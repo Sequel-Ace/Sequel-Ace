@@ -157,8 +157,10 @@
  * On becomeFirstResponder, if editing is disabled, override the super and just
  * display instead; this prevents the selected cell from automatically editing
  * if the table is backtabbed to.
- */
-- (BOOL)becomeFirstResponder 
+ *
+ * @todo Disabled because it breaks Table List display in the sidebar since macOS 10.14+
+ *
+- (BOOL)becomeFirstResponder
 {
 	if (tabEditingDisabled) {
 		[self display];
@@ -168,6 +170,7 @@
 	
 	return [super becomeFirstResponder];
 }
+*/
 
 - (void)keyDown:(NSEvent *)theEvent
 {
