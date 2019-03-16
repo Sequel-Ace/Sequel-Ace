@@ -384,6 +384,8 @@
 		88186F87223CAEAC00C21F5C /* button_rightTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F84223CAEAC00C21F5C /* button_rightTemplate.pdf */; };
 		88186F8A223CAF5C00C21F5C /* button_filterTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F88223CAF5B00C21F5C /* button_filterTemplate.pdf */; };
 		88186F8B223CAF5C00C21F5C /* button_filter_activeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F89223CAF5B00C21F5C /* button_filter_activeTemplate.pdf */; };
+		88186F8E223CAFBA00C21F5C /* button_add_folderTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F8C223CAFB900C21F5C /* button_add_folderTemplate.pdf */; };
+		88186F8F223CAFBA00C21F5C /* button_clearTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F8D223CAFBA00C21F5C /* button_clearTemplate.pdf */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */; };
 		9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE768F3989033CEDDC2027E /* SPFillView.m */; };
@@ -1115,6 +1117,8 @@
 		88186F84223CAEAC00C21F5C /* button_rightTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_rightTemplate.pdf; sourceTree = "<group>"; };
 		88186F88223CAF5B00C21F5C /* button_filterTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_filterTemplate.pdf; sourceTree = "<group>"; };
 		88186F89223CAF5B00C21F5C /* button_filter_activeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_filter_activeTemplate.pdf; sourceTree = "<group>"; };
+		88186F8C223CAFB900C21F5C /* button_add_folderTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_add_folderTemplate.pdf; sourceTree = "<group>"; };
+		88186F8D223CAFBA00C21F5C /* button_clearTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_clearTemplate.pdf; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Pro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Pro.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BE760B3C4586EA3B1A48600 /* SPHelpViewerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPHelpViewerController.m; sourceTree = "<group>"; };
 		9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPHelpViewerClient.h; sourceTree = "<group>"; };
@@ -1988,6 +1992,8 @@
 				88186F78223CAC8E00C21F5C /* button_editTemplate.pdf */,
 				88186F6C223CAA4400C21F5C /* button_removeTemplate.pdf */,
 				88186F82223CAEAB00C21F5C /* button_duplicateTemplate.pdf */,
+				88186F8D223CAFBA00C21F5C /* button_clearTemplate.pdf */,
+				88186F8C223CAFB900C21F5C /* button_add_folderTemplate.pdf */,
 				88186F83223CAEAC00C21F5C /* button_leftTemplate.pdf */,
 				88186F84223CAEAC00C21F5C /* button_rightTemplate.pdf */,
 				88186F72223CABC500C21F5C /* button_refreshTemplate.pdf */,
@@ -2797,6 +2803,7 @@
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
 				1761FD480EF03A6F00331368 /* MainMenu.xib in Resources */,
+				88186F8F223CAFBA00C21F5C /* button_clearTemplate.pdf in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
 				58186D210F4CB38900851FE9 /* ConnectionErrorDialog.xib in Resources */,
 				5885940F0F7AEE6000ED0E67 /* sparkle-public-key.pem in Resources */,
@@ -2831,6 +2838,7 @@
 				BC8B0DAF104004F900FC02EC /* EncodingPopupView.xib in Resources */,
 				BCCBD7FC104408B000D4C50A /* SaveSPFAccessory.xib in Resources */,
 				173C4362104455CA001F3A30 /* QueryFavoriteManager.xib in Resources */,
+				88186F8E223CAFBA00C21F5C /* button_add_folderTemplate.pdf in Resources */,
 				BCB56197106F893F00167321 /* ContentFilters.plist in Resources */,
 				BCB5619B106F8A1B00167321 /* EditorQuickLookTypes.plist in Resources */,
 				BC675A17107203BA00C5ACD4 /* ContentFilterManager.xib in Resources */,
