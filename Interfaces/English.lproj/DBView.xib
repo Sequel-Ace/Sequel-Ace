@@ -348,7 +348,7 @@
                                 <button toolTip="Toggle the visibility of the Information panel" id="7959">
                                     <rect key="frame" x="92" y="-1" width="32" height="25"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES"/>
-                                    <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_pane_hide" imagePosition="only" alignment="center" alternateImage="button_pane_show" inset="2" id="7960">
+                                    <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_pane_hideTemplate" imagePosition="only" alignment="center" alternateImage="button_pane_showTemplate" inset="2" id="7960">
                                         <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
@@ -820,7 +820,7 @@
                                                                     <button hidden="YES" toolTip="Reveal the collapsed indexes pane" id="7457">
                                                                         <rect key="frame" x="124" y="-1" width="33" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_info_pane_show" imagePosition="overlaps" alignment="center" alternateImage="button_info_pane_show" state="on" inset="2" id="7458">
+                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_pane_showTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_pane_showTemplate" state="on" inset="2" id="7458">
                                                                             <behavior key="behavior" lightByContents="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                         </buttonCell>
@@ -4999,11 +4999,12 @@ Gw
         <image name="button_edit_mode_selectedTemplate" width="11" height="10"/>
         <image name="button_filter" width="30" height="22"/>
         <image name="button_filter_active" width="30" height="22"/>
-        <image name="button_info_pane_show" width="30" height="22"/>
         <image name="button_left" width="30" height="22"/>
         <image name="button_paginationTemplate" width="20" height="10"/>
         <image name="button_pane_hide" width="30" height="22"/>
+        <image name="button_pane_hideTemplate" width="11" height="10"/>
         <image name="button_pane_show" width="30" height="22"/>
+        <image name="button_pane_showTemplate" width="11" height="10"/>
         <image name="button_refreshTemplate" width="10" height="10"/>
         <image name="button_removeTemplate" width="11" height="10"/>
         <image name="button_right" width="30" height="22"/>
