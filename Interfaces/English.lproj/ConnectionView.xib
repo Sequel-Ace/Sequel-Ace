@@ -224,7 +224,7 @@
                                 <button id="5853">
                                     <rect key="frame" x="69" y="0.0" width="34" height="23"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_add" imagePosition="overlaps" alignment="center" alternateImage="button_add" inset="2" id="5854">
+                                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_addTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_addTemplate" inset="2" id="5854">
                                         <behavior key="behavior" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
@@ -2592,7 +2592,7 @@ DQ
     </objects>
     <resources>
         <image name="button_action" width="30" height="22"/>
-        <image name="button_add" width="30" height="22"/>
+        <image name="button_addTemplate" width="11" height="10"/>
         <image name="button_add_folder" width="30" height="22"/>
         <image name="button_bar_handleTemplate" width="7" height="10"/>
         <image name="key-icon" width="16" height="9"/>
