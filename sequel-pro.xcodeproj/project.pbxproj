@@ -371,6 +371,7 @@
 		88186F6D223CAA4400C21F5C /* button_removeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F6C223CAA4400C21F5C /* button_removeTemplate.pdf */; };
 		88186F6F223CAACF00C21F5C /* button_actionTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F6E223CAACF00C21F5C /* button_actionTemplate.pdf */; };
 		88186F71223CAB7D00C21F5C /* button_paginationTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F70223CAB7C00C21F5C /* button_paginationTemplate.pdf */; };
+		88186F73223CABC600C21F5C /* button_refreshTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F72223CABC500C21F5C /* button_refreshTemplate.pdf */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */; };
 		9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE768F3989033CEDDC2027E /* SPFillView.m */; };
@@ -1089,6 +1090,7 @@
 		88186F6C223CAA4400C21F5C /* button_removeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_removeTemplate.pdf; sourceTree = "<group>"; };
 		88186F6E223CAACF00C21F5C /* button_actionTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_actionTemplate.pdf; sourceTree = "<group>"; };
 		88186F70223CAB7C00C21F5C /* button_paginationTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_paginationTemplate.pdf; sourceTree = "<group>"; };
+		88186F72223CABC500C21F5C /* button_refreshTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_refreshTemplate.pdf; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Pro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Pro.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BE760B3C4586EA3B1A48600 /* SPHelpViewerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPHelpViewerController.m; sourceTree = "<group>"; };
 		9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPHelpViewerClient.h; sourceTree = "<group>"; };
@@ -1960,6 +1962,7 @@
 			children = (
 				88186F6A223CA90F00C21F5C /* button_addTemplate.pdf */,
 				88186F6C223CAA4400C21F5C /* button_removeTemplate.pdf */,
+				88186F72223CABC500C21F5C /* button_refreshTemplate.pdf */,
 				88186F6E223CAACF00C21F5C /* button_actionTemplate.pdf */,
 				88186F70223CAB7C00C21F5C /* button_paginationTemplate.pdf */,
 				88186F66223CA81B00C21F5C /* button_bar_handleTemplate.pdf */,
@@ -2798,6 +2801,7 @@
 				1792C13210AD752100ABE758 /* DatabaseServerVariables.xib in Resources */,
 				17CC97F710B4AC6C0034CD7A /* AboutPanel.xib in Resources */,
 				17CC993B10B4C9C80034CD7A /* License.rtf in Resources */,
+				88186F73223CABC600C21F5C /* button_refreshTemplate.pdf in Resources */,
 				58C3507510B9ADEA00D37E14 /* ContentPaginationView.xib in Resources */,
 				BC30C011111C98BD002701C9 /* DataMigrationDialog.xib in Resources */,
 				BC962D661144EACA006170BD /* CompletionTokens.plist in Resources */,
