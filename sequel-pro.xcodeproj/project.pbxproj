@@ -382,6 +382,8 @@
 		88186F85223CAEAC00C21F5C /* button_duplicateTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F82223CAEAB00C21F5C /* button_duplicateTemplate.pdf */; };
 		88186F86223CAEAC00C21F5C /* button_leftTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F83223CAEAC00C21F5C /* button_leftTemplate.pdf */; };
 		88186F87223CAEAC00C21F5C /* button_rightTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F84223CAEAC00C21F5C /* button_rightTemplate.pdf */; };
+		88186F8A223CAF5C00C21F5C /* button_filterTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F88223CAF5B00C21F5C /* button_filterTemplate.pdf */; };
+		88186F8B223CAF5C00C21F5C /* button_filter_activeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 88186F89223CAF5B00C21F5C /* button_filter_activeTemplate.pdf */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */; };
 		9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE768F3989033CEDDC2027E /* SPFillView.m */; };
@@ -1111,6 +1113,8 @@
 		88186F82223CAEAB00C21F5C /* button_duplicateTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_duplicateTemplate.pdf; sourceTree = "<group>"; };
 		88186F83223CAEAC00C21F5C /* button_leftTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_leftTemplate.pdf; sourceTree = "<group>"; };
 		88186F84223CAEAC00C21F5C /* button_rightTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_rightTemplate.pdf; sourceTree = "<group>"; };
+		88186F88223CAF5B00C21F5C /* button_filterTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_filterTemplate.pdf; sourceTree = "<group>"; };
+		88186F89223CAF5B00C21F5C /* button_filter_activeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_filter_activeTemplate.pdf; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Pro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Pro.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BE760B3C4586EA3B1A48600 /* SPHelpViewerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPHelpViewerController.m; sourceTree = "<group>"; };
 		9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPHelpViewerClient.h; sourceTree = "<group>"; };
@@ -1991,6 +1995,8 @@
 				88186F70223CAB7C00C21F5C /* button_paginationTemplate.pdf */,
 				88186F7E223CAD4A00C21F5C /* button_pane_hideTemplate.pdf */,
 				88186F7F223CAD4A00C21F5C /* button_pane_showTemplate.pdf */,
+				88186F89223CAF5B00C21F5C /* button_filter_activeTemplate.pdf */,
+				88186F88223CAF5B00C21F5C /* button_filterTemplate.pdf */,
 				88186F66223CA81B00C21F5C /* button_bar_handleTemplate.pdf */,
 				88186F7B223CACC500C21F5C /* button_edit_mode_selectedTemplate.pdf */,
 				88186F7A223CACC500C21F5C /* button_edit_modeTemplate.pdf */,
@@ -2835,6 +2841,7 @@
 				1792C13210AD752100ABE758 /* DatabaseServerVariables.xib in Resources */,
 				17CC97F710B4AC6C0034CD7A /* AboutPanel.xib in Resources */,
 				17CC993B10B4C9C80034CD7A /* License.rtf in Resources */,
+				88186F8B223CAF5C00C21F5C /* button_filter_activeTemplate.pdf in Resources */,
 				88186F73223CABC600C21F5C /* button_refreshTemplate.pdf in Resources */,
 				88186F7D223CACC500C21F5C /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				58C3507510B9ADEA00D37E14 /* ContentPaginationView.xib in Resources */,
@@ -2849,6 +2856,7 @@
 				BC93FBBD11514ADE005F1D9F /* Navigator.xib in Resources */,
 				58A8A72711A0149100B95749 /* MainWindow.xib in Resources */,
 				17A7773811C52E61001E27B4 /* IndexesView.xib in Resources */,
+				88186F8A223CAF5C00C21F5C /* button_filterTemplate.pdf in Resources */,
 				88186F6B223CA90F00C21F5C /* button_addTemplate.pdf in Resources */,
 				58E205FC1234FE4F00A97059 /* KeyTemplate.pdf in Resources */,
 				58A137CD123ED5E6000B1B75 /* titlebarlock.png in Resources */,

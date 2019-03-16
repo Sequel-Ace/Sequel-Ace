@@ -1239,7 +1239,7 @@
                                                                     <button toolTip="Show/Hide table content filters" horizontalHuggingPriority="750" verticalHuggingPriority="750" id="LYg-Ux-Lph">
                                                                         <rect key="frame" x="155" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_filter" imagePosition="overlaps" alignment="center" alternateImage="button_filter_active" inset="2" id="WNc-7G-qPQ">
+                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_filterTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_filter_activeTemplate" inset="2" id="WNc-7G-qPQ">
                                                                             <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                         </buttonCell>
@@ -4997,8 +4997,8 @@ Gw
         <image name="button_editTemplate" width="11" height="10"/>
         <image name="button_edit_modeTemplate" width="11" height="10"/>
         <image name="button_edit_mode_selectedTemplate" width="11" height="10"/>
-        <image name="button_filter" width="30" height="22"/>
-        <image name="button_filter_active" width="30" height="22"/>
+        <image name="button_filterTemplate" width="12" height="10"/>
+        <image name="button_filter_activeTemplate" width="12" height="10"/>
         <image name="button_leftTemplate" width="8" height="10"/>
         <image name="button_paginationTemplate" width="20" height="10"/>
         <image name="button_pane_hide" width="30" height="22"/>
