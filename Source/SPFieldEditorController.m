@@ -317,7 +317,14 @@ typedef enum {
 			[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] :
 #endif			
 			[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+
+			[jsonTextView setFont:
 #ifndef SP_CODA
+			[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] :
+#endif
+			[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+#ifndef SP_CODA
+
 		}
 		else {
 			[editTextView setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"FieldEditorSheetFont"]]];
