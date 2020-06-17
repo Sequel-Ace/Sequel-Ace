@@ -69,6 +69,7 @@ NSString *SPHTMLPrintTemplate                    = @"SPPrintTemplate";
 NSString *SPHTMLTableInfoPrintTemplate           = @"SPTableInfoPrintTemplate";
 NSString *SPHTMLHelpTemplate                     = @"SPMySQLHelpTemplate";
 NSString *SPPreferenceDefaultsFile               = @"PreferenceDefaults";
+NSString *SPSSHConfigFile                        = @"ssh_config";
 
 // Folder names
 NSString *SPThemesSupportFolder                  = @"Themes";
