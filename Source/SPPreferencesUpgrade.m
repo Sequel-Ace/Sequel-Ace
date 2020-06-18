@@ -62,7 +62,6 @@ void SPApplyRevisionChanges(void)
 	currentVersionNumber = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] integerValue];
 	
 	// Get the current revision
-	if ([prefs objectForKey:@"lastUsedVersion"]) recordedVersionNumber = [[prefs objectForKey:@"lastUsedVersion"] integerValue];
 	if ([prefs objectForKey:SPLastUsedVersion]) recordedVersionNumber = [[prefs objectForKey:SPLastUsedVersion] integerValue];
 
 	// Skip processing if the current version matches or is less than recorded version
@@ -161,10 +160,6 @@ void SPApplyRevisionChanges(void)
 				[prefs removeObjectForKey:oldKey];
 			}
 		}
-		
-		// Remove outdated keys
-		[prefs removeObjectForKey:@"lastUsedVersion"];
-		[prefs removeObjectForKey:@"version"];
 	}
 	
 	// For versions prior to r567 (0.9.5), add a timestamp-based identifier to favorites and keychain entries

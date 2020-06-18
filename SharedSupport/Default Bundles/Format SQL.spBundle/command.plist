@@ -24,7 +24,7 @@ echo json_decode($result,true)[&apos;result&apos;];</string>
 	<key>description</key>
 	<string>Send the current query or selection to https://sqlformat.org and replace the current query or selection of the first responder by the server&apos;s formatted output. If a parser error occurred alert that error and tries to jump to the error location.
 
-Version 1.0</string>
+Version 2.0</string>
 	<key>input</key>
 	<string>selectedtext</string>
 	<key>input_fallback</key>
@@ -43,7 +43,7 @@ Version 1.0</string>
 	<key>name</key>
 	<string>Format SQL</string>
 	<key>output</key>
-	<string>showashtml</string>
+	<string>replaceselection</string>
 	<key>scope</key>
 	<string>inputfield</string>
 	<key>tooltip</key>
