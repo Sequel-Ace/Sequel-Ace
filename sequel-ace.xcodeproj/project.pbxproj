@@ -1791,6 +1791,7 @@
 				58D1006813A57FAE0092E019 /* Localization Strings Files */,
 				1740F8350FC3069700CF3699 /* Templates */,
 				584756F7120A1B0B0057631F /* QuickLook Plugin */,
+				96D494B8249C07940092F335 /* SSH Helpers */,
 				17F90E2B1210B34900274C98 /* Credits.rtf */,
 				17CC993A10B4C9C80034CD7A /* License.rtf */,
 				583A278D23F06F1000FBE97B /* Colors.xcassets */,
@@ -2229,7 +2230,6 @@
 		584756F7120A1B0B0057631F /* QuickLook Plugin */ = {
 			isa = PBXGroup;
 			children = (
-				964908C4249A77CF0052FC4A /* ssh_config */,
 				BCBB3C15121158790011F962 /* SPQLPluginConnectionBundleTemplate.html */,
 				584756FA120A1B290057631F /* SPQLPluginConnectionTemplate.html */,
 				584756FC120A1B290057631F /* SPQLPluginContentFiltersTemplate.html */,
@@ -2393,6 +2393,14 @@
 				73F70A951E4E547500636550 /* SPJSONFormatter.m */,
 			);
 			name = Parsing;
+			sourceTree = "<group>";
+		};
+		96D494B8249C07940092F335 /* SSH Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				964908C4249A77CF0052FC4A /* ssh_config */,
+			);
+			name = "SSH Helpers";
 			sourceTree = "<group>";
 		};
 		B57747D60F7A8990003B34F9 /* Category Additions */ = {
