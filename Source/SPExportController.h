@@ -46,7 +46,7 @@
  *
  * Export controller.
  */
-@interface SPExportController : NSWindowController
+@interface SPExportController : NSWindowController<NSOpenSavePanelDelegate>
 {	
 	// Controllers
 	IBOutlet SPDatabaseDocument *tableDocumentInstance;
@@ -254,6 +254,10 @@
  */
 @property(readwrite, assign) SPMySQLConnection *connection;
 @property(readwrite, assign) SPServerSupport *serverSupport;
+
+@property (readwrite, retain) NSData *appScopedBookmark;
+@property (readwrite, retain) NSURL *userChosenDirectory;
+@property (readwrite, retain) NSOpenPanel *changeExportOutputPathPanel;
 
 - (void)exportTables:(NSArray *)table asFormat:(SPExportType)format usingSource:(SPExportSource)source;
 - (void)openExportErrorsSheetWithString:(NSString *)errors;

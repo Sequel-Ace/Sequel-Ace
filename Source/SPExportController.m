@@ -167,7 +167,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 @synthesize serverSupport = serverSupport;
 @synthesize exportToMultipleFiles;
 @synthesize exportCancelled;
-
+@synthesize appScopedBookmark;
+@synthesize userChosenDirectory;
+@synthesize changeExportOutputPathPanel;
 #pragma mark -
 #pragma mark Initialisation
 
@@ -546,27 +548,66 @@ set_input:
 	[exportProgressIndicator setUsesThreadedAnimation:NO];
 }
 
+// NSOpenSavePanelDelegate - not sure why this wasn't enabled before...
+- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url{
+	return YES;
+}
+
 /**
  * Opens the open panel when user selects to change the output path.
  */
 - (IBAction)changeExportOutputPath:(id)sender
 {	
-	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	self.changeExportOutputPathPanel = [NSOpenPanel openPanel] ; 	// need to retain, so we can relinquish access via stopAccessingSecurityScopedResource
+																	// I'm not sure though, haven't written non-ARC code for years.
 	
-	[panel setCanChooseFiles:NO];
-	[panel setCanChooseDirectories:YES];
-	[panel setCanCreateDirectories:YES];
+	changeExportOutputPathPanel.delegate = self;
+	
+	[changeExportOutputPathPanel setCanChooseFiles:NO];
+	[changeExportOutputPathPanel setCanChooseDirectories:YES];
+	[changeExportOutputPathPanel setCanCreateDirectories:YES];
     
-    [panel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
-    [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
+    [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
+    [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-			NSString *path = [[panel directoryURL] path];
+			NSString *path = [[changeExportOutputPathPanel directoryURL] path];
 			if(!path) {
 				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[panel directoryURL],[[panel directoryURL] isFileURL]]
+											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[changeExportOutputPathPanel directoryURL],[[changeExportOutputPathPanel directoryURL] isFileURL]]
 											 userInfo:nil];
 			}
-            [exportPathField setStringValue:path];
+			
+			[exportPathField setStringValue:path];
+			//don't think we need this
+			userChosenDirectory = [[NSURL alloc ] initWithString:changeExportOutputPathPanel.URL.absoluteString];
+		
+
+			// the code always seems to go into this block as the
+			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
+			// I'm not sure we even need com.apple.security.files.bookmarks.app-scope
+			// or the else section below...
+			// or do we want to save all previously user selected folders as appScopedBookmarks?
+			if([changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
+
+				NSLog(@"got access to: %@", changeExportOutputPathPanel.URL.absoluteString);
+			}
+			else{
+				// not sure we need this bit either
+				NSError *error = nil;
+
+				self.appScopedBookmark = [userChosenDirectory bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
+											 includingResourceValuesForKeys:nil
+															  relativeToURL:nil
+																	  error:&error];
+
+				userChosenDirectory = [NSURL URLByResolvingBookmarkData:self.appScopedBookmark
+														   options:NSURLBookmarkResolutionWithSecurityScope
+													 relativeToURL:nil
+											   bookmarkDataIsStale:nil
+															 error:&error];
+
+				[userChosenDirectory startAccessingSecurityScopedResource];
+			}
         }
     }];		
 }
@@ -1220,6 +1261,18 @@ set_input:
 
 	// Restore query mode
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
+	
+	// relinquish access to userChosenDirectory
+	[userChosenDirectory stopAccessingSecurityScopedResource];
+	
+	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
+	
+	// release to avoid leaks
+	// I think...
+	// userChosenDirectory leaks if we don't release here
+	// the panel wasn't leaking according to Leaks instrument.
+	SPClear(userChosenDirectory);
+//	SPClear(changeExportOutputPathPanel);
 
 	// Display export finished notification
 	[self displayExportFinishedNotification];
@@ -3760,7 +3813,11 @@ set_input:
 	SPClear(operationQueue);
 	SPClear(exportFilename);
 	SPClear(localizedTokenNames);
+	SPClear(appScopedBookmark);
+	SPClear(userChosenDirectory);
 	SPClear(previousConnectionEncoding);
+	SPClear(changeExportOutputPathPanel);
+	
 	[self setServerSupport:nil];
 	
 	[super dealloc];
