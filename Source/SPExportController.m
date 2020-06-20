@@ -280,11 +280,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// set some defaults
 	[exportCSVNULLValuesAsTextField setStringValue:[prefs stringForKey:SPNullValue]];
 	[exportXMLNULLValuesAsTextField setStringValue:[prefs stringForKey:SPNullValue]];
-	if(![[exportPathField stringValue] length]) {
-		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, YES);
-		// If found the set the default path to the user's desktop, otherwise use their home directory
-		[exportPathField setStringValue:([paths count] > 0) ? [paths objectAtIndex:0] : NSHomeDirectory()];
-	}
+
+	// MARK: removed default export location
 	
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
@@ -1640,6 +1637,14 @@ set_input:
 		else {
 			[problemFiles addObject:exportFile];
 		}
+
+		// This checks if the user has chosen a location and not just clicked export
+		// actually I think exportFile.exportFilePath.length will always be > 0
+		// might remove that condition
+		if(exportFile.exportFilePath.length == 0 || exportFile.exportFilePath.pathComponents.count < 2 ){
+			[exportFile setExportFileNeedsUserChosenDir:YES];
+			[problemFiles addObject:exportFile];
+		}
 	}
 
 	// Deal with any file handles that we failed to create for whatever reason
@@ -1879,10 +1884,15 @@ set_input:
 	NSUInteger parentFoldersMissing = 0;
 	NSUInteger parentFoldersNotWritable = 0;
 	NSUInteger filesFailed = 0;
+	NSUInteger noExportDirChosen = 0;
 
 	for (SPExportFile *file in files)
 	{
-		if ([file exportFileHandleStatus] == SPExportFileHandleExists) {
+		if (file.exportFileNeedsUserChosenDir == YES){
+			noExportDirChosen++;
+			filesFailed++;
+		}
+		else if ([file exportFileHandleStatus] == SPExportFileHandleExists) {
 			filesAlreadyExisting++;
 		}
 		// For file handles that we failed to create for some unknown reason, ignore them and remove any
@@ -1960,7 +1970,11 @@ set_input:
 				[alert setInformativeText:NSLocalizedString(@"The target export folder no longer exists.  Please select a new export location and try again.", @"Export folder missing explanatory text")];
 			} else if (parentFoldersNotWritable) {
 				[alert setInformativeText:NSLocalizedString(@"The target export folder is not writable.  Please select a new export location and try again.", @"Export folder not writable explanatory text")];
-			} else {
+			}
+			else if (noExportDirChosen) {
+				[alert setInformativeText:NSLocalizedString(@"No directory selected.  Please select a new export location and try again.", @"Export folder not chosen by user")];
+			}
+			else {
 				[alert setInformativeText:NSLocalizedString(@"An unhandled error occurred when attempting to create the export file.  Please check the details and try again.", @"Export file creation error explanatory text")];
 			}
 		}
@@ -3138,7 +3152,12 @@ set_input:
 	[exportFiles removeAllObjects];
 
 	id o;
-	if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
+	// TODO: =This is where the export panel gets the last used dir
+	// TODO: However, if the user just accepts it and clicks export, we get an Attempting to write to an uninitialized file handle exception
+	// TODO: if a file with the same name already exists and the user clicks replace
+	// TODO: Ah, this is because we are not using bookmarks, the location isn't writable so SPExportFile can't create the filehandle
+	// TODO: I'll comment this out for the moment, then implement storing bookmarks
+//	if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
 
 	SPExportType et;
 	if((o = [dict objectForKey:@"exportType"]) && [[self class] copyExportTypeForDescription:o to:&et]) {
@@ -3804,7 +3823,7 @@ set_input:
 }
 
 #pragma mark -
-
+#pragma mark Memory Management
 - (void)dealloc
 {	
     SPClear(tables);
