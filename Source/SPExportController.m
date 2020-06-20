@@ -170,6 +170,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 @synthesize appScopedBookmark;
 @synthesize userChosenDirectory;
 @synthesize changeExportOutputPathPanel;
+@synthesize bookmarks;
 #pragma mark -
 #pragma mark Initialisation
 
@@ -200,6 +201,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		exporters = [[NSMutableArray alloc] init];
 		exportFiles = [[NSMutableArray alloc] init];
 		operationQueue = [[NSOperationQueue alloc] init];
+		bookmarks = [[NSMutableArray alloc] init];
 		
 		showAdvancedView = NO;
 		showCustomFilenameView = NO;
@@ -285,6 +287,11 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
+	
+	id o;
+	if((o = [prefs objectForKey:SPSecureBookmarks])){
+		[bookmarks setArray:o];
+	}
 	
 	// overwrite defaults with user settings from last export
 	[self applySettingsFromDictionary:[prefs objectForKey:SPLastExportSettings] error:NULL];
@@ -575,35 +582,38 @@ set_input:
 			}
 			
 			[exportPathField setStringValue:path];
-			//don't think we need this
-			userChosenDirectory = [[NSURL alloc ] initWithString:changeExportOutputPathPanel.URL.absoluteString];
-		
-
+			
 			// the code always seems to go into this block as the
 			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
-			// I'm not sure we even need com.apple.security.files.bookmarks.app-scope
-			// or the else section below...
-			// or do we want to save all previously user selected folders as appScopedBookmarks?
 			if([changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
-
+				
 				NSLog(@"got access to: %@", changeExportOutputPathPanel.URL.absoluteString);
-			}
-			else{
-				// not sure we need this bit either
-				NSError *error = nil;
-
-				self.appScopedBookmark = [userChosenDirectory bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
-											 includingResourceValuesForKeys:nil
-															  relativeToURL:nil
-																	  error:&error];
-
-				userChosenDirectory = [NSURL URLByResolvingBookmarkData:self.appScopedBookmark
-														   options:NSURLBookmarkResolutionWithSecurityScope
-													 relativeToURL:nil
-											   bookmarkDataIsStale:nil
-															 error:&error];
-
-				[userChosenDirectory startAccessingSecurityScopedResource];
+				
+				BOOL __block beenHereBefore = NO;
+				
+				// have we been here before?
+				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+					
+					if(dict[changeExportOutputPathPanel.URL.absoluteString] != nil){
+						NSLog(@"beenHereBefore: %@", dict[changeExportOutputPathPanel.URL.absoluteString]);
+						beenHereBefore = YES;
+						*stop = YES;
+					}
+				}];
+				
+				if(beenHereBefore == NO){
+					// create a bookmark
+					NSError *error = nil;
+					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
+																			 includingResourceValuesForKeys:nil
+																							  relativeToURL:nil
+																									  error:&error];
+					// save to prefs
+					if(tmpAppScopedBookmark && !error) {
+						[bookmarks addObject:@{changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
+						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+					}
+				}
 			}
         }
     }];		
@@ -3150,15 +3160,35 @@ set_input:
 
 	[exporters removeAllObjects];
 	[exportFiles removeAllObjects];
-
+	
 	id o;
-	// TODO: =This is where the export panel gets the last used dir
-	// TODO: However, if the user just accepts it and clicks export, we get an Attempting to write to an uninitialized file handle exception
-	// TODO: if a file with the same name already exists and the user clicks replace
-	// TODO: Ah, this is because we are not using bookmarks, the location isn't writable so SPExportFile can't create the filehandle
-	// TODO: I'll comment this out for the moment, then implement storing bookmarks
-//	if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
-
+	// if we have some bookmarks, populate the last used export path
+	// look up that bookmark and request access
+	if(bookmarks.count > 0){
+		if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
+		
+		NSError __block *error = nil;
+		
+		[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict2, NSUInteger idx, BOOL *stop) {
+			
+			NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
+			
+			if(dict2[tmpStr] != nil){
+				self.userChosenDirectory = [NSURL URLByResolvingBookmarkData:dict2[tmpStr]
+																	 options:NSURLBookmarkResolutionWithSecurityScope
+															   relativeToURL:nil
+														 bookmarkDataIsStale:nil
+																	   error:&error];
+				*stop = YES;
+			}
+		}];
+		
+		// if no bookmark was found this just calls against nil
+		if(!error){
+			[userChosenDirectory startAccessingSecurityScopedResource];
+		}
+	}
+	
 	SPExportType et;
 	if((o = [dict objectForKey:@"exportType"]) && [[self class] copyExportTypeForDescription:o to:&et]) {
 		[exportTypeTabBar selectTabViewItemAtIndex:et];

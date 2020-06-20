@@ -258,6 +258,7 @@
 @property (readwrite, retain) NSData *appScopedBookmark;
 @property (readwrite, retain) NSURL *userChosenDirectory;
 @property (readwrite, retain) NSOpenPanel *changeExportOutputPathPanel;
+@property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
 
 - (void)exportTables:(NSArray *)table asFormat:(SPExportType)format usingSource:(SPExportSource)source;
 - (void)openExportErrorsSheetWithString:(NSString *)errors;
