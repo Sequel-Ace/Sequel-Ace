@@ -1,14 +1,11 @@
-[Documentation Index](/)
+# Sequel Ace
+## Documentation
 
-[Getting Connected](/get-connected/)
-
-[Keyboard Shortcuts](/keyboard-shortcuts.html)
-
-[Bundles for Sequel Ace](/bundles.html)
-
-[Query View](/query-view.html)
-
-
+-   [Documentation Index](/)
+-   [Getting Connected](/get-connected/)
+-   [Keyboard Shortcuts](/keyboard-shortcuts.html)
+-   [Bundles for Sequel Ace](/bundles.html)
+-   [Query View](/query-view.html)
 
 ### Connect to a Remote MySQL Server
 
