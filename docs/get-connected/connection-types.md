@@ -1,8 +1,15 @@
-# What type of connection do I have?
+-   [Documentation Index](./)
+-   [Getting Connected](../get-connected/)
+-   [Keyboard Shortcuts](../keyboard-shortcuts.html)
+-   [Bundles for Sequel Ace](../bundles.html)
+-   [Query View](../query-view.html)
+
+### What type of connection do I have?
 
 When you open Sequel Ace, the first screen that you will see is the database connection window. If you don't have access to a MySQL server, perhaps you could try installing [MySQL](https://dev.mysql.com/doc/mysql-osx-excerpt/en/osx-installation.html "MySQL:Installing on MacOS") or [MariaDB](https://mariadb.com/kb/en/installing-mariadb-on-macos-using-homebrew "MariaDB:Installing on MacOS") on your Mac.
 
-## Local Connections
+
+#### Local Connections
 
 A MySQL Server running on the same computer as Sequel Ace is called _local_. You can connect to a local MySQL server in two ways:
 
@@ -15,7 +22,8 @@ For more details, see [Connecting to a local MySQL Server](local-connection.html
 
 If you installed MySQL with MAMP or XAMPP, see [Connecting to MAMP or XAMPP](mamp-xampp.html "Connecting to MAMP or XAMPP").
 
-## Remote Connections
+
+#### Remote Connections
 
 If the MySQL server is on a different computer as Sequel Ace, it's called a _remote_ server. You can connect to remote servers:
 
@@ -26,7 +34,8 @@ You can use a standard connection if the MySQL server is directly reachable -- e
 
 At the moment, **Sequel Ace does not support SSL** encryption. If possible, use a SSH connection instead.
 
-## Standard Connection
+
+#### Standard Connection
 
 A standard connection is an **unencrypted** connection using TCP/IP. Such a connection is usually made over the network or over the internet to a remote server. To specify which server to connect to, you must provide its IP address or DNS resolvable name:
 
@@ -75,7 +84,7 @@ Port
 Defaults to port 3306.
 
 
-## Socket Connection
+#### Socket Connection
 
 A **Socket connection** is a connection to a copy of MySQL running on your local machine. If you are connecting to MySQL that you have installed from a package installer or source, then you won't normally need to enter anything into the socket field.
 

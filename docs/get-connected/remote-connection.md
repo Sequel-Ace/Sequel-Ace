@@ -1,15 +1,13 @@
-# Sequel Ace
-## Documentation
-
--   [Documentation Index](/)
--   [Getting Connected](/get-connected/)
--   [Keyboard Shortcuts](/keyboard-shortcuts.html)
--   [Bundles for Sequel Ace](/bundles.html)
--   [Query View](/query-view.html)
+-   [Documentation Index](./)
+-   [Getting Connected](../get-connected/)
+-   [Keyboard Shortcuts](../keyboard-shortcuts.html)
+-   [Bundles for Sequel Ace](../bundles.html)
+-   [Query View](../query-view.html)
 
 ### Connect to a Remote MySQL Server
 
 This page explains how to connect to a MySQL Server running on a different computer than Sequel Ace.
+
 
 #### Connection Types For Connecting to a Remote Host
 
@@ -18,9 +16,11 @@ At the moment, Sequel Ace supports two methods for connecting to remote MySQL se
 -   **Standard** connection
 -   **SSH** connection
 
+
 ##### Standard Connections
 
 **Standard connections** are the simplest method to connect to a MySQL server. A standard connection in Sequel Ace is a connection over the local network or the internet. It uses the TCP/IP protocol. Standard connections are not encrypted.
+
 
 ##### SSH connections
 
@@ -46,9 +46,11 @@ Of course, SSH connections don't solve every problem. The following requirements
 
 _If the SSH host is behind a firewall, it must be configured to allow SSH connections. Also, if the SSH host is behind a NAT, it must also be configured correctly._
 
+
 #### Choosing a SSH Host
 
 The SSH host can basically be any computer that can access the MySQL server. You could for example use your desktop computer at work to connect to your company's MySQL server from home. A hosting provider might tell you to connect to their MySQL server via a specific SSH host. You need a username and a password for the computer you want to use as the SSH host, and it must support remote access via SSH. Almost all Unix/Linux systems and Mac OS X have built-in SSH support. On Mac OS, SSH ist called _Remote Login_ and can be enabled in the _Sharing_ preferences. If you want to use a Microsoft Windows computer as a SSH host, you must install a SSH server first (this might be difficult).
+
 
 #### Creating an SSH Connection from Terminal.app
 
@@ -57,6 +59,7 @@ Sequel Ace now sets up an SSH Tunnel for you when you choose the SSH connection 
 $ ssh -L 1234:mysqlhost:3306 sshuser@sshhost
 
 Here `mysqlhost` is what you have to enter in Sequel Ace as the MySQL host, `sshuser`corresponds to the SSH user, and `sshhost` corresponds to the SSH host field, obviously. The first number, `1234`, is the local port of the SSH tunnel. Sequel Ace chooses this port automatically. The second number in the command, `3306`, is the port used by the MySQL server.
+
 
 #### Notes
 
