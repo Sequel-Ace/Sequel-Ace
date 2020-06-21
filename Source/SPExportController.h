@@ -256,6 +256,7 @@
 @property(readwrite, assign) SPServerSupport *serverSupport;
 
 @property (readwrite, retain) NSData *appScopedBookmark;
+@property (readwrite, retain) NSDate *startTime;
 @property (readwrite, retain) NSURL *userChosenDirectory;
 @property (readwrite, retain) NSOpenPanel *changeExportOutputPathPanel;
 @property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;

@@ -171,6 +171,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 @synthesize userChosenDirectory;
 @synthesize changeExportOutputPathPanel;
 @synthesize bookmarks;
+@synthesize startTime;
 #pragma mark -
 #pragma mark Initialisation
 
@@ -422,6 +423,30 @@ static inline void SetOnOff(NSNumber *ref,id obj);
  */
 - (IBAction)closeSheet:(id)sender
 {
+	
+	// if they clicked export
+	// Cancel tag = 0
+	// Export tag = 1
+	if([sender tag] == 1){
+		// but nothing is in the export path field
+		if([exportPathField stringValue] == nil || [[exportPathField stringValue] isEqualToString:@""] ){
+			NSLog(@"ERROR: no path!");
+			NSLog(@"sender title: %@, sender tag: %ld", [(NSButton*)sender title], (long)[sender tag]);
+			
+			NSAlert *alert = [[NSAlert alloc] init];
+			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setMessageText:NSLocalizedString(@"No directory selected.", @"No directory selected.")];
+			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
+			
+			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+				[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
+			}];
+			
+			// we don't want to close the sheet so return here
+			return;
+		}
+	}
+	
 	if ([sender window] == [self window]) {
 		
 		// Close the advanced options view if it's open
@@ -456,7 +481,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		for (NSMenuItem *item in [exportInputPopUpButton itemArray]) {
 			if([item isEnabled]) {
 				actualInput = [exportInputPopUpButton indexOfItem:item];
-				goto set_input;
+				goto set_input; //MARK: a goto in the WILD!
 			}
 		}
 		// nothing found (should not happen)
@@ -1230,6 +1255,7 @@ set_input:
  */
 - (void)startExport
 {
+	self.startTime = [NSDate date];
 	// Start progress indicator
 	[exportProgressTitle setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Exporting %@", @"text showing that the application is importing a supplied format"), exportTypeLabel]];
 	[exportProgressText setStringValue:NSLocalizedString(@"Writing...", @"text showing that app is writing text file")];
@@ -1264,8 +1290,18 @@ set_input:
  */
 - (void)exportEnded
 {
-	[self _hideExportProgress];
-
+	NSLog(@"Time to export: %f", -[startTime timeIntervalSinceNow]);
+	// if the export was really quick
+	if((-[startTime timeIntervalSinceNow]) < 2){
+		// give the user a second to see the progress
+		NSLog(@"give the user a second to see the progress");
+		[self performSelector:@selector(_hideExportProgress) withObject:nil afterDelay:1.0];
+	}
+	else{
+		NSLog(@"hide instantly");
+		[self _hideExportProgress];
+	}
+	
 	// Restore query mode
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	
@@ -3866,6 +3902,7 @@ set_input:
 	SPClear(userChosenDirectory);
 	SPClear(previousConnectionEncoding);
 	SPClear(changeExportOutputPathPanel);
+	SPClear(startTime);
 	
 	[self setServerSupport:nil];
 	
