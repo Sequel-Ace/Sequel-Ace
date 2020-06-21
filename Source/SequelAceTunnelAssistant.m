@@ -53,7 +53,7 @@ int main(int argc, const char *argv[])
 		}
 
 		// Check if we're being asked a question and respond if so
-		if (argument && [argument rangeOfString:@" (yes/no)?"].location != NSNotFound) {
+		if (argument && [argument rangeOfString:@" (yes/no"].location != NSNotFound) {
 
 			sequelProTunnel = (SPSSHTunnel *)[NSConnection rootProxyForConnectionWithRegisteredName:connectionName host:nil];
 
