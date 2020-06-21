@@ -1,4 +1,13 @@
-# Connect to a Remote MySQL Server
+# Sequel Ace Documentation
+
+-   [Documentation Index](/)
+-   [Getting Connected](/get-connected/)
+-   [Keyboard Shortcuts](/keyboard-shortcuts.html)
+-   [Bundles for Sequel Ace](/bundles.html)
+-   [Query View](/query-view.html)
+
+
+## Connect to a Remote MySQL Server
 
 This page explains how to connect to a MySQL Server running on a different computer than Sequel Ace.
 
@@ -6,8 +15,8 @@ This page explains how to connect to a MySQL Server running on a different compu
 
 At the moment, Sequel Ace supports two methods for connecting to remote MySQL servers:
 
--   a **Standard** connection
--   a **SSH** connection
+-   **Standard** connection
+-   **SSH** connection
 
 #### Standard Connections
 
