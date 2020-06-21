@@ -3768,7 +3768,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/Frameworks/zlib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/zlib",
+					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.0.1;
 				OTHER_LDFLAGS = "$(SRCROOT)/Frameworks/zlib/libz.a";
@@ -4059,7 +4062,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/Frameworks/zlib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/zlib",
+					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.0.1;
 				OTHER_LDFLAGS = "$(SRCROOT)/Frameworks/zlib/libz.a";
@@ -4100,7 +4106,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/Frameworks/zlib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/zlib",
+					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.0.1;
 				OTHER_LDFLAGS = "$(SRCROOT)/Frameworks/zlib/libz.a";
