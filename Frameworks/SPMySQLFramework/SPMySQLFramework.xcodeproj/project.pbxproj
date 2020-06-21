@@ -650,7 +650,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Make it so the SPMySQL executable can fin the dylibs it was compiled with\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\"q\ninstall_name_tool -change libcrypto.1.1.dylib @loader_path/libcrypto.1.1.dylib SPMySQL\ninstall_name_tool -change libssl.1.1.dylib @loader_path/libssl.1.1.dylib SPMySQL\n";
+			shellScript = "# Make it so the SPMySQL executable can fin the dylibs it was compiled with\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\"\ninstall_name_tool -change libcrypto.1.1.dylib @loader_path/libcrypto.1.1.dylib SPMySQL\ninstall_name_tool -change libssl.1.1.dylib @loader_path/libssl.1.1.dylib SPMySQL\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
