@@ -355,6 +355,7 @@
 		8831EFCD2240175400D10172 /* button_actionTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFCB2240175300D10172 /* button_actionTemplate.pdf */; };
 		8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
+		964908C8249A77D00052FC4A /* ssh_config in Resources */ = {isa = PBXBuildFile; fileRef = 964908C4249A77CF0052FC4A /* ssh_config */; };
 		9651262224926F1200E65B53 /* QueryKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; };
 		9651262324926F1200E65B53 /* QueryKit.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; };
@@ -1033,6 +1034,7 @@
 		8831EFCB2240175300D10172 /* button_actionTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_actionTemplate.pdf; sourceTree = "<group>"; };
 		8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_paginationTemplate.pdf; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
 		965125F424926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		965125F624926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = ../en.lproj/ContentFilters.plist; sourceTree = "<group>"; };
@@ -1789,6 +1791,7 @@
 				58D1006813A57FAE0092E019 /* Localization Strings Files */,
 				1740F8350FC3069700CF3699 /* Templates */,
 				584756F7120A1B0B0057631F /* QuickLook Plugin */,
+				96D494B8249C07940092F335 /* SSH Helpers */,
 				17F90E2B1210B34900274C98 /* Credits.rtf */,
 				17CC993A10B4C9C80034CD7A /* License.rtf */,
 				583A278D23F06F1000FBE97B /* Colors.xcassets */,
@@ -2392,6 +2395,14 @@
 			name = Parsing;
 			sourceTree = "<group>";
 		};
+		96D494B8249C07940092F335 /* SSH Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				964908C4249A77CF0052FC4A /* ssh_config */,
+			);
+			name = "SSH Helpers";
+			sourceTree = "<group>";
+		};
 		B57747D60F7A8990003B34F9 /* Category Additions */ = {
 			isa = PBXGroup;
 			children = (
@@ -2821,6 +2832,7 @@
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
 				C9C994491678B3E6001F5DA8 /* table-small-square.png in Resources */,
 				C9C9944A1678B3E6001F5DA8 /* table-small-square@2x.png in Resources */,
+				964908C8249A77D00052FC4A /* ssh_config in Resources */,
 				8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */,
 				C9C9944D1678BCFA001F5DA8 /* table-small.png in Resources */,
 				C9C9944E1678BCFA001F5DA8 /* table-small@2x.png in Resources */,
