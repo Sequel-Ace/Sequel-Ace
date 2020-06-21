@@ -276,7 +276,7 @@
 	}
 
 	NSString *openPath;
-	if((openPath = [prefs objectForKey:@"openPath"])) {
+	if((openPath = [prefs objectForKey:@"exportPath"])) {
 		// Doc says calling +[NSURL URLWithString:] with nil is fine,
 		// but at least on 10.6 this will cause an exception
 		[openPanel setDirectoryURL:[NSURL URLWithString:openPath]];
@@ -287,7 +287,7 @@
 		[openPanel makeFirstResponder:nil];
 
 		// Save values to preferences
-		[prefs setObject:[[openPanel directoryURL] path] forKey:@"openPath"];
+		[prefs setObject:[[openPanel directoryURL] path] forKey:@"exportPath"];
 		[prefs setObject:[[importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
 
 		// Close NSOpenPanel sheet
