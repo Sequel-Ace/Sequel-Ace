@@ -422,6 +422,7 @@ extern NSString *SPFileNameTimeTokenName;
 extern NSString *SPFileName24HourTimeTokenName;
 extern NSString *SPFileNameFavoriteTokenName;
 extern NSString *SPFileNameTableTokenName;
+extern NSString *SPSecureBookmarks;
 
 // Misc
 extern NSString *SPContentFilters;
