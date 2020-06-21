@@ -633,7 +633,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Create symlinks for all re-exported dylibs, at the framework's top level. They must be also relative to the framework directory.\ncd $CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\nln -Ffsv Versions/Current/lib*.dylib .\n";
+			shellScript = "# Create symlinks for all re-exported dylibs, at the framework's top level. They must be also relative to the framework directory.\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\"\nln -Ffsv Versions/Current/lib*.dylib .\n";
 		};
 		26F0BF1424A0069300A43B20 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -650,7 +650,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Make it so the SPMySQL executable can fin the dylibs it was compiled with\ncd $CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\ninstall_name_tool -change libcrypto.1.1.dylib @loader_path/libcrypto.1.1.dylib SPMySQL\ninstall_name_tool -change libssl.1.1.dylib @loader_path/libssl.1.1.dylib SPMySQL\n";
+			shellScript = "# Make it so the SPMySQL executable can fin the dylibs it was compiled with\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\"\ninstall_name_tool -change libcrypto.1.1.dylib @loader_path/libcrypto.1.1.dylib SPMySQL\ninstall_name_tool -change libssl.1.1.dylib @loader_path/libssl.1.1.dylib SPMySQL\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
