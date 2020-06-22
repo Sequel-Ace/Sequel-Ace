@@ -1,6 +1,3 @@
-{% capture menu %}{% include ../_includes/menu.md %}{% endcapture %}
-{{ menu | markdownify }}
-
 ### Core Features
 
 In the articles below we take you through the important screens that make up Sequel Pro and allow you to manage your databases and tables.
