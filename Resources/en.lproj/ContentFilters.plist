@@ -159,6 +159,38 @@
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
+			<string>starts with</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>LIKE $BINARY &apos;${}%&apos;</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>does not start with</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>NOT LIKE $BINARY &apos;${}%&apos;</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>ends with</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>LIKE $BINARY &apos;%${}&apos;</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>does not end with</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>NOT LIKE $BINARY &apos;%${}&apos;</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
 			<string>matches RegExp</string>
 			<key>NumberOfArguments</key>
 			<integer>1</integer>
