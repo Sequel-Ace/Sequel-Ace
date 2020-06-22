@@ -1,5 +1,5 @@
--   [Documentation Index](./)
--   [Getting Connected](../get-connected/)
+-   [Documentation Index](../)
+-   [Getting Connected](./)
 -   [Keyboard Shortcuts](../keyboard-shortcuts.html)
 -   [Bundles for Sequel Ace](../bundles.html)
 -   [Query View](../query-view.html)
