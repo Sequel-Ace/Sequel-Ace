@@ -1,7 +1,7 @@
 -   [Getting Connected](get-started/)
 -   [Making Queries](queries.html)
 -   [Keyboard Shortcuts](shortcuts.html)
--   [Reference](reference/)
+-   [Reference](ref/)
 -   [Bundles](bundles/)
 -   [Contribute](contribute/)
 

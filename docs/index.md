@@ -3,6 +3,6 @@ Get started using Sequel Ace quickly by browsing through this online documentati
 -   [Getting Connected](get-started/)
 -   [Making Queries](queries.html)
 -   [Keyboard Shortcuts](shortcuts.html)
--   [Reference](reference/)
+-   [Reference](ref/)
 -   [Bundles](bundles/)
 -   [Contribute](contribute/)
