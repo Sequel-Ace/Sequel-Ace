@@ -2447,6 +2447,12 @@ set_input:
 							   options:NSLiteralSearch
 								 range:NSMakeRange(0, [string length])];
 
+	 // Replace forward dots with hyphens
+	 [string replaceOccurrencesOfString:@"."
+							 withString:@"-"
+								options:NSLiteralSearch
+								  range:NSMakeRange(0, [string length])];
+
 	[dateFormatter release];
 
 	// Don't allow empty strings - if an empty string resulted, revert to the default string
