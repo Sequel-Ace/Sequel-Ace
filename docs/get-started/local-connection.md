@@ -1,4 +1,4 @@
--   [Getting Connected](./)
+-   [Getting Connected](../get-started/)
 -   [Making Queries](../queries.html)
 -   [Keyboard Shortcuts](../shortcuts.html)
 -   [Reference](../ref/)
