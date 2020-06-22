@@ -36,7 +36,6 @@ Sequel Ace runs in a sandboxed mode and need you to select private key manually.
 -   If you enter a database, it will be selected when the connection to the server is established. Otherwise you can select one of the databases on the server afterwards.
 -   If you enter no port on a standard/SSH connection, Sequel Ace uses the default port for MySQL, port 3306.
 -   If you enter no **SSH port** on a SSH connection, Sequel Ace uses the default port for SSH, port 22.
--   In case you already have a SSH key saved on the remote machine, you can leave the SSH password field empty. Sequel Ace will create the SSH tunnel using that key.
 -   Click "'Add to Favorites"' to save the connection for use next time you open Sequel Ace. Passwords are stored in the Keychain. To re-order favourites click the pencil in the bottom left of the connection window, (or choose Preferences > Favorites from the Sequel Ace menu) then drag the favourites in the list.
 -   You can connect to multiple databases simultaneously by opening a new window (File > New) or ⌘ + N
 
