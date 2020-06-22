@@ -1,4 +1,4 @@
-{% capture menu %}{% include _includes/menu.md %}{% endcapture %}
+{% capture menu %}{% include ../_includes/menu.md %}{% endcapture %}
 {{ menu | markdownify }}
 
 ### Core Features
