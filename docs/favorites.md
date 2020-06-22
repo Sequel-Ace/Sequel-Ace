@@ -54,7 +54,7 @@ A frequently used SQL statement is SELECT FROM WHERE . To create this query favo
 
 After creating it you can click at the **Query Favorites** button and choose **Select**. The query favorite SELECT FROM WHERE will be inserted into the Custom Query Editor — according to the setting of **Favorite Replaces Editor Content** (settable in Custom Query Editor's gear menu).
 
-> **Tip:** If _Favorite Replaces Editor Content_ is checked and you want to insert the chosen query favorite into the Custom Query Editor at the current cursor position instead you can hold any of these keys `⇧ ⌥ ⌘` while choosing the desired favorite via mouse to toggle _Favorite Replaces Editor Content_ setting temporarily (or visa versa).
+> <small><small>**Tip:** If _Favorite Replaces Editor Content_ is checked and you want to insert the chosen query favorite into the Custom Query Editor at the current cursor position instead you can hold any of these keys `⇧ ⌥ ⌘` while choosing the desired favorite via mouse to toggle _Favorite Replaces Editor Content_ setting temporarily (or visa versa).</small></small>
 
 ###### Via Keyboard (Tab Trigger)
 
@@ -124,7 +124,7 @@ SELECT ${0:} FROM ${1:¦table01¦table02¦table03¦} WHERE
 
 After insertion of that query favorite and selecting the second tab snippet a narrow-down completion list window appears thus choose your desired item or start to type to narrow-down the list (or press ⌫ to expand the list again).
 
-> <small>_Tip:_ If you use the default list template **¦¦a¦b¦¦** the narrow-down completion list switches to the fuzzy search mode which means that if you have e.g. the list items _reference_ and _ref_base_ you can type simply r_ to narrow-down the list to _ref_base_due to the fuzzy regular expression search strategy .*r.*_.* If you want to switch to the fuzzy search mode coming from the normal list template **¦a¦b¦** simply press ⌃⎋.</small>
+> <small><small>_Tip:_ If you use the default list template **¦¦a¦b¦¦** the narrow-down completion list switches to the fuzzy search mode which means that if you have e.g. the list items _reference_ and _ref_base_ you can type simply r_ to narrow-down the list to _ref_base_due to the fuzzy regular expression search strategy .*r.*_.* If you want to switch to the fuzzy search mode coming from the normal list template **¦a¦b¦** simply press ⌃⎋.</small></small>
 
 ##### Dynamic Default Value Due to Current Selected Table
 
@@ -140,7 +140,7 @@ or to allow to invoke the completion easier in order to insert one or more field
 SELECT ${0:$SP_SELECTED_TABLE.} FROM ${1:$SP_SELECTED_TABLE} WHERE
 ```
 
-> _Tip:_ You can combine the default list template **¦a¦b¦** with $SP_SELECTED_TABLE for instance as ${1:¦table01¦$SP_SELECTED_TABLE¦}. _See also:_ mirrored tab snippet
+> <small><small>_Tip:_ You can combine the default list template **¦a¦b¦** with $SP_SELECTED_TABLE for instance as ${1:¦table01¦$SP_SELECTED_TABLE¦}. _See also:_ mirrored tab snippet</small></small>
 
 ##### Usage of Pre-defined Dynamic Lists as Default Value
 
