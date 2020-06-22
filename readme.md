@@ -1,34 +1,32 @@
-Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon.png" align="right" height="50">
+Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon.png" align="right" height="80">
 =======
-
-Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
 
 Sequel Ace is the "sequel" to longtime macOS tool Sequel Pro.
 Sequel Ace is a fast, easy-to-use Mac database management application for working with MySQL & MariaDB databases.
 
+## Installation
 
+### Mac AppStore
 
-Build Instructions
-=======
+Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
 
- * Install the [latest version of Xcode](https://itunes.apple.com/au/app/xcode/id497799835)
- * Install [GitHub for Mac](https://desktop.github.com/) (or [SourceTree](https://www.sourcetreeapp.com/), or […](https://git-scm.com/downloads/guis))
- * Click "Clone in Desktop" on the right sidebar of our [GitHub page](https://github.com/sequel-ace/sequel-ace)
- * Open `sequel-ace.xcodeproj`
- * Click the `Run` button in the toolbar
- * If the above doesn't work, please file a [bug report](https://github.com/sequel-ace/sequel-ace/issues/new)
+### HomeBrew
 
-Contributing
-=======
+You can install Mac AppStore version through `mas` with Sequel Ace id `1518036000`
+```sh
+brew install mas-cli/tap/mas
+mas install 1518036000 # Sequel Ace
+```
+
+## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
 
-Please base contributions off of the `dev` branch and submit PRs against this branch as well. The `master` branch is reserved for macOS App Store releases.
+Please always checkout from the `dev` branch and submit PRs against this branch as well. The `master` branch is reserved for macOS App Store releases only.
 
 Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects). This lists the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
 
-License
-=======
+## License
 
 Copyright (c) 2020 Moballo, LLC.  All rights reserved.
 Forked from Sequel Pro: Copyright (c) 2002-2019 Sequel Pro & CocoaMySQL Teams. All rights reserved.
