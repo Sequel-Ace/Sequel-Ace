@@ -62,6 +62,16 @@
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
+			<string>NOT IN __ OR NULL</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>SuppressLeadingFieldPlaceholder</key>
+			<true/>
+			<key>Clause</key>
+			<string>($CURRENT_FIELD NOT IN (${}) OR $CURRENT_FIELD IS NULL)</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
 			<string>LIKE</string>
 			<key>NumberOfArguments</key>
 			<integer>1</integer>
@@ -171,9 +181,17 @@
 			<key>Clause</key>
 			<string>IN (${})</string>
 			<key>Tooltip</key>
-			<string>IN ([arg])
-
-Do quote strings manually.</string>
+			<string>IN ([arg])</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>NOT IN __ OR NULL</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>SuppressLeadingFieldPlaceholder</key>
+			<true/>
+			<key>Clause</key>
+			<string>($CURRENT_FIELD NOT IN (${}) OR $CURRENT_FIELD IS NULL)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
