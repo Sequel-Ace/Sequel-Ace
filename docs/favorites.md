@@ -214,7 +214,7 @@ Here are a few examples you might like to try out:
 
 -   Select Dynamic Fields
 
-    ```sqk
+    ```sql
     SELECT ${1:DISTINCT }${2:*} FROM ${3:¦$SP_ASLIST_ALL_TABLES¦} ${4:WHERE ${5:clause}}
     ```
 
