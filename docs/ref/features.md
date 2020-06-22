@@ -1,3 +1,12 @@
+-   [Getting Connected](./)
+-   [Making Queries](../queries.html)
+-   [Keyboard Shortcuts](../shortcuts.html)
+-   [Reference](../ref/)
+-   [Bundles](../bundles/)
+-   [Contribute](../contribute/)
+
+<hr>
+
 ### Core Features
 
 In the articles below we take you through the important screens that make up Sequel Pro and allow you to manage your databases and tables.
