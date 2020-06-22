@@ -1,4 +1,4 @@
--   [Documentation Index](../)
+-   [Documentation Index](../index.html)
 -   [Getting Connected](./)
 -   [Keyboard Shortcuts](../keyboard-shortcuts.html)
 -   [Bundles for Sequel Ace](../bundles.html)
