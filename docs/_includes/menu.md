@@ -6,9 +6,3 @@
 -   [Contribute](../contribute/)
 
 <hr>
-
-### Reference
-
--   [Core Features](./features.html)
--   [Working With Data](./data.html)
--   [MySQL Reference](./mysql.html)
