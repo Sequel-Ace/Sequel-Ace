@@ -790,17 +790,18 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (IBAction)refresh:(id)sender
 {
 	if ([[self managedObjectContext] hasChanges]) {
-		
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Unsaved changes", @"unsaved changes message")
-										 defaultButton:NSLocalizedString(@"Continue", @"continue button")
-									   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue", @"unsaved changes informative message")];
-		
+
+		NSAlert *alert = [[NSAlert alloc] init];
+		alert.messageText = NSLocalizedString(@"Unsaved changes", @"unsaved changes message");
+		alert.informativeText = NSLocalizedString(@"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue", @"unsaved changes informative message");
+		[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
+		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 		[alert setAlertStyle:NSWarningAlertStyle];
-		
+
 		// Cancel
-		if ([alert runModal] == NSAlertAlternateReturn) return;
+		if ([alert runModal] == NSAlertFirstButtonReturn) {
+			return;
+		}
 	}
     
 	[[self managedObjectContext] reset];
