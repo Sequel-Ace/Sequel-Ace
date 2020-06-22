@@ -164,6 +164,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize sshKeyLocation;
 @synthesize sshPort;
 @synthesize useCompression;
+@synthesize bookmarks;
 
 #ifdef SP_CODA
 @synthesize dbDocument;
@@ -505,6 +506,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 	
 	keySelectionPanel = [[NSOpenPanel openPanel] retain]; // retain/release needed on OS X ≤ 10.6 according to Apple doc
+	
+	[keySelectionPanel setCanChooseFiles:YES];
+	[keySelectionPanel setCanChooseDirectories:YES];
+	[keySelectionPanel setCanCreateDirectories:YES];
+	
 	[keySelectionPanel setShowsHiddenFiles:[prefs boolForKey:SPHiddenKeyFileVisibilityKey]];
 	[keySelectionPanel setAccessoryView:accessoryView];
 	//on os x 10.11+ the accessory view will be hidden by default and has to be made visible
@@ -534,6 +540,41 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSString *currentTimestampHash = [[NSString alloc] initWithFormat:@"%lu", (unsigned long)[[NSString stringWithFormat:@"%f-seeded", [[NSDate date] timeIntervalSince1970]] hash]];
 		NSString *internalPath = [keysDirectoryPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@", currentTimestampHash, [abbreviatedFileName lastPathComponent]]];
 
+		
+		if([keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
+		
+			NSLog(@"got access to: %@", keySelectionPanel.URL.absoluteString);
+			
+			// a bit of duplicated code here,
+			// same code is in the export controler
+			//TODO: put this in a utility/helper class
+			BOOL __block beenHereBefore = NO;
+			
+			// have we been here before?
+			[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+				
+				if(dict[keySelectionPanel.URL.absoluteString] != nil){
+					NSLog(@"beenHereBefore: %@", dict[keySelectionPanel.URL.absoluteString]);
+					beenHereBefore = YES;
+					*stop = YES;
+				}
+			}];
+			
+			if(beenHereBefore == NO){
+				// create a bookmark
+				NSError *error = nil;
+				NSData *tmpAppScopedBookmark = [keySelectionPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
+																		 includingResourceValuesForKeys:nil
+																						  relativeToURL:nil
+																								  error:&error];
+				// save to prefs
+				if(tmpAppScopedBookmark && !error) {
+					[bookmarks addObject:@{keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
+					[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+				}
+			}
+			
+		}
 		// SSH key file selection
 		if (sender == sshSSHKeyButton) {
 			if (returnCode == NSModalResponseCancel) {
@@ -557,6 +598,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				return;
 			}
 			
+			if( [self validateKeyFile:keySelectionPanel.URL error:&err] == NO ){
+				NSLog(@"Problem with key file - %@ : %@",[err localizedDescription], [err localizedRecoverySuggestion]);
+				[self showValidationAlertForError:err];
+				return; // don't copy the bad key
+			}
+			
 			if (![fm copyItemAtPath:selectedFilePath toPath:internalPath error:&err])
 			{
 				NSLog(@"Could not copy file to internal filesystem - %@",[err localizedDescription]);
@@ -570,6 +617,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				[self setSslCertificateFileLocationEnabled:NSOffState];
 				[self setSslCertificateFileLocation:nil];
 				return;
+			}
+			
+			if( [self validateCertFile:keySelectionPanel.URL error:&err] == NO ){
+				NSLog(@"Problem with cert file - %@ : %@",[err localizedDescription], [err localizedRecoverySuggestion]);
+				[self showValidationAlertForError:err];
+				return; // don't copy the bad cert
 			}
 			
 			if (![fm copyItemAtPath:selectedFilePath toPath:internalPath error:&err])
@@ -600,54 +653,73 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #endif
 }
 
+-(void)showValidationAlertForError:(NSError*)err{
+	
+	NSAlert *alert = [[NSAlert alloc] init];
+	alert.messageText = [err localizedDescription];
+	alert.informativeText = [err localizedRecoverySuggestion];
+	[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+	[alert beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:nil];
+}
+
+-(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError{
+	
+	NSError *err = nil;
+	NSData *file = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&err];
+	if(err) {
+		*outError = err;
+		return NO;
+	}
+	
+	// see PemToDer() in crypto_wrapper.cpp in yaSSL
+	const char rsaHead[] = "-----BEGIN RSA PRIVATE KEY-----";
+	const char rsaFoot[] = "-----END RSA PRIVATE KEY-----";
+	
+	if(FindLinesInFile(file, rsaHead, strlen(rsaHead), rsaFoot, strlen(rsaFoot)))
+		return YES;
+	
+	*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
+		NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid private key file.", @"connection view : ssl : key file picker : wrong format error title"),[url lastPathComponent]],
+		NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a RSA private key and is using PEM encoding.", @"connection view : ssl : key file picker : wrong format error description"),
+		NSURLErrorKey: url
+	}];
+	
+	return NO;
+	
+}
+
+-(BOOL)validateCertFile:(NSURL *)url error:(NSError **)outError{
+	
+	NSError *err = nil;
+	NSData *file = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&err];
+	if(err) {
+		*outError = err;
+		return NO;
+	}
+	
+	// see PemToDer() in crypto_wrapper.cpp in yaSSL
+	const char cerHead[] = "-----BEGIN CERTIFICATE-----";
+	const char cerFoot[] = "-----END CERTIFICATE-----";
+	
+	if(FindLinesInFile(file, cerHead, strlen(cerHead), cerFoot, strlen(cerFoot)))
+		return YES;
+	
+	*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
+		NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid client certificate file.", @"connection view : ssl : client cert file picker : wrong format error title"),[url lastPathComponent]],
+		NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a X.509 client certificate and is using PEM encoding.", @"connection view : ssl : client cert picker : wrong format error description"),
+		NSURLErrorKey: url
+	}];
+	
+	return NO;
+}
+
 - (BOOL)panel:(id)sender validateURL:(NSURL *)url error:(NSError **)outError
 {
-	// mysql limits yaSSL to PEM format files (it would support DER)
-	if([keySelectionPanel accessoryView] == sslKeyFileLocationHelp) {
-		// and yaSSL only supports RSA type keys, with the exact string below on a single line
-		NSError *err = nil;
-		NSData *file = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&err];
-		if(err) {
-			*outError = err;
-			return NO;
-		}
-
-		// see PemToDer() in crypto_wrapper.cpp in yaSSL
-		const char rsaHead[] = "-----BEGIN RSA PRIVATE KEY-----";
-		const char rsaFoot[] = "-----END RSA PRIVATE KEY-----";
-		
-		if(FindLinesInFile(file, rsaHead, strlen(rsaHead), rsaFoot, strlen(rsaFoot)))
-			return YES;
-
-		*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
-			NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid private key file.", @"connection view : ssl : key file picker : wrong format error title"),[url lastPathComponent]],
-			NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a RSA private key and is using PEM encoding.", @"connection view : ssl : key file picker : wrong format error description"),
-			NSURLErrorKey: url
-		}];
-		return NO;
-	}
-	else if([keySelectionPanel accessoryView] == sslCertificateLocationHelp) {
-		NSError *err = nil;
-		NSData *file = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&err];
-		if(err) {
-			*outError = err;
-			return NO;
-		}
-		
-		// see PemToDer() in crypto_wrapper.cpp in yaSSL
-		const char cerHead[] = "-----BEGIN CERTIFICATE-----";
-		const char cerFoot[] = "-----END CERTIFICATE-----";
-		
-		if(FindLinesInFile(file, cerHead, strlen(cerHead), cerFoot, strlen(cerFoot)))
-			return YES;
-		
-		*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
-			NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid client certificate file.", @"connection view : ssl : client cert file picker : wrong format error title"),[url lastPathComponent]],
-			NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a X.509 client certificate and is using PEM encoding.", @"connection view : ssl : client cert picker : wrong format error description"),
-			NSURLErrorKey: url
-		}];
-		return NO;
-	}
+	
+	// see https://developer.apple.com/documentation/foundation/nsurl/1410597-checkresourceisreachableandretur?language=objc
+	// If your app must perform operations on the file, such as opening it or copying resource properties,
+	//it is more efficient to attempt the operation and handle any failure that may occur.
+	
 	//unknown, accept by default
 	return YES;
 	
@@ -3255,7 +3327,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Set up a keychain instance and preferences reference, and create the initial favorites list
 		keychain = [[SPKeychain alloc] init];
 		prefs = [[NSUserDefaults standardUserDefaults] retain];
+		
+		bookmarks = [[NSMutableArray alloc] init];
 
+		id o;
+		if((o = [prefs objectForKey:SPSecureBookmarks])){
+			[bookmarks setArray:o];
+		}
+		
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk
 		// and the tree to be constructed.
 		favoritesController = [SPFavoritesController sharedFavoritesController];

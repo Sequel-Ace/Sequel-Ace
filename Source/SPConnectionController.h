@@ -214,6 +214,7 @@
 @property (readwrite, retain) NSString *connectionSSHKeychainItemName;
 @property (readwrite, retain) NSString *connectionSSHKeychainItemAccount;
 @property (readwrite, assign) BOOL useCompression;
+@property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
 
 #ifdef SP_CODA
 @property (readwrite, assign) SPDatabaseDocument *dbDocument;
@@ -245,6 +246,10 @@
 
 - (IBAction)sortFavorites:(id)sender;
 - (IBAction)reverseSortFavorites:(NSMenuItem *)sender;
+
+-(BOOL)validateCertFile:(NSURL *)url error:(NSError **)outError;
+-(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
+-(void)showValidationAlertForError:(NSError*)err;
 
 // Favorites interaction
 - (void)updateFavoriteSelection:(id)sender;
