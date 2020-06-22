@@ -12,7 +12,7 @@ Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/a
 
 ### HomeBrew
 
-You can install Mac AppStore version through `mas` with Sequel Ace id `1518036000`
+You can install Mac AppStore version through `mas` [MAS CLI](https://github.com/mas-cli/mas) with Sequel Ace id `1518036000`
 ```sh
 brew install mas-cli/tap/mas
 mas install 1518036000 # Sequel Ace
