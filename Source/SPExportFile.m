@@ -44,6 +44,7 @@
 @synthesize exportFileNeedsCSVHeader;
 @synthesize exportFileNeedsXMLHeader;
 @synthesize exportFileHandleStatus;
+@synthesize exportFileNeedsUserChosenDir;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -77,6 +78,7 @@
 		
 		[self setExportFileNeedsCSVHeader:NO];
 		[self setExportFileNeedsXMLHeader:NO];
+		[self setExportFileNeedsUserChosenDir:NO];
 	}
 	
 	return self;

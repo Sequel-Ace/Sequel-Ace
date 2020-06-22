@@ -68,6 +68,11 @@
 @property (readwrite, assign) BOOL exportFileNeedsCSVHeader;
 
 /**
+ * @property noExportDirChosen
+ */
+@property (readwrite, assign) BOOL exportFileNeedsUserChosenDir;
+
+/**
  * @property exportFileNeedsXMLHeader
  */
 @property (readwrite, assign) BOOL exportFileNeedsXMLHeader;

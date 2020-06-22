@@ -167,7 +167,11 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 @synthesize serverSupport = serverSupport;
 @synthesize exportToMultipleFiles;
 @synthesize exportCancelled;
-
+@synthesize appScopedBookmark;
+@synthesize userChosenDirectory;
+@synthesize changeExportOutputPathPanel;
+@synthesize bookmarks;
+@synthesize startTime;
 #pragma mark -
 #pragma mark Initialisation
 
@@ -198,6 +202,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		exporters = [[NSMutableArray alloc] init];
 		exportFiles = [[NSMutableArray alloc] init];
 		operationQueue = [[NSOperationQueue alloc] init];
+		bookmarks = [[NSMutableArray alloc] init];
 		
 		showAdvancedView = NO;
 		showCustomFilenameView = NO;
@@ -278,14 +283,16 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// set some defaults
 	[exportCSVNULLValuesAsTextField setStringValue:[prefs stringForKey:SPNullValue]];
 	[exportXMLNULLValuesAsTextField setStringValue:[prefs stringForKey:SPNullValue]];
-	if(![[exportPathField stringValue] length]) {
-		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, YES);
-		// If found the set the default path to the user's desktop, otherwise use their home directory
-		[exportPathField setStringValue:([paths count] > 0) ? [paths objectAtIndex:0] : NSHomeDirectory()];
-	}
+
+	// MARK: removed default export location
 	
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
+	
+	id o;
+	if((o = [prefs objectForKey:SPSecureBookmarks])){
+		[bookmarks setArray:o];
+	}
 	
 	// overwrite defaults with user settings from last export
 	[self applySettingsFromDictionary:[prefs objectForKey:SPLastExportSettings] error:NULL];
@@ -416,6 +423,30 @@ static inline void SetOnOff(NSNumber *ref,id obj);
  */
 - (IBAction)closeSheet:(id)sender
 {
+	
+	// if they clicked export
+	// Cancel tag = 0
+	// Export tag = 1
+	if([sender tag] == 1){
+		// but nothing is in the export path field
+		if([exportPathField stringValue] == nil || [[exportPathField stringValue] isEqualToString:@""] ){
+			NSLog(@"ERROR: no path!");
+			NSLog(@"sender title: %@, sender tag: %ld", [(NSButton*)sender title], (long)[sender tag]);
+			
+			NSAlert *alert = [[NSAlert alloc] init];
+			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setMessageText:NSLocalizedString(@"No directory selected.", @"No directory selected.")];
+			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
+			
+			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+				[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
+			}];
+			
+			// we don't want to close the sheet so return here
+			return;
+		}
+	}
+	
 	if ([sender window] == [self window]) {
 		
 		// Close the advanced options view if it's open
@@ -450,7 +481,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		for (NSMenuItem *item in [exportInputPopUpButton itemArray]) {
 			if([item isEnabled]) {
 				actualInput = [exportInputPopUpButton indexOfItem:item];
-				goto set_input;
+				goto set_input; //MARK: a goto in the WILD!
 			}
 		}
 		// nothing found (should not happen)
@@ -546,27 +577,69 @@ set_input:
 	[exportProgressIndicator setUsesThreadedAnimation:NO];
 }
 
+// NSOpenSavePanelDelegate - not sure why this wasn't enabled before...
+- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url{
+	return YES;
+}
+
 /**
  * Opens the open panel when user selects to change the output path.
  */
 - (IBAction)changeExportOutputPath:(id)sender
 {	
-	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	self.changeExportOutputPathPanel = [NSOpenPanel openPanel] ; 	// need to retain, so we can relinquish access via stopAccessingSecurityScopedResource
+																	// I'm not sure though, haven't written non-ARC code for years.
 	
-	[panel setCanChooseFiles:NO];
-	[panel setCanChooseDirectories:YES];
-	[panel setCanCreateDirectories:YES];
+	changeExportOutputPathPanel.delegate = self;
+	
+	[changeExportOutputPathPanel setCanChooseFiles:NO];
+	[changeExportOutputPathPanel setCanChooseDirectories:YES];
+	[changeExportOutputPathPanel setCanCreateDirectories:YES];
     
-    [panel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
-    [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
+    [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
+    [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-			NSString *path = [[panel directoryURL] path];
+			NSString *path = [[changeExportOutputPathPanel directoryURL] path];
 			if(!path) {
 				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[panel directoryURL],[[panel directoryURL] isFileURL]]
+											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[changeExportOutputPathPanel directoryURL],[[changeExportOutputPathPanel directoryURL] isFileURL]]
 											 userInfo:nil];
 			}
-            [exportPathField setStringValue:path];
+			
+			[exportPathField setStringValue:path];
+			
+			// the code always seems to go into this block as the
+			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
+			if([changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
+				
+				NSLog(@"got access to: %@", changeExportOutputPathPanel.URL.absoluteString);
+				
+				BOOL __block beenHereBefore = NO;
+				
+				// have we been here before?
+				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+					
+					if(dict[changeExportOutputPathPanel.URL.absoluteString] != nil){
+						NSLog(@"beenHereBefore: %@", dict[changeExportOutputPathPanel.URL.absoluteString]);
+						beenHereBefore = YES;
+						*stop = YES;
+					}
+				}];
+				
+				if(beenHereBefore == NO){
+					// create a bookmark
+					NSError *error = nil;
+					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
+																			 includingResourceValuesForKeys:nil
+																							  relativeToURL:nil
+																									  error:&error];
+					// save to prefs
+					if(tmpAppScopedBookmark && !error) {
+						[bookmarks addObject:@{changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
+						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+					}
+				}
+			}
         }
     }];		
 }
@@ -1182,6 +1255,7 @@ set_input:
  */
 - (void)startExport
 {
+	self.startTime = [NSDate date];
 	// Start progress indicator
 	[exportProgressTitle setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Exporting %@", @"text showing that the application is importing a supplied format"), exportTypeLabel]];
 	[exportProgressText setStringValue:NSLocalizedString(@"Writing...", @"text showing that app is writing text file")];
@@ -1216,10 +1290,32 @@ set_input:
  */
 - (void)exportEnded
 {
-	[self _hideExportProgress];
-
+	NSLog(@"Time to export: %f", -[startTime timeIntervalSinceNow]);
+	// if the export was really quick
+	if((-[startTime timeIntervalSinceNow]) < 2){
+		// give the user a second to see the progress
+		NSLog(@"give the user a second to see the progress");
+		[self performSelector:@selector(_hideExportProgress) withObject:nil afterDelay:1.0];
+	}
+	else{
+		NSLog(@"hide instantly");
+		[self _hideExportProgress];
+	}
+	
 	// Restore query mode
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
+	
+	// relinquish access to userChosenDirectory
+	[userChosenDirectory stopAccessingSecurityScopedResource];
+	
+	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
+	
+	// release to avoid leaks
+	// I think...
+	// userChosenDirectory leaks if we don't release here
+	// the panel wasn't leaking according to Leaks instrument.
+	SPClear(userChosenDirectory);
+//	SPClear(changeExportOutputPathPanel);
 
 	// Display export finished notification
 	[self displayExportFinishedNotification];
@@ -1587,6 +1683,14 @@ set_input:
 		else {
 			[problemFiles addObject:exportFile];
 		}
+
+		// This checks if the user has chosen a location and not just clicked export
+		// actually I think exportFile.exportFilePath.length will always be > 0
+		// might remove that condition
+		if(exportFile.exportFilePath.length == 0 || exportFile.exportFilePath.pathComponents.count < 2 ){
+			[exportFile setExportFileNeedsUserChosenDir:YES];
+			[problemFiles addObject:exportFile];
+		}
 	}
 
 	// Deal with any file handles that we failed to create for whatever reason
@@ -1826,10 +1930,15 @@ set_input:
 	NSUInteger parentFoldersMissing = 0;
 	NSUInteger parentFoldersNotWritable = 0;
 	NSUInteger filesFailed = 0;
+	NSUInteger noExportDirChosen = 0;
 
 	for (SPExportFile *file in files)
 	{
-		if ([file exportFileHandleStatus] == SPExportFileHandleExists) {
+		if (file.exportFileNeedsUserChosenDir == YES){
+			noExportDirChosen++;
+			filesFailed++;
+		}
+		else if ([file exportFileHandleStatus] == SPExportFileHandleExists) {
 			filesAlreadyExisting++;
 		}
 		// For file handles that we failed to create for some unknown reason, ignore them and remove any
@@ -1907,7 +2016,11 @@ set_input:
 				[alert setInformativeText:NSLocalizedString(@"The target export folder no longer exists.  Please select a new export location and try again.", @"Export folder missing explanatory text")];
 			} else if (parentFoldersNotWritable) {
 				[alert setInformativeText:NSLocalizedString(@"The target export folder is not writable.  Please select a new export location and try again.", @"Export folder not writable explanatory text")];
-			} else {
+			}
+			else if (noExportDirChosen) {
+				[alert setInformativeText:NSLocalizedString(@"No directory selected.  Please select a new export location and try again.", @"Export folder not chosen by user")];
+			}
+			else {
 				[alert setInformativeText:NSLocalizedString(@"An unhandled error occurred when attempting to create the export file.  Please check the details and try again.", @"Export file creation error explanatory text")];
 			}
 		}
@@ -3083,10 +3196,35 @@ set_input:
 
 	[exporters removeAllObjects];
 	[exportFiles removeAllObjects];
-
+	
 	id o;
-	if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
-
+	// if we have some bookmarks, populate the last used export path
+	// look up that bookmark and request access
+	if(bookmarks.count > 0){
+		if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
+		
+		NSError __block *error = nil;
+		
+		[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict2, NSUInteger idx, BOOL *stop) {
+			
+			NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
+			
+			if(dict2[tmpStr] != nil){
+				self.userChosenDirectory = [NSURL URLByResolvingBookmarkData:dict2[tmpStr]
+																	 options:NSURLBookmarkResolutionWithSecurityScope
+															   relativeToURL:nil
+														 bookmarkDataIsStale:nil
+																	   error:&error];
+				*stop = YES;
+			}
+		}];
+		
+		// if no bookmark was found this just calls against nil
+		if(!error){
+			[userChosenDirectory startAccessingSecurityScopedResource];
+		}
+	}
+	
 	SPExportType et;
 	if((o = [dict objectForKey:@"exportType"]) && [[self class] copyExportTypeForDescription:o to:&et]) {
 		[exportTypeTabBar selectTabViewItemAtIndex:et];
@@ -3751,7 +3889,7 @@ set_input:
 }
 
 #pragma mark -
-
+#pragma mark Memory Management
 - (void)dealloc
 {	
     SPClear(tables);
@@ -3760,7 +3898,12 @@ set_input:
 	SPClear(operationQueue);
 	SPClear(exportFilename);
 	SPClear(localizedTokenNames);
+	SPClear(appScopedBookmark);
+	SPClear(userChosenDirectory);
 	SPClear(previousConnectionEncoding);
+	SPClear(changeExportOutputPathPanel);
+	SPClear(startTime);
+	
 	[self setServerSupport:nil];
 	
 	[super dealloc];
