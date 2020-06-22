@@ -4,6 +4,8 @@
 -   [Bundles for Sequel Ace](../bundles.html)
 -   [Query View](../query-view.html)
 
+<hr>
+
 ### Connecting to MAMP or XAMPP
 
 This page describes how to connect to the MySQL Server of [MAMP](http://www.mamp.info/) or [XAMPP](http://www.apachefriends.org/en/xampp-macosx.html) running on the same computer as Sequel Ace. If you want to connect to MAMP/XAMPP running on a different computer, please see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
@@ -17,7 +19,7 @@ This is the recommended way of connecting to [MAMP](http://www.mamp.info/ "http:
 
 In the Sequel Ace connection dialog, choose a socket connection.
 
-(0.9.7 and earlier versions: Enter /Applications/MAMP/tmp/mysql/mysql.sock in the socket field. In 0.9.8 and later versions, this socket path will be checked automatically if the field is left empty.)
+Usually, socket path will be checked automatically if the field is left empty. Try to use full socket path in case of troubles: `/Applications/MAMP/tmp/mysql/mysql.sock`
 
 Type root into the username field. The default password is also root. Optionally enter a name for the connection.
 
@@ -36,7 +38,7 @@ Just like with MAMP, you can also connect to [XAMPP](http://www.apachefriends.or
 
 ##### Connect to XAMPP via a unix socket
 
-(0.9.7 and earlier versions: The unix socket for XAMPP is /Applications/XAMPP/xamppfiles/var/mysql/mysql.sock. In 0.9.8 and later versions, this socket path will be checked automatically if the field is left empty.)
+Usually, socket path will be checked automatically if the field is left empty. Try to use full socket path in case of troubles: `/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock`
 
 Use root as username, and leave the password field blank.
 
