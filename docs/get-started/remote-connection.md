@@ -3,6 +3,7 @@
 -   [Keyboard Shortcuts](../shortcuts.html)
 -   [Reference](../reference/)
 -   [Bundles](../bundles/)
+-   [Contribute](../contribute/)
 
 <hr>
 

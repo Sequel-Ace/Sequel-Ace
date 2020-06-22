@@ -5,3 +5,4 @@ Get started using Sequel Ace quickly by browsing through this online documentati
 -   [Keyboard Shortcuts](shortcuts.html)
 -   [Reference](reference/)
 -   [Bundles](bundles/)
+-   [Contribute](contribute/)
