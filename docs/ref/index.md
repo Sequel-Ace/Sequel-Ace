@@ -1,0 +1,14 @@
+-   [Getting Connected](./)
+-   [Making Queries](../queries.html)
+-   [Keyboard Shortcuts](../shortcuts.html)
+-   [Reference](../ref/)
+-   [Bundles](../bundles/)
+-   [Contribute](../contribute/)
+
+<hr>
+
+### Reference
+
+-   [Core Features](./features.html)
+-   [Working With Data](./data.html)
+-   [MySQL Reference](./mysql.html)
