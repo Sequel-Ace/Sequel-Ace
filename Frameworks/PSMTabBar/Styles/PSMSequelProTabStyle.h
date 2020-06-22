@@ -26,7 +26,7 @@
 #import "PSMTabStyle.h"
 
 @interface PSMSequelProTabStyle : NSObject <PSMTabStyle>
-{
+{	
     NSImage *sequelProCloseButton;
     NSImage *sequelProCloseButtonDown;
     NSImage *sequelProCloseButtonOver;
