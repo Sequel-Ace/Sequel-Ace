@@ -1,8 +1,8 @@
--   [Documentation Index](../index.html)
 -   [Getting Connected](./)
--   [Keyboard Shortcuts](../keyboard-shortcuts.html)
--   [Bundles for Sequel Ace](../bundles.html)
--   [Query View](../query-view.html)
+-   [Making Queries](../queries.html)
+-   [Keyboard Shortcuts](../shortcuts.html)
+-   [Reference](../reference/)
+-   [Bundles](../bundles/)
 
 <hr>
 
