@@ -14,10 +14,10 @@ Query Favorites are useful for frequently used SQL statements, text chunks, etc.
 
 The Query Favorites Editor allows to:
 
--   add new query favorites ⌥⌘A
--   duplicate query favorites ⌘D
+-   add new query favorites `⌥⌘A`
+-   duplicate query favorites `⌘D`
 -   edit query favorites
--   remove selected query favorites ⌫
+-   remove selected query favorites `⌫`
 -   rearrange the order of appearance in the popup menu by dragging it
 -   change the storage location (global or document) by dragging it
 -   export selected query favorites in a SPF file
@@ -34,13 +34,13 @@ A frequently used SQL statement is SELECT FROM WHERE . To create this query favo
 
     -   type SELECT FROM WHERE in the Custom Query Editor
     -   select it
-    -   holding ⌥ key and click at the **Query Favorites** button, choose **Save Selection to Favorites**
+    -   holding `⌥` key and click at the **Query Favorites** button, choose **Save Selection to Favorites**
     -   named it (_e.g. Select_)
 
 2.  via Query Favorites Editor
 
     -   open the Query Favorites Editor by choosing **Edit Favorites…**
-    -   click at the + button (⌥⌘A)
+    -   click at the + button (`⌥⌘A`)
     -   name the new favorite (_e.g. Select_)
     -   type in the query field: SELECT FROM WHERE
     -   save it
@@ -124,7 +124,7 @@ SELECT ${0:} FROM ${1:¦table01¦table02¦table03¦} WHERE
 
 After insertion of that query favorite and selecting the second tab snippet a narrow-down completion list window appears thus choose your desired item or start to type to narrow-down the list (or press ⌫ to expand the list again).
 
-> _Tip:_ If you use the default list template **¦¦a¦b¦¦** the narrow-down completion list switches to the fuzzy search mode which means that if you have e.g. the list items _reference_ and _ref_base_ you can type simply r_ to narrow-down the list to _ref_base_due to the fuzzy regular expression search strategy .*r.*_.* If you want to switch to the fuzzy search mode coming from the normal list template **¦a¦b¦** simply press ⌃⎋.
+> <small>_Tip:_ If you use the default list template **¦¦a¦b¦¦** the narrow-down completion list switches to the fuzzy search mode which means that if you have e.g. the list items _reference_ and _ref_base_ you can type simply r_ to narrow-down the list to _ref_base_due to the fuzzy regular expression search strategy .*r.*_.* If you want to switch to the fuzzy search mode coming from the normal list template **¦a¦b¦** simply press ⌃⎋.</small>
 
 ##### Dynamic Default Value Due to Current Selected Table
 
