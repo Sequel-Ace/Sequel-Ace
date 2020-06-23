@@ -671,21 +671,42 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		return NO;
 	}
 	
-	// see PemToDer() in crypto_wrapper.cpp in yaSSL
-	const char rsaHead[] = "-----BEGIN RSA PRIVATE KEY-----";
-	const char rsaFoot[] = "-----END RSA PRIVATE KEY-----";
+	NSString *stringFromData = [[NSString alloc] initWithData:file encoding:NSASCIIStringEncoding];
+
+	// SEE: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Strings/Articles/stringsParagraphBreaks.html#//apple_ref/doc/uid/TP40005016-SW3
+	// need to handle \n, \r, \r\n,
 	
-	if(FindLinesInFile(file, rsaHead, strlen(rsaHead), rsaFoot, strlen(rsaFoot)))
+	BOOL __block foundValidFirstLine = NO;
+	BOOL __block foundValidLastLine = NO;
+	
+	if(stringFromData){
+		NSRange range = NSMakeRange(0, stringFromData.length);
+		
+		[stringFromData enumerateSubstringsInRange:range
+										   options:NSStringEnumerationByParagraphs
+										usingBlock:^(NSString * _Nullable paragraph, NSRange paragraphRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+			
+			if ([paragraph containsString:@"PRIVATE KEY-----"] && [paragraph containsString:@"-----BEGIN"]) {
+				foundValidFirstLine = YES;
+			}
+			if ([paragraph containsString:@"PRIVATE KEY-----"] && [paragraph containsString:@"-----END"]) {
+				foundValidLastLine = YES;
+			}
+		}];
+	}
+	
+	if(foundValidFirstLine == YES && foundValidLastLine == YES){
 		return YES;
-	
-	*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
-		NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid private key file.", @"connection view : ssl : key file picker : wrong format error title"),[url lastPathComponent]],
-		NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a RSA private key and is using PEM encoding.", @"connection view : ssl : key file picker : wrong format error description"),
-		NSURLErrorKey: url
-	}];
-	
-	return NO;
-	
+	}
+	else{
+		*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
+			NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid private key file.", @"connection view : ssl : key file picker : wrong format error title"),[url lastPathComponent]],
+			NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a RSA private key and is using PEM encoding.", @"connection view : ssl : key file picker : wrong format error description"),
+			NSURLErrorKey: url
+		}];
+		
+		return NO;
+	}
 }
 
 -(BOOL)validateCertFile:(NSURL *)url error:(NSError **)outError{
@@ -697,20 +718,51 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		return NO;
 	}
 	
-	// see PemToDer() in crypto_wrapper.cpp in yaSSL
-	const char cerHead[] = "-----BEGIN CERTIFICATE-----";
-	const char cerFoot[] = "-----END CERTIFICATE-----";
+	NSString *stringFromData = [[NSString alloc] initWithData:file encoding:NSASCIIStringEncoding];
+
+	// SEE: https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Strings/Articles/stringsParagraphBreaks.html#//apple_ref/doc/uid/TP40005016-SW3
+	// need to handle \n, \r, \r\n,
 	
-	if(FindLinesInFile(file, cerHead, strlen(cerHead), cerFoot, strlen(cerFoot)))
+	BOOL __block foundValidFirstLine = NO;
+	BOOL __block foundValidLastLine = NO;
+	
+	if(stringFromData){
+		NSRange range = NSMakeRange(0, stringFromData.length);
+		
+		[stringFromData enumerateSubstringsInRange:range
+										   options:NSStringEnumerationByParagraphs
+										usingBlock:^(NSString * _Nullable paragraph, NSRange paragraphRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+			
+			if ([paragraph containsString:@"CERTIFICATE-----"] && [paragraph containsString:@"-----BEGIN"]) {
+				foundValidFirstLine = YES;
+			}
+			if ([paragraph containsString:@"CERTIFICATE-----"] && [paragraph containsString:@"-----END"]) {
+				foundValidLastLine = YES;
+			}
+		}];
+	}
+	
+	if(foundValidFirstLine == YES && foundValidLastLine == YES){
 		return YES;
-	
-	*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
-		NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid client certificate file.", @"connection view : ssl : client cert file picker : wrong format error title"),[url lastPathComponent]],
-		NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a X.509 client certificate and is using PEM encoding.", @"connection view : ssl : client cert picker : wrong format error description"),
-		NSURLErrorKey: url
-	}];
-	
-	return NO;
+	}
+	else{
+		
+		*outError = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:@{
+			NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"“%@” is not a valid client certificate file.", @"connection view : ssl : client cert file picker : wrong format error title"),[url lastPathComponent]],
+			NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Make sure the file contains a X.509 client certificate and is using PEM encoding.", @"connection view : ssl : client cert picker : wrong format error description"),
+			NSURLErrorKey: url
+		}];
+		
+		return NO;
+	}
+}
+
+// quick check to stop users selecting .pub files
+- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url{
+	if([url.pathExtension isEqualToString:@"pub"]){
+		return NO;
+	}
+	return YES;
 }
 
 - (BOOL)panel:(id)sender validateURL:(NSURL *)url error:(NSError **)outError
