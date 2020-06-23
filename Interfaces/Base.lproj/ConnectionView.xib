@@ -42,7 +42,7 @@
                 <outlet property="sshSQLHostField" destination="5264" id="5445"/>
                 <outlet property="sshSSHKeyButton" destination="5492" id="5494"/>
                 <outlet property="sshSSHPasswordField" destination="5288" id="5430"/>
-                <outlet property="sshUserField" destination="5212" id="5808"/>
+                <outlet property="sshUserField" destination="5266" id="1O2-uu-pMp"/>
                 <outlet property="sslCACertLocationHelp" destination="5680" id="5686"/>
                 <outlet property="sslCertificateLocationHelp" destination="5683" id="5687"/>
                 <outlet property="sslKeyFileLocationHelp" destination="5668" id="5671"/>
