@@ -798,8 +798,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 		[alert setAlertStyle:NSWarningAlertStyle];
 
-		// Cancel
-		if ([alert runModal] == NSAlertFirstButtonReturn) {
+		// "Continue" is our first button, "Cancel" is our second button. We could also implement setKeyEquivalent but this is easier for now
+		NSModalResponse response = [alert runModal];
+		if (response == NSAlertSecondButtonReturn) {
+			// Cancel button tapped
 			return;
 		}
 	}
