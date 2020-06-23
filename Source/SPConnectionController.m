@@ -1130,33 +1130,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Alter the name for clarity
 		[favorite setObject:[NSString stringWithFormat:NSLocalizedString(@"%@ Copy", @"Initial favourite name after duplicating a previous favourite"), [favorite objectForKey:SPFavoriteNameKey]] forKey:SPFavoriteNameKey];
 		
-		// Create new keychain items if appropriate
-		if (password && [password length]) {
-			NSString *oldKeychainName = [keychain nameForFavoriteName:[[self selectedFavorite] objectForKey:SPFavoriteNameKey] id:[[self selectedFavorite] objectForKey:SPFavoriteIDKey]];
-			NSString *newKeychainName = [keychain nameForFavoriteName:[favorite objectForKey:SPFavoriteNameKey] id:[favorite objectForKey:SPFavoriteIDKey]];
-
-			NSString *keychainAccount = [keychain accountForUser:[favorite objectForKey:SPFavoriteUserKey] host:((duplicatedFavoriteType == SPSocketConnection) ? @"localhost" : [favorite objectForKey:SPFavoriteHostKey]) database:[favorite objectForKey:SPFavoriteDatabaseKey]];
-
-			NSString *favoritePassword = [keychain getPasswordForName:oldKeychainName account:keychainAccount];
-
-			[keychain addPassword:favoritePassword forName:newKeychainName account:keychainAccount];
-
-			favoritePassword = nil;
-		}
-		
-		if (sshPassword && [sshPassword length]) {
-			NSString *oldKeychainSSHName = [keychain nameForSSHForFavoriteName:[[self selectedFavorite] objectForKey:SPFavoriteNameKey] id:[[self selectedFavorite] objectForKey:SPFavoriteIDKey]];
-			NSString *newKeychainSSHName = [keychain nameForSSHForFavoriteName:[favorite objectForKey:SPFavoriteNameKey] id:[favorite objectForKey:SPFavoriteIDKey]];
-
-			NSString *keychainSSHAccount = [keychain accountForSSHUser:[favorite objectForKey:SPFavoriteSSHUserKey] sshHost:[favorite objectForKey:SPFavoriteSSHHostKey]];
-
-			NSString *favoriteSSHPassword = [keychain getPasswordForName:oldKeychainSSHName account:keychainSSHAccount];
-
-			[keychain addPassword:favoriteSSHPassword forName:newKeychainSSHName account:keychainSSHAccount];
-
-			favoriteSSHPassword = nil;
-		}
-		
 		SPTreeNode *selectedNode = [self selectedFavoriteNode];
 		
 		SPTreeNode *parent = ([selectedNode isGroup]) ? selectedNode : (SPTreeNode *)[selectedNode parentNode];
