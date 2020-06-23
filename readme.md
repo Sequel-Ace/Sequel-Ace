@@ -26,6 +26,12 @@ Please always checkout from the `dev` branch and submit PRs against this branch 
 
 Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects). This lists the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
 
+## Compatibility
+
+- macOS >= 10.10
+- MySQL >= 5.5
+- MariaDB
+
 ## License
 
 Copyright (c) 2020 Moballo, LLC.  All rights reserved.
