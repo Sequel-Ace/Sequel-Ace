@@ -106,6 +106,27 @@
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
+		1AB0689D24A355B600E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
+		1AB0689E24A355B600E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
+		1AB0689F24A355B600E2AAC2 /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */; };
+		1AB068A024A355B600E2AAC2 /* client-cert-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689224A355B500E2AAC2 /* client-cert-cr.pem */; };
+		1AB068A124A355B600E2AAC2 /* client-cert-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689324A355B500E2AAC2 /* client-cert-bad-start.pem */; };
+		1AB068A224A355B600E2AAC2 /* client-key-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689524A355B500E2AAC2 /* client-key-bad-end.pem */; };
+		1AB068A324A355B600E2AAC2 /* client-key-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689624A355B500E2AAC2 /* client-key-cr.pem */; };
+		1AB068A424A355B600E2AAC2 /* client-key-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689724A355B500E2AAC2 /* client-key-bad-start.pem */; };
+		1AB068A524A355B600E2AAC2 /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689824A355B500E2AAC2 /* client-key-lf.pem */; };
+		1AB068A624A355B600E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
+		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
+		1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
+		1AB068AA24A355CC00E2AAC2 /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */; };
+		1AB068AB24A355CC00E2AAC2 /* client-cert-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689224A355B500E2AAC2 /* client-cert-cr.pem */; };
+		1AB068AC24A355CC00E2AAC2 /* client-cert-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689324A355B500E2AAC2 /* client-cert-bad-start.pem */; };
+		1AB068AD24A355CC00E2AAC2 /* client-key-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689524A355B500E2AAC2 /* client-key-bad-end.pem */; };
+		1AB068AE24A355CC00E2AAC2 /* client-key-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689624A355B500E2AAC2 /* client-key-cr.pem */; };
+		1AB068AF24A355CC00E2AAC2 /* client-key-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689724A355B500E2AAC2 /* client-key-bad-start.pem */; };
+		1AB068B024A355CC00E2AAC2 /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689824A355B500E2AAC2 /* client-key-lf.pem */; };
+		1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
+		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
 		265446DF24A1616900376B48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC89E0F8FD336002A3258 /* WebKit.framework */; };
 		296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8A70F909194002A3258 /* MGTemplateEngine.m */; };
@@ -739,6 +760,17 @@
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
+		1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-crlf.pem"; sourceTree = "<group>"; };
+		1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-end.pem"; sourceTree = "<group>"; };
+		1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-lf.pem"; sourceTree = "<group>"; };
+		1AB0689224A355B500E2AAC2 /* client-cert-cr.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-cr.pem"; sourceTree = "<group>"; };
+		1AB0689324A355B500E2AAC2 /* client-cert-bad-start.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-start.pem"; sourceTree = "<group>"; };
+		1AB0689524A355B500E2AAC2 /* client-key-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-bad-end.pem"; sourceTree = "<group>"; };
+		1AB0689624A355B500E2AAC2 /* client-key-cr.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-cr.pem"; sourceTree = "<group>"; };
+		1AB0689724A355B500E2AAC2 /* client-key-bad-start.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-bad-start.pem"; sourceTree = "<group>"; };
+		1AB0689824A355B500E2AAC2 /* client-key-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-lf.pem"; sourceTree = "<group>"; };
+		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
+		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
 		296DC89E0F8FD336002A3258 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = /System/Library/Frameworks/WebKit.framework; sourceTree = "<absolute>"; };
 		296DC8A50F909194002A3258 /* MGTemplateMarker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGTemplateMarker.h; sourceTree = "<group>"; };
 		296DC8A60F909194002A3258 /* MGTemplateFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGTemplateFilter.h; sourceTree = "<group>"; };
@@ -2114,6 +2146,39 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		1AB0688D24A355B500E2AAC2 /* fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				1AB0688E24A355B500E2AAC2 /* certs */,
+				1AB0689424A355B500E2AAC2 /* keys */,
+			);
+			path = fixtures;
+			sourceTree = "<group>";
+		};
+		1AB0688E24A355B500E2AAC2 /* certs */ = {
+			isa = PBXGroup;
+			children = (
+				1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */,
+				1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */,
+				1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */,
+				1AB0689224A355B500E2AAC2 /* client-cert-cr.pem */,
+				1AB0689324A355B500E2AAC2 /* client-cert-bad-start.pem */,
+			);
+			path = certs;
+			sourceTree = "<group>";
+		};
+		1AB0689424A355B500E2AAC2 /* keys */ = {
+			isa = PBXGroup;
+			children = (
+				1AB0689524A355B500E2AAC2 /* client-key-bad-end.pem */,
+				1AB0689624A355B500E2AAC2 /* client-key-cr.pem */,
+				1AB0689724A355B500E2AAC2 /* client-key-bad-start.pem */,
+				1AB0689824A355B500E2AAC2 /* client-key-lf.pem */,
+				1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */,
+			);
+			path = keys;
+			sourceTree = "<group>";
+		};
 		296DC8A40F90914B002A3258 /* MGTemplateEngine */ = {
 			isa = PBXGroup;
 			children = (
@@ -2189,10 +2254,12 @@
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				1AB0688D24A355B500E2AAC2 /* fixtures */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
+				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2485,6 +2552,7 @@
 				17E20DEF12D6602F007F75A6 /* Copy Frameworks */,
 				380F4ED50FC0B50500B0BFD7 /* Sources */,
 				17E20DFF12D6609E007F75A6 /* Frameworks */,
+				1AB068A724A355C200E2AAC2 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -2671,6 +2739,23 @@
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
+		1AB068A724A355C200E2AAC2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */,
+				1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */,
+				1AB068AA24A355CC00E2AAC2 /* client-cert-lf.pem in Resources */,
+				1AB068AB24A355CC00E2AAC2 /* client-cert-cr.pem in Resources */,
+				1AB068AC24A355CC00E2AAC2 /* client-cert-bad-start.pem in Resources */,
+				1AB068AD24A355CC00E2AAC2 /* client-key-bad-end.pem in Resources */,
+				1AB068AE24A355CC00E2AAC2 /* client-key-cr.pem in Resources */,
+				1AB068AF24A355CC00E2AAC2 /* client-key-bad-start.pem in Resources */,
+				1AB068B024A355CC00E2AAC2 /* client-key-lf.pem in Resources */,
+				1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		584754BE120A04560057631F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2719,11 +2804,13 @@
 				17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */,
 				17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */,
 				17E6420A0EF020CB001BC333 /* DBView.xib in Resources */,
+				1AB068A524A355B600E2AAC2 /* client-key-lf.pem in Resources */,
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
 				1761FD480EF03A6F00331368 /* MainMenu.xib in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
+				1AB068A224A355B600E2AAC2 /* client-key-bad-end.pem in Resources */,
 				58186D210F4CB38900851FE9 /* ConnectionErrorDialog.xib in Resources */,
 				B5E92F190F75B2D100012500 /* ExportDialog.xib in Resources */,
 				B57747D20F7A891A003B34F9 /* Preferences.xib in Resources */,
@@ -2739,6 +2826,7 @@
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
 				B58DA73C0FF8BBA500FDDACD /* PrintAccessory.xib in Resources */,
+				1AB0689E24A355B600E2AAC2 /* client-cert-bad-end.pem in Resources */,
 				B58DA73A0FF8BB9E00FDDACD /* SSHQuestionDialog.xib in Resources */,
 				B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */,
 				8831EFB0224013AF00D10172 /* button_refreshTemplate.pdf in Resources */,
@@ -2776,6 +2864,7 @@
 				B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */,
 				8831EFBA2240154A00D10172 /* button_rightTemplate.pdf in Resources */,
 				17DD52B7115071D0007D8950 /* SPPrintTemplate.html in Resources */,
+				1AB0689F24A355B600E2AAC2 /* client-cert-lf.pem in Resources */,
 				17F90E2C1210B34900274C98 /* Credits.rtf in Resources */,
 				17DD52C3115074B3007D8950 /* InfoPlist.strings in Resources */,
 				8831EFCD2240175400D10172 /* button_actionTemplate.pdf in Resources */,
@@ -2794,8 +2883,11 @@
 				BC09D7E012A786FB0030DB64 /* cancel-highlighted.png in Resources */,
 				BC09D7E112A786FB0030DB64 /* cancel-hovered-highlighted.png in Resources */,
 				BC09D7E212A786FB0030DB64 /* cancel-hovered.png in Resources */,
+				1AB068A124A355B600E2AAC2 /* client-cert-bad-start.pem in Resources */,
+				1AB068A024A355B600E2AAC2 /* client-cert-cr.pem in Resources */,
 				BC09D7E312A786FB0030DB64 /* cancel.png in Resources */,
 				58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */,
+				1AB0689D24A355B600E2AAC2 /* client-cert-crlf.pem in Resources */,
 				58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */,
 				5843DA6C161FA35600EAA6D1 /* key-icon-alternate.png in Resources */,
 				583A278E23F06F1000FBE97B /* Colors.xcassets in Resources */,
@@ -2820,6 +2912,7 @@
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
 				C9C994491678B3E6001F5DA8 /* table-small-square.png in Resources */,
 				C9C9944A1678B3E6001F5DA8 /* table-small-square@2x.png in Resources */,
+				1AB068A624A355B600E2AAC2 /* client-key-crlf.pem in Resources */,
 				964908C8249A77D00052FC4A /* ssh_config in Resources */,
 				8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */,
 				C9C9944D1678BCFA001F5DA8 /* table-small.png in Resources */,
@@ -2836,6 +2929,7 @@
 				BAE25E0120B32BDA00DD9A40 /* HelpViewer.xib in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
+				1AB068A324A355B600E2AAC2 /* client-key-cr.pem in Resources */,
 				582E944A168374C1003459FD /* field-small-square.png in Resources */,
 				582E944C16837986003459FD /* hideconsole.png in Resources */,
 				582E945016837AA9003459FD /* network-small.png in Resources */,
@@ -2849,6 +2943,7 @@
 				582E948F168383F0003459FD /* table-view-small-square.png in Resources */,
 				582E9490168383F0003459FD /* table-view-small.png in Resources */,
 				582E94A816839AD5003459FD /* toolbar-preferences-autoupdate.png in Resources */,
+				1AB068A424A355B600E2AAC2 /* client-key-bad-start.pem in Resources */,
 				582E94AA16839AEF003459FD /* toolbar-preferences-general.png in Resources */,
 				582E94AE16839C4A003459FD /* toolbar-preferences-notifications.png in Resources */,
 				582E94C716839D83003459FD /* toolbar-preferences-tables.png in Resources */,
@@ -2879,6 +2974,7 @@
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				50EA92641AB23EAD008D3C4F /* SPDatabaseCopy.m in Sources */,
+				1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */,
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
@@ -3514,6 +3610,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks/**",
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -3547,6 +3644,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks/**",
 				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3578,6 +3676,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks/**",
 				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3744,6 +3843,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
@@ -3756,10 +3856,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/Frameworks/zlib",
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
-				);
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
@@ -4037,6 +4134,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
@@ -4049,10 +4147,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/Frameworks/zlib",
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
-				);
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
@@ -4080,6 +4175,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
@@ -4092,10 +4188,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/Frameworks/zlib",
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
-				);
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
