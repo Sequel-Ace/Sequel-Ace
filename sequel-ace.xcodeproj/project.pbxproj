@@ -483,6 +483,13 @@
 			remoteGlobalIDString = 507FF1D51BC0D7D300104523;
 			remoteInfo = "SPMySQL Unit Tests";
 		};
+		518402D824A3FF4F004693B0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2A37F4A9FDCFA73011CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8D15AC270486D014006FF6A4;
+			remoteInfo = "Sequel Ace";
+		};
 		5847571D120A1C6D0057631F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2A37F4A9FDCFA73011CA2CEA /* Project object */;
@@ -2489,6 +2496,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				518402D924A3FF4F004693B0 /* PBXTargetDependency */,
 			);
 			name = "Unit Tests";
 			productName = "Unit Tests";
@@ -3128,6 +3136,11 @@
 			name = SPMySQL.framework;
 			targetProxy = 17D41AB12171157B00B1888D /* PBXContainerItemProxy */;
 		};
+		518402D924A3FF4F004693B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8D15AC270486D014006FF6A4 /* Sequel Ace */;
+			targetProxy = 518402D824A3FF4F004693B0 /* PBXContainerItemProxy */;
+		};
 		5847571E120A1C6D0057631F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 584754C1120A04560057631F /* Sequel Ace QLGenerator */;
@@ -3506,8 +3519,8 @@
 		380F4EDB0FC0B50600B0BFD7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Sequel Ace.app/Contents/MacOS/Sequel Ace";
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 2040;
@@ -3540,8 +3553,8 @@
 		380F4EDC0FC0B50600B0BFD7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Sequel Ace.app/Contents/MacOS/Sequel Ace";
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2040;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3571,8 +3584,8 @@
 		380F4EDD0FC0B50600B0BFD7 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Sequel Ace.app/Contents/MacOS/Sequel Ace";
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2040;
 				FRAMEWORK_SEARCH_PATHS = (
