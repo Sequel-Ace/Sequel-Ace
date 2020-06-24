@@ -889,18 +889,6 @@
 		[csvParser setNullReplacementString:[prefs objectForKey:SPNullValue]];
 	});
 
-	// Take CSV import setting from accessory view
-	[csvParser setFieldTerminatorString:[importFieldsTerminatedField stringValue] convertDisplayStrings:YES];
-	[csvParser setLineTerminatorString:[importLinesTerminatedField stringValue] convertDisplayStrings:YES];
-	[csvParser setFieldQuoteString:[importFieldsEnclosedField stringValue] convertDisplayStrings:YES];
-	if ([[importFieldsEscapedField stringValue] isEqualToString:@"\\ or \""]) {
-		[csvParser setEscapeString:@"\\" convertDisplayStrings:NO];
-	} else {
-		[csvParser setEscapeString:[importFieldsEscapedField stringValue] convertDisplayStrings:YES];
-		[csvParser setEscapeStringsAreMatchedStrictly:YES];
-	}
-	[csvParser setNullReplacementString:[prefs objectForKey:SPNullValue]];
-
 	csvDataBuffer = [[NSMutableData alloc] init];
 	importPool = [[NSAutoreleasePool alloc] init];
 	while (1) {
