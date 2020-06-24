@@ -102,6 +102,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 @interface SPDatabaseDocument ()
 
+// Privately redeclare as read/write to get the synthesized setter
+@property (readwrite, assign) BOOL allowSplitViewResizing;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -143,6 +146,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 @synthesize tablesListInstance;
 @synthesize tableContentInstance;
 @synthesize customQueryInstance;
+@synthesize allowSplitViewResizing;
 
 #pragma mark -
 
@@ -164,6 +168,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		_supportsEncoding = NO;
 		databaseListIsSelectable = YES;
 		_queryMode = SPInterfaceQueryMode;
+
+		initComplete = NO;
+		allowSplitViewResizing = NO;
 
 		chooseDatabaseButton = nil;
 #ifndef SP_CODA /* init ivars */
@@ -4466,6 +4473,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[connectionController updateFavoriteNextKeyView];
 	}
 #endif
+	
+	initComplete = YES;
 }
 
 /**
@@ -5919,7 +5928,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification
 {
 	[self updateChooseDatabaseToolbarItemWidth];
-	[connectionController updateSplitViewSize];
+	if (initComplete) {
+		allowSplitViewResizing = YES;
+		[connectionController updateSplitViewSize];
+	}
 }
 
 - (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMinimumPosition ofSubviewAt:(NSInteger)dividerIndex

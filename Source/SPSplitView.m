@@ -957,6 +957,11 @@
 		}
 	}
 
+	if (delegate && [delegate respondsToSelector:@selector(allowSplitViewResizing)] && ![delegate allowSplitViewResizing]) {
+		resizeProportions[0] = 0;
+		resizeProportions[1] = 1 - resizeProportions[0];
+	}
+
 	// In a loop, determine whether any constraints would be hit, and if so, match them
 	// and update remaining proportions.
 	BOOL iteratingConstraints = YES;
