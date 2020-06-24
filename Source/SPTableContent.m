@@ -894,6 +894,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		[[tableContentView onMainThread] selectRowIndexes:selectionSet byExtendingSelection:NO];
+		// Scroll to selection (if needed)
+		[[tableContentView onMainThread] scrollRowToVisible:[[tableContentView onMainThread] selectedRow]];
+
 		tableRowsSelectable = previousTableRowsSelectable;
 	}
 
@@ -2377,78 +2380,84 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)clickLinkArrowTask:(SPTextAndLinkCell *)theArrowCell
 {
 	@autoreleasepool {
-		NSUInteger dataColumnIndex = [[[[tableContentView tableColumns] objectAtIndex:[theArrowCell getClickedColumn]] identifier] integerValue];
-		BOOL tableFilterRequired = NO;
+		SPMainQSync(^{
+			NSUInteger dataColumnIndex = [[[[tableContentView tableColumns] objectAtIndex:[theArrowCell getClickedColumn]] identifier] integerValue];
+			BOOL tableFilterRequired = NO;
 
-		// Ensure the clicked cell has foreign key details available
-		NSDictionary *columnDefinition = [dataColumns objectAtIndex:dataColumnIndex];
-		NSDictionary *refDictionary = [columnDefinition objectForKey:@"foreignkeyreference"];
-		if (!refDictionary) {
-			return;
-		}
+			// Ensure the clicked cell has foreign key details available
+			NSDictionary *columnDefinition = [dataColumns objectAtIndex:dataColumnIndex];
+			NSDictionary *refDictionary = [columnDefinition objectForKey:@"foreignkeyreference"];
+			if (!refDictionary) {
+				return;
+			}
 
 #ifndef SP_CODA
-		// Save existing scroll position and details and mark that state is being modified
-		[spHistoryControllerInstance updateHistoryEntries];
-		[spHistoryControllerInstance setModifyingState:YES];
+			// Save existing scroll position and details and mark that state is being modified
+			[spHistoryControllerInstance updateHistoryEntries];
+			[spHistoryControllerInstance setModifyingState:YES];
 #endif
 
-		id targetFilterValue = [tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
+			id targetFilterValue = [tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
-		//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
-		BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
-		if(navigateAsHex) targetFilterValue = [mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
+			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
+			if(navigateAsHex) targetFilterValue = [mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
 
-		NSString *filterComparison = @"=";
-		if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
-		else if(navigateAsHex) filterComparison = @"= (Hex String)";
+			NSString *filterComparison = @"=";
+			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
+			else if(navigateAsHex) filterComparison = @"= (Hex String)";
 
-		// Store the filter details to use when loading the target table
-		NSDictionary *filterSettings = [SPRuleFilterController makeSerializedFilterForColumn:[refDictionary objectForKey:@"column"]
-		                                                                            operator:filterComparison
-		                                                                              values:@[targetFilterValue]];
+			// Store the filter details to use when loading the target table
+			NSDictionary *filterSettings = [SPRuleFilterController makeSerializedFilterForColumn:[refDictionary objectForKey:@"column"]
+																						operator:filterComparison
+																						  values:@[targetFilterValue]];
 
-		// If the link is within the current table, apply filter settings manually
-		if ([[refDictionary objectForKey:@"table"] isEqualToString:selectedTable]) {
-			SPMainQSync(^{
-				[ruleFilterController restoreSerializedFilters:filterSettings];
-				[self setRuleEditorVisible:YES animate:YES];
-				activeFilter = SPTableContentFilterSourceRuleFilter;
-			});
-			tableFilterRequired = YES;
-		}
-		else {
-			SPMainQSync(^{
-				// Switch databases if needed
-				if (![[refDictionary objectForKey:@"database"] isEqualToString:[tableDocumentInstance database]]) {
-					NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
-					NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
-					[[tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
-				}
-				[self setFiltersToRestore:filterSettings];
-				[self setActiveFilterToRestore:SPTableContentFilterSourceRuleFilter];
-				// Attempt to switch to the target table
-				if (![tablesListInstance selectItemWithName:[refDictionary objectForKey:@"table"]]) {
+			NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
+			NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
+
+			if (![databaseToJumpTo isEqualToString:[tableDocumentInstance database]]) {
+				// fk points to a table in another database; switch database, and select the target table
+				[[tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
+			} else if (![tableToJumpTo isEqualToString:selectedTable]) {
+				// fk points to another table in the same database: switch to the target table
+				if (![tablesListInstance selectItemWithName:tableToJumpTo]) {
 					NSBeep();
 					[self setFiltersToRestore:nil];
 					[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
 				}
-			});
-		}
+			} else {
+				// fk points to same table; just apply filter settings manually
+				tableFilterRequired = YES;
+			}
+			
+			if (tableFilterRequired) {
+				[ruleFilterController restoreSerializedFilters:filterSettings];
+				activeFilter = SPTableContentFilterSourceRuleFilter;
+			} else {
+				[self setFiltersToRestore:filterSettings];
+				[self setActiveFilterToRestore:SPTableContentFilterSourceRuleFilter];
+			}
+			[self setRuleEditorVisible:YES animate:YES];
 
 #ifndef SP_CODA
-		// End state and ensure a new history entry
-		[spHistoryControllerInstance setModifyingState:NO];
-		[spHistoryControllerInstance updateHistoryEntries];
+			// End modifying state
+			[spHistoryControllerInstance setModifyingState:NO];
 #endif
 
-		// End the task
-		[tableDocumentInstance endTask];
+			// End the task
+			[tableDocumentInstance endTask];
 
 #ifndef SP_CODA
-		// If the same table is the target, trigger a filter task on the main thread
-		if (tableFilterRequired) [self performSelectorOnMainThread:@selector(filterTable:) withObject:self waitUntilDone:NO];
+			if (tableFilterRequired) {
+				// If the same table is the target, trigger a filter task on the main thread
+				[self performSelectorOnMainThread:@selector(filterTable:) withObject:self waitUntilDone:NO];
+			} else {
+				// Will prevent table-load from overwriting the filtersToRestore we set above
+				// See [SPHistoryController restoreViewStates]
+				[spHistoryControllerInstance setNavigatingFK:YES];
+			}
 #endif
+		});
 	}
 }
 
