@@ -106,27 +106,7 @@
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
-		1AFEFE6124A217D500BF2A6F /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A18B0D024A2072E0027517B /* SPValidateKeyAndCertFiles.m */; };
-		1AFEFE7424A21B0500BF2A6F /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6924A21B0500BF2A6F /* client-cert-crlf.pem */; };
-		1AFEFE7524A21B0500BF2A6F /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6A24A21B0500BF2A6F /* client-cert-bad-end.pem */; };
-		1AFEFE7624A21B0500BF2A6F /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6B24A21B0500BF2A6F /* client-cert-lf.pem */; };
-		1AFEFE7724A21B0500BF2A6F /* client-cert-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6C24A21B0500BF2A6F /* client-cert-cr.pem */; };
-		1AFEFE7824A21B0500BF2A6F /* client-cert-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6D24A21B0500BF2A6F /* client-cert-bad-start.pem */; };
-		1AFEFE7924A21B0500BF2A6F /* client-key-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6F24A21B0500BF2A6F /* client-key-bad-end.pem */; };
-		1AFEFE7A24A21B0500BF2A6F /* client-key-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7024A21B0500BF2A6F /* client-key-cr.pem */; };
-		1AFEFE7B24A21B0500BF2A6F /* client-key-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7124A21B0500BF2A6F /* client-key-bad-start.pem */; };
-		1AFEFE7C24A21B0500BF2A6F /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7224A21B0500BF2A6F /* client-key-lf.pem */; };
-		1AFEFE7D24A21B0500BF2A6F /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7324A21B0500BF2A6F /* client-key-crlf.pem */; };
-		1AFEFE8124A21ED900BF2A6F /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6924A21B0500BF2A6F /* client-cert-crlf.pem */; };
-		1AFEFE8224A21ED900BF2A6F /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6A24A21B0500BF2A6F /* client-cert-bad-end.pem */; };
-		1AFEFE8324A21ED900BF2A6F /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6B24A21B0500BF2A6F /* client-cert-lf.pem */; };
-		1AFEFE8424A21ED900BF2A6F /* client-cert-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6C24A21B0500BF2A6F /* client-cert-cr.pem */; };
-		1AFEFE8524A21ED900BF2A6F /* client-cert-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6D24A21B0500BF2A6F /* client-cert-bad-start.pem */; };
-		1AFEFE8624A21ED900BF2A6F /* client-key-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE6F24A21B0500BF2A6F /* client-key-bad-end.pem */; };
-		1AFEFE8724A21ED900BF2A6F /* client-key-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7024A21B0500BF2A6F /* client-key-cr.pem */; };
-		1AFEFE8824A21ED900BF2A6F /* client-key-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7124A21B0500BF2A6F /* client-key-bad-start.pem */; };
-		1AFEFE8924A21ED900BF2A6F /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7224A21B0500BF2A6F /* client-key-lf.pem */; };
-		1AFEFE8A24A21ED900BF2A6F /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AFEFE7324A21B0500BF2A6F /* client-key-crlf.pem */; };
+		265446DF24A1616900376B48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC89E0F8FD336002A3258 /* WebKit.framework */; };
 		296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8A70F909194002A3258 /* MGTemplateEngine.m */; };
 		296DC8B70F909194002A3258 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; };
@@ -141,7 +121,6 @@
 		380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 380F4EF40FC0B68F00B0BFD7 /* SPStringAdditionsTests.m */; };
 		384582C40FB95FF800DDACB6 /* func-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C30FB95FF800DDACB6 /* func-small.png */; };
 		384582C70FB9603600DDACB6 /* proc-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C60FB9603600DDACB6 /* proc-small.png */; };
-		386083461C8A3D97006D1B47 /* zlib.1.2.4.h in Headers */ = {isa = PBXBuildFile; fileRef = 386083451C8A3D97006D1B47 /* zlib.1.2.4.h */; };
 		3876E15D1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 3876E15C1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m */; };
 		387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */ = {isa = PBXBuildFile; fileRef = 387BBBA70FBCB6CB00B31746 /* SPTableRelations.m */; };
 		3E10740420FC25B7006DBDFD /* SPButtonBar.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E10740320FC25B7006DBDFD /* SPButtonBar.m */; };
@@ -757,20 +736,9 @@
 		17F90E471210B42700274C98 /* SPExportFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPExportFile.m; sourceTree = "<group>"; };
 		17FDB04A1280778B00DBBBC2 /* SPFontPreviewTextField.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFontPreviewTextField.h; sourceTree = "<group>"; };
 		17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFontPreviewTextField.m; sourceTree = "<group>"; };
-		1A18B0D024A2072E0027517B /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
-		1AFEFE6924A21B0500BF2A6F /* client-cert-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-crlf.pem"; sourceTree = "<group>"; };
-		1AFEFE6A24A21B0500BF2A6F /* client-cert-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-end.pem"; sourceTree = "<group>"; };
-		1AFEFE6B24A21B0500BF2A6F /* client-cert-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-lf.pem"; sourceTree = "<group>"; };
-		1AFEFE6C24A21B0500BF2A6F /* client-cert-cr.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-cr.pem"; sourceTree = "<group>"; };
-		1AFEFE6D24A21B0500BF2A6F /* client-cert-bad-start.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-start.pem"; sourceTree = "<group>"; };
-		1AFEFE6F24A21B0500BF2A6F /* client-key-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-bad-end.pem"; sourceTree = "<group>"; };
-		1AFEFE7024A21B0500BF2A6F /* client-key-cr.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-cr.pem"; sourceTree = "<group>"; };
-		1AFEFE7124A21B0500BF2A6F /* client-key-bad-start.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-bad-start.pem"; sourceTree = "<group>"; };
-		1AFEFE7224A21B0500BF2A6F /* client-key-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-lf.pem"; sourceTree = "<group>"; };
-		1AFEFE7324A21B0500BF2A6F /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		296DC89E0F8FD336002A3258 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = /System/Library/Frameworks/WebKit.framework; sourceTree = "<absolute>"; };
 		296DC8A50F909194002A3258 /* MGTemplateMarker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGTemplateMarker.h; sourceTree = "<group>"; };
 		296DC8A60F909194002A3258 /* MGTemplateFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGTemplateFilter.h; sourceTree = "<group>"; };
@@ -799,12 +767,10 @@
 		380F4EF40FC0B68F00B0BFD7 /* SPStringAdditionsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPStringAdditionsTests.m; sourceTree = "<group>"; };
 		384582C30FB95FF800DDACB6 /* func-small.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "func-small.png"; sourceTree = "<group>"; };
 		384582C60FB9603600DDACB6 /* proc-small.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "proc-small.png"; sourceTree = "<group>"; };
-		386083451C8A3D97006D1B47 /* zlib.1.2.4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zlib.1.2.4.h; path = Frameworks/zlib/zlib.1.2.4.h; sourceTree = "<group>"; };
 		3876E15B1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableFooterPopUpButtonCell.h; sourceTree = "<group>"; };
 		3876E15C1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableFooterPopUpButtonCell.m; sourceTree = "<group>"; };
 		387BBBA60FBCB6CB00B31746 /* SPTableRelations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableRelations.h; sourceTree = "<group>"; };
 		387BBBA70FBCB6CB00B31746 /* SPTableRelations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableRelations.m; sourceTree = "<group>"; };
-		38C613701C89777B00B3B6EF /* libz.1.2.5.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.2.5.tbd; path = usr/lib/libz.1.2.5.tbd; sourceTree = SDKROOT; };
 		38C613721C8977E600B3B6EF /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		38F37194182F0621008EB031 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = readme.md; sourceTree = "<group>"; };
 		3E10740220FC25B7006DBDFD /* SPButtonBar.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPButtonBar.h; sourceTree = "<group>"; };
@@ -1263,6 +1229,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				503CDBB21ACDC204004F8A2F /* Quartz.framework in Frameworks */,
+				265446DF24A1616900376B48 /* libz.tbd in Frameworks */,
 				17AED4161888BD67008E380F /* Security.framework in Frameworks */,
 				296DC8BF0F9091DF002A3258 /* libicucore.dylib in Frameworks */,
 				8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */,
@@ -2109,7 +2076,6 @@
 		17FC36AE141425D600AC3602 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				386083441C8A3D89006D1B47 /* zlib */,
 				17E5954E14F304000054EE08 /* QueryKit.xcodeproj */,
 				584D876015140D3500F24774 /* SPMySQLFramework.xcodeproj */,
 				58B906F811BD9B34000826E5 /* PSMTabBar */,
@@ -2146,39 +2112,6 @@
 				584754C2120A04560057631F /* Sequel Ace.qlgenerator */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		1AFEFE6724A21B0500BF2A6F /* fixtures */ = {
-			isa = PBXGroup;
-			children = (
-				1AFEFE6824A21B0500BF2A6F /* certs */,
-				1AFEFE6E24A21B0500BF2A6F /* keys */,
-			);
-			path = fixtures;
-			sourceTree = "<group>";
-		};
-		1AFEFE6824A21B0500BF2A6F /* certs */ = {
-			isa = PBXGroup;
-			children = (
-				1AFEFE6924A21B0500BF2A6F /* client-cert-crlf.pem */,
-				1AFEFE6A24A21B0500BF2A6F /* client-cert-bad-end.pem */,
-				1AFEFE6B24A21B0500BF2A6F /* client-cert-lf.pem */,
-				1AFEFE6C24A21B0500BF2A6F /* client-cert-cr.pem */,
-				1AFEFE6D24A21B0500BF2A6F /* client-cert-bad-start.pem */,
-			);
-			path = certs;
-			sourceTree = "<group>";
-		};
-		1AFEFE6E24A21B0500BF2A6F /* keys */ = {
-			isa = PBXGroup;
-			children = (
-				1AFEFE6F24A21B0500BF2A6F /* client-key-bad-end.pem */,
-				1AFEFE7024A21B0500BF2A6F /* client-key-cr.pem */,
-				1AFEFE7124A21B0500BF2A6F /* client-key-bad-start.pem */,
-				1AFEFE7224A21B0500BF2A6F /* client-key-lf.pem */,
-				1AFEFE7324A21B0500BF2A6F /* client-key-crlf.pem */,
-			);
-			path = keys;
 			sourceTree = "<group>";
 		};
 		296DC8A40F90914B002A3258 /* MGTemplateEngine */ = {
@@ -2225,7 +2158,6 @@
 			isa = PBXGroup;
 			children = (
 				38C613721C8977E600B3B6EF /* libz.tbd */,
-				38C613701C89777B00B3B6EF /* libz.1.2.5.tbd */,
 				1058C7A6FEA54F5311CA2CBB /* Linked Frameworks */,
 			);
 			name = Frameworks;
@@ -2240,14 +2172,6 @@
 			);
 			name = "Unit Tests";
 			path = UnitTests;
-			sourceTree = "<group>";
-		};
-		386083441C8A3D89006D1B47 /* zlib */ = {
-			isa = PBXGroup;
-			children = (
-				386083451C8A3D97006D1B47 /* zlib.1.2.4.h */,
-			);
-			name = zlib;
 			sourceTree = "<group>";
 		};
 		507FF10E1BBCC4A900104523 /* Utility */ = {
@@ -2265,12 +2189,10 @@
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
-				1AFEFE6724A21B0500BF2A6F /* fixtures */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
-				1A18B0D024A2072E0027517B /* SPValidateKeyAndCertFiles.m */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2521,7 +2443,6 @@
 				58B9075811BD9B34000826E5 /* NSString_AITruncation.h in Headers */,
 				58B9075A11BD9B34000826E5 /* PSMOverflowPopUpButton.h in Headers */,
 				58B9075C11BD9B34000826E5 /* PSMProgressIndicator.h in Headers */,
-				386083461C8A3D97006D1B47 /* zlib.1.2.4.h in Headers */,
 				58B9075E11BD9B34000826E5 /* PSMRolloverButton.h in Headers */,
 				58B9076011BD9B34000826E5 /* PSMTabBarCell.h in Headers */,
 				58B9076211BD9B34000826E5 /* PSMTabBarControl.h in Headers */,
@@ -2564,7 +2485,6 @@
 				17E20DEF12D6602F007F75A6 /* Copy Frameworks */,
 				380F4ED50FC0B50500B0BFD7 /* Sources */,
 				17E20DFF12D6609E007F75A6 /* Frameworks */,
-				1AFEFE8024A21EC100BF2A6F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -2751,23 +2671,6 @@
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1AFEFE8024A21EC100BF2A6F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1AFEFE8124A21ED900BF2A6F /* client-cert-crlf.pem in Resources */,
-				1AFEFE8224A21ED900BF2A6F /* client-cert-bad-end.pem in Resources */,
-				1AFEFE8324A21ED900BF2A6F /* client-cert-lf.pem in Resources */,
-				1AFEFE8424A21ED900BF2A6F /* client-cert-cr.pem in Resources */,
-				1AFEFE8524A21ED900BF2A6F /* client-cert-bad-start.pem in Resources */,
-				1AFEFE8624A21ED900BF2A6F /* client-key-bad-end.pem in Resources */,
-				1AFEFE8724A21ED900BF2A6F /* client-key-cr.pem in Resources */,
-				1AFEFE8824A21ED900BF2A6F /* client-key-bad-start.pem in Resources */,
-				1AFEFE8924A21ED900BF2A6F /* client-key-lf.pem in Resources */,
-				1AFEFE8A24A21ED900BF2A6F /* client-key-crlf.pem in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		584754BE120A04560057631F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2816,13 +2719,11 @@
 				17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */,
 				17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */,
 				17E6420A0EF020CB001BC333 /* DBView.xib in Resources */,
-				1AFEFE7C24A21B0500BF2A6F /* client-key-lf.pem in Resources */,
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
 				1761FD480EF03A6F00331368 /* MainMenu.xib in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
-				1AFEFE7924A21B0500BF2A6F /* client-key-bad-end.pem in Resources */,
 				58186D210F4CB38900851FE9 /* ConnectionErrorDialog.xib in Resources */,
 				B5E92F190F75B2D100012500 /* ExportDialog.xib in Resources */,
 				B57747D20F7A891A003B34F9 /* Preferences.xib in Resources */,
@@ -2838,7 +2739,6 @@
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
 				B58DA73C0FF8BBA500FDDACD /* PrintAccessory.xib in Resources */,
-				1AFEFE7524A21B0500BF2A6F /* client-cert-bad-end.pem in Resources */,
 				B58DA73A0FF8BB9E00FDDACD /* SSHQuestionDialog.xib in Resources */,
 				B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */,
 				8831EFB0224013AF00D10172 /* button_refreshTemplate.pdf in Resources */,
@@ -2876,7 +2776,6 @@
 				B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */,
 				8831EFBA2240154A00D10172 /* button_rightTemplate.pdf in Resources */,
 				17DD52B7115071D0007D8950 /* SPPrintTemplate.html in Resources */,
-				1AFEFE7624A21B0500BF2A6F /* client-cert-lf.pem in Resources */,
 				17F90E2C1210B34900274C98 /* Credits.rtf in Resources */,
 				17DD52C3115074B3007D8950 /* InfoPlist.strings in Resources */,
 				8831EFCD2240175400D10172 /* button_actionTemplate.pdf in Resources */,
@@ -2895,11 +2794,8 @@
 				BC09D7E012A786FB0030DB64 /* cancel-highlighted.png in Resources */,
 				BC09D7E112A786FB0030DB64 /* cancel-hovered-highlighted.png in Resources */,
 				BC09D7E212A786FB0030DB64 /* cancel-hovered.png in Resources */,
-				1AFEFE7824A21B0500BF2A6F /* client-cert-bad-start.pem in Resources */,
-				1AFEFE7724A21B0500BF2A6F /* client-cert-cr.pem in Resources */,
 				BC09D7E312A786FB0030DB64 /* cancel.png in Resources */,
 				58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */,
-				1AFEFE7424A21B0500BF2A6F /* client-cert-crlf.pem in Resources */,
 				58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */,
 				5843DA6C161FA35600EAA6D1 /* key-icon-alternate.png in Resources */,
 				583A278E23F06F1000FBE97B /* Colors.xcassets in Resources */,
@@ -2924,7 +2820,6 @@
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
 				C9C994491678B3E6001F5DA8 /* table-small-square.png in Resources */,
 				C9C9944A1678B3E6001F5DA8 /* table-small-square@2x.png in Resources */,
-				1AFEFE7D24A21B0500BF2A6F /* client-key-crlf.pem in Resources */,
 				964908C8249A77D00052FC4A /* ssh_config in Resources */,
 				8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */,
 				C9C9944D1678BCFA001F5DA8 /* table-small.png in Resources */,
@@ -2941,7 +2836,6 @@
 				BAE25E0120B32BDA00DD9A40 /* HelpViewer.xib in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
-				1AFEFE7A24A21B0500BF2A6F /* client-key-cr.pem in Resources */,
 				582E944A168374C1003459FD /* field-small-square.png in Resources */,
 				582E944C16837986003459FD /* hideconsole.png in Resources */,
 				582E945016837AA9003459FD /* network-small.png in Resources */,
@@ -2955,7 +2849,6 @@
 				582E948F168383F0003459FD /* table-view-small-square.png in Resources */,
 				582E9490168383F0003459FD /* table-view-small.png in Resources */,
 				582E94A816839AD5003459FD /* toolbar-preferences-autoupdate.png in Resources */,
-				1AFEFE7B24A21B0500BF2A6F /* client-key-bad-start.pem in Resources */,
 				582E94AA16839AEF003459FD /* toolbar-preferences-general.png in Resources */,
 				582E94AE16839C4A003459FD /* toolbar-preferences-notifications.png in Resources */,
 				582E94C716839D83003459FD /* toolbar-preferences-tables.png in Resources */,
@@ -2986,7 +2879,6 @@
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				50EA92641AB23EAD008D3C4F /* SPDatabaseCopy.m in Sources */,
-				1AFEFE6124A217D500BF2A6F /* SPValidateKeyAndCertFiles.m in Sources */,
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
@@ -3618,7 +3510,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
@@ -3651,7 +3543,7 @@
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Sequel Ace.app/Contents/MacOS/Sequel Ace";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
@@ -3682,7 +3574,7 @@
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Sequel Ace.app/Contents/MacOS/Sequel Ace";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
@@ -3713,7 +3605,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3734,7 +3626,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3755,7 +3647,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
@@ -3794,7 +3686,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -3845,7 +3737,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
@@ -3870,7 +3762,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.1.0;
-				OTHER_LDFLAGS = "$(SRCROOT)/Frameworks/zlib/libz.a";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3886,9 +3777,9 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 2036;
+				DYLIB_CURRENT_VERSION = 2040;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
@@ -3910,10 +3801,10 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 2036;
+				DYLIB_CURRENT_VERSION = 2040;
 				FRAMEWORK_VERSION = A;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3934,9 +3825,9 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 2036;
+				DYLIB_CURRENT_VERSION = 2040;
 				FRAMEWORK_VERSION = A;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3958,7 +3849,7 @@
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
@@ -3984,7 +3875,7 @@
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -4009,7 +3900,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -4036,7 +3927,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
@@ -4071,7 +3962,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4106,7 +3997,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
@@ -4139,7 +4030,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
@@ -4164,7 +4055,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.1.0;
-				OTHER_LDFLAGS = "$(SRCROOT)/Frameworks/zlib/libz.a";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -4182,7 +4072,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4208,7 +4098,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MARKETING_VERSION = 2.1.0;
-				OTHER_LDFLAGS = "$(SRCROOT)/Frameworks/zlib/libz.a";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -4244,7 +4133,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -4319,7 +4208,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2036;
+				CURRENT_PROJECT_VERSION = 2040;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;

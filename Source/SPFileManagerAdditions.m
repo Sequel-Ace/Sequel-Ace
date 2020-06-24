@@ -171,7 +171,6 @@ static NSString *DirectoryLocationDomain = @"DirectoryLocationDomain";
 	}
 	
 	NSData *startData = [detectorFileHandle readDataOfLength:500];
-	[detectorFileHandle release];
 	Byte *bytes = (Byte *)[startData bytes];
 	
 	if (bytes[0] == 0xff && bytes[1] == 0xfe && (startData.length < 4 || bytes[2] != 0 || bytes[3] != 0))
