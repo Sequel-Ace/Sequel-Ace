@@ -165,6 +165,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize sshPort;
 @synthesize useCompression;
 @synthesize bookmarks;
+@synthesize resolvedBookmarks;
 
 #ifdef SP_CODA
 @synthesize dbDocument;
@@ -2140,6 +2141,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 	
 	if (sshTunnel) (void)([sshTunnel setConnectionStateChangeSelector:nil delegate:nil]), SPClear(sshTunnel);
+
+
+	for(NSURL *url in resolvedBookmarks){
+		[url stopAccessingSecurityScopedResource];
+	}
 }
 
 #pragma mark - SPConnectionHandler
@@ -3381,12 +3387,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		prefs = [[NSUserDefaults standardUserDefaults] retain];
 		
 		bookmarks = [[NSMutableArray alloc] init];
+		resolvedBookmarks = [[NSMutableArray alloc] init];
 
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){
 			[bookmarks setArray:o];
 		}
 		
+		// we need to re-request access to places we've been before..
+		[self reRequestSecureAccess];
+
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk
 		// and the tree to be constructed.
 		favoritesController = [SPFavoritesController sharedFavoritesController];
@@ -3424,6 +3434,33 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	return self;
+}
+
+-(void)reRequestSecureAccess{
+
+	NSLog(@"reRequestSecureAccess to saved bookmarks");
+
+	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+
+		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
+
+			NSError *error = nil;
+
+			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
+													  options:NSURLBookmarkResolutionWithSecurityScope
+												relativeToURL:nil
+										  bookmarkDataIsStale:nil
+														error:&error];
+
+			if(!error){
+				[tmpURL startAccessingSecurityScopedResource];
+				[resolvedBookmarks addObject:tmpURL];
+			}
+			else{
+				NSLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+			}
+		}];
+	}];
 }
 
 /**
@@ -3793,7 +3830,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #endif
     
 
+	for(NSURL *url in resolvedBookmarks){
+		[url stopAccessingSecurityScopedResource];
+	}
+
 	SPClear(nibObjectsToRelease);
+	SPClear(bookmarks);
+	SPClear(resolvedBookmarks);
 
 	[self setConnectionKeychainID:nil];
 	if (connectionKeychainItemName)       SPClear(connectionKeychainItemName);
