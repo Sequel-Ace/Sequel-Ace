@@ -726,7 +726,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[[SPNavigatorController sharedNavigatorController] setIgnoreUpdate:NO];
 
 	// If Navigator runs in syncMode let it follow the selection
-	if([[SPNavigatorController sharedNavigatorController] syncMode]) {
+	if ([[[SPNavigatorController sharedNavigatorController] onMainThread] syncMode]) {
 		NSMutableString *schemaPath = [NSMutableString string];
 		
 		[schemaPath setString:[self connectionID]];
@@ -741,7 +741,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 #endif
 
 	// Start a task
-	[self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [chooseDatabaseButton titleOfSelectedItem]]];
+	[self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [[chooseDatabaseButton onMainThread] titleOfSelectedItem]]];
 	
 	NSDictionary *selectionDetails = [NSDictionary dictionaryWithObjectsAndKeys:database, @"database", item, @"item", nil];
 	
