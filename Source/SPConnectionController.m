@@ -339,7 +339,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[standardPasswordField undoManager] removeAllActionsWithTarget:standardPasswordField];
 			[[socketPasswordField undoManager] removeAllActionsWithTarget:socketPasswordField];
 			[[sshPasswordField undoManager] removeAllActionsWithTarget:sshPasswordField];
-		} 
+		}
 		else {
 			SPClear(connectionKeychainItemName);
 			SPClear(connectionKeychainItemAccount);
@@ -522,7 +522,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
 		NSString *selectedFilePath=[[keySelectionPanel URL] path];
-		NSString *abbreviatedFileName = [selectedFilePath stringByAbbreviatingWithTildeInPath];
 																		   
 		//delay the release so it won't happen while this block is still executing.
 		// jamesstout notes
@@ -534,13 +533,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			SPClear(keySelectionPanel);
 		});
 		
-		NSFileManager *fm=[NSFileManager defaultManager];
 		NSError *err=nil;
-		
-		NSString *keysDirectoryPath = [NSHomeDirectory() stringByAppendingPathComponent:@".keys"];
-		NSString *currentTimestampHash = [[NSString alloc] initWithFormat:@"%lu", (unsigned long)[[NSString stringWithFormat:@"%f-seeded", [[NSDate date] timeIntervalSince1970]] hash]];
-		NSString *internalPath = [keysDirectoryPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@", currentTimestampHash, [abbreviatedFileName lastPathComponent]]];
-
 		
 		if([keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
 		
@@ -584,12 +577,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				return;
 			}
 			
-			if (![fm copyItemAtPath:selectedFilePath toPath:internalPath error:&err])
-			{
-				NSLog(@"Could not copy file to internal filesystem - %@",[err localizedDescription]);
-			}
-
-			[self setSshKeyLocation:internalPath];
+			[self setSshKeyLocation:selectedFilePath];
 		}
 		// SSL key file selection
 		else if (sender == standardSSLKeyFileButton || sender == socketSSLKeyFileButton || sender == sslOverSSHKeyFileButton) {
@@ -604,13 +592,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				[self showValidationAlertForError:err];
 				return; // don't copy the bad key
 			}
-			
-			if (![fm copyItemAtPath:selectedFilePath toPath:internalPath error:&err])
-			{
-				NSLog(@"Could not copy file to internal filesystem - %@",[err localizedDescription]);
-			}
 
-			[self setSslKeyFileLocation:internalPath];
+			[self setSslKeyFileLocation:selectedFilePath];
 		}
 		// SSL certificate file selection
 		else if (sender == standardSSLCertificateButton || sender == socketSSLCertificateButton || sender == sslOverSSHCertificateButton) {
@@ -626,12 +609,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				return; // don't copy the bad cert
 			}
 			
-			if (![fm copyItemAtPath:selectedFilePath toPath:internalPath error:&err])
-			{
-				NSLog(@"Could not copy file to internal filesystem - %@",[err localizedDescription]);
-			}
-			
-			[self setSslCertificateFileLocation:internalPath];
+			[self setSslCertificateFileLocation:selectedFilePath];
 		}
 		// SSL CA certificate file selection
 		else if (sender == standardSSLCACertButton || sender == socketSSLCACertButton || sender == sslOverSSHCACertButton) {
@@ -641,12 +619,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				return;
 			}
 			
-			if (![fm copyItemAtPath:selectedFilePath toPath:internalPath error:&err])
-			{
-				NSLog(@"Could not copy file to internal filesystem - %@",[err localizedDescription]);
-			}
-
-			[self setSslCACertFileLocation:internalPath];
+			[self setSslCACertFileLocation:selectedFilePath];
 		}
 		
 		[self _startEditingConnection];
@@ -2141,8 +2114,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 	
 	if (sshTunnel) (void)([sshTunnel setConnectionStateChangeSelector:nil delegate:nil]), SPClear(sshTunnel);
-
-
+	
+	
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
@@ -3396,7 +3369,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		// we need to re-request access to places we've been before..
 		[self reRequestSecureAccess];
-
+		
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk
 		// and the tree to be constructed.
 		favoritesController = [SPFavoritesController sharedFavoritesController];
@@ -3437,21 +3410,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 -(void)reRequestSecureAccess{
-
+	
 	NSLog(@"reRequestSecureAccess to saved bookmarks");
 
 	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-
+		
 		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
-
+			
 			NSError *error = nil;
-
+			
 			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
 													  options:NSURLBookmarkResolutionWithSecurityScope
 												relativeToURL:nil
 										  bookmarkDataIsStale:nil
 														error:&error];
-
+			
 			if(!error){
 				[tmpURL startAccessingSecurityScopedResource];
 				[resolvedBookmarks addObject:tmpURL];
@@ -3829,7 +3802,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	SPClear(quickConnectCell);
 #endif
     
-
+	
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
