@@ -464,6 +464,11 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		[self _resizeWindowForCustomFilenameViewByHeightDelta:0];
 	}
 	
+	// should we reliquish access here?
+	// user clicked cancel, they may just click export again
+	// without selecting a folder again..
+	// tried it ... doesn't give good UX.
+	
 	[NSApp endSheet:[sender window] returnCode:[sender tag]];
 	[[sender window] orderOut:self];
 }
@@ -531,6 +536,12 @@ set_input:
 	
 	// Disable the cancel button
 	[sender setEnabled:NO];
+	
+	// should we reliquish access here?
+	// user clicked cancel, they may just click export again
+	// without selecting a folder again..
+	// let's try it
+	// No, bad UX.
 	
 	// Cancel all of the currently running operations
 	[operationQueue cancelAllOperations]; // async call
@@ -3891,7 +3902,12 @@ set_input:
 #pragma mark -
 #pragma mark Memory Management
 - (void)dealloc
-{	
+{
+	
+	// relinquish access to userChosenDirectory
+	[userChosenDirectory stopAccessingSecurityScopedResource];
+	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
+		
     SPClear(tables);
 	SPClear(exporters);
 	SPClear(exportFiles);
