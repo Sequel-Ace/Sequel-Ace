@@ -1,0 +1,14 @@
+name: PR Tests
+
+on: pull_request
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: macOS-latest
+    steps:
+    - name: Checkout the Git repository
+      uses: actions/checkout@v2
+    - name: Build and run tests
+      run: ./GitHubActions/build.sh tests
+
