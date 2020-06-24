@@ -661,9 +661,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[ruleFilterController setColumns:dataColumns];
 	// Restore preserved filter settings if appropriate and valid
 	[ruleFilterController restoreSerializedFilters:filtersToRestore];
-	// hide/show the rule filter editor, based on its previous state (so that it says visible when switching tables, if someone has enabled it and vice versa)
-	if(showFilterRuleEditor) {
-		[self setRuleEditorVisible:YES animate:NO];
+	// hide/show the rule filter editor, based on its previous state (so that it stays visible when switching tables, if someone has enabled it and vice versa)
+	if (showFilterRuleEditor) {
+		[self setRuleEditorVisible:YES animate:YES];
 		[toggleRuleFilterButton setState:NSOnState];
 	}
 	else {
