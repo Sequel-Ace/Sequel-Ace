@@ -43,12 +43,14 @@
 	NSMutableDictionary *tableContentStates;
 	NSUInteger historyPosition;
 	BOOL modifyingState;
+	BOOL navigatingFK;
 	BOOL toolbarItemVisible;
 }
 
 @property (readonly) NSUInteger historyPosition;
 @property (readonly) NSMutableArray *history;
 @property (readwrite, assign) BOOL modifyingState;
+@property (readwrite, assign) BOOL navigatingFK;
 
 // Interface interaction
 - (void) updateToolbarItem;

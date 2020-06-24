@@ -894,6 +894,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		[[tableContentView onMainThread] selectRowIndexes:selectionSet byExtendingSelection:NO];
+		// Scroll to selection (if needed)
+		[[tableContentView onMainThread] scrollRowToVisible:[[tableContentView onMainThread] selectedRow]];
+
 		tableRowsSelectable = previousTableRowsSelectable;
 	}
 
@@ -2409,42 +2412,50 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 																						operator:filterComparison
 																						  values:@[targetFilterValue]];
 
-			// If the link is within the current table, apply filter settings manually
-			if ([[refDictionary objectForKey:@"table"] isEqualToString:selectedTable]) {
-				[ruleFilterController restoreSerializedFilters:filterSettings];
-				[self setRuleEditorVisible:YES animate:YES];
-				activeFilter = SPTableContentFilterSourceRuleFilter;
-				tableFilterRequired = YES;
-			}
-			else {
-				// Switch databases if needed
-				if (![[refDictionary objectForKey:@"database"] isEqualToString:[tableDocumentInstance database]]) {
-					NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
-					NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
-					[[tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
-				}
-				[self setFiltersToRestore:filterSettings];
-				[self setActiveFilterToRestore:SPTableContentFilterSourceRuleFilter];
-				// Attempt to switch to the target table
-				if (![tablesListInstance selectItemWithName:[refDictionary objectForKey:@"table"]]) {
+			NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
+			NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
+
+			if (![databaseToJumpTo isEqualToString:[tableDocumentInstance database]]) {
+				// fk points to a table in another database; switch database, and select the target table
+				[[tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
+			} else if (![tableToJumpTo isEqualToString:selectedTable]) {
+				// fk points to another table in the same database: switch to the target table
+				if (![tablesListInstance selectItemWithName:tableToJumpTo]) {
 					NSBeep();
 					[self setFiltersToRestore:nil];
 					[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
 				}
+			} else {
+				// fk points to same table; just apply filter settings manually
+				tableFilterRequired = YES;
 			}
+			
+			if (tableFilterRequired) {
+				[ruleFilterController restoreSerializedFilters:filterSettings];
+				activeFilter = SPTableContentFilterSourceRuleFilter;
+			} else {
+				[self setFiltersToRestore:filterSettings];
+				[self setActiveFilterToRestore:SPTableContentFilterSourceRuleFilter];
+			}
+			[self setRuleEditorVisible:YES animate:YES];
 
 #ifndef SP_CODA
-			// End state and ensure a new history entry
+			// End modifying state
 			[spHistoryControllerInstance setModifyingState:NO];
-			[spHistoryControllerInstance updateHistoryEntries];
 #endif
 
 			// End the task
 			[tableDocumentInstance endTask];
 
 #ifndef SP_CODA
-			// If the same table is the target, trigger a filter task on the main thread
-			if (tableFilterRequired) [self performSelectorOnMainThread:@selector(filterTable:) withObject:self waitUntilDone:NO];
+			if (tableFilterRequired) {
+				// If the same table is the target, trigger a filter task on the main thread
+				[self performSelectorOnMainThread:@selector(filterTable:) withObject:self waitUntilDone:NO];
+			} else {
+				// Will prevent table-load from overwriting the filtersToRestore we set above
+				// See [SPHistoryController restoreViewStates]
+				[spHistoryControllerInstance setNavigatingFK:YES];
+			}
 #endif
 		});
 	}
