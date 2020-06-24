@@ -5,7 +5,6 @@ about: Create a report to help us improve
 ---
 
 <!-- Please search existing issues to avoid creating duplicates. -->
-<!-- For application crashes on macOS 10.14 (Mojave) please see issue #3116. -->
 
 - Sequel Ace Version:
 - macOS Version:
@@ -20,6 +19,9 @@ A clear and concise description of what the bug is.
 
 **Expected Behaviour**
 A clear and concise description of what you expected to happen.
+
+**Is Issue Present in [Latest Beta](https://github.com/Sequel-Ace/Sequel-Ace/releases)?**
+Please try the [latest beta](https://github.com/Sequel-Ace/Sequel-Ace/releases). If the latest beta works, we've fixed the issue already and will get the fix out soon.
 
 **Additional Context**
 Add any other context about the problem here.
