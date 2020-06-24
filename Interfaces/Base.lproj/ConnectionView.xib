@@ -68,7 +68,7 @@
             <rect key="frame" x="0.0" y="0.0" width="882" height="513"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <splitView identifier="connectionViewSplitView" fixedFrame="YES" autosaveName="DBViewSplitter" dividerStyle="thin" vertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5741" customClass="SPSplitView">
+                <splitView fixedFrame="YES" autosaveName="DBViewSplitter" dividerStyle="thin" vertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5741" customClass="SPSplitView">
                     <rect key="frame" x="0.0" y="0.0" width="882" height="513"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                     <subviews>

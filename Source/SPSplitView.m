@@ -788,8 +788,6 @@
 	for (NSView *eachView in [self subviews]) {
 		[viewDetails addObject:[NSNumber numberWithFloat:[self _lengthOfView:eachView]]];
 	}
-	if ([self.identifier isEqualToString:@"connectionViewSplitView"])
-	NSLog(@"[DBGGB] _saveAutoSaveSizes() saving width into NSUserDefaults: %@", [viewDetails objectAtIndex:0]);
 	[[NSUserDefaults standardUserDefaults] setObject:viewDetails forKey:[NSString stringWithFormat:@"SPSplitView Lengths %@", [self autosaveName]]];
 }
 
@@ -807,9 +805,6 @@
 	if (!viewDetails) {
 		return;
 	}
-	
-	if ([self.identifier isEqualToString:@"connectionViewSplitView"])
-	NSLog(@"[DBGGB] _restoreAutoSaveSizes() width from NSUserDefaults: %@", [viewDetails objectAtIndex:0]);
 
 	for (NSUInteger i = 0; i < [[self subviews] count] - 1; i++) {
 		[self setPosition:[[viewDetails objectAtIndex:i] floatValue] ofDividerAtIndex:i];
@@ -944,9 +939,6 @@
 	sizesCalculated = calloc(subviewCount, sizeof(BOOL));
 	resizeProportions = calloc(subviewCount, sizeof(float));
 
-	if ([self.identifier isEqualToString:@"connectionViewSplitView"])
-	NSLog(@"[DBGGB] _suggestedSizesForTargetSize(%.1f, %d, %d) : total: %.1f; view[0]: %.1f, view[1]: %.1f", targetSize, respectStruts, respectConstraints, totalCurrentSize, originalSizes[0], originalSizes[1]);
-
 	// Prepopulate them
 	for (i = 0; i < subviewCount; i++) {
 		sizesCalculated[i] = NO;
@@ -1028,9 +1020,6 @@
 	free(maxSizes);
 	free(sizesCalculated);
 	free(resizeProportions);
-
-	if ([self.identifier isEqualToString:@"connectionViewSplitView"])
-	NSLog(@"[DBGGB] _suggestedSizesForTargetSize(%.1f, %d, %d) = %@", targetSize, respectStruts, respectConstraints, outputSizes);
 
 	return outputSizes;
 }
