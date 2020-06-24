@@ -10,5 +10,5 @@ jobs:
     - name: Checkout the Git repository
       uses: actions/checkout@v2
     - name: Build and run tests
-      run: ./GitHubActions/build.sh tests
+      run: ./build.sh tests
 
