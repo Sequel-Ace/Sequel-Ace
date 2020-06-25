@@ -360,8 +360,8 @@
 		9651262324926F1200E65B53 /* QueryKit.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; };
 		9651262524926F1600E65B53 /* SPMySQL.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		9691789424A562490012ED42 /* Default Bundles in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9691789324A562490012ED42 /* Default Bundles */; };
-		9691789724A5626D0012ED42 /* Default Themes in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9691789624A5626D0012ED42 /* Default Themes */; };
+		9691789424A562490012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 9691789324A562490012ED42 /* Default Bundles */; };
+		9691789724A5626D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 9691789624A5626D0012ED42 /* Default Themes */; };
 		96B0A1512493DF3E007BB270 /* ShortcutRecorder.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; };
 		96B0A1522493DF3E007BB270 /* ShortcutRecorder.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		96B0A16124941670007BB270 /* SequelAceTunnelAssistant in Copy SequelAceTunnelAssistant and sign */ = {isa = PBXBuildFile; fileRef = 58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -567,15 +567,16 @@
 			name = "Copy QuickLook Plugins";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		9691789224A562330012ED42 /* CopyFiles */ = {
+		9691789224A562330012ED42 /* Copy Default Themes and Default Bundles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 12;
 			files = (
-				9691789724A5626D0012ED42 /* Default Themes in CopyFiles */,
-				9691789424A562490012ED42 /* Default Bundles in CopyFiles */,
+				9691789724A5626D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */,
+				9691789424A562490012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */,
 			);
+			name = "Copy Default Themes and Default Bundles";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		96B0A162249416B1007BB270 /* Copy SequelAceTunnelAssistant and sign */ = {
@@ -2598,7 +2599,7 @@
 				96B0A162249416B1007BB270 /* Copy SequelAceTunnelAssistant and sign */,
 				4DECC4940EC2B447008D359E /* Copy Frameworks */,
 				58475762120A1DC40057631F /* Copy QuickLook Plugins */,
-				9691789224A562330012ED42 /* CopyFiles */,
+				9691789224A562330012ED42 /* Copy Default Themes and Default Bundles */,
 			);
 			buildRules = (
 			);
