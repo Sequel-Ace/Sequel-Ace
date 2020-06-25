@@ -39,6 +39,7 @@
 @synthesize history;
 @synthesize historyPosition;
 @synthesize modifyingState;
+@synthesize navigatingFK;
 
 #pragma mark Setup and teardown
 
@@ -52,6 +53,7 @@
 		tableContentStates = [[NSMutableDictionary alloc] init];
 		historyPosition = NSNotFound;
 		modifyingState = NO;
+		navigatingFK = NO;
 	}
 	return self;	
 }
@@ -500,6 +502,12 @@ abort_entry_load:
 
 	// Return if the history state is currently being modified
 	if (modifyingState) return;
+	
+	// Return (and disable navigatingFK), if we are navigating using a Foreign-Key button
+	if (navigatingFK) {
+		navigatingFK = NO;
+		return;
+	}
 
 	// Return if no database or table are selected
 	if (!theDatabase || !theTable) return;
