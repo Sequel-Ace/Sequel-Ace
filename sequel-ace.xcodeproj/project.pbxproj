@@ -360,8 +360,8 @@
 		9651262324926F1200E65B53 /* QueryKit.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; };
 		9651262524926F1600E65B53 /* SPMySQL.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		9691789424A562490012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 9691789324A562490012ED42 /* Default Bundles */; };
-		9691789724A5626D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 9691789624A5626D0012ED42 /* Default Themes */; };
+		969178A524A5640D0012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 969178A324A5640D0012ED42 /* Default Bundles */; };
+		969178A624A5640D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 969178A424A5640D0012ED42 /* Default Themes */; };
 		96B0A1512493DF3E007BB270 /* ShortcutRecorder.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; };
 		96B0A1522493DF3E007BB270 /* ShortcutRecorder.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		96B0A16124941670007BB270 /* SequelAceTunnelAssistant in Copy SequelAceTunnelAssistant and sign */ = {isa = PBXBuildFile; fileRef = 58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -573,8 +573,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 12;
 			files = (
-				9691789724A5626D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */,
-				9691789424A562490012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */,
+				969178A524A5640D0012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */,
+				969178A624A5640D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */,
 			);
 			name = "Copy Default Themes and Default Bundles";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1097,8 +1097,8 @@
 		9651261D24926B7F00E65B53 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/FilterTableWindow.xib; sourceTree = "<group>"; };
 		9651261E24926B7F00E65B53 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/HelpViewer.xib; sourceTree = "<group>"; };
 		9651261F24926C7900E65B53 /* Sequel Ace.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Sequel Ace.entitlements"; sourceTree = "<group>"; };
-		9691789324A562490012ED42 /* Default Bundles */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Default Bundles"; sourceTree = "<group>"; };
-		9691789624A5626D0012ED42 /* Default Themes */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Default Themes"; sourceTree = "<group>"; };
+		969178A324A5640D0012ED42 /* Default Bundles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Default Bundles"; path = "SharedSupport/Default Bundles"; sourceTree = "<group>"; };
+		969178A424A5640D0012ED42 /* Default Themes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Default Themes"; path = "SharedSupport/Default Themes"; sourceTree = "<group>"; };
 		9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SequelAceTunnelAssistant.entitlements; sourceTree = "<group>"; };
 		9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = xibLocalizationPostprocessor.entitlements; sourceTree = "<group>"; };
 		96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ShortcutRecorder.framework; path = Frameworks/ShortcutRecorder.framework; sourceTree = "<group>"; };
@@ -2161,8 +2161,6 @@
 		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
 			isa = PBXGroup;
 			children = (
-				9691789624A5626D0012ED42 /* Default Themes */,
-				9691789324A562490012ED42 /* Default Bundles */,
 				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
 				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
 				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
@@ -2173,6 +2171,8 @@
 				17E642050EF020A3001BC333 /* Interfaces */,
 				17E641430EF01E90001BC333 /* Resources */,
 				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
+				969178A324A5640D0012ED42 /* Default Bundles */,
+				969178A424A5640D0012ED42 /* Default Themes */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
 			);
 			name = "sequel-pro";
