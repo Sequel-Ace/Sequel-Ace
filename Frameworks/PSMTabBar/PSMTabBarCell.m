@@ -38,6 +38,9 @@
         _isEdited = NO;
         _isPlaceholder = NO;
 		_backgroundColor = nil;
+		self.accessibilityRole = NSAccessibilityButtonRole;
+		self.accessibilityHelp = [self accessibilityHelpGenerated];
+		self.accessibilityFocused = ([self tabState] == 2);
     }
     return self;
 }
@@ -508,51 +511,19 @@
 #pragma mark -
 #pragma mark Accessibility
 
--(BOOL)accessibilityIsIgnored {
-	return NO;
+- (BOOL)accessibilityPerformPress {
+	[_customControlView tabClick:self];
+	return YES;
 }
 
-- (id)accessibilityAttributeValue:(NSString *)attribute {
-	id attributeValue = nil;
-
-	if ([attribute isEqualToString: NSAccessibilityRoleAttribute]) {
-		attributeValue = NSAccessibilityButtonRole;
-	} else if ([attribute isEqualToString: NSAccessibilityHelpAttribute]) {
-		if ([[[self customControlView] delegate] respondsToSelector:@selector(accessibilityStringForTabView:objectCount:)]) {
-			attributeValue = [NSString stringWithFormat:@"%@, %lu %@", [self stringValue],
-																		(unsigned long)[self count],
-																		[[[self customControlView] delegate] accessibilityStringForTabView:[[self customControlView] tabView] objectCount:[self count]]];
-		} else {
-			attributeValue = [self stringValue];
-		}
-	} else if ([attribute isEqualToString: NSAccessibilityFocusedAttribute]) {
-		attributeValue = [NSNumber numberWithBool:([self tabState] == 2)];
+- (NSString *)accessibilityHelpGenerated {
+	if ([[[self customControlView] delegate] respondsToSelector:@selector(accessibilityStringForTabView:objectCount:)]) {
+		return [NSString stringWithFormat:@"%@, %lu %@",
+				[self stringValue],
+				(unsigned long)[self count],
+				[[[self customControlView] delegate] accessibilityStringForTabView:[[self customControlView] tabView] objectCount:[self count]]];
 	} else {
-        attributeValue = [super accessibilityAttributeValue:attribute];
-    }
-
-	return attributeValue;
-}
-
-- (NSArray *)accessibilityActionNames
-{
-	static NSArray *actions;
-	
-	if (!actions) {
-		actions = [[NSArray alloc] initWithObjects:NSAccessibilityPressAction, nil];
-	}
-	return actions;
-}
-
-- (NSString *)accessibilityActionDescription:(NSString *)action
-{
-	return NSAccessibilityActionDescription(action);
-}
-	
-- (void)accessibilityPerformAction:(NSString *)action {
-	if ([action isEqualToString:NSAccessibilityPressAction]) {
-		// this tab was selected
-		[_customControlView tabClick:self];
+		return [self stringValue];
 	}
 }
 

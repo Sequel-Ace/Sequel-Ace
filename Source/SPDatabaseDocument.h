@@ -117,6 +117,7 @@
 	IBOutlet NSBox *taskProgressLayer;
 	IBOutlet id taskProgressIndicator;
 	IBOutlet id taskDescriptionText;
+	IBOutlet id taskDurationTime;
 	IBOutlet NSButton *taskCancelButton;
 #endif
 	
@@ -193,6 +194,8 @@
 	BOOL statusLoaded;
 	BOOL triggersLoaded;
 	BOOL relationsLoaded;
+	BOOL initComplete;
+	BOOL allowSplitViewResizing;
 
 	NSString *selectedDatabase;
 	NSString *mySQLVersion;
@@ -223,7 +226,9 @@
 	CGFloat taskDisplayLastValue;
 	CGFloat taskProgressValueDisplayInterval;
 	NSTimer *taskDrawTimer;
+	NSTimer *queryExecutionTimer;
 	NSDate *taskFadeInStartDate;
+	NSDate *queryStartDate;
 	BOOL taskCanBeCancelled;
 	id taskCancellationCallbackObject;
 	SEL taskCancellationCallbackSelector;

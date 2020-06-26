@@ -42,12 +42,12 @@ typedef enum {
 @interface SPMySQLResult : NSObject <NSFastEnumeration> {
 
 	// Wrapped MySQL result set and its encoding
-	struct st_mysql_res *resultSet;
+	struct MYSQL_RES *resultSet;
 	NSStringEncoding stringEncoding;
 
 	// Number of fields in the result set, and the field names and information
 	NSUInteger numberOfFields;
-	struct st_mysql_field *fieldDefinitions;
+	struct MYSQL_FIELD *fieldDefinitions;
 	NSString **fieldNames;
 	
 	// Number of rows in the result set and an internal data position counter

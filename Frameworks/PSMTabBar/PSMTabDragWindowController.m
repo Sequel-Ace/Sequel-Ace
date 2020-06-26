@@ -110,7 +110,8 @@
 	[[self window] setFrame:frame display:YES];
 	
 	if (![_animation isAnimating]) {
-		[_animation release], _animation = nil;
+		[_animation release];
+		_animation = nil;
 		[timer invalidate];
 		_timer = nil;
 	}

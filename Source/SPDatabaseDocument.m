@@ -102,6 +102,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 @interface SPDatabaseDocument ()
 
+// Privately redeclare as read/write to get the synthesized setter
+@property (readwrite, assign) BOOL allowSplitViewResizing;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -143,6 +146,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 @synthesize tablesListInstance;
 @synthesize tableContentInstance;
 @synthesize customQueryInstance;
+@synthesize allowSplitViewResizing;
 
 #pragma mark -
 
@@ -164,6 +168,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		_supportsEncoding = NO;
 		databaseListIsSelectable = YES;
 		_queryMode = SPInterfaceQueryMode;
+
+		initComplete = NO;
+		allowSplitViewResizing = NO;
 
 		chooseDatabaseButton = nil;
 #ifndef SP_CODA /* init ivars */
@@ -726,7 +733,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[[SPNavigatorController sharedNavigatorController] setIgnoreUpdate:NO];
 
 	// If Navigator runs in syncMode let it follow the selection
-	if([[SPNavigatorController sharedNavigatorController] syncMode]) {
+	if ([[[SPNavigatorController sharedNavigatorController] onMainThread] syncMode]) {
 		NSMutableString *schemaPath = [NSMutableString string];
 		
 		[schemaPath setString:[self connectionID]];
@@ -741,7 +748,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 #endif
 
 	// Start a task
-	[self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [chooseDatabaseButton titleOfSelectedItem]]];
+	[self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [[chooseDatabaseButton onMainThread] titleOfSelectedItem]]];
 	
 	NSDictionary *selectionDetails = [NSDictionary dictionaryWithObjectsAndKeys:database, @"database", item, @"item", nil];
 	
@@ -1362,9 +1369,40 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				
 		// Schedule appearance of the task window in the near future, using a frame timer.
 		taskFadeInStartDate = [[NSDate alloc] init];
+		queryStartDate = [[NSDate alloc] init];
 		taskDrawTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0 target:self selector:@selector(fadeInTaskProgressWindow:) userInfo:nil repeats:YES] retain];
+		queryExecutionTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(showQueryExecutionTime) userInfo:nil repeats:YES] retain];
+
 #endif
 	}
+}
+
+
+/**
+ * Show query execution time on progress window.
+ */
+-(void)showQueryExecutionTime{
+
+	double timeSinceQueryStarted = [[NSDate date] timeIntervalSinceDate:queryStartDate];
+
+	NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
+	formatter.allowedUnits = NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
+	formatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorPad;
+	NSString *queryRunningTime = [formatter stringFromTimeInterval:timeSinceQueryStarted];
+	
+	NSShadow *textShadow = [[NSShadow alloc] init];
+	[textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
+	[textShadow setShadowOffset:NSMakeSize(1.0f, -1.0f)];
+	[textShadow setShadowBlurRadius:3.0f];
+	
+	NSMutableDictionary *attributes = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+									   [NSFont boldSystemFontOfSize:13.0f], NSFontAttributeName,
+									   textShadow, NSShadowAttributeName,
+									   nil];
+	NSAttributedString *queryRunningTimeString = [[NSAttributedString alloc] initWithString:queryRunningTime attributes:attributes];
+	
+	[taskDurationTime setAttributedStringValue:queryRunningTimeString];
+	
 }
 
 /**
@@ -1505,6 +1543,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			SPClear(taskFadeInStartDate);
 		}
 
+		if (queryExecutionTimer) {
+			queryStartDate = [[NSDate alloc] init];
+			[self showQueryExecutionTime];
+			[queryExecutionTimer invalidate], SPClear(queryExecutionTimer);
+			SPClear(queryExecutionTimer);
+		}
+		
 		// Hide the task interface and reset to indeterminate
 		if (taskDisplayIsIndeterminate) [taskProgressIndicator stopAnimation:self];
 		[taskProgressWindow setAlphaValue:0.0f];
@@ -3395,7 +3440,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Update the keys
 		[spf setObject:[[SPQueryController sharedQueryController] favoritesForFileURL:[self fileURL]] forKey:SPQueryFavorites];
-		[spf setObject:[[SPQueryController sharedQueryController] historyForFileURL:[self fileURL]] forKey:SPQueryHistory];
+		// DON'T SAVE QUERY HISTORY IN EXPORTS FOR SECURITY
+		// [spfStructure setObject:[stateDetails objectForKey:SPQueryHistory] forKey:SPQueryHistory];
 		[spf setObject:[[SPQueryController sharedQueryController] contentFilterForFileURL:[self fileURL]] forKey:SPContentFilters];
 
 		// Save it again
@@ -3466,7 +3512,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Retrieve details and add to the appropriate dictionaries
 	NSMutableDictionary *stateDetails = [NSMutableDictionary dictionaryWithDictionary:[self stateIncludingDetails:stateDetailsToSave]];
 	[spfStructure setObject:[stateDetails objectForKey:SPQueryFavorites] forKey:SPQueryFavorites];
-	[spfStructure setObject:[stateDetails objectForKey:SPQueryHistory] forKey:SPQueryHistory];
+	// DON'T SAVE QUERY HISTORY IN EXPORTS FOR SECURITY
+	// [spfStructure setObject:[stateDetails objectForKey:SPQueryHistory] forKey:SPQueryHistory];
 	[spfStructure setObject:[stateDetails objectForKey:SPContentFilters] forKey:SPContentFilters];
 	[stateDetails removeObjectsForKeys:@[SPQueryFavorites, SPQueryHistory, SPContentFilters]];
 	[spfData addEntriesFromDictionary:stateDetails];
@@ -4428,6 +4475,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[connectionController updateFavoriteNextKeyView];
 	}
 #endif
+	
+	initComplete = YES;
 }
 
 /**
@@ -5881,7 +5930,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification
 {
 	[self updateChooseDatabaseToolbarItemWidth];
-	[connectionController updateSplitViewSize];
+	if (initComplete) {
+		allowSplitViewResizing = YES;
+		[connectionController updateSplitViewSize];
+	}
 }
 
 - (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMinimumPosition ofSubviewAt:(NSInteger)dividerIndex
@@ -7629,6 +7681,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (selectedDatabase) SPClear(selectedDatabase);
 	if (mySQLVersion) SPClear(mySQLVersion);
 	if (taskDrawTimer) (void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
+	if (queryExecutionTimer) [queryExecutionTimer invalidate], SPClear(queryExecutionTimer);
 	if (taskFadeInStartDate) SPClear(taskFadeInStartDate);
 	if (queryEditorInitString) SPClear(queryEditorInitString);
 	if (sqlFileURL) SPClear(sqlFileURL);

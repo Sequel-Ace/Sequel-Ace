@@ -529,7 +529,8 @@ static NSInteger potentialMinimumForArray(NSArray *array, NSInteger minimum)
     NSTabViewItem *selectedTabViewItem = [[_control tabView] selectedTabViewItem];
     NSMenuItem *menuItem;
     
-    [_overflowMenu release], _overflowMenu = nil;
+	[_overflowMenu release];
+	_overflowMenu = nil;
     
     for (i = 0; i < cellCount; i++) {
         cell = [cells objectAtIndex:i];

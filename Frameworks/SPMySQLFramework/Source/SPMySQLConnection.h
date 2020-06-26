@@ -54,7 +54,7 @@
 	NSString *sslCipherList;
 
 	// MySQL connection details and state
-	struct st_mysql *mySQLConnection;
+	struct MYSQL *mySQLConnection;
 	SPMySQLConnectionState state;
 	BOOL connectedWithSSL;
 	BOOL userTriggeredDisconnect;

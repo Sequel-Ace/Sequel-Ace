@@ -29,7 +29,7 @@
 /**
  * Variable and prototype definitions required for flex syntax hightlighting parsing.
  */
-extern NSUInteger yylex();
+extern NSUInteger yylex(void);
 extern NSUInteger yyuoffset, yyuleng;
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 void yy_switch_to_buffer(YY_BUFFER_STATE);

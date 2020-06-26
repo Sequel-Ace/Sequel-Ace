@@ -276,7 +276,7 @@
 	}
 
 	NSString *openPath;
-	if((openPath = [prefs objectForKey:@"openPath"])) {
+	if((openPath = [prefs objectForKey:@"exportPath"])) {
 		// Doc says calling +[NSURL URLWithString:] with nil is fine,
 		// but at least on 10.6 this will cause an exception
 		[openPanel setDirectoryURL:[NSURL URLWithString:openPath]];
@@ -287,7 +287,7 @@
 		[openPanel makeFirstResponder:nil];
 
 		// Save values to preferences
-		[prefs setObject:[[openPanel directoryURL] path] forKey:@"openPath"];
+		[prefs setObject:[[openPanel directoryURL] path] forKey:@"exportPath"];
 		[prefs setObject:[[importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
 
 		// Close NSOpenPanel sheet
@@ -311,10 +311,35 @@
 		}
 
 		if (importFileName == nil) return;
+		
+		// Check to see if current connection has existing tables, if so warn
+		if([[tablesListInstance tables] count] > 1){
+			SPBeginAlertSheet(NSLocalizedString(@"The current database already has existing tables, importing may overwrite data. Are you sure you want to continue?", @"title of warning when trying to import data when tables already exist"),
+							  NSLocalizedString(@"Yes, continue anyway", @"Yes, continue anyway"),	// Main button
+							  NSLocalizedString(@"Cancel import", @"Cancel import"),	// Alternate button
+							  nil,	// Other button
+							  [tableDocumentInstance parentWindow],	// Window to attach to
+							  self,	// Modal delegate
+							  @selector(importOverwriteWarningSheetDidEnd:returnCode:contextInfo:),	// Did end selector
+							  importFileName,	// Contextual info for selectors
+							  NSLocalizedString(@"The chosen import file can potentially overwrite existing data. You should use caution when proceeding with the import.", @"message of warning when trying to import data when tables already exist."));
 
-		// Begin the import process
+			return;
+		}
+		
 		[self _startBackgroundImportTaskForFilename:importFileName];
 	}];
+}
+
+/**
+ * Alert sheet callback method - invoked when the error sheet is closed.
+ */
+- (void)importOverwriteWarningSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(NSString *)importFileName
+{
+	if (returnCode == NSAlertDefaultReturn && importFileName != nil) {
+		// Begin the import process
+		[self _startBackgroundImportTaskForFilename:importFileName];
+	};
 }
 
 /**
@@ -758,7 +783,7 @@
 	NSMutableArray *parsePositions = [[NSMutableArray alloc] init];
 	NSArray *csvRowArray;
 	NSInteger fileChunkMaxLength = 256 * 1024;
-	NSUInteger csvRowsPerQuery = 50;
+	NSUInteger csvRowsPerQuery = 1000;
 	NSUInteger csvRowsThisQuery;
 	NSUInteger fileTotalLength = 0;
 	BOOL fileIsCompressed;
@@ -1247,6 +1272,7 @@
 	[notification release];
 
 	SPMainQSync(^{
+
 		if(importIntoNewTable) {
 
 			// Select the new table
