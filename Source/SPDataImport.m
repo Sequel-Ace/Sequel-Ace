@@ -782,7 +782,7 @@
 	NSMutableArray *parsedRows = [[NSMutableArray alloc] init];
 	NSMutableArray *parsePositions = [[NSMutableArray alloc] init];
 	NSArray *csvRowArray;
-	NSInteger fileChunkMaxLength = 512 * 1024;
+	NSInteger fileChunkMaxLength = 256 * 1024;
 	NSUInteger csvRowsPerQuery = 1000;
 	NSUInteger csvRowsThisQuery;
 	NSUInteger fileTotalLength = 0;
