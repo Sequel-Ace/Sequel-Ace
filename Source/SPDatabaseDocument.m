@@ -3440,7 +3440,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Update the keys
 		[spf setObject:[[SPQueryController sharedQueryController] favoritesForFileURL:[self fileURL]] forKey:SPQueryFavorites];
-		[spf setObject:[[SPQueryController sharedQueryController] historyForFileURL:[self fileURL]] forKey:SPQueryHistory];
+		// DON'T SAVE QUERY HISTORY IN EXPORTS FOR SECURITY
+		// [spfStructure setObject:[stateDetails objectForKey:SPQueryHistory] forKey:SPQueryHistory];
 		[spf setObject:[[SPQueryController sharedQueryController] contentFilterForFileURL:[self fileURL]] forKey:SPContentFilters];
 
 		// Save it again
@@ -3511,7 +3512,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Retrieve details and add to the appropriate dictionaries
 	NSMutableDictionary *stateDetails = [NSMutableDictionary dictionaryWithDictionary:[self stateIncludingDetails:stateDetailsToSave]];
 	[spfStructure setObject:[stateDetails objectForKey:SPQueryFavorites] forKey:SPQueryFavorites];
-	[spfStructure setObject:[stateDetails objectForKey:SPQueryHistory] forKey:SPQueryHistory];
+	// DON'T SAVE QUERY HISTORY IN EXPORTS FOR SECURITY
+	// [spfStructure setObject:[stateDetails objectForKey:SPQueryHistory] forKey:SPQueryHistory];
 	[spfStructure setObject:[stateDetails objectForKey:SPContentFilters] forKey:SPContentFilters];
 	[stateDetails removeObjectsForKeys:@[SPQueryFavorites, SPQueryHistory, SPContentFilters]];
 	[spfData addEntriesFromDictionary:stateDetails];
