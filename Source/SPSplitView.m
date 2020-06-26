@@ -807,8 +807,7 @@
 	}
 
 	for (NSUInteger i = 0; i < [[self subviews] count] - 1; i++) {
-        // /1.88 fixes the MacOS Catalina issue with the site picker having random width on startup
- 		[self setPosition:[[viewDetails objectAtIndex:i] floatValue]/1.88 ofDividerAtIndex:i];
+		[self setPosition:[[viewDetails objectAtIndex:i] floatValue] ofDividerAtIndex:i];
 	}
 }
 
@@ -948,6 +947,11 @@
 		} else {
 			resizeProportions[i] = originalSizes[i] / totalCurrentSize;
 		}
+	}
+
+	if (delegate && [delegate respondsToSelector:@selector(allowSplitViewResizing)] && ![delegate allowSplitViewResizing]) {
+		resizeProportions[0] = 0;
+		resizeProportions[1] = 1 - resizeProportions[0];
 	}
 
 	// In a loop, determine whether any constraints would be hit, and if so, match them
