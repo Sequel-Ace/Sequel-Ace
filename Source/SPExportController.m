@@ -640,7 +640,7 @@ set_input:
 				if(beenHereBefore == NO){
 					// create a bookmark
 					NSError *error = nil;
-					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
+					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
 																			 includingResourceValuesForKeys:nil
 																							  relativeToURL:nil
 																									  error:&error];

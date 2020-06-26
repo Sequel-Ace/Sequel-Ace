@@ -559,10 +559,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			if(beenHereBefore == NO){
 				// create a bookmark
 				NSError *error = nil;
-				NSData *tmpAppScopedBookmark = [keySelectionPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
-																		 includingResourceValuesForKeys:nil
-																						  relativeToURL:nil
-																								  error:&error];
+				// this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
+				NSData *tmpAppScopedBookmark = [keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+																							   | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
+															   includingResourceValuesForKeys:nil
+																				relativeToURL:nil
+																						error:&error];
 				// save to prefs
 				if(tmpAppScopedBookmark && !error) {
 					[bookmarks addObject:@{keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
