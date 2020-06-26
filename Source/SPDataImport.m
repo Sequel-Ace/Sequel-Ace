@@ -930,7 +930,7 @@
 		// Step through the data buffer, identifying line endings to parse the data with
 		csvDataBufferBytes = [csvDataBuffer bytes];
 		dataBufferLength = [csvDataBuffer length];
-		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition+) {
+		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
 			if (csvDataBufferBytes[dataBufferPosition] == 0x0A || csvDataBufferBytes[dataBufferPosition] == 0x0D || allDataRead) {
 #warning This EOL detection logic will break for multibyte encodings (like UTF16)!
 				// Keep reading through any other line endings
