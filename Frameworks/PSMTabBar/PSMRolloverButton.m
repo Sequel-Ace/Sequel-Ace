@@ -94,7 +94,7 @@
 {
     // assign a tracking rect to watch for mouse enter/exit
 	NSRect	trackRect = [self bounds];
-	NSPoint	localPoint = [self convertPoint:[[self window] convertScreenToBase:[NSEvent mouseLocation]] fromView:nil];
+	NSPoint	localPoint = [self convertPoint:[[self window] convertPointToScreen:[NSEvent mouseLocation]] fromView:nil];
 
 	BOOL mouseInside = NSPointInRect(localPoint, trackRect);
 	

@@ -29,7 +29,7 @@ Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects
 ## Compatibility
 
 - macOS >= 10.10
-- MySQL >= 5.5
+- MySQL >= 5.6
 - MariaDB
 
 ## License

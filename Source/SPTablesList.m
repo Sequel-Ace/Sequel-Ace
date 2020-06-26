@@ -206,7 +206,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// views; on MySQL versions >= 5.0.02 select the "full" list to also select the table type column.
 //		theResult = [mySQLConnection queryString:@"SHOW /*!50002 FULL*/ TABLES"];
 		theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
-		[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
+		[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
 		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
 		if ([theResult numberOfFields] == 1) {
 			for (NSArray *eachRow in theResult) {
@@ -214,24 +214,24 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
 			}
 		} else {
-			for (NSArray *eachRow in theResult) {
+			for (NSDictionary *eachRow in theResult) {
 
 				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
 				// return NSNull, thus catch that case for safety reasons
-				id tableName = [eachRow objectAtIndex:0];
+				id tableName = [eachRow objectForKey:@"Name"];
 				if ([tableName isNSNull]) {
 					tableName = @"...";
 				}
 				[tables addObject:tableName];
 				
 				// comments is usefull
-				id tableComment = [eachRow lastObject];
+				id tableComment = [eachRow objectForKey:@"Comment"];
 				if ([tableComment isNSNull]) {
 					tableComment = @"";
 				}
 				[tableComments setValue:tableComment forKey:tableName];
 
-				if ([[eachRow lastObject] isEqualToString:@"VIEW"] || [[eachRow objectAtIndex:1] isEqualToString:@"VIEW"]) {
+				if ([@"VIEW" isEqualToString:tableComment]) {
 					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
 					tableListContainsViews = YES;
 				} else {

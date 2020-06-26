@@ -255,7 +255,7 @@
 	// wrong data with invalid length
 	{
 		NSData *inp = [@"12345678901234567890123456789012345678901234567" dataUsingEncoding:NSASCIIStringEncoding];
-		XCTAssertNil([inp dataDecryptedWithKey:key], @"Trying to decrypt data with invalid length.");
+		XCTAssertThrows([inp dataDecryptedWithKey:key], @"Trying to decrypt data with invalid length.");
 	}
 	// simple decryption test
 	{

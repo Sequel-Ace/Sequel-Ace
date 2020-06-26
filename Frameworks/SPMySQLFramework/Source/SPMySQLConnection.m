@@ -432,7 +432,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 {
     serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
     NSLog(@"%@", [serverVariableVersion lowercaseString]);
-    NSString *someRegexp = @"(.*)10(\.[3-9]+[0-9]*(\.[0-9]*))*-(mariadb)(.*)";
+    NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
     
     if ([myTest evaluateWithObject: [serverVariableVersion lowercaseString]]){
@@ -602,7 +602,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Disable automatic reconnection, as it's handled in-framework to preserve
 	// options, encodings and connection state.
-	my_bool falseMyBool = FALSE;
+	bool falseMyBool = FALSE;
 	mysql_options(theConnection, MYSQL_OPT_RECONNECT, &falseMyBool);
 
 	// Set the connection timeout
