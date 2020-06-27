@@ -14,7 +14,7 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 #### Main Tabs
 
 | Keyboard shortcut | Description     |
-|-------------------|-----------------|
+|:------------------|:----------------|
 | `⌘ 1`             | Table Structure |
 | `⌘ 2`             | Table Content   |
 | `⌘ 3`             | Table Relations |
@@ -25,7 +25,7 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 #### General Shortcuts
 
 | Keyboard shortcut | Description                                |
-|-------------------|--------------------------------------------|
+|:------------------|:-------------------------------------------|
 | `⌘ N`             | New Window (Connection File)               |
 | `⌘ T`             | New Tab(Connection File)                   |
 | `⇧ ⌘ A`           | Add Connection To Favorites                |
@@ -66,7 +66,7 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 #### Select
 
 | Keyboard shortcut | Description               |
-|-------------------|---------------------------|
+|:------------------|:--------------------------|
 | `⌃ W`             | Select current word       |
 | `⌃ L`             | Select current line       |
 | `⇧ ⌘ B`           | Select enclosing brackets |
@@ -75,7 +75,7 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 #### Table Structure Tab
 
 | Keyboard shortcut | Description              |
-|-------------------|--------------------------|
+|:------------------|:-------------------------|
 | `⌥ ⌘ A`           | Add a new field          |
 | `⌫`               | Delete selected field    |
 | `⌘ D`             | Duplicate selected field |
@@ -85,7 +85,7 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 #### Table Content Tab
 
 | Keyboard shortcut | Description            |
-|-------------------|------------------------|
+|:------------------|:-----------------------|
 | `⌥ ⌘ A`           | Add a new row          |
 | `⌫`               | Delete selected row(s) |
 | `⌘ D`             | Duplicate selected row |
@@ -94,7 +94,7 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 #### Custom Query Tab
 
 | Keyboard shortcut                | Description                                  |
-|----------------------------------|----------------------------------------------|
+|:---------------------------------|:---------------------------------------------|
 | `⌥ ⌘ R`                          | Run all queries                              |
 | `⌅` or `⌘ R`                     | Run current query or selection               |
 | `⌘ [`                            | Shift line or selection rightwards           |
@@ -105,11 +105,10 @@ Get the most out of Sequel Pro by remembering the following keyboard shortcuts.
 | `↩`, `⇥`, `Double-Click`         | Insertion of an item                         |
 | `⇧ + ↩`, `⇧ ⇥`, `⇧ Double-Click` | Insertion full schema reference              |
 
-Keep Window Open after Insertion
-_holding down `⌃` while insertion_
+Keep Window Open after Insertion by _holding down `⌃` while insertion_
 
 | Keyboard shortcut | Description                                                   |
-|-------------------|---------------------------------------------------------------|
+|:------------------|:--------------------------------------------------------------|
 | `⌃ ⎋`             | Fuzzy Search                                                  |
 | `⎋`               | Close Window                                                  |
 | `F5`              | Spell Checker Completion (narrow-down list)                   |
@@ -122,4 +121,3 @@ _holding down `⌃` while insertion_
 | `⌥ ⌘ 1`           | Show all database names as completion list                    |
 | `⌥ ⌘ 2`           | Show all table and view names as completion list              |
 | `⌥ ⌘ 3`           | Show all table names from current database as completion list |
-
