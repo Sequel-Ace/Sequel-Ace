@@ -6,7 +6,7 @@ Sequel Ace starts at version 2.0 in honor of Sequel Pro's 1.x releases. We do no
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.0.x   | :white_check_mark: |
+| 2.x     | :white_check_mark: |
 | < 2.0   | :x:                |
 
 ## Reporting a Vulnerability
