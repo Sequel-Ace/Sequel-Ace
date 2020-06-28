@@ -1620,7 +1620,6 @@
 
 	NSMutableString *infoAboutUpdatedDefaultBundles = [NSMutableString string];
 	BOOL doBundleUpdate = ([[NSUserDefaults standardUserDefaults] objectForKey:@"doBundleUpdate"]) ? YES : NO;
-	doBundleUpdate = YES;
 
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
