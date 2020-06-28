@@ -2662,11 +2662,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
-	SPTreeNode              *node         = (SPTreeNode *)item;
+	SPTreeNode *node = (SPTreeNode *)item;
 	SPFavoriteTextFieldCell *favoriteCell = (SPFavoriteTextFieldCell *)cell;
-
-	// Draw entries with the small system font by default
-	[cell setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 
 	// Set an image as appropriate; the quick connect image for that entry, no image for other
 	// top-level items, the folder image for group nodes, or the database image for other nodes.
@@ -2711,11 +2708,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
 {
-	if (item == quickConnectItem) {
-		return 24.f;
-	}
-
-	return ([[item parentNode] parentNode]) ? 17.f : 22.f;
+	return 24.f;
 }
 
 - (NSString *)outlineView:(NSOutlineView *)outlineView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn item:(id)item mouseLocation:(NSPoint)mouseLocation
