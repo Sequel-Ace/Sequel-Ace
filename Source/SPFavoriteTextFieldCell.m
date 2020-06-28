@@ -47,7 +47,7 @@
     SPFavoriteTextFieldCell *cell = (SPFavoriteTextFieldCell *)[super copyWithZone:zone];
 
 	cell->drawsDividerUnderCell = drawsDividerUnderCell;
-	cell->labelColor            = [labelColor copyWithZone:zone];
+	cell->labelColor = [labelColor copyWithZone:zone];
     
 	return cell;
 }
@@ -76,7 +76,7 @@
 
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 {
-	if(labelColor) {
+	if (labelColor) {
 		CGFloat round = (cellFrame.size.height/2);
 		NSBezierPath *bg = [NSBezierPath bezierPathWithRoundedRect:cellFrame xRadius:round yRadius:round];
 
