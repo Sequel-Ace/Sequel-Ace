@@ -1859,22 +1859,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			case SPTableTypeView:
 				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
 				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
 				break;
 			case SPTableTypeTable:
 				[aCell setImage:[NSImage imageNamed:@"table-small"]];
-				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeProc:
 				[aCell setImage:[NSImage imageNamed:@"proc-small"]];
 				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
 				break;
 			case SPTableTypeFunc:
 				[aCell setImage:[NSImage imageNamed:@"func-small"]];
 				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
 				break;
 			case SPTableTypeNone:
 				[aCell setImage:nil];
@@ -1882,7 +1878,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				break;
 			default:
 				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
 		}
 
 	} 
@@ -1898,7 +1893,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	return (row == 0) ? 25 : 17;
+	return (row == 0) ? 25 : 20;
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
