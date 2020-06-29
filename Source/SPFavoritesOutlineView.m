@@ -99,7 +99,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 	if ([[event characters] length] && [[event characters] characterAtIndex:0] == NSTabCharacter) {
 		if (([event modifierFlags] & NSEventModifierFlagShift) != NSEventModifierFlagShift) {
 			[[self window] selectKeyViewFollowingView:self];
-		} 
+		}
 		else {
 			[[self window] selectKeyViewPrecedingView:self];
 		}
@@ -143,41 +143,41 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 }
 
 /**		
-  * Disclosure triangles for the top-level items hae been removed, and similarly other		
-  * paddings need altering.  This involves increasing the padding - and reducing the width -		
-  * of all rows to compensate.		
-  */		
- - (NSRect)frameOfCellAtColumn:(NSInteger)columnIndex row:(NSInteger)rowIndex		
- {		
- 	NSRect superFrame = [super frameOfCellAtColumn:columnIndex row:rowIndex];		
+ * Disclosure triangles for the top-level items hae been removed, and similarly other
+ * paddings need altering.  This involves increasing the padding - and reducing the width -
+ * of all rows to compensate.
+ */
+- (NSRect)frameOfCellAtColumn:(NSInteger)columnIndex row:(NSInteger)rowIndex
+{
+	NSRect superFrame = [super frameOfCellAtColumn:columnIndex row:rowIndex];
 
-  	// Don't alter padding for the top-level items		
- 	if ([[self delegate] respondsToSelector:@selector(outlineView:isGroupItem:)]) {		
- 		if ([[self delegate] outlineView:self isGroupItem:[self itemAtRow:rowIndex]]) {		
- 			return superFrame;		
- 		}		
- 	}		
+	// Don't alter padding for the top-level items
+	if ([[self delegate] respondsToSelector:@selector(outlineView:isGroupItem:)]) {
+		if ([[self delegate] outlineView:self isGroupItem:[self itemAtRow:rowIndex]]) {
+			return superFrame;
+		}
+	}
 
-  	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width - SPFavoritesOutlineViewUnindent, superFrame.size.height);		
- }		
+	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width - SPFavoritesOutlineViewUnindent, superFrame.size.height);
+}
 
-  /**		
-  * Disclosure triangles for the top-level items have been removed, the frames for other		
-  * disclosure items need to be similarly moved.		
-  */		
- - (NSRect)frameOfOutlineCellAtRow:(NSInteger)rowIndex		
- {		
- 	NSRect superFrame = [super frameOfOutlineCellAtRow:rowIndex];		
+/**
+ * Disclosure triangles for the top-level items have been removed, the frames for other
+ * disclosure items need to be similarly moved.
+ */
+- (NSRect)frameOfOutlineCellAtRow:(NSInteger)rowIndex
+{
+	NSRect superFrame = [super frameOfOutlineCellAtRow:rowIndex];
 
-  	// Return NSZeroRect if the row is a group row		
- 	if ([[self delegate] respondsToSelector:@selector(outlineView:isGroupItem:)]) {		
- 		if ([[self delegate] outlineView:self isGroupItem:[self itemAtRow:rowIndex]]) {		
- 			return NSZeroRect;		
- 		}		
- 	}		
+	// Return NSZeroRect if the row is a group row
+	if ([[self delegate] respondsToSelector:@selector(outlineView:isGroupItem:)]) {
+		if ([[self delegate] outlineView:self isGroupItem:[self itemAtRow:rowIndex]]) {
+			return NSZeroRect;
+		}
+	}
 
-  	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width, superFrame.size.height);		
- }
+	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width, superFrame.size.height);
+}
 
 /**
  * If the delegate is a SPConnectionController, and editing is currently in
@@ -186,7 +186,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 - (void)highlightSelectionInClipRect:(NSRect)clipRect
 {
 	// Only proceed if a the delegate is a SPConnectionController and a favorite being edited
-	if ([[self delegate] isKindOfClass:[SPConnectionController class]] && 
+	if ([[self delegate] isKindOfClass:[SPConnectionController class]] &&
 		[(SPConnectionController *)[self delegate] isEditingConnection] &&
 		[(SPConnectionController *)[self delegate] selectedFavorite])
 	{
