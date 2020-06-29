@@ -453,7 +453,7 @@
 	if (tableView == infoTable) {
 		if (rowIndex > 0 && [[tableColumn identifier] isEqualToString:@"info"]) {
 			[(ImageAndTextCell*)cell setImage:[NSImage imageNamed:@"table-property"]];
-			[(ImageAndTextCell*)cell setIndentationLevel:1];
+			[(ImageAndTextCell*)cell setIndentationLevel:0];
 			[(ImageAndTextCell*)cell setDrawsBackground:NO];
 		} 
 		else {

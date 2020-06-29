@@ -1858,7 +1858,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		switch([NSArrayObjectAtIndex(filteredTableTypes, rowIndex) integerValue]) {
 			case SPTableTypeView:
 				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
-				[aCell setIndentationLevel:1];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeTable:
 				[aCell setImage:[NSImage imageNamed:@"table-small"]];
@@ -1866,18 +1866,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				break;
 			case SPTableTypeProc:
 				[aCell setImage:[NSImage imageNamed:@"proc-small"]];
-				[aCell setIndentationLevel:1];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeFunc:
 				[aCell setImage:[NSImage imageNamed:@"func-small"]];
-				[aCell setIndentationLevel:1];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeNone:
 				[aCell setImage:nil];
 				[aCell setIndentationLevel:0];
 				break;
 			default:
-				[aCell setIndentationLevel:1];
+				[aCell setIndentationLevel:0];
 		}
 
 	} 
