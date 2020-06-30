@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>author</key>
+	<string>Andrew Fulton</string>
+	<key>category</key>
+	<string>Format</string>
+	<key>command</key>
+	<string>#!/usr/bin/php
+
+&lt;pre&gt;
+&lt;?php
+function goFormatVarExport($string) {
+	return preg_replace(array(
+		'/=&gt;\s+array\(/im',
+		'/array\(\s+\)/im',
+	), array(
+		'=&gt; array(',
+		'array()',
+	), str_replace('array (', 'array(', $string));
+}
+
+print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
+?&gt;
+&lt;/pre&gt;</string>
+	<key>contact</key>
+	<string>ns@zbaxvv.pbz</string>
+	<key>description</key>
+	<string>Deserializes those PHP objects that drupal loves so much.</string>
+	<key>input</key>
+	<string>selectedtext</string>
+	<key>internalKeyEquivalent</key>
+	<dict>
+		<key>characters</key>
+		<string>D</string>
+		<key>keyCode</key>
+		<integer>2</integer>
+		<key>modifierFlags</key>
+		<integer>1179648</integer>
+	</dict>
+	<key>keyEquivalent</key>
+	<string>$@D</string>
+	<key>name</key>
+	<string>Deserialize PHP</string>
+	<key>output</key>
+	<string>showashtml</string>
+	<key>scope</key>
+	<string>inputfield</string>
+	<key>uuid</key>
+	<string>8F858F4D-9DCC-488A-B01C-D9F7FA32FE32</string>
+</dict>
+</plist>

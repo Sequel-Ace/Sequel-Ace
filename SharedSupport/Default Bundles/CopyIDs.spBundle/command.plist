@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>author</key>
+	<string>Matt Dolan</string>
+	<key>category</key>
+	<string>Copy</string>
+	<key>command</key>
+	<string>cat | awk 'BEGIN {
+	ORS = "";
+}
+{
+	id = $1;
+	if (NR &gt; 2) {
+		print ","
+	}
+	if (NR &gt; 1) {
+		print id
+	}
+}' | __CF_USER_TEXT_ENCODING=$UID:0x8000100:0x8000100 pbcopy
+</string>
+	<key>contact</key>
+	<string>zngg@uhyynonybb.pb.hx</string>
+	<key>description</key>
+	<string>Copies the ID (assumed to be the first field) from each record, as a comma separated string.
+
+Ideal for using in a subsequent query, e.g.:
+UPDATE ... WHERE id IN (1,2,3,4)</string>
+	<key>input</key>
+	<string>selectedtablerowsastab</string>
+	<key>keyEquivalent</key>
+	<string></string>
+	<key>name</key>
+	<string>Copy IDs</string>
+	<key>output</key>
+	<string>showastexttooltip</string>
+	<key>scope</key>
+	<string>datatable</string>
+	<key>uuid</key>
+	<string>3C9F6E07-DF65-44D3-B0F2-8220E9BE009C</string>
+</dict>
+</plist>
