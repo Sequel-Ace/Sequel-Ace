@@ -800,6 +800,7 @@
 
 - (IBAction)undeleteDefaultBundles:(id)sender
 {
+	[undeleteTableView reloadData];
 	[NSApp beginSheet:undeleteSheet
 	   modalForWindow:[self window] 
 		modalDelegate:self
