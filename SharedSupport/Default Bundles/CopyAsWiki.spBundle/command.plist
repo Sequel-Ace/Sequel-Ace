@@ -94,7 +94,7 @@ print "\n";
 		<integer>262144</integer>
 	</dict>
 	<key>keyEquivalent</key>
-	<string>^c</string>
+	<string></string>
 	<key>name</key>
 	<string>Copy as Wiki</string>
 	<key>output</key>
