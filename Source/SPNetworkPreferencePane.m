@@ -176,21 +176,26 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (IBAction)pickSSHConfig:(id)sender
 {
+	// retrieve the file manager in order to fetch the current user's home
+	// directory
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	
 	_currentFilePanel = [NSOpenPanel openPanel];
+	[_currentFilePanel setTitle:@"Choose ssh config"];
 	[_currentFilePanel setCanChooseFiles:YES];
 	[_currentFilePanel setCanChooseDirectories:NO];
 	[_currentFilePanel setAllowsMultipleSelection:YES];
 	[_currentFilePanel setAccessoryView:hiddenFileView];
 	[_currentFilePanel setResolvesAliases:NO];
+	[_currentFilePanel setDirectoryURL:[fileManager.homeDirectoryForCurrentUser URLByAppendingPathComponent:@".ssh"]];
 	[self updateHiddenFiles];
 	
 	[prefs addObserver:self
 			forKeyPath:SPHiddenKeyFileVisibilityKey
 			   options:NSKeyValueObservingOptionNew
 			   context:NULL];
-	
-	[_currentFilePanel beginSheetModalForWindow:[_currentAlert window]
-							  completionHandler:^(NSInteger returnCode)
+	// Get the main window for the document.
+	[_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode)
 	 {
 		// only process data, when the user pressed ok
 		if (returnCode != NSModalResponseOK) {
