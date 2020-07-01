@@ -41,6 +41,7 @@
 {
 	IBOutlet NSView *sshClientPickerView;
 	IBOutlet NSTextField *sshClientPath;
+	IBOutlet NSTextField *sshConfigPath;
 	IBOutlet NSView *hiddenFileView;
 	IBOutlet NSTableView *sslCipherView;
 	
@@ -49,7 +50,12 @@
 	NSOpenPanel *_currentFilePanel;
 	NSMutableArray *sslCiphers;
 }
+
+@property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (readwrite, retain) NSMutableArray<NSURL *> *resolvedBookmarks;
+
 - (IBAction)pickSSHClientViaFileBrowser:(id)sender;
 - (IBAction)pickSSHClient:(id)sender;
+- (IBAction)pickSSHConfig:(id)sender;
 - (IBAction)resetCipherList:(id)sender;
 @end

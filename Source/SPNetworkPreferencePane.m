@@ -42,18 +42,30 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 @implementation SPNetworkPreferencePane
 
+@synthesize bookmarks;
+
 - (instancetype)init
 {
 	self = [super init];
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
 	}
+	
+	bookmarks = [[NSMutableArray alloc] init];
+	// resolvedBookmarks = [[NSMutableArray alloc] init];
+
+	id o;
+	if((o = [prefs objectForKey:SPSecureBookmarks])){
+		[bookmarks setArray:o];
+	}
+	
 	return self;
 }
 
 - (void)dealloc
 {
 	SPClear(sslCiphers);
+	SPClear(bookmarks);
 	[super dealloc];
 }
 
@@ -124,7 +136,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	
 	[prefs addObserver:self
 			forKeyPath:SPHiddenKeyFileVisibilityKey
-	           options:NSKeyValueObservingOptionNew
+			   options:NSKeyValueObservingOptionNew
 			   context:NULL];
 	
 	[_currentFilePanel beginSheetModalForWindow:[_currentAlert window] completionHandler:^(NSInteger result) {
@@ -163,6 +175,93 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	SPClear(_currentAlert);
 }
 
+- (IBAction)pickSSHConfig:(id)sender
+{
+	_currentFilePanel = [NSOpenPanel openPanel];
+	[_currentFilePanel setCanChooseFiles:YES];
+	[_currentFilePanel setCanChooseDirectories:NO];
+	[_currentFilePanel setAllowsMultipleSelection:YES];
+	[_currentFilePanel setAccessoryView:hiddenFileView];
+	[_currentFilePanel setResolvesAliases:NO];
+	[self updateHiddenFiles];
+	
+	[prefs addObserver:self
+			forKeyPath:SPHiddenKeyFileVisibilityKey
+			   options:NSKeyValueObservingOptionNew
+			   context:NULL];
+	
+	[_currentFilePanel beginSheetModalForWindow:[_currentAlert window]
+							  completionHandler:^(NSInteger returnCode)
+	 {
+		// only process data, when the user pressed ok
+		if (returnCode != NSModalResponseOK) {
+			return;
+		}
+		
+		// TODO: - fetch result from the panel and save it as a bookmark
+		// NOTE: - get "inspiration" from SPConnectionController :D
+		
+		// release the file picker panel later on.
+		dispatch_async(NSOperationQueue.currentQueue.underlyingQueue, ^{
+			SPClear(_currentFilePanel);
+		});
+		
+		// since ssh configs are able to consist of multiple files, bookmarks
+		// for every selected file should be created in order to access them
+		// read-only.
+		[_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+			NSLog(@"processing %lu - %@", idxURL, url.absoluteString);
+			// check if the file is out of the sandbox
+			if ([_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
+				NSLog(@"got access to: %@", url.absoluteString);
+				
+				BOOL __block beenHereBefore = NO;
+				
+				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+					// check, if a bookmark already exists
+					if (dict[url.absoluteString] != nil) {
+						beenHereBefore = YES;
+						*stop = YES;
+					}
+				}];
+				
+				// if no bookmark exist, create on
+				if (beenHereBefore == NO) {
+					NSError *error = nil;
+					
+					NSData *tmpAppScopedBookmark = [url
+													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope |
+																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
+													includingResourceValuesForKeys:nil
+													relativeToURL:nil
+													error:&error];
+					
+					if (tmpAppScopedBookmark && !error) {
+						[bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
+						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+					}
+				}
+			}
+			
+			if (idxURL == 0) {
+				NSLog(@"setting the config file to the text field");
+				[sshConfigPath setStringValue: [url path]];
+			}
+		}];
+		
+		NSString *newPath = [sshConfigPath stringValue];
+		if (![newPath length]) {
+			[prefs removeObjectForKey:SPSSHConfigFile];
+		} else {
+			NSLog(@"saving new path");
+			[prefs setObject:newPath forKey:SPSSHConfigFile];
+			NSLog(@"%@", newPath);
+			NSLog(@"%@", SPSSHConfigFile);
+		}
+		_currentFilePanel = nil;
+	}];
+}
+
 #pragma mark -
 #pragma mark SSL cipher list methods
 
@@ -170,7 +269,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 {
 	NSArray *supportedCiphers = [SPNetworkPreferencePane defaultSSLCipherList];
 	[sslCiphers removeAllObjects];
-
+	
 	NSString *userCipherString = [prefs stringForKey:SPSSLCipherListKey];
 	if(userCipherString) {
 		//expand user list
