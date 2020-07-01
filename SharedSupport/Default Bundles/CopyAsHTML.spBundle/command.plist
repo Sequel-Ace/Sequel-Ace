@@ -100,5 +100,7 @@ print "&lt;/table&gt;\n";
 	<string>none</string>
 	<key>uuid</key>
 	<string>31FD6D95-CED5-4870-9A19-5A1396216C37</string>
+	<key>isDefaultBundle</key>
+	<true/>
 </dict>
 </plist>

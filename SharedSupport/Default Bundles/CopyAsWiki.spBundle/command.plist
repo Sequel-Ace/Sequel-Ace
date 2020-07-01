@@ -107,5 +107,7 @@ print "\n";
 	<string>none</string>
 	<key>uuid</key>
 	<string>5B20D1B9-9C60-4D9F-B51B-5F742665557E</string>
+	<key>isDefaultBundle</key>
+	<true/>
 </dict>
 </plist>
