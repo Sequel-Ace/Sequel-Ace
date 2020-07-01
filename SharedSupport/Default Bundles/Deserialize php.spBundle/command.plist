@@ -48,7 +48,7 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 	<key>scope</key>
 	<string>inputfield</string>
 	<key>uuid</key>
-	<string>8F858F4D-9DCC-488A-B01C-D9F7FA32FE32</string>
+	<string>4E0126ED-3AC6-4BB5-B836-5F9718FE36D5</string>
 	<key>isDefaultBundle</key>
 	<true/>
 </dict>
