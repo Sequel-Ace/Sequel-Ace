@@ -52,7 +52,6 @@
 }
 
 @property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
-@property (readwrite, retain) NSMutableArray<NSURL *> *resolvedBookmarks;
 
 - (IBAction)pickSSHClientViaFileBrowser:(id)sender;
 - (IBAction)pickSSHClient:(id)sender;

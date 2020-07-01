@@ -52,8 +52,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	}
 	
 	bookmarks = [[NSMutableArray alloc] init];
-	// resolvedBookmarks = [[NSMutableArray alloc] init];
-
+	
 	id o;
 	if((o = [prefs objectForKey:SPSecureBookmarks])){
 		[bookmarks setArray:o];
@@ -197,20 +196,13 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		if (returnCode != NSModalResponseOK) {
 			return;
 		}
-		
-		// TODO: - fetch result from the panel and save it as a bookmark
-		// NOTE: - get "inspiration" from SPConnectionController :D
-		
+
 		// release the file picker panel later on.
-		dispatch_async(NSOperationQueue.currentQueue.underlyingQueue, ^{
-			SPClear(_currentFilePanel);
-		});
-		
+
 		// since ssh configs are able to consist of multiple files, bookmarks
 		// for every selected file should be created in order to access them
 		// read-only.
 		[_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
-			NSLog(@"processing %lu - %@", idxURL, url.absoluteString);
 			// check if the file is out of the sandbox
 			if ([_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
 				NSLog(@"got access to: %@", url.absoluteString);
@@ -230,12 +222,15 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 					NSError *error = nil;
 					
 					NSData *tmpAppScopedBookmark = [url
-													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope |
+													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+																			 |
 																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
 													includingResourceValuesForKeys:nil
 													relativeToURL:nil
 													error:&error];
 					
+					// save the bookmark to the preferences in order to access
+					// them later in the SPConnectionController
 					if (tmpAppScopedBookmark && !error) {
 						[bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
 						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
@@ -243,8 +238,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 				}
 			}
 			
+			// set the config path to the first selected file
 			if (idxURL == 0) {
-				NSLog(@"setting the config file to the text field");
 				[sshConfigPath setStringValue: [url path]];
 			}
 		}];
@@ -253,11 +248,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		if (![newPath length]) {
 			[prefs removeObjectForKey:SPSSHConfigFile];
 		} else {
-			NSLog(@"saving new path");
 			[prefs setObject:newPath forKey:SPSSHConfigFile];
-			NSLog(@"%@", newPath);
-			NSLog(@"%@", SPSSHConfigFile);
 		}
+		
 		_currentFilePanel = nil;
 	}];
 }
