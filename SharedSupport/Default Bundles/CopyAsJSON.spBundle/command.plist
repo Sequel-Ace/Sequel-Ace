@@ -115,7 +115,7 @@ Version 1.0</string>
 		<integer>262144</integer>
 	</dict>
 	<key>keyEquivalent</key>
-	<string>^c</string>
+	<string></string>
 	<key>name</key>
 	<string>Copy as JSON</string>
 	<key>output</key>
