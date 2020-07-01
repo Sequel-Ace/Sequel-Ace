@@ -60,7 +60,7 @@
                 <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="r1S-eS-uJK"/>
                 <outlet property="sshClientPath" destination="yQV-9I-7us" id="eUn-5b-NBa"/>
                 <outlet property="sshClientPickerView" destination="D6L-76-0Ik" id="gUn-jl-Tfb"/>
-                <outlet property="sshConfigPath" destination="on9-UJ-WZI" id="8aV-rG-0si"/>
+                <outlet property="sshConfigPath" destination="on9-UJ-WZI" id="cB5-ug-r1L"/>
                 <outlet property="sslCipherView" destination="RuH-Yq-cdH" id="pF5-VG-sY0"/>
                 <outlet property="view" destination="641" id="2154"/>
             </connections>
@@ -1028,7 +1028,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="on9-UJ-WZI">
-                    <rect key="frame" x="226" y="248" width="120" height="16"/>
+                    <rect key="frame" x="226" y="248" width="220" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="/path/to/ssh/config" id="9Yv-Uy-f5M">
                         <font key="font" metaFont="system"/>
@@ -1036,9 +1036,9 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
-                        <binding destination="117" name="value" keyPath="values.SSHConfigFile" id="wqF-7J-HeC">
+                        <binding destination="117" name="value" keyPath="values.ssh_config" id="ier-RP-N5K">
                             <dictionary key="options">
-                                <string key="NSNullPlaceholder">System default</string>
+                                <string key="NSNullPlaceholder">Sequel Ace default</string>
                             </dictionary>
                         </binding>
                     </connections>
