@@ -76,7 +76,7 @@ while($rowData) {
 	$rowData=&lt;&gt;;
 }
 
-print "\n"; 
+print "\n";
 ' | __CF_USER_TEXT_ENCODING=$UID:0x8000100:0x8000100 pbcopy</string>
 	<key>contact</key>
 	<string>yvivh.ghqbe@tznvy.pbz</string>
@@ -107,5 +107,7 @@ print "\n";
 	<string>none</string>
 	<key>uuid</key>
 	<string>5B20D1B9-9C60-4D9F-B51B-5F742665557E</string>
+	<key>isDefaultBundle</key>
+ 	<true/>
 </dict>
 </plist>

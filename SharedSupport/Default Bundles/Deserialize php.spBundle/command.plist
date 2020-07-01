@@ -49,5 +49,7 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>8F858F4D-9DCC-488A-B01C-D9F7FA32FE32</string>
+	<key>isDefaultBundle</key>
+ 	<true/>
 </dict>
 </plist>
