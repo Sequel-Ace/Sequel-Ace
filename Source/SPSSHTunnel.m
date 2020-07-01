@@ -366,7 +366,14 @@ static unsigned short getRandomPort();
 		TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@/.keys/ssh_known_hosts_strict", NSHomeDirectory()]);
 		
 		// Use a custom ssh config file
-		TA(@"-F", [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile]);
+		NSString *sshConfigFile = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile];
+		
+		// If the config is not set, use the default one
+		if (sshConfigFile == nil) {
+			sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+		}
+		
+		TA(@"-F", sshConfigFile);
 
 		// Specify an identity file if available
 		if (identityFilePath) {
