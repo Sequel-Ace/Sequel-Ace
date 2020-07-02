@@ -9,6 +9,7 @@
         <customObject id="-2" userLabel="File's Owner" customClass="SPPreferenceController">
             <connections>
                 <outlet property="editorPreferencePane" destination="2144" id="2148"/>
+                <outlet property="filePreferencePane" destination="bKg-6I-v9A" id="wt8-L0-QxT"/>
                 <outlet property="generalPreferencePane" destination="2074" id="2076"/>
                 <outlet property="networkPreferencePane" destination="2146" id="2150"/>
                 <outlet property="notificationsPreferencePane" destination="2143" id="2147"/>
@@ -65,6 +66,13 @@
                 <outlet property="view" destination="641" id="2154"/>
             </connections>
         </customObject>
+        <customObject id="bKg-6I-v9A" userLabel="File" customClass="SPFilePreferencePane">
+            <connections>
+                <outlet property="fileView" destination="eH2-Ed-Xh3" id="4ea-J5-z5n"/>
+                <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="YAa-9u-hpT"/>
+                <outlet property="view" destination="5dZ-tO-Ldn" id="VI1-LP-ygg"/>
+            </connections>
+        </customObject>
         <userDefaultsController representsSharedInstance="YES" id="117"/>
         <window title="Preferences" allowsToolTipsWhenApplicationIsInactive="NO" visibleAtLaunch="NO" animationBehavior="default" id="1" userLabel="PreferencesPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES"/>
@@ -105,7 +113,7 @@
                         <rect key="frame" x="18" y="45" width="191" height="11"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Already exists and will be overwritten!" id="1825">
-                            <font key="font" metaFont="label" size="9"/>
+                            <font key="font" metaFont="menu" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1400,7 +1408,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
                         <rect key="frame" x="1" y="1" width="220" height="286"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" id="1685">
                                 <rect key="frame" x="0.0" y="0.0" width="220" height="286"/>
@@ -1536,6 +1544,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             <connections>
                 <outlet property="delegate" destination="-2" id="1555"/>
             </connections>
+            <point key="canvasLocation" x="616" y="837"/>
         </menu>
         <customView id="D6L-76-0Ik" userLabel="Pick SSH client binary Accessory View">
             <rect key="frame" x="0.0" y="0.0" width="404" height="44"/>
@@ -1597,6 +1606,100 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 </button>
             </subviews>
             <point key="canvasLocation" x="-609.5" y="138"/>
+        </customView>
+        <customView id="5dZ-tO-Ldn" userLabel="File">
+            <rect key="frame" x="0.0" y="0.0" width="580" height="400"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <userGuides>
+                <userLayoutGuide location="146" affinity="minX"/>
+                <userLayoutGuide location="315" affinity="minX"/>
+            </userGuides>
+            <subviews>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YVZ-mE-SYx">
+                    <rect key="frame" x="470" y="13" width="96" height="32"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <buttonCell key="cell" type="push" title="Add Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="addBookmark:" target="bKg-6I-v9A" id="LBd-Si-eCg"/>
+                    </connections>
+                </button>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kZG-fE-IMo">
+                    <rect key="frame" x="18" y="364" width="98" height="16"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Accessible files" id="kpg-Xc-INC">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fk8-1b-YVh">
+                    <rect key="frame" x="18" y="340" width="524" height="16"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" title="This list shows all files, that Sequel Ace has access to." id="g1t-1Q-PEO">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="807-4b-o8N">
+                    <rect key="frame" x="20" y="45" width="540" height="287"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" heightSizable="YES"/>
+                    <clipView key="contentView" id="u3q-XC-nUM">
+                        <rect key="frame" x="1" y="1" width="538" height="285"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="eH2-Ed-Xh3">
+                                <rect key="frame" x="0.0" y="0.0" width="538" height="285"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <size key="intercellSpacing" width="3" height="2"/>
+                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
+                                <tableColumns>
+                                    <tableColumn editable="NO" width="535" minWidth="40" maxWidth="1000" id="oAq-cQ-smW" userLabel="Granted Files">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Granted Files">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" title="Text Cell" id="XpU-Pg-wan">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                        <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                    </tableColumn>
+                                </tableColumns>
+                                <connections>
+                                    <outlet property="dataSource" destination="bKg-6I-v9A" id="Xl3-F4-bfN"/>
+                                    <outlet property="delegate" destination="bKg-6I-v9A" id="gdA-Pt-K3z"/>
+                                </connections>
+                            </tableView>
+                        </subviews>
+                    </clipView>
+                    <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="a0h-TA-vlQ">
+                        <rect key="frame" x="1" y="119" width="223" height="15"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </scroller>
+                    <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="MIJ-1S-T0a">
+                        <rect key="frame" x="224" y="17" width="15" height="102"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </scroller>
+                </scrollView>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jKz-jR-d80">
+                    <rect key="frame" x="298" y="13" width="172" height="32"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <buttonCell key="cell" type="push" title="Revoke Selected Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="lHn-Wy-DTi">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="revokeBookmark:" target="bKg-6I-v9A" id="hfz-ao-mRF"/>
+                    </connections>
+                </button>
+            </subviews>
+            <point key="canvasLocation" x="200" y="1772"/>
         </customView>
     </objects>
     <resources>

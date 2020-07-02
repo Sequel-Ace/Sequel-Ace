@@ -227,6 +227,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// If triggered via the "Test Connection" button, set the state - otherwise clear it
 	isTestingConnection = (sender == testConnectButton);
 
+	// Ensure the bookmarks are loaded correctly, as they
+	id o;
+	if((o = [prefs objectForKey:SPSecureBookmarks])){
+		[bookmarks setArray:o];
+	}
+	
+	[self reRequestSecureAccess];
+	
 	// Ensure that host is not empty if this is a TCP/IP or SSH connection
 	if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
 		SPOnewayAlertSheet(

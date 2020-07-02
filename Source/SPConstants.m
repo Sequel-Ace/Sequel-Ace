@@ -284,6 +284,7 @@ NSString *SPPreferenceToolbarNotifications       = @"SPPreferenceToolbarNotifica
 NSString *SPPreferenceToolbarNetwork             = @"SPPreferenceToolbarNetwork";
 NSString *SPPreferenceToolbarEditor              = @"SPPreferenceToolbarEditor";
 NSString *SPPreferenceToolbarShortcuts           = @"SPPreferenceToolbarShortcuts";
+NSString *SPPreferenceToolbarFile				 = @"SPPreferenceToolbarFile";
 
 // Connection favorite keys
 NSString *SPFavoritesRootKey                             = @"Favorites Root";
