@@ -43,19 +43,22 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 @implementation SPNetworkPreferencePane
 
 @synthesize bookmarks;
+@synthesize resolvedBookmarks;
 
 - (instancetype)init
 {
 	self = [super init];
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
-	}
-	
-	bookmarks = [[NSMutableArray alloc] init];
-	
-	id o;
-	if((o = [prefs objectForKey:SPSecureBookmarks])){
-		[bookmarks setArray:o];
+		bookmarks = [[NSMutableArray alloc] init];
+		resolvedBookmarks = [[NSMutableArray alloc] init];
+		
+		id o;
+		if((o = [prefs objectForKey:SPSecureBookmarks])){
+			[bookmarks setArray:o];
+		}
+		
+		[self reRequestSecureAccess];
 	}
 	
 	return self;
@@ -63,8 +66,14 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (void)dealloc
 {
+	for(NSURL *url in resolvedBookmarks){
+		[url stopAccessingSecurityScopedResource];
+	}
+	
 	SPClear(sslCiphers);
 	SPClear(bookmarks);
+	SPClear(resolvedBookmarks);
+	
 	[super dealloc];
 }
 
@@ -108,6 +117,36 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	[self loadSSLCiphers];
 	if(![[sslCipherView registeredDraggedTypes] containsObject:SPSSLCipherPboardTypeName])
 		[sslCipherView registerForDraggedTypes:@[SPSSLCipherPboardTypeName]];
+}
+
+#pragma mark -
+#pragma mark Bookmarks
+
+-(void)reRequestSecureAccess{
+	
+	NSLog(@"reRequestSecureAccess to saved bookmarks");
+
+	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+		
+		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
+			
+			NSError *error = nil;
+			
+			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
+													  options:NSURLBookmarkResolutionWithSecurityScope
+												relativeToURL:nil
+										  bookmarkDataIsStale:nil
+														error:&error];
+			
+			if(!error){
+				[tmpURL startAccessingSecurityScopedResource];
+				[resolvedBookmarks addObject:tmpURL];
+			}
+			else{
+				NSLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+			}
+		}];
+	}];
 }
 
 #pragma mark -
