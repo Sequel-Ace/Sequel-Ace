@@ -612,6 +612,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	NSStringEncoding connectEncodingNS = [SPMySQLConnection stringEncodingForMySQLCharset:[encodingName UTF8String]];
 	mysql_options(theConnection, MYSQL_SET_CHARSET_NAME, [encodingName UTF8String]);
 
+    // Some servers have issues when we try caching_sha2_password first; let's always try mysql_native_password first; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/141
+    mysql_options(theConnection, MYSQL_DEFAULT_AUTH, @"mysql_native_password");
+
 	// Set up the connection variables in the format MySQL needs, from the class-wide variables
 	const char *theHost = NULL;
 	const char *theUsername = "";
