@@ -575,6 +575,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 																						error:&error];
 				// save to prefs
 				if(tmpAppScopedBookmark && !error) {
+					// refresh the bookmarks, as the settings could have modified them
+					id o;
+					if((o = [prefs objectForKey:SPSecureBookmarks])){
+						[bookmarks setArray:o];
+					}
+					
+					// ensure the access of the bookmarks
+					[self reRequestSecureAccess];
+					
 					[bookmarks addObject:@{keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
 					[prefs setObject:bookmarks forKey:SPSecureBookmarks];
 				}
