@@ -60,7 +60,7 @@
                 <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="r1S-eS-uJK"/>
                 <outlet property="sshClientPath" destination="yQV-9I-7us" id="eUn-5b-NBa"/>
                 <outlet property="sshClientPickerView" destination="D6L-76-0Ik" id="gUn-jl-Tfb"/>
-                <outlet property="sshConfigPath" destination="on9-UJ-WZI" id="cB5-ug-r1L"/>
+                <outlet property="sshConfigChooser" destination="P6m-dR-d6a" id="zw4-Lr-8KG"/>
                 <outlet property="sslCipherView" destination="RuH-Yq-cdH" id="pF5-VG-sY0"/>
                 <outlet property="view" destination="641" id="2154"/>
             </connections>
@@ -1027,33 +1027,6 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="on9-UJ-WZI">
-                    <rect key="frame" x="226" y="248" width="220" height="16"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="/path/to/ssh/config" id="9Yv-Uy-f5M">
-                        <font key="font" metaFont="system"/>
-                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                    <connections>
-                        <binding destination="117" name="value" keyPath="values.ssh_config" id="ier-RP-N5K">
-                            <dictionary key="options">
-                                <string key="NSNullPlaceholder">Sequel Ace default</string>
-                            </dictionary>
-                        </binding>
-                    </connections>
-                </textField>
-                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5uX-Uh-2yi">
-                    <rect key="frame" x="452" y="245" width="109" height="19"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <buttonCell key="cell" type="roundRect" title="Change..." bezelStyle="roundedRect" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="ppT-hf-NB1">
-                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="label" size="12"/>
-                        <connections>
-                            <action selector="pickSSHConfig:" target="2146" id="Z63-UA-5FH"/>
-                        </connections>
-                    </buttonCell>
-                </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="3Fg-G1-BWj">
                     <rect key="frame" x="226" y="235" width="334" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -1074,6 +1047,30 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         </binding>
                     </connections>
                 </button>
+                <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="P6m-dR-d6a">
+                    <rect key="frame" x="226" y="242" width="337" height="25"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="X7v-6X-VbB" id="KPx-1M-u3e">
+                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <menu key="menu" id="X6f-Ih-yPF">
+                            <items>
+                                <menuItem title="Item 1" state="on" id="X7v-6X-VbB"/>
+                                <menuItem title="Item 2" id="iac-DX-oNn"/>
+                                <menuItem title="Item 3" id="diE-aL-9zb"/>
+                            </items>
+                        </menu>
+                    </popUpButtonCell>
+                    <connections>
+                        <action selector="updateSSHConfig:" target="2146" id="vEn-BP-8c9"/>
+                        <binding destination="117" name="selectedTag" keyPath="values.ssh_config" id="NXN-uJ-sTe">
+                            <dictionary key="options">
+                                <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
+                                <string key="NSNullPlaceholder">Sequel Ace default</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
+                </popUpButton>
             </subviews>
             <point key="canvasLocation" x="200" y="836"/>
         </customView>

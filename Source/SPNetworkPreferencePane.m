@@ -103,6 +103,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (void)preferencePaneWillBeShown
 {
+	[self updateSSHConfigPopUp];
+	
 	[self loadSSLCiphers];
 	if(![[sslCipherView registeredDraggedTypes] containsObject:SPSSLCipherPboardTypeName])
 		[sslCipherView registerForDraggedTypes:@[SPSSLCipherPboardTypeName]];
@@ -174,7 +176,91 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	SPClear(_currentAlert);
 }
 
-- (IBAction)pickSSHConfig:(id)sender
+#pragma mark -
+#pragma mark - PopUp Button
+
+- (IBAction)updateSSHConfig:(id)sender
+{
+	for (NSMenuItem *item in [sshConfigChooser itemArray]) {
+		[item setState:NSOffState];
+	}
+	
+	[sender setState:NSOnState];
+	[sshConfigChooser setTitle:[sender title]];
+	
+	if ([[sender title] isEqualToString:@"Sequel Ace default"]) {
+		[prefs setObject:[[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""] forKey:SPSSHConfigFile];
+		
+		return;
+	}
+	
+	// choose a config file not listed
+	if ((NSUInteger) [sshConfigChooser indexOfSelectedItem] == ([[sshConfigChooser itemArray] count] - 1)) {
+		// open the file chooser dialog
+		[self chooseSSHConfig];
+		
+		return;
+	}
+	
+	// the title contains the absolute path of the config file. Therefore save
+	// it to the preferences as selected config file.
+	[prefs setObject:[sender title] forKey:SPSSHConfigFile];
+	
+	[self updateSSHConfigPopUp];
+}
+
+- (void)updateSSHConfigPopUp
+{
+	// clear up all existing items
+	[sshConfigChooser removeAllItems];
+	
+	// add the default item to give the user the ability to revert his/her changes
+	[sshConfigChooser addItemWithTitle:@"Sequel Ace default"];
+	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
+	
+	NSUInteger __block count = 0;
+	
+	// iterate through all bookmarks in order to display them as menu items
+	[bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+		NSEnumerator *keyEnumerator = [dict keyEnumerator];
+		id key;
+		
+		// every bookmark is saved in relation to it's abslute path
+		while (key = [keyEnumerator nextObject]) {
+			NSString *itemTitle = [key substringFromIndex:[@"file://" length]];
+			
+			[sshConfigChooser addItemWithTitle:itemTitle];
+			
+			count++;
+		}
+	}];
+
+	// default value if no bookmarks are available
+	if (count == 0) {
+		[sshConfigChooser selectItemWithTitle:@"Sequel Ace default"];
+	}
+	
+	// add a separate add option under all granted files, that will open a
+	// file chooser panel in order to select a new file and grant access to
+	// it
+	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
+	[sshConfigChooser addItemWithTitle:@"Other file..."];
+
+	NSString *defaultConfig = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+	
+	if (count != 0) {
+		// select the currently configured value
+		NSString *currentConfig = [prefs stringForKey:SPSSHConfigFile];
+		
+		if ([currentConfig isEqualToString:defaultConfig]) {
+			currentConfig = @"Sequel Ace default";
+		}
+		
+		[sshConfigChooser selectItemWithTitle:currentConfig];
+	}
+}
+
+- (void) chooseSSHConfig
 {
 	// retrieve the file manager in order to fetch the current user's home
 	// directory
@@ -194,15 +280,13 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			forKeyPath:SPHiddenKeyFileVisibilityKey
 			   options:NSKeyValueObservingOptionNew
 			   context:NULL];
-	// Get the main window for the document.
+	
 	[_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode)
 	 {
 		// only process data, when the user pressed ok
 		if (returnCode != NSModalResponseOK) {
 			return;
 		}
-
-		// release the file picker panel later on.
 
 		// since ssh configs are able to consist of multiple files, bookmarks
 		// for every selected file should be created in order to access them
@@ -245,16 +329,18 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			
 			// set the config path to the first selected file
 			if (idxURL == 0) {
-				[sshConfigPath setStringValue: [url path]];
+				// save the preferences
+				if (![[url path] length]) {
+					[prefs removeObjectForKey:SPSSHConfigFile];
+				} else {
+					[prefs setObject:[url path] forKey:SPSSHConfigFile];
+				}
 			}
 		}];
 		
-		NSString *newPath = [sshConfigPath stringValue];
-		if (![newPath length]) {
-			[prefs removeObjectForKey:SPSSHConfigFile];
-		} else {
-			[prefs setObject:newPath forKey:SPSSHConfigFile];
-		}
+		// update the popup button with its items and the selected item
+		// from the file picker
+		[self updateSSHConfigPopUp];
 		
 		_currentFilePanel = nil;
 	}];

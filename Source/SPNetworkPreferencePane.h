@@ -41,7 +41,7 @@
 {
 	IBOutlet NSView *sshClientPickerView;
 	IBOutlet NSTextField *sshClientPath;
-	IBOutlet NSTextField *sshConfigPath;
+	IBOutlet NSPopUpButton *sshConfigChooser;
 	IBOutlet NSView *hiddenFileView;
 	IBOutlet NSTableView *sslCipherView;
 	
@@ -49,6 +49,7 @@
 	NSAlert *_currentAlert;
 	NSOpenPanel *_currentFilePanel;
 	NSMutableArray *sslCiphers;
+	NSString *sshConfigFile;
 }
 
 @property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
