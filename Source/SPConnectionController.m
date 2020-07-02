@@ -1617,7 +1617,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (BOOL)_checkHost
 {
-	if ([self type] != SPSocketConnection && [[self host] isEqualToString:@"localhost"]) {
+	if ([self type] != SPSSHTunnelConnection && [self type] != SPSocketConnection && [[self host] isEqualToString:@"localhost"]) {
 		SPBeginAlertSheet(
 			NSLocalizedString(@"You have entered 'localhost' for a non-socket connection", @"title of error when using 'localhost' for a network connection"),
 			NSLocalizedString(@"Use 127.0.0.1", @"Use 127.0.0.1 button"), // Main button
