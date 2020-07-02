@@ -34,6 +34,6 @@ print "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mi lacus
 	<key>uuid</key>
 	<string>C73F7EA3-4CDC-4F3F-B9EE-FEED7E3F0B71</string>
 	<key>isDefaultBundle</key>
- 	<true/>
+	<true/>
 </dict>
 </plist>

@@ -94,7 +94,7 @@ print "\n";
 		<integer>262144</integer>
 	</dict>
 	<key>keyEquivalent</key>
-	<string>^c</string>
+	<string></string>
 	<key>name</key>
 	<string>Copy as Wiki</string>
 	<key>output</key>
@@ -108,6 +108,6 @@ print "\n";
 	<key>uuid</key>
 	<string>5B20D1B9-9C60-4D9F-B51B-5F742665557E</string>
 	<key>isDefaultBundle</key>
- 	<true/>
+	<true/>
 </dict>
 </plist>

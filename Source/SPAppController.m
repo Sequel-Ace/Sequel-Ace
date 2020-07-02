@@ -1625,12 +1625,16 @@
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
 
+			SPLog(@"processing path: %@",bundlePath );
+			
 			NSError *error = nil;
 			NSArray *foundBundles = [fm contentsOfDirectoryAtPath:bundlePath error:&error];
 			if (foundBundles && [foundBundles count] && error == nil) {
 
 				for(NSString* bundle in foundBundles) {
 					if(![[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtension lowercaseString]]) continue;
+
+					SPLog(@"processing bundle: %@",bundle );
 
 					foundInstalledBundles = YES;
 
@@ -1709,6 +1713,8 @@
 										// Check for modifications
 										if([cmdDataOld objectForKey:SPBundleFileDefaultBundleWasModifiedKey]) {
 
+											SPLog(@"default bundle WAS modified, duplicate, change UUID and rename menu item");
+
 											// Duplicate Bundle, change the UUID and rename the menu label
 											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtension length] - 1)], (long)(random() % 35000), SPUserBundleFileExtension];
 											if(![[NSFileManager defaultManager] copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
@@ -1762,7 +1768,7 @@
 											}
 											[infoAboutUpdatedDefaultBundles appendFormat:@"• %@\n", orgName];
 										} else {
-
+											SPLog(@"default bundle not modified, delete and ....");
 											// If no modifications are done simply remove the old one
 											if(![fm removeItemAtPath:oldBundle error:nil]) {
 												NSLog(@"Couldn't remove “%@” to update it", bundle);
@@ -1772,6 +1778,8 @@
 
 										}
 									}
+
+									SPLog(@"copy bundle from app bundle");
 
 									BOOL isDir;
 									NSString *newInfoPath = [NSString stringWithFormat:@"%@/%@/%@", [bundlePaths objectAtIndex:0], bundle, SPBundleFileName];
@@ -1868,9 +1876,28 @@
 
 						if([cmdData objectForKey:SPBundleFileKeyEquivalentKey] && [(NSString *)[cmdData objectForKey:SPBundleFileKeyEquivalentKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileKeyEquivalentKey] forKey:@"key"];
+						// add UUID so we can check for it
+						if([cmdData objectForKey:SPBundleFileUUIDKey] && [(NSString *)[cmdData objectForKey:SPBundleFileUUIDKey] length])
+							[aDict setObject:[cmdData objectForKey:SPBundleFileUUIDKey] forKey:SPBundleFileUUIDKey];
 
-						[[bundleItems objectForKey:scope] addObject:aDict];
+						SPLog(@"UUID = %@", [cmdData objectForKey:SPBundleFileUUIDKey]);
 
+						BOOL __block alreadyAdded = NO;
+						
+						// check UUID, only add if it's different
+						[bundleItems enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray *obj, BOOL *stop1) {
+							[obj enumerateObjectsUsingBlock:^(id obj2, NSUInteger idx, BOOL *stop){
+								if([obj2[SPBundleFileUUIDKey] isEqualToString:[aDict objectForKey:SPBundleFileUUIDKey]]){ // what if these are null? nothing happens...
+									SPLog(@"Already added this UUID, name = %@",[cmdData objectForKey:SPBundleFileNameKey] );
+									alreadyAdded = YES;
+								}
+							}];
+						}];
+						
+						if(alreadyAdded == NO){
+							SPLog(@"NEW UUID, add to menu bundle, name = %@",[cmdData objectForKey:SPBundleFileNameKey] );
+							[[bundleItems objectForKey:scope] addObject:aDict];
+						}
 					}
 				}
 

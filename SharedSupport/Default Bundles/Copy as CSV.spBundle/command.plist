@@ -88,7 +88,7 @@ print "\n";
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
 	<key>keyEquivalent</key>
-	<string></string>
+	<string>^c</string>
 	<key>name</key>
 	<string>Copy as CSV</string>
 	<key>output</key>
@@ -102,6 +102,6 @@ print "\n";
 	<key>uuid</key>
 	<string>E24C4537-0AAB-4C17-B5F9-C5054CADA77C</string>
 	<key>isDefaultBundle</key>
- 	<true/>
+	<true/>
 </dict>
 </plist>
