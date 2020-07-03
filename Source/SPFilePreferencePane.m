@@ -71,7 +71,7 @@
 }
 
 - (NSImage *)preferencePaneIcon {
-	return [NSImage imageNamed:@"toolbar-preferences-network"];
+	return [NSImage imageNamed:NSImageNameFolder];
 }
 
 - (NSString *)preferencePaneIdentifier {
