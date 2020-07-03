@@ -226,14 +226,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	// If triggered via the "Test Connection" button, set the state - otherwise clear it
 	isTestingConnection = (sender == testConnectButton);
-
-	// Ensure the bookmarks are loaded correctly, as they
-	id o;
-	if((o = [prefs objectForKey:SPSecureBookmarks])){
-		[bookmarks setArray:o];
-	}
-	
-	[self reRequestSecureAccess];
 	
 	// Ensure that host is not empty if this is a TCP/IP or SSH connection
 	if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
@@ -575,15 +567,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 																						error:&error];
 				// save to prefs
 				if(tmpAppScopedBookmark && !error) {
-					// refresh the bookmarks, as the settings could have modified them
-					id o;
-					if((o = [prefs objectForKey:SPSecureBookmarks])){
-						[bookmarks setArray:o];
-					}
-					
-					// ensure the access of the bookmarks
-					[self reRequestSecureAccess];
-					
 					[bookmarks addObject:@{keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
 					[prefs setObject:bookmarks forKey:SPSecureBookmarks];
 				}
@@ -1360,6 +1343,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
+	// reload the bookmarks, when the observer detected a change in them
+	//
+	// thanks a lot to @jamesstout for pointing this out!
+	if ([keyPath isEqualToString:SPSecureBookmarks]) {
+		id o;
+
+		if((o = [prefs objectForKey:SPSecureBookmarks])){
+			[bookmarks setArray:o];
+		}
+
+		[self reRequestSecureAccess];
+	}
 }
 
 #pragma mark -
@@ -3371,6 +3366,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// we need to re-request access to places we've been before..
 		[self reRequestSecureAccess];
 		
+		// add an observer to get re-read the bookmarks when they change
+		[prefs addObserver:self
+				forKeyPath:SPSecureBookmarks
+				options:NSKeyValueObservingOptionNew
+				   context:NULL];
+
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk
 		// and the tree to be constructed.
 		favoritesController = [SPFavoritesController sharedFavoritesController];
