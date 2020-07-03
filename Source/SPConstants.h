@@ -489,6 +489,7 @@ extern NSString *SPPreferenceToolbarNotifications;
 extern NSString *SPPreferenceToolbarNetwork;
 extern NSString *SPPreferenceToolbarEditor;
 extern NSString *SPPreferenceToolbarShortcuts;
+extern NSString *SPPreferenceToolbarFile;
 
 // Connection favorite keys
 extern NSString *SPFavoritesRootKey;
