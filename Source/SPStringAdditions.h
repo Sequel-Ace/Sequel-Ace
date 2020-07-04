@@ -73,6 +73,7 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 - (NSString *)replaceUnderscoreWithSpace;
 - (NSArray *)lineRangesForRange:(NSRange)aRange;
 - (NSString *)createViewSyntaxPrettifier;
+- (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis;
 
 - (NSString *)getGeomFromTextString;
 
