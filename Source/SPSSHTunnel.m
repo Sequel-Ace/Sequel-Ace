@@ -568,7 +568,7 @@ static unsigned short getRandomPort();
 			[debugMessages addObject:[NSString stringWithString:message]];
 			[debugMessagesLock unlock];
 
-			if ([message rangeOfString:@"Entering interactive session."].location != NSNotFound
+			if ([message rangeOfString:@"Local forwarding listening on"].location != NSNotFound
 				|| [message rangeOfString:@"mux_client_request_session: master session id: "].location != NSNotFound)
 			{
 				connectionState = SPMySQLProxyConnected;
