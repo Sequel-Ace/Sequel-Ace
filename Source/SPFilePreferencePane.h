@@ -1,5 +1,5 @@
 //
-//  SPNetworkPreferencePane.h
+//  SPFilePreferencePane.m
 //  sequel-pro
 //
 //  Created by Stuart Connolly (stuconnolly.com) on October 31, 2010.
@@ -33,29 +33,22 @@
 /**
  * @class SPNetworkPreferencePane SPNetworkPreferencePane.h
  *
- * @author Stuart Connolly http://stuconnolly.com/
- *
- * Network preference pane controller.
+ * File preference pane controller.
  */
-@interface SPNetworkPreferencePane : SPPreferencePane <SPPreferencePaneProtocol, NSTableViewDataSource, NSTableViewDelegate>
+@interface SPFilePreferencePane : SPPreferencePane <SPPreferencePaneProtocol, NSTableViewDataSource, NSTableViewDelegate>
 {
-	IBOutlet NSView *sshClientPickerView;
-	IBOutlet NSTextField *sshClientPath;
-	IBOutlet NSPopUpButton *sshConfigChooser;
+	IBOutlet NSTableView *fileView;
 	IBOutlet NSView *hiddenFileView;
-	IBOutlet NSTableView *sslCipherView;
-	
+
 @private
-	NSAlert *_currentAlert;
 	NSOpenPanel *_currentFilePanel;
-	NSMutableArray *sslCiphers;
-	NSString *sshConfigFile;
+	NSMutableArray<NSString *> *fileNames;
+	
 }
 
 @property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
 @property (readwrite, retain) NSMutableArray<NSURL *> *resolvedBookmarks;
 
-- (IBAction)pickSSHClientViaFileBrowser:(id)sender;
-- (IBAction)pickSSHClient:(id)sender;
-- (IBAction)resetCipherList:(id)sender;
+- (IBAction) revokeBookmark:(id)sender;
+- (IBAction) addBookmark:(id)sender;
 @end

@@ -9,6 +9,7 @@
         <customObject id="-2" userLabel="File's Owner" customClass="SPPreferenceController">
             <connections>
                 <outlet property="editorPreferencePane" destination="2144" id="2148"/>
+                <outlet property="filePreferencePane" destination="bKg-6I-v9A" id="wt8-L0-QxT"/>
                 <outlet property="generalPreferencePane" destination="2074" id="2076"/>
                 <outlet property="networkPreferencePane" destination="2146" id="2150"/>
                 <outlet property="notificationsPreferencePane" destination="2143" id="2147"/>
@@ -60,8 +61,16 @@
                 <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="r1S-eS-uJK"/>
                 <outlet property="sshClientPath" destination="yQV-9I-7us" id="eUn-5b-NBa"/>
                 <outlet property="sshClientPickerView" destination="D6L-76-0Ik" id="gUn-jl-Tfb"/>
+                <outlet property="sshConfigChooser" destination="P6m-dR-d6a" id="zw4-Lr-8KG"/>
                 <outlet property="sslCipherView" destination="RuH-Yq-cdH" id="pF5-VG-sY0"/>
                 <outlet property="view" destination="641" id="2154"/>
+            </connections>
+        </customObject>
+        <customObject id="bKg-6I-v9A" userLabel="File" customClass="SPFilePreferencePane">
+            <connections>
+                <outlet property="fileView" destination="eH2-Ed-Xh3" id="4ea-J5-z5n"/>
+                <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="YAa-9u-hpT"/>
+                <outlet property="view" destination="5dZ-tO-Ldn" id="VI1-LP-ygg"/>
             </connections>
         </customObject>
         <userDefaultsController representsSharedInstance="YES" id="117"/>
@@ -69,7 +78,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="430" y="486" width="580" height="172"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1692"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1440"/>
             <value key="minSize" type="size" width="580" height="50"/>
             <view key="contentView" id="2">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="172"/>
@@ -84,7 +93,7 @@
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="481" width="227" height="114"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1692"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1440"/>
             <value key="minSize" type="size" width="227" height="114"/>
             <value key="maxSize" type="size" width="247" height="124"/>
             <view key="contentView" id="1717">
@@ -104,7 +113,7 @@
                         <rect key="frame" x="18" y="45" width="191" height="11"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Already exists and will be overwritten!" id="1825">
-                            <font key="font" metaFont="toolTip" size="9"/>
+                            <font key="font" metaFont="menu" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -168,7 +177,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="370" width="264" height="225"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1692"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1440"/>
             <value key="minSize" type="size" width="264" height="225"/>
             <value key="maxSize" type="size" width="264" height="274"/>
             <view key="contentView" id="1757">
@@ -860,23 +869,19 @@ Line 2</string>
             <point key="canvasLocation" x="200" y="537"/>
         </customView>
         <customView id="641" userLabel="Network">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="312"/>
+            <rect key="frame" x="0.0" y="0.0" width="580" height="380"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="681">
-                    <rect key="frame" x="226" y="262" width="334" height="5"/>
+                    <rect key="frame" x="226" y="330" width="334" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="HWX-AV-xGx">
-                    <rect key="frame" x="226" y="229" width="334" height="5"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                </box>
-                <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="3Fg-G1-BWj">
-                    <rect key="frame" x="226" y="193" width="334" height="5"/>
+                    <rect key="frame" x="226" y="297" width="334" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="676">
-                    <rect key="frame" x="281" y="276" width="282" height="17"/>
+                    <rect key="frame" x="281" y="344" width="282" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="seconds" id="677">
                         <font key="font" metaFont="system"/>
@@ -885,7 +890,7 @@ Line 2</string>
                     </textFieldCell>
                 </textField>
                 <textField toolTip="Enter how long to attempt to connect or send queries for; set a value of 0 to disable the timeout" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="674">
-                    <rect key="frame" x="226" y="273" width="50" height="22"/>
+                    <rect key="frame" x="226" y="341" width="50" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="60" drawsBackground="YES" usesSingleLineMode="YES" id="675">
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="42" id="789">
@@ -903,7 +908,7 @@ Line 2</string>
                     </connections>
                 </textField>
                 <button toolTip="Enable to send a MySQL ping to ensure the connection is kept alive if it has not been used for a while" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="652">
-                    <rect key="frame" x="224" y="238" width="338" height="18"/>
+                    <rect key="frame" x="224" y="306" width="338" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Keep connections alive" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="661">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -914,7 +919,7 @@ Line 2</string>
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="642">
-                    <rect key="frame" x="17" y="275" width="204" height="17"/>
+                    <rect key="frame" x="17" y="343" width="204" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Connection Timeout:" id="669">
                         <font key="font" metaFont="system"/>
@@ -923,7 +928,7 @@ Line 2</string>
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9CM-2a-2JU">
-                    <rect key="frame" x="16" y="204" width="204" height="19"/>
+                    <rect key="frame" x="16" y="272" width="204" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Client:" id="4Us-KF-Ysj">
                         <font key="font" metaFont="system"/>
@@ -932,7 +937,7 @@ Line 2</string>
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4Aw-q4-73u">
-                    <rect key="frame" x="16" y="165" width="204" height="19"/>
+                    <rect key="frame" x="17" y="210" width="204" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <string key="toolTip">The cipher suites are used for SSL/TLS-secured connections and specify which algorithms Sequel Ace will use to encrypt a connection, as well as their preference. 
 Warning: If Sequel Ace and the server do not have at least one cipher suite in common, you will no longer be able to connect!</string>
@@ -943,7 +948,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Rsg-4x-YV2">
-                    <rect key="frame" x="452" y="204" width="109" height="19"/>
+                    <rect key="frame" x="452" y="272" width="109" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="roundRect" title="Change…" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MhF-tS-nrE">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -954,7 +959,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GcY-yy-sZn">
-                    <rect key="frame" x="224" y="204" width="222" height="19"/>
+                    <rect key="frame" x="224" y="272" width="222" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" title="/path/to/ssh/binary" id="29D-bG-y15">
                         <font key="font" metaFont="system"/>
@@ -970,14 +975,14 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9lg-Fd-6u7">
-                    <rect key="frame" x="226" y="56" width="334" height="128"/>
+                    <rect key="frame" x="226" y="56" width="334" height="173"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" heightSizable="YES"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
-                        <rect key="frame" x="1" y="1" width="332" height="126"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <rect key="frame" x="1" y="1" width="332" height="171"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" id="RuH-Yq-cdH">
-                                <rect key="frame" x="0.0" y="0.0" width="332" height="126"/>
+                                <rect key="frame" x="0.0" y="0.0" width="332" height="171"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -1021,8 +1026,21 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Rn3-Bt-QGE">
+                    <rect key="frame" x="142" y="248" width="78" height="16"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="SSH Config:" id="Ziz-Vf-7cz">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="3Fg-G1-BWj">
+                    <rect key="frame" x="226" y="235" width="334" height="5"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                </box>
                 <button toolTip="Reset the cipher list to the default configuration" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jJw-LF-gtW">
-                    <rect key="frame" x="226" y="22" width="32" height="25"/>
+                    <rect key="frame" x="228" y="24" width="32" height="25"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="resetTemplate" imagePosition="overlaps" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="7JN-Nf-GsD">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1037,8 +1055,32 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         </binding>
                     </connections>
                 </button>
+                <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="P6m-dR-d6a">
+                    <rect key="frame" x="226" y="242" width="337" height="25"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="X7v-6X-VbB" id="KPx-1M-u3e">
+                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <menu key="menu" id="X6f-Ih-yPF">
+                            <items>
+                                <menuItem title="Item 1" state="on" id="X7v-6X-VbB"/>
+                                <menuItem title="Item 2" id="iac-DX-oNn"/>
+                                <menuItem title="Item 3" id="diE-aL-9zb"/>
+                            </items>
+                        </menu>
+                    </popUpButtonCell>
+                    <connections>
+                        <action selector="updateSSHConfig:" target="2146" id="vEn-BP-8c9"/>
+                        <binding destination="117" name="selectedTag" keyPath="values.ssh_config" id="NXN-uJ-sTe">
+                            <dictionary key="options">
+                                <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
+                                <string key="NSNullPlaceholder">Sequel Ace default</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
+                </popUpButton>
             </subviews>
-            <point key="canvasLocation" x="200" y="870"/>
+            <point key="canvasLocation" x="200" y="836"/>
         </customView>
         <customView id="802" userLabel="Editor">
             <rect key="frame" x="0.0" y="0.0" width="580" height="400"/>
@@ -1366,7 +1408,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
                         <rect key="frame" x="1" y="1" width="220" height="286"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" id="1685">
                                 <rect key="frame" x="0.0" y="0.0" width="220" height="286"/>
@@ -1502,6 +1544,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             <connections>
                 <outlet property="delegate" destination="-2" id="1555"/>
             </connections>
+            <point key="canvasLocation" x="616" y="837"/>
         </menu>
         <customView id="D6L-76-0Ik" userLabel="Pick SSH client binary Accessory View">
             <rect key="frame" x="0.0" y="0.0" width="404" height="44"/>
@@ -1563,6 +1606,100 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 </button>
             </subviews>
             <point key="canvasLocation" x="-609.5" y="138"/>
+        </customView>
+        <customView id="5dZ-tO-Ldn" userLabel="File">
+            <rect key="frame" x="0.0" y="0.0" width="580" height="400"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <userGuides>
+                <userLayoutGuide location="146" affinity="minX"/>
+                <userLayoutGuide location="315" affinity="minX"/>
+            </userGuides>
+            <subviews>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YVZ-mE-SYx">
+                    <rect key="frame" x="470" y="13" width="96" height="32"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <buttonCell key="cell" type="push" title="Add Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="addBookmark:" target="bKg-6I-v9A" id="LBd-Si-eCg"/>
+                    </connections>
+                </button>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kZG-fE-IMo">
+                    <rect key="frame" x="18" y="364" width="98" height="16"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Accessible files" id="kpg-Xc-INC">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fk8-1b-YVh">
+                    <rect key="frame" x="18" y="340" width="524" height="16"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" title="This list shows all files, that Sequel Ace has access to." id="g1t-1Q-PEO">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="807-4b-o8N">
+                    <rect key="frame" x="20" y="45" width="540" height="287"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" heightSizable="YES"/>
+                    <clipView key="contentView" id="u3q-XC-nUM">
+                        <rect key="frame" x="1" y="1" width="538" height="285"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="eH2-Ed-Xh3">
+                                <rect key="frame" x="0.0" y="0.0" width="538" height="285"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <size key="intercellSpacing" width="3" height="2"/>
+                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
+                                <tableColumns>
+                                    <tableColumn editable="NO" width="535" minWidth="40" maxWidth="1000" id="oAq-cQ-smW" userLabel="Granted Files">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Granted Files">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" title="Text Cell" id="XpU-Pg-wan">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                        <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                    </tableColumn>
+                                </tableColumns>
+                                <connections>
+                                    <outlet property="dataSource" destination="bKg-6I-v9A" id="Xl3-F4-bfN"/>
+                                    <outlet property="delegate" destination="bKg-6I-v9A" id="gdA-Pt-K3z"/>
+                                </connections>
+                            </tableView>
+                        </subviews>
+                    </clipView>
+                    <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="a0h-TA-vlQ">
+                        <rect key="frame" x="1" y="119" width="223" height="15"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </scroller>
+                    <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="MIJ-1S-T0a">
+                        <rect key="frame" x="224" y="17" width="15" height="102"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </scroller>
+                </scrollView>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jKz-jR-d80">
+                    <rect key="frame" x="298" y="13" width="172" height="32"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <buttonCell key="cell" type="push" title="Revoke Selected Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="lHn-Wy-DTi">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="revokeBookmark:" target="bKg-6I-v9A" id="hfz-ao-mRF"/>
+                    </connections>
+                </button>
+            </subviews>
+            <point key="canvasLocation" x="200" y="1772"/>
         </customView>
     </objects>
     <resources>

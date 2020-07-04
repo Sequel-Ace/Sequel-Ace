@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>author</key>
-	<string>Hans-Jörg Bibiko</string>
+	<string>Liviu Tudor</string>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -34,13 +34,18 @@ while(&lt;META&gt;) {
 }
 close(META);
 
-print "{\n\t\"data\":\n\t[\n";
+print "&lt;table border=\"1\" cellpadding=\"0\" cellspacing=\"0\"&gt;\n";
+print "&lt;tr&gt;";
+for($i=0; $i&lt;=$h_cnt; $i++) {
+	print "&lt;th&gt;$header[$i]&lt;/th&gt;";
+}
+print "&lt;/tr&gt;\n";
 
 # read row data of each selected row
 $rowData=&lt;&gt;;
 while($rowData) {
 
-	print "\t\t{\n";
+	print "&lt;tr&gt;";
 
 	# remove line ending
 	chomp($rowData);
@@ -51,81 +56,50 @@ while($rowData) {
 	# split column data which are tab-delimited
 	@data = split(/\t/, $rowData);
 	for($i=0; $i&lt;=$h_cnt; $i++) {
-
 		# re-escape \t and \n
 		$cellData = $data[$i];
 		$cellData =~ s/↵/\n/g;
 		$cellData =~ s/⇥/\t/g;
 
-		print "\t\t\t\"$header[$i]\": ";
-
+		print "&lt;td&gt;";
 		# check for data types
 		if($cellData eq "NULL") {
-			print "null";
-		}
-		elsif($meta[$i]-&gt;[1] eq "integer" || $meta[$i]-&gt;[1] eq "float") {
-			chomp($cellData);
-			$d = $cellData+0;
-			print "$d";
+			print "NULL";
 		} else {
 			chomp($cellData);
-			print "\"$cellData\"";
+			print "$cellData";
 		}
-		
-		# suppress last ,
-		if($i&lt;$h_cnt) {
-			print ",";
-		}
-
-		print "\n";
-
+		print "&lt;/td&gt;";
 	}
 
-	print "\t\t}";
+	print "&lt;/tr&gt;\n";
 
 	# get next row
 	$rowData=&lt;&gt;;
-
-	# suppress last ,
-	if($rowData) {
-		print ",";
-	}
-
-	print "\n";
 }
 
-print "\t]\n}";
-
+print "&lt;/table&gt;\n"; 
 ' | __CF_USER_TEXT_ENCODING=$UID:0x8000100:0x8000100 pbcopy</string>
 	<key>contact</key>
-	<string>znvy@ovovxb.qr</string>
+	<string>yvivh.ghqbe@tznvy.pbz</string>
 	<key>description</key>
-	<string>Copies the selected rows excluding any BLOB data in a data table JSON formatted into the pasteboard.
-
-Version 1.0</string>
+	<string>Copies the selected rows to clipboard as html</string>
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
-	<key>internalKeyEquivalent</key>
-	<dict>
-		<key>characters</key>
-		<string>C</string>
-		<key>keyCode</key>
-		<integer>8</integer>
-		<key>modifierFlags</key>
-		<integer>262144</integer>
-	</dict>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
-	<string>Copy as JSON</string>
+	<string>Copy as HTML</string>
 	<key>output</key>
 	<string>none</string>
 	<key>scope</key>
 	<string>datatable</string>
 	<key>tooltip</key>
-	<string>Copies the selected rows excluding any BLOB data JSON formatted into the pasteboard</string>
+	<string>Copy as HTML</string>
+	<key>trigger</key>
+	<string>none</string>
 	<key>uuid</key>
-	<string>CBB8B7A7-5AB9-4F4C-A404-D99CA9521337</string>
+	<string>31FD6D95-CED5-4870-9A19-5A1396216C37</string>
 	<key>isDefaultBundle</key>
 	<true/>
 </dict>

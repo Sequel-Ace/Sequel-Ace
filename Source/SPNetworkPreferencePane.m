@@ -42,18 +42,38 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 @implementation SPNetworkPreferencePane
 
+@synthesize bookmarks;
+@synthesize resolvedBookmarks;
+
 - (instancetype)init
 {
 	self = [super init];
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
+		bookmarks = [[NSMutableArray alloc] init];
+		resolvedBookmarks = [[NSMutableArray alloc] init];
+		
+		id o;
+		if((o = [prefs objectForKey:SPSecureBookmarks])){
+			[bookmarks setArray:o];
+		}
+		
+		[self reRequestSecureAccess];
 	}
+	
 	return self;
 }
 
 - (void)dealloc
 {
+	for(NSURL *url in resolvedBookmarks){
+		[url stopAccessingSecurityScopedResource];
+	}
+	
 	SPClear(sslCiphers);
+	SPClear(bookmarks);
+	SPClear(resolvedBookmarks);
+	
 	[super dealloc];
 }
 
@@ -92,9 +112,41 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (void)preferencePaneWillBeShown
 {
+	[self updateSSHConfigPopUp];
+	
 	[self loadSSLCiphers];
 	if(![[sslCipherView registeredDraggedTypes] containsObject:SPSSLCipherPboardTypeName])
 		[sslCipherView registerForDraggedTypes:@[SPSSLCipherPboardTypeName]];
+}
+
+#pragma mark -
+#pragma mark Bookmarks
+
+-(void)reRequestSecureAccess{
+	
+	NSLog(@"reRequestSecureAccess to saved bookmarks");
+
+	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+		
+		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
+			
+			NSError *error = nil;
+			
+			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
+													  options:NSURLBookmarkResolutionWithSecurityScope
+												relativeToURL:nil
+										  bookmarkDataIsStale:nil
+														error:&error];
+			
+			if(!error){
+				[tmpURL startAccessingSecurityScopedResource];
+				[resolvedBookmarks addObject:tmpURL];
+			}
+			else{
+				NSLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+			}
+		}];
+	}];
 }
 
 #pragma mark -
@@ -124,7 +176,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	
 	[prefs addObserver:self
 			forKeyPath:SPHiddenKeyFileVisibilityKey
-	           options:NSKeyValueObservingOptionNew
+			   options:NSKeyValueObservingOptionNew
 			   context:NULL];
 	
 	[_currentFilePanel beginSheetModalForWindow:[_currentAlert window] completionHandler:^(NSInteger result) {
@@ -164,13 +216,183 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 }
 
 #pragma mark -
+#pragma mark - PopUp Button
+
+- (IBAction)updateSSHConfig:(id)sender
+{
+	for (NSMenuItem *item in [sshConfigChooser itemArray]) {
+		[item setState:NSOffState];
+	}
+	
+	[sender setState:NSOnState];
+	[sshConfigChooser setTitle:[sender title]];
+	
+	if ([[sender title] isEqualToString:@"Sequel Ace default"]) {
+		[prefs setObject:[[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""] forKey:SPSSHConfigFile];
+		
+		return;
+	}
+	
+	// choose a config file not listed
+	if ((NSUInteger) [sshConfigChooser indexOfSelectedItem] == ([[sshConfigChooser itemArray] count] - 1)) {
+		// open the file chooser dialog
+		[self chooseSSHConfig];
+		
+		return;
+	}
+	
+	// the title contains the absolute path of the config file. Therefore save
+	// it to the preferences as selected config file.
+	[prefs setObject:[sender title] forKey:SPSSHConfigFile];
+	
+	[self updateSSHConfigPopUp];
+}
+
+- (void)updateSSHConfigPopUp
+{
+	// clear up all existing items
+	[sshConfigChooser removeAllItems];
+	
+	// add the default item to give the user the ability to revert his/her changes
+	[sshConfigChooser addItemWithTitle:@"Sequel Ace default"];
+	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
+	
+	NSUInteger __block count = 0;
+	
+	// iterate through all bookmarks in order to display them as menu items
+	[bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+		NSEnumerator *keyEnumerator = [dict keyEnumerator];
+		id key;
+		
+		// every bookmark is saved in relation to it's abslute path
+		while (key = [keyEnumerator nextObject]) {
+			NSString *itemTitle = [key substringFromIndex:[@"file://" length]];
+			
+			[sshConfigChooser addItemWithTitle:itemTitle];
+			
+			count++;
+		}
+	}];
+
+	// default value if no bookmarks are available
+	if (count == 0) {
+		[sshConfigChooser selectItemWithTitle:@"Sequel Ace default"];
+	}
+	
+	// add a separate add option under all granted files, that will open a
+	// file chooser panel in order to select a new file and grant access to
+	// it
+	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
+	[sshConfigChooser addItemWithTitle:@"Other file..."];
+
+	NSString *defaultConfig = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+	
+	if (count != 0) {
+		// select the currently configured value
+		NSString *currentConfig = [prefs stringForKey:SPSSHConfigFile];
+		
+		if ([currentConfig isEqualToString:defaultConfig]) {
+			currentConfig = @"Sequel Ace default";
+		}
+		
+		[sshConfigChooser selectItemWithTitle:currentConfig];
+	}
+}
+
+- (void) chooseSSHConfig
+{
+	// retrieve the file manager in order to fetch the current user's home
+	// directory
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	
+	_currentFilePanel = [NSOpenPanel openPanel];
+	[_currentFilePanel setTitle:@"Choose ssh config"];
+	[_currentFilePanel setCanChooseFiles:YES];
+	[_currentFilePanel setCanChooseDirectories:NO];
+	[_currentFilePanel setAllowsMultipleSelection:YES];
+	[_currentFilePanel setAccessoryView:hiddenFileView];
+	[_currentFilePanel setResolvesAliases:NO];
+	[_currentFilePanel setDirectoryURL:[fileManager.homeDirectoryForCurrentUser URLByAppendingPathComponent:@".ssh"]];
+	[self updateHiddenFiles];
+	
+	[prefs addObserver:self
+			forKeyPath:SPHiddenKeyFileVisibilityKey
+			   options:NSKeyValueObservingOptionNew
+			   context:NULL];
+	
+	[_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode)
+	 {
+		// only process data, when the user pressed ok
+		if (returnCode != NSModalResponseOK) {
+			return;
+		}
+
+		// since ssh configs are able to consist of multiple files, bookmarks
+		// for every selected file should be created in order to access them
+		// read-only.
+		[_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+			// check if the file is out of the sandbox
+			if ([_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
+				NSLog(@"got access to: %@", url.absoluteString);
+				
+				BOOL __block beenHereBefore = NO;
+				
+				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+					// check, if a bookmark already exists
+					if (dict[url.absoluteString] != nil) {
+						beenHereBefore = YES;
+						*stop = YES;
+					}
+				}];
+				
+				// if no bookmark exist, create on
+				if (beenHereBefore == NO) {
+					NSError *error = nil;
+					
+					NSData *tmpAppScopedBookmark = [url
+													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+																			 |
+																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
+													includingResourceValuesForKeys:nil
+													relativeToURL:nil
+													error:&error];
+					
+					// save the bookmark to the preferences in order to access
+					// them later in the SPConnectionController
+					if (tmpAppScopedBookmark && !error) {
+						[bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
+						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+					}
+				}
+			}
+			
+			// set the config path to the first selected file
+			if (idxURL == 0) {
+				// save the preferences
+				if (![[url path] length]) {
+					[prefs removeObjectForKey:SPSSHConfigFile];
+				} else {
+					[prefs setObject:[url path] forKey:SPSSHConfigFile];
+				}
+			}
+		}];
+		
+		// update the popup button with its items and the selected item
+		// from the file picker
+		[self updateSSHConfigPopUp];
+		
+		_currentFilePanel = nil;
+	}];
+}
+
+#pragma mark -
 #pragma mark SSL cipher list methods
 
 - (void)loadSSLCiphers
 {
 	NSArray *supportedCiphers = [SPNetworkPreferencePane defaultSSLCipherList];
 	[sslCiphers removeAllObjects];
-
+	
 	NSString *userCipherString = [prefs stringForKey:SPSSLCipherListKey];
 	if(userCipherString) {
 		//expand user list

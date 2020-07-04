@@ -363,10 +363,24 @@ static unsigned short getRandomPort();
 		TA(@"-o",@"NumberOfPasswordPrompts=3");
 		
 		// Use a KnownHostsFile in the sandbox folder
-		TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@/.keys/ssh_known_hosts_strict", NSHomeDirectory()]);
+		NSString *customKnownHostsFilePath = [NSHomeDirectory() stringByAppendingPathComponent:@".keys/ssh_known_hosts_strict"];
+		if (![[NSFileManager defaultManager] isWritableFileAtPath:customKnownHostsFilePath]){
+			//Handle deleting an old known hosts file if it exists and we don't have permission to write
+			[[NSFileManager defaultManager] removeItemAtPath:customKnownHostsFilePath error:nil];
+			//Create new known hosts file
+			[[NSFileManager defaultManager] createFileAtPath:customKnownHostsFilePath contents:[@"" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
+		}
+		TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@", customKnownHostsFilePath]);
 		
 		// Use a custom ssh config file
-		TA(@"-F", [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""]);
+		NSString *sshConfigFile = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile];
+		
+		// If the config is not set, use the default one
+		if (sshConfigFile == nil) {
+			sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+		}
+		
+		TA(@"-F", sshConfigFile);
 
 		// Specify an identity file if available
 		if (identityFilePath) {
