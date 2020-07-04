@@ -73,6 +73,8 @@ typedef struct {
 
 typedef void (^QueryProgressHandler)(QueryProgress *);
 
+static const NSUInteger SPMaxQueryLengthForWarning = 1000;
+
 /**
  * This class is used to decouple the background thread running the SQL queries
  * from the main thread displaying the progress.
@@ -601,12 +603,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 #pragma mark -
 #pragma mark Query actions
 
-/**
- * Performs the mysql-query given by the user
- * sets the tableView columns corresponding to the mysql-result
- */
-- (void)performQueries:(NSArray *)queries withCallback:(SEL)customQueryCallbackMethod;
-{
+- (void)performQueriesWithNoWarning:(NSArray *)queries withCallback:(SEL)customQueryCallbackMethod{
+	
 	NSString *taskString;
 	
 	//ensure there is no pending edit, which could be messed up (#2113)
@@ -614,7 +612,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	
 	if ([queries count] > 1) {
 		taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %i of %lu...", @"Running multiple queries string"), 1, (unsigned long)[queries count]];
-	} 
+	}
 	else {
 		taskString = NSLocalizedString(@"Running query...", @"Running single query string");
 	}
@@ -632,10 +630,73 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// If a helper thread is already running, execute inline - otherwise detach a new thread for the queries
 	if ([NSThread isMainThread]) {
 		[NSThread detachNewThreadWithName:SPCtxt(@"SPCustomQuery query perform task", tableDocumentInstance) target:self selector:@selector(performQueriesTask:) object:taskArguments];
-	} 
+	}
 	else {
 		[self performQueriesTask:taskArguments];
 	}
+}
+
+
+/**
+ * Performs the mysql-query given by the user
+ * sets the tableView columns corresponding to the mysql-result
+ */
+- (void)performQueries:(NSArray *)queries withCallback:(SEL)customQueryCallbackMethod;
+{
+	// check for new flag, if set to no, just exec queries
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled] == NO) {
+		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
+		return;
+	}
+	
+	NSMutableString *theQueries = [[NSMutableString alloc] init];
+	
+	for(NSString *tmpStr in queries){
+		SPLog(@"len: %lu", (unsigned long)tmpStr.length);
+		[theQueries appendString:tmpStr];
+		[theQueries appendString:@"\n\n"];
+	}
+	
+	SPLog(@"theQueriesLen: %lu", theQueries.length);
+	
+	NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"),theQueries];
+	
+	if(queries.count > 1){
+		infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with these queries?\n\n %@", @"message of panel asking for confirmation for exec query"),theQueries];
+	}
+	
+	if(theQueries.length > SPMaxQueryLengthForWarning){
+		
+		theQueries = (NSMutableString*)[theQueries summarizeToLength:SPMaxQueryLengthForWarning withEllipsis:YES];
+		infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with these queries?\n\n %@", @"message of panel asking for confirmation for exec query"), theQueries];
+	}
+
+	NSAlert *alert = [[NSAlert alloc] init];
+	[alert addButtonWithTitle:NSLocalizedString(@"Yes", @"Yes button")];
+	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+	[alert setInformativeText:infoText];
+	[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
+	[alert setAlertStyle:NSWarningAlertStyle];
+	
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+		
+		SPLog(@"rc = %ld", (long)returnCode);
+
+		// Cancel button
+		if(returnCode == NSAlertSecondButtonReturn){
+			SPLog(@"Use clicked Cancel, return");
+			[[alert window] orderOut:nil];
+			[alert release];
+			return;
+		}
+		else if(returnCode == NSAlertFirstButtonReturn){
+			SPLog(@"User clicked Yes, exec queries");
+			[[alert window] orderOut:nil];
+			[alert release];
+			[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
+		}
+	}];
+
 }
 
 - (void)performQueriesTask:(NSDictionary *)taskArguments
