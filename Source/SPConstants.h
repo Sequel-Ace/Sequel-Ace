@@ -293,9 +293,6 @@ extern NSString *SPDataSupportFolder;
 // Table filter
 extern NSString *SPTableContentFilterKey;
 
-// Preference key constants
-extern NSString *SPFirstRun;
-
 // General Prefpane
 extern NSString *SPDefaultFavorite;
 extern NSString *SPSelectLastFavoriteUsed;
