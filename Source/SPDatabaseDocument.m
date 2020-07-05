@@ -6942,11 +6942,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			// tableEncoding == nil indicates that there was an error while retrieving table data
 			tableEncoding = [tableDataInstance tableEncoding];
 
-			// If encoding is set to Autodetect, update the connection character set encoding
-			// based on the newly selected table's encoding - but only if it differs from the current encoding.
+			// If encoding is set to Autodetect, update the connection character set encoding to utf8mb4
+			// This allows us to receive data encoded in various charsets as UTF-8 characters.
 			if ([[[NSUserDefaults standardUserDefaults] objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
-				if (tableEncoding != nil && ![tableEncoding isEqualToString:previousEncoding]) {
-					[self setConnectionEncoding:tableEncoding reloadingViews:NO];
+				if (![@"utf8mb4" isEqualToString:previousEncoding]) {
+					[self setConnectionEncoding:@"utf8mb4" reloadingViews:NO];
 					changeEncoding = NO;
 				}
 			}
