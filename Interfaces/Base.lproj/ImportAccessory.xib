@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15705" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15705"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -84,10 +84,10 @@
                 <tabView fixedFrame="YES" drawsBackground="NO" controlSize="mini" type="bottomTabsBezelBorder" translatesAutoresizingMaskIntoConstraints="NO" id="124">
                     <rect key="frame" x="-7" y="-9" width="464" height="96"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                    <font key="font" metaFont="miniSystem"/>
+                    <font key="font" metaFont="toolTip" size="9"/>
                     <tabViewItems>
                         <tabViewItem label="CSV" identifier="1" id="125">
-                            <view key="view" ambiguous="YES" id="128">
+                            <view key="view" id="128">
                                 <rect key="frame" x="10" y="7" width="444" height="61"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
@@ -255,7 +255,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="131" y="16" width="500" height="412"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1792" height="1097"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <value key="minSize" type="size" width="500" height="353"/>
             <view key="contentView" id="86">
                 <rect key="frame" x="0.0" y="0.0" width="500" height="412"/>
@@ -264,11 +264,11 @@
                     <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="91">
                         <rect key="frame" x="-1" y="200" width="502" height="180"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <clipView key="contentView" ambiguous="YES" drawsBackground="NO" id="vP2-ix-4RJ">
+                        <clipView key="contentView" drawsBackground="NO" id="vP2-ix-4RJ">
                             <rect key="frame" x="1" y="1" width="500" height="178"/>
-                            <autoresizingMask key="autoresizingMask"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView ambiguous="YES" editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" allowsNonContiguousLayout="YES" id="92">
+                                <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" allowsNonContiguousLayout="YES" id="92">
                                     <rect key="frame" x="0.0" y="0.0" width="500" height="178"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -331,7 +331,7 @@ DQ
                         </view>
                     </box>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="103">
-                        <rect key="frame" x="17" y="388.5" width="466" height="16"/>
+                        <rect key="frame" x="17" y="389" width="466" height="16"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Import from Clipboard" id="104">
                             <font key="font" metaFont="system"/>
@@ -341,6 +341,7 @@ DQ
                     </textField>
                 </subviews>
             </view>
+            <point key="canvasLocation" x="139" y="-207"/>
         </window>
     </objects>
 </document>

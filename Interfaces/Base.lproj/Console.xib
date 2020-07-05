@@ -27,7 +27,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="426" y="331" width="575" height="203"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1692"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <value key="minSize" type="size" width="575" height="130"/>
             <view key="contentView" id="4">
                 <rect key="frame" x="0.0" y="0.0" width="575" height="203"/>
@@ -269,6 +269,7 @@
                     </buttonCell>
                 </button>
             </subviews>
+            <point key="canvasLocation" x="139" y="-70"/>
         </customView>
         <menu id="64" userLabel="Table Row Context Menu">
             <items>
