@@ -34,4 +34,21 @@ import AppKit
 			cancelButtonHandler?()
 		}
 	}
+
+	/// Creates an alert with primary colored OK button that triggers callback
+	/// - Parameters:
+	///   - title: String for title of the alert
+	///   - message: tring for informative message
+	///   - callback: Optional block that's invoked when user hits OK button
+	static func createWarningAlert(title: String,
+								   message: String,
+								   callback: (() -> ())? = nil) {
+		let alert = NSAlert()
+		alert.alertStyle = .critical
+		alert.messageText = title
+		alert.informativeText = message
+		alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+		alert.runModal()
+		callback?()
+	}
 }
