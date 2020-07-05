@@ -569,12 +569,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Display any errors
 	if ([errorsString length]) {
 		[errorsTextView setString:errorsString];
-		
-		[NSApp beginSheet:errorsSheet 
-		   modalForWindow:[NSApp keyWindow] 
-			modalDelegate:nil 
-		   didEndSelector:NULL 
-			  contextInfo:nil];
+
+		[self.window beginSheet:errorsSheet completionHandler:nil];
 		
 		SPClear(errorsString);
 		
