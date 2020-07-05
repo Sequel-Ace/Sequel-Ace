@@ -1,4 +1,4 @@
-Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon.png" align="right" height="80">
+Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon-1024.png" align="right" height="80">
 =======
 
 Sequel Ace is the "sequel" to longtime macOS tool Sequel Pro.
