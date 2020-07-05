@@ -511,25 +511,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
 	//copy block from stack to heap, otherwise it wouldn't live long enough to be invoked later.
 	void *heapCallback = callback? Block_copy(callback) : NULL;
-	
-	[NSApp beginSheet:[self window]
-	   modalForWindow:docWindow
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:heapCallback];
-}
 
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void*)context
-{
-	//[NSApp endSheet...] does not close the window
-	[[self window] orderOut:self];
-	//notify delegate
-	if(context) {
-		void (^callback)(void) = context;
+	[docWindow beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
 		//directly invoking callback would risk that we are dealloc'd while still in this run loop iteration.
-		dispatch_async(dispatch_get_main_queue(), callback);
-		Block_release(callback);
-	}
+		dispatch_async(dispatch_get_main_queue(), heapCallback);
+		Block_release(heapCallback);
+	}];
 }
 
 #pragma mark -
