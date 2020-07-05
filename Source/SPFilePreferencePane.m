@@ -273,16 +273,6 @@
 					}
 				}
 			}
-			
-			// set the config path to the first selected file
-			if (idxURL == 0) {
-				// save the preferences
-				if (![[url path] length]) {
-					[prefs removeObjectForKey:SPSSHConfigFile];
-				} else {
-					[prefs setObject:[url path] forKey:SPSSHConfigFile];
-				}
-			}
 		}];
 		
 		[self loadBookmarks];
