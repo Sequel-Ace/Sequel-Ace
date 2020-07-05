@@ -47,7 +47,7 @@
     SPFavoriteTextFieldCell *cell = (SPFavoriteTextFieldCell *)[super copyWithZone:zone];
 
 	cell->drawsDividerUnderCell = drawsDividerUnderCell;
-	cell->labelColor            = [labelColor copyWithZone:zone];
+	cell->labelColor = [labelColor copyWithZone:zone];
     
 	return cell;
 }
@@ -76,17 +76,17 @@
 
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 {
-	if(labelColor) {
+	if (labelColor) {
 		CGFloat round = (cellFrame.size.height/2);
 		NSBezierPath *bg = [NSBezierPath bezierPathWithRoundedRect:cellFrame xRadius:round yRadius:round];
-		
+
 		CGFloat h,s,b,a;
 		[[labelColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] getHue:&h saturation:&s brightness:&b alpha:&a];
-		
+
 		[[NSColor colorWithCalibratedHue:h saturation:s*1.21 brightness:b*1.1 alpha:a] set];
 		[bg fill];
 	}
-	
+
 	[super drawWithFrame:cellFrame inView:controlView];
 }
 
@@ -95,7 +95,7 @@
  * Draws the actual cell, with a divider if appropriate.
  */
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
-{		
+{
 	[super drawInteriorWithFrame:cellFrame inView:controlView];
 
 	if (drawsDividerUnderCell) {
@@ -107,7 +107,7 @@
 		if ([controlView isFlipped]) {
 			startPoint.y += cellFrame.size.height + 8.5f;
 			endPoint.y += cellFrame.size.height + 8.5f;
-		} 
+		}
 		else {
 			startPoint.y -= cellFrame.size.height + 8.5f;
 			endPoint.y -= cellFrame.size.height + 8.5f;
@@ -115,18 +115,18 @@
 
 		[NSGraphicsContext saveGraphicsState];
 		[[NSColor gridColor] set];
-		
+
 		NSShadow *lineGlow = [[NSShadow alloc] init];
-		
+
 		[lineGlow setShadowBlurRadius:1];
 		[lineGlow setShadowColor:[[NSColor controlLightHighlightColor] colorWithAlphaComponent:0.75f]];
 		[lineGlow setShadowOffset:NSMakeSize(0, -1)];
 		[lineGlow set];
-		
+
 		[NSBezierPath strokeLineFromPoint:startPoint toPoint:endPoint];
-		
+
 		[lineGlow release];
-		
+
 		[NSGraphicsContext restoreGraphicsState];
 	}
 }
