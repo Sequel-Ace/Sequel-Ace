@@ -25,6 +25,7 @@ import AppKit
 		let alert = NSAlert()
 		alert.messageText = title
 		alert.informativeText = message
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
 		alert.addButton(withTitle: primaryButtonTitle)
 		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
 		if alert.runModal() == .alertFirstButtonReturn {
