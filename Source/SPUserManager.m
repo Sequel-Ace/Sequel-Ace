@@ -41,6 +41,8 @@
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
 
+#import "Sequel_Ace-Swift.h"
+
 static NSString * const SPTableViewNameColumnID = @"NameColumn";
 
 static NSString *SPGeneralTabIdentifier = @"General";
@@ -1628,8 +1630,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 #pragma mark -
 #pragma mark Tab View Delegate methods
 
-- (BOOL)tabView:(NSTabView *)tabView shouldSelectTabViewItem:(NSTabViewItem *)tabViewItem
-{
+- (BOOL)tabView:(NSTabView *)tabView shouldSelectTabViewItem:(NSTabViewItem *)tabViewItem {
 	BOOL retVal = YES;
 
 	if ([[treeController selectedObjects] count] == 0) return NO;
@@ -1641,8 +1642,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Currently selected object in tree
 	id selectedObject = [[treeController selectedObjects] objectAtIndex:0];
 
-	// If we are selecting a tab view that requires there be a child,
-	// make sure there is a child to select.  If not, don't allow it.
+	// If we are selecting a tab view that requires there be a child, make sure there is a child to select.  If not, don't allow it.
 	if ([[tabViewItem identifier] isEqualToString:SPGlobalPrivilegesTabIdentifier] ||
 		[[tabViewItem identifier] isEqualToString:SPResourcesTabIdentifier] ||
 		[[tabViewItem identifier] isEqualToString:SPSchemaPrivilegesTabIdentifier]) {
@@ -1652,15 +1652,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		retVal = parent ? ([[parent children] count] > 0) : ([[selectedObject children] count] > 0);
 
 		if (!retVal) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"User has no hosts", @"user has no hosts message")
-											 defaultButton:NSLocalizedString(@"Add Host", @"Add Host")
-										   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-											   otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"This user doesn't have any hosts associated with it. It will be deleted unless one is added", @"user has no hosts informative message")];
 
-			if ([alert runModal] == NSAlertDefaultReturn) {
+			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"User has no hosts", @"user has no hosts message") message:NSLocalizedString(@"This user doesn't have any hosts associated with it. It will be deleted unless one is added", @"user has no hosts informative message") primaryButtonTitle:NSLocalizedString(@"Add Host", @"Add Host") primaryButtonHandler:^{
 				[self addHost:nil];
-			}
+			} cancelButtonHandler:nil];
 		}
 
 		// If this is the resources tab, enable or disable the controls based on the server's support for them

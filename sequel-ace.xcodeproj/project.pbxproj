@@ -210,6 +210,7 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50EAB5B81A8FBB08008F627A /* SPOSInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EAB5B71A8FBB08008F627A /* SPOSInfo.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
+		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
 		580E8DB711EA774B000D8427 /* SequelProTabClose_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAB11EA772C000D8427 /* SequelProTabClose_Pressed.png */; };
 		580E8DB811EA774B000D8427 /* SequelProTabClose_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAC11EA772C000D8427 /* SequelProTabClose_Rollover.png */; };
@@ -873,6 +874,8 @@
 		50EAB5B61A8FBB08008F627A /* SPOSInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPOSInfo.h; sourceTree = "<group>"; };
 		50EAB5B71A8FBB08008F627A /* SPOSInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPOSInfo.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
+		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
+		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
 		580E8DAB11EA772C000D8427 /* SequelProTabClose_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SequelProTabClose_Pressed.png; sourceTree = "<group>"; };
@@ -1830,6 +1833,7 @@
 			isa = PBXGroup;
 			children = (
 				17E641440EF01EB5001BC333 /* main.m */,
+				51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */,
 				17E641450EF01EB5001BC333 /* Sequel-Pro.pch */,
 				17E641470EF01EB8001BC333 /* Controllers */,
 				17E6415D0EF01EF9001BC333 /* Model */,
@@ -1929,6 +1933,7 @@
 		17E6416E0EF01F3B001BC333 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				51F4AFB924B26646006144D5 /* Extensions */,
 				507FF10E1BBCC4A900104523 /* Utility */,
 				1198F5B01174EDA700670590 /* Database Actions */,
 				583CE39511722B70008F148E /* File Compression */,
@@ -2292,6 +2297,14 @@
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 			);
 			name = Other;
+			sourceTree = "<group>";
+		};
+		51F4AFB924B26646006144D5 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
+			);
+			name = Extensions;
 			sourceTree = "<group>";
 		};
 		583CE39511722B70008F148E /* File Compression */ = {
@@ -2699,6 +2712,7 @@
 				TargetAttributes = {
 					8D15AC270486D014006FF6A4 = {
 						DevelopmentTeam = NKQ4HJ66PX;
+						LastSwiftMigration = 1200;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -3182,6 +3196,7 @@
 				58A8A79111A036C000B95749 /* SPWindowController.m in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
 				173C837211AAD26E00B8B084 /* SPExportUtilities.m in Sources */,
+				51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */,
 				173C837911AAD2AE00B8B084 /* SPDotExporter.m in Sources */,
 				173C837A11AAD2AE00B8B084 /* SPHTMLExporter.m in Sources */,
 				173C837B11AAD2AE00B8B084 /* SPPDFExporter.m in Sources */,
@@ -3640,6 +3655,7 @@
 		380F4EDB0FC0B50600B0BFD7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3675,6 +3691,7 @@
 		380F4EDC0FC0B50600B0BFD7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3707,6 +3724,7 @@
 		380F4EDD0FC0B50600B0BFD7 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3869,6 +3887,7 @@
 		588593F10F7AEB6900ED0E67 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3901,6 +3920,8 @@
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				VALID_ARCHS = x86_64;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -4160,6 +4181,7 @@
 		C05733C808A9546B00998B17 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -4192,6 +4214,9 @@
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				VALID_ARCHS = x86_64;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -4200,6 +4225,7 @@
 		C05733C908A9546B00998B17 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -4233,6 +4259,8 @@
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				VALID_ARCHS = x86_64;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
