@@ -218,20 +218,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
 				// return NSNull, thus catch that case for safety reasons
-				id tableName = [eachRow objectForKey:@"Name"];
-				if ([tableName isNSNull]) {
-					tableName = [eachRow objectForKey:@"NAME"];
-				}
+				id tableName = [eachRow objectForKey:@"Name"] ?: [eachRow objectForKey:@"NAME"];
 				if ([tableName isNSNull]) {
 					tableName = @"...";
 				}
 				[tables addObject:tableName];
 				
 				// comments is usefull
-				id tableComment = [eachRow objectForKey:@"Comment"];
-				if ([tableComment isNSNull]) {
-					tableComment = [eachRow objectForKey:@"COMMENT"];
-				}
+				id tableComment = [eachRow objectForKey:@"Comment"] ?: [eachRow objectForKey:@"COMMENT"];
 				if ([tableComment isNSNull]) {
 					tableComment = @"";
 				}
