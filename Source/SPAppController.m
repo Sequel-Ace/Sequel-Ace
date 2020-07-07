@@ -52,6 +52,8 @@
 #import "SPOSInfo.h"
 #import <PSMTabBar/PSMTabBarControl.h>
 
+#import "Sequel_Ace-Swift.h"
+
 @interface SPAppController ()
 
 - (void)_copyDefaultThemes;
@@ -449,38 +451,32 @@
 	NSDictionary *spfs = nil;
 	{
 		NSError *error = nil;
-		
+
 		NSData *pData = [NSData dataWithContentsOfFile:[filePath stringByAppendingPathComponent:@"info.plist"]
 											   options:NSUncachedRead
 												 error:&error];
-		
+
 		if(pData && !error) {
 			spfs = [[NSPropertyListSerialization propertyListWithData:pData
 															  options:NSPropertyListImmutable
 															   format:NULL
 																error:&error] retain];
 		}
-		
-		if(!spfs || error) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")
-											 defaultButton:NSLocalizedString(@"OK", @"OK button")
-										   alternateButton:nil
-											   otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
-			
-			[alert setAlertStyle:NSCriticalAlertStyle];
-			[alert runModal];
+
+		if (!spfs || error) {
+			NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file") message:message callback:nil];
 			
 			if (spfs) [spfs release];
 			
 			return;
 		}
 	}
-	
+
 	if([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
-		
+
 		NSFileManager *fileManager = [NSFileManager defaultManager];
-		
+
 		// Retrieve Save Panel accessory view data for remembering them globally
 		NSMutableDictionary *spfsDocData = [NSMutableDictionary dictionary];
 		[spfsDocData setObject:[NSNumber numberWithBool:[[spfs objectForKey:@"encrypted"] boolValue]] forKey:@"encrypted"];
@@ -488,51 +484,51 @@
 		[spfsDocData setObject:[NSNumber numberWithBool:[[spfs objectForKey:@"save_password"] boolValue]] forKey:@"save_password"];
 		[spfsDocData setObject:[NSNumber numberWithBool:[[spfs objectForKey:@"include_session"] boolValue]] forKey:@"include_session"];
 		[spfsDocData setObject:[NSNumber numberWithBool:[[spfs objectForKey:@"save_editor_content"] boolValue]] forKey:@"save_editor_content"];
-		
+
 		// Set global session properties
 		[SPAppDelegate setSpfSessionDocData:spfsDocData];
 		[SPAppDelegate setSessionURL:filePath];
-		
+
 		// Loop through each defined window in reversed order to reconstruct the last active window
 		for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects])
 		{
 			// Create a new window controller, and set up a new connection view within it.
 			SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
 			NSWindow *newWindow = [newWindowController window];
-			
+
 			// If window has more than 1 tab then set setHideForSingleTab to NO
 			// in order to avoid animation problems while opening tabs
 			if([[window objectForKey:@"tabs"] count] > 1)
 				[newWindowController setHideForSingleTab:NO];
-			
+
 			// The first window should use autosaving; subsequent windows should cascade.
 			// So attempt to set the frame autosave name; this will succeed for the very
 			// first window, and fail for others.
 			BOOL usedAutosave = [newWindow setFrameAutosaveName:@"DBView"];
-			
+
 			if (!usedAutosave) {
 				[newWindow setFrameUsingName:@"DBView"];
 			}
-			
+
 			if ([window objectForKey:@"frame"])
 			{
 				[newWindow setFrame:NSRectFromString([window objectForKey:@"frame"]) display:NO];
 			}
-			
+
 			// Set the window controller as the window's delegate
 			[newWindow setDelegate:newWindowController];
-			
+
 			usleep(1000);
-			
+
 			// Show the window
 			[newWindowController showWindow:self];
-			
+
 			// Loop through all defined tabs for each window
 			for (NSDictionary *tab in [window objectForKey:@"tabs"])
 			{
 				NSString *fileName = nil;
 				BOOL isBundleFile = NO;
-				
+
 				// If isAbsolutePath then take this path directly
 				// otherwise construct the releative path for the passed spfs file
 				if ([[tab objectForKey:@"isAbsolutePath"] boolValue]) {
@@ -542,32 +538,32 @@
 					fileName = [NSString stringWithFormat:@"%@/Contents/%@", filePath, [tab objectForKey:@"path"]];
 					isBundleFile = YES;
 				}
-				
+
 				// Security check if file really exists
 				if ([fileManager fileExistsAtPath:fileName]) {
-					
+
 					// Add new the tab
 					if(newWindowController) {
-						
+
 						if ([[newWindowController window] isMiniaturized]) [[newWindowController window] deminiaturize:self];
 						SPDatabaseDocument *newConnection = [newWindowController addNewConnection];
-						
+
 						[newConnection setIsSavedInBundle:isBundleFile];
 						if (![newConnection setStateFromConnectionFile:fileName]) {
 							break;
 						}
 					}
-					
+
 				}
 				else {
 					NSLog(@"Bundle file “%@” does not exists", fileName);
 					NSBeep();
 				}
 			}
-			
+
 			// Select active tab
 			[newWindowController selectTabAtIndex:[[window objectForKey:@"selectedTabIndex"] intValue]];
-			
+
 			// Reset setHideForSingleTab
 			if ([[NSUserDefaults standardUserDefaults] objectForKey:SPAlwaysShowWindowTabBar]) {
 				[newWindowController setHideForSingleTab:[[NSUserDefaults standardUserDefaults] boolForKey:SPAlwaysShowWindowTabBar]];
@@ -577,9 +573,9 @@
 			}
 		}
 	}
-	
+
 	[spfs release];
-	
+
 	[[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
 }
 
@@ -607,15 +603,7 @@
 		}
 	}
 	else {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while installing color theme file", @"error while installing color theme file")]
-										 defaultButton:NSLocalizedString(@"OK", @"OK button")
-									   alternateButton:nil
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"The color theme ‘%@’ already exists.", @"the color theme ‘%@’ already exists."), [filePath lastPathComponent]];
-		
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
-		
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while installing color theme file", @"error while installing color theme file")] message:[NSString stringWithFormat:NSLocalizedString(@"The color theme ‘%@’ already exists.", @"the color theme ‘%@’ already exists."), [filePath lastPathComponent]] callback:nil];
 		return;
 	}
 }
@@ -662,14 +650,7 @@
 
 	// Check for installed UUIDs
 	if (![cmdData objectForKey:SPBundleFileUUIDKey]) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while installing Bundle", @"Open Files : Bundle : UUID : Error dialog title")]
-										 defaultButton:NSLocalizedString(@"OK", @"Open Files : Bundle : UUID : OK button")
-									   alternateButton:nil
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.", @"Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file"), [filePath lastPathComponent]];
-		
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while installing Bundle", @"") message:[NSString stringWithFormat:NSLocalizedString(@"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.", @"Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file"), [filePath lastPathComponent]] callback:nil];
 		if (cmdData) [cmdData release];
 		return;
 	}
@@ -680,38 +661,22 @@
 	}
 	
 	if ([[installedBundleUUIDs allKeys] containsObject:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Installing Bundle", @"Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title")]
-										 defaultButton:NSLocalizedString(@"Update", @"Open Files : Bundle : Already-Installed : Update button")
-									   alternateButton:NSLocalizedString(@"Cancel", @"Open Files : Bundle : Already-Installed : Cancel button")
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"A Bundle ‘%@’ is already installed. Do you want to update it?", @"Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message"), [[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"name"]];
-		
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		NSInteger answer = [alert runModal];
-		
-		if (answer == NSAlertDefaultReturn) {
+		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Installing Bundle", @"Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title")]
+									 message:[NSString stringWithFormat:NSLocalizedString(@"A Bundle ‘%@’ is already installed. Do you want to update it?", @"Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message"), [[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"name"]]
+						  primaryButtonTitle:NSLocalizedString(@"Update", @"Open Files : Bundle : Already-Installed : Update button") primaryButtonHandler:^{
 			NSError *error = nil;
 			NSString *removePath = [[[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"] substringToIndex:([(NSString *)[[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"] length]-[SPBundleFileName length]-1)];
 			[[NSFileManager defaultManager] removeItemAtPath:removePath error:&error];
-			
+
 			if (error != nil) {
-				alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version."), removePath]
-										defaultButton:NSLocalizedString(@"OK", @"Open Files : Bundle : Already-Installed : Delete-Old-Error : OK button")
-									  alternateButton:nil
-										  otherButton:nil
-							informativeTextWithFormat:@"%@", [error localizedDescription]];
-				
-				[alert setAlertStyle:NSCriticalAlertStyle];
-				[alert runModal];
+				[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version."), removePath] message:[error localizedDescription] callback:nil];
 				if (cmdData) [cmdData release];
 				return;
 			}
-		}
-		else {
+		} cancelButtonHandler:^{
 			if (cmdData) [cmdData release];
-			
 			return;
-		}
+		}];
 	}
 	
 	if (cmdData) [cmdData release];
@@ -737,14 +702,7 @@
 		
 	}
 	else {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while installing Bundle", @"Open Files : Bundle : Install-Error : error dialog title")]
-										 defaultButton:NSLocalizedString(@"OK", @"Open Files : Bundle : Install-Error : OK button")
-									   alternateButton:nil
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"The Bundle ‘%@’ already exists.", @"Open Files : Bundle : Install-Error : Destination path already exists error dialog message"), [filePath lastPathComponent]];
-		
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while installing Bundle", @"Open Files : Bundle : Install-Error : error dialog title")] message:[NSString stringWithFormat:NSLocalizedString(@"The Bundle ‘%@’ already exists.", @"Open Files : Bundle : Install-Error : Destination path already exists error dialog message"), [filePath lastPathComponent]] callback:nil];
 	}
 }
 
@@ -1599,13 +1557,7 @@
 
 	// If ~/Library/Application Path/Sequel Ace/Bundles couldn't be created bail
 	if(appPathError != nil) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Bundles Installation Error", @"bundles installation error")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-									   alternateButton:nil 
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"Couldn't create Application Support Bundle folder!\nError: %@", @"Couldn't create Application Support Bundle folder!\nError: %@"), [appPathError localizedDescription]];
-
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Bundles Installation Error", @"bundles installation error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create Application Support Bundle folder!\nError: %@", @"Couldn't create Application Support Bundle folder!\nError: %@"), [appPathError localizedDescription]] callback:nil];
 		return;
 	}
 
@@ -1755,14 +1707,7 @@
 											[[NSFileManager defaultManager] removeItemAtPath:oldBundle error:&error];
 
 											if(error != nil) {
-												NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"error while moving “%@” to trash"), [[installedBundleUUIDs objectForKey:[cmdDataOld objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"]]
-																				 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-																			   alternateButton:nil 
-																				  otherButton:nil 
-																	informativeTextWithFormat:@"%@", [error localizedDescription]];
-
-												[alert setAlertStyle:NSCriticalAlertStyle];
-												[alert runModal];
+												[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"error while moving “%@” to trash"), [[installedBundleUUIDs objectForKey:[cmdDataOld objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"]] message:[error localizedDescription] callback:nil];
 												continue;
 											}
 											[infoAboutUpdatedDefaultBundles appendFormat:@"• %@\n", orgName];
@@ -1919,13 +1864,7 @@
 
 	// Inform user about default Bundle updates which were modified by the user and re-run Reload Bundles
 	if([infoAboutUpdatedDefaultBundles length]) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Default Bundles Update", @"default bundles update")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-									   alternateButton:nil 
-										  otherButton:nil 
-							informativeTextWithFormat:NSLocalizedString(@"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”.", @"the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”."), infoAboutUpdatedDefaultBundles];
-
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Default Bundles Update", @"default bundles update") message:[NSString stringWithFormat:NSLocalizedString(@"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”.", @"the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”."), infoAboutUpdatedDefaultBundles] callback:nil];
 		[self reloadBundles:nil];
 		return;
 	}
@@ -2263,16 +2202,10 @@
 	
 	// If ~/Library/Application Path/Sequel Ace/Themes couldn't be created bail
 	if (appPathError != nil) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Themes Installation Error", @"themes installation error")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button")
-									   alternateButton:nil
-                                           otherButton:nil
-                             informativeTextWithFormat:NSLocalizedString(@"Couldn't create Application Support Theme folder!\nError: %@", @"Couldn't create Application Support Theme folder!\nError: %@"), [appPathError localizedDescription]];
-        
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Themes Installation Error", @"themes installation error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create Application Support Theme folder!\nError: %@", @"Couldn't create Application Support Theme folder!\nError: %@"), [appPathError localizedDescription]] callback:nil];
 		return;
 	}
-    
+
     NSError *error = nil;
     NSError *copyError = nil;
     NSArray *defaultThemes = [fm contentsOfDirectoryAtPath:defaultThemesPath error:&error];
@@ -2293,14 +2226,7 @@
     
     // If Themes could not be copied, show error message
 	if (copyError != nil) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Themes Installation Error", @"themes installation error")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button")
-									   alternateButton:nil
-                                           otherButton:nil
-                             informativeTextWithFormat:NSLocalizedString(@"Couldn't copy default themes to Application Support Theme folder!\nError: %@", @"Couldn't copy default themes to Application Support Theme folder!\nError: %@"), [copyError localizedDescription]];
-        
-		[alert runModal];
-		
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Themes Installation Error", @"themes installation error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't copy default themes to Application Support Theme folder!\nError: %@", @"Couldn't copy default themes to Application Support Theme folder!\nError: %@"), [copyError localizedDescription]] callback:nil];
 		return;
 	}
 }
