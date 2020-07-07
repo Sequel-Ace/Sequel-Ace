@@ -49,6 +49,7 @@
 @synthesize notificationsPreferencePane;
 @synthesize editorPreferencePane;
 @synthesize networkPreferencePane;
+@synthesize filePreferencePane;
 @synthesize fontChangeTarget;
 
 - (id)init
@@ -73,6 +74,7 @@
 					   notificationsPreferencePane,
 					   editorPreferencePane,
 					   networkPreferencePane,
+					   filePreferencePane,
 					   nil];
 }
 
@@ -188,6 +190,15 @@
 	[networkItem setImage:[networkPreferencePane preferencePaneIcon]];
 	[networkItem setTarget:self];
 	[networkItem setAction:@selector(displayPreferencePane:)];
+	
+	// File preferences
+	
+	fileItem = [[NSToolbarItem alloc] initWithItemIdentifier:[filePreferencePane preferencePaneIdentifier]];
+	
+	[fileItem setLabel:[filePreferencePane preferencePaneName]];
+	[fileItem setImage:[filePreferencePane preferencePaneIcon]];
+	[fileItem setTarget:self];
+	[fileItem setAction:@selector(displayPreferencePane:)];
 
 	[toolbar setDelegate:self];
 	[toolbar setSelectedItemIdentifier:[generalPreferencePane preferencePaneIdentifier]];
@@ -267,6 +278,9 @@
 	else if ([itemIdentifier isEqualToString:SPPreferenceToolbarShortcuts]) {
 		return shortcutItem;
 	}
+	else if ([itemIdentifier isEqualToString:SPPreferenceToolbarFile]) {
+		return fileItem;
+	}
 
 	return [[[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] autorelease];
 }
@@ -279,7 +293,8 @@
 			 SPPreferenceToolbarNotifications,
 			 SPPreferenceToolbarEditor,
 			 SPPreferenceToolbarShortcuts,
-			 SPPreferenceToolbarNetwork
+			 SPPreferenceToolbarNetwork,
+			 SPPreferenceToolbarFile
 			 ];
 }
 
@@ -291,7 +306,8 @@
 			 SPPreferenceToolbarNotifications,
 			 SPPreferenceToolbarEditor,
 			 SPPreferenceToolbarShortcuts,
-			 SPPreferenceToolbarNetwork
+			 SPPreferenceToolbarNetwork,
+			 SPPreferenceToolbarFile
 			 ];
 }
 
@@ -303,7 +319,8 @@
 			 SPPreferenceToolbarNotifications,
 			 SPPreferenceToolbarEditor,
 			 SPPreferenceToolbarShortcuts,
-			 SPPreferenceToolbarNetwork
+			 SPPreferenceToolbarNetwork,
+			 SPPreferenceToolbarFile
 			 ];
 }
 
@@ -317,6 +334,7 @@
 	SPClear(notificationsItem);
 	SPClear(editorItem);
 	SPClear(networkItem);
+	SPClear(fileItem);
 	
 	[super dealloc];
 }

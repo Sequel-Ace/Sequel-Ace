@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15705" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15705"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -113,7 +113,7 @@
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="364" y="183" width="667" height="428"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1792" height="1097"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <view key="contentView" focusRingType="none" id="2">
                 <rect key="frame" x="0.0" y="0.0" width="667" height="428"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -123,7 +123,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                     </box>
                     <button verticalHuggingPriority="750" fixedFrame="YES" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="13">
-                        <rect key="frame" x="581.5" y="13" width="66" height="25"/>
+                        <rect key="frame" x="582" y="13" width="66" height="25"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="OK" bezelStyle="texturedRounded" alignment="center" controlSize="small" borderStyle="border" tag="1" inset="2" id="15">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -137,7 +137,7 @@ DQ
                         </connections>
                     </button>
                     <button hidden="YES" verticalHuggingPriority="750" fixedFrame="YES" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="76">
-                        <rect key="frame" x="581.5" y="13" width="66" height="25"/>
+                        <rect key="frame" x="582" y="13" width="66" height="25"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="Close" bezelStyle="texturedRounded" alignment="center" controlSize="small" borderStyle="border" tag="1" inset="2" id="77">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -151,7 +151,7 @@ Gw
                         </connections>
                     </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="10">
-                        <rect key="frame" x="498.5" y="13" width="75" height="25"/>
+                        <rect key="frame" x="499" y="13" width="75" height="25"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="Cancel" bezelStyle="texturedRounded" alignment="center" controlSize="small" borderStyle="border" inset="2" id="18">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -225,11 +225,11 @@ Gw
                     <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6">
                         <rect key="frame" x="0.0" y="51" width="667" height="349"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <clipView key="contentView" ambiguous="YES" drawsBackground="NO" id="vwn-fu-Tue">
+                        <clipView key="contentView" drawsBackground="NO" id="vwn-fu-Tue">
                             <rect key="frame" x="0.0" y="0.0" width="667" height="349"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView ambiguous="YES" editable="NO" importsGraphics="NO" verticallyResizable="YES" usesFontPanel="YES" usesRuler="YES" smartInsertDelete="YES" id="35">
+                                <textView editable="NO" importsGraphics="NO" verticallyResizable="YES" usesFontPanel="YES" usesRuler="YES" smartInsertDelete="YES" id="35">
                                     <rect key="frame" x="0.0" y="0.0" width="667" height="349"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -252,11 +252,11 @@ Gw
                     <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1000">
                         <rect key="frame" x="0.0" y="51" width="667" height="349"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <clipView key="contentView" ambiguous="YES" drawsBackground="NO" id="1001">
+                        <clipView key="contentView" drawsBackground="NO" id="1001">
                             <rect key="frame" x="0.0" y="0.0" width="667" height="349"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView ambiguous="YES" editable="NO" importsGraphics="NO" verticallyResizable="YES" usesFontPanel="YES" usesRuler="YES" smartInsertDelete="YES" id="1002">
+                                <textView editable="NO" importsGraphics="NO" verticallyResizable="YES" usesFontPanel="YES" usesRuler="YES" smartInsertDelete="YES" id="1002">
                                     <rect key="frame" x="0.0" y="0.0" width="667" height="349"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -288,11 +288,11 @@ Gw
                     <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5">
                         <rect key="frame" x="0.0" y="51" width="667" height="349"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <clipView key="contentView" ambiguous="YES" drawsBackground="NO" id="nVu-8c-pwq">
+                        <clipView key="contentView" drawsBackground="NO" id="nVu-8c-pwq">
                             <rect key="frame" x="0.0" y="0.0" width="667" height="349"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView ambiguous="YES" importsGraphics="NO" richText="NO" verticallyResizable="YES" usesFontPanel="YES" findStyle="panel" continuousSpellChecking="YES" allowsUndo="YES" usesRuler="YES" smartInsertDelete="YES" id="36" customClass="SPEditSheetTextView">
+                                <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" usesFontPanel="YES" findStyle="panel" continuousSpellChecking="YES" allowsUndo="YES" usesRuler="YES" smartInsertDelete="YES" id="36" customClass="SPEditSheetTextView">
                                     <rect key="frame" x="0.0" y="0.0" width="667" height="349"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -355,7 +355,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="292" width="439" height="218"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1792" height="1097"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <value key="minSize" type="size" width="411" height="218"/>
             <value key="maxSize" type="size" width="439" height="218"/>
             <view key="contentView" id="81">
@@ -367,7 +367,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="7" inset="2" id="157">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="459"/>
@@ -379,7 +379,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="158">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="458"/>
@@ -391,7 +391,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="159">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="457"/>
@@ -403,7 +403,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="160">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="456"/>
@@ -415,7 +415,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="161">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="455"/>
@@ -427,7 +427,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="162">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="454"/>
@@ -439,7 +439,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="163">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="453"/>
@@ -451,7 +451,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="164">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="452"/>
@@ -463,7 +463,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="165">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="463"/>
@@ -475,7 +475,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="166">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="462"/>
@@ -487,7 +487,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="167">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="461"/>
@@ -499,7 +499,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="168">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="460"/>
@@ -511,7 +511,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="169">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="467"/>
@@ -523,7 +523,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="170">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="466"/>
@@ -535,7 +535,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="171">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="465"/>
@@ -547,7 +547,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="172">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="464"/>
@@ -559,7 +559,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="173">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="471"/>
@@ -571,7 +571,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="174">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="470"/>
@@ -583,7 +583,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="175">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="469"/>
@@ -595,7 +595,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="176">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="468"/>
@@ -607,7 +607,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="177">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="476"/>
@@ -619,7 +619,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="178">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="475"/>
@@ -631,7 +631,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="179">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="474"/>
@@ -643,7 +643,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="180">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="472"/>
@@ -655,7 +655,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="181">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="480"/>
@@ -667,7 +667,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="182">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="479"/>
@@ -679,7 +679,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="183">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="478"/>
@@ -691,7 +691,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="184">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="477"/>
@@ -703,7 +703,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="185">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="484"/>
@@ -715,7 +715,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="186">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="483"/>
@@ -727,7 +727,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="187">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="482"/>
@@ -739,7 +739,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="188">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="481"/>
@@ -751,7 +751,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="7" inset="2" id="189">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="349"/>
@@ -763,7 +763,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="190">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="347"/>
@@ -775,7 +775,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="191">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="345"/>
@@ -787,7 +787,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="192">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="343"/>
@@ -799,7 +799,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="193">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="341"/>
@@ -811,7 +811,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="194">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="338"/>
@@ -823,7 +823,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="195">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="336"/>
@@ -835,7 +835,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="196">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="334"/>
@@ -847,7 +847,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="197">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="409"/>
@@ -859,7 +859,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="198">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="407"/>
@@ -871,7 +871,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="199">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="399"/>
@@ -883,7 +883,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="200">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="351"/>
@@ -895,7 +895,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="201">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="418"/>
@@ -907,7 +907,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="202">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="415"/>
@@ -919,7 +919,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="203">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="413"/>
@@ -931,7 +931,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="204">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="411"/>
@@ -943,7 +943,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="205">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="426"/>
@@ -955,7 +955,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="206">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="424"/>
@@ -967,7 +967,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="207">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="421"/>
@@ -979,7 +979,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="208">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="419"/>
@@ -991,7 +991,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="209">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="434"/>
@@ -1003,7 +1003,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="210">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="432"/>
@@ -1015,7 +1015,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="211">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="430"/>
@@ -1027,7 +1027,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="212">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="428"/>
@@ -1039,7 +1039,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="213">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="442"/>
@@ -1051,7 +1051,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="214">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="440"/>
@@ -1063,7 +1063,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="215">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="438"/>
@@ -1075,7 +1075,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="216">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="436"/>
@@ -1087,7 +1087,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="217">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="451"/>
@@ -1099,7 +1099,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="218">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="449"/>
@@ -1111,7 +1111,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" tag="1" inset="2" id="219">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="447"/>
@@ -1123,7 +1123,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="below" alignment="center" controlSize="mini" inset="2" id="220">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                         </buttonCell>
                         <connections>
                             <action selector="bitSheetBitButtonWasClicked:" target="-2" id="444"/>
@@ -1191,7 +1191,7 @@ Gw
                         <rect key="frame" x="139" y="102" width="138" height="16"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" drawsBackground="YES" usesSingleLineMode="YES" id="222">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1204,7 +1204,7 @@ Gw
                         <rect key="frame" x="139" y="84" width="138" height="16"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" continuous="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" drawsBackground="YES" usesSingleLineMode="YES" id="223">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1226,7 +1226,7 @@ Gw
                         <rect key="frame" x="139" y="66" width="138" height="16"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" drawsBackground="YES" usesSingleLineMode="YES" id="227">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1299,7 +1299,7 @@ Gw
                         <rect key="frame" x="380" y="142" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="0" id="353">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1308,7 +1308,7 @@ Gw
                         <rect key="frame" x="288" y="142" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="8" id="355">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1317,7 +1317,7 @@ Gw
                         <rect key="frame" x="196" y="142" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="16" id="357">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1326,7 +1326,7 @@ Gw
                         <rect key="frame" x="104" y="142" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="24" id="359">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1335,7 +1335,7 @@ Gw
                         <rect key="frame" x="380" y="171" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="32" id="367">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1344,7 +1344,7 @@ Gw
                         <rect key="frame" x="288" y="171" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="40" id="366">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1353,7 +1353,7 @@ Gw
                         <rect key="frame" x="196" y="171" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="48" id="365">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1362,7 +1362,7 @@ Gw
                         <rect key="frame" x="104" y="171" width="27" height="11"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="56" id="364">
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -1372,7 +1372,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="1" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="377">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">1</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1386,7 +1386,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="&gt;&gt;" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="383">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">r</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1400,7 +1400,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="&lt;&lt;" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="385">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">l</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1414,7 +1414,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="0" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="379">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">0</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1428,7 +1428,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="x̄" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="381">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">n</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1442,7 +1442,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="&gt;&gt;+" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="387">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">R</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1456,7 +1456,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="NULL" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="521">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">N</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
@@ -1470,7 +1470,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="roundTextured" title="+&lt;&lt;" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="389">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="miniSystem"/>
+                            <font key="font" metaFont="toolTip" size="9"/>
                             <string key="keyEquivalent">L</string>
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>

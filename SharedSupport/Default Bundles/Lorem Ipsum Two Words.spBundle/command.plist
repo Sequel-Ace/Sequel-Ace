@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>author</key>
+	<string>Boris Guéry</string>
+	<key>category</key>
+	<string>Lorem Ipsum</string>
+	<key>command</key>
+	<string>#!/usr/bin/ruby
+
+print "Lorem Ipsum"</string>
+	<key>contact</key>
+	<string>threl.o@tznvy.pbz</string>
+	<key>description</key>
+	<string>Insert Lorem Ipsum. Best suited for VARCHAR type.</string>
+	<key>input</key>
+	<string>none</string>
+	<key>internalKeyEquivalent</key>
+	<dict>
+		<key>characters</key>
+		<string>T</string>
+		<key>keyCode</key>
+		<integer>17</integer>
+		<key>modifierFlags</key>
+		<integer>393216</integer>
+	</dict>
+	<key>keyEquivalent</key>
+	<string>^$T</string>
+	<key>name</key>
+	<string>Two Words</string>
+	<key>output</key>
+	<string>insertastext</string>
+	<key>scope</key>
+	<string>inputfield</string>
+	<key>uuid</key>
+	<string>8F858F4D-9DCC-488A-B01C-D9F7FA32FE32</string>
+	<key>isDefaultBundle</key>
+	<true/>
+</dict>
+</plist>
