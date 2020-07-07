@@ -315,7 +315,7 @@
                                     <control verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="804" customClass="SRRecorderControl">
                                         <rect key="frame" x="127" y="434" width="157" height="22"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        <string key="toolTip">Click to record a shortcut for the Bundle command (Please note, not every shortcut will work due to global or Sequel Pro key bindings)</string>
+                                        <string key="toolTip">Click to record a shortcut for the Bundle command (Please note, not every shortcut will work due to global or Sequel Ace key bindings)</string>
                                         <actionCell key="cell" controlSize="mini" alignment="left" id="824" customClass="SRRecorderCell">
                                             <font key="font" metaFont="miniSystem"/>
                                         </actionCell>

@@ -9,7 +9,7 @@
 
 ### Core Features
 
-In the articles below we take you through the important screens that make up Sequel Pro and allow you to manage your databases and tables.
+In the articles below we take you through the important screens that make up Sequel Ace and allow you to manage your databases and tables.
 
 #### Frequently Asked Questions
 
@@ -23,7 +23,7 @@ If you press `⌘ + ⌥ + R` it will run either the currently selected text as a
 
 To create an _enum_ field follow the same procedure as you would for any other field, choose _enum_ in the _Type_column of the Table Structure form, and then in the _Length_ column enter the enum values as comma separated quoted strings. If you wish to use a default value, you should enter it without quotes in the _Default_ column.
 
-**Where does Sequel Pro store the connections?**
+**Where does Sequel Ace store the connections?**
 
 The connections strings are stored in the following preference file:
 

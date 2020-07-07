@@ -25,7 +25,7 @@
                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" preferredMaxLayoutWidth="400" translatesAutoresizingMaskIntoConstraints="NO" id="7">
                         <rect key="frame" x="112" y="64" width="404" height="34"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Sequel Pro appears to have lost the connection to the server, or the server has stopped responding." id="8">
+                        <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." id="8">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

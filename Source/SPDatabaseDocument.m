@@ -5567,7 +5567,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				SPOnewayAlertSheet(
 					NSLocalizedString(@"BASH Error", @"bash error"),
 					[self parentWindow],
-					NSLocalizedString(@"Status file for sequelpro url scheme command couldn't be written!", @"status file for sequelpro url scheme command couldn't be written error message")
+					NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
 				);
 			}
 			
@@ -5743,7 +5743,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			SPOnewayAlertSheet(
 				NSLocalizedString(@"BASH Error", @"bash error"),
 				[self parentWindow],
-				NSLocalizedString(@"Status file for sequelpro url scheme command couldn't be written!", @"status file for sequelpro url scheme command couldn't be written error message")
+				NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
 			);
 		}
 		return;
