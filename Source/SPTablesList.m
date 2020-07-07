@@ -220,12 +220,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				// return NSNull, thus catch that case for safety reasons
 				id tableName = [eachRow objectForKey:@"Name"];
 				if ([tableName isNSNull]) {
+					tableName = [eachRow objectForKey:@"NAME"];
+				}
+				if ([tableName isNSNull]) {
 					tableName = @"...";
 				}
 				[tables addObject:tableName];
 				
 				// comments is usefull
 				id tableComment = [eachRow objectForKey:@"Comment"];
+				if ([tableComment isNSNull]) {
+					tableComment = [eachRow objectForKey:@"COMMENT"];
+				}
 				if ([tableComment isNSNull]) {
 					tableComment = @"";
 				}
