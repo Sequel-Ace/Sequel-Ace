@@ -64,11 +64,14 @@
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
 - (void)openUserBundleAtPath:(NSString *)filePath;
 
+@property (readwrite, retain) NSFileManager *fm;
+
 @end
 
 @implementation SPAppController
 
 @synthesize lastBundleBlobFilesDirectory;
+@synthesize fm;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -93,9 +96,11 @@
 		installedBundleUUIDs = [[NSMutableDictionary alloc] initWithCapacity:1];
 		runningActivitiesArray = [[NSMutableArray alloc] init];
 
+		fm = [NSFileManager defaultManager];
+		
 		//Create runtime directiories
-		[[NSFileManager defaultManager] createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
-		[[NSFileManager defaultManager] createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
+		[fm createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
+		[fm createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
 
 		[NSApp setDelegate:self];
 	}
@@ -356,7 +361,7 @@
 - (void)openSQLFileAtPath:(NSString *)filePath
 {
 	// Check size and NSFileType
-	NSDictionary *attr = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil];
+	NSDictionary *attr = [fm attributesOfItemAtPath:filePath error:nil];
 
 	SPDatabaseDocument *frontDocument = [self frontDocument];
 
@@ -410,7 +415,7 @@
 		// Otherwise, attempt to autodetect the encoding
 	}
 	else {
-		sqlEncoding = [[NSFileManager defaultManager] detectEncodingforFileAtPath:filePath];
+		sqlEncoding = [fm detectEncodingforFileAtPath:filePath];
 	}
 
 	NSError *error = nil;
@@ -475,7 +480,7 @@
 
 	if([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
 
-		NSFileManager *fileManager = [NSFileManager defaultManager];
+		NSFileManager *fileManager = fm;
 
 		// Retrieve Save Panel accessory view data for remembering them globally
 		NSMutableDictionary *spfsDocData = [NSMutableDictionary dictionary];
@@ -581,9 +586,7 @@
 
 - (void)openColorThemeFileAtPath:(NSString *)filePath
 {
-	NSFileManager *fm = [NSFileManager defaultManager];
-
-	NSString *themePath = [[NSFileManager defaultManager] applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
+	NSString *themePath = [fm applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
 
 	if (!themePath) return;
 
@@ -610,7 +613,6 @@
 
 - (void)openUserBundleAtPath:(NSString *)filePath
 {
-	NSFileManager *fm = [NSFileManager defaultManager];
 
 	NSString *bundlePath = [fm applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder error:nil];
 
@@ -666,7 +668,7 @@
 						  primaryButtonTitle:NSLocalizedString(@"Update", @"Open Files : Bundle : Already-Installed : Update button") primaryButtonHandler:^{
 			NSError *error = nil;
 			NSString *removePath = [[[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"] substringToIndex:([(NSString *)[[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"] length]-[SPBundleFileName length]-1)];
-			[[NSFileManager defaultManager] removeItemAtPath:removePath error:&error];
+			[fm removeItemAtPath:removePath error:&error];
 
 			if (error != nil) {
 				[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version."), removePath] message:[error localizedDescription] callback:nil];
@@ -800,8 +802,6 @@
 	else
 		parameter = @[];
 
-
-	NSFileManager *fm = [NSFileManager defaultManager];
 
 	// Handle commands which don't need a connection window
 	if([command isEqualToString:@"chooseItemFromList"]) {
@@ -1104,7 +1104,7 @@
 		NSString *uuid = [NSString stringWithNewUUID];
 		NSString *bundleInputFilePath = [NSString stringWithFormat:@"%@_%@", [SPBundleTaskInputFilePath stringByExpandingTildeInPath], uuid];
 
-		[[NSFileManager defaultManager] removeItemAtPath:bundleInputFilePath error:nil];
+		[fm removeItemAtPath:bundleInputFilePath error:nil];
 
 		NSMutableDictionary *env = [NSMutableDictionary dictionary];
 		[env setObject:[infoPath stringByDeletingLastPathComponent] forKey:SPBundleShellVariableBundlePath];
@@ -1142,7 +1142,7 @@
 																  uuid, SPBundleFileInternalexecutionUUID, nil]
 														   error:&err];
 
-		[[NSFileManager defaultManager] removeItemAtPath:bundleInputFilePath error:nil];
+		[fm removeItemAtPath:bundleInputFilePath error:nil];
 
 		NSString *action = SPBundleOutputActionNone;
 		if([cmdData objectForKey:SPBundleFileOutputActionKey] && [(NSString *)[cmdData objectForKey:SPBundleFileOutputActionKey] length])
@@ -1548,7 +1548,6 @@
 
 	// Set up the bundle search paths
 	// First process all in Application Support folder installed ones then Default ones
-	NSFileManager *fm = [NSFileManager defaultManager];
 	NSError *appPathError = nil;
 	NSArray *bundlePaths = [NSArray arrayWithObjects:
 		[fm applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:&appPathError],
@@ -1668,7 +1667,7 @@
 
 											// Duplicate Bundle, change the UUID and rename the menu label
 											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtension length] - 1)], (long)(random() % 35000), SPUserBundleFileExtension];
-											if(![[NSFileManager defaultManager] copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
+											if(![fm copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
 												NSLog(@"Couldn't copy “%@” to update it", bundle);
 												NSBeep();
 												continue;
@@ -1704,7 +1703,7 @@
 											[dupData writeToFile:duplicatedBundleCommand atomically:YES];
 
 											error = nil;
-											[[NSFileManager defaultManager] removeItemAtPath:oldBundle error:&error];
+											[fm removeItemAtPath:oldBundle error:&error];
 
 											if(error != nil) {
 												[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"error while moving “%@” to trash"), [[installedBundleUUIDs objectForKey:[cmdDataOld objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"]] message:[error localizedDescription] callback:nil];
@@ -2132,7 +2131,7 @@
 	BOOL shouldSaveFavorites = NO;
 
 	if (lastBundleBlobFilesDirectory != nil) {
-		[[NSFileManager defaultManager] removeItemAtPath:lastBundleBlobFilesDirectory error:nil];
+		[fm removeItemAtPath:lastBundleBlobFilesDirectory error:nil];
 	}
 
 	// Iterate through each open window
@@ -2195,7 +2194,6 @@
 - (void)_copyDefaultThemes
 {
 	NSError *appPathError = nil;
-	NSFileManager *fm = [NSFileManager defaultManager];
 
     NSString *defaultThemesPath = [NSString stringWithFormat:@"%@/Contents/SharedSupport/Default Themes", [[NSBundle mainBundle] bundlePath]];
     NSString *appSupportThemesPath = [fm applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder createIfNotExists:YES error:&appPathError];
@@ -2487,6 +2485,7 @@
 	if (runningActivitiesArray)     SPClear(runningActivitiesArray);
 
 	SPClear(prefsController);
+	SPClear(fm);
 
 	if (aboutController) SPClear(aboutController);
 	if (bundleEditorController) SPClear(bundleEditorController);

@@ -51,9 +51,14 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
 
+@property (readwrite, retain) NSFileManager *fm;
+
 @end
 
 @implementation SPEditorPreferencePane
+
+@synthesize fm;
+
 
 #pragma mark -
 #pragma mark Initialisation
@@ -62,7 +67,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	if ((self = [super init])) {
 		
-		themePath = [[[NSFileManager defaultManager] applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil] retain];
+		fm = [NSFileManager defaultManager];
+
+		themePath = [[fm applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil] retain];
 		
 		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
 		
@@ -202,9 +209,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if ([editThemeListTable numberOfSelectedRows] != 1) return;
 	
 	NSString *selectedPath = [NSString stringWithFormat:@"%@/%@_copy.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension];
-	
-	NSFileManager *fm = [NSFileManager defaultManager];
-	
+		
 	if (![fm fileExistsAtPath:selectedPath isDirectory:nil]) {
 		if ([fm copyItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension] toPath:selectedPath error:nil]) {
 			
@@ -229,9 +234,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if ([editThemeListTable numberOfSelectedRows] != 1) return;
 	
 	NSString *selectedPath = [NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension];
-	
-	NSFileManager *fm = [NSFileManager defaultManager];
-	
+		
 	if ([fm fileExistsAtPath:selectedPath isDirectory:nil]) {
 		if ([fm removeItemAtPath:selectedPath error:nil]) {
 			
@@ -511,7 +514,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	
 	if ([contextInfo isEqualToString:SPSaveColorScheme]) {
 		if (returnCode == NSModalResponseOK) {
-			NSFileManager *fm = [NSFileManager defaultManager];
 			
 			if (![fm fileExistsAtPath:themePath isDirectory:nil]) {
 				NSError *error = nil;
@@ -584,8 +586,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		}
 		
 		// Rename theme file
-		NSFileManager *fm = [NSFileManager defaultManager];
-		
 		if (![fm moveItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:rowIndex], SPColorThemeFileExtension] toPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, newName, SPColorThemeFileExtension] error:nil]) {
 			NSBeep();
 			[editThemeListTable reloadData];
@@ -775,8 +775,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (NSArray *)_getAvailableThemes
 {
 	// Read ~/Library/Application Support/Sequel Ace/Themes
-	NSFileManager *fm = [NSFileManager defaultManager];
-	
 	if ([fm fileExistsAtPath:themePath isDirectory:nil]) {
 		NSError *error = nil;
 		NSArray *allItemsRaw = [fm contentsOfDirectoryAtPath:themePath error:&error];
