@@ -5400,12 +5400,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	if([command isEqualToString:@"ReloadContentTableWithWHEREClause"]) {
 		NSString *queryFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fm = [NSFileManager defaultManager];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
 		BOOL isDir;
-		if([fm fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
+		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 			NSError *inError = nil;
 			NSString *query = [NSString stringWithContentsOfFile:queryFileName encoding:NSUTF8StringEncoding error:&inError];
-			[fm removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
 			if(inError == nil && query && [query length]) {
 				[tableContentInstance filterTable:query];
 			}
@@ -5415,12 +5415,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	if([command isEqualToString:@"RunQueryInQueryEditor"]) {
 		NSString *queryFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fm = [NSFileManager defaultManager];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
 		BOOL isDir;
-		if([fm fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
+		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 			NSError *inError = nil;
 			NSString *query = [NSString stringWithContentsOfFile:queryFileName encoding:NSUTF8StringEncoding error:&inError];
-			[fm removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
 			if(inError == nil && query && [query length]) {
 				[customQueryInstance performQueries:@[query] withCallback:NULL];
 			}
@@ -5436,7 +5436,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			NSString *resultFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], docProcessID];
 			NSString *metaFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], docProcessID];
 			NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], docProcessID];
-			NSFileManager *fm = [NSFileManager defaultManager];
+			NSFileManager *fileManager = [NSFileManager defaultManager];
 			NSString *status = @"0";
 			BOOL userTerminated = NO;
 			BOOL doSyntaxHighlighting = NO;
@@ -5549,10 +5549,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				}
 			}
 			
-			[fm removeItemAtPath:queryFileName error:nil];
-			[fm removeItemAtPath:resultFileName error:nil];
-			[fm removeItemAtPath:metaFileName error:nil];
-			[fm removeItemAtPath:statusFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:resultFileName error:nil];
+			[fileManager removeItemAtPath:metaFileName error:nil];
+			[fileManager removeItemAtPath:statusFileName error:nil];
 
 			if(userTerminated)
 				status = @"1";
@@ -5587,19 +5587,19 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NSString *resultFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], docProcessID];
 		NSString *metaFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], docProcessID];
 		NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fm = [NSFileManager defaultManager];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
 		NSString *status = @"0";
 		BOOL isDir;
 		BOOL userTerminated = NO;
-		if([fm fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
+		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 
 			NSError *inError = nil;
 			NSString *query = [NSString stringWithContentsOfFile:queryFileName encoding:NSUTF8StringEncoding error:&inError];
 
-			[fm removeItemAtPath:queryFileName error:nil];
-			[fm removeItemAtPath:resultFileName error:nil];
-			[fm removeItemAtPath:metaFileName error:nil];
-			[fm removeItemAtPath:statusFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:resultFileName error:nil];
+			[fileManager removeItemAtPath:metaFileName error:nil];
+			[fileManager removeItemAtPath:statusFileName error:nil];
 
 			if(inError == nil && query && [query length]) {
 
