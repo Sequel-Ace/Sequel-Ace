@@ -8,16 +8,16 @@
 
 import Cocoa
 
-class SPAutosizingTextView: NSTextView {
+final class SPAutosizingTextView: NSTextView {
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+	override func draw(_ dirtyRect: NSRect) {
+		super.draw(dirtyRect)
 		//Ensure text view resizes to content
 		if let textContainerReference = self.textContainer, let layoutManagerRef = self.layoutManager {
 			layoutManagerRef.ensureLayout(for: textContainerReference)
 			self.frame = layoutManagerRef.usedRect(for: textContainerReference)
 			
 		}
-    }
+	}
     
 }
