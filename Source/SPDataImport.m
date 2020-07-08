@@ -58,13 +58,13 @@
 - (void)_closeAndStopProgressSheet;
 - (NSString *)_getLineEndingForFile:(NSString *)filePath;
 
-@property (readwrite, retain) NSFileManager *fm;
+@property (readwrite, retain) NSFileManager *fileManager;
 
 @end
 
 @implementation SPDataImport
 
-@synthesize fm;
+@synthesize fileManager;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -99,7 +99,7 @@
 		prefs = nil;
 		lastFilename = nil;
 		mainNibLoaded = NO;
-		fm = [NSFileManager defaultManager];
+		fileManager = [NSFileManager defaultManager];
 	}
 	
 	return self;
@@ -404,13 +404,13 @@
 			NSLocalizedString(@"The SQL file you selected could not be found or read.", @"SQL file open error")
 		);
 		if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-			[fm removeItemAtPath:filename error:nil];
+			[fileManager removeItemAtPath:filename error:nil];
 		return;
 	}
 	fileIsCompressed = ([sqlFileHandle compressionFormat] != SPNoCompression);
 
 	// Grab the file length
-	fileTotalLength = (NSUInteger)[[[fm attributesOfItemAtPath:filename error:NULL] objectForKey:NSFileSize] longLongValue];
+	fileTotalLength = (NSUInteger)[[[fileManager attributesOfItemAtPath:filename error:NULL] objectForKey:NSFileSize] longLongValue];
 	if (!fileTotalLength) fileTotalLength = 1;
 
 	SPMainQSync(^{
@@ -437,7 +437,7 @@
 	// Determine the file encoding.  The first item in the encoding menu is "Autodetect"; if
 	// this is selected, attempt to detect the encoding of the file
 	if (![[importEncodingPopup onMainThread]indexOfSelectedItem]) {
-	sqlEncoding = [fm detectEncodingforFileAtPath:filename];
+	sqlEncoding = [fileManager detectEncodingforFileAtPath:filename];
 		if ([SPMySQLConnection mySQLCharsetForStringEncoding:sqlEncoding]) {
 			connectionEncodingToRestore = [mySQLConnection encoding];
 			[mySQLConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", [SPMySQLConnection mySQLCharsetForStringEncoding:sqlEncoding]]];
@@ -495,7 +495,7 @@
 			[sqlDataBuffer release];
 			[importPool drain];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fm removeItemAtPath:filename error:nil];
+			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 			return;
 		}
 
@@ -551,7 +551,7 @@
 					[sqlDataBuffer release];
 					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fm removeItemAtPath:filename error:nil];
+					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 					return;
 				}
 
@@ -576,7 +576,7 @@
 		// Before entering the following loop, check that we actually have a connection.
 		// If not, check the connection if appropriate and then clean up and exit if appropriate.
 		if (![mySQLConnection isConnected] && ([mySQLConnection userTriggeredDisconnect] || ![mySQLConnection checkConnection])) {
-			if ([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fm removeItemAtPath:filename error:nil];
+			if ([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 
 			[self _closeAndStopProgressSheet];
 			[errors appendString:NSLocalizedString(@"The connection to the server was lost during the import.  The import is only partially complete.", @"Connection lost during import error message")];
@@ -723,7 +723,7 @@
 	[sqlDataBuffer release];
 	[importPool drain];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fm removeItemAtPath:filename error:nil];
+	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 
 	// Close progress sheet
 	[self _closeAndStopProgressSheet];
@@ -822,12 +822,12 @@
 			NSLocalizedString(@"The CSV file you selected could not be found or read.", @"CSV file open error")
 		);
 		if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-			[fm removeItemAtPath:filename error:nil];
+			[fileManager removeItemAtPath:filename error:nil];
 		return;
 	}
 
 	// Grab the file length and status
-	fileTotalLength = (NSUInteger)[[[fm attributesOfItemAtPath:filename error:NULL] objectForKey:NSFileSize] longLongValue];
+	fileTotalLength = (NSUInteger)[[[fileManager attributesOfItemAtPath:filename error:NULL] objectForKey:NSFileSize] longLongValue];
 	if (!fileTotalLength) fileTotalLength = 1;
 	fileIsCompressed = ([csvFileHandle compressionFormat] != SPNoCompression);
 
@@ -863,7 +863,7 @@
 	});
 	// if "Autodetect" is selected, attempt to detect the encoding of the file.
 	if (!csvEncoding) {
-		csvEncoding = [fm detectEncodingforFileAtPath:filename];
+		csvEncoding = [fileManager detectEncodingforFileAtPath:filename];
 	}
 
 	// Read in the file in a loop.  The loop actually needs to perform three tasks: read in
@@ -919,7 +919,7 @@
 			[importPool drain];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-				[fm removeItemAtPath:filename error:nil];
+				[fileManager removeItemAtPath:filename error:nil];
 			return;
 		}
 
@@ -971,7 +971,7 @@
 					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-						[fm removeItemAtPath:filename error:nil];
+						[fileManager removeItemAtPath:filename error:nil];
 					return;
 				}
 
@@ -1018,7 +1018,7 @@
 					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-						[fm removeItemAtPath:filename error:nil];
+						[fileManager removeItemAtPath:filename error:nil];
 					return;
 				}
 
@@ -1095,7 +1095,7 @@
 				[importPool drain];
 				[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 				if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-					[fm removeItemAtPath:filename error:nil];
+					[fileManager removeItemAtPath:filename error:nil];
 				return;
 			}
 
@@ -1257,7 +1257,7 @@
 	[importPool drain];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-		[fm removeItemAtPath:filename error:nil];
+		[fileManager removeItemAtPath:filename error:nil];
 
 	// Close progress sheet
 	[self _closeAndStopProgressSheet];
@@ -1902,7 +1902,7 @@ cleanup:
 	if (selectedTableTarget)           SPClear(selectedTableTarget);
 	
 	SPClear(nibObjectsToRelease);
-	SPClear(fm);
+	SPClear(fileManager);
 	
 	[super dealloc];
 }

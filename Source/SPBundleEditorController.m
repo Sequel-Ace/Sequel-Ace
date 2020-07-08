@@ -62,7 +62,7 @@
 - (NSUInteger)_arrangedCategoryIndexForScopeIndex:(NSUInteger)scopeIndex andCategory:(NSString*)category;
 - (void)_metaSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
-@property (readwrite, retain) NSFileManager *fm;
+@property (readwrite, retain) NSFileManager *fileManager;
 
 @end
 
@@ -70,7 +70,7 @@
 
 @implementation SPBundleEditorController
 
-@synthesize fm;
+@synthesize fileManager;
 
 - (id)init
 {
@@ -81,7 +81,7 @@
 		oldBundleName = nil;
 		isTableCellEditing = NO;
 		deletedDefaultBundles = [[NSMutableArray alloc] initWithCapacity:1];
-		fm = [NSFileManager defaultManager];
+		fileManager = [NSFileManager defaultManager];
 
 	}
 	
@@ -105,7 +105,7 @@
 	// Init all needed variables; popup menus (with the chance for localization); and set
 	// defaults
 
-	bundlePath = [[fm applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil] retain];
+	bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil] retain];
 
 
 	touchedBundleArray = [[NSMutableArray alloc] initWithCapacity:1];
@@ -552,16 +552,16 @@
 		BOOL isDir;
 		BOOL copyingWasSuccessful = YES;
 		// Copy possible existing bundle with content
-		if([fm fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
-			if(![fm copyItemAtPath:possibleExisitingBundleFilePath toPath:newBundleFilePath error:nil])
+		if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
+			if(![fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:newBundleFilePath error:nil])
 				copyingWasSuccessful = NO;
 		}
 		if(!copyingWasSuccessful) {
 			// try again with new name
 			newFileName = [NSString stringWithFormat:@"%@_%ld", newFileName, (long)(random() % 35000)];
 			newBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newFileName, SPUserBundleFileExtension];
-			if([fm fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
-				if([fm copyItemAtPath:possibleExisitingBundleFilePath toPath:newBundleFilePath error:nil])
+			if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
+				if([fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:newBundleFilePath error:nil])
 					copyingWasSuccessful = YES;
 			}
 		}
@@ -750,9 +750,9 @@
 		NSError *err = nil;
 		
 		// Copy possible existing bundle with content
-		if([fm fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
+		if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
 			//FIXME This will fail if savePath exists, but the user already consented overwriting in the save panel. We should use trashItemAtURL:... once we are 10.8+
-			if(![fm copyItemAtPath:possibleExisitingBundleFilePath toPath:savePath error:&err]) {
+			if(![fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:savePath error:&err]) {
 				//if we have an NSError that will provide the nicest error message.
 				if(err) {
 					[[NSAlert alertWithError:err] runModal];
@@ -922,13 +922,13 @@
 			return NO;
 		}
 		if(!bundlePath)
-			bundlePath = [[fm applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil] retain];
+			bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil] retain];
 		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], SPUserBundleFileExtension];
 	}
 
 	// Create spBundle folder if it doesn't exist
-	if(![fm fileExistsAtPath:aPath isDirectory:&isDir]) {
-		if(![fm createDirectoryAtPath:aPath withIntermediateDirectories:YES attributes:nil error:nil])
+	if(![fileManager fileExistsAtPath:aPath isDirectory:&isDir]) {
+		if(![fileManager createDirectoryAtPath:aPath withIntermediateDirectories:YES attributes:nil error:nil])
 			return NO;
 		isDir = YES;
 		isNewBundle = YES;
@@ -981,7 +981,7 @@
 	}
 
 	// Remove a given old command.plist file
-	[fm removeItemAtPath:cmdFilePath error:nil];
+	[fileManager removeItemAtPath:cmdFilePath error:nil];
 	[saveDict writeToFile:cmdFilePath atomically:YES];
 
 	return YES;
@@ -1012,12 +1012,12 @@
 				// Move already installed Bundles to Trash
 				NSString *bundleName = [obj objectForKey:kBundleNameKey];
 				NSString *thePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleName, SPUserBundleFileExtension];
-				if([fm fileExistsAtPath:thePath isDirectory:nil]) {
+				if([fileManager fileExistsAtPath:thePath isDirectory:nil]) {
 					NSError *error = nil;
 
 					// Use a AppleScript script since NSWorkspace performFileOperation or NSFileManager moveItemAtPath 
 					// have problems probably due access rights.
-					[fm removeItemAtPath:thePath error:&error];
+					[fileManager removeItemAtPath:thePath error:&error];
 					
 					if(error != nil) {
 						
@@ -1118,7 +1118,7 @@
 {
 	// Remove temporary drag file if any
 	if(draggedFilePath) {
-		[fm removeItemAtPath:draggedFilePath error:nil];
+		[fileManager removeItemAtPath:draggedFilePath error:nil];
 		SPClear(draggedFilePath);
 	}
 	if(oldBundleName) SPClear(oldBundleName);
@@ -1390,14 +1390,14 @@
 	
 				BOOL isDir;
 				// Check for renaming
-				if([fm fileExistsAtPath:oldName isDirectory:&isDir] && isDir) {
-					if(![fm moveItemAtPath:oldName toPath:newName error:nil]) {
+				if([fileManager fileExistsAtPath:oldName isDirectory:&isDir] && isDir) {
+					if(![fileManager moveItemAtPath:oldName toPath:newName error:nil]) {
 						isValid = NO;
 					}
 				}
 				// Check if the new name already exists
 				else {
-					if([fm fileExistsAtPath:newName isDirectory:&isDir] && isDir) {
+					if([fileManager fileExistsAtPath:newName isDirectory:&isDir] && isDir) {
 						isValid = NO;
 					}
 				}
@@ -1503,7 +1503,7 @@
 
 	// Remove old temporary drag file if any
 	if(draggedFilePath) {
-		[fm removeItemAtPath:draggedFilePath error:nil];
+		[fileManager removeItemAtPath:draggedFilePath error:nil];
 		SPClear(draggedFilePath);
 	}
 
@@ -1519,8 +1519,8 @@
 	BOOL isDir;
 
 	// Copy possible existing bundle with content
-	if([fm fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
-		if(![fm copyItemAtPath:possibleExisitingBundleFilePath toPath:draggedFilePath error:nil])
+	if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
+		if(![fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:draggedFilePath error:nil])
 			return NO;
 	}
 
@@ -1656,7 +1656,7 @@
 	// Load all installed bundle items
 	if(bundlePath) {
 		NSError *error = nil;
-		NSArray *foundBundles = [fm contentsOfDirectoryAtPath:bundlePath error:&error];
+		NSArray *foundBundles = [fileManager contentsOfDirectoryAtPath:bundlePath error:&error];
 		if (foundBundles && [foundBundles count]) {
 			for(NSString* bundle in foundBundles) {
 				if(![[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtension lowercaseString]]) continue;
@@ -2130,7 +2130,7 @@
 	
 	SPClear(shellVariableSuggestions);
 	SPClear(deletedDefaultBundles);
-	SPClear(fm);
+	SPClear(fileManager);
 	
 	if (touchedBundleArray) SPClear(touchedBundleArray);
 	if (commandBundleTree) SPClear(commandBundleTree);

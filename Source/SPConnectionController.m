@@ -227,7 +227,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// If triggered via the "Test Connection" button, set the state - otherwise clear it
 	isTestingConnection = (sender == testConnectButton);
 	
-	NSFileManager *fm = [NSFileManager defaultManager];
+	NSFileManager *fileManager = [NSFileManager defaultManager];
 	
 	// Ensure that host is not empty if this is a TCP/IP or SSH connection
 	if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
@@ -251,7 +251,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// If an SSH key has been provided, verify it exists
 	if ([self type] == SPSSHTunnelConnection && sshKeyLocationEnabled && sshKeyLocation) {
-		if (![fm fileExistsAtPath:[sshKeyLocation stringByExpandingTildeInPath]]) {
+		if (![fileManager fileExistsAtPath:[sshKeyLocation stringByExpandingTildeInPath]]) {
 			[self setSshKeyLocationEnabled:NSOffState];
 			SPOnewayAlertSheet(
 				NSLocalizedString(@"SSH Key not found", @"SSH key check error"),
@@ -269,7 +269,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (([self type] == SPTCPIPConnection || [self type] == SPSocketConnection) && [self useSSL]) {
 		
 		if (sslKeyFileLocationEnabled && sslKeyFileLocation && 
-			![fm fileExistsAtPath:[sslKeyFileLocation stringByExpandingTildeInPath]])
+			![fileManager fileExistsAtPath:[sslKeyFileLocation stringByExpandingTildeInPath]])
 		{
 			[self setSslKeyFileLocationEnabled:NSOffState];
 			[self setSslKeyFileLocation:nil];
@@ -284,7 +284,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 		
 		if (sslCertificateFileLocationEnabled && sslCertificateFileLocation && 
-			![fm fileExistsAtPath:[sslCertificateFileLocation stringByExpandingTildeInPath]])
+			![fileManager fileExistsAtPath:[sslCertificateFileLocation stringByExpandingTildeInPath]])
 		{
 			[self setSslCertificateFileLocationEnabled:NSOffState];
 			[self setSslCertificateFileLocation:nil];
@@ -299,7 +299,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 		
 		if (sslCACertFileLocationEnabled && sslCACertFileLocation && 
-			![fm fileExistsAtPath:[sslCACertFileLocation stringByExpandingTildeInPath]])
+			![fileManager fileExistsAtPath:[sslCACertFileLocation stringByExpandingTildeInPath]])
 		{
 			[self setSslCACertFileLocationEnabled:NSOffState];
 			[self setSslCACertFileLocation:nil];

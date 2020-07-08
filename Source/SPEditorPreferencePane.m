@@ -51,13 +51,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
 
-@property (readwrite, retain) NSFileManager *fm;
+@property (readwrite, retain) NSFileManager *fileManager;
 
 @end
 
 @implementation SPEditorPreferencePane
 
-@synthesize fm;
+@synthesize fileManager;
 
 
 #pragma mark -
@@ -67,9 +67,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	if ((self = [super init])) {
 		
-		fm = [NSFileManager defaultManager];
+		fileManager = [NSFileManager defaultManager];
 
-		themePath = [[fm applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil] retain];
+		themePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil] retain];
 		
 		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
 		
@@ -210,8 +210,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	
 	NSString *selectedPath = [NSString stringWithFormat:@"%@/%@_copy.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension];
 		
-	if (![fm fileExistsAtPath:selectedPath isDirectory:nil]) {
-		if ([fm copyItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension] toPath:selectedPath error:nil]) {
+	if (![fileManager fileExistsAtPath:selectedPath isDirectory:nil]) {
+		if ([fileManager copyItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension] toPath:selectedPath error:nil]) {
 			
 			if (editThemeListItems) SPClear(editThemeListItems);
 			
@@ -235,8 +235,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	
 	NSString *selectedPath = [NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension];
 		
-	if ([fm fileExistsAtPath:selectedPath isDirectory:nil]) {
-		if ([fm removeItemAtPath:selectedPath error:nil]) {
+	if ([fileManager fileExistsAtPath:selectedPath isDirectory:nil]) {
+		if ([fileManager removeItemAtPath:selectedPath error:nil]) {
 			
 			// Refresh current color theme setting name
 			if ([[[prefs objectForKey:SPCustomQueryEditorThemeName] lowercaseString] isEqualToString:[[editThemeListItems objectAtIndex:[editThemeListTable selectedRow]] lowercaseString]]) {
@@ -515,9 +515,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if ([contextInfo isEqualToString:SPSaveColorScheme]) {
 		if (returnCode == NSModalResponseOK) {
 			
-			if (![fm fileExistsAtPath:themePath isDirectory:nil]) {
+			if (![fileManager fileExistsAtPath:themePath isDirectory:nil]) {
 				NSError *error = nil;
-				if (![fm createDirectoryAtPath:themePath withIntermediateDirectories:YES attributes:nil error:&error]) {
+				if (![fileManager createDirectoryAtPath:themePath withIntermediateDirectories:YES attributes:nil error:&error]) {
 					SPLog(@"Failed to create directory '%@'. error=%@", themePath, error);
 					NSBeep();
 					return;
@@ -586,7 +586,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		}
 		
 		// Rename theme file
-		if (![fm moveItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:rowIndex], SPColorThemeFileExtension] toPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, newName, SPColorThemeFileExtension] error:nil]) {
+		if (![fileManager moveItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:rowIndex], SPColorThemeFileExtension] toPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, newName, SPColorThemeFileExtension] error:nil]) {
 			NSBeep();
 			[editThemeListTable reloadData];
 			return;
@@ -775,9 +775,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (NSArray *)_getAvailableThemes
 {
 	// Read ~/Library/Application Support/Sequel Ace/Themes
-	if ([fm fileExistsAtPath:themePath isDirectory:nil]) {
+	if ([fileManager fileExistsAtPath:themePath isDirectory:nil]) {
 		NSError *error = nil;
-		NSArray *allItemsRaw = [fm contentsOfDirectoryAtPath:themePath error:&error];
+		NSArray *allItemsRaw = [fileManager contentsOfDirectoryAtPath:themePath error:&error];
 		
 		if(!allItemsRaw || error) {
 			SPLog(@"Failed to list contents of path '%@'. error=%@", themePath, error);

@@ -78,7 +78,7 @@
  */
 + (NSString *)runBashCommand:(NSString *)command withEnvironment:(NSDictionary*)shellEnvironment atCurrentDirectoryPath:(NSString*)path callerInstance:(id)caller contextInfo:(NSDictionary*)contextInfo error:(NSError**)theError
 {
-	NSFileManager *fm = [NSFileManager defaultManager];
+	NSFileManager *fileManager = [NSFileManager defaultManager];
 
 	BOOL userTerminated = NO;
 	BOOL redirectForScript = NO;
@@ -90,10 +90,10 @@
 	NSString *stdoutFilePath = [NSString stringWithFormat:@"%@_%@", [SPBundleTaskOutputFilePath stringByExpandingTildeInPath], uuid];
 	NSString *scriptFilePath = [NSString stringWithFormat:@"%@_%@", [SPBundleTaskScriptCommandFilePath stringByExpandingTildeInPath], uuid];
 
-	[fm removeItemAtPath:scriptFilePath error:nil];
-	[fm removeItemAtPath:stdoutFilePath error:nil];
+	[fileManager removeItemAtPath:scriptFilePath error:nil];
+	[fileManager removeItemAtPath:stdoutFilePath error:nil];
 	if([SPAppDelegate lastBundleBlobFilesDirectory] != nil)
-		[fm removeItemAtPath:[SPAppDelegate lastBundleBlobFilesDirectory] error:nil];
+		[fileManager removeItemAtPath:[SPAppDelegate lastBundleBlobFilesDirectory] error:nil];
 
 	if([shellEnvironment objectForKey:SPBundleShellVariableBlobFileDirectory])
 		[SPAppDelegate setLastBundleBlobFilesDirectory:[shellEnvironment objectForKey:SPBundleShellVariableBlobFileDirectory]];
@@ -112,7 +112,7 @@
 		if([scriptHeaderArguments count])
 			scriptPath = [scriptHeaderArguments objectAtIndex:0];
 
-		if([scriptPath hasPrefix:@"/"] && [fm fileExistsAtPath:scriptPath isDirectory:&isDir] && !isDir) {
+		if([scriptPath hasPrefix:@"/"] && [fileManager fileExistsAtPath:scriptPath isDirectory:&isDir] && !isDir) {
 			NSString *script = [command substringWithRange:NSMakeRange(NSMaxRange(firstLineRange), [command length] - NSMaxRange(firstLineRange))];
 			NSError *writeError = nil;
 			[script writeToFile:scriptFilePath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
@@ -209,7 +209,7 @@
 
 	if(path != nil)
 		[bashTask setCurrentDirectoryPath:path];
-	else if([shellEnvironment objectForKey:SPBundleShellVariableBundlePath] && [fm fileExistsAtPath:[shellEnvironment objectForKey:SPBundleShellVariableBundlePath] isDirectory:&isDir] && isDir)
+	else if([shellEnvironment objectForKey:SPBundleShellVariableBundlePath] && [fileManager fileExistsAtPath:[shellEnvironment objectForKey:SPBundleShellVariableBundlePath] isDirectory:&isDir] && isDir)
 		[bashTask setCurrentDirectoryPath:[shellEnvironment objectForKey:SPBundleShellVariableBundlePath]];
 
 	// STDOUT will be redirected to SPBundleTaskOutputFilePath in order to avoid nasty pipe programming due to block size reading
@@ -264,17 +264,17 @@
 	}
 
 	// Remove files
-	[fm removeItemAtPath:scriptFilePath error:nil];
+	[fileManager removeItemAtPath:scriptFilePath error:nil];
 	if([theEnv objectForKey:SPBundleShellVariableQueryFile])
-		[fm removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryFile] error:nil];
+		[fileManager removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryFile] error:nil];
 	if([theEnv objectForKey:SPBundleShellVariableQueryResultFile])
-		[fm removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryResultFile] error:nil];
+		[fileManager removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryResultFile] error:nil];
 	if([theEnv objectForKey:SPBundleShellVariableQueryResultStatusFile])
-		[fm removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryResultStatusFile] error:nil];
+		[fileManager removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryResultStatusFile] error:nil];
 	if([theEnv objectForKey:SPBundleShellVariableQueryResultMetaFile])
-		[fm removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryResultMetaFile] error:nil];
+		[fileManager removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableQueryResultMetaFile] error:nil];
 	if([theEnv objectForKey:SPBundleShellVariableInputTableMetaData])
-		[fm removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableInputTableMetaData] error:nil];
+		[fileManager removeItemAtPath:[theEnv objectForKey:SPBundleShellVariableInputTableMetaData] error:nil];
 
 	// If return from bash re-activate Sequel Ace
 	[NSApp activateIgnoringOtherApps:YES];
@@ -284,7 +284,7 @@
 
 	// Check STDERR
 	if([errdata length] && (status < SPBundleRedirectActionNone || status > SPBundleRedirectActionLastCode)) {
-		[fm removeItemAtPath:stdoutFilePath error:nil];
+		[fileManager removeItemAtPath:stdoutFilePath error:nil];
 
 		if(status == 9 || userTerminated) return @"";
 		if(theError != NULL) {
@@ -303,10 +303,10 @@
 	}
 
 	// Read STDOUT saved to file
-	if([fm fileExistsAtPath:stdoutFilePath isDirectory:nil]) {
+	if([fileManager fileExistsAtPath:stdoutFilePath isDirectory:nil]) {
 		NSString *stdoutContent = [NSString stringWithContentsOfFile:stdoutFilePath encoding:NSUTF8StringEncoding error:nil];
 		if(bashTask) SPClear(bashTask);
-		[fm removeItemAtPath:stdoutFilePath error:nil];
+		[fileManager removeItemAtPath:stdoutFilePath error:nil];
 		if(stdoutContent != nil) {
 			if (status == 0) {
 				return stdoutContent;
@@ -336,7 +336,7 @@
 	}
 
 	if (bashTask) [bashTask release];
-	[fm removeItemAtPath:stdoutFilePath error:nil];
+	[fileManager removeItemAtPath:stdoutFilePath error:nil];
 	return @"";
 }
 

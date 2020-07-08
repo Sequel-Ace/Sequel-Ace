@@ -179,9 +179,9 @@ static const NSInteger kBlobAsImageFile = 4;
 	__block NSUInteger rowCounter = 0;
 
 	if((withBlobHandling == kBlobAsFile || withBlobHandling == kBlobAsImageFile) && tmpBlobFileDirectory && [tmpBlobFileDirectory length]) {
-		NSFileManager *fm = [NSFileManager defaultManager];
-		[fm removeItemAtPath:tmpBlobFileDirectory error:nil];
-		[fm createDirectoryAtPath:tmpBlobFileDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
+		[fileManager removeItemAtPath:tmpBlobFileDirectory error:nil];
+		[fileManager createDirectoryAtPath:tmpBlobFileDirectory withIntermediateDirectories:YES attributes:nil error:nil];
 	}
 
 	BOOL hexBlobs = [prefs boolForKey:SPDisplayBinaryDataAsHex];
@@ -315,9 +315,9 @@ static const NSInteger kBlobAsImageFile = 4;
 	__block NSUInteger rowCounter = 0;
 
 	if((withBlobHandling == kBlobAsFile || withBlobHandling == kBlobAsImageFile) && tmpBlobFileDirectory && [tmpBlobFileDirectory length]) {
-		NSFileManager *fm = [NSFileManager defaultManager];
-		[fm removeItemAtPath:tmpBlobFileDirectory error:nil];
-		[fm createDirectoryAtPath:tmpBlobFileDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
+		[fileManager removeItemAtPath:tmpBlobFileDirectory error:nil];
+		[fileManager createDirectoryAtPath:tmpBlobFileDirectory withIntermediateDirectories:YES attributes:nil error:nil];
 	}
 
 	BOOL hexBlobs = [prefs boolForKey:SPDisplayBinaryDataAsHex];
