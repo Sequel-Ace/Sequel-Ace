@@ -1039,20 +1039,20 @@
                                                 <rect key="frame" x="10" y="7" width="706" height="546"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GZS-nP-BvF" userLabel="Content Area Runtime Container">
+                                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GZS-nP-BvF" userLabel="Content Area Runtime Container">
                                                         <rect key="frame" x="7" y="10" width="695" height="529"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
-                                                            <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vcX-Xr-0cm" userLabel="Table Content Container">
+                                                            <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vcX-Xr-0cm" userLabel="Table Content Container">
                                                                 <rect key="frame" x="0.0" y="0.0" width="695" height="458"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
-                                                                    <scrollView focusRingType="none" misplaced="YES" autohidesScrollers="YES" horizontalLineScroll="18" horizontalPageScroll="10" verticalLineScroll="18" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="35">
+                                                                    <scrollView focusRingType="none" fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="18" horizontalPageScroll="10" verticalLineScroll="18" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="35">
                                                                         <rect key="frame" x="-1" y="22" width="697" height="436"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" id="lwO-LP-RWZ">
                                                                             <rect key="frame" x="1" y="0.0" width="695" height="435"/>
-                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView identifier="TableContentTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="3920" id="36" customClass="SPCopyTable">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="695" height="418"/>
@@ -1095,11 +1095,11 @@
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </tableHeaderView>
                                                                     </scrollView>
-                                                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="NHu-6H-yk7" customClass="SPButtonBar">
+                                                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NHu-6H-yk7" customClass="SPButtonBar">
                                                                         <rect key="frame" x="0.0" y="0.0" width="695" height="23"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                                     </customView>
-                                                                    <button toolTip="Add row (⌥⌘A)" translatesAutoresizingMaskIntoConstraints="NO" id="5175">
+                                                                    <button toolTip="Add row (⌥⌘A)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5175">
                                                                         <rect key="frame" x="-1" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_addTemplate" imagePosition="only" alignment="center" alternateImage="button_addTemplate" enabled="NO" inset="2" id="5184">
@@ -1112,7 +1112,7 @@
                                                                             <action selector="addRow:" target="67" id="5188"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button toolTip="Refresh table contents (⌘R)" translatesAutoresizingMaskIntoConstraints="NO" id="5176">
+                                                                    <button toolTip="Refresh table contents (⌘R)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5176">
                                                                         <rect key="frame" x="93" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_refreshTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_refreshTemplate" inset="2" id="5183">
@@ -1125,7 +1125,7 @@
                                                                             <action selector="reloadTable:" target="67" id="5185"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button toolTip="Delete selected row(s) (⌫)" translatesAutoresizingMaskIntoConstraints="NO" id="5177">
+                                                                    <button toolTip="Delete selected row(s) (⌫)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5177">
                                                                         <rect key="frame" x="30" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_removeTemplate" imagePosition="only" alignment="center" alternateImage="button_removeTemplate" enabled="NO" inset="2" id="5182">
@@ -1137,7 +1137,7 @@
                                                                             <action selector="removeRow:" target="67" id="5187"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button toolTip="Duplicate selected row (⌘D)" translatesAutoresizingMaskIntoConstraints="NO" id="5178">
+                                                                    <button toolTip="Duplicate selected row (⌘D)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5178">
                                                                         <rect key="frame" x="61" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_duplicateTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_duplicateTemplate" enabled="NO" inset="2" id="5181">
@@ -1150,7 +1150,7 @@
                                                                             <action selector="duplicateRow:" target="67" id="7838"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button toolTip="Toggle between editing simple text cells as a spreadsheet or in pop-up sheets" translatesAutoresizingMaskIntoConstraints="NO" id="5201">
+                                                                    <button toolTip="Toggle between editing simple text cells as a spreadsheet or in pop-up sheets" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5201">
                                                                         <rect key="frame" x="124" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_edit_modeTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_edit_mode_selectedTemplate" inset="2" id="5202">
@@ -1161,7 +1161,7 @@
                                                                             <binding destination="1907" name="value" keyPath="values.EditInSheetEnabled" id="6351"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <textField verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="261">
+                                                                    <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="261">
                                                                         <rect key="frame" x="193" y="-4" width="362" height="22"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" id="3759">
@@ -1170,7 +1170,7 @@
                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                         </textFieldCell>
                                                                     </textField>
-                                                                    <button toolTip="View next page of results" translatesAutoresizingMaskIntoConstraints="NO" id="6647">
+                                                                    <button toolTip="View next page of results" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6647">
                                                                         <rect key="frame" x="647" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_rightTemplate" imagePosition="only" alignment="center" alternateImage="button_rightTemplate" inset="2" id="6648">
@@ -1181,7 +1181,7 @@
                                                                             <action selector="navigatePaginationFromButton:" target="67" id="6666"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button toolTip="View previous page of results" translatesAutoresizingMaskIntoConstraints="NO" id="6650">
+                                                                    <button toolTip="View previous page of results" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6650">
                                                                         <rect key="frame" x="585" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_leftTemplate" imagePosition="only" alignment="center" alternateImage="button_leftTemplate" inset="2" id="6651">
@@ -1192,7 +1192,7 @@
                                                                             <action selector="navigatePaginationFromButton:" target="67" id="6665"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button toolTip="Jump to page (⌘J) or view pagination options" translatesAutoresizingMaskIntoConstraints="NO" id="6653">
+                                                                    <button toolTip="Jump to page (⌘J) or view pagination options" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6653">
                                                                         <rect key="frame" x="616" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_paginationTemplate" imagePosition="overlaps" alignment="center" inset="2" id="6654">
@@ -1205,11 +1205,11 @@
                                                                             <action selector="togglePagination:" target="67" id="6662"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <progressIndicator wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" misplaced="YES" maxValue="100" displayedWhenStopped="NO" bezeled="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="858">
+                                                                    <progressIndicator wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" maxValue="100" displayedWhenStopped="NO" bezeled="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="858">
                                                                         <rect key="frame" x="561" y="4" width="16" height="16"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                     </progressIndicator>
-                                                                    <button toolTip="Show/Hide table content filters" horizontalHuggingPriority="750" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LYg-Ux-Lph">
+                                                                    <button toolTip="Show/Hide table content filters" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LYg-Ux-Lph">
                                                                         <rect key="frame" x="155" y="-1" width="32" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_filterTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_filter_activeTemplate" inset="2" id="WNc-7G-qPQ">
@@ -1222,18 +1222,18 @@
                                                                     </button>
                                                                 </subviews>
                                                             </customView>
-                                                            <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9oo-u0-ndW" userLabel="Filter Rule Editor Container">
+                                                            <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9oo-u0-ndW" userLabel="Filter Rule Editor Container">
                                                                 <rect key="frame" x="0.0" y="458" width="695" height="71"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                 <subviews>
-                                                                    <scrollView misplaced="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="CIQ-tc-1Fn">
+                                                                    <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="CIQ-tc-1Fn">
                                                                         <rect key="frame" x="0.0" y="31" width="694" height="40"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="kdv-Wp-s5h">
                                                                             <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
-                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
-                                                                                <ruleEditor nestingMode="compound" rowHeight="29" id="FF9-z2-9od">
+                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
                                                                                     <connections>
@@ -1251,14 +1251,14 @@
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
                                                                     </scrollView>
-                                                                    <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GJn-1I-e7O" customClass="SPFillView">
+                                                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GJn-1I-e7O" customClass="SPFillView">
                                                                         <rect key="frame" x="0.0" y="30" width="695" height="1"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                                         <userDefinedRuntimeAttributes>
                                                                             <userDefinedRuntimeAttribute type="string" keyPath="systemColorOfName" value="gridColor"/>
                                                                         </userDefinedRuntimeAttributes>
                                                                     </customView>
-                                                                    <button verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4676">
+                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4676">
                                                                         <rect key="frame" x="616" y="5" width="54" height="19"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                         <buttonCell key="cell" type="roundRect" title="Filter" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4677">
@@ -1819,15 +1819,15 @@ Gw
                                                                         <rect key="frame" x="109" y="0.0" width="554" height="73"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" id="fhZ-nZ-AwI">
-                                                                            <rect key="frame" x="1" y="1" width="537" height="71"/>
+                                                                            <rect key="frame" x="1" y="1" width="552" height="71"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                             <subviews>
                                                                                 <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" findStyle="panel" continuousSpellChecking="YES" smartInsertDelete="YES" id="8236">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="537" height="71"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="552" height="71"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                                    <size key="minSize" width="537" height="71"/>
+                                                                                    <size key="minSize" width="552" height="71"/>
                                                                                     <size key="maxSize" width="1097" height="10000000"/>
                                                                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                     <connections>
@@ -1865,15 +1865,15 @@ Gw
                                                                         <rect key="frame" x="109" y="0.0" width="554" height="200"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" drawsBackground="NO" id="nV8-ly-BSi">
-                                                                            <rect key="frame" x="1" y="1" width="537" height="198"/>
+                                                                            <rect key="frame" x="1" y="1" width="552" height="198"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                             <subviews>
                                                                                 <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" id="8242" customClass="SPTextView">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="537" height="198"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="552" height="198"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                                    <size key="minSize" width="537" height="198"/>
+                                                                                    <size key="minSize" width="552" height="198"/>
                                                                                     <size key="maxSize" width="1097" height="10000000"/>
                                                                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                     <connections>
@@ -3742,15 +3742,15 @@ DQ
                         <rect key="frame" x="-1" y="35" width="383" height="206"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="w4Z-p1-GZA">
-                            <rect key="frame" x="1" y="1" width="366" height="204"/>
+                            <rect key="frame" x="1" y="1" width="381" height="204"/>
                             <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" verticallyResizable="YES" id="8219">
-                                    <rect key="frame" x="0.0" y="0.0" width="366" height="204"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="381" height="204"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    <size key="minSize" width="366" height="204"/>
+                                    <size key="minSize" width="381" height="204"/>
                                     <size key="maxSize" width="753" height="10000000"/>
                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <connections>
@@ -3922,15 +3922,15 @@ Gw
                         <rect key="frame" x="20" y="45" width="365" height="177"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="aEl-zD-ga2">
-                            <rect key="frame" x="1" y="1" width="348" height="175"/>
+                            <rect key="frame" x="1" y="1" width="363" height="175"/>
                             <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" id="8202">
-                                    <rect key="frame" x="0.0" y="0.0" width="348" height="175"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="363" height="175"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    <size key="minSize" width="348" height="175"/>
+                                    <size key="minSize" width="363" height="175"/>
                                     <size key="maxSize" width="717" height="10000000"/>
                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                 </textView>
