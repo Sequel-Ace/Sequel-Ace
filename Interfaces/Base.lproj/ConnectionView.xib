@@ -1623,7 +1623,7 @@ DQ
                             <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView editable="NO" drawsBackground="NO" importsGraphics="NO" verticallyResizable="NO" id="5434" customClass="SPAutosizingTextView">
+                                <textView editable="NO" drawsBackground="NO" importsGraphics="NO" verticallyResizable="NO" id="5434" customClass="SPAutosizingTextView" customModule="Sequel_Ace" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" red="0.90196078999999996" green="0.90196078999999996" blue="0.90196078999999996" alpha="1" colorSpace="calibratedRGB"/>
