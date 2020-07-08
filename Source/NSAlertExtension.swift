@@ -51,4 +51,32 @@ import AppKit
 		alert.runModal()
 		callback?()
 	}
+
+	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title, informative subtitle message and accessory view.
+	/// - Parameters:
+	///   - title: String for title of the alert
+	///   - message: String for informative message
+	///   - primaryButtonTitle: String for main confirm button
+	///   - primaryButtonHandler: Optional block that's invoked when user hits primary button or Enter
+	///   - cancelButtonHandler: Optional block that's invoked when user hits cancel button or Escape
+	/// - Returns: Nothing
+	static func createAccessoryAlert(title: String,
+								   message: String,
+								   accessoryView: NSView,
+								   primaryButtonTitle: String,
+								   primaryButtonHandler: (() -> ())? = nil,
+								   cancelButtonHandler: (() -> ())? = nil) {
+		let alert = NSAlert()
+		alert.messageText = title
+		alert.informativeText = message
+		alert.accessoryView = accessoryView
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		alert.addButton(withTitle: primaryButtonTitle)
+		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+		if alert.runModal() == .alertFirstButtonReturn {
+			primaryButtonHandler?()
+		} else {
+			cancelButtonHandler?()
+		}
+	}
 }
