@@ -2555,8 +2555,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) {
 		[errorDetailText setFont:[NSFont userFontOfSize:12]];
 		[errorDetailText setAlignment:NSLeftTextAlignment];
-		[errorDetailText.layoutManager ensureLayoutForTextContainer:errorDetailText.textContainer];
-		errorDetailText.frame = [errorDetailText.layoutManager usedRectForTextContainer:errorDetailText.textContainer];
 		[errorDetailWindow makeKeyAndOrderFront:self];
 	}
 
