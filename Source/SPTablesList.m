@@ -219,14 +219,20 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
 				// return NSNull, thus catch that case for safety reasons
 				id tableName = [eachRow objectForKey:@"Name"];
-				if ([tableName isNSNull]) {
+				if (tableName == nil || [tableName isNSNull]) {
+					tableName = [eachRow objectForKey:@"NAME"];
+				}
+				if (tableName == nil || [tableName isNSNull]) {
 					tableName = @"...";
 				}
 				[tables addObject:tableName];
 				
 				// comments is usefull
 				id tableComment = [eachRow objectForKey:@"Comment"];
-				if ([tableComment isNSNull]) {
+				if (tableComment == nil || [tableComment isNSNull]) {
+					tableComment = [eachRow objectForKey:@"COMMENT"];
+				}
+				if (tableComment == nil || [tableComment isNSNull]) {
 					tableComment = @"";
 				}
 				[tableComments setValue:tableComment forKey:tableName];
