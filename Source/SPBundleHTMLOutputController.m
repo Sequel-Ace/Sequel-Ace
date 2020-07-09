@@ -76,7 +76,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		[webView setShouldUpdateWhileOffscreen:NO];
 		suppressExceptionAlerting = NO;
 	}
-	
+
 	return self;
 
 }
@@ -266,7 +266,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 	[panel setNameFieldStringValue:@"output"];
 	[panel setAllowedFileTypes:@[@"html"]];
-	
+
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:YES];
 	[panel setCanSelectHiddenExtension:YES];
@@ -346,8 +346,8 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 {
 	NSInteger navigationType = [[actionInformation objectForKey:WebActionNavigationTypeKey] integerValue];
 
-	// sequelpro:// handler
-	if([[[request URL] scheme] isEqualToString:@"sequelpro"] && navigationType == WebNavigationTypeLinkClicked) {
+	// sequelace:// handler
+	if([[[request URL] scheme] isEqualToString:@"sequelace"] && navigationType == WebNavigationTypeLinkClicked) {
 		[SPAppDelegate handleEventWithURL:[request URL]];
 		[listener ignore];
 	}
@@ -534,9 +534,9 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	NSString *mes = [NSString stringWithFormat:@"Failed to parse JavaScript source:\nline = %lu\nerror = %@ with\n%@\nfor source = \n%@", (unsigned long)lineNumber, [error localizedDescription], [error userInfo], source];
 
 	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"JavaScript Parsing Error", @"javascript parsing error")
-									 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-								   alternateButton:nil 
-									  otherButton:nil 
+									 defaultButton:NSLocalizedString(@"OK", @"OK button")
+								   alternateButton:nil
+									  otherButton:nil
 						informativeTextWithFormat:@"%@", mes];
 
 	[alert setAlertStyle:NSCriticalAlertStyle];
@@ -554,9 +554,9 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	}
 
 	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"JavaScript Exception", @"javascript exception")
-									 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-								   alternateButton:nil 
-									  otherButton:nil 
+									 defaultButton:NSLocalizedString(@"OK", @"OK button")
+								   alternateButton:nil
+									  otherButton:nil
 						informativeTextWithFormat:@"%@", mes];
 
 	[alert setAlertStyle:NSCriticalAlertStyle];
@@ -671,9 +671,9 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	}
 	else {
 		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while executing JavaScript BASH command", @"error while executing javascript bash command")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-									   alternateButton:nil 
-										  otherButton:nil 
+										 defaultButton:NSLocalizedString(@"OK", @"OK button")
+									   alternateButton:nil
+										  otherButton:nil
 							informativeTextWithFormat:NSLocalizedString(@"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.", @"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.")];
 
 		[alert setAlertStyle:NSCriticalAlertStyle];
@@ -694,10 +694,10 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		[theEnv setObject:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], uuid] forKey:SPBundleShellVariableQueryResultFile];
 		[theEnv setObject:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], uuid] forKey:SPBundleShellVariableQueryResultStatusFile];
 		[theEnv setObject:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], uuid] forKey:SPBundleShellVariableQueryResultMetaFile];
-		
-		output = [SPBundleCommandRunner runBashCommand:command 
-									   withEnvironment:theEnv 
-								atCurrentDirectoryPath:nil 
+
+		output = [SPBundleCommandRunner runBashCommand:command
+									   withEnvironment:theEnv
+								atCurrentDirectoryPath:nil
 										callerInstance:SPAppDelegate
 										   contextInfo:[NSDictionary dictionaryWithObjectsAndKeys:
 														@"JavaScript", @"name",
@@ -708,9 +708,9 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 	if(err != nil) {
 		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while executing JavaScript BASH command", @"error while executing javascript bash command")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-									   alternateButton:nil 
-										  otherButton:nil 
+										 defaultButton:NSLocalizedString(@"OK", @"OK button")
+									   alternateButton:nil
+										  otherButton:nil
 							informativeTextWithFormat:@"%@", [err localizedDescription]];
 
 		[alert setAlertStyle:NSCriticalAlertStyle];

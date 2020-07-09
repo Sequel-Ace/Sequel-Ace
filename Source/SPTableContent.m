@@ -1024,7 +1024,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 
 #ifndef SP_CODA
-	// If filter command was passed by sequelpro url scheme
+	// If filter command was passed by sequelace url scheme
 	if(activeFilter == SPTableContentFilterSourceURLScheme) {
 		if(schemeFilter) return schemeFilter;
 	}

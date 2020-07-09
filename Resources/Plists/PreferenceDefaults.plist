@@ -183,8 +183,6 @@
 	<true/>
 	<key>ShowNoAffectedRowsError</key>
 	<true/>
-	<key>SPFirstRun</key>
-	<true/>
 	<key>SSHMultiplexingEnabled</key>
 	<false/>
 	<key>TableInformationPanelCollapsed</key>

@@ -79,9 +79,6 @@ NSString *SPDataSupportFolder                    = @"Data";
 // Table filter
 NSString *SPTableContentFilterKey                = @"filter";
 
-// Preference key constants
-NSString *SPFirstRun                             = @"SPFirstRun";
-
 // General Prefpane
 NSString *SPDefaultFavorite                      = @"DefaultFavorite";
 NSString *SPSelectLastFavoriteUsed               = @"SelectLastFavoriteUsed";

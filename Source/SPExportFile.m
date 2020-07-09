@@ -112,7 +112,7 @@
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 	
 	if ([fileManager fileExistsAtPath:[self exportFilePath]]) {
-		return [[NSFileManager defaultManager] removeItemAtPath:[self exportFilePath] error:nil];
+		return [fileManager removeItemAtPath:[self exportFilePath] error:nil];
 	}
 	
 	return NO;
@@ -216,7 +216,7 @@
 	exportFileHandle = [[SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]] retain];
 	
 	if (!exportFileHandle) {
-		[[NSFileManager defaultManager] removeItemAtPath:[self exportFilePath] error:nil];
+		[fileManager removeItemAtPath:[self exportFilePath] error:nil];
 		
 		return SPExportFileHandleFailed;
 	}

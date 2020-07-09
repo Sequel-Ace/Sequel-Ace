@@ -1,4 +1,4 @@
-Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon.png" align="right" height="80">
+Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon-1024.png" align="right" height="80">
 =======
 
 Sequel Ace is the "sequel" to longtime macOS tool Sequel Pro.
@@ -10,12 +10,16 @@ Sequel Ace is a fast, easy-to-use Mac database management application for workin
 
 Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
 
-### HomeBrew
+### MacPorts / Homebrew
 
 You can install Mac AppStore version through `mas` [MAS CLI](https://github.com/mas-cli/mas) with Sequel Ace id `1518036000`
 ```sh
-brew install mas-cli/tap/mas
-mas install 1518036000 # Sequel Ace
+$sudo port install mas 
+# or 
+$brew install mas-cli/tap/mas
+
+# then
+$mas install 1518036000 # Sequel Ace
 ```
 
 ## Contributing
