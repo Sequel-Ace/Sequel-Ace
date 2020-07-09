@@ -2582,6 +2582,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Initiate the connection after a half second delay to give the connection view a chance to resize
 		[self performSelector:@selector(initiateConnection:) withObject:self afterDelay:0.5];
 	}
+	
+	// we're not connecting anymore, it failed.
+	isConnecting = NO;
+	// update tab and window title
+	[dbDocument updateWindowTitle:self];
 }
 
 #pragma mark - SPConnectionHandlerPrivateAPI
