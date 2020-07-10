@@ -242,6 +242,8 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)clickLinkArrowTask:(SPTextAndLinkCell *)theArrowCell;
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
 - (BOOL)saveRowToTable;
+- (BOOL)_saveRowToTable;
+- (NSMutableString *)deriveQueryString;
 - (void) addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (NSString *)argumentForRow:(NSInteger)row;
 - (NSString *)argumentForRow:(NSInteger)row excludingLimits:(BOOL)excludeLimits;
