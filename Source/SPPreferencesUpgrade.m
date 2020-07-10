@@ -80,9 +80,8 @@ void SPApplyRevisionChanges(void)
 	[prefs setObject:@YES forKey:@"doBundleUpdate"];
 
 	
-	
 	// This is how you add release notes and run specific migration steps
-	if (recordedVersionNumber < 3922) {
+	if (recordedVersionNumber < currentVersionNumber) {
 		[importantUpdateNotes addObject:NSLocalizedString(@"There is a new option in Preferences->Alerts & Logs: \"Show warning before executing a query\"", @"Short important release note for new option in Preferences->Alerts & Logs")];
 		[importantUpdateNotes addObject:NSLocalizedString(@"When selected, you will be prompted to confirm that you want to execte an SQL query or edit a row.", @"Short important release note for why password prompts may occur")];
 	}
