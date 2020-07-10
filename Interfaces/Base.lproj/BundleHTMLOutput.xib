@@ -28,7 +28,7 @@
                     <webView focusRingType="none" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3">
                         <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <webPreferences key="preferences" identifier="Sequel Pro BundleHTMLOutput" defaultFontSize="12" defaultFixedFontSize="12" minimumFontSize="5"/>
+                        <webPreferences key="preferences" identifier="Sequel Ace BundleHTMLOutput" defaultFontSize="12" defaultFixedFontSize="12" minimumFontSize="5"/>
                         <connections>
                             <outlet property="UIDelegate" destination="-2" id="8"/>
                             <outlet property="downloadDelegate" destination="-2" id="15"/>

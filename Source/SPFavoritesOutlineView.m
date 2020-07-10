@@ -99,7 +99,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 	if ([[event characters] length] && [[event characters] characterAtIndex:0] == NSTabCharacter) {
 		if (([event modifierFlags] & NSEventModifierFlagShift) != NSEventModifierFlagShift) {
 			[[self window] selectKeyViewFollowingView:self];
-		} 
+		}
 		else {
 			[[self window] selectKeyViewPrecedingView:self];
 		}
@@ -142,7 +142,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 	}
 }
 
-/**
+/**		
  * Disclosure triangles for the top-level items hae been removed, and similarly other
  * paddings need altering.  This involves increasing the padding - and reducing the width -
  * of all rows to compensate.
@@ -179,7 +179,6 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width, superFrame.size.height);
 }
 
-
 /**
  * If the delegate is a SPConnectionController, and editing is currently in
  * progress, draw a custom highlight.
@@ -187,7 +186,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 - (void)highlightSelectionInClipRect:(NSRect)clipRect
 {
 	// Only proceed if a the delegate is a SPConnectionController and a favorite being edited
-	if ([[self delegate] isKindOfClass:[SPConnectionController class]] && 
+	if ([[self delegate] isKindOfClass:[SPConnectionController class]] &&
 		[(SPConnectionController *)[self delegate] isEditingConnection] &&
 		[(SPConnectionController *)[self delegate] selectedFavorite])
 	{

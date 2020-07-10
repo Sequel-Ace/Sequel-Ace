@@ -227,6 +227,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// If triggered via the "Test Connection" button, set the state - otherwise clear it
 	isTestingConnection = (sender == testConnectButton);
 	
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	
 	// Ensure that host is not empty if this is a TCP/IP or SSH connection
 	if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
 		SPOnewayAlertSheet(
@@ -249,7 +251,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// If an SSH key has been provided, verify it exists
 	if ([self type] == SPSSHTunnelConnection && sshKeyLocationEnabled && sshKeyLocation) {
-		if (![[NSFileManager defaultManager] fileExistsAtPath:[sshKeyLocation stringByExpandingTildeInPath]]) {
+		if (![fileManager fileExistsAtPath:[sshKeyLocation stringByExpandingTildeInPath]]) {
 			[self setSshKeyLocationEnabled:NSOffState];
 			SPOnewayAlertSheet(
 				NSLocalizedString(@"SSH Key not found", @"SSH key check error"),
@@ -267,7 +269,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (([self type] == SPTCPIPConnection || [self type] == SPSocketConnection) && [self useSSL]) {
 		
 		if (sslKeyFileLocationEnabled && sslKeyFileLocation && 
-			![[NSFileManager defaultManager] fileExistsAtPath:[sslKeyFileLocation stringByExpandingTildeInPath]])
+			![fileManager fileExistsAtPath:[sslKeyFileLocation stringByExpandingTildeInPath]])
 		{
 			[self setSslKeyFileLocationEnabled:NSOffState];
 			[self setSslKeyFileLocation:nil];
@@ -282,7 +284,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 		
 		if (sslCertificateFileLocationEnabled && sslCertificateFileLocation && 
-			![[NSFileManager defaultManager] fileExistsAtPath:[sslCertificateFileLocation stringByExpandingTildeInPath]])
+			![fileManager fileExistsAtPath:[sslCertificateFileLocation stringByExpandingTildeInPath]])
 		{
 			[self setSslCertificateFileLocationEnabled:NSOffState];
 			[self setSslCertificateFileLocation:nil];
@@ -297,7 +299,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 		
 		if (sslCACertFileLocationEnabled && sslCACertFileLocation && 
-			![[NSFileManager defaultManager] fileExistsAtPath:[sslCACertFileLocation stringByExpandingTildeInPath]])
+			![fileManager fileExistsAtPath:[sslCACertFileLocation stringByExpandingTildeInPath]])
 		{
 			[self setSslCACertFileLocationEnabled:NSOffState];
 			[self setSslCACertFileLocation:nil];
@@ -2578,6 +2580,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Initiate the connection after a half second delay to give the connection view a chance to resize
 		[self performSelector:@selector(initiateConnection:) withObject:self afterDelay:0.5];
 	}
+	
+	// we're not connecting anymore, it failed.
+	isConnecting = NO;
+	// update tab and window title
+	[dbDocument updateWindowTitle:self];
 }
 
 #pragma mark - SPConnectionHandlerPrivateAPI
@@ -2674,11 +2681,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
-	SPTreeNode              *node         = (SPTreeNode *)item;
+	SPTreeNode *node = (SPTreeNode *)item;
 	SPFavoriteTextFieldCell *favoriteCell = (SPFavoriteTextFieldCell *)cell;
-
-	// Draw entries with the small system font by default
-	[cell setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 
 	// Set an image as appropriate; the quick connect image for that entry, no image for other
 	// top-level items, the folder image for group nodes, or the database image for other nodes.
@@ -2723,11 +2727,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
 {
-	if (item == quickConnectItem) {
-		return 24.f;
-	}
-
-	return ([[item parentNode] parentNode]) ? 17.f : 22.f;
+	return 24.f;
 }
 
 - (NSString *)outlineView:(NSOutlineView *)outlineView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn item:(id)item mouseLocation:(NSPoint)mouseLocation

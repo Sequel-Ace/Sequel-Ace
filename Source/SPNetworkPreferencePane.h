@@ -46,7 +46,6 @@
 	IBOutlet NSTableView *sslCipherView;
 	
 @private
-	NSAlert *_currentAlert;
 	NSOpenPanel *_currentFilePanel;
 	NSMutableArray *sslCiphers;
 	NSString *sshConfigFile;

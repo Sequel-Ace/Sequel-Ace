@@ -9,13 +9,13 @@
 
 ### Query View
 
-It looks like a simple text area, but the Sequel Pro Query view is as powerful as your favourite text editor. Write queries like a boss!
+It looks like a simple text area, but the Sequel Ace Query view is as powerful as your favorite text editor. Write queries like a boss!
 
 **Shortcut** `⌘ 5`
 
 #### Query Favourites
 
-The Query Favourites are a powerful feature that makes it easy to rerun saved queries or to write dynamic and customisable reusable queries. [Learn more about Query Favorites …](favorites.html)
+The Query Favourites are a powerful feature that makes it easy to rerun saved queries or to write dynamic and customizable reusable queries. [Learn more about Query Favorites …](favorites.html)
 
 #### Tab Trigger
 

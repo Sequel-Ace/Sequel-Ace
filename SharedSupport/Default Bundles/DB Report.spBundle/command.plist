@@ -11,7 +11,7 @@
 # Since this command will execute SQL statements at the front most
 # document window's connection check for a passed process ID to cancel
 # this command by displaying a tooltip. Otherwise the loop after
-# “open "sequelpro://$SP_PROCESS_ID@passToDoc/ExecuteQuery"”
+# “open "sequelace://$SP_PROCESS_ID@passToDoc/ExecuteQuery"”
 # won't break.
 if [ -z $SP_PROCESS_ID ]; then
 	echo "&lt;font color=red&gt;No front most connection window found!&lt;/font&gt;"
@@ -26,7 +26,7 @@ GROUP BY TABLE_SCHEMA
 SQL
 
 # execute the SQL statement; the result will be available in the file $SP_QUERY_RESULT_FILE
-open "sequelpro://$SP_PROCESS_ID@passToDoc/ExecuteQuery"
+open "sequelace://$SP_PROCESS_ID@passToDoc/ExecuteQuery"
 
 # wait for Sequel Ace; status file will be written to disk if query was finished
 while [ 1 ]
@@ -99,7 +99,7 @@ do
 	&lt;tr&gt;
 		&lt;td width=20px&gt;&lt;span id="$cnt" onclick=toggle_display(this) style="cursor:pointer;color:gray;font-size:smaller;" title="Toggle visibility"&gt;▼&lt;/span&gt;&lt;/td&gt;
 		&lt;td align=center width='40px'&gt;&lt;img src='file://$SP_APP_RESOURCES_DIRECTORY/database-small.png'&gt;&lt;/td&gt;
-		&lt;td&gt;&lt;big&gt;&lt;a href='sequelpro://$SP_PROCESS_ID@passToDoc/SelectDatabase/$db' title='Click to select database “$db”'&gt;$db&lt;/big&gt;&lt;/a&gt;&lt;/td&gt;
+		&lt;td&gt;&lt;big&gt;&lt;a href='sequelace://$SP_PROCESS_ID@passToDoc/SelectDatabase/$db' title='Click to select database “$db”'&gt;$db&lt;/big&gt;&lt;/a&gt;&lt;/td&gt;
 	&lt;/tr&gt;
 	&lt;/table&gt;
 	&lt;table id="$cnt:data" border=1 style='border-collapse:collapse' width=100%&gt;
@@ -110,7 +110,7 @@ HTML3
 
 	# Query for table status
 	echo "SHOW TABLE STATUS IN \`$db\`" &gt; "$SP_QUERY_FILE"
-	open "sequelpro://$SP_PROCESS_ID@passToDoc/ExecuteQuery"
+	open "sequelace://$SP_PROCESS_ID@passToDoc/ExecuteQuery"
 
 	# wait for Sequel Ace; status file will be written to disk if query was finished
 	while [ 1 ]

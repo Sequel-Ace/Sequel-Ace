@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPNetworkPreferencePane.h"
+#import "Sequel_Ace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
@@ -178,8 +179,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			forKeyPath:SPHiddenKeyFileVisibilityKey
 			   options:NSKeyValueObservingOptionNew
 			   context:NULL];
-	
-	[_currentFilePanel beginSheetModalForWindow:[_currentAlert window] completionHandler:^(NSInteger result) {
+
+	[_currentFilePanel beginSheetModalForWindow:[[NSApplication sharedApplication] keyWindow] completionHandler:^(NSInteger result) {
 		if(result == NSFileHandlingPanelOKButton) [sshClientPath setStringValue:[[_currentFilePanel URL] path]];
 		
 		[prefs removeObserver:self forKeyPath:SPHiddenKeyFileVisibilityKey];
@@ -188,31 +189,21 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	}];
 }
 
-- (IBAction)pickSSHClient:(id)sender
-{
+- (IBAction)pickSSHClient:(id)sender {
 	//take value from user defaults
 	NSString *oldPath = [prefs stringForKey:SPSSHClientPath];
 	if([oldPath length]) [sshClientPath setStringValue:oldPath];
-	
-	// set up dialog
-	_currentAlert = [[NSAlert alloc] init]; //needs to be ivar so we can attach the OpenPanel later
-	[_currentAlert setAccessoryView:sshClientPickerView];
-	[_currentAlert setAlertStyle:NSWarningAlertStyle];
-	[_currentAlert setMessageText:NSLocalizedString(@"Unsupported configuration!",@"Preferences : Network : Custom SSH client : warning dialog title")];
-	[_currentAlert setInformativeText:NSLocalizedString(@"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.",@"Preferences : Network : Custom SSH client : warning dialog message")];
-	[_currentAlert addButtonWithTitle:NSLocalizedString(@"OK",@"Preferences : Network : Custom SSH client : warning dialog : accept button")];
-	[_currentAlert addButtonWithTitle:NSLocalizedString(@"Cancel",@"Preferences : Network : Custom SSH client : warning dialog : cancel button")];
-	
-	if([_currentAlert runModal] == NSAlertFirstButtonReturn || [_currentAlert runModal] == NSAlertAlternateReturn) {
+
+	[NSAlert createAccessoryAlertWithTitle:NSLocalizedString(@"Unsupported configuration!",@"Preferences : Network : Custom SSH client : warning dialog title") message:NSLocalizedString(@"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.",@"Preferences : Network : Custom SSH client : warning dialog message") accessoryView:sshClientPickerView primaryButtonTitle:NSLocalizedString(@"OK",@"Preferences : Network : Custom SSH client : warning dialog : accept button") primaryButtonHandler:^{
 		//store new value to user defaults
 		NSString *newPath = [sshClientPath stringValue];
-		if(![newPath length])
+		if (![newPath length]) {
 			[prefs removeObjectForKey:SPSSHClientPath];
-		else
+		} else {
 			[prefs setObject:newPath forKey:SPSSHClientPath];
-	}
-	
-	SPClear(_currentAlert);
+		}
+	} cancelButtonHandler:nil];
+
 }
 
 #pragma mark -

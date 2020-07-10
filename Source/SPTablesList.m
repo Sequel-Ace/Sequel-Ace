@@ -219,14 +219,20 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
 				// return NSNull, thus catch that case for safety reasons
 				id tableName = [eachRow objectForKey:@"Name"];
-				if ([tableName isNSNull]) {
+				if (tableName == nil || [tableName isNSNull]) {
+					tableName = [eachRow objectForKey:@"NAME"];
+				}
+				if (tableName == nil || [tableName isNSNull]) {
 					tableName = @"...";
 				}
 				[tables addObject:tableName];
 				
 				// comments is usefull
 				id tableComment = [eachRow objectForKey:@"Comment"];
-				if ([tableComment isNSNull]) {
+				if (tableComment == nil || [tableComment isNSNull]) {
+					tableComment = [eachRow objectForKey:@"COMMENT"];
+				}
+				if (tableComment == nil || [tableComment isNSNull]) {
 					tableComment = @"";
 				}
 				[tableComments setValue:tableComment forKey:tableName];
@@ -1858,31 +1864,26 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		switch([NSArrayObjectAtIndex(filteredTableTypes, rowIndex) integerValue]) {
 			case SPTableTypeView:
 				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
-				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeTable:
 				[aCell setImage:[NSImage imageNamed:@"table-small"]];
-				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeProc:
 				[aCell setImage:[NSImage imageNamed:@"proc-small"]];
-				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeFunc:
 				[aCell setImage:[NSImage imageNamed:@"func-small"]];
-				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
+				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeNone:
 				[aCell setImage:nil];
 				[aCell setIndentationLevel:0];
 				break;
 			default:
-				[aCell setIndentationLevel:1];
-				[aCell setFont:smallSystemFont];
+				[aCell setIndentationLevel:0];
 		}
 
 	} 
@@ -1898,7 +1899,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	return (row == 0) ? 25 : 17;
+	return (row == 0) ? 25 : 20;
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation

@@ -1062,7 +1062,7 @@
 				//FIXME that error should really show only when trying to view the table content, but we don't even try to load that if Rows==NULL
 				SPOnewayAlertSheet(
 					NSLocalizedString(@"Querying row count failed", @"table status : row count query failed : error title"),
-					[NSApp mainWindow],
+					[[NSApp onMainThread] mainWindow],
 					[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to determine the number of rows for “%@”.\nMySQL said: %@ (%lu)", @"table status : row count query failed : error message"),[tableListInstance tableName],[mySQLConnection lastErrorMessage],[mySQLConnection lastErrorID]]
 				);
 			}

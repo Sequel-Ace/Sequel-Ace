@@ -17,11 +17,11 @@ while(<>) {
 	} else {
 		$img = "file://$res/table-small-square.tiff";
 	}
-	
+
 	print <<HTML4;
 	<tr>
 		<td align=center width='40px'><img src=\"$img\"></td>
-		<td><a href=\"sequelpro://$pid\@passToDoc/SelectDatabase/$db/$data[0]/\" title=\"Click to select $itemType “$db.$data[0]”\">$data[0]</a></td>
+		<td><a href=\"sequelace://$pid\@passToDoc/SelectDatabase/$db/$data[0]/\" title=\"Click to select $itemType “$db.$data[0]”\">$data[0]</a></td>
 		<td>$data[1]</td>
 		<td align=right>$data[4]</td>
 		<td align=right>$data[6]</td>

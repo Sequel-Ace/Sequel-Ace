@@ -55,6 +55,13 @@ void SPApplyRevisionChanges(void)
 	
 	// Get the current revision
 	if ([prefs objectForKey:SPLastUsedVersion]) recordedVersionNumber = [[prefs objectForKey:SPLastUsedVersion] integerValue];
+	
+	//Set version number back down if we're somehow too far ahead
+	if (currentVersionNumber < recordedVersionNumber) {
+		[prefs setObject:[NSNumber numberWithInteger:currentVersionNumber] forKey:SPLastUsedVersion];
+		[importantUpdateNotes release];
+		return;
+	}
 
 	// Skip processing if the current version matches or is less than recorded version
 	if (currentVersionNumber <= recordedVersionNumber) {
