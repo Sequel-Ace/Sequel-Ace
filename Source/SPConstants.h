@@ -246,7 +246,7 @@ typedef enum
 
 // Narrow down completion max rows
 extern const NSUInteger SPNarrowDownCompletionMaxRows;
-
+extern const NSUInteger SPMaxQueryLengthForWarning;
 // Default monospaced font name
 extern NSString *SPDefaultMonospacedFontName;
 

@@ -32,6 +32,7 @@
 
 // Narrow down completion max rows
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
+const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
 
 // Default monospaced font name
 NSString *SPDefaultMonospacedFontName            = @"Monaco";

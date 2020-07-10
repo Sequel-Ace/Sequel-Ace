@@ -73,8 +73,6 @@ typedef struct {
 
 typedef void (^QueryProgressHandler)(QueryProgress *);
 
-static const NSUInteger SPMaxQueryLengthForWarning = 1000;
-
 /**
  * This class is used to decouple the background thread running the SQL queries
  * from the main thread displaying the progress.
