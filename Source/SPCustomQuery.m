@@ -65,6 +65,7 @@
 #import <SPMySQL/SPMySQL.h>
 
 #include <libkern/OSAtomic.h>
+#import "Sequel_Ace-Swift.h"
 
 typedef struct {
 	NSUInteger query;
@@ -664,37 +665,20 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	
 	if(theQueries.length > SPMaxQueryLengthForWarning){
-		
 		theQueries = (NSMutableString*)[theQueries summarizeToLength:SPMaxQueryLengthForWarning withEllipsis:YES];
 		infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with these queries?\n\n %@", @"message of panel asking for confirmation for exec query"), theQueries];
 	}
 
-	NSAlert *alert = [[NSAlert alloc] init];
-	[alert addButtonWithTitle:NSLocalizedString(@"Yes", @"Yes button")];
-	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-	[alert setInformativeText:infoText];
-	[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-	[alert setAlertStyle:NSWarningAlertStyle];
-	
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
-		
-		SPLog(@"rc = %ld", (long)returnCode);
-
-		// Cancel button
-		if(returnCode == NSAlertSecondButtonReturn){
-			SPLog(@"Use clicked Cancel, return");
-			[[alert window] orderOut:nil];
-			[alert release];
-			return;
-		}
-		else if(returnCode == NSAlertFirstButtonReturn){
-			SPLog(@"User clicked Yes, exec queries");
-			[[alert window] orderOut:nil];
-			[alert release];
-			[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
-		}
+	[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Execute SQL?", @"Execute SQL?")]
+								 message:infoText
+					  primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+					primaryButtonHandler:^{
+		SPLog(@"User clicked Yes, exec queries");
+		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
+	}
+					 cancelButtonHandler:^{
+		SPLog(@"Cancel pressed");
 	}];
-
 }
 
 - (void)performQueriesTask:(NSDictionary *)taskArguments
