@@ -14,8 +14,9 @@ Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/a
 
 You can install Mac AppStore version through `mas` [MAS CLI](https://github.com/mas-cli/mas) with Sequel Ace id `1518036000`
 ```sh
+# maports
 $sudo port install mas 
-# or 
+# homebrew
 $brew install mas-cli/tap/mas
 
 # then
