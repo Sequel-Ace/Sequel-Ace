@@ -2695,12 +2695,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[rowValuesToSave release];
 	
 	SPLog(@"query: %@", queryString);
-	
-//	TESTING:
-//	return (NSMutableString*)@"";
-	
+
 	return queryString;
-	
 }
 /**
  * Tries to write a new row to the table.
