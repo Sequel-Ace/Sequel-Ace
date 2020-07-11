@@ -111,7 +111,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification;
 - (void)contentViewSizeChanged:(NSNotification *)notification;
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate;
-
+- (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 
 #pragma mark - SPTableContentDataSource_Private_API
