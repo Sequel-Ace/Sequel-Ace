@@ -10,15 +10,16 @@ Sequel Ace is a fast, easy-to-use Mac database management application for workin
 
 Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
 
-### MacPorts / Homebrew
+### Homebrew / MacPorts
 
 You can install Mac AppStore version through `mas` [MAS CLI](https://github.com/mas-cli/mas) with Sequel Ace id `1518036000`
 ```sh
-$sudo port install mas 
-# or 
+# Install MAS via Homebrew
 $brew install mas-cli/tap/mas
+# Install MAS via MacPorts
+$sudo port install mas
 
-# then
+# then, Install Sequel Ace using MAS
 $mas install 1518036000 # Sequel Ace
 ```
 
