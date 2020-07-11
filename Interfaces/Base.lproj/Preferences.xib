@@ -1651,7 +1651,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fk8-1b-YVh">
                     <rect key="frame" x="18" y="340" width="524" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" title="This list shows all files, that Sequel Ace has access to." id="g1t-1Q-PEO">
+                    <textFieldCell key="cell" title="This list shows all the files that Sequel Ace has been granted access to." id="g1t-1Q-PEO">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
