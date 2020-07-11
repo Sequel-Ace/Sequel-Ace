@@ -32,6 +32,7 @@
 
 // Narrow down completion max rows
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
+const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
 
 // Default monospaced font name
 NSString *SPDefaultMonospacedFontName            = @"Monaco";
@@ -112,6 +113,7 @@ NSString *SPFavorites                            = @"favorites";
 
 // Notifications Prefpane
 NSString *SPGrowlEnabled                         = @"GrowlEnabled";
+NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecQuery";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPConsoleEnableLogging                 = @"ConsoleEnableLogging";
 NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLogging";
