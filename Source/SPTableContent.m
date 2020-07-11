@@ -2466,9 +2466,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 /**
  * Tries to write a new row to the table.
- * Returns YES if row is written to table, otherwise NO; also returns YES if no row
- * is being edited or nothing has to be written to the table.
- */
+ *
+ * @param queryString The query string that will be sent to the MySQL server
+ * @return YES if row is written to table, otherwise NO; also returns YES if no row s being edited or nothing has to be written to the table.
+*/
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString{
 	
 	SPLog(@"_saveRowToTableWithQuery: %@", queryString);
@@ -2590,6 +2591,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 }
 
+/**
+ * Figures out what query will be performed.
+ *
+ *  @return the query string, can be empty.
+*/
 - (NSMutableString *)deriveQueryString{
 		
 	// Iterate through the row contents, constructing the (ordered) arrays of keys and values to be saved
@@ -2698,10 +2704,17 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	return queryString;
 }
+
+
 /**
  * Tries to write a new row to the table.
  * Returns YES if row is written to table, otherwise NO; also returns YES if no row
  * is being edited or nothing has to be written to the table.
+ * saveRowToTable originally did two things:
+ * 1. Figure out what had changed so it could construct an SQL query.
+ * 2. Executed the query.
+ *  Now it alerts the user to see if they really want to proceed, if they do, then
+ *  we call _saveRowToTableWithQuery:query
  */
 - (BOOL)saveRowToTable
 {
