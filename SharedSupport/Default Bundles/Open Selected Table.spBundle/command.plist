@@ -22,7 +22,7 @@ fi
 
 
 # Ask for desired application - modify the list if needed
-open "sequelpro://$SP_PROCESS_ID@chooseItemFromList/Numbers/Microsoft Excel"
+open "sequelace://$SP_PROCESS_ID@chooseItemFromList/Numbers/Microsoft Excel"
 
 # wait for Sequel Ace; status file will be written to disk if query was finished
 while [ 1 ]
@@ -50,7 +50,7 @@ rm -f "$SP_QUERY_RESULT_STATUS_FILE"
 
 # Query for desired data
 echo "SELECT * FROM \`${SP_SELECTED_TABLE//\`/\`\`}\`" &gt; "$SP_QUERY_FILE"
-open "sequelpro://$SP_PROCESS_ID@passToDoc/ExecuteQuery/csv"
+open "sequelace://$SP_PROCESS_ID@passToDoc/ExecuteQuery/csv"
 
 # wait for Sequel Ace; status file will be written to disk if query
 # was finished

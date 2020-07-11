@@ -5400,12 +5400,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	if([command isEqualToString:@"ReloadContentTableWithWHEREClause"]) {
 		NSString *queryFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fm = [NSFileManager defaultManager];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
 		BOOL isDir;
-		if([fm fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
+		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 			NSError *inError = nil;
 			NSString *query = [NSString stringWithContentsOfFile:queryFileName encoding:NSUTF8StringEncoding error:&inError];
-			[fm removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
 			if(inError == nil && query && [query length]) {
 				[tableContentInstance filterTable:query];
 			}
@@ -5415,12 +5415,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	if([command isEqualToString:@"RunQueryInQueryEditor"]) {
 		NSString *queryFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fm = [NSFileManager defaultManager];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
 		BOOL isDir;
-		if([fm fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
+		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 			NSError *inError = nil;
 			NSString *query = [NSString stringWithContentsOfFile:queryFileName encoding:NSUTF8StringEncoding error:&inError];
-			[fm removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
 			if(inError == nil && query && [query length]) {
 				[customQueryInstance performQueries:@[query] withCallback:NULL];
 			}
@@ -5436,7 +5436,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			NSString *resultFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], docProcessID];
 			NSString *metaFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], docProcessID];
 			NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], docProcessID];
-			NSFileManager *fm = [NSFileManager defaultManager];
+			NSFileManager *fileManager = [NSFileManager defaultManager];
 			NSString *status = @"0";
 			BOOL userTerminated = NO;
 			BOOL doSyntaxHighlighting = NO;
@@ -5549,10 +5549,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				}
 			}
 			
-			[fm removeItemAtPath:queryFileName error:nil];
-			[fm removeItemAtPath:resultFileName error:nil];
-			[fm removeItemAtPath:metaFileName error:nil];
-			[fm removeItemAtPath:statusFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:resultFileName error:nil];
+			[fileManager removeItemAtPath:metaFileName error:nil];
+			[fileManager removeItemAtPath:statusFileName error:nil];
 
 			if(userTerminated)
 				status = @"1";
@@ -5567,7 +5567,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				SPOnewayAlertSheet(
 					NSLocalizedString(@"BASH Error", @"bash error"),
 					[self parentWindow],
-					NSLocalizedString(@"Status file for sequelpro url scheme command couldn't be written!", @"status file for sequelpro url scheme command couldn't be written error message")
+					NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
 				);
 			}
 			
@@ -5587,19 +5587,19 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NSString *resultFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], docProcessID];
 		NSString *metaFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], docProcessID];
 		NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fm = [NSFileManager defaultManager];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
 		NSString *status = @"0";
 		BOOL isDir;
 		BOOL userTerminated = NO;
-		if([fm fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
+		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 
 			NSError *inError = nil;
 			NSString *query = [NSString stringWithContentsOfFile:queryFileName encoding:NSUTF8StringEncoding error:&inError];
 
-			[fm removeItemAtPath:queryFileName error:nil];
-			[fm removeItemAtPath:resultFileName error:nil];
-			[fm removeItemAtPath:metaFileName error:nil];
-			[fm removeItemAtPath:statusFileName error:nil];
+			[fileManager removeItemAtPath:queryFileName error:nil];
+			[fileManager removeItemAtPath:resultFileName error:nil];
+			[fileManager removeItemAtPath:metaFileName error:nil];
+			[fileManager removeItemAtPath:statusFileName error:nil];
 
 			if(inError == nil && query && [query length]) {
 
@@ -5743,7 +5743,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			SPOnewayAlertSheet(
 				NSLocalizedString(@"BASH Error", @"bash error"),
 				[self parentWindow],
-				NSLocalizedString(@"Status file for sequelpro url scheme command couldn't be written!", @"status file for sequelpro url scheme command couldn't be written error message")
+				NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
 			);
 		}
 		return;
@@ -6942,11 +6942,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			// tableEncoding == nil indicates that there was an error while retrieving table data
 			tableEncoding = [tableDataInstance tableEncoding];
 
-			// If encoding is set to Autodetect, update the connection character set encoding
-			// based on the newly selected table's encoding - but only if it differs from the current encoding.
+			// If encoding is set to Autodetect, update the connection character set encoding to utf8mb4
+			// This allows us to receive data encoded in various charsets as UTF-8 characters.
 			if ([[[NSUserDefaults standardUserDefaults] objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
-				if (tableEncoding != nil && ![tableEncoding isEqualToString:previousEncoding]) {
-					[self setConnectionEncoding:tableEncoding reloadingViews:NO];
+				if (![@"utf8mb4" isEqualToString:previousEncoding]) {
+					[self setConnectionEncoding:@"utf8mb4" reloadingViews:NO];
 					changeEncoding = NO;
 				}
 			}

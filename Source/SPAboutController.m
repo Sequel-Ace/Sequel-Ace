@@ -82,9 +82,8 @@ static NSString *SPShortVersionHashKey = @"SPVersionShortHash";
 /**
  * Display the license sheet.
  */
-- (IBAction)openApplicationLicenseSheet:(id)sender
-{
-	[NSApp beginSheet:appLicensePanel modalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
+- (IBAction)openApplicationLicenseSheet:(id)sender {
+	[self.window beginSheet:appLicensePanel completionHandler:nil];
 }
 
 /**

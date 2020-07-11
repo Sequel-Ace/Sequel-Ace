@@ -41,6 +41,8 @@
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
 
+#import "Sequel_Ace-Swift.h"
+
 static NSString * const SPTableViewNameColumnID = @"NameColumn";
 
 static NSString *SPGeneralTabIdentifier = @"General";
@@ -511,25 +513,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
 	//copy block from stack to heap, otherwise it wouldn't live long enough to be invoked later.
 	void *heapCallback = callback? Block_copy(callback) : NULL;
-	
-	[NSApp beginSheet:[self window]
-	   modalForWindow:docWindow
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:heapCallback];
-}
 
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void*)context
-{
-	//[NSApp endSheet...] does not close the window
-	[[self window] orderOut:self];
-	//notify delegate
-	if(context) {
-		void (^callback)(void) = context;
+	[docWindow beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
 		//directly invoking callback would risk that we are dealloc'd while still in this run loop iteration.
-		dispatch_async(dispatch_get_main_queue(), callback);
-		Block_release(callback);
-	}
+		dispatch_async(dispatch_get_main_queue(), heapCallback);
+		Block_release(heapCallback);
+	}];
 }
 
 #pragma mark -
@@ -582,12 +571,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Display any errors
 	if ([errorsString length]) {
 		[errorsTextView setString:errorsString];
-		
-		[NSApp beginSheet:errorsSheet 
-		   modalForWindow:[NSApp keyWindow] 
-			modalDelegate:nil 
-		   didEndSelector:NULL 
-			  contextInfo:nil];
+
+		[self.window beginSheet:errorsSheet completionHandler:nil];
 		
 		SPClear(errorsString);
 		
@@ -1645,8 +1630,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 #pragma mark -
 #pragma mark Tab View Delegate methods
 
-- (BOOL)tabView:(NSTabView *)tabView shouldSelectTabViewItem:(NSTabViewItem *)tabViewItem
-{
+- (BOOL)tabView:(NSTabView *)tabView shouldSelectTabViewItem:(NSTabViewItem *)tabViewItem {
 	BOOL retVal = YES;
 
 	if ([[treeController selectedObjects] count] == 0) return NO;
@@ -1658,8 +1642,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Currently selected object in tree
 	id selectedObject = [[treeController selectedObjects] objectAtIndex:0];
 
-	// If we are selecting a tab view that requires there be a child,
-	// make sure there is a child to select.  If not, don't allow it.
+	// If we are selecting a tab view that requires there be a child, make sure there is a child to select.  If not, don't allow it.
 	if ([[tabViewItem identifier] isEqualToString:SPGlobalPrivilegesTabIdentifier] ||
 		[[tabViewItem identifier] isEqualToString:SPResourcesTabIdentifier] ||
 		[[tabViewItem identifier] isEqualToString:SPSchemaPrivilegesTabIdentifier]) {
@@ -1669,15 +1652,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		retVal = parent ? ([[parent children] count] > 0) : ([[selectedObject children] count] > 0);
 
 		if (!retVal) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"User has no hosts", @"user has no hosts message")
-											 defaultButton:NSLocalizedString(@"Add Host", @"Add Host")
-										   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-											   otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"This user doesn't have any hosts associated with it. It will be deleted unless one is added", @"user has no hosts informative message")];
 
-			if ([alert runModal] == NSAlertDefaultReturn) {
+			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"User has no hosts", @"user has no hosts message") message:NSLocalizedString(@"This user doesn't have any hosts associated with it. It will be deleted unless one is added", @"user has no hosts informative message") primaryButtonTitle:NSLocalizedString(@"Add Host", @"Add Host") primaryButtonHandler:^{
 				[self addHost:nil];
-			}
+			} cancelButtonHandler:nil];
 		}
 
 		// If this is the resources tab, enable or disable the controls based on the server's support for them

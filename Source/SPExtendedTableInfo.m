@@ -544,6 +544,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 /**
  * NSTextView delegate. Used to change the selected table's comment.
+ * THIS GETS CALLED A LOT - jcs
  */
 - (void)textDidEndEditing:(NSNotification *)notification
 {
@@ -555,8 +556,10 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		NSString *newComment = [[tableCommentsTextView string] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
 		// Check that the user actually changed the tables comment
-		if (![currentComment isEqualToString:newComment]) {
-
+		// what if the new comment is "" and the current is nil?
+		// or current is not nil and new new is "" or nil?
+		if (([currentComment isEqualToString:newComment] == NO && newComment.length > 0) ||(newComment.length == 0 && currentComment.length > 0) ) {
+																							
 			// Alter table's comment
 			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]]];
 
