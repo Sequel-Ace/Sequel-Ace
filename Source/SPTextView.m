@@ -309,7 +309,7 @@ retry:
 	} else if ([keyPath isEqualToString:SPCustomQueryEnableSyntaxHighlighting]) {
 	    [self setEnableSyntaxHighlighting:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
 	    [self setNeedsDisplayInRect:[self bounds]];
-		[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+	    [self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
     } else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
 		[self setCommentColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if([[self string] length]<100000 && [self isEditable])
