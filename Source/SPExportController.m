@@ -364,7 +364,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 }
 
 /**
- * Displays the export finished Growl notification.
+ * Displays the export finished notification.
  */
 - (void)displayExportFinishedNotification
 {
