@@ -127,6 +127,7 @@ NSString *SPUseKeepAlive                         = @"UseKeepAlive";
 NSString *SPKeepAliveInterval                    = @"KeepAliveInterval";
 
 // Editor Prefpane
+NSString *SPCustomQueryEnableSyntaxHighlighting  = @"CustomQueryEnableSyntaxHighlighting";
 NSString *SPCustomQueryEditorFont                = @"CustomQueryEditorFont";
 NSString *SPCustomQueryEditorTextColor           = @"CustomQueryEditorTextColor";
 NSString *SPCustomQueryEditorBackgroundColor     = @"CustomQueryEditorBackgroundColor";

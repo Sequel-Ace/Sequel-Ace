@@ -109,6 +109,7 @@ typedef struct {
 	NSColor *otherTextColor;
 	NSRange queryRange;
 	BOOL shouldHiliteQuery;
+	BOOL enableSyntaxHighlighting;
 
 }
 
@@ -123,6 +124,7 @@ typedef struct {
 @property(retain) NSColor* otherTextColor;
 @property(assign) NSRange queryRange;
 @property(assign) BOOL shouldHiliteQuery;
+@property(assign) BOOL enableSyntaxHighlighting;
 @property(assign) BOOL completionIsOpen;
 @property(assign) BOOL completionWasReinvokedAutomatically;
 

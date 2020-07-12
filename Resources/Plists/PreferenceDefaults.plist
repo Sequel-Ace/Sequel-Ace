@@ -91,6 +91,8 @@
 	<true/>
 	<key>CustomQueryHighlightCurrentQuery</key>
 	<true/>
+	<key>CustomQueryEnableSyntaxHighlighting</key>
+	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
 	<key>CustomQuerySoftIndent</key>
