@@ -116,6 +116,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize enableSyntaxHighlighting;
 @synthesize completionIsOpen;
 @synthesize completionWasReinvokedAutomatically;
+@synthesize syntaxHighlightingRemoved;
 
 #ifdef SP_CODA
 @synthesize tableDocumentInstance;
@@ -2719,6 +2720,16 @@ retry:
 - (void)doSyntaxHighlighting
 {
 	if (![self enableSyntaxHighlighting]) { // the point of disabling syntax highlighting is to get the min input lag
+
+		if (!self.syntaxHighlightingRemoved) {
+			self.syntaxHighlightingRemoved = YES;
+
+			NSTextStorage *textStore = [self textStorage];
+			NSRange textRange = NSMakeRange(0, textStore.length);
+			[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
+			[textStore removeAttribute:kLEXToken range:textRange];
+		}
+
 		return;
 	}
 
@@ -2917,6 +2928,8 @@ retry:
 	}
 
 	// [textStore endEditing];
+
+	self.syntaxHighlightingRemoved = NO;
 
 	[self setNeedsDisplayInRect:[self bounds]];
 
