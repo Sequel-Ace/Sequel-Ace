@@ -339,6 +339,7 @@ extern NSString *SPUseKeepAlive;
 extern NSString *SPKeepAliveInterval;
 
 // Editor Prefpane
+extern NSString *SPCustomQueryEnableSyntaxHighlighting;
 extern NSString *SPCustomQueryEditorFont;
 extern NSString *SPCustomQueryEditorTextColor;
 extern NSString *SPCustomQueryEditorBackgroundColor;
