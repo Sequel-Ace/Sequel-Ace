@@ -129,8 +129,6 @@
 	<false/>
 	<key>FilterTableDefaultOperator</key>
 	<string>LIKE &apos;%@%&apos;</string>
-	<key>GrowlEnabled</key>
-	<true/>
 	<key>KeepAliveInterval</key>
 	<integer>60</integer>
 	<key>LastFavoriteIndex</key>

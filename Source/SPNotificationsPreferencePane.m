@@ -30,71 +30,8 @@
 
 #import "SPNotificationsPreferencePane.h"
 
-static NSString *_runningApplicationsKeyPath = @"runningApplications";
-
 @implementation SPNotificationsPreferencePane
 
-- (instancetype)init
-{
-	self = [super init];
-	if (self) {
-		// Growl doesn't tell use when it exits (even though they DO monitor it).
-		// This code replicates what it does internally.
-		[[NSWorkspace sharedWorkspace] addObserver:self
-										forKeyPath:_runningApplicationsKeyPath
-										   options:NSKeyValueObservingOptionNew
-										   context:nil];
-		// TODO: we are only really interested in this notification while we are visible.
-	}
-	return self;
-}
-
--(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-	//check if growl has exited
-	if(object == [NSWorkspace sharedWorkspace] && [keyPath isEqualToString:_runningApplicationsKeyPath]){
-		[self updateGrowlStatusLabel];
-	}
-}
-
-- (void)dealloc
-{
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[[NSWorkspace sharedWorkspace] removeObserver:self forKeyPath:_runningApplicationsKeyPath];
-	[super dealloc];
-}
-
-- (void)growlLaunchedNotifcation:(NSNotification *)notification
-{
-	[self updateGrowlStatusLabel];
-}
-
-- (void)preferencePaneWillBeShown
-{
-	[self updateGrowlStatusLabel];
-}
-
-#pragma mark -
-#pragma mark Bindings
-
-- (void)setGrowlEnabled:(BOOL)value
-{
-	[prefs setBool:value forKey:SPGrowlEnabled];
-}
-
-/**
- * Returns the user's Growl notifications preference.
- */
-- (BOOL)growlEnabled
-{
-	return [prefs boolForKey:SPGrowlEnabled];
-}
-
-- (void)updateGrowlStatusLabel
-{
-	NSString *text = NSLocalizedString(@"Notification Center will be used for sending notifications. ",@"Preferences : Notifications : status text : using Apple Notification Center, Apple's Notificiation Center is used instead. (KEEP the SPACE at the end)");
-		
-	[growlStatusLabel setStringValue:text];
-}
 
 #pragma mark -
 #pragma mark Preference pane protocol methods
