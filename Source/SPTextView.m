@@ -116,7 +116,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize enableSyntaxHighlighting;
 @synthesize completionIsOpen;
 @synthesize completionWasReinvokedAutomatically;
-@synthesize syntaxHighlightingRemoved;
+@synthesize syntaxHighlightingApplied;
 
 #ifdef SP_CODA
 @synthesize tableDocumentInstance;
@@ -2711,6 +2711,21 @@ retry:
 
 }
 
+- (void)removeSyntaxHighlighting
+{
+	if (self.syntaxHighlightingApplied)
+	{
+		self.syntaxHighlightingApplied = NO;
+
+		NSTextStorage *textStore = [self textStorage];
+		NSRange textRange = NSMakeRange(0, textStore.length);
+
+		[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
+		[textStore removeAttribute:kLEXToken range:textRange];
+
+		NSMutableAttributedStringAddAttributeValueRange(textStore, NSForegroundColorAttributeName, otherTextColor, textRange);
+	}
+}
 /**
  * Syntax Highlighting.
  *  
@@ -2719,16 +2734,10 @@ retry:
  */
 - (void)doSyntaxHighlighting
 {
-	if (![self enableSyntaxHighlighting]) { // the point of disabling syntax highlighting is to get the min input lag
-
-		if (!self.syntaxHighlightingRemoved) {
-			self.syntaxHighlightingRemoved = YES;
-
-			NSTextStorage *textStore = [self textStorage];
-			NSRange textRange = NSMakeRange(0, textStore.length);
-			[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
-			[textStore removeAttribute:kLEXToken range:textRange];
-		}
+	if (![self enableSyntaxHighlighting])
+	{
+		// the point of disabling syntax highlighting is to get the min input lag
+		[self removeSyntaxHighlighting];
 
 		return;
 	}
@@ -2929,7 +2938,7 @@ retry:
 
 	// [textStore endEditing];
 
-	self.syntaxHighlightingRemoved = NO;
+	self.syntaxHighlightingApplied = YES;
 
 	[self setNeedsDisplayInRect:[self bounds]];
 

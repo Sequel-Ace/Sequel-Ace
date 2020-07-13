@@ -111,7 +111,7 @@ typedef struct {
 	BOOL shouldHiliteQuery;
 	BOOL enableSyntaxHighlighting;
 
-	BOOL syntaxHighlightingRemoved;
+	BOOL syntaxHighlightingApplied;
 }
 
 @property(retain) NSColor* queryHiliteColor;
@@ -126,7 +126,7 @@ typedef struct {
 @property(assign) NSRange queryRange;
 @property(assign) BOOL shouldHiliteQuery;
 @property(assign) BOOL enableSyntaxHighlighting;
-@property(assign) BOOL syntaxHighlightingRemoved;
+@property(assign) BOOL syntaxHighlightingApplied;
 @property(assign) BOOL completionIsOpen;
 @property(assign) BOOL completionWasReinvokedAutomatically;
 
