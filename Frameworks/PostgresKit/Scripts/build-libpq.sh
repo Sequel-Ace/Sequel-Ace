@@ -49,8 +49,8 @@ COMMON_COMPILE_OPTIONS="-fno-omit-frame-pointer -fno-exceptions -mmacosx-version
 ESC=$(printf '\033')
 set -A INCLUDE_HEADERS 'src/interfaces/libpq/libpq-fe.h' 'src/include/postgres_ext.h'
 
-usage() 
-{	
+usage()
+{
 	cat <<!EOF
 Usage: $(basename $0): -s <postgresql_source_path> [-q -c -d -o <output_path>]
 
@@ -101,7 +101,7 @@ else
 fi
 
 # Find the SDK path
-SDK_PATH=$(xcodebuild -version -sdk 2>/dev/null | grep "^Path: [a-zA-Z0-9\/\.]*$" | awk -F' ' '{ print $2 }' | grep "$MIN_OS_X_VERSION")
+SDK_PATH=$(xcodebuild -version -sdk 2>/dev/null | grep "^Path: [a-zA-Z0-9\/\.]*$" | /usr/bin/awk -F' ' '{ print $2 }' | grep "$MIN_OS_X_VERSION")
 
 if [ "x${SDK_PATH}" == 'x' ]
 then
@@ -122,7 +122,7 @@ cd "$POSTGRESQL_SOURCE_DIR"
 if [ "x${CLEAN}" == 'xYES' ]
 then
 	echo "$ESC[1mCleaning PostgreSQL source and builds...$ESC[0m"
-	
+
 	if [ "x${QUIET}" == 'xYES' ]
 	then
 		make clean > /dev/null
@@ -130,14 +130,14 @@ then
 		if [ -d "$OUTPUT_PATH" ]; then rm -rf "$OUTPUT_PATH" > /dev/null; fi
 	else
 		make clean
-		
+
 		if [ -d "$OUTPUT_PATH" ]; then rm -rf "$OUTPUT_PATH" > /dev/null; fi
 	fi
 
 	echo "$ESC[1mCleaning PostgreSQL completed.$ESC[0m"
 
 	exit 0
-fi 
+fi
 
 echo ''
 echo "This script builds the PostgreSQL client library for distribution in Sequel Pro's PostgreSQL framework."
@@ -240,14 +240,14 @@ fi
 for HEADER in ${INCLUDE_HEADERS[@]}
 do
 	cp "$HEADER" "${OUTPUT_PATH}/include/"
-	
+
 	if [ ! $? -eq 0 ]
 	then
 		echo "$ESC[1;31mCould not copy '${HEADER}' to output directory (${OUTPUT_PATH}/include).$ESC[0m"
 		exit 1
 	fi
 done
-	
+
 
 echo "$ESC[1mBuilding PostgreSQL client library successfully completed.$ESC[0m"
 echo "$ESC[1mSee ${OUTPUT_PATH} for the product.$ESC[0m"

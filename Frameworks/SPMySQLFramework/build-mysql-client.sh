@@ -153,7 +153,7 @@ then
 fi
 
 # Find the SDK path
-SDK_PATH=$(xcodebuild -version -sdk 2>/dev/null | grep "^Path: [a-zA-Z0-9\/\.]*$" | awk -F' ' '{ print $2 }' | grep "$MIN_OS_X_VERSION")
+SDK_PATH=$(xcodebuild -version -sdk 2>/dev/null | grep "^Path: [a-zA-Z0-9\/\.]*$" | /usr/bin/awk -F' ' '{ print $2 }' | grep "$MIN_OS_X_VERSION")
 
 if [ "x${SDK_PATH}" == 'x' ]
 then
