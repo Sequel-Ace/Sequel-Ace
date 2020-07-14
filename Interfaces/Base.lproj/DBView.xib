@@ -4755,6 +4755,12 @@ Gw
                         <action selector="copy:" target="36" id="6342"/>
                     </connections>
                 </menuItem>
+		<menuItem title="Copy as SQL INSERT (no auto_inc)" tag="2004" id="8MG-Mb-qpD">
+		    <modifierMask key="keyEquivalentModifierMask"/>
+		    <connections>
+			<action selector="copy:" target="36" id="vef-dB-uno"/>
+		    </connections>
+		</menuItem>
                 <menuItem isSeparatorItem="YES" id="7796"/>
                 <menuItem title="Add New Row" id="7795">
                     <modifierMask key="keyEquivalentModifierMask"/>
@@ -4797,11 +4803,18 @@ Gw
                         <action selector="copy:" target="-1" id="7483"/>
                     </connections>
                 </menuItem>
+		<menuItem title="Copy as SQL INSERT (no auto_inc)" tag="2004" id="0Tv-Br-8JO">
+		    <modifierMask key="keyEquivalentModifierMask"/>
+		    <connections>
+			<action selector="copy:" target="-1" id="6ey-zg-Cgj"/>
+		    </connections>
+		</menuItem>
                 <menuItem isSeparatorItem="YES" hidden="YES" id="7472"/>
                 <menuItem title="Delete Row" hidden="YES" id="7473">
                     <modifierMask key="keyEquivalentModifierMask"/>
                 </menuItem>
             </items>
+	    <point key="canvasLocation" x="139" y="-34"/>
         </menu>
         <menu id="6232" userLabel="Table Relations Menu">
             <items>

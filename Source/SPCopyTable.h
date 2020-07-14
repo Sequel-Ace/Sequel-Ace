@@ -41,6 +41,7 @@
 extern NSInteger SPEditMenuCopy;
 extern NSInteger SPEditMenuCopyWithColumns;
 extern NSInteger SPEditMenuCopyAsSQL;
+extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 
 /*!
 	@class copyTable
@@ -120,11 +121,23 @@ extern NSInteger SPEditMenuCopyAsSQL;
 - (NSString *)rowsAsCsvStringWithHeaders:(BOOL)withHeaders onlySelectedRows:(BOOL)onlySelected blobHandling:(NSInteger)withBlobHandling;
 #endif
 
-/*
+/*!
  * Generate a string in form of INSERT INTO <table> VALUES () of 
  * currently selected rows or all. Support blob data as well.
- */
+ * @param  A bool determining all rows or just selected
+ * @param  A bool to skip AUTO_INCREMENT column
+ * @result SQL to insert the rows
+*/
+- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn;
+
+/*!
+ * Generate a string in form of INSERT INTO <table> VALUES () of
+ * currently selected rows or all. Support blob data as well.
+ * @param  A bool determining all rows or just selected
+ * @result SQL to insert the rows
+*/
 - (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected;
+
 
 /*
  * Set all necessary data from the table content view.
