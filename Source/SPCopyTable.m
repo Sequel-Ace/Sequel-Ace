@@ -55,9 +55,12 @@
 #import "pthread.h"
 #include <stdlib.h>
 
-NSInteger SPEditMenuCopy            = 2001;
-NSInteger SPEditMenuCopyWithColumns = 2002;
-NSInteger SPEditMenuCopyAsSQL       = 2003;
+#import "Sequel_Ace-Swift.h"
+
+NSInteger SPEditMenuCopy               = 2001;
+NSInteger SPEditMenuCopyWithColumns    = 2002;
+NSInteger SPEditMenuCopyAsSQL          = 2003;
+NSInteger SPEditMenuCopyAsSQLNoAutoInc = 2004;
 
 static const NSInteger kBlobExclude     = 1;
 static const NSInteger kBlobInclude     = 2;
@@ -102,18 +105,22 @@ static const NSInteger kBlobAsImageFile = 4;
 {
 #ifndef SP_CODA /* copy table rows */
 	NSString *tmp = nil;
+	
+	if ([sender tag] == SPEditMenuCopyAsSQL || [sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
 
-	if ([sender tag] == SPEditMenuCopyAsSQL) {
-		tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
+		if ([sender tag] == SPEditMenuCopyAsSQL){
+			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
+		}
+		else{
+			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES];
+		}
 		
 		if (tmp != nil){
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
-
 			[pb declareTypes:@[NSStringPboardType] owner:nil];
-
 			[pb setString:tmp forType:NSStringPboardType];
 		}
-	} 
+	}
 	else {
 		tmp = [self rowsAsTabStringWithHeaders:([sender tag] == SPEditMenuCopyWithColumns) onlySelectedRows:YES blobHandling:kBlobInclude];
 		
@@ -415,8 +422,14 @@ static const NSInteger kBlobAsImageFile = 4;
  * Return selected rows as SQL INSERT INTO `foo` VALUES (baz) string.
  * If no selected table name is given `<table>` will be used instead.
  */
-- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected
-{
+- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected{
+	
+	return [self rowsAsSqlInsertsOnlySelectedRows:onlySelected skipAutoIncrementColumn:NO];
+}
+	
+
+- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn{
+
 	if (onlySelected && [self numberOfSelectedRows] == 0) return nil;
 
 	NSIndexSet *selectedRows = (onlySelected) ? [self selectedRowIndexes] : [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [tableStorage count])];
@@ -430,6 +443,10 @@ static const NSInteger kBlobAsImageFile = 4;
 	NSUInteger rowCounter = 0;
 	NSUInteger penultimateRowIndex = [selectedRows count];
 	NSUInteger c;
+	BOOL autoIncrement = NO;
+	BOOL foundAutoIncColumn = NO; 	// there can only be one AUTO_INCREMENT col, well MyISAM can have more, but only one column is set to AUTO_INCREMENT
+									// see: https://dev.mysql.com/doc/refman/8.0/en/example-auto-increment.html#example-auto-increment-myisam-notes
+	NSString *autoIncrementColumnName = nil;
 
 	NSMutableString *result = [NSMutableString stringWithCapacity:2000];
 
@@ -448,8 +465,18 @@ static const NSInteger kBlobAsImageFile = 4;
 	for (c = 0; c < numColumns; c++) 
 	{
 		columnMappings[c] = (NSUInteger)[[NSArrayObjectAtIndex(columns, c) identifier] integerValue];
-
+		
 		NSString *t = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"typegrouping"];
+		
+		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
+			autoIncrement = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) boolForKey:@"autoincrement"];
+			// the columnDefinitions array contains dictionaries with different keys when copying from the table view (autoincrement)
+			// or the query view (AUTO_INCREMENT_FLAG)
+			// so we need this extra check
+			if(autoIncrement == NO){
+				autoIncrement = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) boolForKey:@"AUTO_INCREMENT_FLAG"];
+			}
+		}
 
 		// Numeric data
 		if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
@@ -466,8 +493,37 @@ static const NSInteger kBlobAsImageFile = 4;
 		// Default to strings
 		else
 			columnTypes[c] = 1;
+		
+		if(foundAutoIncColumn == NO && autoIncrement == YES && skipAutoIncrementColumn == YES){
+			SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
+			columnTypes[c] = 4; // new type
+			autoIncrementColumnName = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"name"];
+			foundAutoIncColumn = YES;
+			autoIncrement = NO;
+		}
 	}
-
+	
+	if(foundAutoIncColumn == YES && skipAutoIncrementColumn == YES){
+		//what if autoIncrementColumnName is nil?
+		if(autoIncrementColumnName == nil){
+			SPLog(@"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions");
+			
+			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Cannot find auto_increment column name", @"Cannot find auto_increment column name")]
+										 message:NSLocalizedString(@"Raise GitHub issue with developers: autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions", @"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions")
+										callback:nil];
+			
+			SPLog(@"free mem");
+			NSBeep();
+			free(columnMappings);
+			free(columnTypes);
+			return nil;
+		}
+		else{
+			SPLog(@"autoIncrementColumnName: %@", autoIncrementColumnName);
+			[tbHeader removeObject:autoIncrementColumnName];
+			SPLog(@"tbHeader: %@", tbHeader);
+		}
+	}
 	// Begin the SQL string
 	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n",
 		[(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString], [tbHeader componentsJoinedAndBacktickQuoted]];
@@ -537,6 +593,10 @@ static const NSInteger kBlobAsImageFile = 4;
 					// GEOMETRY
 					case 3:
 						[rowValues addObject:[mySQLConnection escapeAndQuoteData:[cellData data]]];
+						break;
+					// auto_inc
+					case 4:
+						SPLog(@"Not adding auto inc value");
 						break;
 					// Unhandled cases - abort
 					default:
@@ -989,7 +1049,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	}
 
 	// Don't validate anything other than the copy commands
-	if (menuItemTag != SPEditMenuCopy && menuItemTag != SPEditMenuCopyWithColumns && menuItemTag != SPEditMenuCopyAsSQL) {
+	if (menuItemTag != SPEditMenuCopy && menuItemTag != SPEditMenuCopyWithColumns && menuItemTag != SPEditMenuCopyAsSQL && menuItemTag != SPEditMenuCopyAsSQLNoAutoInc) {
 		return YES;
 	}
 
@@ -1004,7 +1064,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	}
 
 	// Enable the Copy as SQL commands if rows are selected and column definitions are available
-	if (menuItemTag == SPEditMenuCopyAsSQL) {
+	if (menuItemTag == SPEditMenuCopyAsSQL || menuItemTag == SPEditMenuCopyAsSQLNoAutoInc) {
 		return (columnDefinitions != nil && [self numberOfSelectedRows] > 0);
 	}
 #endif

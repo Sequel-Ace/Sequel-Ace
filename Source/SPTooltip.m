@@ -257,7 +257,15 @@ static CGFloat slow_in_out (CGFloat t)
 		NSRange glyphRange = [[fr layoutManager] glyphRangeForCharacterRange:range actualCharacterRange:NULL];
 		NSRect boundingRect = [[fr layoutManager] boundingRectForGlyphRange:glyphRange inTextContainer:[fr textContainer]];
 		boundingRect = [fr convertRect: boundingRect toView:NULL];
-		pos = [[fr window] convertPointToScreen: NSMakePoint(boundingRect.origin.x + boundingRect.size.width,boundingRect.origin.y + boundingRect.size.height)];
+
+		NSPoint oppositeOrigin = NSMakePoint(NSMaxX(boundingRect), NSMaxY(boundingRect));
+
+		if (@available(macOS 10.12, *)) {
+			pos = [[fr window] convertPointToScreen:oppositeOrigin];
+		} else {
+			pos = [[fr window] convertRectToScreen:(CGRect){.origin=oppositeOrigin}].origin;
+		}
+
 		NSFont* font = [fr font];
 		if(font) pos.y -= [font pointSize]*1.3f;
 		return pos;

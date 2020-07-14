@@ -125,7 +125,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 -(void)reRequestSecureAccess{
 	
-	NSLog(@"reRequestSecureAccess to saved bookmarks");
+	SPLog(@"reRequestSecureAccess to saved bookmarks");
 
 	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
 		
@@ -144,7 +144,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 				[resolvedBookmarks addObject:tmpURL];
 			}
 			else{
-				NSLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
 			}
 		}];
 	}];

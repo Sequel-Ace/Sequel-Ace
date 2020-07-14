@@ -113,8 +113,10 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize otherTextColor;
 @synthesize queryRange;
 @synthesize shouldHiliteQuery;
+@synthesize enableSyntaxHighlighting;
 @synthesize completionIsOpen;
 @synthesize completionWasReinvokedAutomatically;
+@synthesize syntaxHighlightingApplied;
 
 #ifdef SP_CODA
 @synthesize tableDocumentInstance;
@@ -228,6 +230,8 @@ retry:
 			}
 		} while((++item)->p);
 	}
+
+	[self setEnableSyntaxHighlighting:[prefs boolForKey:SPCustomQueryEnableSyntaxHighlighting]];
 	
 	[self setShouldHiliteQuery:[prefs boolForKey:SPCustomQueryHighlightCurrentQuery]];
 
@@ -241,6 +245,7 @@ retry:
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorBackgroundColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorHighlightQueryColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryHighlightCurrentQuery options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPCustomQueryEnableSyntaxHighlighting options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorCommentColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorQuoteColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorSQLKeywordColor options:NSKeyValueObservingOptionNew context:NULL];
@@ -263,6 +268,7 @@ retry:
 	[self setTextColor:otherTextColor];
 	[self setInsertionPointColor:[NSColor blackColor]];
 	[self setShouldHiliteQuery:YES];
+	[self setEnableSyntaxHighlighting:YES];
 	[self setSelectedTextAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[NSColor lightGrayColor], NSBackgroundColorAttributeName, nil]];
 
 #endif
@@ -301,7 +307,11 @@ retry:
 	} else if ([keyPath isEqualToString:SPCustomQueryHighlightCurrentQuery]) {
 		[self setShouldHiliteQuery:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
 		[self setNeedsDisplayInRect:[self bounds]];
-	} else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
+	} else if ([keyPath isEqualToString:SPCustomQueryEnableSyntaxHighlighting]) {
+	    [self setEnableSyntaxHighlighting:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
+	    [self setNeedsDisplayInRect:[self bounds]];
+	    [self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+    } else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
 		[self setCommentColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if([[self string] length]<100000 && [self isEditable])
 			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
@@ -2701,6 +2711,21 @@ retry:
 
 }
 
+- (void)removeSyntaxHighlighting
+{
+	if (self.syntaxHighlightingApplied)
+	{
+		self.syntaxHighlightingApplied = NO;
+
+		NSTextStorage *textStore = [self textStorage];
+		NSRange textRange = NSMakeRange(0, textStore.length);
+
+		[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
+		[textStore removeAttribute:kLEXToken range:textRange];
+
+		NSMutableAttributedStringAddAttributeValueRange(textStore, NSForegroundColorAttributeName, otherTextColor, textRange);
+	}
+}
 /**
  * Syntax Highlighting.
  *  
@@ -2709,6 +2734,13 @@ retry:
  */
 - (void)doSyntaxHighlighting
 {
+	if (![self enableSyntaxHighlighting])
+	{
+		// the point of disabling syntax highlighting is to get the min input lag
+		[self removeSyntaxHighlighting];
+
+		return;
+	}
 
 	NSTextStorage *textStore = [self textStorage];
 	NSString *selfstr        = [self string];
@@ -2905,6 +2937,8 @@ retry:
 	}
 
 	// [textStore endEditing];
+
+	self.syntaxHighlightingApplied = YES;
 
 	[self setNeedsDisplayInRect:[self bounds]];
 
@@ -3695,6 +3729,7 @@ retry:
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorBackgroundColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorHighlightQueryColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryHighlightCurrentQuery];
+	[prefs removeObserver:self forKeyPath:SPCustomQueryEnableSyntaxHighlighting];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorCommentColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorQuoteColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorSQLKeywordColor];

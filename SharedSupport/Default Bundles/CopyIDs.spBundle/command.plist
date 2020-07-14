@@ -7,7 +7,7 @@
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
-	<string>cat | awk 'BEGIN {
+	<string>/bin/cat | /usr/bin/awk 'BEGIN {
 	ORS = "";
 }
 {
