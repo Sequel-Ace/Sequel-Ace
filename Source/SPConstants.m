@@ -32,6 +32,7 @@
 
 // Narrow down completion max rows
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
+const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
 
 // Default monospaced font name
 NSString *SPDefaultMonospacedFontName            = @"Monaco";
@@ -111,7 +112,7 @@ NSString *SPFilterTableDefaultOperatorLastItems  = @"FilterTableDefaultOperatorL
 NSString *SPFavorites                            = @"favorites";
 
 // Notifications Prefpane
-NSString *SPGrowlEnabled                         = @"GrowlEnabled";
+NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecQuery";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPConsoleEnableLogging                 = @"ConsoleEnableLogging";
 NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLogging";
@@ -125,6 +126,7 @@ NSString *SPUseKeepAlive                         = @"UseKeepAlive";
 NSString *SPKeepAliveInterval                    = @"KeepAliveInterval";
 
 // Editor Prefpane
+NSString *SPCustomQueryEnableSyntaxHighlighting  = @"CustomQueryEnableSyntaxHighlighting";
 NSString *SPCustomQueryEditorFont                = @"CustomQueryEditorFont";
 NSString *SPCustomQueryEditorTextColor           = @"CustomQueryEditorTextColor";
 NSString *SPCustomQueryEditorBackgroundColor     = @"CustomQueryEditorBackgroundColor";

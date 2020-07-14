@@ -39,7 +39,7 @@
  */
 @interface SPNotificationsPreferencePane : SPPreferencePane <SPPreferencePaneProtocol>
 {
-	IBOutlet NSTextField *growlStatusLabel;
+	
 }
 
 @end

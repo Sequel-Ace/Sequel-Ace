@@ -246,7 +246,7 @@ typedef enum
 
 // Narrow down completion max rows
 extern const NSUInteger SPNarrowDownCompletionMaxRows;
-
+extern const NSUInteger SPMaxQueryLengthForWarning;
 // Default monospaced font name
 extern NSString *SPDefaultMonospacedFontName;
 
@@ -325,7 +325,7 @@ extern NSString *SPFilterTableDefaultOperatorLastItems;
 extern NSString *SPFavorites;
 
 // Notifications Prefpane
-extern NSString *SPGrowlEnabled;
+extern NSString *SPQueryWarningEnabled;
 extern NSString *SPShowNoAffectedRowsError;
 extern NSString *SPConsoleEnableLogging;
 extern NSString *SPConsoleEnableInterfaceLogging;
@@ -339,6 +339,7 @@ extern NSString *SPUseKeepAlive;
 extern NSString *SPKeepAliveInterval;
 
 // Editor Prefpane
+extern NSString *SPCustomQueryEnableSyntaxHighlighting;
 extern NSString *SPCustomQueryEditorFont;
 extern NSString *SPCustomQueryEditorTextColor;
 extern NSString *SPCustomQueryEditorBackgroundColor;

@@ -382,6 +382,20 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	return newString;
 }
 
+- (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis
+{
+	NSString *str = self;
+	if ([str length] > length) {
+		str = [str substringToIndex:length];
+
+		// Find last space, trim to it
+		NSRange offset = [str rangeOfCharacterFromSet:[NSCharacterSet whitespaceAndNewlineCharacterSet] options:NSBackwardsSearch range:NSMakeRange(0, length)];
+		if (offset.location == NSNotFound) offset.location = length;
+		str = [NSString stringWithFormat:@"%@%@", [str substringToIndex:offset.location], ellipsis ? @"\xE2\x80\xA6" : @""];
+	}
+	return str;
+}
+
 /**
  * Returns the string by removing the characters in the supplied set and options.
  */

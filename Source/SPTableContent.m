@@ -63,6 +63,9 @@
 #import <SPMySQL/SPMySQL.h>
 #include <stdlib.h>
 
+#import "Sequel_Ace-Swift.h"
+
+
 /**
  * This is the unique KVO context of code that resides in THIS class.
  * Do not try to give it to other classes, ESPECIALLY NOT child classes!
@@ -108,7 +111,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification;
 - (void)contentViewSizeChanged:(NSNotification *)notification;
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate;
-
+- (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 
 #pragma mark - SPTableContentDataSource_Private_API
@@ -2463,24 +2466,138 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 /**
  * Tries to write a new row to the table.
- * Returns YES if row is written to table, otherwise NO; also returns YES if no row
- * is being edited or nothing has to be written to the table.
- */
-- (BOOL)saveRowToTable
-{
-	// Only handle tables - views should be handled per-cell.
-	if ([tablesListInstance tableType] == SPTableTypeView) return NO;
+ *
+ * @param queryString The query string that will be sent to the MySQL server
+ * @return YES if row is written to table, otherwise NO; also returns YES if no row s being edited or nothing has to be written to the table.
+*/
+- (BOOL)_saveRowToTableWithQuery:(NSString*)queryString{
+	
+	SPLog(@"_saveRowToTableWithQuery: %@", queryString);
 
-	// If no row is being edited, return success.
-	if (!isEditingRow) return YES;
-
-	// If editing, quickly compare the new row to the old row and if they are identical finish editing without saving.
-	if (!isEditingNewRow && [oldRow isEqualToArray:[tableValues rowContentsAtIndex:currentlyEditingRow]]) {
-		isEditingRow = NO;
-		currentlyEditingRow = -1;
-		return YES;
+	if(queryString.length < 1){
+		SPLog(@"no query str: %@", queryString);
+		[[SPQueryController sharedQueryController] showErrorInConsole:NSLocalizedString(@"/* WARNING: No rows have been affected */\n", @"warning shown in the console when no rows have been affected after writing to the db") connection:[tableDocumentInstance name] database:[tableDocumentInstance database]];
+		return NO;
 	}
 
+	NSUInteger i;
+	
+	// Run the query
+	[mySQLConnection queryString:queryString];
+
+	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+
+	// If no rows have been changed, show error if appropriate.
+	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
+#ifndef SP_CODA
+		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
+			SPOnewayAlertSheet(
+				NSLocalizedString(@"Warning", @"warning"),
+				[tableDocumentInstance parentWindow],
+				NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db")
+			);
+		} else {
+			NSBeep();
+		}
+#endif
+
+		// If creating a new row, remove the row; otherwise revert the row contents
+		if (isEditingNewRow) {
+			tableRowsCount--;
+			[tableValues removeRowAtIndex:currentlyEditingRow];
+			[self updateCountText];
+			isEditingNewRow = NO;
+		}
+		else {
+			[tableValues replaceRowAtIndex:currentlyEditingRow withRowContents:oldRow];
+		}
+
+		isEditingRow = NO;
+		currentlyEditingRow = -1;
+		[tableContentView reloadData];
+
+		[[SPQueryController sharedQueryController] showErrorInConsole:NSLocalizedString(@"/* WARNING: No rows have been affected */\n", @"warning shown in the console when no rows have been affected after writing to the db") connection:[tableDocumentInstance name] database:[tableDocumentInstance database]];
+
+		return YES;
+
+	// On success...
+	} else if ( ![mySQLConnection queryErrored] ) {
+		isEditingRow = NO;
+
+		// New row created successfully
+		if ( isEditingNewRow ) {
+#ifndef SP_CODA
+			if ( [prefs boolForKey:SPReloadAfterAddingRow] ) {
+
+				// Save any edits which have been started but not saved to the underlying table/data structures
+				// yet - but not if currently undoing/redoing, as this can cause a processing loop
+				if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
+				[[tableDocumentInstance parentWindow] endEditingFor:nil];
+				}
+
+				previousTableRowsCount = tableRowsCount;
+				[self loadTableValues];
+			}
+			else {
+#endif
+				// Set the insertId for fields with auto_increment
+				for ( i = 0; i < [dataColumns count] ; i++ ) {
+					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
+						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
+					}
+				}
+#ifndef SP_CODA
+			}
+#endif
+			isEditingNewRow = NO;
+
+		// Existing row edited successfully
+		} else {
+
+			// Reload table if set to - otherwise no action required.
+#ifndef SP_CODA
+			if ([prefs boolForKey:SPReloadAfterEditingRow]) {
+
+				// Save any edits which have been started but not saved to the underlying table/data structures
+				// yet - but not if currently undoing/redoing, as this can cause a processing loop
+				if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
+				[[tableDocumentInstance parentWindow] endEditingFor:nil];
+				}
+
+				previousTableRowsCount = tableRowsCount;
+				[self loadTableValues];
+			}
+#endif
+		}
+		currentlyEditingRow = -1;
+
+		return YES;
+	}
+	// Report errors which have occurred
+	else {
+		SPBeginAlertSheet(
+			NSLocalizedString(@"Unable to write row", @"Unable to write row error"),
+			NSLocalizedString(@"Edit row", @"Edit row button"),
+			NSLocalizedString(@"Discard changes", @"discard changes button"),
+			nil,
+			[tableDocumentInstance parentWindow],
+			self,
+			@selector(addRowErrorSheetDidEnd:returnCode:contextInfo:),
+			NULL,
+			[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]]
+		);
+		return NO;
+	}
+
+}
+
+/**
+ * Figures out what query will be performed.
+ *
+ *  @return the query string, can be empty.
+*/
+- (NSMutableString *)deriveQueryString{
+		
 	// Iterate through the row contents, constructing the (ordered) arrays of keys and values to be saved
 	NSMutableArray *rowFieldsToSave = [[NSMutableArray alloc] initWithCapacity:[dataColumns count]];
 	NSMutableArray *rowValuesToSave = [[NSMutableArray alloc] initWithCapacity:[dataColumns count]];
@@ -2488,7 +2605,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSDictionary *fieldDefinition;
 	id rowObject;
 	
-	for (i = 0; i < [dataColumns count]; i++) 
+	for (i = 0; i < [dataColumns count]; i++)
 	{
 		rowObject = [tableValues cellDataAtRow:currentlyEditingRow column:i];
 		fieldDefinition = NSArrayObjectAtIndex(dataColumns, i);
@@ -2575,120 +2692,96 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSBeep();
 			[rowFieldsToSave release];
 			[rowValuesToSave release];
-			return NO;
+			return (NSMutableString*)@"";
 		}
 		[queryString appendFormat:@" WHERE %@", whereArg];
 	}
 
 	[rowFieldsToSave release];
 	[rowValuesToSave release];
+	
+	SPLog(@"query: %@", queryString);
 
-	// Run the query
-	[mySQLConnection queryString:queryString];
+	return queryString;
+}
 
-	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
-	// If no rows have been changed, show error if appropriate.
-	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
-#ifndef SP_CODA
-		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Warning", @"warning"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db")
-			);
-		} else {
-			NSBeep();
-		}
-#endif
+/**
+ * Tries to write a new row to the table.
+ * Returns YES if row is written to table, otherwise NO; also returns YES if no row
+ * is being edited or nothing has to be written to the table.
+ * saveRowToTable originally did two things:
+ * 1. Figure out what had changed so it could construct an SQL query.
+ * 2. Executed the query.
+ *  Now it alerts the user to see if they really want to proceed, if they do, then
+ *  we call _saveRowToTableWithQuery:query
+ */
+- (BOOL)saveRowToTable
+{
+	// Only handle tables - views should be handled per-cell.
+	if ([tablesListInstance tableType] == SPTableTypeView) return NO;
 
-		// If creating a new row, remove the row; otherwise revert the row contents
-		if (isEditingNewRow) {
-			tableRowsCount--;
-			[tableValues removeRowAtIndex:currentlyEditingRow];
-			[self updateCountText];
-			isEditingNewRow = NO;
-		}
-		else {
-			[tableValues replaceRowAtIndex:currentlyEditingRow withRowContents:oldRow];
-		}
+	// If no row is being edited, return success.
+	if (!isEditingRow) return YES;
 
+	// If editing, quickly compare the new row to the old row and if they are identical finish editing without saving.
+	if (!isEditingNewRow && [oldRow isEqualToArray:[tableValues rowContentsAtIndex:currentlyEditingRow]]) {
 		isEditingRow = NO;
 		currentlyEditingRow = -1;
-		[tableContentView reloadData];
-
-		[[SPQueryController sharedQueryController] showErrorInConsole:NSLocalizedString(@"/* WARNING: No rows have been affected */\n", @"warning shown in the console when no rows have been affected after writing to the db") connection:[tableDocumentInstance name] database:[tableDocumentInstance database]];
-
 		return YES;
-
-	// On success...
-	} else if ( ![mySQLConnection queryErrored] ) {
-		isEditingRow = NO;
-
-		// New row created successfully
-		if ( isEditingNewRow ) {
-#ifndef SP_CODA
-			if ( [prefs boolForKey:SPReloadAfterAddingRow] ) {
-
-				// Save any edits which have been started but not saved to the underlying table/data structures
-				// yet - but not if currently undoing/redoing, as this can cause a processing loop
-				if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
-				[[tableDocumentInstance parentWindow] endEditingFor:nil];
-				}
-
-				previousTableRowsCount = tableRowsCount;
-				[self loadTableValues];
-			} 
-			else {
-#endif
-				// Set the insertId for fields with auto_increment
-				for ( i = 0; i < [dataColumns count] ; i++ ) {
-					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
-						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
-					}
-				}
-#ifndef SP_CODA
+	}
+	
+	BOOL __block returnCode = NO;
+	
+	// check for new flag, if set to no, just exec queries
+	if ([prefs boolForKey:SPQueryWarningEnabled] == YES) {
+		
+		NSMutableString *queryString = [[NSMutableString alloc] initWithString:[self deriveQueryString]];
+		NSMutableString *originalQueryString = [[NSMutableString alloc] initWithString:queryString];
+		
+		SPLog(@"queryStringLen: %lu", queryString.length);
+		
+		if(queryString.length > 0){
+			if(queryString.length > SPMaxQueryLengthForWarning){
+				queryString = (NSMutableString*)[queryString summarizeToLength:SPMaxQueryLengthForWarning withEllipsis:YES];
 			}
-#endif
-			isEditingNewRow = NO;
-
-		// Existing row edited successfully
-		} else {
-
-			// Reload table if set to - otherwise no action required.
-#ifndef SP_CODA
-			if ([prefs boolForKey:SPReloadAfterEditingRow]) {
-
-				// Save any edits which have been started but not saved to the underlying table/data structures
-				// yet - but not if currently undoing/redoing, as this can cause a processing loop
-				if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
-				[[tableDocumentInstance parentWindow] endEditingFor:nil];
-				}
-
-				previousTableRowsCount = tableRowsCount;
-				[self loadTableValues];
+			
+			NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"),queryString];
+			
+			// show warning
+			[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Edit row?", @"Edit row?")]
+										 message:infoText
+							  primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+							primaryButtonHandler:^{
+				SPLog(@"Proceed pressed");
+				returnCode = [self _saveRowToTableWithQuery:originalQueryString];
 			}
-#endif
+							 cancelButtonHandler:^{
+				SPLog(@"Cancel pressed");
+				isEditingRow = NO;
+				currentlyEditingRow = -1;
+				// reload
+				[self loadTableValues];
+				returnCode = YES;
+			}];
 		}
-		currentlyEditingRow = -1;
+		else{
+			SPLog(@"No query string");
+			isEditingRow = NO;
+			currentlyEditingRow = -1;
+			// reload
+			[self loadTableValues];
+			returnCode = YES;
+		}
+	}
+	else{
+		SPLog(@"warning before query pref == NO, just execute");
+		returnCode = [self _saveRowToTableWithQuery:[self deriveQueryString]];
+	}
+	
+	SPLog(@"returnCode = %d", returnCode);
+	return returnCode;
 
-		return YES;
-	}
-	// Report errors which have occurred
-	else {
-		SPBeginAlertSheet(
-			NSLocalizedString(@"Unable to write row", @"Unable to write row error"),
-			NSLocalizedString(@"Edit row", @"Edit row button"),
-			NSLocalizedString(@"Discard changes", @"discard changes button"),
-			nil,
-			[tableDocumentInstance parentWindow],
-			self,
-			@selector(addRowErrorSheetDidEnd:returnCode:contextInfo:),
-			NULL,
-			[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]]
-		);
-		return NO;
-	}
 }
 
 /**
