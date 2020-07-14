@@ -10,7 +10,7 @@
 ### Migrating to Sequel Ace from Sequel Pro
 
 #### Migrating Connection Favorites
-_[The following is based on this medium article](https://medium.com/@harrybailey/migration-from-sequel-pro-to-sequel-ace-c6a579399c90):_
+_The following is based on [this medium article](https://medium.com/@harrybailey/migration-from-sequel-pro-to-sequel-ace-c6a579399c90):_
 1. Install Sequel Ace
 
 2. Quit both Sequel Pro and Sequel Ace
