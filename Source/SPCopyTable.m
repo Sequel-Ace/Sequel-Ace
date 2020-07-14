@@ -55,6 +55,8 @@
 #import "pthread.h"
 #include <stdlib.h>
 
+#import "Sequel_Ace-Swift.h"
+
 NSInteger SPEditMenuCopy               = 2001;
 NSInteger SPEditMenuCopyWithColumns    = 2002;
 NSInteger SPEditMenuCopyAsSQL          = 2003;
@@ -500,14 +502,27 @@ static const NSInteger kBlobAsImageFile = 4;
 			autoIncrement = NO;
 		}
 	}
-
-	SPLog(@"tbHeader: %@", tbHeader);
-	// TODO: what if autoIncrementColumnName is nil?
+	
 	if(foundAutoIncColumn == YES && skipAutoIncrementColumn == YES){
-		SPLog(@"autoIncrementColumnName: %@", autoIncrementColumnName);
-		[tbHeader removeObject:autoIncrementColumnName];
-		SPLog(@"tbHeader: %@", tbHeader);
-
+		//what if autoIncrementColumnName is nil?
+		if(autoIncrementColumnName == nil){
+			SPLog(@"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions");
+			
+			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Cannot find auto_increment column name", @"Cannot find auto_increment column name")]
+										 message:NSLocalizedString(@"Raise GitHub issue with developers: autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions", @"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions")
+										callback:nil];
+			
+			SPLog(@"free mem");
+			NSBeep();
+			free(columnMappings);
+			free(columnTypes);
+			return nil;
+		}
+		else{
+			SPLog(@"autoIncrementColumnName: %@", autoIncrementColumnName);
+			[tbHeader removeObject:autoIncrementColumnName];
+			SPLog(@"tbHeader: %@", tbHeader);
+		}
 	}
 	// Begin the SQL string
 	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n",
