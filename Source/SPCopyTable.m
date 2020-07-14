@@ -110,7 +110,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
 		}
 		else{
-			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumns:YES];
+			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES];
 		}
 		
 		if (tmp != nil){
