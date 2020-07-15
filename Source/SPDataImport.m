@@ -373,7 +373,7 @@
  */
 - (void)importSQLFile:(NSString *)filename
 {
-	SPLog(@"Staring import....");
+	SPLog(@"Starting import....");
 	
 //	TODO: this is slowwwwwwww
 #ifdef DEBUG
