@@ -42,10 +42,30 @@
  */
 + (double)monotonicTimeInterval
 {
+	
+	uint64_t elapsedNano;
+    static mach_timebase_info_data_t sTimebaseInfo;
 	uint64_t elapsedTime_t = mach_absolute_time();
-	Nanoseconds nanosecondsElapsed = AbsoluteToNanoseconds(*(AbsoluteTime *)&(elapsedTime_t));
 
-	return (((double)UnsignedWideToUInt64(nanosecondsElapsed)) * 1e-9);
+	// see: https://developer.apple.com/library/archive/qa/qa1398/_index.html
+	// Convert to nanoseconds.
+
+    // If this is the first time we've run, get the timebase.
+    // We can use denom == 0 to indicate that sTimebaseInfo is
+    // uninitialised because it makes no sense to have a zero
+    // denominator is a fraction.
+
+    if ( sTimebaseInfo.denom == 0 ) {
+        (void) mach_timebase_info(&sTimebaseInfo);
+    }
+	
+    // Do the maths. We hope that the multiplication doesn't
+    // overflow; the price you pay for working in fixed point.
+
+    elapsedNano = elapsedTime_t * sTimebaseInfo.numer / sTimebaseInfo.denom;
+
+    return (double)(elapsedNano * 1e-9);
+	
 }
 
 @end
