@@ -3574,9 +3574,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (contextInfo == nil) {
 		// Register and update query favorites, content filter, and history for the (new) file URL
 		NSMutableDictionary *preferences = [[NSMutableDictionary alloc] init];
-		[preferences setObject:[spfStructure objectForKey:SPQueryHistory] forKey:SPQueryHistory];
-		[preferences setObject:[spfStructure objectForKey:SPQueryFavorites] forKey:SPQueryFavorites];
-		[preferences setObject:[spfStructure objectForKey:SPContentFilters] forKey:SPContentFilters];
+		if([spfStructure objectForKey:SPQueryHistory]){
+			[preferences setObject:[spfStructure objectForKey:SPQueryHistory] forKey:SPQueryHistory];
+		}
+		if([spfStructure objectForKey:SPQueryFavorites]){
+			[preferences setObject:[spfStructure objectForKey:SPQueryFavorites] forKey:SPQueryFavorites];
+		}
+		if([spfStructure objectForKey:SPContentFilters]){
+			[preferences setObject:[spfStructure objectForKey:SPContentFilters] forKey:SPContentFilters];
+		}
 		[[SPQueryController sharedQueryController] registerDocumentWithFileURL:[NSURL fileURLWithPath:fileName] andContextInfo:preferences];
 
 		NSURL *newURL = [NSURL fileURLWithPath:fileName];
@@ -5082,9 +5088,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Move favourites and history into the data dictionary to pass to setState:
 	// SPQueryHistory is no longer saved to the SPF file, so it was causing an exception here (it was adding nil to the spf dict), skipping out of the method and not connecting
 	// or restoring the query screen content. See commit 96063541
-	if([spf objectForKey:SPQueryFavorites])[data setObject:[spf objectForKey:SPQueryFavorites] forKey:SPQueryFavorites];
-	if([spf objectForKey:SPQueryHistory])  [data setObject:[spf objectForKey:SPQueryHistory]   forKey:SPQueryHistory];
-	if([spf objectForKey:SPContentFilters])[data setObject:[spf objectForKey:SPContentFilters] forKey:SPContentFilters];
+	if([spf objectForKey:SPQueryFavorites]){
+		[data setObject:[spf objectForKey:SPQueryFavorites] forKey:SPQueryFavorites];
+	}
+	if([spf objectForKey:SPQueryHistory]){
+		[data setObject:[spf objectForKey:SPQueryHistory] forKey:SPQueryHistory];
+	}
+	if([spf objectForKey:SPContentFilters]){
+		[data setObject:[spf objectForKey:SPContentFilters] forKey:SPContentFilters];
+	}
 
 	// Ensure the encryption status is stored in the spfDocData store for future saves
 	[spfDocData setObject:@NO forKey:@"encrypted"];
