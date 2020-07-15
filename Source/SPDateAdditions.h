@@ -31,5 +31,6 @@
 @interface NSDate (SPDateAdditions)
 
 + (double)monotonicTimeInterval;
+-(NSString *)formattedDateWithFormat:(NSString *)format timeZone:(NSTimeZone *)timeZone locale:(NSLocale *)locale;
 
 @end

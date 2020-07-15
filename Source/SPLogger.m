@@ -119,7 +119,7 @@ int _isSPLeaksLog(const struct direct *entry);
 	// synchronised to allow use across multiple executables or their frameworks.
 	[logFileHandle synchronizeFile];
 	[logFileHandle seekToEndOfFile];
-	[logFileHandle writeData:[[NSString stringWithFormat:@"%@ %@\n", [[NSDate date] descriptionWithCalendarFormat:@"%H:%M:%S" timeZone:nil locale:[[NSUserDefaults standardUserDefaults] dictionaryRepresentation]], logString] dataUsingEncoding:NSUTF8StringEncoding]];
+	[logFileHandle writeData:[[NSString stringWithFormat:@"%@ %@\n", [[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:[NSLocale autoupdatingCurrentLocale]], logString] dataUsingEncoding:NSUTF8StringEncoding]];
 	[logFileHandle synchronizeFile];
 
 	[logString release];
