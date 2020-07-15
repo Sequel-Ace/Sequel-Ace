@@ -48,6 +48,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 
 @interface SPDataImport ()
@@ -223,13 +225,13 @@
 
 	// Reset progress cancelled from any previous runs
 	progressCancelled = NO;
-
+	
 	NSString *importFileName = [NSString stringWithFormat:@"%@%@",
-									SPImportClipboardTempFileNamePrefix, 
-									[[NSDate  date] descriptionWithCalendarFormat:@"%H%M%S" 
-											timeZone:nil 
-											locale:[[NSUserDefaults standardUserDefaults] dictionaryRepresentation]]];
-
+									SPImportClipboardTempFileNamePrefix,
+									[[NSDate date] formattedDateWithFormat:@"HHmmss"
+																  timeZone:nil
+																	locale:[NSLocale autoupdatingCurrentLocale]]];
+		
 	// Write clipboard content to temp file using the connection encoding
 	NSStringEncoding encoding;
 	if ([[[importFormatPopup selectedItem] title] isEqualToString:@"SQL"])
@@ -371,6 +373,16 @@
  */
 - (void)importSQLFile:(NSString *)filename
 {
+	SPLog(@"Staring import....");
+	
+//	TODO: this is slowwwwwwww
+#ifdef DEBUG
+	NSDate *startDate;
+	NSDate *endDate;
+	NSTimeInterval interval;
+	startDate = [NSDate date];
+#endif
+	
 	NSAutoreleasePool *importPool;
 	SPFileHandle *sqlFileHandle;
 	NSMutableData *sqlDataBuffer;
@@ -674,15 +686,19 @@
 
 			// Increment the processed queries count
 			queriesPerformed++;
-
+#ifdef DEBUG
+			endDate = [NSDate date];
+			interval = [endDate timeIntervalSinceDate:startDate];
+			SPLog(@"JIMMY time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
+#endif
 			// Update the progress bar
 			if (fileIsCompressed) {
-				[singleProgressBar setDoubleValue:[sqlFileHandle realDataReadLength]];
-				[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of SQL", @"SQL import progress text where total size is unknown"),
+				[[singleProgressBar onMainThread] setDoubleValue:[sqlFileHandle realDataReadLength]];
+				[[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of SQL", @"SQL import progress text where total size is unknown"),
 					[NSString stringForByteSize:fileProcessedLength]]];
 			} else {
-				[singleProgressBar setDoubleValue:fileProcessedLength];
-				[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"),
+				[[singleProgressBar onMainThread] setDoubleValue:fileProcessedLength];
+				[[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"),
 					[NSString stringForByteSize:fileProcessedLength], [NSString stringForByteSize:fileTotalLength]]];
 			}
 		}
@@ -753,6 +769,13 @@
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
 	[notification release];
+
+#ifdef DEBUG
+	endDate = [NSDate date];
+	interval = [endDate timeIntervalSinceDate:startDate];
+	SPLog(@"JIMMY total time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
+#endif
+
 }
 
 #pragma mark -
