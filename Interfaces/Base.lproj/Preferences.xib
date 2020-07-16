@@ -844,7 +844,7 @@ Gw
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <binding destination="117" name="value" keyPath="values.ShowWarningBeforeExecQuery" id="vid-6Z-YSC"/>
+                        <binding destination="117" name="value" keyPath="values.ShowWarningBeforeExecuteQuery" id="vid-6Z-YSC"/>
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1156">

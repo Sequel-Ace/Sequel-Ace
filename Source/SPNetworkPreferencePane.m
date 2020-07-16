@@ -295,6 +295,12 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	// retrieve the file manager in order to fetch the current user's home
 	// directory
 	NSFileManager *fileManager = [NSFileManager defaultManager];
+	NSURL *homeDirectory = nil;
+	if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
+		homeDirectory = [fileManager homeDirectoryForCurrentUser];
+	} else {
+		homeDirectory = [NSURL fileURLWithPath:NSHomeDirectory()];
+	}
 	
 	_currentFilePanel = [NSOpenPanel openPanel];
 	[_currentFilePanel setTitle:@"Choose ssh config"];
@@ -303,7 +309,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	[_currentFilePanel setAllowsMultipleSelection:YES];
 	[_currentFilePanel setAccessoryView:hiddenFileView];
 	[_currentFilePanel setResolvesAliases:NO];
-	[_currentFilePanel setDirectoryURL:[fileManager.homeDirectoryForCurrentUser URLByAppendingPathComponent:@".ssh"]];
+	[_currentFilePanel setDirectoryURL:[homeDirectory URLByAppendingPathComponent:@".ssh"]];
 	[self updateHiddenFiles];
 	
 	[prefs addObserver:self
