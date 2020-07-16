@@ -635,6 +635,119 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 }
 
+-(BOOL)queriesContainDestructiveSQL:(NSArray *)queries{
+	
+	NSArray *showCommands = @[@"SHOW CREATE DATABASE",
+							  @"SHOW CREATE EVENT",
+							  @"SHOW CREATE FUNCTION",
+							  @"SHOW CREATE PROCEDURE",
+							  @"SHOW CREATE TABLE",
+							  @"SHOW CREATE TRIGGER",
+							  @"SHOW CREATE VIEW"];
+	
+	NSArray *destructiveCommands = @[@"CALL",
+									 @"DELETE",
+									 @"DO",
+									 @"HANDLER",
+									 @"IMPORT TABLE",
+									 @"INSERT",
+									 @"LOAD DATA",
+									 @"REPLACE",
+									 @"UPDATE",
+									 @"VALUES",
+									 @"ALTER DATABASE",
+									 @"ALTER EVENT",
+									 @"ALTER FUNCTION",
+									 @"ALTER INSTANCE",
+									 @"ALTER LOGFILE GROUP",
+									 @"ALTER PROCEDURE",
+									 @"ALTER SERVER",
+									 @"ALTER TABLE",
+									 @"ALTER TABLESPACE",
+									 @"ALTER VIEW",
+									 @"CREATE DATABASE",
+									 @"CREATE EVENT",
+									 @"CREATE FUNCTION",
+									 @"CREATE INDEX",
+									 @"CREATE LOGFILE GROUP",
+									 @"CREATE PROCEDURE",
+									 @"CREATE FUNCTION ",
+									 @"CREATE SERVER",
+									 @"CREATE SPATIAL REFERENCE SYSTEM",
+									 @"CREATE TABLE",
+									 @"CREATE TABLESPACE",
+									 @"CREATE TRIGGER",
+									 @"CREATE VIEW",
+									 @"DROP DATABASE",
+									 @"DROP EVENT",
+									 @"DROP FUNCTION",
+									 @"DROP INDEX",
+									 @"DROP LOGFILE GROUP",
+									 @"DROP PROCEDURE ",
+									 @"DROP FUNCTION ",
+									 @"DROP SERVER",
+									 @"DROP SPATIAL REFERENCE SYSTEM",
+									 @"DROP TABLE",
+									 @"DROP TABLESPACE",
+									 @"DROP TRIGGER",
+									 @"DROP VIEW",
+									 @"RENAME TABLE",
+									 @"TRUNCATE TABLE"];
+	
+		
+	BOOL __block retCode = NO;
+	
+	[queries enumerateObjectsUsingBlock:^(NSMutableString *obj, NSUInteger idx, BOOL *stop)
+	{
+		if([obj isKindOfClass:[NSMutableString class]] && [(NSMutableString *)obj length]) {
+			
+//			SPLog(@"query: %@", obj);
+			
+			NSMutableString *query = [NSMutableString stringWithString:obj];
+			
+			// remove comments
+			[query replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
+			[query replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
+			[query replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
+			
+			// trim leading spaces
+			[query setString:[query trimSubstringFromStart:@" "]];
+
+			SPLog(@"query: [%@]", query);
+						
+			for (NSString *sql in destructiveCommands) {
+				
+//				SPLog(@"searching for %@ in %@", sql, query);
+				
+				if([query localizedCaseInsensitiveContainsString:sql] == YES){
+					SPLog(@"WARNING: Contains: [%@]", sql);
+					retCode = YES;
+					// check it's not a safe show command
+					for (NSString *showCommand in showCommands) {
+//						SPLog(@"searching for %@ in %@", showCommand, query);
+						if([query localizedCaseInsensitiveContainsString:showCommand] == YES){
+							SPLog(@"Safe show command: [%@], breaking", showCommand);
+							retCode = NO;
+							break;
+						}
+					}
+					
+					if(retCode == YES){
+						SPLog(@"No Safe show command, destructive command found, stop");
+						SPLog(@"retCode: %hhd", retCode);
+						*stop = YES;
+					}
+					
+				} // End localizedCaseInsensitiveContainsString
+			} // End destructiveCommands
+			
+			SPLog(@"retCode: %hhd", retCode);
+		}
+	}];
+	
+	return retCode;
+	
+}
 
 /**
  * Performs the mysql-query given by the user
@@ -644,6 +757,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	// check for new flag, if set to no, just exec queries
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled] == NO) {
+		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
+		return;
+	}
+	
+	// search for destructive SQL
+	BOOL containsDestructiveSQL = [self queriesContainDestructiveSQL:queries];
+	
+	// if no destructive SQL, just execute
+	if(containsDestructiveSQL == NO){
 		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
 		return;
 	}
