@@ -635,73 +635,26 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 }
 
+
+/**
+*  Method that checks if an array of SQL queries contain any destructive SQL
+* Basically, defaults to YES, unless all of the queries start with SHOW or SELECT
+*
+*  @param queries   NSArray - Array of SQL queries
+*
+*  @return BOOL YES if any of the queries contain destructive SQL
+*/
 -(BOOL)queriesContainDestructiveSQL:(NSArray *)queries{
 	
-	NSArray *showCommands = @[@"SHOW CREATE DATABASE",
-							  @"SHOW CREATE EVENT",
-							  @"SHOW CREATE FUNCTION",
-							  @"SHOW CREATE PROCEDURE",
-							  @"SHOW CREATE TABLE",
-							  @"SHOW CREATE TRIGGER",
-							  @"SHOW CREATE VIEW"];
+	NSArray *safeCommands = @[@"SHOW", @"SELECT"];
 	
-	NSArray *destructiveCommands = @[@"CALL",
-									 @"DELETE",
-									 @"DO",
-									 @"HANDLER",
-									 @"IMPORT TABLE",
-									 @"INSERT",
-									 @"LOAD DATA",
-									 @"REPLACE",
-									 @"UPDATE",
-									 @"VALUES",
-									 @"ALTER DATABASE",
-									 @"ALTER EVENT",
-									 @"ALTER FUNCTION",
-									 @"ALTER INSTANCE",
-									 @"ALTER LOGFILE GROUP",
-									 @"ALTER PROCEDURE",
-									 @"ALTER SERVER",
-									 @"ALTER TABLE",
-									 @"ALTER TABLESPACE",
-									 @"ALTER VIEW",
-									 @"CREATE DATABASE",
-									 @"CREATE EVENT",
-									 @"CREATE FUNCTION",
-									 @"CREATE INDEX",
-									 @"CREATE LOGFILE GROUP",
-									 @"CREATE PROCEDURE",
-									 @"CREATE FUNCTION ",
-									 @"CREATE SERVER",
-									 @"CREATE SPATIAL REFERENCE SYSTEM",
-									 @"CREATE TABLE",
-									 @"CREATE TABLESPACE",
-									 @"CREATE TRIGGER",
-									 @"CREATE VIEW",
-									 @"DROP DATABASE",
-									 @"DROP EVENT",
-									 @"DROP FUNCTION",
-									 @"DROP INDEX",
-									 @"DROP LOGFILE GROUP",
-									 @"DROP PROCEDURE ",
-									 @"DROP FUNCTION ",
-									 @"DROP SERVER",
-									 @"DROP SPATIAL REFERENCE SYSTEM",
-									 @"DROP TABLE",
-									 @"DROP TABLESPACE",
-									 @"DROP TRIGGER",
-									 @"DROP VIEW",
-									 @"RENAME TABLE",
-									 @"TRUNCATE TABLE"];
+	BOOL __block retCode = YES;
 	
+	[queries enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
 		
-	BOOL __block retCode = NO;
-	
-	[queries enumerateObjectsUsingBlock:^(NSMutableString *obj, NSUInteger idx, BOOL *stop)
-	{
-		if([obj isKindOfClass:[NSMutableString class]] && [(NSMutableString *)obj length]) {
-			
-//			SPLog(@"query: %@", obj);
+		retCode = YES;
+
+		if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
 			
 			NSMutableString *query = [NSMutableString stringWithString:obj];
 			
@@ -712,41 +665,29 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			
 			// trim leading spaces
 			[query setString:[query trimSubstringFromStart:@" "]];
+			[query setString:[query trimSubstringFromStart:@"\n"]];
 
 			SPLog(@"query: [%@]", query);
-						
-			for (NSString *sql in destructiveCommands) {
-				
-//				SPLog(@"searching for %@ in %@", sql, query);
-				
-				if([query localizedCaseInsensitiveContainsString:sql] == YES){
-					SPLog(@"WARNING: Contains: [%@]", sql);
-					retCode = YES;
-					// check it's not a safe show command
-					for (NSString *showCommand in showCommands) {
-//						SPLog(@"searching for %@ in %@", showCommand, query);
-						if([query localizedCaseInsensitiveContainsString:showCommand] == YES){
-							SPLog(@"Safe show command: [%@], breaking", showCommand);
-							retCode = NO;
-							break;
-						}
-					}
-					
-					if(retCode == YES){
-						SPLog(@"No Safe show command, destructive command found, stop");
-						SPLog(@"retCode: %hhd", retCode);
-						*stop = YES;
-					}
-					
-				} // End localizedCaseInsensitiveContainsString
-			} // End destructiveCommands
 			
-			SPLog(@"retCode: %hhd", retCode);
+			for (NSString *safeCommand in safeCommands){
+				if([query hasPrefix:safeCommand caseInsensitive:YES] == YES){
+					SPLog(@"Safe command: [%@], breaking", safeCommand);
+					retCode = NO;
+					break;
+				}
+			}
+
+		} // End isKindOfClass
+		
+		// if we get to here and retCode is still YES,
+		// then it means the query contains Destructive SQL
+		// so we can just stop and return YES
+		if(retCode == YES){
+			*stop = YES;
 		}
 	}];
 	
 	return retCode;
-	
 }
 
 /**
@@ -762,10 +703,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	
 	// search for destructive SQL
-	BOOL containsDestructiveSQL = [self queriesContainDestructiveSQL:queries];
-	
 	// if no destructive SQL, just execute
-	if(containsDestructiveSQL == NO){
+	if([self queriesContainDestructiveSQL:queries] == NO){
 		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
 		return;
 	}
