@@ -201,7 +201,7 @@
 	<false/>
 	<key>CopyContentOnTableCopy</key>
 	<false/>
-	<key>ShowWarningBeforeExecQuery</key>
+	<key>ShowWarningBeforeExecuteQuery</key>
 	<false/>
 </dict>
 </plist>
