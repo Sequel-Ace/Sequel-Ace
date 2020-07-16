@@ -32,6 +32,7 @@
 
 // Narrow down completion max rows
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
+const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
 
 // Default monospaced font name
 NSString *SPDefaultMonospacedFontName            = @"Monaco";
@@ -47,7 +48,7 @@ NSString *SPDefaultPasteboardDragType            = @"SequelProPasteboard";
 NSString *SPFavoritesPasteboardDragType          = @"SPFavoritesPasteboard";
 NSString *SPContentFilterPasteboardDragType      = @"SPContentFilterPasteboard";
 NSString *SPNavigatorPasteboardDragType          = @"SPNavigatorPasteboardDragType";
-NSString *SPNavigatorTableDataPasteboardDragType = @"SPNavigatorTableDataPasteboardDragType"; 
+NSString *SPNavigatorTableDataPasteboardDragType = @"SPNavigatorTableDataPasteboardDragType";
 NSString *SPExportCustomFileNameTokenPlistType   = @"SPExportCustomFileNameTokenPlist";
 
 // File extensions
@@ -111,7 +112,7 @@ NSString *SPFilterTableDefaultOperatorLastItems  = @"FilterTableDefaultOperatorL
 NSString *SPFavorites                            = @"favorites";
 
 // Notifications Prefpane
-NSString *SPGrowlEnabled                         = @"GrowlEnabled";
+NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecQuery";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPConsoleEnableLogging                 = @"ConsoleEnableLogging";
 NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLogging";
@@ -125,6 +126,7 @@ NSString *SPUseKeepAlive                         = @"UseKeepAlive";
 NSString *SPKeepAliveInterval                    = @"KeepAliveInterval";
 
 // Editor Prefpane
+NSString *SPCustomQueryEnableSyntaxHighlighting  = @"CustomQueryEnableSyntaxHighlighting";
 NSString *SPCustomQueryEditorFont                = @"CustomQueryEditorFont";
 NSString *SPCustomQueryEditorTextColor           = @"CustomQueryEditorTextColor";
 NSString *SPCustomQueryEditorBackgroundColor     = @"CustomQueryEditorBackgroundColor";
@@ -207,7 +209,7 @@ NSString *SPFileName24HourTimeTokenName          = @"time24";
 NSString *SPFileNameFavoriteTokenName            = @"favorite";
 NSString *SPFileNameTableTokenName               = @"table";
 
-// Misc 
+// Misc
 NSString *SPContentFilters                       = @"ContentFilters";
 NSString *SPDocumentTaskEndNotification          = @"DocumentTaskEnded";
 NSString *SPDocumentTaskStartNotification        = @"DocumentTaskStarted";
@@ -245,7 +247,7 @@ NSString *SPCopyContentOnTableCopy                    = @"CopyContentOnTableCopy
 
 // URLs
 NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/refman/%@/%@/%@.html";
-NSString *SPDevURL                               = @"https://github.com/sequelpro/sequelpro";
+NSString *SPDevURL                               = @"https://github.com/Sequel-Ace/Sequel-Ace";
 
 // Toolbar constants
 
@@ -262,14 +264,14 @@ NSString *SPMainToolbarTableRelations            = @"SwitchToTableRelationsToolb
 NSString *SPMainToolbarTableTriggers             = @"SwitchToTableTriggersToolbarItemIdentifier";
 NSString *SPMainToolbarUserManager               = @"SwitchToUserManagerToolbarItemIdentifier";
 
-NSString **SPViewModeToMainToolbarMap[] = 
-{ 
-	nil, 
-	&SPMainToolbarTableStructure, 
-	&SPMainToolbarTableContent, 
-	&SPMainToolbarCustomQuery, 
-	&SPMainToolbarTableInfo, 
-	&SPMainToolbarTableRelations, 
+NSString **SPViewModeToMainToolbarMap[] =
+{
+	nil,
+	&SPMainToolbarTableStructure,
+	&SPMainToolbarTableContent,
+	&SPMainToolbarCustomQuery,
+	&SPMainToolbarTableInfo,
+	&SPMainToolbarTableRelations,
 	&SPMainToolbarTableTriggers
 };
 

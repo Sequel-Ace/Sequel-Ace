@@ -617,9 +617,17 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 				[sqlHTML appendFormat:@"<font color=%@>%@</font>", tokenColor, [[sqlText substringWithRange:tokenRange] HTMLEscapeString]];
 			
 			if (QLPreviewRequestIsCancelled(preview)) {
-				if(sqlHTML) SPClear(sqlHTML);
-				if(truncatedString) [truncatedString release], sqlHTML = nil;
-				if(sqlText) [sqlText release], sqlHTML = nil;
+				if (sqlHTML) {
+					SPClear(sqlHTML);
+				}
+				if (truncatedString) {
+					[truncatedString release];
+					sqlHTML = nil;
+				}
+				if (sqlText) {
+					[sqlText release];
+					sqlHTML = nil;
+				}
 				[loopPool release];
 				return nil;
 			}

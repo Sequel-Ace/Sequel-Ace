@@ -80,11 +80,10 @@ void SPApplyRevisionChanges(void)
 	[prefs setObject:@YES forKey:@"doBundleUpdate"];
 
 	
-//	// FThis is how you add release notes and run specific migration steps
-//	if (recordedVersionNumber < 3922) {
-//		[importantUpdateNotes addObject:NSLocalizedString(@"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped.", @"Short important release note for swap of custom query buttons")];
-//		[importantUpdateNotes addObject:NSLocalizedString(@"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again.", @"Short important release note for why password prompts may occur")];
-//	}
+	// This is how you add release notes and run specific migration steps
+	if (recordedVersionNumber < 2061) {
+		[importantUpdateNotes addObject:NSLocalizedString(@"There is a new option in Preferences->Alerts & Logs: \"Show warning before executing a query\". When enabled, you will be prompted to confirm that you want to execte an SQL query or edit a row.", @"Short important release note for new option in Preferences->Alerts & Logs")];
+	}
 
 	// Display any important release notes, if any.  Call this after a slight delay to prevent double help
 	// menus - see http://www.cocoabuilder.com/archive/cocoa/6200-two-help-menus-why.html .

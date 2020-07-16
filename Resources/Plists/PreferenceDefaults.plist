@@ -91,6 +91,8 @@
 	<true/>
 	<key>CustomQueryHighlightCurrentQuery</key>
 	<true/>
+	<key>CustomQueryEnableSyntaxHighlighting</key>
+	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
 	<key>CustomQuerySoftIndent</key>
@@ -127,8 +129,6 @@
 	<false/>
 	<key>FilterTableDefaultOperator</key>
 	<string>LIKE &apos;%@%&apos;</string>
-	<key>GrowlEnabled</key>
-	<true/>
 	<key>KeepAliveInterval</key>
 	<integer>60</integer>
 	<key>LastFavoriteIndex</key>
@@ -201,5 +201,7 @@
 	<false/>
 	<key>CopyContentOnTableCopy</key>
 	<false/>
+	<key>ShowWarningBeforeExecQuery</key>
+	<true/>
 </dict>
 </plist>

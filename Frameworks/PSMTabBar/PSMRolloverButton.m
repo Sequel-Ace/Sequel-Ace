@@ -92,9 +92,17 @@
 
 - (void)addTrackingRect
 {
-    // assign a tracking rect to watch for mouse enter/exit
+	// assign a tracking rect to watch for mouse enter/exit
+	NSPoint globalPoint;
+
+	if (@available(macOS 10.12, *)) {
+		globalPoint = [[self window] convertPointToScreen:[NSEvent mouseLocation]];
+	} else {
+		globalPoint = [[self window] convertRectToScreen:(CGRect){.origin=[NSEvent mouseLocation]}].origin;
+	}
+
 	NSRect	trackRect = [self bounds];
-	NSPoint	localPoint = [self convertPoint:[[self window] convertPointToScreen:[NSEvent mouseLocation]] fromView:nil];
+	NSPoint	localPoint = [self convertPoint:globalPoint fromView:nil];
 
 	BOOL mouseInside = NSPointInRect(localPoint, trackRect);
 	
