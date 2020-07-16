@@ -656,7 +656,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
 			
-			NSMutableString *query = [NSMutableString stringWithString:obj];
+			NSMutableString *query = [obj mutableCopy];
 			
 			// remove comments
 			[query replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
