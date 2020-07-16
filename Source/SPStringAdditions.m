@@ -382,6 +382,32 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	return newString;
 }
 
+- (NSString *)trimSubstringFromStart:(NSString *)needle
+{
+	NSInteger needleLen = [needle length];
+	NSString *str = self;
+	while ([str hasPrefix:needle]){
+		str = [str substringFromIndex:needleLen];
+	}
+	return str;
+}
+
+- (NSString *)trimSubstringFromEnd:(NSString *)needle
+{
+	NSInteger needleLen = [needle length];
+	NSString *str = self;
+	while ([str hasSuffix:needle]){
+		str = [str substringToIndex:([str length] - needleLen)];
+	}
+	return str;
+}
+
+- (NSString *)trimSubstringFromBothEnds:(NSString *)needle
+{
+	return [[self trimSubstringFromStart:needle] trimSubstringFromEnd:needle];
+}
+
+
 - (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis
 {
 	NSString *str = self;
