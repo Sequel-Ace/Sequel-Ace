@@ -1319,6 +1319,8 @@ BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle)
 	[self _doChangeToRuleEditorData:^{
 		[filterRuleEditor insertRowAtIndex:0 withType:NSRuleEditorRowTypeSimple asSubrowOfRow:-1 animate:NO];
 	}];
+	
+	[self focusFirstInputField];
 }
 
 - (NSRuleEditor *)view
