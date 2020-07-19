@@ -897,8 +897,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		[[tableContentView onMainThread] selectRowIndexes:selectionSet byExtendingSelection:NO];
-		// Scroll to selection (if needed)
-		[[tableContentView onMainThread] scrollRowToVisible:[[tableContentView onMainThread] selectedRow]];
 
 		tableRowsSelectable = previousTableRowsSelectable;
 	}
