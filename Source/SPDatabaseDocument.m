@@ -2512,9 +2512,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)performFindPanelAction:(id)sender
 {
-	if ([sender tag] == 1 && [[self selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent]) {
-		[tableContentInstance makeContentFilterHaveFocus];
-	}
+	[tableContentInstance makeContentFilterHaveFocus];
 }
 
 /**

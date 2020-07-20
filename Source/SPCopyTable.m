@@ -1045,7 +1045,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	NSInteger menuItemTag = [anItem tag];
 
 	if ([anItem action] == @selector(performFindPanelAction:)) {
-		return (menuItemTag == 1 && [[self delegate] isKindOfClass:[SPTableContent class]]);
+		return [[self delegate] isKindOfClass:[SPTableContent class]];
 	}
 
 	// Don't validate anything other than the copy commands
