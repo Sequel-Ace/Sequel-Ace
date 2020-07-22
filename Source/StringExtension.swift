@@ -9,14 +9,14 @@
 import Foundation
 
 extension String {
-	func drop(prefix: String) -> String {
+	func dropPrefix(_ prefix: String) -> String {
 		guard self.hasPrefix(prefix) else {
 			return self
 		}
 		return String(self.dropFirst(prefix.count))
 	}
 
-	func drop(suffix: String) -> String {
+	func dropSuffix(_ suffix: String) -> String {
 		guard self.hasSuffix(suffix) else {
 			return self
 		}
@@ -43,12 +43,12 @@ extension String {
 }
 
 @objc extension NSString {
-	func drop(prefix: NSString) -> NSString {
-		return (self as String).drop(prefix: prefix)
+	func dropPrefix(_ prefix: NSString) -> NSString {
+		return (self as String).dropPrefix(prefix)
 	}
 
-	func drop(suffix: NSString) -> NSString {
-		return (self as String).drop(suffix: suffix)
+	func dropSuffix(_ suffix: NSString) -> NSString {
+		return (self as String).dropSuffix(suffix)
 	}
 
 	func hasPrefix(_ prefix: NSString, caseSensitive: Bool = true) -> Bool {
