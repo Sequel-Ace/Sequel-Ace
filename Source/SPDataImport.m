@@ -320,7 +320,7 @@
 		if (importFileName == nil) return;
 		
 		// Check to see if current connection has existing tables, if so warn
-		if([[tablesListInstance tables] count] > 1){
+		if([[tablesListInstance tables] count] > 1 && [[[importFormatPopup selectedItem] title] isEqualToString:@"SQL"]){
 			SPBeginAlertSheet(NSLocalizedString(@"The current database already has existing tables, importing may overwrite data. Are you sure you want to continue?", @"title of warning when trying to import data when tables already exist"),
 							  NSLocalizedString(@"Yes, continue anyway", @"Yes, continue anyway"),	// Main button
 							  NSLocalizedString(@"Cancel import", @"Cancel import"),	// Alternate button
