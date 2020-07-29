@@ -2718,7 +2718,7 @@
 		2A37F4A9FDCFA73011CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1150;
+				LastUpgradeCheck = 1160;
 				ORGANIZATIONNAME = "Sequel-Ace";
 				TargetAttributes = {
 					8D15AC270486D014006FF6A4 = {
@@ -4424,6 +4424,7 @@
 				IBC_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				VALID_ARCHS = x86_64;
 				VERSIONING_SYSTEM = "apple-generic";
 				WARNING_CFLAGS = "-Wmost";
