@@ -86,6 +86,28 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	XCTAssertTrue([uuid isMatchedByRegex:@"[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}"], @"UUID %@ doesn't match regex", uuid);
 }
 
+- (void)testDropPrefix {
+	NSString *string = @"prefixString";
+	string = [string dropPrefixWithPrefix:@"prefix"];
+	XCTAssertTrue([string isEqualToString:@"String"]);
+}
+
+- (void)testHasPrefix {
+	NSString *string = @"prefixString";
+	XCTAssertTrue([string hasPrefixWithPrefix:@"prefix" caseSensitive:NO]);
+}
+
+- (void)testDropSuffix {
+	NSString *string = @"stringSuffix";
+	string = [string dropSuffixWithSuffix:@"Suffix"];
+	XCTAssertTrue([string isEqualToString:@"string"]);
+}
+
+- (void)testHasSuffix {
+	NSString *string = @"stringSuffix";
+	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: NO]);
+}
+
 /**
  * createViewSyntaxPrettifier test case.
  */
