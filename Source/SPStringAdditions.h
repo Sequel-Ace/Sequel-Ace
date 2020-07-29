@@ -74,10 +74,6 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 - (NSArray *)lineRangesForRange:(NSRange)aRange;
 - (NSString *)createViewSyntaxPrettifier;
 - (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis;
-- (NSString *)trimSubstringFromStart:(NSString *)needle;
-- (NSString *)trimSubstringFromEnd:(NSString *)needle;
-- (NSString *)trimSubstringFromBothEnds:(NSString *)needle;
-- (BOOL)hasPrefix:(NSString *)prefix caseInsensitive:(BOOL)caseInsensitive;
 
 - (NSString *)getGeomFromTextString;
 
