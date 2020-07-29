@@ -30,7 +30,7 @@
 	<key>CFBundleName</key>
 	<string>${PRODUCT_NAME}</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.1.5</string>
+	<string>2.1.6</string>
 	<key>CFBundleVersion</key>
 	<string>2074</string>
 	<key>CFPlugInDynamicRegisterFunction</key>
