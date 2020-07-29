@@ -14,6 +14,10 @@ When you open Sequel Ace, the first screen that you will see is the database con
 
 #### Frequently Asked Questions
 
+**How do I migrate my favorites from Sequel Pro to Sequel Ace?**
+
+Please check out [this page](migrating-from-sequel-pro.html) for info on how to migrate from Sequel Pro!
+
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
 Try manually setting the socket. The socket depends on how you installed MySQL on your computer.
@@ -46,3 +50,4 @@ Sequel Ace runs in a sandboxed mode and by default cannot access your SSH config
 -   [Connect to a Local MySQL Server](local-connection.html)
 -   [Connect to a Remote MySQL Server](remote-connection.html)
 -   [Connecting to MAMP or XAMPP](mamp-xampp.html)
+-   [Migrating from Sequel Pro](migrating-from-sequel-pro.html)

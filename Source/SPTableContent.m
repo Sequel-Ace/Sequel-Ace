@@ -1392,6 +1392,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	else {
 		[ruleFilterController setEnabled:NO]; // disable it to not trigger any key bindings when hidden
 		[self updateFilterRuleEditorSize:0.0 animate:animate];
+		[[tableContentView window] makeFirstResponder:tableContentView];
 	}
 }
 
