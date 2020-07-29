@@ -664,13 +664,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[query replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
 			
 			// trim leading spaces
-			[query setString:[query trimSubstringFromStart:@" "]];
-			[query setString:[query trimSubstringFromStart:@"\n"]];
-
+			[query setString:[query dropPrefixWithPrefix:@" "]];
+			[query setString:[query dropPrefixWithPrefix:@"\n"]];
+		
 			SPLog(@"query: [%@]", query);
 			
 			for (NSString *safeCommand in safeCommands){
-				if([query hasPrefix:safeCommand caseInsensitive:YES] == YES){
+				if([query hasPrefixWithPrefix:safeCommand caseSensitive:NO] == YES){
 					SPLog(@"Safe command: [%@], breaking", safeCommand);
 					retCode = NO;
 					break;
