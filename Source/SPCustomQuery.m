@@ -637,6 +637,60 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 
 /**
+*  Method that checks if an array of SQL queries contain any destructive SQL
+* Basically, defaults to YES, unless all of the queries start with SHOW or SELECT
+*
+*  @param queries   NSArray - Array of SQL queries
+*
+*  @return BOOL YES if any of the queries contain destructive SQL
+*/
+-(BOOL)queriesContainDestructiveSQL:(NSArray *)queries{
+	
+	NSArray *safeCommands = @[@"SHOW", @"SELECT"];
+	
+	BOOL __block retCode = YES;
+	
+	[queries enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+		
+		retCode = YES;
+
+		if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
+			
+			NSMutableString *query = [obj mutableCopy];
+			
+			// remove comments
+			[query replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
+			[query replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
+			[query replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
+			
+			// trim leading spaces
+			[query setString:[query dropPrefixWithPrefix:@" "]];
+			[query setString:[query dropPrefixWithPrefix:@"\n"]];
+		
+			SPLog(@"query: [%@]", query);
+			
+			for (NSString *safeCommand in safeCommands){
+				if([query hasPrefixWithPrefix:safeCommand caseSensitive:NO] == YES){
+					SPLog(@"Safe command: [%@], breaking", safeCommand);
+					retCode = NO;
+					break;
+				}
+			}
+
+		} // End isKindOfClass
+		
+		// if we get to here and retCode is still YES,
+		// then it means the query contains Destructive SQL
+		// so we can just stop and return YES
+		if(retCode == YES){
+			*stop = YES;
+		}
+	}];
+	
+	return retCode;
+}
+
+/**
  * Performs the mysql-query given by the user
  * sets the tableView columns corresponding to the mysql-result
  */
@@ -644,6 +698,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	// check for new flag, if set to no, just exec queries
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled] == NO) {
+		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
+		return;
+	}
+	
+	// search for destructive SQL
+	// if no destructive SQL, just execute
+	if([self queriesContainDestructiveSQL:queries] == NO){
 		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
 		return;
 	}
