@@ -211,6 +211,7 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50EAB5B81A8FBB08008F627A /* SPOSInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EAB5B71A8FBB08008F627A /* SPOSInfo.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
+		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1789343B0F30C1DD0097539A /* SPStringAdditions.m */; };
 		51C8598124C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1789343B0F30C1DD0097539A /* SPStringAdditions.m */; };
@@ -3019,6 +3020,7 @@
 				505F56901BCEE491007467DD /* SPOSInfo.m in Sources */,
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
+				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
@@ -3699,6 +3701,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -3732,6 +3735,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -3765,6 +3769,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Distribution;
 		};
