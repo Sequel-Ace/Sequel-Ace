@@ -663,10 +663,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[query replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
 			[query replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
 			
-			// trim leading spaces
-			[query setString:[query dropPrefixWithPrefix:@" "]];
-			[query setString:[query dropPrefixWithPrefix:@"\n"]];
-		
+			// trim leading and trailing spaces and new lines
+			[query setString:[query trimWhitespacesAndNewlines]];
+
 			SPLog(@"query: [%@]", query);
 			
 			for (NSString *safeCommand in safeCommands){

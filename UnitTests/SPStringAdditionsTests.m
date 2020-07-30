@@ -108,6 +108,40 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: NO]);
 }
 
+- (void)testHasSuffixCaseSensitive {
+	NSString *string = @"stringSuffix";
+	XCTAssertFalse([string hasSuffixWithSuffix:@"suffix" caseSensitive: YES]);
+	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: YES]);
+}
+
+- (void)testHasPrefixCaseSensitive {
+	NSString *string = @"prefixString";
+	XCTAssertFalse([string hasPrefixWithPrefix:@"Prefix" caseSensitive:YES]);
+	XCTAssertTrue([string hasPrefixWithPrefix:@"prefix" caseSensitive:YES]);
+}
+
+- (void)testTrim {
+	NSString *string = @"  \n\nstring\n\n  ";
+	string = [string trimWhitespacesAndNewlines];
+	XCTAssertTrue([string isEqualToString:@"string"]);
+	
+	string = @" \n \n string \n \n  ";
+	string = [string trimWhitespacesAndNewlines];
+	XCTAssertTrue([string isEqualToString:@"string"]);
+	
+	string = @"..  ..string... ";
+	string = [string trimWhitespacesAndNewlines];
+	XCTAssertTrue([string isEqualToString:@"..  ..string..."]);
+	
+	string = @"str ing";
+	string = [string trimWhitespacesAndNewlines];
+	XCTAssertTrue([string isEqualToString:@"str ing"]);
+	
+	string = @"\nstr\ning\n";
+	string = [string trimWhitespacesAndNewlines];
+	XCTAssertTrue([string isEqualToString:@"str\ning"]);
+
+}
 /**
  * createViewSyntaxPrettifier test case.
  */
