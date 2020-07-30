@@ -40,6 +40,11 @@ extension String {
 				return self.lowercased().hasSuffix(suffix.lowercased())
 		}
 	}
+	
+	// the string with new lines and spaces trimmed from BOTH ends
+	var trimmedString: String {
+        return self.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 @objc extension NSString {
@@ -57,5 +62,9 @@ extension String {
 
 	func hasSuffix(suffix: NSString, caseSensitive: Bool = true) -> Bool {
 		return (self as String).hasSuffix(suffix as String, caseSensitive: caseSensitive)
+	}
+	
+	func trimWhitespacesAndNewlines() -> NSString {
+		return (self as String).trimmedString as NSString
 	}
 }
