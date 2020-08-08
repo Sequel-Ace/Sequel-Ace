@@ -569,6 +569,9 @@
 
 		// Build the kill query
 		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
+        if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+            [killQuery appendString:@" TIDB"];
+        }
 		if (killQuerySupported) [killQuery appendString:@" QUERY"];
 		[killQuery appendFormat:@" %lu", mySQLConnection->thread_id];
 
