@@ -19,11 +19,11 @@ If you are not sure if the MySQL server is running, open _Activity Viewer_ (from
 
 #### Connecting via a socket connection
 
-Open Sequel Ace. Choose a _Socket_ Connection. You must only specify the username and password (if any). Most MySQL installations use the default username root and a blank password.
-
-If you leave the socket field empty, Sequel Ace will try several common socket file locations. If Sequel Ace can't find your socket file, or if you have multiple MySQL servers running on your computer, you must enter the location of the socket file.
-
-**Note**: the popular MAMP package uses root as default password. See [Connecting to MAMP or XAMPP.](mamp-xampp.html "Connecting to MAMP or XAMPP")
+Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`):
+```
+[mysqld]
+socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+```
 
 
 #### Connecting via a standard connection
