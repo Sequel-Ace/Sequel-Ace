@@ -104,9 +104,12 @@
 
 		// Ignore Dark Theme when needed
  		if (@available(macOS 10.14, *)) {
- 			if ([[NSUserDefaults standardUserDefaults] boolForKey:SPPreventAutoDarkMode]) {
+			NSInteger style = [[NSUserDefaults standardUserDefaults] integerForKey:SPThemeStyle];
+			if (style == 1) {
  				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
- 			}
+			} else if (style == 2) {
+				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+			}
  		}
 
 		[NSApp setDelegate:self];
