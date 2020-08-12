@@ -103,7 +103,7 @@
                         <rect key="frame" x="17" y="86" width="192" height="14"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Name:" id="1726">
-                            <font key="font" metaFont="label" size="11"/>
+                            <font key="font" metaFont="menu" size="11"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -131,7 +131,7 @@
                         <rect key="frame" x="20" y="60" width="187" height="18"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" usesSingleLineMode="YES" id="1725">
-                            <font key="font" metaFont="label" size="11"/>
+                            <font key="font" metaFont="menu" size="11"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
@@ -144,7 +144,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Save" bezelStyle="rounded" alignment="center" controlSize="small" enabled="NO" borderStyle="border" tag="1" inset="2" id="1730">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="label" size="11"/>
+                            <font key="font" metaFont="menu" size="11"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
 DQ
 </string>
@@ -159,7 +159,7 @@ DQ
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" inset="2" id="1724">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="label" size="11"/>
+                            <font key="font" metaFont="menu" size="11"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
 Gw
 </string>
@@ -189,7 +189,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES"/>
                         <buttonCell key="cell" type="push" title="Close" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" inset="2" id="1764">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="label" size="11"/>
+                            <font key="font" metaFont="menu" size="11"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
 Gw
 </string>
@@ -557,7 +557,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YpU-KB-oKj">
-                    <rect key="frame" x="201" y="35" width="254" height="26"/>
+                    <rect key="frame" x="201" y="33" width="254" height="26"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <popUpButtonCell key="cell" type="push" title="Light" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" borderStyle="borderAndBezel" tag="1" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="eKV-qw-xZ9" id="qEs-4C-bPo">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -571,7 +571,7 @@ Gw
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
                                 <menuItem isSeparatorItem="YES" id="uDu-Gm-cCy"/>
-                                <menuItem title="Automatic" state="on" id="dTB-Qx-h4w">
+                                <menuItem title="Auto" state="on" id="dTB-Qx-h4w">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
                             </items>
@@ -586,7 +586,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mUn-Vd-ryj">
-                    <rect key="frame" x="204" y="20" width="167" height="16"/>
+                    <rect key="frame" x="204" y="18" width="167" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="(needs Sequel Ace restart)" id="ocM-hG-iMy">
                         <font key="font" metaFont="system"/>
