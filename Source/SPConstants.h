@@ -305,6 +305,7 @@ extern NSString *SPUseMonospacedFonts;
 extern NSString *SPDisplayTableViewVerticalGridlines;
 extern NSString *SPDisplayCommentsInTablesList;
 extern NSString *SPCustomQueryMaxHistoryItems;
+extern NSString *SPPreventAutoDarkMode;
 
 // Tables Prefpane
 extern NSString *SPReloadAfterAddingRow;

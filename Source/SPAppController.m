@@ -102,6 +102,13 @@
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
 
+		// Ignore Dark Theme when needed
+ 		if (@available(macOS 10.14, *)) {
+ 			if ([[NSUserDefaults standardUserDefaults] boolForKey:SPPreventAutoDarkMode]) {
+ 				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+ 			}
+ 		}
+
 		[NSApp setDelegate:self];
 	}
 
