@@ -97,6 +97,8 @@
 - (void)registerActivity:(NSDictionary *)commandDict;
 - (void)removeRegisteredActivity:(NSInteger)pid;
 - (NSArray *)runningActivities;
+- (void)defaultsChanged:(NSNotification *)notification;
+- (void)switchAppearance;
 
 - (void)handleEventWithURL:(NSURL *)url;
 - (NSString*)doSQLSyntaxHighlightForString:(NSString *)sqlText cssLike:(BOOL)cssLike;
