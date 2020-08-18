@@ -20,7 +20,11 @@ Please check out [this page](migrating-from-sequel-pro.html) for info on how to 
 
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
-Try manually setting the socket. The socket depends on how you installed MySQL on your computer.
+Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`):
+ ```
+ [mysqld]
+ socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+ ```
 
 **I'm having trouble connecting to a MySQL 4 or MySQL 5 database on localhost with a MAMP install.**
 
