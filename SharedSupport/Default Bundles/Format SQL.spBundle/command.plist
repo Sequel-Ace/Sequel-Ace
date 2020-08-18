@@ -1098,8 +1098,6 @@ $sql = @file_get_contents("php://stdin");
 echo trim(SqlFormatter::format($sql, false));</string>
 	<key>contact</key>
 	<string></string>
-	<key>defaultBundleWasModified</key>
-	<true/>
 	<key>description</key>
 	<string>Format current query or selection in a nice formatted way</string>
 	<key>input</key>
@@ -1118,7 +1116,7 @@ echo trim(SqlFormatter::format($sql, false));</string>
 	<key>isDefaultBundle</key>
 	<true/>
 	<key>keyEquivalent</key>
-	<string>^$F</string>
+	<string>^~@t</string>
 	<key>name</key>
 	<string>Format SQL</string>
 	<key>output</key>
