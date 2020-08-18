@@ -34,9 +34,6 @@
 #import "SPTreeNode.h"
 #import "SPFavoriteNode.h"
 
-static NSString *SPOldFavoritesKey       = @"favorites";
-static NSString *SPOldDefaultEncodingKey = @"DefaultEncoding";
-
 @implementation SPPreferencesUpgrade
 
 /**

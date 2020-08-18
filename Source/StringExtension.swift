@@ -40,22 +40,31 @@ extension String {
 				return self.lowercased().hasSuffix(suffix.lowercased())
 		}
 	}
+	
+	// the string with new lines and spaces trimmed from BOTH ends
+	var trimmedString: String {
+        return self.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 @objc extension NSString {
-	func dropPrefix(_ prefix: NSString) -> NSString {
-		return (self as String).dropPrefix(prefix)
+	func dropPrefix(prefix: NSString) -> NSString {
+		return (self as String).dropPrefix(prefix as String) as NSString
 	}
 
-	func dropSuffix(_ suffix: NSString) -> NSString {
-		return (self as String).dropSuffix(suffix)
+	func dropSuffix(suffix: NSString) -> NSString {
+		return (self as String).dropSuffix(suffix as String) as NSString
 	}
 
-	func hasPrefix(_ prefix: NSString, caseSensitive: Bool = true) -> Bool {
-		return (self as String).hasPrefix(prefix, caseSensitive: caseSensitive)
+	func hasPrefix(prefix: NSString, caseSensitive: Bool = true) -> Bool {
+		return (self as String).hasPrefix(prefix as String, caseSensitive: caseSensitive)
 	}
 
-	func hasSuffix(_ suffix: NSString, caseSensitive: Bool = true) -> Bool {
-		return (self as String).hasSuffix(suffix, caseSensitive: caseSensitive)
+	func hasSuffix(suffix: NSString, caseSensitive: Bool = true) -> Bool {
+		return (self as String).hasSuffix(suffix as String, caseSensitive: caseSensitive)
+	}
+	
+	func trimWhitespacesAndNewlines() -> NSString {
+		return (self as String).trimmedString as NSString
 	}
 }

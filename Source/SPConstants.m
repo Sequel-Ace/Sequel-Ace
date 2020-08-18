@@ -92,6 +92,7 @@ NSString *SPUseMonospacedFonts                   = @"UseMonospacedFonts";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
 NSString *SPCustomQueryMaxHistoryItems           = @"CustomQueryMaxHistoryItems";
+NSString *SPAppearance                           = @"Appearance";
 
 // Tables Prefpane
 NSString *SPReloadAfterAddingRow                 = @"ReloadAfterAddingRow";
