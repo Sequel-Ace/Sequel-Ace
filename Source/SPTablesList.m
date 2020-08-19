@@ -169,7 +169,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)resetTablesListSelectedIndex {
 	isMenuOpened = false;
 
-	if (lastSelectedRows != nil) {
+	if (lastSelectedRows) {
 		[tablesListView selectRowIndexes:lastSelectedRows byExtendingSelection:NO];
 	}
 }
@@ -340,6 +340,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListIsSelectable = YES;
 #ifndef SP_CODA /* ui manipulation */
 		[[tablesListView onMainThread] selectRowIndexes:[NSIndexSet indexSetWithIndex:itemToReselect] byExtendingSelection:NO];
+		lastSelectedRows = [[tablesListView onMainThread] selectedRowIndexes];
 #endif
 		tableListIsSelectable = previousTableListIsSelectable;
 		if (selectedTableName) [selectedTableName release];
@@ -1764,6 +1765,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void)tableViewSelectionDidChange:(NSNotification *)aNotification
 {
+	if (!isMenuOpened) lastSelectedRows = [tablesListView selectedRowIndexes];
+
 	if ([tablesListView numberOfSelectedRows] != 1) {
 
 		// Ensure the state is cleared
@@ -1819,8 +1822,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		
 		[[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
 	}
-
-	if (!isMenuOpened) lastSelectedRows = [tablesListView selectedRowIndexes];
 }
 
 /**
