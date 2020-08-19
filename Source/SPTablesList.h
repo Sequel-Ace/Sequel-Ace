@@ -124,8 +124,8 @@
 	BOOL tableListContainsViews;
 	BOOL alertSheetOpened;
 	BOOL isMenuOpened;
-	NSInteger lastSelectedRow;
 
+	NSIndexSet *lastSelectedRows;
 	NSFont *smallSystemFont;
 	
 	SPCharsetCollationHelper *addTableCharsetHelper;

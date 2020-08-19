@@ -104,7 +104,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListContainsViews = NO;
 		selectedTableType = SPTableTypeNone;
 		selectedTableName = nil;
-		lastSelectedRow = -1;
+		lastSelectedRows = nil;
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 
@@ -169,9 +169,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)resetTablesListSelectedIndex {
 	isMenuOpened = false;
 
-	if (lastSelectedRow != -1) {
-		NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:lastSelectedRow];
-		[tablesListView selectRowIndexes:indexSet byExtendingSelection:NO];
+	if (lastSelectedRows != nil) {
+		[tablesListView selectRowIndexes:lastSelectedRows byExtendingSelection:NO];
 	}
 }
 
@@ -1821,7 +1820,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
 	}
 
-	if (!isMenuOpened) lastSelectedRow = selectedRowIndex;
+	if (!isMenuOpened) lastSelectedRows = [tablesListView selectedRowIndexes];
 }
 
 /**
