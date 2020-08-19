@@ -20,7 +20,8 @@ mas install 1518036000 # Sequel Ace
 
 ### Homebrew
 
-To install an unoffical community maintained Homebrew Cask of the github release
+To install an unoffical community maintained [Homebrew](https://brew.sh) [Cask](https://github.com/Homebrew/homebrew-cask) of the [GitHub Release](https://github.com/sequel-ace/sequel-ace/releases)
+
 
 ```sh
 brew cask install sequel-ace
