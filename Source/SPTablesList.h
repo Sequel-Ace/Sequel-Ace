@@ -59,6 +59,7 @@
 	IBOutlet SPTableInfo *tableInfoInstance;
 	IBOutlet SPTableTriggers *tableTriggersInstance;
 
+	IBOutlet NSMenu *tablesListMenu;
 	IBOutlet NSWindow *copyTableSheet;
 	IBOutlet SPTableView *tablesListView;
 	IBOutlet NSButton *copyTableButton;
@@ -122,6 +123,8 @@
 	BOOL tableListIsSelectable;
 	BOOL tableListContainsViews;
 	BOOL alertSheetOpened;
+	BOOL isMenuOpened;
+	NSInteger lastSelectedRow;
 
 	NSFont *smallSystemFont;
 	

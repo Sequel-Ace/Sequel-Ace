@@ -71,7 +71,7 @@ static NSString *SPNewTableType         = @"SPNewTableType";
 static NSString *SPNewTableCharacterSet = @"SPNewTableCharacterSet";
 static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
-@interface SPTablesList () <NSSplitViewDelegate, NSTableViewDataSource>
+@interface SPTablesList () <NSSplitViewDelegate, NSMenuDelegate, NSTableViewDataSource>
 
 - (void)_removeTable:(BOOL)force;
 - (void)_truncateTable;
@@ -104,6 +104,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListContainsViews = NO;
 		selectedTableType = SPTableTypeNone;
 		selectedTableName = nil;
+		lastSelectedRow = -1;
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 
@@ -147,8 +148,31 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	
 	[tablesListView registerForDraggedTypes:@[SPNavigatorTableDataPasteboardDragType]];
 
+	[tablesListMenu setDelegate:self];
+
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
+}
+
+/**
+ * Not a menuDidOpen because it fires after tableViewSelectionDidChange which is responsible for DB View (and other things) refresh
+ */
+- (void)rightMouseDown:(NSEvent *)event
+{
+	isMenuOpened = true;
+}
+
+- (void)menuDidClose:(NSMenu *)menu {
+	isMenuOpened = false;
+}
+
+- (void)resetTablesListSelectedIndex {
+	isMenuOpened = false;
+
+	if (lastSelectedRow != -1) {
+		NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:lastSelectedRow];
+		[tablesListView selectRowIndexes:indexSet byExtendingSelection:NO];
+	}
 }
 
 #pragma mark -
@@ -700,6 +724,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[[[tableDocumentInstance parentWindow] windowController] addNewConnection:self];
 	
 	[self _duplicateConnectionToFrontTab];
+	[self resetTablesListSelectedIndex];
 }
 
 - (void)_duplicateConnectionToFrontTab
@@ -1795,6 +1820,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		
 		[[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
 	}
+
+	if (!isMenuOpened) lastSelectedRow = selectedRowIndex;
 }
 
 /**

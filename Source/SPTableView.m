@@ -131,8 +131,11 @@
 		
 		// Check for SPTablesList if right-click on header, then suppress context menu
 		if ([[[[self delegate] class] description] isEqualToString:@"SPTablesList"]) {
-			if ([NSArrayObjectAtIndex([(NSObject*)[self delegate] valueForKeyPath:@"tableTypes"], row) integerValue] == -1)
+			SPTablesList* delegate = (SPTablesList*)[self delegate];
+			if ([NSArrayObjectAtIndex([delegate valueForKeyPath:@"tableTypes"], row) integerValue] == -1)
 				return nil;
+			else
+				[delegate rightMouseDown:event];
 		}
 		
 		if ([[[[self delegate] class] description] isEqualToString:@"SPQueryFavoriteManager"]) {
