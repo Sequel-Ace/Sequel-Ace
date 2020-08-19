@@ -45,7 +45,7 @@
 @class SPTableTriggers;
 @class SPExtendedTableInfo;
 
-@interface SPTablesList : NSObject <NSTextFieldDelegate, NSTableViewDelegate>
+@interface SPTablesList : NSObject <NSTextFieldDelegate, NSMenuDelegate, NSTableViewDelegate>
 {
 	IBOutlet SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTableStructure *tableSourceInstance;
