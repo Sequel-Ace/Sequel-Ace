@@ -597,6 +597,8 @@ static BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle);
 			[[textField cell] setSendsActionOnEndEditing:YES];
 			[[textField cell] setUsesSingleLineMode:YES];
 			[textField setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+			[[textField cell] setWraps:NO];
+			[[textField cell] setScrollable:YES];
 			[textField sizeToFit];
 			[textField setTarget:self];
 			[textField setAction:@selector(_textFieldAction:)];
