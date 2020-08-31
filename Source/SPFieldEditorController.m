@@ -308,21 +308,21 @@ typedef enum {
 	else {
 		usedSheet = editSheet;
 
-		// If required, use monospaced fonts
+		NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
 #ifndef SP_CODA
-		if (![prefs objectForKey:SPFieldEditorSheetFont]) {
-#endif
-			[editTextView setFont:
-#ifndef SP_CODA
-			[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] :
+		// Based on user preferences, either use:
+		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
+		// 2. The font used for the tablew view (GlobalResultTableFont, per the "MySQL Content Font" preference option);
+		// 3. The Sequel-Ace default monospaced font (UseMonospacedFonts, per the "Use monospaced fonts" preference option).
+		if ([prefs objectForKey:SPFieldEditorSheetFont]) {
+			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
+		} else if ([prefs objectForKey:SPGlobalResultTableFont]) {
+			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+		} else if ([prefs boolForKey:SPUseMonospacedFonts]) {
+			textEditorFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize];
+		}
 #endif			
-			[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-#ifndef SP_CODA
-		}
-		else {
-			[editTextView setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"FieldEditorSheetFont"]]];
-		}
-#endif
+		[editTextView setFont:textEditorFont];
 
 		[editTextView setContinuousSpellCheckingEnabled:
 #ifndef SP_CODA
