@@ -1081,7 +1081,7 @@
 							else
 								insertBaseStringHasEntries = YES;
 							if([geometryFields count]) {
-								// Store column index for each geometry field to be able to apply GeomFromText() while importing
+								// Store column index for each geometry field to be able to apply ST_GeomFromText() while importing
 								if([geometryFields containsObject:fieldName = NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) ])
 									[geometryFieldsMapIndex addIndex:i];
 								[insertBaseString appendString:[fieldName backtickQuotedString]];
@@ -1667,7 +1667,7 @@ cleanup:
 				[valueString appendString:@"NULL"];
 
 			} else {
-				// Apply GeomFromText() for each geometry field
+				// Apply ST_GeomFromText() for each geometry field
 				if([geometryFields count] && [geometryFieldsMapIndex containsIndex:i]) {
 					[valueString appendString:[(NSString*)cellData getGeomFromTextString]];
 				} else if([bitFields count] && [bitFieldsMapIndex containsIndex:i]) {
