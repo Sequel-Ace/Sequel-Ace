@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "584754C1120A04560057631F"
-               BuildableName = "Sequel Ace.qlgenerator"
-               BlueprintName = "Sequel Ace QLGenerator"
+               BlueprintIdentifier = "58B906E511BD989A000826E5"
+               BuildableName = "PSMTabBar.framework"
+               BlueprintName = "PSMTabBar"
                ReferencedContainer = "container:sequel-ace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -50,10 +50,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "584754C1120A04560057631F"
-            BuildableName = "Sequel Ace.qlgenerator"
-            BlueprintName = "Sequel Ace QLGenerator"
-            ReferencedContainer = "container:sequel-pro.xcodeproj">
+            BlueprintIdentifier = "58B906E511BD989A000826E5"
+            BuildableName = "PSMTabBar.framework"
+            BlueprintName = "PSMTabBar"
+            ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

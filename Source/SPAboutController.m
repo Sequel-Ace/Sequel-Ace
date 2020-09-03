@@ -31,7 +31,7 @@
 #import "SPAboutController.h"
 #import "SPOSInfo.h"
 
-static NSString *SPSnapshotBuildIndicator = @"Snapshot";
+static NSString *SPSnapshotBuildIndicator = @"Beta";
 
 static NSString *SPCreditsFilename = @"Credits";
 static NSString *SPLicenseFilename = @"License";
@@ -59,13 +59,13 @@ static NSString *SPShortVersionHashKey = @"SPVersionShortHash";
 {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
 	
-	// If the version string has a prefix of 'Nightly' then this is obviously a nighly build.
-	NSRange matchRange = [version rangeOfString:SPSnapshotBuildIndicator];
+	// If the name string contains 'Beta' then this is obviously a beta build.
+	NSRange matchRange = [[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey] rangeOfString:SPSnapshotBuildIndicator];
 
 	BOOL isSnapshotBuild = matchRange.location != NSNotFound;
 	
 	// Set the application name, but only include the major version if this is not a nightly build.
-	[appNameVersionTextField setStringValue:isSnapshotBuild ? @"Sequel Ace" : [NSString stringWithFormat:@"Sequel Ace %@", version]];
+	[appNameVersionTextField setStringValue:[NSString stringWithFormat:@"Sequel Ace %@%@", version, (isSnapshotBuild ? @" Beta" : @"")]];
 
 	[self _setVersionLabel:isSnapshotBuild];
 	
@@ -121,7 +121,7 @@ static NSString *SPShortVersionHashKey = @"SPVersionShortHash";
 	else {
 		textFieldString =
 		 [NSString stringWithFormat:@"%@ %@%@",
-		  isSnapshotBuild ? NSLocalizedString(@"Snapshot Build", @"snapshot build label") : NSLocalizedString(@"Build", @"build label"),
+		  isSnapshotBuild ? NSLocalizedString(@"Beta Build", @"beta build label") : NSLocalizedString(@"Build", @"build label"),
 		  bundleVersion,
 		  hashIsEmpty ? @"" : [NSString stringWithFormat:@" (%@)", versionHash]];
 	}

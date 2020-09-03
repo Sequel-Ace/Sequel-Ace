@@ -2819,7 +2819,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		return NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting");
 	}
 	
-	if ([self getConnection] == nil) return [NSString stringWithFormat:@"%@%@", pathName, @"Sequel Ace"];
+	if ([self getConnection] == nil) return [NSString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
 
 	tabTitle = [NSMutableString string];
 
@@ -3916,7 +3916,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		tabTitle = windowTitle;
 	}
 	else if (!_isConnected) {
-		windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, @"Sequel Ace"];
+		windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
 		tabTitle = windowTitle;
 	} 
 	else {
@@ -4609,7 +4609,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (NSString *)displayName
 {
 	if (!_isConnected) {
-		return [NSString stringWithFormat:@"%@%@", ([[[self fileURL] path] length] && ![self isUntitled]) ? [NSString stringWithFormat:@"%@ — ",[[[self fileURL] path] lastPathComponent]] : @"", @"Sequel Ace"];
+		return [NSString stringWithFormat:@"%@%@", ([[[self fileURL] path] length] && ![self isUntitled]) ? [NSString stringWithFormat:@"%@ — ",[[[self fileURL] path] lastPathComponent]] : @"", [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
 	} 
 	return [[[self fileURL] path] lastPathComponent];
 }
