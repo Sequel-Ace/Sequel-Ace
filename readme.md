@@ -4,6 +4,8 @@ Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon-1024.png" 
 Sequel Ace is the "sequel" to longtime macOS tool Sequel Pro.
 Sequel Ace is a fast, easy-to-use Mac database management application for working with MySQL & MariaDB databases.
 
+If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace)!
+
 ## Installation
 
 ### Mac AppStore
