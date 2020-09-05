@@ -53,6 +53,8 @@
 	IBOutlet SPEditorPreferencePane <SPPreferencePaneProtocol>        *editorPreferencePane;
 	IBOutlet SPNetworkPreferencePane <SPPreferencePaneProtocol>       *networkPreferencePane;
 	IBOutlet SPFilePreferencePane <SPPreferencePaneProtocol>          *filePreferencePane;
+    IBOutlet NSPopUpButton                                            *appearancePopUp;
+    IBOutlet NSTextField                                              *appearanceMacOSVersionLabel;
 
 	NSToolbar *toolbar;
 	NSArray *preferencePanes;
