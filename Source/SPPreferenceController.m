@@ -71,6 +71,7 @@
 	if (@available(macOS 10.14, *)) {
 		[appearancePopUp setEnabled:YES];
 	} else {
+		[appearancePopUp setEnabled:NO];
 		[appearanceMacOSVersionLabel setHidden:NO];
 	}
 
