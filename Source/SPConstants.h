@@ -502,6 +502,8 @@ extern NSString *SPFavoriteHostKey;
 extern NSString *SPFavoritePortKey;
 extern NSString *SPFavoriteUserKey;
 extern NSString *SPFavoriteColorIndexKey;
+extern NSString *SPFavoriteTimeZoneModeKey;
+extern NSString *SPFavoriteTimeZoneIdentifierKey;
 extern NSString *SPFavoriteTypeKey;
 extern NSString *SPFavoriteSocketKey;
 extern NSString *SPFavoriteSSHHostKey;
