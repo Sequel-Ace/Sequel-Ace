@@ -93,6 +93,8 @@
 	<true/>
 	<key>CustomQueryEnableSyntaxHighlighting</key>
 	<true/>
+	<key>CustomQueryEnableBracketHighlighting</key>
+	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
 	<key>CustomQuerySoftIndent</key>

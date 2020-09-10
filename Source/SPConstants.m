@@ -146,6 +146,7 @@ NSString *SPCustomQueryAutoUppercaseKeywords     = @"CustomQueryAutoUppercaseKey
 NSString *SPCustomQueryUpdateAutoHelp            = @"CustomQueryUpdateAutoHelp";
 NSString *SPCustomQueryAutoHelpDelay             = @"CustomQueryAutoHelpDelay";
 NSString *SPCustomQueryHighlightCurrentQuery     = @"CustomQueryHighlightCurrentQuery";
+NSString *SPCustomQueryEnableBracketHighlighting = @"CustomQueryEnableBracketHighlighting";
 NSString *SPCustomQueryEditorTabStopWidth        = @"CustomQueryEditorTabStopWidth";
 NSString *SPCustomQueryEditorCompleteWithBackticks = @"SPCustomQueryEditorCompleteWithBackticks";
 NSString *SPCustomQueryAutoComplete              = @"CustomQueryAutoComplete";

@@ -59,6 +59,7 @@
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
+#import "SPBracketHighlighter.h"
 
 #include <libkern/OSAtomic.h>
 #import "Sequel_Ace-Swift.h"
@@ -113,6 +114,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 @synthesize runAllButton;
 @synthesize textViewWasChanged;
+@synthesize bracketHighlighter;
 
 #pragma mark IBAction methods
 
@@ -2813,6 +2815,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	return newSelectedCharRange;
 }
 
+- (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)affectedCharRange replacementString:(NSString *)replacementString {
+	[self.bracketHighlighter highlightOff];
+	return YES;
+}
+
 /**
  * A notification posted when the selection changes within the text view;
  * used to control the run-currentrun-selection button state and action.
@@ -2850,6 +2857,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	if (!historyItemWasJustInserted)
 		currentHistoryOffsetIndex = -1;
+
+	[self.bracketHighlighter bracketHighlight:caretPosition -1 inRange:currentQueryRange];
 
 	// Update the text of the contextual run current/previous/selection button and menu item
 	[self updateContextualRunInterface];
@@ -3155,6 +3164,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[customQueryView setFont:tableFont];
 		[customQueryView reloadData];
+	} else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
+		self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
 	}
 }
 
@@ -3553,6 +3564,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	                                           object:[tableDocumentInstance helpViewerClient]];
 
 	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
+	self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
+	self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
 }
 
 #pragma mark -
@@ -3621,6 +3635,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 
 	[self clearQueryLoadTimer];
