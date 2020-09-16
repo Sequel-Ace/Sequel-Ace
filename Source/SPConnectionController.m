@@ -3415,6 +3415,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[socketColorField setColorList:colorList];
 		[socketColorField   bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
 
+		// An instance of NSMenuItem can not be assigned to more than one menu so we have to create separate arrays.
 		standardTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
 		sshTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
 		socketTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
@@ -3498,8 +3499,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (NSArray<NSMenuItem *> *)generateTimeZoneMenuItems
 {
 	NSArray<NSString *> *timeZoneIdentifiers = [NSTimeZone.knownTimeZoneNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
-    // timeZoneIdentifiers.count + (fixed entries and separators) + (separators for time zone prefixes)
-    NSMutableArray<NSMenuItem *> *timeZoneMenuItems = [NSMutableArray arrayWithCapacity:timeZoneIdentifiers.count + 4 + 11];
+	// timeZoneIdentifiers.count + (fixed entries and separators) + (separators for time zone prefixes)
+	NSMutableArray<NSMenuItem *> *timeZoneMenuItems = [NSMutableArray arrayWithCapacity:timeZoneIdentifiers.count + 4 + 11];
 
 	// Use Server Time Zone
 	NSMenuItem *useServerTimeZoneMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Use Server Time Zone", @"Leave the server time zone in place when connecting") action:nil keyEquivalent:@""];

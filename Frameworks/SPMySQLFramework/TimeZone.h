@@ -12,10 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface SPMySQLConnection (TimeZone)
 
 // Current connection time zone information
-- (NSString *)timeZoneIdentifier;
+- (nullable NSString *)timeZoneIdentifier;
 
 // Setting connection time zone
-- (BOOL)setTimeZoneIdentifier:(NSString *)newTimeZoneIdentifier;
+- (BOOL)setTimeZoneIdentifier:(nullable NSString *)newTimeZoneIdentifier;
 
 @end
 

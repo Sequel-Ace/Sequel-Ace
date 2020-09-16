@@ -155,7 +155,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSSecureTextField *sshPasswordField;
 	IBOutlet NSSecureTextField *sshSSHPasswordField;
 	IBOutlet NSButton *sshSSHKeyButton;
-    IBOutlet NSPopUpButton *standardTimeZoneField;
+	IBOutlet NSPopUpButton *standardTimeZoneField;
 	IBOutlet NSPopUpButton *sshTimeZoneField;
 	IBOutlet NSPopUpButton *socketTimeZoneField;
 	IBOutlet NSButton *standardSSLKeyFileButton;

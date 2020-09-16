@@ -127,7 +127,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 		port = 3306;
 
-        timeZoneIdentifier = @"";
+		timeZoneIdentifier = @"";
 
 		// Default to socket connections if no other details have been provided
 		useSocket = YES;

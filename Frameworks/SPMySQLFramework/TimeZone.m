@@ -16,33 +16,33 @@
 /**
  * Returns the time zone identifier in use by the connection.
  */
-- (NSString *)timeZoneIdentifier
+- (nullable NSString *)timeZoneIdentifier
 {
-    return [NSString stringWithString:timeZoneIdentifier];
+	return [timeZoneIdentifier copy];
 }
 
 #pragma mark -
 #pragma mark Setting connection time zone
 
-- (BOOL)setTimeZoneIdentifier:(NSString *)newTimeZoneIdentifier
+- (BOOL)setTimeZoneIdentifier:(nullable NSString *)newTimeZoneIdentifier
 {
     if ([newTimeZoneIdentifier isEqualToString:timeZoneIdentifier]) {
         return YES;
     }
 
-    if ([newTimeZoneIdentifier isEqualToString:@""]) {
+	[timeZoneIdentifier release];
+	timeZoneIdentifier = nil;
+    if (!newTimeZoneIdentifier || [newTimeZoneIdentifier isEqualToString:@""]) {
         [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
     } else {
         [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [newTimeZoneIdentifier mySQLTickQuotedString]]];
+		timeZoneIdentifier = [[NSString alloc] initWithString:newTimeZoneIdentifier];
     }
 
     // If the query errored, no time zone change occurred - return failure.
     if ([self queryErrored]) {
         return NO;
     }
-
-    [timeZoneIdentifier release];
-    timeZoneIdentifier = [[NSString alloc] initWithString:newTimeZoneIdentifier];
 
     return YES;
 }

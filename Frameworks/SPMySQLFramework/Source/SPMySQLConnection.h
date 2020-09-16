@@ -46,8 +46,8 @@
 	BOOL useSocket;
 	NSString *socketPath;
 
-    // Time Zone
-    NSString *timeZoneIdentifier;
+	// Time Zone
+	NSString *timeZoneIdentifier;
 
 	// SSL connection details
 	BOOL useSSL;
