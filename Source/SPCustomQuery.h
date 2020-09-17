@@ -203,6 +203,7 @@
 - (NSRange)queryRangeAtPosition:(NSUInteger)position lookBehind:(BOOL *)doLookBehind;
 - (NSRange)queryTextRangeForQuery:(NSInteger)anIndex startPosition:(NSUInteger)position;
 - (void) updateStatusInterfaceWithDetails:(NSDictionary *)errorDetails;
+- (BOOL)queriesContainDestructiveSQL:(NSArray *)queries;
 
 // Interface setup
 - (void)updateQueryInteractionInterface;

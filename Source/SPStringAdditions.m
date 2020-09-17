@@ -382,6 +382,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	return newString;
 }
 
+
 - (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis
 {
 	NSString *str = self;
@@ -491,7 +492,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 }
 
 /**
- * Create the GeomFromText() string according to a possible SRID value
+ * Create the ST_GeomFromText() string according to a possible SRID value
  */
 - (NSString*)getGeomFromTextString
 {
@@ -501,7 +502,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 
 	// No SRID
 	if ([geomStr hasSuffix:@")"]) {
-		return [NSString stringWithFormat:@"GeomFromText('%@')", geomStr];
+		return [NSString stringWithFormat:@"ST_GeomFromText('%@')", geomStr];
 	}
 	else {
 		NSUInteger idx = [geomStr length] - 1;
@@ -513,7 +514,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 			idx--;
 		}
 		
-		return [NSString stringWithFormat:@"GeomFromText('%@'%@)", [geomStr substringToIndex:idx + 1], [geomStr substringFromIndex:idx + 1]];
+		return [NSString stringWithFormat:@"ST_GeomFromText('%@'%@)", [geomStr substringToIndex:idx + 1], [geomStr substringFromIndex:idx + 1]];
 	}
 }
 

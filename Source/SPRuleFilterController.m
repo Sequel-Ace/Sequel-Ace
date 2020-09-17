@@ -597,6 +597,8 @@ static BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle);
 			[[textField cell] setSendsActionOnEndEditing:YES];
 			[[textField cell] setUsesSingleLineMode:YES];
 			[textField setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+			[[textField cell] setWraps:NO];
+			[[textField cell] setScrollable:YES];
 			[textField sizeToFit];
 			[textField setTarget:self];
 			[textField setAction:@selector(_textFieldAction:)];
@@ -880,12 +882,6 @@ static BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle);
 	}
 
 	if(nodeIndex < [criteria count]) {
-		// yet another uglyness: if one of the displayValues is an input and currently the first responder
-		// we have to manually restore that for the new input we create for UX reasons.
-		// However an NSTextField is seldom a first responder, usually it's an invisible subview of the text field...
-		id firstResponder = [[filterRuleEditor window] firstResponder];
-		BOOL hasFirstResponderInRow = _arrayContainsInViewHierarchy(displayValues, firstResponder);
-
 		//remove previous node and everything that follows and append new node
 		NSRange stripRange = NSMakeRange(nodeIndex, ([criteria count] - nodeIndex));
 
@@ -914,14 +910,12 @@ static BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle);
 			[filterRuleEditor setCriteria:criteria andDisplayValues:displayValues forRowAtIndex:row];
 		}];
 
-		if(hasFirstResponderInRow) {
-			// make the next possible object after the opnode the new next responder (since the previous one is gone now)
-			for (NSUInteger j = nodeIndex + 1; j < [displayValues count]; ++j) {
-				id obj = [displayValues objectAtIndex:j];
-				if([obj respondsToSelector:@selector(acceptsFirstResponder)] && [obj acceptsFirstResponder]) {
-					[[filterRuleEditor window] makeFirstResponder:obj];
-					break;
-				}
+		// make the next possible object after the opnode the new next responder (since the previous one is gone now)
+		for (NSUInteger j = nodeIndex + 1; j < [displayValues count]; ++j) {
+			id obj = [displayValues objectAtIndex:j];
+			if([obj respondsToSelector:@selector(acceptsFirstResponder)] && [obj acceptsFirstResponder]) {
+				[[filterRuleEditor window] makeFirstResponder:obj];
+				break;
 			}
 		}
 	}
@@ -1327,6 +1321,8 @@ BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle)
 	[self _doChangeToRuleEditorData:^{
 		[filterRuleEditor insertRowAtIndex:0 withType:NSRuleEditorRowTypeSimple asSubrowOfRow:-1 animate:NO];
 	}];
+	
+	[self focusFirstInputField];
 }
 
 - (NSRuleEditor *)view

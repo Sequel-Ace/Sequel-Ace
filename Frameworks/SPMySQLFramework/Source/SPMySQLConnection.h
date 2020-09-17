@@ -46,6 +46,9 @@
 	BOOL useSocket;
 	NSString *socketPath;
 
+	// Time Zone
+	NSString *timeZoneIdentifier;
+
 	// SSL connection details
 	BOOL useSSL;
 	NSString *sslKeyFilePath;
@@ -141,6 +144,8 @@
 @property (readwrite, assign) NSUInteger port;
 @property (readwrite, assign) BOOL useSocket;
 @property (readwrite, retain) NSString *socketPath;
+
+@property (readwrite, retain) NSString *timeZoneIdentifier;
 
 @property (readwrite, assign) BOOL useSSL;
 @property (readwrite, retain) NSString *sslKeyFilePath;

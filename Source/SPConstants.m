@@ -92,6 +92,7 @@ NSString *SPUseMonospacedFonts                   = @"UseMonospacedFonts";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
 NSString *SPCustomQueryMaxHistoryItems           = @"CustomQueryMaxHistoryItems";
+NSString *SPAppearance                           = @"Appearance";
 
 // Tables Prefpane
 NSString *SPReloadAfterAddingRow                 = @"ReloadAfterAddingRow";
@@ -112,7 +113,7 @@ NSString *SPFilterTableDefaultOperatorLastItems  = @"FilterTableDefaultOperatorL
 NSString *SPFavorites                            = @"favorites";
 
 // Notifications Prefpane
-NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecQuery";
+NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecuteQuery";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPConsoleEnableLogging                 = @"ConsoleEnableLogging";
 NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLogging";
@@ -297,6 +298,8 @@ NSString *SPFavoriteHostKey                              = @"host";
 NSString *SPFavoritePortKey                              = @"port";
 NSString *SPFavoriteUserKey                              = @"user";
 NSString *SPFavoriteColorIndexKey                        = @"colorIndex";
+NSString *SPFavoriteTimeZoneModeKey                      = @"timeZoneMode";
+NSString *SPFavoriteTimeZoneIdentifierKey                = @"timeZone";
 NSString *SPFavoriteTypeKey                              = @"type";
 NSString *SPFavoriteSocketKey                            = @"socket";
 NSString *SPFavoriteSSHHostKey                           = @"sshHost";

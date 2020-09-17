@@ -4,23 +4,29 @@ Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon-1024.png" 
 Sequel Ace is the "sequel" to longtime macOS tool Sequel Pro.
 Sequel Ace is a fast, easy-to-use Mac database management application for working with MySQL & MariaDB databases.
 
+If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace)!
+
 ## Installation
 
 ### Mac AppStore
 
 Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
 
-### Homebrew / MacPorts
+### MAS CLI
 
-You can install Mac AppStore version through `mas` [MAS CLI](https://github.com/mas-cli/mas) with Sequel Ace id `1518036000`
+To install via `mas` [MAS CLI](https://github.com/mas-cli/mas) use Sequel Ace id `1518036000`
+
 ```sh
-# Install MAS via Homebrew
-$brew install mas-cli/tap/mas
-# Install MAS via MacPorts
-$sudo port install mas
+mas install 1518036000 # Sequel Ace
+```
 
-# then, Install Sequel Ace using MAS
-$mas install 1518036000 # Sequel Ace
+### Homebrew
+
+To install an unoffical community maintained [Homebrew](https://brew.sh) [Cask](https://github.com/Homebrew/homebrew-cask) of the [GitHub Release](https://github.com/sequel-ace/sequel-ace/releases)
+
+
+```sh
+brew cask install sequel-ace
 ```
 
 ## Contributing

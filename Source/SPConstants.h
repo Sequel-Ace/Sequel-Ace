@@ -305,6 +305,7 @@ extern NSString *SPUseMonospacedFonts;
 extern NSString *SPDisplayTableViewVerticalGridlines;
 extern NSString *SPDisplayCommentsInTablesList;
 extern NSString *SPCustomQueryMaxHistoryItems;
+extern NSString *SPAppearance;
 
 // Tables Prefpane
 extern NSString *SPReloadAfterAddingRow;
@@ -501,6 +502,8 @@ extern NSString *SPFavoriteHostKey;
 extern NSString *SPFavoritePortKey;
 extern NSString *SPFavoriteUserKey;
 extern NSString *SPFavoriteColorIndexKey;
+extern NSString *SPFavoriteTimeZoneModeKey;
+extern NSString *SPFavoriteTimeZoneIdentifierKey;
 extern NSString *SPFavoriteTypeKey;
 extern NSString *SPFavoriteSocketKey;
 extern NSString *SPFavoriteSSHHostKey;

@@ -706,11 +706,8 @@
 			<string>ADDTIME</string>
 			<string>AES_DECRYPT</string>
 			<string>AES_ENCRYPT</string>
-			<string>AREA</string>
-			<string>ASBINARY</string>
 			<string>ASCII</string>
 			<string>ASIN</string>
-			<string>ASTEXT</string>
 			<string>ATAN</string>
 			<string>ATAN2</string>
 			<string>AVG</string>
@@ -726,11 +723,9 @@
 			<string>BIT_OR</string>
 			<string>BIT_XOR</string>
 			<string>BOUNDARY</string>
-			<string>BUFFER</string>
 			<string>CAST</string>
 			<string>CEIL</string>
 			<string>CEILING</string>
-			<string>CENTROID</string>
 			<string>CHAR</string>
 			<string>CHARACTER_LENGTH</string>
 			<string>CHARSET</string>
@@ -746,13 +741,11 @@
 			<string>CONV</string>
 			<string>CONVERT</string>
 			<string>CONVERT_TZ</string>
-			<string>CONVEXHULL</string>
 			<string>COS</string>
 			<string>COT</string>
 			<string>COUNT</string>
 			<string>COUNT(*)</string>
 			<string>CRC32</string>
-			<string>CROSSES</string>
 			<string>CURDATE</string>
 			<string>CURRENT_DATE</string>
 			<string>CURRENT_TIME</string>
@@ -777,18 +770,13 @@
 			<string>DES_DECRYPT</string>
 			<string>DES_ENCRYPT</string>
 			<string>DIFFERENCE</string>
-			<string>DIMENSION</string>
 			<string>DISJOINT</string>
-			<string>DISTANCE</string>
 			<string>ELT</string>
 			<string>ENCODE</string>
 			<string>ENCRYPT</string>
-			<string>ENDPOINT</string>
-			<string>ENVELOPE</string>
 			<string>EQUALS</string>
 			<string>EXP</string>
 			<string>EXPORT_SET</string>
-			<string>EXTERIORRING</string>
 			<string>EXTRACT</string>
 			<string>EXTRACTVALUE</string>
 			<string>FIELD</string>
@@ -798,17 +786,7 @@
 			<string>FOUND_ROWS</string>
 			<string>FROM_DAYS</string>
 			<string>FROM_UNIXTIME</string>
-			<string>GEOMCOLLFROMTEXT</string>
-			<string>GEOMCOLLFROMWKB</string>
 			<string>GEOMETRYCOLLECTION</string>
-			<string>GEOMETRYCOLLECTIONFROMTEXT</string>
-			<string>GEOMETRYCOLLECTIONFROMWKB</string>
-			<string>GEOMETRYFROMTEXT</string>
-			<string>GEOMETRYFROMWKB</string>
-			<string>GEOMETRYN</string>
-			<string>GEOMETRYTYPE</string>
-			<string>GEOMFROMTEXT</string>
-			<string>GEOMFROMWKB</string>
 			<string>GET_FORMAT</string>
 			<string>GET_LOCK</string>
 			<string>GLENGTH</string>
@@ -824,15 +802,11 @@
 			<string>INSERT</string>
 			<string>INSERT_ID</string>
 			<string>INSTR</string>
-			<string>INTERIORRINGN</string>
 			<string>INTERSECTION</string>
 			<string>INTERSECTS</string>
 			<string>INTERVAL</string>
-			<string>ISCLOSED</string>
-			<string>ISEMPTY</string>
 			<string>ISNULL</string>
 			<string>ISRING</string>
-			<string>ISSIMPLE</string>
 			<string>IS_FREE_LOCK</string>
 			<string>IS_USED_LOCK</string>
 			<string>JSON_APPEND</string>
@@ -862,11 +836,7 @@
 			<string>LEAST</string>
 			<string>LEFT</string>
 			<string>LENGTH</string>
-			<string>LINEFROMTEXT</string>
-			<string>LINEFROMWKB</string>
 			<string>LINESTRING</string>
-			<string>LINESTRINGFROMTEXT</string>
-			<string>LINESTRINGFROMWKB</string>
 			<string>LN</string>
 			<string>LOAD_FILE</string>
 			<string>LOCALTIME</string>
@@ -896,31 +866,16 @@
 			<string>MID</string>
 			<string>MIN</string>
 			<string>MINUTE</string>
-			<string>MLINEFROMTEXT</string>
-			<string>MLINEFROMWKB</string>
 			<string>MOD</string>
 			<string>MONTH</string>
 			<string>MONTHNAME</string>
 			<string>NOW</string>
-			<string>MPOINTFROMTEXT</string>
-			<string>MPOINTFROMWKB</string>
-			<string>MPOLYFROMTEXT</string>
-			<string>MPOLYFROMWKB</string>
 			<string>MULTILINESTRING</string>
-			<string>MULTILINESTRINGFROMTEXT</string>
-			<string>MULTILINESTRINGFROMWKB</string>
 			<string>MULTIPOINT</string>
-			<string>MULTIPOINTFROMTEXT</string>
-			<string>MULTIPOINTFROMWKB</string>
 			<string>MULTIPOLYGON</string>
-			<string>MULTIPOLYGONFROMTEXT</string>
-			<string>MULTIPOLYGONFROMWKB</string>
 			<string>NAME_CONST</string>
 			<string>NOW</string>
 			<string>NULLIF</string>
-			<string>NUMGEOMETRIES</string>
-			<string>NUMINTERIORRINGS</string>
-			<string>NUMPOINTS</string>
 			<string>OCT</string>
 			<string>OCTET_LENGTH</string>
 			<string>OLD_PASSWORD</string>
@@ -931,15 +886,8 @@
 			<string>PERIOD_DIFF</string>
 			<string>PI</string>
 			<string>POINT</string>
-			<string>POINTFROMTEXT</string>
-			<string>POINTFROMWKB</string>
-			<string>POINTN</string>
 			<string>POINTONSURFACE</string>
-			<string>POLYFROMTEXT</string>
-			<string>POLYFROMWKB</string>
 			<string>POLYGON</string>
-			<string>POLYGONFROMTEXT</string>
-			<string>POLYGONFROMWKB</string>
 			<string>POSITION</string>
 			<string>POW</string>
 			<string>POWER</string>
@@ -969,14 +917,71 @@
 			<string>SOUNDEX</string>
 			<string>SPACE</string>
 			<string>SQRT</string>
-			<string>SRID</string>
-			<string>STARTPOINT</string>
 			<string>STD</string>
 			<string>STDDEV</string>
 			<string>STDDEV_POP</string>
 			<string>STDDEV_SAMP</string>
 			<string>STRCMP</string>
 			<string>STR_TO_DATE</string>
+			<string>ST_AREA</string>
+			<string>ST_ASBINARY</string>
+			<string>ST_ASTEXT</string>
+			<string>ST_ASWBK</string>
+			<string>ST_ASWKT</string>
+			<string>ST_BUFFER</string>
+			<string>ST_CENTROID</string>
+			<string>ST_CONVEXHULL</string>
+			<string>ST_CROSSES</string>
+			<string>ST_DIMENSION</string>
+			<string>ST_DISTANCE</string>
+			<string>ST_ENDPOINT</string>
+			<string>ST_ENVELOPE</string>
+			<string>ST_EXTERIORRING</string>
+			<string>ST_GEOMCOLLFROMTEXT</string>
+			<string>ST_GEOMCOLLFROMWKB</string>
+			<string>ST_GEOMETRYCOLLECTIONFROMTEXT</string>
+			<string>ST_GEOMETRYCOLLECTIONFROMWKB</string>
+			<string>ST_GEOMETRYFROMTEXT</string>
+			<string>ST_GEOMETRYFROMWKB</string>
+			<string>ST_GEOMETRYN</string>
+			<string>ST_GEOMETRYTYPE</string>
+			<string>ST_GEOMFROMTEXT</string>
+			<string>ST_GEOMFROMWKB</string>
+			<string>ST_INTERIORRINGN</string>
+			<string>ST_ISCLOSED</string>
+			<string>ST_ISEMPTY</string>
+			<string>ST_ISSIMPLE</string>
+			<string>ST_LINEFROMTEXT</string>
+			<string>ST_LINEFROMWKB</string>
+			<string>ST_LINESTRINGFROMTEXT</string>
+			<string>ST_LINESTRINGFROMWKB</string>
+			<string>ST_MLINEFROMTEXT</string>
+			<string>ST_MLINEFROMWKB</string>
+			<string>ST_MPOINTFROMTEXT</string>
+			<string>ST_MPOINTFROMWKB</string>
+			<string>ST_MPOLYFROMTEXT</string>
+			<string>ST_MPOLYFROMWKB</string>
+			<string>ST_MULTILINESTRINGFROMTEXT</string>
+			<string>ST_MULTILINESTRINGFROMWKB</string>
+			<string>ST_MULTIPOINTFROMTEXT</string>
+			<string>ST_MULTIPOINTFROMWKB</string>
+			<string>ST_MULTIPOLYGONFROMTEXT</string>
+			<string>ST_MULTIPOLYGONFROMWKB</string>
+			<string>ST_NUMGEOMETRIES</string>
+			<string>ST_NUMINTERIORRINGS</string>
+			<string>ST_NUMPOINTS</string>
+			<string>ST_POINTFROMTEXT</string>
+			<string>ST_POINTFROMWKB</string>
+			<string>ST_POINTN</string>
+			<string>ST_POLYFROMTEXT</string>
+			<string>ST_POLYFROMWKB</string>
+			<string>ST_POLYGONFROMTEXT</string>
+			<string>ST_POLYGONFROMWKB</string>
+			<string>ST_SRID</string>
+			<string>ST_STARTPOINT</string>
+			<string>ST_TOUCHES</string>
+			<string>ST_X</string>
+			<string>ST_Y</string>
 			<string>SUBDATE</string>
 			<string>SUBSTR</string>
 			<string>SUBSTRING</string>
@@ -994,7 +999,6 @@
 			<string>TIMESTAMPDIFF</string>
 			<string>TIME_FORMAT</string>
 			<string>TIME_TO_SEC</string>
-			<string>TOUCHES</string>
 			<string>TO_DAYS</string>
 			<string>TRIM</string>
 			<string>TRUNCATE</string>

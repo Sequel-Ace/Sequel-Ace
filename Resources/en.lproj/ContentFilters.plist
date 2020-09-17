@@ -367,7 +367,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBRContains(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBRContains(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
@@ -377,7 +377,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBRWithin(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBRWithin(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
@@ -387,7 +387,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBRDisjoint(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBRDisjoint(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
@@ -397,7 +397,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBREqual(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBREqual(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
@@ -407,7 +407,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBRIntersects(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBRIntersects(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
@@ -417,7 +417,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBROverlaps(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBROverlaps(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
@@ -427,7 +427,7 @@
 			<key>SuppressLeadingFieldPlaceholder</key>
 			<true/>
 			<key>Clause</key>
-			<string>MBRTouches(GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
+			<string>MBRTouches(ST_GeomFromText(&apos;${}&apos;),$CURRENT_FIELD)</string>
 		</dict>
 		<dict>
 			<key>MenuLabel</key>

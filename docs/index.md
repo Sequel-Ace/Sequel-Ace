@@ -6,3 +6,7 @@ Get started using Sequel Ace quickly by browsing through this online documentati
 -   [Reference](ref/)
 -   [Bundles](bundles/)
 -   [Contribute](contribute/)
+
+---
+
+Edit these pages at https://github.com/Sequel-Ace/Sequel-Ace/tree/master/docs

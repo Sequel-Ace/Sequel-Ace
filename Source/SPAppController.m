@@ -102,6 +102,15 @@
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
 
+		//Handle Appearance on macOS 10.14+
+		if (@available(macOS 10.14, *)) {
+			//Switch Appearance on Application startup (prevent Appearance blink)
+			[self switchAppearance];
+
+			//Register an observer to switch Appearance at runtime
+			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
+		}
+
 		[NSApp setDelegate:self];
 	}
 
@@ -126,6 +135,30 @@
 
 	// Upgrade prefs before any other parts of the app pick up on the values
 	SPApplyRevisionChanges();
+}
+
+/**
+ * Called when default properties had a change at runtime
+ */
+- (void)defaultsChanged:(NSNotification *)notification {
+	[self switchAppearance];
+}
+
+/**
+ * Called when need to switch application appearance - on startup and when userDefaults changed
+ */
+- (void)switchAppearance {
+	if (@available(macOS 10.14, *)) {
+		NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
+
+		if (appearance == 1) {
+			NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+		} else if (appearance == 2) {
+			NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+		} else {
+			NSApp.appearance = nil;
+		}
+	}
 }
 
 /**

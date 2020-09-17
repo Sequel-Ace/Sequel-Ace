@@ -53,6 +53,7 @@
 #import "Max Packet Size.h"
 #import "Querying & Preparation.h"
 #import "Encoding.h"
+#import "TimeZone.h"
 #import "Server Info.h"
 
 // MySQL result set, streaming subclasses of same, and associated categories
