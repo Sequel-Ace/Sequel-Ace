@@ -307,6 +307,7 @@ NSString *SPFavoriteSSHPortKey                           = @"sshPort";
 NSString *SPFavoriteSSHUserKey                           = @"sshUser";
 NSString *SPFavoriteSSHKeyLocationEnabledKey             = @"sshKeyLocationEnabled";
 NSString *SPFavoriteSSHKeyLocationKey                    = @"sshKeyLocation";
+NSString *SPFavoriteAllowDataLocalInfileKey              = @"allowDataLocalInfile";
 NSString *SPFavoriteUseSSLKey                            = @"useSSL";
 NSString *SPFavoriteSSLKeyFileLocationEnabledKey         = @"sslKeyFileLocationEnabled";
 NSString *SPFavoriteSSLKeyFileLocationKey                = @"sslKeyFileLocation";

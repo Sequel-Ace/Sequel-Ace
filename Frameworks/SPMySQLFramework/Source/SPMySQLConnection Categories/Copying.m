@@ -52,6 +52,7 @@
 	[copy setPort:port];
 	[copy setUseSocket:useSocket];
 	[copy setSocketPath:socketPath];
+    [copy setAllowDataLocalInfile:allowDataLocalInfile];
 	[copy setUseSSL:useSSL];
 	[copy setSslKeyFilePath:sslKeyFilePath];
 	[copy setSslCipherList:sslCipherList];
