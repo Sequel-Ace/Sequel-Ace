@@ -102,11 +102,14 @@
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
 
-		//Switch Appearance on Application startup (prevent Appearance blink)
-		[self switchAppearance];
+		//Handle Appearance on macOS 10.14+
+		if (@available(macOS 10.14, *)) {
+			//Switch Appearance on Application startup (prevent Appearance blink)
+			[self switchAppearance];
 
-		//Register an observer to switch Appearance at runtime
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
+			//Register an observer to switch Appearance at runtime
+			[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
+		}
 
 		[NSApp setDelegate:self];
 	}

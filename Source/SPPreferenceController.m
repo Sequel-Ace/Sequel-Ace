@@ -68,6 +68,13 @@
 {		
 	[self _setupToolbar];
 
+	if (@available(macOS 10.14, *)) {
+		[appearancePopUp setEnabled:YES];
+	} else {
+		[appearancePopUp setEnabled:NO];
+		[appearanceMacOSVersionLabel setHidden:NO];
+	}
+
 	preferencePanes = [[NSArray alloc] initWithObjects:
 					   generalPreferencePane,
 					   tablesPreferencePane,
