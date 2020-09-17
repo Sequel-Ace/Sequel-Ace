@@ -73,6 +73,9 @@ static NSString *SPQuickConnectImage       = @"quick-connect-icon.pdf";
 static NSString *SPQuickConnectImageWhite  = @"quick-connect-icon-white.pdf";
 
 static NSString *SPConnectionViewNibName   = @"ConnectionView";
+
+const static NSInteger SPUseServerTimeZoneTag = -1;
+const static NSInteger SPUseSystemTimeZoneTag = -2;
 #endif
 
 /**
@@ -151,6 +154,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize socket;
 @synthesize port;
 @synthesize colorIndex;
+@synthesize timeZoneMode;
+@synthesize timeZoneIdentifier;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -932,6 +937,35 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self setPort:([fav objectForKey:SPFavoritePortKey] ? [fav objectForKey:SPFavoritePortKey] : @"")];
 	[self setDatabase:([fav objectForKey:SPFavoriteDatabaseKey] ? [fav objectForKey:SPFavoriteDatabaseKey] : @"")];
 	[self setUseCompression:([fav objectForKey:SPFavoriteUseCompressionKey] ? [[fav objectForKey:SPFavoriteUseCompressionKey] boolValue] : YES)];
+
+	// Time Zone details
+	switch ([fav objectForKey:SPFavoriteTimeZoneModeKey] ? [[fav objectForKey:SPFavoriteTimeZoneModeKey] intValue] : SPConnectionTimeZoneModeUseServerTZ) {
+		case SPConnectionTimeZoneModeUseSystemTZ: {
+			[standardTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
+			[socketTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
+			[sshTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
+			[self setTimeZoneMode:SPConnectionTimeZoneModeUseSystemTZ];
+			[self setTimeZoneIdentifier:@""];
+			break;
+		}
+		case SPConnectionTimeZoneModeUseFixedTZ: {
+			NSString *tzIdentifier = [fav objectForKey:SPFavoriteTimeZoneIdentifierKey];
+			[standardTimeZoneField selectItemWithTitle:tzIdentifier];
+			[socketTimeZoneField selectItemWithTitle:tzIdentifier];
+			[sshTimeZoneField selectItemWithTitle:tzIdentifier];
+			[self setTimeZoneMode:SPConnectionTimeZoneModeUseFixedTZ];
+			[self setTimeZoneIdentifier:tzIdentifier];
+			break;
+		}
+		default: {
+			[standardTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
+			[socketTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
+			[sshTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
+			[self setTimeZoneMode:SPConnectionTimeZoneModeUseServerTZ];
+			[self setTimeZoneIdentifier:@""];
+			break;
+		}
+	}
 	
 	// SSL details
 	[self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSOffState)];
@@ -1074,6 +1108,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		@"",
 		@(-1),
 		@"",
+		@0,
+		@"",
 		@(NSOffState),
 		@(NSOffState),
 		@(NSOffState),
@@ -1095,6 +1131,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		SPFavoriteUserKey,
 		SPFavoriteColorIndexKey,
 		SPFavoritePortKey,
+		SPFavoriteTimeZoneModeKey,
+		SPFavoriteTimeZoneIdentifierKey,
 		SPFavoriteUseSSLKey,
 		SPFavoriteSSLKeyFileLocationEnabledKey,
 		SPFavoriteSSLCertificateFileLocationEnabledKey,
@@ -1327,6 +1365,35 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 #pragma mark -
+#pragma mark Time Zone changes
+
+- (IBAction)didChangeSelectedTimeZone:(NSPopUpButton *)sender
+{
+	NSMenuItem *selectedItem = [sender selectedItem];
+	switch (selectedItem.tag) {
+		case SPUseServerTimeZoneTag:
+			[self setTimeZoneMode:SPConnectionTimeZoneModeUseServerTZ];
+			[self setTimeZoneIdentifier:@""];
+			break;
+		case SPUseSystemTimeZoneTag:
+			[self setTimeZoneMode:SPConnectionTimeZoneModeUseSystemTZ];
+			[self setTimeZoneIdentifier:@""];
+			break;
+		default:
+			[self setTimeZoneMode:SPConnectionTimeZoneModeUseFixedTZ];
+			[self setTimeZoneIdentifier:selectedItem.title];
+			break;
+	}
+
+
+	[standardTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
+	[sshTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
+	[socketTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
+
+	[self _startEditingConnection];
+}
+
+#pragma mark -
 #pragma mark Accessors
 
 /**
@@ -1471,6 +1538,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	_setOrRemoveKey(SPFavoritePortKey, [self port]);
 	_setOrRemoveKey(SPFavoriteDatabaseKey, [self database]);
 	[theFavorite setObject:[NSNumber numberWithInteger:[self colorIndex]] forKey:SPFavoriteColorIndexKey];
+	[theFavorite setObject:[NSNumber numberWithInteger:[self timeZoneMode]] forKey:SPFavoriteTimeZoneModeKey];
+	_setOrRemoveKey(SPFavoriteTimeZoneIdentifierKey, [self timeZoneIdentifier]);
 	// SSL details
 	[theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
 	[theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -2313,6 +2382,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 				return;
 			}
+		}
+
+		switch (timeZoneMode) {
+			case SPConnectionTimeZoneModeUseSystemTZ:
+				[mySQLConnection setTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
+				break;
+			case SPConnectionTimeZoneModeUseFixedTZ:
+				[mySQLConnection setTimeZoneIdentifier:timeZoneIdentifier];
+				break;
+			default:
+				break;
 		}
 
 		// Connection established
@@ -3335,6 +3415,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[socketColorField setColorList:colorList];
 		[socketColorField   bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
 
+		// An instance of NSMenuItem can not be assigned to more than one menu so we have to create separate arrays.
+		standardTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
+		sshTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
+		socketTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
+
 		[self registerForNotifications];
 
 #ifndef SP_CODA
@@ -3409,6 +3494,39 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	return self;
+}
+
+- (NSArray<NSMenuItem *> *)generateTimeZoneMenuItems
+{
+	NSArray<NSString *> *timeZoneIdentifiers = [NSTimeZone.knownTimeZoneNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+	// timeZoneIdentifiers.count + (fixed entries and separators) + (separators for time zone prefixes)
+	NSMutableArray<NSMenuItem *> *timeZoneMenuItems = [NSMutableArray arrayWithCapacity:timeZoneIdentifiers.count + 4 + 11];
+
+	// Use Server Time Zone
+	NSMenuItem *useServerTimeZoneMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Use Server Time Zone", @"Leave the server time zone in place when connecting") action:nil keyEquivalent:@""];
+	useServerTimeZoneMenuItem.tag = SPUseServerTimeZoneTag;
+	[timeZoneMenuItems addObject:useServerTimeZoneMenuItem];
+
+	[timeZoneMenuItems addObject:NSMenuItem.separatorItem];
+
+	// Use System Time Zone
+	NSMenuItem *useSystemTimeZoneMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Use System Time Zone", @"Set the time zone currently used by the user when connecting") action:nil keyEquivalent:@""];
+	useSystemTimeZoneMenuItem.tag = SPUseSystemTimeZoneTag;
+	[timeZoneMenuItems addObject:useSystemTimeZoneMenuItem];
+
+	// Add all identifier entries and insert a separator every time the prefix changes
+	NSString *previousPrefix = @"";
+	for (NSString *tzIdentifier in timeZoneIdentifiers) {
+		NSString *currentPrefix = [tzIdentifier componentsSeparatedByString:@"/"].firstObject;
+		if (![currentPrefix isEqualToString:previousPrefix]) {
+			previousPrefix = currentPrefix;
+			[timeZoneMenuItems addObject:NSMenuItem.separatorItem];
+		}
+		NSMenuItem *entry = [[NSMenuItem alloc] initWithTitle:tzIdentifier action:nil keyEquivalent:@""];
+		[timeZoneMenuItems addObject:entry];
+	}
+
+	return timeZoneMenuItems;
 }
 
 -(void)reRequestSecureAccess{

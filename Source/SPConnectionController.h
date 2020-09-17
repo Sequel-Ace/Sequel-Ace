@@ -49,6 +49,12 @@
 #endif
 ;
 
+typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
+    SPConnectionTimeZoneModeUseServerTZ,
+    SPConnectionTimeZoneModeUseSystemTZ,
+    SPConnectionTimeZoneModeUseFixedTZ
+};
+
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
 {
 	id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
@@ -82,6 +88,10 @@
 	NSString *port;
 	NSInteger colorIndex;
 	BOOL useCompression;
+
+	// Time Zone details
+	SPConnectionTimeZoneMode timeZoneMode;
+	NSString *timeZoneIdentifier;
 	
 	// SSL details
 	NSInteger useSSL;
@@ -145,6 +155,9 @@
 	IBOutlet NSSecureTextField *sshPasswordField;
 	IBOutlet NSSecureTextField *sshSSHPasswordField;
 	IBOutlet NSButton *sshSSHKeyButton;
+	IBOutlet NSPopUpButton *standardTimeZoneField;
+	IBOutlet NSPopUpButton *sshTimeZoneField;
+	IBOutlet NSPopUpButton *socketTimeZoneField;
 	IBOutlet NSButton *standardSSLKeyFileButton;
 	IBOutlet NSButton *standardSSLCertificateButton;
 	IBOutlet NSButton *standardSSLCACertButton;
@@ -195,6 +208,8 @@
 @property (readwrite, retain) NSString *database;
 @property (readwrite, retain) NSString *socket;
 @property (readwrite, retain) NSString *port;
+@property (readwrite, assign) SPConnectionTimeZoneMode timeZoneMode;
+@property (readwrite, retain) NSString *timeZoneIdentifier;
 @property (readwrite, assign) NSInteger useSSL;
 @property (readwrite, assign) NSInteger colorIndex;
 @property (readwrite, assign) NSInteger sslKeyFileLocationEnabled;
