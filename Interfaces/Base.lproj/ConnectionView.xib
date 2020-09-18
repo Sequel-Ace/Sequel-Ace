@@ -1123,25 +1123,6 @@ DQ
                                                                                                 </binding>
                                                                                             </connections>
                                                                                         </textField>
-                                                                                        <button toolTip="Click to choose the SSH key file to use with this connection.  Standard locations like ~/.ssh are NOT checked automatically." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5492">
-                                                                                            <rect key="frame" x="328" y="135" width="29" height="24"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="key-icon" imagePosition="overlaps" alignment="center" alternateImage="key-icon-alternate" borderStyle="border" inset="2" id="5493">
-                                                                                                <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                            </buttonCell>
-                                                                                            <connections>
-                                                                                                <action selector="chooseKeyLocation:" target="-2" id="5661"/>
-                                                                                                <binding destination="-2" name="value" keyPath="sshKeyLocationEnabled" id="5551">
-                                                                                                    <dictionary key="options">
-                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
-                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
-                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
-                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
-                                                                                                    </dictionary>
-                                                                                                </binding>
-                                                                                            </connections>
-                                                                                        </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5404">
                                                                                             <rect key="frame" x="7" y="450" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -1485,6 +1466,25 @@ DQ
                                                                                                 <action selector="didChangeSelectedTimeZone:" target="-2" id="vNL-jC-ecd"/>
                                                                                             </connections>
                                                                                         </popUpButton>
+                                                                                        <button toolTip="Click to choose the SSH key file to use with this connection.  Standard locations like ~/.ssh are NOT checked automatically." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5492">
+                                                                                            <rect key="frame" x="328" y="101" width="29" height="24"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="key-icon" imagePosition="overlaps" alignment="center" alternateImage="key-icon-alternate" borderStyle="border" inset="2" id="5493">
+                                                                                                <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="chooseKeyLocation:" target="-2" id="5661"/>
+                                                                                                <binding destination="-2" name="value" keyPath="sshKeyLocationEnabled" id="5551">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9t3-JG-c1l">

@@ -3938,7 +3938,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MARKETING_VERSION = "2.2.0-beta1";
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -4244,7 +4244,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MARKETING_VERSION = "2.2.0-beta1";
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -4290,7 +4290,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MARKETING_VERSION = "2.2.0-beta1";
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
