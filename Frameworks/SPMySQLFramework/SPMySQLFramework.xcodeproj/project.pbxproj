@@ -86,6 +86,8 @@
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
+		BECAB35424EDD163004FD17E /* TimeZone.h in Headers */ = {isa = PBXBuildFile; fileRef = BECAB35224EDD163004FD17E /* TimeZone.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		BECAB35524EDD163004FD17E /* TimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BECAB35324EDD163004FD17E /* TimeZone.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -198,6 +200,8 @@
 		58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLEmptyResult.m; path = Source/SPMySQLEmptyResult.m; sourceTree = "<group>"; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* SPMySQL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SPMySQL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BECAB35224EDD163004FD17E /* TimeZone.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TimeZone.h; sourceTree = "<group>"; };
+		BECAB35324EDD163004FD17E /* TimeZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TimeZone.m; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
@@ -411,6 +415,8 @@
 				584294F914CB8002000F8438 /* Encoding.m */,
 				584294FC14CB8002000F8438 /* Server Info.h */,
 				584294FD14CB8002000F8438 /* Server Info.m */,
+				BECAB35224EDD163004FD17E /* TimeZone.h */,
+				BECAB35324EDD163004FD17E /* TimeZone.m */,
 				58C00AA714E4869C00AC489A /* Max Packet Size.h */,
 				58C00AA814E4869C00AC489A /* Max Packet Size.m */,
 				5884142414CCF4E60078027F /* Private */,
@@ -490,6 +496,7 @@
 				584292A414C34B36000F8438 /* mysql_time.h in Headers */,
 				584292A514C34B36000F8438 /* mysql_version.h in Headers */,
 				584292A614C34B36000F8438 /* typelib.h in Headers */,
+				BECAB35424EDD163004FD17E /* TimeZone.h in Headers */,
 				5884127714CC63830078027F /* SPMySQL.h in Headers */,
 				588412A814CC7A4D0078027F /* Locking.h in Headers */,
 				5884142714CCF5190078027F /* Conversion.h in Headers */,
@@ -566,7 +573,7 @@
 		0867D690FE84028FC02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1160;
+				LastUpgradeCheck = 1200;
 				TargetAttributes = {
 					507FF1D41BC0D7D300104523 = {
 						CreatedOnToolsVersion = 6.2;
@@ -669,6 +676,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BECAB35524EDD163004FD17E /* TimeZone.m in Sources */,
 				58428E0114BA5FAE000F8438 /* SPMySQLConnection.m in Sources */,
 				584294F114CB8002000F8438 /* Ping & KeepAlive.m in Sources */,
 				584294FB14CB8002000F8438 /* Encoding.m in Sources */,
@@ -802,6 +810,7 @@
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -851,6 +860,7 @@
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -997,6 +1007,7 @@
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1118,6 +1129,7 @@
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
