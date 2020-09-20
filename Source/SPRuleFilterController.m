@@ -1178,7 +1178,6 @@ BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle)
 	
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 
-#ifndef SP_CODA /* content filters */
 	// Load global user-defined content filters
 	if([prefs objectForKey:SPContentFilters]
 		&& [contentFilters objectForKey:compareType]
@@ -1193,7 +1192,6 @@ BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle)
 		if([filters objectForKey:compareType])
 			[[contentFilters objectForKey:compareType] addObjectsFromArray:[filters objectForKey:compareType]];
 	}
-#endif
 
 	NSUInteger i = 0;
 	if([contentFilters objectForKey:compareType]) {
@@ -1275,9 +1273,8 @@ BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle)
 - (void)openContentFilterManagerForFilterType:(NSString *)filterType
 {
 	// init query favorites controller
-#ifndef SP_CODA
 	[[NSUserDefaults standardUserDefaults] synchronize];
-#endif
+
 	if(contentFilterManager) [contentFilterManager release];
 	contentFilterManager = [[SPContentFilterManager alloc] initWithDatabaseDocument:tableDocumentInstance forFilterType:filterType];
 

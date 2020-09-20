@@ -74,9 +74,7 @@
 	NSMutableCharacterSet *textualInputCharacters;
 
 	SPDatabaseStructure *databaseStructureRetrieval;
-#ifndef SP_CODA
 	NSUserDefaults *prefs;
-#endif
 }
 
 - (id)      initWithItems:(NSArray *)someSuggestions

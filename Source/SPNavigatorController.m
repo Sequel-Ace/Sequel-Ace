@@ -30,7 +30,6 @@
 
 #import "SPNavigatorController.h"
 #import "SPSplitView.h"
-#ifndef SP_CODA /* headers */
 #import "RegexKitLite.h"
 #import "SPNavigatorOutlineView.h"
 #import "ImageAndTextCell.h"
@@ -44,7 +43,6 @@
 
 #import <objc/message.h>
 #import <SPMySQL/SPMySQL.h>
-#endif
 
 static SPNavigatorController *sharedNavigatorController = nil;
 
@@ -54,13 +52,10 @@ static SPNavigatorController *sharedNavigatorController = nil;
 
 @implementation SPNavigatorController
 
-#ifndef SP_CODA /* unused sort func */
 static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* context)
 {
 	return (NSComparisonResult)objc_msgSend(s1, @selector(localizedCompare:), s2);
 }
-#endif
-
 
 /**
  * Returns the shared query console.
@@ -87,7 +82,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (id)init
 {
 	if((self = [super initWithWindowNibName:@"Navigator"])) {
-
 		schemaDataFiltered  = [[NSMutableDictionary alloc] init];
 		allSchemaKeys       = [[NSMutableDictionary alloc] init];
 		schemaData          = [[NSMutableDictionary alloc] init];
@@ -95,18 +89,16 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		cachedSortedKeys    = [[NSMutableDictionary alloc] init];
 		infoArray           = [[NSMutableArray alloc] init];
 		updatingConnections = [[NSMutableArray alloc] init];
-#ifndef SP_CODA
+
 		selectedKey2        = @"";
 		ignoreUpdate        = NO;
 		isFiltered          = NO;
 		isFiltering         = NO;
 		[syncButton setState:NSOffState];
 		NSDictionaryClass   = [NSDictionary class];
-#endif
 	}
 
 	return self;
-
 }
 
 - (void)dealloc
@@ -119,7 +111,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	if(updatingConnections) SPClear(updatingConnections);
 	if(expandStatus2)       SPClear(expandStatus2);
 	if(cachedSortedKeys)    SPClear(cachedSortedKeys);
-#ifndef SP_CODA /* dealloc ivars */
+
 	SPClear(connectionIcon);
 	SPClear(databaseIcon);
 	SPClear(tableIcon);
@@ -127,7 +119,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	SPClear(procedureIcon);
 	SPClear(functionIcon);
 	SPClear(fieldIcon);
-#endif
 
 	[super dealloc];
 }
@@ -145,7 +136,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 - (oneway void)release { }
 
-#ifndef SP_CODA
 /**
  * Set the window's auto save name and initialise display
  */
@@ -503,7 +493,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	[[schemaData objectForKey:connectionID] removeObjectForKey:db_id];
 	[outlineSchema2 reloadData];
 }
-#endif
 
 - (NSDictionary *)dbStructureForConnection:(NSString*)connectionID
 {
@@ -565,8 +554,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 	return @[@0, @""];
 }
-
-#ifndef SP_CODA
 
 - (BOOL)isUpdatingConnection:(NSString*)connectionID
 {
@@ -1270,5 +1257,5 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 	return @"";
 }
-#endif
+
 @end

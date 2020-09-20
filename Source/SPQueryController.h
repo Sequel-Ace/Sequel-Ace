@@ -28,16 +28,13 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#ifndef SP_CODA /* constants */
 extern NSString *SPQueryConsoleWindowAutoSaveName;
 extern NSString *SPTableViewDateColumnID;
 extern NSString *SPTableViewConnectionColumnID;
 extern NSString *SPTableViewDatabaseColumnID;
-#endif
 
 @interface SPQueryController : NSWindowController 
 {
-#ifndef SP_CODA /* ivars */
 	IBOutlet NSView *saveLogView;
 	IBOutlet NSTableView *consoleTableView;
 	IBOutlet NSSearchField *consoleSearchField;
@@ -64,23 +61,18 @@ extern NSString *SPTableViewDatabaseColumnID;
 	NSMutableDictionary *contentFilterContainer;
 	NSUInteger untitledDocumentCounter;
 	NSUInteger numberOfMaxAllowedHistory;
-#endif
 
 	NSArray *completionKeywordList;
 	NSArray *completionFunctionList;
 	NSDictionary *functionArgumentSnippets;
 
-#ifndef SP_CODA /* ivars */
 	NSUserDefaults *prefs;
 	NSDateFormatter *dateFormatter;
 	
 	pthread_mutex_t consoleLock;
-#endif
 }
 
-#ifndef SP_CODA
 @property (readwrite, retain) NSFont *consoleFont;
-#endif
 
 + (SPQueryController *)sharedQueryController;
 

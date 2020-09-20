@@ -49,8 +49,6 @@
 
 @implementation SPBundleCommandRunner
 
-#ifndef SP_CODA /* run commands */
-
 /**
  * Run the supplied string as a BASH command(s) and return the result.
  * This task can be interrupted by pressing ⌘.
@@ -339,7 +337,5 @@
 	[fileManager removeItemAtPath:stdoutFilePath error:nil];
 	return @"";
 }
-
-#endif
 
 @end

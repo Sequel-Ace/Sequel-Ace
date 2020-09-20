@@ -158,10 +158,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	if ((self = [super init])) {
 		instanceId = OSAtomicIncrement64(&SPDatabaseDocumentInstanceCounter);
-#ifndef SP_CODA /* init ivars */
 
 		_mainNibLoaded = NO;
-#endif
 		_isConnected = NO;
 		_isWorkingLevel = 0;
 		_isSavedInBundle = NO;
@@ -173,9 +171,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		allowSplitViewResizing = NO;
 
 		chooseDatabaseButton = nil;
-#ifndef SP_CODA /* init ivars */
 		chooseDatabaseToolbarItem = nil;
-#endif
 		connectionController = nil;
 
 		selectedTableName = nil;
@@ -195,33 +191,26 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		allSystemDatabases = nil;
 		gotoDatabaseController = nil;
 
-#ifndef SP_CODA /* init ivars */
 		mainToolbar = nil;
 		parentWindow = nil;
-#endif
 		isProcessing = NO;
 
-#ifndef SP_CODA /* init ivars */
 		printWebView = [[WebView alloc] init];
 		[printWebView setFrameLoadDelegate:self];
 
 		prefs = [NSUserDefaults standardUserDefaults];
 		undoManager = [[NSUndoManager alloc] init];
-#endif
 		queryEditorInitString = nil;
 
-#ifndef SP_CODA
 		sqlFileURL = nil;
 		spfFileURL = nil;
 		spfSession = nil;
 		spfPreferences = [[NSMutableDictionary alloc] init];
 		spfDocData = [[NSMutableDictionary alloc] init];
 		runningActivitiesArray = [[NSMutableArray alloc] init];
-#endif
 
 		titleAccessoryView = nil;
 
-#ifndef SP_CODA /* init ivars */
 		taskProgressWindow = nil;
 		taskDisplayIsIndeterminate = YES;
 		taskDisplayLastValue = 0;
@@ -232,11 +221,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		taskCanBeCancelled = NO;
 		taskCancellationCallbackObject = nil;
 		taskCancellationCallbackSelector = NULL;
-#endif
 		alterDatabaseCharsetHelper = nil; //init in awakeFromNib
 		addDatabaseCharsetHelper = nil;
 		
-#ifndef SP_CODA /* init ivars */
 		statusValues = nil;
 		printThread = nil;
 		windowTitleStatusViewIsVisible = NO;
@@ -249,7 +236,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[nibLoader instantiateWithOwner:self topLevelObjects:&dbViewTopLevelObjects];
 		[nibLoader release];
 		[nibObjectsToRelease addObjectsFromArray:dbViewTopLevelObjects];
-#endif
 
 		databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
 	}
@@ -310,7 +296,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	                                             name:@"NSApplicationWillTerminateNotification"
 	                                           object:nil];
 
-#ifndef SP_CODA
 	// Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
 	selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
 
@@ -330,8 +315,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	[nibLoader release];
 
-	// SP_CODA can't use progress indicator because of BWToolkit dependency
-
 	NSArray *progressIndicatorLayerTopLevelObjects = nil;
 	nibLoader = [[NSNib alloc] initWithNibNamed:@"ProgressIndicatorLayer" bundle:[NSBundle mainBundle]];
 	if (![nibLoader instantiateWithOwner:self topLevelObjects:&progressIndicatorLayerTopLevelObjects]) {
@@ -343,9 +326,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Retain the icon accessory view to allow it to be added and removed from windows
 	[titleAccessoryView retain];
-#endif
 
-#ifndef SP_CODA
 	// Set up the progress indicator child window and layer - change indicator color and size
 	[taskProgressIndicator setForeColor:[NSColor whiteColor]];
 	NSShadow *progressIndicatorShadow = [[NSShadow alloc] init];
@@ -362,7 +343,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[taskProgressWindow setContentView:taskProgressLayer];
 
 	[self updateTitlebarStatusVisibilityForcingHide:NO];
-#endif
 
 	alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
 	addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
@@ -370,31 +350,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 #pragma mark -
 
-#ifdef SP_CODA /* glue */
-- (SPConnectionController*)createConnectionController
-{
-	// Set up the connection controller
-	connectionController = [[SPConnectionController alloc] initWithDocument:self];
-	
-	// Set the connection controller's delegate
-	[connectionController setDelegate:self];
-	
-	return connectionController;
-}
-
-- (void)setTableSourceInstance:(SPTableStructure*)source
-{
-	tableSourceInstance = source;
-}
-
-- (void)setTableContentInstance:(SPTableContent*)content
-{
-	tableContentInstance = content;
-}
-
-#endif
-
-#ifndef SP_CODA /* password sheet and history navigation */
 /**
  * Set the return code for entering the encryption passowrd sheet
  */
@@ -428,7 +383,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			break;
 	}
 }
-#endif
 
 #pragma mark -
 #pragma mark Connection callback and methods
@@ -452,14 +406,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	                                                        minor:[mySQLConnection serverMinorVersion]
 	                                                      release:[mySQLConnection serverReleaseVersion]];
 
-#ifndef SP_CODA	
-	// Set the fileURL and init the preferences (query favs, filters, and history) if available for that URL 
+	// Set the fileURL and init the preferences (query favs, filters, and history) if available for that URL
 	NSURL *newURL = [[SPQueryController sharedQueryController] registerDocumentWithFileURL:[self fileURL] andContextInfo:spfPreferences];
 	[self setFileURL:newURL];
 	
 	// ...but hide the icon while the document is temporary
 	if ([self isUntitled]) [[parentWindow standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
-#endif
 
 	// Get the mysql version
 	mySQLVersion = [[NSString alloc] initWithString:[mySQLConnection serverVersionString]];
@@ -468,9 +420,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ([connectionController database] && ![[connectionController database] isEqualToString:@""]) {
 		if (selectedDatabase) SPClear(selectedDatabase);
 		selectedDatabase = [[NSString alloc] initWithString:[connectionController database]];
-#ifndef SP_CODA /* [spHistoryControllerInstance updateHistoryEntries] */
 		[spHistoryControllerInstance updateHistoryEntries];
-#endif
 	}
 
 	// Ensure the connection encoding is set to utf8 for database/table name retrieval
@@ -489,28 +439,18 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Pass the support class to the data instance
 	[databaseDataInstance setServerSupport:serverSupport];
 
-#ifdef SP_CODA /* glue */
-	tablesListInstance = [[SPTablesList alloc] init];
-	[tablesListInstance setDatabaseDocument:self];
-	[tablesListInstance awakeFromNib];
-#endif	
-
 	// Set the connection on the tables list instance - this updates the table list while the connection
 	// is still UTF8
 	[tablesListInstance setConnection:mySQLConnection];
 
-#ifndef SP_CODA /* set connection encoding from prefs */
 	// Set the connection encoding if necessary
 	NSNumber *encodingType = [prefs objectForKey:SPDefaultEncoding];
 	
 	if ([encodingType intValue] != SPEncodingAutodetect) {
 		[self setConnectionEncoding:[self mysqlEncodingFromEncodingTag:encodingType] reloadingViews:NO];
 	} else {
-#endif
 		[[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[mySQLConnection encoding]]];
-#ifndef SP_CODA
 	}
-#endif
 
 	// For each of the main controllers, assign the current connection
 	[tableSourceInstance setConnection:mySQLConnection];
@@ -519,10 +459,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[tableTriggersInstance setConnection:mySQLConnection];
 	[customQueryInstance setConnection:mySQLConnection];
 	[tableDumpInstance setConnection:mySQLConnection];
-#ifndef SP_CODA
 	[exportControllerInstance setConnection:mySQLConnection];
 	[exportControllerInstance setServerSupport:serverSupport];
-#endif
 	[tableDataInstance setConnection:mySQLConnection];
 	[extendedTableInfoInstance setConnection:mySQLConnection];
 	
@@ -531,7 +469,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	[helpViewerClientInstance setConnection:mySQLConnection];
 
-#ifndef SP_CODA
 	[self updateWindowTitle:self];
 	
 	NSString *serverDisplayName = nil;
@@ -614,11 +551,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[[tablesListInstance onMainThread] makeTableListFilterHaveFocus];
 	}
 
-#endif
-#ifdef SP_CODA /* glue */
-	if ( delegate && [delegate respondsToSelector:@selector(databaseDocumentDidConnect:)] )
-		[delegate performSelector:@selector(databaseDocumentDidConnect:) withObject:self];
-#endif
 }
 
 /**
@@ -694,8 +626,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	(![self database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[self database]];
 }
 
-#ifndef SP_CODA /* chooseDatabase: */
-
 /**
  * Selects the database choosen by the user, using a child task if necessary,
  * and displaying errors in an alert sheet on failure.
@@ -721,14 +651,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Select the database
 	[self selectDatabase:[chooseDatabaseButton titleOfSelectedItem] item:[self table]];
 }
-#endif
 
 /**
  * Select the specified database and, optionally, table.
  */
 - (void)selectDatabase:(NSString *)database item:(NSString *)item
 {
-#ifndef SP_CODA /* update navigator controller */
 	// Do not update the navigator since nothing is changed
 	[[SPNavigatorController sharedNavigatorController] setIgnoreUpdate:NO];
 
@@ -745,7 +673,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 		[[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
 	}
-#endif
 
 	// Start a task
 	[self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [[chooseDatabaseButton onMainThread] titleOfSelectedItem]]];
@@ -957,10 +884,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (IBAction)removeDatabase:(id)sender
 {
-#ifndef SP_CODA
 	// No database selected, bail
 	if ([chooseDatabaseButton indexOfSelectedItem] == 0) return;
-#endif
 
 	if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
 
@@ -972,15 +897,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	NSArray *buttons = [alert buttons];
 
-#ifndef SP_CODA
 	// Change the alert's cancel button to have the key equivalent of return
 	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-#else
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\e"]; // Esc = Cancel
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"\r"]; // Return = OK
-#endif
 
 	[alert setAlertStyle:NSCriticalAlertStyle];
 
@@ -998,7 +918,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[tablesListInstance updateTables:self];
 }
 
-#ifndef SP_CODA
 /**
  * Displays the database server variables sheet.
  */
@@ -1060,7 +979,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Until s.o. has a good UI idea, do nothing. Sequel Ace should figure out the connection loss soon enough
 }
 
-#endif
 
 /**
  * Returns an array of all available database names
@@ -1149,7 +1067,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 }
 
-#ifndef SP_CODA /* sheetDidEnd: */
 /**
  * Show Error sheet (can be called from inside of a endSheet selector)
  * via [self performSelector:@selector(showErrorSheetWithTitle:) withObject: afterDelay:]
@@ -1159,7 +1076,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// error := first object is the title , second the message, only one button OK
 	SPOnewayAlertSheet([error objectAtIndex:0], parentWindow, [error objectAtIndex:1]);
 }
-#endif
 
 /**
  * Reset the current selected database name
@@ -1203,12 +1119,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:self];
 }
 
-#ifndef SP_CODA /* navigatorSchemaPathExistsForDatabase: */
 - (BOOL)navigatorSchemaPathExistsForDatabase:(NSString*)dbname
 {
 	return [[SPNavigatorController sharedNavigatorController] schemaPathExistsForConnection:[self connectionID] andDatabase:dbname];
 }
-#endif
 
 - (NSDictionary*)getDbStructure
 {
@@ -1235,8 +1149,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self selectDatabase:[gotoDatabaseController selectedDatabase] item:nil];
 	}
 }
-
-#ifndef SP_CODA /* console and navigator methods */
 
 #pragma mark -
 #pragma mark Console methods
@@ -1315,7 +1227,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[[[SPNavigatorController sharedNavigatorController] window] makeKeyAndOrderFront:self];
 	}
 }
-#endif
 
 #pragma mark -
 #pragma mark Task progress and notification methods
@@ -1344,7 +1255,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Increment the task level
 	_isWorkingLevel++;
 
-#ifndef SP_CODA 
 	// Reset the progress indicator if necessary
 	if (_isWorkingLevel == 1 || !taskDisplayIsIndeterminate) {
 		taskDisplayIsIndeterminate = YES;
@@ -1352,18 +1262,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[taskProgressIndicator startAnimation:self];
 		taskDisplayLastValue = 0;
 	}
-#endif
-	
+
 	// If the working level just moved to start a task, set up the interface
 	if (_isWorkingLevel == 1) {
-#ifndef SP_CODA 
 		[taskCancelButton setHidden:YES];
-#endif
-		
+
 		// Set flags and prevent further UI interaction in this window
 		databaseListIsSelectable = NO;
 		[[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
-#ifndef SP_CODA
 		[mainToolbar validateVisibleItems];
 		[chooseDatabaseButton setEnabled:NO];
 				
@@ -1373,7 +1279,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		taskDrawTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0 target:self selector:@selector(fadeInTaskProgressWindow:) userInfo:nil repeats:YES] retain];
 		queryExecutionTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(showQueryExecutionTime) userInfo:nil repeats:YES] retain];
 
-#endif
 	}
 }
 
@@ -1410,7 +1315,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) fadeInTaskProgressWindow:(NSTimer *)theTimer
 {
-#ifndef SP_CODA 
 	double timeSinceFadeInStart = [[NSDate date] timeIntervalSinceDate:taskFadeInStartDate];
 
 	// Keep the window hidden for the first ~0.5 secs
@@ -1431,7 +1335,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		(void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
 		SPClear(taskFadeInStartDate);
 	}
-#endif
 }
 
 
@@ -1440,7 +1343,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskDescription:(NSString *)description
 {
-#ifndef SP_CODA 
 	NSShadow *textShadow = [[NSShadow alloc] init];
 	[textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
 	[textShadow setShadowOffset:NSMakeSize(1.0f, -1.0f)];
@@ -1457,7 +1359,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[string release];
 	[attributes release];
 	[textShadow release];
-#endif
 }
 
 /**
@@ -1467,7 +1368,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskPercentage:(CGFloat)taskPercentage
 {
-#ifndef SP_CODA 
 
 	// If the task display is currently indeterminate, set it to determinate on the main thread.
 	if (taskDisplayIsIndeterminate) {
@@ -1491,7 +1391,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		}
 		taskDisplayLastValue = taskProgressValue;
 	}
-#endif
 }
 
 /**
@@ -1503,7 +1402,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskProgressToIndeterminateAfterDelay:(BOOL)afterDelay
 {
-#ifndef SP_CODA 
 	if (afterDelay) {
 		[self performSelector:@selector(setTaskProgressToIndeterminateAfterDelay:) withObject:nil afterDelay:0.5];
 		return;
@@ -1515,7 +1413,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[taskProgressIndicator setIndeterminate:YES];
 	[taskProgressIndicator startAnimation:self];
 	taskDisplayLastValue = 0;
-#endif
 }
 
 /**
@@ -1536,7 +1433,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// If all tasks have ended, re-enable the interface
 	if (!_isWorkingLevel) {
 
-#ifndef SP_CODA 
 		// Cancel the draw timer if it exists
 		if (taskDrawTimer) {
 			(void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
@@ -1555,14 +1451,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[taskProgressWindow setAlphaValue:0.0f];
 		taskDisplayIsIndeterminate = YES;
 		[taskProgressIndicator setIndeterminate:YES];
-#endif
-		
+
 		// Re-enable window interface
 		databaseListIsSelectable = YES;
 		[[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskEndNotification object:self];
-#ifndef SP_CODA 
 		[mainToolbar validateVisibleItems];
-#endif
 		[chooseDatabaseButton setEnabled:_isConnected];
 	}
 }
@@ -1573,7 +1466,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) enableTaskCancellationWithTitle:(NSString *)buttonTitle callbackObject:(id)callbackObject callbackFunction:(SEL)callbackFunction
 {
-#ifndef SP_CODA 
 	// Ensure call on the main thread
 	if (![NSThread isMainThread]) return [[self onMainThread] enableTaskCancellationWithTitle:buttonTitle callbackObject:callbackObject callbackFunction:callbackFunction];
 
@@ -1589,7 +1481,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[taskCancelButton setTitle:buttonTitle];
 	[taskCancelButton setEnabled:YES];
 	[taskCancelButton setHidden:NO];
-#endif
 }
 
 /**
@@ -1597,7 +1488,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)disableTaskCancellation
 {
-#ifndef SP_CODA 
 	// Ensure call on the main thread
 	if (![NSThread isMainThread]) return [[self onMainThread] disableTaskCancellation];
 
@@ -1608,7 +1498,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	taskCancellationCallbackObject = nil;
 	taskCancellationCallbackSelector = NULL;
 	[taskCancelButton setHidden:YES];
-#endif
 }
 
 /**
@@ -1616,7 +1505,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (IBAction)cancelTask:(id)sender
 {
-#ifndef SP_CODA 
 	if (!taskCanBeCancelled) return;
 
 	[taskCancelButton setEnabled:NO];
@@ -1633,7 +1521,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (taskCancellationCallbackObject && taskCancellationCallbackSelector) {
 		[taskCancellationCallbackObject performSelector:taskCancellationCallbackSelector];
 	}
-#endif
 }
 
 /**
@@ -1658,7 +1545,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)centerTaskWindow
 {
-#ifndef SP_CODA 
 	NSPoint newBottomLeftPoint;
 	NSRect mainWindowRect = [parentWindow frame];
 	NSRect taskWindowRect = [taskProgressWindow frame];
@@ -1667,7 +1553,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	newBottomLeftPoint.y = roundf(mainWindowRect.origin.y + mainWindowRect.size.height/2 - taskWindowRect.size.height/2);
 
 	[taskProgressWindow setFrameOrigin:newBottomLeftPoint];
-#endif
 }
 
 /**
@@ -1676,13 +1561,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)setTaskIndicatorShouldAnimate:(BOOL)shouldAnimate
 {
-#ifndef SP_CODA 
 	if (shouldAnimate) {
 		[[taskProgressIndicator onMainThread] startAnimation:self];
 	} else {
 		[[taskProgressIndicator onMainThread] stopAnimation:self];
 	}
-#endif
 }
 
 #pragma mark -
@@ -1864,7 +1747,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 #pragma mark -
 #pragma mark Table Methods
-#ifndef SP_CODA /* whole table operations */
 
 /**
  * Copies if sender == self or displays or the CREATE TABLE syntax of the selected table(s) to the user .
@@ -2543,7 +2425,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	queryEditorInitString = [query retain];
 }
-#endif
 
 /**
  * Invoked when user hits the cancel button or close button in
@@ -2563,7 +2444,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[[sender window] orderOut:self];
 }
 
-#ifndef SP_CODA
 /**
  * Displays the user account manager.
  */
@@ -2654,7 +2534,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[newTableDocument setStateFromConnectionFile:[[self fileURL] path]];
 }
 
-#endif
 
 /**
  * Ask the connection controller to initiate connection, if it hasn't
@@ -2671,7 +2550,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[mySQLConnection disconnect];
 	_isConnected = NO;
 
-#ifndef SP_CODA /* notification */
 	// Disconnected notification
 	NSUserNotification *notification = [[NSUserNotification alloc] init];
 	notification.title = @"Disconnected";
@@ -2680,10 +2558,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
 	[notification release];
-#endif
 }
 
-#ifndef SP_CODA /* observeValueForKeyPath: */
 /**
  * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
  */
@@ -2706,7 +2582,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	return (!_isSavedInBundle && [self fileURL] && [[self fileURL] isFileURL]) ? NO : YES;
 }
-#endif
 
 /**
  * Asks any currently editing views to commit their changes;
@@ -2716,7 +2591,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (BOOL)couldCommitCurrentViewActions
 {
 	[parentWindow endEditingFor:nil];
-#ifndef SP_CODA 
 	switch ([self currentlySelectedView]) {
 
 		case SPTableViewStructure:
@@ -2730,9 +2604,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	
 	return YES;
-#else
-	return [tableSourceInstance saveRowOnDeselect] && [tableContentInstance saveRowOnDeselect];
-#endif
 }
 
 #pragma mark -
@@ -2803,7 +2674,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Returns the full window title which is mainly used for tab tooltips
  */
-#ifndef SP_CODA
 
 - (NSString *)tabTitleForTooltip
 {
@@ -2823,10 +2693,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	tabTitle = [NSMutableString string];
 
-#ifndef SP_CODA /* Add the MySQL version to the window title */
 	// Add the MySQL version to the window title if enabled in prefs
 	if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) [tabTitle appendFormat:@"(MySQL %@)\n", [self mySQLVersion]];
-#endif
 
 	[tabTitle appendString:[self name]];
 	if ([self database]) {
@@ -2840,7 +2708,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	return tabTitle;
 }
 
-#endif
 
 /**
  * Returns the currently selected database
@@ -2955,8 +2822,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)applicationWillTerminate:(NSNotification *)notification
 {
-#ifndef SP_CODA /* applicationWillTerminate: */
-
 	// Auto-save preferences to spf file based connection
 	if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
 		if (_isConnected && ![self saveDocumentWithFilePath:nil inBackground:YES onlyPreferences:YES contextInfo:nil]) {
@@ -2970,13 +2835,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Note that this call does not need to be removed in release builds as leaks analysis output is only
 	// dumped if [[SPLogger logger] setDumpLeaksOnTermination]; has been called first.
 	[[SPLogger logger] dumpLeaks];
-#endif
 }
 
 #pragma mark -
 #pragma mark Menu methods
 
-#ifndef SP_CODA 
 /**
  * Saves SP session or if Custom Query tab is active the editor's content as SQL file
  * If sender == nil then the call came from [self writeSafelyToURL:ofType:forSaveOperation:error]
@@ -3652,7 +3515,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[helpViewerClientInstance showHelpFor:SPHelpViewerSearchTOC addToHistory:YES calledByAutoHelp:NO];
 	[[helpViewerClientInstance helpWebViewWindow] makeKeyWindow];
 }
-#endif
 
 /**
  * Forwards a responder request to set the focus to the table list filter area or table list
@@ -3856,7 +3718,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (IBAction)addConnectionToFavorites:(id)sender
 {
-#ifndef SP_CODA
 	// Obviously don't add if it already exists. We shouldn't really need this as the menu item validation
 	// enables or disables the menu item based on the same method. Although to be safe do the check anyway
 	// as we don't know what's calling this method.
@@ -3864,7 +3725,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Request the connection controller to add its details to favorites
 	[connectionController addFavoriteUsingCurrentDetails:self];
-#endif
 }
 
 /**
@@ -3872,11 +3732,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (BOOL)isCustomQuerySelected
 {
-#ifndef SP_CODA
 	return [[self selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery];
-#else
-	return ([structureContentSwitcher selectedSegment] == 2);
-#endif
 }
 
 /**
@@ -3895,7 +3751,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) updateWindowTitle:(id)sender
 {
-#ifndef SP_CODA
 	// Ensure a call on the main thread
 	if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
 
@@ -3973,7 +3828,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// If the sender wasn't the window controller, update other tabs in this window
 	// for shared pathname updates
 	if ([sender class] != [SPWindowController class]) [parentWindowController updateAllTabTitles:self];
-#endif
 }
 
 /**
@@ -3981,21 +3835,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)setStatusIconToImageWithName:(NSString *)imageName
 {
-#ifndef SP_CODA
 	NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];
 	if (!imagePath) return;
 
 	NSImage *image = [[[NSImage alloc] initByReferencingFile:imagePath] autorelease];
 	[titleImageView setImage:image];
-#endif
 }
 
 - (void)setTitlebarStatus:(NSString *)status
 {
-#ifndef SP_CODA
 	[self clearStatusIcon];
 	[titleStringView setStringValue:status];
-#endif
 }
 
 /**
@@ -4003,9 +3853,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)clearStatusIcon
 {
-#ifndef SP_CODA
 	[titleImageView setImage:nil];
-#endif
 }
 
 /**
@@ -4014,7 +3862,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)updateTitlebarStatusVisibilityForcingHide:(BOOL)forceHide
 {
-#ifndef SP_CODA
 	BOOL newIsVisible = !forceHide;
 	if (newIsVisible && [parentWindow styleMask] & NSFullScreenWindowMask) newIsVisible = NO;
 	if (newIsVisible && [parentWindowController selectedTableDocument] != self) newIsVisible = NO;
@@ -4054,13 +3901,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	windowTitleStatusViewIsVisible = newIsVisible;
-#endif
 }
 
 #pragma mark -
 #pragma mark Toolbar Methods
 
-#ifndef SP_CODA
 
 /**
  * set up the standard toolbar
@@ -4332,7 +4177,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	return YES;
 }
 
-#endif
 
 
 #pragma mark -
@@ -4345,9 +4189,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)makeKeyDocument
 {
 	[[[self parentWindow] onMainThread] makeKeyAndOrderFront:self];
-#ifndef SP_CODA
 	[[[[self parentTabViewItem] onMainThread] tabView] selectTabViewItemWithIdentifier:self];
-#endif
 }
 
 /**
@@ -4366,7 +4208,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// edits in progress in various views.
 	if ( ![tablesListInstance selectionShouldChangeInTableView:nil] ) return NO;
 
-#ifndef SP_CODA
 	// Auto-save spf file based connection and return if the save was not successful
 	if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
 		BOOL isSaved = [self saveDocumentWithFilePath:nil inBackground:YES onlyPreferences:YES contextInfo:nil];
@@ -4393,7 +4234,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Note that this call does not need to be removed in release builds as leaks analysis output is only
 	// dumped if [[SPLogger logger] setDumpLeaksOnTermination]; has been called first.
 	[[SPLogger logger] dumpLeaks];
-#endif
 	// Return YES by default
 	return YES;
 }
@@ -4404,23 +4244,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)parentTabDidClose
 {
-#ifndef SP_CODA
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
-#endif
 		[NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
 		                                         selector:@selector(doAutoCompletion)
 		                                           object:nil];
-#ifndef SP_CODA
 	}
 	if([prefs boolForKey:SPCustomQueryUpdateAutoHelp]) {
-#endif
 		[NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
 		                                         selector:@selector(autoHelp)
 		                                           object:nil];
-#ifndef SP_CODA
 	}
-#endif
 
 	[mySQLConnection setDelegate:nil];
 	if (_isConnected) {
@@ -4428,16 +4262,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		[connectionController cancelConnection:self];
 	}
-#ifndef SP_CODA
 	if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
 	[createTableSyntaxWindow orderOut:nil];
-#endif
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self setParentWindow:nil];
 
 }
 
-#ifndef SP_CODA
 /**
  * Invoked when the parent tab is currently the active tab in the
  * window, but is being switched away from, to allow cleaning up
@@ -4473,13 +4304,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[self centerTaskWindow];
 	[parentWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
-#ifndef SP_CODA
 	// If not connected, update the favorite selection
 	if (!_isConnected) {
 		[connectionController updateFavoriteNextKeyView];
 	}
-#endif
-	
+
 	initComplete = YES;
 }
 
@@ -4516,7 +4345,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// If the task interface is visible, and this tab is frontmost, re-center the task child window
 	if (_isWorkingLevel && [parentWindowController selectedTableDocument] == self) [self centerTaskWindow];
 }
-#endif
 
 /**
  * Set the parent window
@@ -4545,7 +4373,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	return parentWindow;
 }
 
-#ifndef SP_CODA
 #pragma mark -
 #pragma mark NSDocument compatibility
 
@@ -4562,19 +4389,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		else                                      [parentWindow setRepresentedURL:nil];
 	}
 }
-#endif
 
 /**
  * Retrieve the NSURL for the .spf file for this connection instance (if any)
  */
-#ifndef SP_CODA
 - (NSURL *)fileURL
 {
 	return [[spfFileURL copy] autorelease];
 }
-#endif
 
-#ifndef SP_CODA /* writeSafelyToURL: */
 /**
  * Invoked if user chose "Save" from 'Do you want save changes you made...' sheet
  * which is called automatically if [self isDocumentEdited] == YES and user wanted to close an Untitled doc.
@@ -5199,7 +5022,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self endTask];
 	}
 }
-#endif
 
 #pragma mark -
 #pragma mark Connection controller delegate methods
@@ -5209,14 +5031,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)connectionControllerInitiatingConnection:(SPConnectionController *)controller
 {
-#ifndef SP_CODA /* ui manipulation */
 	// Update the window title to indicate that we are trying to establish a connection
 	[parentTabViewItem setLabel:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
 	
 	if ([parentWindowController selectedTableDocument] == self) {
 		[parentWindow setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
 	}
-#endif
 }
 
 /**
@@ -5224,33 +5044,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)connectionControllerConnectAttemptFailed:(SPConnectionController *)controller
 {
-#ifdef SP_CODA /* glue */
-	if ( delegate && [delegate respondsToSelector:@selector(databaseDocumentConnectionFailed:)] )
-		[delegate performSelector:@selector(databaseDocumentConnectionFailed:) withObject:self];
-#endif
-
-#ifndef SP_CODA /* updateWindowTitle: */
 	// Reset the window title
 	[self updateWindowTitle:self];
-#endif
 }
 
 - (SPConnectionController*)connectionController
 {
 	return connectionController;
 }
-
-#ifdef SP_CODA
-
-- (void)databaseDocumentConnectionFailed:(id)sender
-{
-	if ( delegate && [delegate respondsToSelector:@selector(databaseDocumentConnectionFailed:)] )
-		[delegate performSelector:@selector(databaseDocumentConnectionFailed:) withObject:self];
-}
-#endif
-
-
-#ifndef SP_CODA /* scheme scripting methods */
 
 #pragma mark -
 #pragma mark Scheme scripting methods
@@ -5880,7 +5681,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	return env;
 }
-#endif
 
 #pragma mark -
 #pragma mark Text field delegate methods
@@ -5895,24 +5695,19 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (object == databaseNameField) {
 		[addDatabaseButton setEnabled:([[databaseNameField stringValue] length] > 0 && ![allDatabases containsObject: [databaseNameField stringValue]])]; 
 	}
-#ifndef SP_CODA
 	else if (object == databaseCopyNameField) {
 		[copyDatabaseButton setEnabled:([[databaseCopyNameField stringValue] length] > 0 && ![allDatabases containsObject: [databaseCopyNameField stringValue]])]; 
 	}
-#endif
 	else if (object == databaseRenameNameField) {
 		[renameDatabaseButton setEnabled:([[databaseRenameNameField stringValue] length] > 0 && ![allDatabases containsObject: [databaseRenameNameField stringValue]])]; 
 	}
-#ifndef SP_CODA
 	else if (object == saveConnectionEncryptString) {
 		[saveConnectionEncryptString setStringValue:[saveConnectionEncryptString stringValue]];
 	}
-#endif
 }
 
 #pragma mark -
 #pragma mark General sheet delegate methods
-#ifndef SP_CODA /* window:willPositionSheet:usingRect: */
 
 - (NSRect)window:(NSWindow *)window willPositionSheet:(NSWindow *)sheet usingRect:(NSRect)rect {
 
@@ -5938,11 +5733,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	return rect;
 }
-#endif
 
 #pragma mark -
 #pragma mark SplitView delegate methods
-#ifndef SP_CODA /* SplitView delegate methods */
 
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification
 {
@@ -6073,7 +5866,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	_isSavedInBundle = savedInBundle;
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Private API
@@ -6210,10 +6002,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	[self setDatabases:self];
-#ifdef SP_CODA /* glue */
-	if ( delegate && [delegate respondsToSelector:@selector(refreshDatabasePopup)] )
-		[delegate performSelector:@selector(refreshDatabasePopup) withObject:nil];
-#endif
 
 	// Select the database
 	[self selectDatabase:[databaseNameField stringValue] item:nil];
@@ -6287,22 +6075,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	
 	[tablesListInstance setConnection:mySQLConnection];
 	
-#ifndef SP_CODA
 	[self updateWindowTitle:self];
-#endif
-#ifdef SP_CODA /* glue */
-	if ( delegate && [delegate respondsToSelector:@selector(refreshDatabasePopup)] )
-		[delegate performSelector:@selector(refreshDatabasePopup) withObject:nil];
-		
-	if ( delegate && [delegate respondsToSelector:@selector(selectDatabaseInPopup:)] )
-	{
-		if ( [allDatabases count] > 0 )
-		{
-			NSString* db = [allDatabases objectAtIndex:0];
-			[delegate performSelector:@selector(selectDatabaseInPopup:) withObject:db];
-		}
-	}
-#endif
 }
 
 /**
@@ -6312,7 +6085,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	@autoreleasepool {
 		NSString *targetDatabaseName = [selectionDetails objectForKey:@"database"];
-#ifndef SP_CODA /* update history controller */
 		NSString *targetItemName = [selectionDetails objectForKey:@"item"];
 
 		// Save existing scroll position and details, and ensure no duplicate entries are created as table list changes
@@ -6322,15 +6094,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[spHistoryControllerInstance updateHistoryEntries];
 			[spHistoryControllerInstance setModifyingState:YES];
 		}
-#endif
 
 		if (![targetDatabaseName isEqualToString:selectedDatabase]) {
 			// Attempt to select the specified database, and abort on failure
-#ifndef SP_CODA /* patch */
 			if ([[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName] == NSNotFound || ![mySQLConnection selectDatabase:targetDatabaseName])
-#else
-			if ( ![mySQLConnection selectDatabase:targetDatabaseName] )
-#endif
 			{
 				// End the task first to ensure the database dropdown can be reselected
 				[self endTask];
@@ -6350,25 +6117,19 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				return;
 			}
 
-#ifndef SP_CODA /* chooseDatabaseButton selectItemWithTitle: */
 			[[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
-#endif
 			if (selectedDatabase) SPClear(selectedDatabase);
 			selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
 
 			[databaseDataInstance resetAllData];
 
-#ifndef SP_CODA /* update database encoding */
-
 			// Update the stored database encoding, used for views, "default" table encodings, and to allow
 			// or disallow use of the "View using encoding" menu
 			[self detectDatabaseEncoding];
-#endif
 
 			// Set the connection of SPTablesList to reload tables in db
 			[tablesListInstance setConnection:mySQLConnection];
 
-#ifndef SP_CODA /* update history controller and ui manip */
 			// Update the window title
 			[self updateWindowTitle:self];
 
@@ -6377,10 +6138,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				[spHistoryControllerInstance setModifyingState:NO];
 				[spHistoryControllerInstance updateHistoryEntries];
 			}
-#endif
 		}
-
-#ifndef SP_CODA /* update selected table in SPTablesList */
 
 		SPMainQSync(^{
 			BOOL focusOnFilter = YES;
@@ -6401,21 +6159,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[tablesListInstance setTableListSelectability:NO];
 		});
 
-#endif
 		[self endTask];
-#ifndef SP_CODA /* triggered commands */
 		[self _processDatabaseChangedBundleTriggerActions];
-#endif
-
-#ifdef SP_CODA /* glue */
-		if (delegate && [delegate respondsToSelector:@selector(databaseDidChange:)]) {
-			[delegate performSelectorOnMainThread:@selector(databaseDidChange:) withObject:self waitUntilDone:NO];
-		}
-#endif
 	}
 }
 
-#ifndef SP_CODA
 - (void)_processDatabaseChangedBundleTriggerActions
 {
 	NSArray __block *triggeredCommands = nil;
@@ -6470,7 +6218,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		}
 	}
 }
-#endif
 
 /**
  * Add any necessary preference observers to allow live updating on changes.
@@ -6518,7 +6265,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 #pragma mark Getters
 
-#ifndef SP_CODA /* getters */
 /**
  * Returns the master database view, containing the tables list and views for
  * table setup and contents.
@@ -6527,7 +6273,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	return parentView;
 }
-#endif
 
 /**
  * Returns the name of the currently selected table/view/procedure/function.
@@ -6568,8 +6313,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	return statusLoaded;
 }
-
-#ifndef SP_CODA /* toolbar ibactions */
 
 #pragma mark -
 #pragma mark Tab view control and delegate methods
@@ -6673,7 +6416,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	[prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
 }
-#endif
 
 /**
  * Mark the structure tab for refresh when it's next switched to,
@@ -6683,11 +6425,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	BOOL reloadRequired = reload;
 
-#ifndef SP_CODA
 	if ([self currentlySelectedView] == SPTableViewStructure) {
 		reloadRequired = NO;
 	}
-#endif
 
 	if (reloadRequired && selectedTableName) {
 		[tableSourceInstance loadTable:selectedTableName];
@@ -6704,9 +6444,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)setContentRequiresReload:(BOOL)reload
 {
 	if (reload && selectedTableName
-#ifndef SP_CODA /* check which tab is selected */
 	    && [self currentlySelectedView] == SPTableViewContent
-#endif
 	) {
 		[tableContentInstance loadTable:selectedTableName];
 	}
@@ -6722,9 +6460,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)setStatusRequiresReload:(BOOL)reload
 {
 	if (reload && selectedTableName
-#ifndef SP_CODA /* check which tab is selected */
 	    && [self currentlySelectedView] == SPTableViewStatus
-#endif
 	) {
 		[[extendedTableInfoInstance onMainThread] loadTable:selectedTableName];
 	}
@@ -6740,9 +6476,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)setRelationsRequiresReload:(BOOL)reload
 {
 	if (reload && selectedTableName
-#ifndef SP_CODA /* check which tab is selected */
 	    && [self currentlySelectedView] == SPTableViewRelations
-#endif
 	) {
 		[[tableRelationsInstance onMainThread] refreshRelations:self];
 	}
@@ -6751,7 +6485,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 }
 
-#ifndef SP_CODA /* !!! respond to tab change */
 /**
  * Triggers a task to update the newly selected tab view, ensuring
  * the data is fully loaded and up-to-date.
@@ -6774,7 +6507,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self _loadTabTask:@(newView)];
 	}
 }
-#endif
 
 #pragma mark -
 #pragma mark Table control
@@ -6803,24 +6535,20 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[[tablesListInstance onMainThread] setSelectionState:nil];
 		[tableSourceInstance loadTable:nil];
 		[tableContentInstance loadTable:nil];
-#ifndef SP_CODA /* [extendedTableInfoInstance loadTable:] */
 		[[extendedTableInfoInstance onMainThread] loadTable:nil];
 		[[tableTriggersInstance onMainThread] resetInterface];
 		[[tableRelationsInstance onMainThread] refreshRelations:self];
-#endif
 		structureLoaded = NO;
 		contentLoaded = NO;
 		statusLoaded = NO;
 		triggersLoaded = NO;
 		relationsLoaded = NO;
 
-#ifndef SP_CODA
 		// Update the window title
 		[self updateWindowTitle:self];
 
 		// Add a history entry
 		[spHistoryControllerInstance updateHistoryEntries];
-#endif
 
 		// Notify listeners of the table change
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
@@ -6925,10 +6653,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	@autoreleasepool {
 		NSString *tableEncoding = nil;
 
-#ifndef SP_CODA /* Update the window title */
 		// Update the window title
 		[self updateWindowTitle:self];
-#endif
 
 		// Reset table information caches and mark that all loaded views require their data reloading
 		[tableDataInstance resetAllData];
@@ -6974,29 +6700,22 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Notify listeners of the table change now that the state is fully set up.
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
 
-#ifndef SP_CODA /* [spHistoryControllerInstance restoreViewStates] */
 		// Restore view states as appropriate
 		[spHistoryControllerInstance restoreViewStates];
-#endif
 
 		// Load the currently selected view if looking at a table or view
 		if (tableEncoding && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable))
 		{
-#ifndef SP_CODA /* load everything */
 			NSInteger selectedTabViewIndex = [[self onMainThread] currentlySelectedView];
 
 			switch (selectedTabViewIndex) {
 				case SPTableViewStructure:
-#endif
 					[tableSourceInstance loadTable:selectedTableName];
 					structureLoaded = YES;
-#ifndef SP_CODA /* load everything */
 					break;
 				case SPTableViewContent:
-#endif
 					[tableContentInstance loadTable:selectedTableName];
 					contentLoaded = YES;
-#ifndef SP_CODA /* load everything */
 					break;
 				case SPTableViewStatus:
 					[[extendedTableInfoInstance onMainThread] loadTable:selectedTableName];
@@ -7011,7 +6730,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 					relationsLoaded = YES;
 					break;
 			}
-#endif
 		}
 
 		// Clear any views which haven't been loaded as they weren't visible.  Note
@@ -7028,7 +6746,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// action will be performed if not necessary
 		[tableDataInstance updateAccurateNumberOfRowsForCurrentTableForcingUpdate:NO];
 
-#ifndef SP_CODA /* show Create Table syntax */
 		SPMainQSync(^{
 			// Update the "Show Create Syntax" window if it's already opened
 			// according to the selected table/view/proc/func
@@ -7039,11 +6756,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Add a history entry
 		[spHistoryControllerInstance updateHistoryEntries];
-#endif
 		// Empty the loading pool and exit the thread
 		[self endTask];
-
-#ifndef SP_CODA /* triggered commands */
 		
 		NSArray __block *triggeredCommands = nil;
 		
@@ -7088,7 +6802,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				}
 			}
 		}
-#endif
 	}
 }
 
@@ -7099,7 +6812,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)willQueryString:(NSString *)query connection:(id)connection
 {
-#ifndef SP_CODA
 	if ([prefs boolForKey:SPConsoleEnableLogging]) {
 		if ((_queryMode == SPInterfaceQueryMode && [prefs boolForKey:SPConsoleEnableInterfaceLogging]) ||
 			(_queryMode == SPCustomQueryQueryMode && [prefs boolForKey:SPConsoleEnableCustomQueryLogging]) ||
@@ -7108,7 +6820,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[[SPQueryController sharedQueryController] showMessageInConsole:query connection:[self name] database:[self database]];
 		}
 	}
-#endif
 }
 
 /**
@@ -7116,11 +6827,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)queryGaveError:(NSString *)error connection:(id)connection
 {
-#ifndef SP_CODA
 	if ([prefs boolForKey:SPConsoleEnableLogging] && [prefs boolForKey:SPConsoleEnableErrorLogging]) {
 		[[SPQueryController sharedQueryController] showErrorInConsole:error connection:[self name] database:[self database]];
 	}
-#endif
 }
 
 /**
@@ -7171,10 +6880,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Ensure the window isn't miniaturized
 		if ([[self parentWindow] isMiniaturized]) [[self parentWindow] deminiaturize:self];
 
-#ifndef SP_CODA
 		// Ensure the window and tab are frontmost
 		[self makeKeyDocument];
-#endif
 
 		// Display the connection error dialog and wait for the return code
 		[NSApp beginSheet:connectionErrorDialog modalForWindow:[self parentWindow] modalDelegate:nil didEndSelector:NULL contextInfo:NULL];
@@ -7215,7 +6922,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) closeAndDisconnect
 {
-#ifndef SP_CODA
 	NSWindow *theParentWindow = [self parentWindow];
 
 	_isConnected = NO;
@@ -7231,7 +6937,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	[self parentTabDidClose];
-#endif
 }
 
 #pragma mark - SPPrintController

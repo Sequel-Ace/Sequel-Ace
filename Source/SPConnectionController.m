@@ -30,12 +30,10 @@
 
 #import "SPConnectionController.h"
 #import "SPDatabaseDocument.h"
-#ifndef SP_CODA /* headers */
 #import "SPAppController.h"
 #import "SPPreferenceController.h"
 #import "ImageAndTextCell.h"
 #import "RegexKitLite.h"
-#endif
 #import "SPAlertSheets.h"
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
@@ -52,10 +50,8 @@
 #import "SPWindowController.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPCategoryAdditions.h"
-#ifndef SP_CODA
 #import "SPFavoriteTextFieldCell.h"
 #import "SPGroupNode.h"
-#endif
 #import "SPSplitView.h"
 #import "SPColorSelectorView.h"
 #import "SPFunctions.h"
@@ -63,7 +59,6 @@
 #import <SPMySQL/SPMySQL.h>
 
 // Constants
-#ifndef SP_CODA
 static NSString *SPRemoveNode              = @"RemoveNode";
 static NSString *SPExportFavoritesFilename = @"SequelProFavorites.plist";
 static NSString *SPLocalhostAddress        = @"127.0.0.1";
@@ -76,7 +71,6 @@ static NSString *SPConnectionViewNibName   = @"ConnectionView";
 
 const static NSInteger SPUseServerTimeZoneTag = -1;
 const static NSInteger SPUseSystemTimeZoneTag = -2;
-#endif
 
 /**
  * This is a utility function to validate SSL key/certificate files
@@ -97,7 +91,6 @@ static BOOL FindLinesInFile(NSData *fileData,const void *first,size_t first_len,
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (BOOL)_checkHost;
-#ifndef SP_CODA
 - (void)_sortFavorites;
 - (void)_sortTreeNode:(SPTreeNode *)node usingKey:(NSString *)key;
 - (void)_favoriteTypeDidChange;
@@ -120,7 +113,6 @@ static BOOL FindLinesInFile(NSData *fileData,const void *first,size_t first_len,
 - (void)_documentWillClose:(NSNotification *)notification;
 
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
-#endif
 
 #pragma mark - SPConnectionControllerDelegate
 
@@ -175,10 +167,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize resolvedBookmarks;
 @synthesize allowSplitViewResizing;
 
-#ifdef SP_CODA
-@synthesize dbDocument;
-#endif
-
 @synthesize connectionKeychainID = connectionKeychainID;
 @synthesize connectionKeychainItemName;
 @synthesize connectionKeychainItemAccount;
@@ -226,10 +214,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
 	// If this action was triggered via a double-click on the favorites outline view,
 	// ensure that one of the connections was double-clicked, not the area above or below
-#ifndef SP_CODA
 	if (sender == favoritesOutlineView && [favoritesOutlineView clickedRow] <= 0) return;
-#endif
-	
+
 	// If triggered via the "Test Connection" button, set the state - otherwise clear it
 	isTestingConnection = (sender == testConnectButton);
 	
@@ -324,7 +310,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	isConnecting = YES;
 	cancellingConnection = NO;
 
-#ifndef SP_CODA
 	// Disable the favorites outline view to prevent further connections attempts
 	[favoritesOutlineView setEnabled:NO];
 
@@ -333,15 +318,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[testConnectButton setEnabled:NO];
 	[progressIndicator startAnimation:self];
 	[progressIndicatorText setHidden:NO];
-#endif
-	
+
 	// Start the current tab's progress indicator
 	[dbDocument setIsProcessing:YES];
 
 	// If the password(s) are marked as having been originally sourced from a keychain, check whether they
 	// have been changed or not; if not, leave the mark in place and remove the password from the field
 	// for increased security.
-#ifndef SP_CODA
 	if (connectionKeychainItemName && !isTestingConnection) {
 		if ([[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount] isEqualToString:[self password]]) {
 			[self setPassword:[[NSString string] stringByPaddingToLength:[[self password] length] withString:@"sp" startingAtIndex:0]];
@@ -366,7 +349,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			SPClear(connectionSSHKeychainItemAccount);
 		}
 	}
-#endif
 
 	// Inform the delegate that we are starting the connection process
 	if (delegate && [delegate respondsToSelector:@selector(connectionControllerInitiatingConnection:)]) {
@@ -392,12 +374,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)cancelConnection:(id)sender
 {
-#ifndef SP_CODA
 	[connectButton setEnabled:NO];
 
 	[progressIndicatorText setStringValue:NSLocalizedString(@"Cancelling...", @"cancelling task status message")];
 	[progressIndicatorText display];
-#endif
 
 	cancellingConnection = YES;
 
@@ -415,19 +395,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		SPClear(sshTunnel);
 	}
 
-#ifndef SP_CODA
 	// Restore the connection interface
 	[self _restoreConnectionInterface];
-#endif
 }
-
-#ifdef SP_CODA
-- (BOOL)cancellingConnection
-{
-	return cancellingConnection;
-}
-#endif
-
 
 #pragma mark -
 #pragma mark Interface interaction
@@ -437,7 +407,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)nodeDoubleClicked:(id)sender
 {
-#ifndef SP_CODA
 	SPTreeNode *node = [favoritesOutlineView itemForDoubleAction];
 		
 	if (node) {
@@ -455,7 +424,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[favoritesOutlineView editColumn:0 row:[favoritesOutlineView selectedRow] withEvent:nil select:YES];
 		}
 	}
-#endif
 }
 
 /**
@@ -463,7 +431,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)chooseKeyLocation:(NSButton *)sender
 {
-#ifndef SP_CODA
 	NSString *directoryPath = nil;
 	NSString *filePath = nil;
 	NSView *accessoryView = nil;
@@ -636,7 +603,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		[self _startEditingConnection];
 	}];
-#endif
 }
 
 -(void)showValidationAlertForError:(NSError*)err{
@@ -785,10 +751,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)updateSSLInterface:(id)sender
 {
-#ifndef SP_CODA
 	[self _startEditingConnection];
 	[self resizeTabViewToConnectionType:[self type] animating:YES];
-#endif
 }
 
 /**
@@ -804,7 +768,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)updateSplitViewSize
 {
-#ifndef SP_CODA
 	if ([dbDocument getConnection]) {
 		return;
 	}
@@ -812,7 +775,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[connectionSplitView setDelegate:nil];
 	[connectionSplitView setPosition:[[[databaseConnectionView subviews] objectAtIndex:0] frame].size.width ofDividerAtIndex:0];
 	[connectionSplitView setDelegate:self];
-#endif
 }
 
 #pragma mark -
@@ -865,7 +827,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)sortFavorites:(id)sender
 {
-#ifndef SP_CODA
     SPFavoritesSortItem previousSortItem = currentSortItem;
 	currentSortItem  = (SPFavoritesSortItem)[[sender menu] indexOfItem:sender];
 
@@ -877,7 +838,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (previousSortItem > SPFavoritesSortUnsorted) [[[sender menu] itemAtIndex:previousSortItem] setState:NSOffState];
 
 	[[[sender menu] itemAtIndex:currentSortItem] setState:NSOnState];
-#endif
 }
 
 /**
@@ -885,7 +845,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)reverseSortFavorites:(NSMenuItem *)sender
 {
-#ifndef SP_CODA
 	reverseFavoritesSort = (![sender state]);
 
 	[prefs setBool:reverseFavoritesSort forKey:SPFavoritesSortedInReverse];
@@ -894,7 +853,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self _sortFavorites];
 
 	[sender setState:reverseFavoritesSort];
-#endif
 }
 
 /**
@@ -902,7 +860,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)updateFavoriteSelection:(id)sender
 {
-#ifndef SP_CODA
 
 	// Clear the keychain referral items as appropriate
 	[self setConnectionKeychainID:nil];
@@ -1021,7 +978,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[prefs setInteger:[[fav objectForKey:SPFavoriteIDKey] integerValue] forKey:SPLastFavoriteID];
 
 	[self updateFavoriteNextKeyView];
-#endif
 }
 	
 /**
@@ -1029,7 +985,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)updateFavoriteNextKeyView
 {
-#ifndef SP_CODA
 	switch ([self type])
 	{
 		case SPTCPIPConnection:
@@ -1050,13 +1005,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			}
 			break;
 	}
-#endif
 }
 
 /**
  * Returns the selected favorite data dictionary or nil if nothing is selected.
  */
-#ifndef SP_CODA
 - (NSMutableDictionary *)selectedFavorite
 {
 	SPTreeNode *node = [self selectedFavoriteNode];
@@ -1454,7 +1407,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-#endif
 
 /**
  * Alert sheet callback method - invoked when the error sheet is closed.
@@ -1481,7 +1433,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails
 {
-#ifndef SP_CODA
 	// Complete any active editing
 	if ([[connectionView window] firstResponder]) {
 		[[connectionView window] endEditingFor:[[connectionView window] firstResponder]];
@@ -1706,7 +1657,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	favoriteNameFieldWasAutogenerated = NO;
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:SPConnectionFavoritesChangedNotification object:self];
-#endif
 }
 
 /**
@@ -1736,7 +1686,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * Sorts the connection favorites based on the selected criteria.
  */
 
-#ifndef SP_CODA
 - (void)_sortFavorites
 {
 	NSString *sortKey = SPFavoriteNameKey;
@@ -2088,7 +2037,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	return favoriteNode;
 }
-#endif
 
 /**
  * Strips any invalid characters form the supplied string. Invalid is defined as any characters that should
@@ -2101,7 +2049,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return [result stringByReplacingOccurrencesOfString:@"\n" withString:@""];
 }
 
-#ifndef SP_CODA
 /**
  * Generate a name for the current connection based on any other populated details.
  * Currently uses the host and database fields.
@@ -2173,7 +2120,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[progressIndicatorText setHidden:YES];
 	[favoritesOutlineView display];
 }
-#endif
 
 - (void)_documentWillClose:(NSNotification *)notification
 {
@@ -2202,7 +2148,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)initiateMySQLConnection
 {
-#ifndef SP_CODA
 	if (isTestingConnection) {
 		if (sshTunnel) {
 			[progressIndicatorText setStringValue:NSLocalizedString(@"Testing MySQL...", @"MySQL connection test very short status message")];
@@ -2224,7 +2169,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[connectButton setAction:@selector(cancelConnection:)];
 	[connectButton setEnabled:YES];
 	[connectButton display];
-#endif
 
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController MySQL connection task", dbDocument)
 	                           target:self
@@ -2373,9 +2317,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				if (sshTunnel) (void)([sshTunnel disconnect]), SPClear(sshTunnel);
 
 				SPClear(mySQLConnection);
-#ifndef SP_CODA
 				if (!cancellingConnection) [self _restoreConnectionInterface];
-#endif
 
 				return;
 			}
@@ -2444,9 +2386,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
 	
 	if(sshTunnel == nil) {
-		#ifndef SP_CODA
-				[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
-		#endif
+						[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
 
 				[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
 												errorMessage:@"Failed to Initialize SSH Handle"
@@ -2499,21 +2439,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		return;
 	}
 
-#ifndef SP_CODA
 	[progressIndicatorText setStringValue:NSLocalizedString(@"Connected", @"connection established message")];
 	[progressIndicatorText display];
-#endif
 
 	// Stop the current tab's progress indicator
 	[dbDocument setIsProcessing:NO];
 
 	// Successful connection!
-#ifndef SP_CODA
 	[connectButton setEnabled:NO];
 	[connectButton display];
 	[progressIndicator stopAnimation:self];
 	[progressIndicatorText setHidden:YES];
-#endif
 
 	// If SSL was enabled, check it was established correctly
 	if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
@@ -2525,17 +2461,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			);
 		}
 		else {
-#ifndef SP_CODA
 			[dbDocument setStatusIconToImageWithName:@"titlebarlock"];
-#endif
 		}
 	}
 
-#ifndef SP_CODA
 	// Re-enable favorites table view
 	[favoritesOutlineView setEnabled:YES];
 	[favoritesOutlineView display];
-#endif
 
 	// Release the tunnel if set - will now be retained by the connection
 	if (sshTunnel) SPClear(sshTunnel);
@@ -2564,9 +2496,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	if (newState == SPMySQLProxyIdle) {
 
-#ifndef SP_CODA
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
-#endif
 
 		[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
 		                                errorMessage:[theTunnel lastError]
@@ -2574,16 +2504,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		                                rawErrorText:[theTunnel lastError]];
 	}
 	else if (newState == SPMySQLProxyConnected) {
-#ifndef SP_CODA
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Connected", @"SSH connected titlebar marker")];
-#endif
 
 		[self initiateMySQLConnection];
 	}
 	else {
-#ifndef SP_CODA
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Connecting…", @"SSH connecting titlebar marker")];
-#endif
 	}
 }
 
@@ -2593,7 +2519,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)addConnectionToDocument
 {
-#ifndef SP_CODA
 	// Hide the connection view and restore the main view
 	[connectionView removeFromSuperviewWithoutNeedingDisplay];
 	[databaseConnectionView setHidden:NO];
@@ -2602,7 +2527,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	NSArray *toolbarItems = [[[dbDocument parentWindow] toolbar] items];
 
 	for (NSUInteger i = 0; i < [toolbarItems count]; i++) [[toolbarItems objectAtIndex:i] setEnabled:YES];
-#endif
 
 	// Pass the connection to the table document, allowing it to set
 	// up the other classes and the rest of the interface.
@@ -2617,9 +2541,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
 	BOOL isSSHTunnelBindError = NO;
 
-#ifndef SP_CODA
 	[self _restoreConnectionInterface];
-#endif
 
 	// Release as appropriate
 	if (sshTunnel) {
@@ -2670,10 +2592,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[self setPort:tunnelPort];
 		[self setHost:SPLocalhostAddress];
 
-#ifndef SP_CODA
 		// Change to standard TCP/IP connection view
 		[self resizeTabViewToConnectionType:SPTCPIPConnection animating:YES];
-#endif
 
 		// Initiate the connection after a half second delay to give the connection view a chance to resize
 		[self performSelector:@selector(initiateConnection:) withObject:self afterDelay:0.5];
@@ -2706,7 +2626,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 #pragma mark SplitView delegate methods
 
-#ifndef SP_CODA
 
 /**
  * When the split view is resized, trigger a resize in the hidden table
@@ -2725,12 +2644,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return 145.f;
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Outline view delegate methods
 
-#ifndef SP_CODA
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item
 {
@@ -2922,12 +2839,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self _setNodeIsExpanded:YES fromNotification:notification];
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Outline view drag & drop
 
-#ifndef SP_CODA
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView writeItems:(NSArray *)items toPasteboard:(NSPasteboard *)pboard
 {
@@ -3077,12 +2992,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return acceptedDrop;
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Textfield delegate methods
 
-#ifndef SP_CODA
 
 /**
  * React to control text changes in the connection interface
@@ -3153,12 +3066,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Tab bar delegate methods
 
-#ifndef SP_CODA
 
 /**
  * Trigger a resize action whenever the tab view changes. The connection
@@ -3187,7 +3098,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self _favoriteTypeDidChange];
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Color Selector delegate
@@ -3200,7 +3110,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #pragma mark -
 #pragma mark Scroll view notifications
 
-#ifndef SP_CODA
 
 /**
  * As the scrollview resizes, keep the details centered within it if
@@ -3235,12 +3144,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Menu Validation
 
-#ifndef SP_CODA
 
 /**
  * Menu item validation.
@@ -3306,12 +3213,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return YES;
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Favorites import/export delegate methods
 
-#ifndef SP_CODA
 
 /**
  * Called by the favorites importer when the imported data is available.
@@ -3367,12 +3272,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Private API
 
-#ifndef SP_CODA
 
 /**
  * Sets the expanded state of the node from the supplied outline view notification.
@@ -3387,7 +3290,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[node setNodeIsExpanded:expanded];
 }
 
-#endif
 
 #pragma mark - SPConnectionControllerInitializer
 
@@ -3401,11 +3303,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Weak reference
 		dbDocument = document;
 
-#ifndef SP_CODA
 		databaseConnectionSuperview = [dbDocument databaseView];
 #warning Private ivar accessed from outside (#2978)
 		databaseConnectionView = [dbDocument valueForKey:@"contentViewSplitter"];
-#endif
 
 		// Keychain references
 		connectionKeychainItemName = nil;
@@ -3440,7 +3340,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		[self registerForNotifications];
 
-#ifndef SP_CODA
 		// Hide the main view and position and display the connection view
 		[databaseConnectionView setHidden:YES];
 		[connectionView setFrame:[databaseConnectionView frame]];
@@ -3506,7 +3405,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Set sort items
 		currentSortItem = (SPFavoritesSortItem)[prefs integerForKey:SPFavoritesSortedBy];
 		reverseFavoritesSort = [prefs boolForKey:SPFavoritesSortedInReverse];
-#endif
 
 		initComplete = YES;
 	}
@@ -3579,7 +3477,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)loadNib
 {
-#ifndef SP_CODA
 
 	// Load the connection nib, keeping references to the top-level objects for later release
 	nibObjectsToRelease = [[NSMutableArray alloc] init];
@@ -3591,7 +3488,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[nibObjectsToRelease addObjectsFromArray:connectionViewTopLevelObjects];
 	[nibLoader release];
 
-#endif
 }
 
 /**
@@ -3604,7 +3500,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	                                             name:SPDocumentWillCloseNotification
 	                                           object:dbDocument];
 
-#ifndef SP_CODA
 	[[NSNotificationCenter defaultCenter] addObserver:self
 	                                         selector:@selector(scrollViewFrameChanged:)
 	                                             name:NSViewFrameDidChangeNotification
@@ -3719,7 +3614,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	       forKeyPath:SPFavoriteSSLCACertFileLocationKey
 	          options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
 	          context:NULL];
-#endif
 }
 
 /**
@@ -3741,7 +3635,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)setUpSelectedConnectionFavorite
 {
-#ifndef SP_CODA
 	SPTreeNode *favorite = [self _favoriteNodeForFavoriteID:[prefs integerForKey:[prefs boolForKey:SPSelectLastFavoriteUsed] ? SPLastFavoriteID : SPDefaultFavorite]];
 
 	if (favorite) {
@@ -3764,7 +3657,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		[self resizeTabViewToConnectionType:SPTCPIPConnection animating:NO];
 	}
-#endif
 }
 
 #pragma mark -
@@ -3776,7 +3668,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)_processFavoritesDataChange:(NSNotification *)aNotification
 {
-#ifndef SP_CODA
 	// Check the supplied notification for the sender; if the sender
 	// was this object, ignore it
 	if ([aNotification object] == self) return;
@@ -3797,7 +3688,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	[favoritesOutlineView selectRowIndexes:selectionIndexes byExtendingSelection:NO];
-#endif
 }
 
 /**
@@ -3805,7 +3695,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  *
  * @param node The node to traverse
  */
-#ifndef SP_CODA
 - (void)_restoreOutlineViewStateNode:(SPTreeNode *)node
 {
 	if ([node isGroup]) {
@@ -3824,11 +3713,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 	}
 }
-#endif
 
 #pragma mark - SPConnectionControllerDataSource
 
-#ifndef SP_CODA
 
 /**
  * Return the number of children for the specified item in the favourites tree.
@@ -3901,7 +3788,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-#endif
 
 #pragma mark -
 
@@ -3911,7 +3797,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
 	// Unregister observers
-#ifndef SP_CODA
 	[self removeObserver:self forKeyPath:SPFavoriteTypeKey];
 	[self removeObserver:self forKeyPath:SPFavoriteNameKey];
 	[self removeObserver:self forKeyPath:SPFavoriteHostKey];
@@ -3933,19 +3818,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
-#endif
-	
-#ifndef SP_CODA
+
 	SPClear(keychain);
-#endif
 	SPClear(prefs);
 
-#ifndef SP_CODA
 	SPClear(folderImage);
 	SPClear(quickConnectItem);
 	SPClear(quickConnectCell);
-#endif
-    
+
 	
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
@@ -3961,14 +3841,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (connectionSSHKeychainItemName)    SPClear(connectionSSHKeychainItemName);
 	if (connectionSSHKeychainItemAccount) SPClear(connectionSSHKeychainItemAccount);
 
-#ifndef SP_CODA
 	if (currentFavorite) SPClear(currentFavorite);
-#endif
-	
+
 	[super dealloc];
 }
-
-#ifndef SP_CODA
 
 /**
  * Called by the favorites exporter when the export completes.
@@ -3988,7 +3864,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		                    contextInfo:NULL];
 	}
 }
-#endif
 
 @end
 

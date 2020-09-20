@@ -83,9 +83,4 @@
 - (NSDictionary *) parseFieldDefinitionStringParts:(NSArray *)definitionParts;
 - (NSArray *) primaryKeyColumnNames;
 
-#ifdef SP_CODA /* glue */
-- (void)setTableDocumentInstance:(SPDatabaseDocument*)doc;
-- (void)setTableListInstance:(SPTablesList*)list;
-#endif
-
 @end

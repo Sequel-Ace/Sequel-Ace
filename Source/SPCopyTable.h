@@ -97,7 +97,6 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 */
 - (NSDragOperation)draggingSourceOperationMaskForLocal:(BOOL)isLocal;
 
-#ifndef SP_CODA /* method decls */
 /*!
 	@method	 rowsAsTabStringWithHeaders:onlySelectedRows:
 	@abstract   getter of the selected rows or all of the table for copy
@@ -119,7 +118,6 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 	@result	 The above described string, or nil if nothing selected
 */
 - (NSString *)rowsAsCsvStringWithHeaders:(BOOL)withHeaders onlySelectedRows:(BOOL)onlySelected blobHandling:(NSInteger)withBlobHandling;
-#endif
 
 /*!
  * Generate a string in form of INSERT INTO <table> VALUES () of 

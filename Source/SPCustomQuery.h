@@ -55,7 +55,6 @@
 	IBOutlet SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 
-#ifndef SP_CODA
 	IBOutlet id queryFavoritesButton;
 	IBOutlet NSMenuItem *queryFavoritesSearchMenuItem;
 	IBOutlet NSMenuItem *queryFavoritesSaveAsMenuItem;
@@ -76,7 +75,6 @@
 	IBOutlet NSMenuItem *saveHistoryMenuItem;
 	IBOutlet NSMenuItem *copyHistoryMenuItem;
 	IBOutlet NSPopUpButton *encodingPopUp;
-#endif
 
 	IBOutlet SPTextView *textView;
 	IBOutlet SPCopyTable *customQueryView;
@@ -107,11 +105,9 @@
 	IBOutlet NSMenuItem *autouppercaseKeywordsMenuItem;
 	IBOutlet NSMenuItem *commentCurrentQueryMenuItem;
 	IBOutlet NSMenuItem *commentLineOrSelectionMenuItem;
-	
-#ifndef SP_CODA
+
 	IBOutlet NSMenuItem *previousHistoryMenuItem;
 	IBOutlet NSMenuItem *nextHistoryMenuItem;
-#endif
 
 	IBOutlet NSButton *queryInfoButton;
 	IBOutlet SPSplitView *queryInfoPaneSplitView;
@@ -168,14 +164,6 @@
 	NSString *kCellEditorErrorTooManyMatches;
 }
 
-#ifdef SP_CODA
-@property (assign) SPDatabaseDocument* tableDocumentInstance;
-@property (assign) SPTablesList* tablesListInstance;
-@property (assign) SPTextView *textView;
-@property (assign) SPCopyTable *customQueryView;
-@property (assign) id affectedRowsText;
-#endif
-
 @property (assign) NSButton* runAllButton;
 @property (assign) BOOL textViewWasChanged;
 
@@ -231,10 +219,8 @@
 - (void)clearResultViewDetailsToRestore;
 - (void)autosizeColumns;
 
-#ifndef SP_CODA
 // MySQL Help
 - (void)showAutoHelpForCurrentWord:(id)sender;
-#endif
 - (void)setMySQLversion:(NSString *)theVersion;
 
 // Task interaction

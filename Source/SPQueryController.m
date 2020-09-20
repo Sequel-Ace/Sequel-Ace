@@ -35,7 +35,6 @@
 
 #import "pthread.h"
 
-#ifndef SP_CODA
 NSString *SPQueryConsoleWindowAutoSaveName = @"QueryConsole";
 NSString *SPTableViewDateColumnID          = @"messageDate";
 NSString *SPTableViewConnectionColumnID    = @"messageConnection";
@@ -46,7 +45,6 @@ static NSString *SPCompletionTokensFilename     = @"CompletionTokens.plist";
 static NSString *SPCompletionTokensKeywordsKey  = @"core_keywords";
 static NSString *SPCompletionTokensFunctionsKey = @"core_builtin_functions";
 static NSString *SPCompletionTokensSnippetsKey  = @"function_argument_snippets";
-#endif
 
 static NSUInteger SPMessageTruncateCharacterLength = 256;
 
@@ -64,9 +62,7 @@ static SPQueryController *sharedQueryController = nil;
 
 @implementation SPQueryController
 
-#ifndef SP_CODA
 @synthesize consoleFont;
-#endif
 
 /**
  * Returns the shared query console.
@@ -94,7 +90,6 @@ static SPQueryController *sharedQueryController = nil;
 - (id)init
 {
 	if ((self = [super initWithWindowNibName:@"Console"])) {
-#ifndef SP_CODA
 		messagesFullSet		= [[NSMutableArray alloc] init];
 		messagesFilteredSet	= [[NSMutableArray alloc] init];
 
@@ -113,14 +108,11 @@ static SPQueryController *sharedQueryController = nil;
 		favoritesContainer = [[NSMutableDictionary alloc] init];
 		historyContainer = [[NSMutableDictionary alloc] init];
 		contentFilterContainer = [[NSMutableDictionary alloc] init];
-#endif
 		completionKeywordList = nil;
 		completionFunctionList = nil;
 		functionArgumentSnippets = nil;
 		
-#ifndef SP_CODA
 		pthread_mutex_init(&consoleLock, NULL);
-#endif
 
 		NSError *error = [self loadCompletionLists];
 
@@ -223,12 +215,10 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)clearConsole:(id)sender
 {
-#ifndef SP_CODA
 	[messagesFullSet removeAllObjects];
 	[messagesFilteredSet removeAllObjects];
 
 	[consoleTableView reloadData];
-#endif
 }
 
 /**
@@ -236,7 +226,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)saveConsoleAs:(id)sender
 {
-#ifndef SP_CODA
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
 	[panel setAllowedFileTypes:@[SPFileExtensionSQL]];
@@ -256,7 +245,6 @@ static SPQueryController *sharedQueryController = nil;
 										 databases:[includeDatabaseButton state]] writeToFile:[[panel URL] path] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
         }
     }];
-#endif
 }
 
 /**
@@ -264,9 +252,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowTimeStamps:(id)sender
 {
-#ifndef SP_CODA
 	[[consoleTableView tableColumnWithIdentifier:SPTableViewDateColumnID] setHidden:[sender state]];
-#endif
 }
 
 /**
@@ -274,9 +260,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowConnections:(id)sender
 {
-#ifndef SP_CODA
 	[[consoleTableView tableColumnWithIdentifier:SPTableViewConnectionColumnID] setHidden:[sender state]];
-#endif
 }
 
 /**
@@ -284,9 +268,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowDatabases:(id)sender
 {
-#ifndef SP_CODA
 	[[consoleTableView tableColumnWithIdentifier:SPTableViewDatabaseColumnID] setHidden:[sender state]];
-#endif
 }
 
 /**
@@ -294,12 +276,10 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowSelectShowStatements:(id)sender
 {
-#ifndef SP_CODA
 	// Store the state of the toggle for later quick reference
 	showSelectStatementsAreDisabled = [sender state];
 
 	[self _updateFilterState];
-#endif
 }
 
 /**
@@ -307,12 +287,10 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowHelpStatements:(id)sender
 {
-#ifndef SP_CODA
 	// Store the state of the toggle for later quick reference
 	showHelpStatementsAreDisabled = [sender state];
 
 	[self _updateFilterState];
-#endif
 }
 
 /**
@@ -320,9 +298,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)showMessageInConsole:(NSString *)message connection:(NSString *)connection database:(NSString *)database
 {
-#ifndef SP_CODA
 	[self _addMessageToConsole:message connection:connection isError:NO database:database];
-#endif
 }
 
 /**
@@ -330,9 +306,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)showErrorInConsole:(NSString *)error connection:(NSString *)connection database:(NSString *)database
 {
-#ifndef SP_CODA
 	[self _addMessageToConsole:error connection:connection isError:YES database:database];
-#endif
 }
 
 /**
@@ -340,11 +314,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (NSUInteger)consoleMessageCount
 {
-#ifndef SP_CODA
 	return [messagesFullSet count];
-#else
-	return 0;
-#endif
 }
 
 #pragma mark -
@@ -355,7 +325,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)controlTextDidChange:(NSNotification *)notification
 {
-#ifndef SP_CODA
 	if ([[notification object] isEqualTo:consoleSearchField]) {
 
 		// Store the state of the text filter and the current filter string for later quick reference
@@ -365,7 +334,6 @@ static SPQueryController *sharedQueryController = nil;
 
 		[self _updateFilterState];
 	}
-#endif
 }
 
 /**
@@ -373,7 +341,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-#ifndef SP_CODA
 	// Show/hide logging disabled label
 	if ([keyPath isEqualToString:SPConsoleEnableLogging]) {
 		[loggingDisabledTextField setStringValue:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? @"" : NSLocalizedString(@"Query logging is currently disabled", @"query logging currently disabled label")];
@@ -395,7 +362,6 @@ static SPQueryController *sharedQueryController = nil;
 
 		[consoleTableView reloadData];
 	}
-#endif
 }
 
 /**
@@ -403,7 +369,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-#ifndef SP_CODA
 	if ([menuItem action] == @selector(copy:)) {
 		return ([consoleTableView numberOfSelectedRows] > 0);
 	}
@@ -412,27 +377,20 @@ static SPQueryController *sharedQueryController = nil;
 	if ([menuItem action] == @selector(clearConsole:)) {
 		return ([self consoleMessageCount] > 0);
 	}
-#endif
 
 	return [[self window] validateMenuItem:menuItem];
 }
 
 - (BOOL)allowConsoleUpdate
 {
-#ifndef SP_CODA
 	return allowConsoleUpdate;
-#else
-	return NO;
-#endif
 }
 
 - (void)setAllowConsoleUpdate:(BOOL)allowUpdate
 {
-#ifndef SP_CODA
 	allowConsoleUpdate = allowUpdate;
 	
 	if (allowUpdate && [[self window] isVisible]) [self updateEntries];
-#endif
 }
 
 /**
@@ -440,13 +398,10 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)updateEntries
 {
-#ifndef SP_CODA
 	[consoleTableView reloadData];
 	[consoleTableView scrollRowToVisible:([messagesVisibleSet count] - 1)];
-#endif
 }
 
-#ifndef SP_CODA
 /**
  * Return the AutoSaveName of the Query Console.
  */
@@ -454,7 +409,6 @@ static SPQueryController *sharedQueryController = nil;
 {
 	return SPQueryConsoleWindowAutoSaveName;
 }
-#endif
 
 #pragma mark -
 #pragma mark Privat API
@@ -465,7 +419,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)_updateFilterState
 {
-#ifndef SP_CODA
 	// Display start progress spinner
 	[progressIndicator setHidden:NO];
 	[progressIndicator startAnimation:self];
@@ -523,7 +476,6 @@ static SPQueryController *sharedQueryController = nil;
 	// Hide progress spinner
 	[progressIndicator setHidden:YES];
 	[progressIndicator stopAnimation:self];
-#endif
 }
 
 /**
@@ -543,7 +495,6 @@ static SPQueryController *sharedQueryController = nil;
 {
 	BOOL messageMatchesCurrentFilters = YES;
 
-#ifndef SP_CODA
 	// Check whether to hide the message based on the current filter text, if any
 	if (filterIsActive && [message rangeOfString:activeFilterString options:NSCaseInsensitiveSearch].location == NSNotFound) {
 		messageMatchesCurrentFilters = NO;
@@ -561,7 +512,6 @@ static SPQueryController *sharedQueryController = nil;
 	if (messageMatchesCurrentFilters && showHelpStatementsAreDisabled && ([[message uppercaseString] hasPrefix:@"HELP"])) {
 		messageMatchesCurrentFilters = NO;
 	}
-#endif
 
 	return messageMatchesCurrentFilters;
 }
@@ -574,7 +524,6 @@ static SPQueryController *sharedQueryController = nil;
 {
 	NSMutableString *consoleString = [NSMutableString string];
 
-#ifndef SP_CODA
 	NSArray *messageCopy = [messagesVisibleSet copy];
 	
 	for (SPConsoleMessage *message in messagesVisibleSet)
@@ -607,7 +556,6 @@ static SPQueryController *sharedQueryController = nil;
 	}
 	
 	[messageCopy release];
-#endif
 
 	return consoleString;
 }
@@ -617,7 +565,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database
 {
-#ifndef SP_CODA
 	NSString *messageTemp = [[message stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
 
 	// Only append a semi-colon (;) if the supplied message is not an error
@@ -647,7 +594,6 @@ static SPQueryController *sharedQueryController = nil;
 	});
 
 	pthread_mutex_unlock(&consoleLock);
-#endif
 }
 
 #pragma mark - SPQueryControllerInitializer
@@ -657,7 +603,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)awakeFromNib
 {
-#ifndef SP_CODA /* init ivars */
 	prefs = [NSUserDefaults standardUserDefaults];
 
 	[self setWindowFrameAutosaveName:SPQueryConsoleWindowAutoSaveName];
@@ -696,7 +641,6 @@ static SPQueryController *sharedQueryController = nil;
 
 	//allow drag-out copying of selected rows
 	[consoleTableView setDraggingSourceOperationMask:NSDragOperationCopy forLocal:NO];
-#endif
 }
 
 /**
@@ -763,11 +707,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
 {
-#ifndef SP_CODA
 	return [messagesVisibleSet count];
-#else
-	return 0;
-#endif
 }
 
 /**
@@ -775,7 +715,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row
 {
-#ifndef SP_CODA
 	NSString *returnValue = nil;
 
 	NSString *identifier = [tableColumn identifier];
@@ -815,9 +754,6 @@ static SPQueryController *sharedQueryController = nil;
 	}
 
 	return [[[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes] autorelease];
-#else
-	return nil;
-#endif
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
@@ -835,7 +771,6 @@ static SPQueryController *sharedQueryController = nil;
 
 - (NSURL *)registerDocumentWithFileURL:(NSURL *)fileURL andContextInfo:(NSMutableDictionary *)contextInfo
 {
-#ifndef SP_CODA
 	// Register a new untiled document and return its URL
 	if (fileURL == nil) {
 		NSURL *new = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
@@ -912,14 +847,10 @@ static SPQueryController *sharedQueryController = nil;
 	}
 
 	return fileURL;
-#else
-	return nil;
-#endif
 }
 
 - (void)removeRegisteredDocumentWithFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	// Check for multiple instance of the same document.
 	// Remove it if only one instance was registerd.
 	NSArray *allDocs = [SPAppDelegate orderedDocuments];
@@ -948,12 +879,10 @@ static SPQueryController *sharedQueryController = nil;
 	if ([contentFilterContainer objectForKey:[fileURL absoluteString]]) {
 		[contentFilterContainer removeObjectForKey:[fileURL absoluteString]];
 	}
-#endif
 }
 
 - (void)replaceContentFilterByArray:(NSArray *)contentFilterArray ofType:(NSString *)filterType forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([contentFilterContainer objectForKey:[fileURL absoluteString]]) {
 		NSMutableDictionary *c = [[NSMutableDictionary alloc] init];
 		[c setDictionary:[contentFilterContainer objectForKey:[fileURL absoluteString]]];
@@ -961,16 +890,13 @@ static SPQueryController *sharedQueryController = nil;
 		[contentFilterContainer setObject:c forKey:[fileURL absoluteString]];
 		[c release];
 	}
-#endif
 }
 
 - (void)replaceFavoritesByArray:(NSArray *)favoritesArray forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([favoritesContainer objectForKey:[fileURL absoluteString]]) {
 		[favoritesContainer setObject:favoritesArray forKey:[fileURL absoluteString]];
 	}
-#endif
 }
 
 /**
@@ -982,21 +908,16 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)removeFavoriteAtIndex:(NSUInteger)index forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	[[favoritesContainer objectForKey:[fileURL absoluteString]] removeObjectAtIndex:index];
-#endif
 }
 
 - (void)insertFavorite:(NSDictionary *)favorite atIndex:(NSUInteger)index forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	[[favoritesContainer objectForKey:[fileURL absoluteString]] insertObject:favorite atIndex:index];
-#endif
 }
 
 - (void)replaceHistoryByArray:(NSArray *)historyArray forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
 		[historyContainer setObject:historyArray forKey:[fileURL absoluteString]];
 	}
@@ -1008,21 +929,17 @@ static SPQueryController *sharedQueryController = nil;
 	if (![fileURL isFileURL] && ![historyArray count]) {
 		[prefs setObject:historyArray forKey:SPQueryHistory];
 	}
-#endif
 }
 
 - (void)addFavorite:(NSDictionary *)favorite forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([favoritesContainer objectForKey:[fileURL absoluteString]]) {
 		[[favoritesContainer objectForKey:[fileURL absoluteString]] addObject:favorite];
 	}
-#endif
 }
 
 - (void)addHistory:(NSString *)history forFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	NSUInteger maxHistoryItems = [[prefs objectForKey:SPCustomQueryMaxHistoryItems] integerValue];
 
 	// Save each history item due to its document source
@@ -1060,34 +977,28 @@ static SPQueryController *sharedQueryController = nil;
 		[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
 		[uniquifier release];
 	}
-#endif
 }
 
 - (NSMutableArray *)favoritesForFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([favoritesContainer objectForKey:[fileURL absoluteString]]) {
 		return [favoritesContainer objectForKey:[fileURL absoluteString]];
 	}
-#endif
 
 	return [NSMutableArray array];
 }
 
 - (NSMutableArray *)historyForFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
 		return [historyContainer objectForKey:[fileURL absoluteString]];
 	}
-#endif
 
 	return [NSMutableArray array];
 }
 
 - (NSArray *)historyMenuItemsForFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
 		NSMutableArray *returnArray = [NSMutableArray arrayWithCapacity:[[historyContainer objectForKey:[fileURL absoluteString]] count]];
 		NSMenuItem *historyMenuItem;
@@ -1104,7 +1015,6 @@ static SPQueryController *sharedQueryController = nil;
 
 		return returnArray;
 	}
-#endif
 
 	return @[];
 }
@@ -1117,14 +1027,12 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (NSUInteger)numberOfHistoryItemsForFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
 		return [[historyContainer objectForKey:[fileURL absoluteString]] count];
 	}
 	else {
 		return 0;
 	}
-#endif
 
 	return 0;
 }
@@ -1138,11 +1046,9 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (NSMutableDictionary *)contentFilterForFileURL:(NSURL *)fileURL
 {
-#ifndef SP_CODA
 	if ([contentFilterContainer objectForKey:[fileURL absoluteString]]) {
 		return [contentFilterContainer objectForKey:[fileURL absoluteString]];
 	}
-#endif
 
 	return [NSMutableDictionary dictionary];
 }
@@ -1160,7 +1066,6 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}
 
-#ifndef SP_CODA
 	if (includeGlobals && [prefs objectForKey:SPQueryFavorites]) {
 
 		for (id fav in [prefs objectForKey:SPQueryFavorites])
@@ -1171,7 +1076,6 @@ static SPQueryController *sharedQueryController = nil;
 			}
 		}
 	}
-#endif
 
 	return [result autorelease];
 }
@@ -1209,12 +1113,9 @@ static SPQueryController *sharedQueryController = nil;
 
 - (void)dealloc
 {
-#ifndef SP_CODA
 	messagesVisibleSet = nil;
-#endif
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-#ifndef SP_CODA
 	SPClear(dateFormatter);
 
 	SPClear(messagesFullSet);
@@ -1224,16 +1125,13 @@ static SPQueryController *sharedQueryController = nil;
 	SPClear(favoritesContainer);
 	SPClear(historyContainer);
 	SPClear(contentFilterContainer);
-#endif
 
 	if (completionKeywordList) SPClear(completionKeywordList);
 	if (completionFunctionList) SPClear(completionFunctionList);
 	if (functionArgumentSnippets) SPClear(functionArgumentSnippets);
 	
-#ifndef SP_CODA
 	pthread_mutex_destroy(&consoleLock);
-#endif
-	
+
 	[super dealloc];
 }
 

@@ -59,15 +59,11 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	}
 
 	if ((self = [super initWithWindowNibName:@"ContentFilterManager"])) {
-#ifndef SP_CODA
 		prefs = [NSUserDefaults standardUserDefaults];
-#endif
 
 		contentFilters = [[NSMutableArray alloc] init];
 		tableDocumentInstance = document;
-#ifndef SP_CODA
 		documentFileURL = [[tableDocumentInstance fileURL] copy];
-#endif
 
 		filterType = [compareType copy];
 	}
@@ -92,7 +88,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		@"ConjunctionLabel" : @""
 	}];
 
-#ifndef SP_CODA /* prefs access */
 	// Build data source for global content filter (as mutable copy! otherwise each
 	// change will be stored in the prefs at once)
 	if ([[prefs objectForKey:SPContentFilters] objectForKey:filterType]) {
@@ -121,7 +116,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			for(id fav in [filters objectForKey:filterType])
 				[contentFilters addObject:[[fav mutableCopy] autorelease]];
 	}
-#endif
 
 	// Select the first query if any
 	NSUInteger i = 0;
@@ -247,13 +241,11 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		[contentFilters insertObject:filter atIndex:insertIndex];
 	}
 
-#ifndef SP_CODA
 	// If the DatabaseDocument is an on-disk document, add the favourite to the bottom of that document's favourites
 	else if (![tableDocumentInstance isUntitled]) {
 		insertIndex = [contentFilters count] - 1;
 		[contentFilters addObject:filter];
 	}
-#endif
 
 	// Otherwise, add to the bottom of the Global list by default
 	else {
@@ -326,7 +318,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (IBAction)exportContentFilter:(id)sender
 {
-#ifndef SP_CODA
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
 	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
@@ -340,7 +331,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	{
 		[self savePanelDidEnd:panel returnCode:returnCode contextInfo:SPExportFilterAction];
 	}];
-#endif
 }
 
 /**
@@ -348,7 +338,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (IBAction)importContentFilterByAdding:(id)sender
 {
-#ifndef SP_CODA
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 
 	[panel setCanSelectHiddenExtension:YES];
@@ -362,7 +351,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	{
 		[self importPanelDidEnd:panel returnCode:returnCode contextInfo:nil];
 	}];
-#endif
 }
 
 /**
@@ -389,7 +377,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		if ([contentFilterTableView numberOfSelectedRows] == 1)
 			[[self window] makeFirstResponder:contentFilterTableView];
 
-#ifndef SP_CODA
 		// Update current document's content filters in the SPQueryController
 		[[SPQueryController sharedQueryController] replaceContentFilterByArray:
 			[self contentFilterForFileURL:documentFileURL] ofType:filterType forFileURL:documentFileURL];
@@ -402,7 +389,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 		// Inform all opened documents to update the query favorites list
 		[[NSNotificationCenter defaultCenter] postNotificationName:SPContentFiltersHaveBeenUpdatedNotification object:self];
-#endif
 	}
 }
 
@@ -819,7 +805,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (void)importPanelDidEnd:(NSOpenPanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
-#ifndef SP_CODA
 	if (returnCode == NSModalResponseOK) {
 
 		NSString *filename = [[[panel URLs] objectAtIndex:0] path];
@@ -857,7 +842,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 			if([[spf objectForKey:SPContentFilters] objectForKey:filterType] && [[[spf objectForKey:SPContentFilters] objectForKey:filterType] count]) {
 
-#ifndef SP_CODA
 				// If the DatabaseDocument is an on-disk document, add the favourites to the bottom of it
 				if (![tableDocumentInstance isUntitled]) {
 					insertionIndexStart = [contentFilters count];
@@ -867,7 +851,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 				// Otherwise, add to the bottom of the Global array
 				else {
-#endif
 					NSUInteger i, l;
 					insertionIndexStart = 1;
 					while (![[contentFilters objectAtIndex:insertionIndexStart] objectForKey:@"headerOfFileURL"]) {
@@ -877,9 +860,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				 		[contentFilters insertObject:[[[spf objectForKey:SPContentFilters] objectForKey:filterType] objectAtIndex:i] atIndex:insertionIndexStart + i];
 					}
 					insertionIndexEnd = insertionIndexStart + i;
-#ifndef SP_CODA
 				}
-#endif
 
 				[contentFilterArrayController rearrangeObjects];
 				[contentFilterTableView reloadData];
@@ -900,7 +881,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			}
 		}
 	}
-#endif
 }
 
 
@@ -909,8 +889,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (void)savePanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
-
-#ifndef SP_CODA
 	if([contextInfo isEqualToString:SPExportFilterAction]) {
 		if (returnCode == NSModalResponseOK) {
 
@@ -957,7 +935,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			if (error) [[NSAlert alertWithError:error] runModal];
 		}
 	}
-#endif
 }
 
 #pragma mark -

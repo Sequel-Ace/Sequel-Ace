@@ -57,9 +57,7 @@
 {
 	if ((self = [super initWithWindowNibName:@"QueryFavoriteManager"])) {
 
-#ifndef SP_CODA
 		prefs = [NSUserDefaults standardUserDefaults];
-#endif
 
 		favorites = [[NSMutableArray alloc] init];
 		
@@ -69,9 +67,7 @@
 			return nil;
 		}
 		tableDocumentInstance = [managerDelegate valueForKeyPath:@"tableDocumentInstance"];
-#ifndef SP_CODA
 		delegatesFileURL = [tableDocumentInstance fileURL];
-#endif
 	}
 	
 	return self;
@@ -82,7 +78,6 @@
  */
 - (void)awakeFromNib
 {
-#ifndef SP_CODA
 	[favorites addObject:@{
 			@"name"            : @"Global",
 			@"headerOfFileURL" : @"",
@@ -128,7 +123,6 @@
 
 	// Set Remove button state
 	[removeButton setEnabled:([favoritesTableView numberOfSelectedRows] > 0)];
-#endif
 }
 
 #pragma mark -
@@ -138,7 +132,6 @@
  * Returns the query favorites array for fileURL.
  * fileURL == nil → global favorites
  */
-#ifndef SP_CODA
 - (NSMutableArray *)queryFavoritesForFileURL:(NSURL *)fileURL
 {
 	NSMutableArray *favs = [NSMutableArray array];
@@ -173,7 +166,6 @@
 
 	return favs;
 }
-#endif
 
 /**
  * This method is only implemented to be compatible with SPTextView.
@@ -191,7 +183,6 @@
  */
 - (IBAction)addQueryFavorite:(id)sender
 {
-#ifndef SP_CODA 
 	NSMutableDictionary *favorite;
 	NSUInteger insertIndex;
 
@@ -243,7 +234,6 @@
 
 	[removeButton setEnabled:([favoritesTableView numberOfSelectedRows] > 0)];
 	[[self window] makeFirstResponder:favoriteNameTextField];
-#endif
 }
 
 /**
@@ -313,7 +303,6 @@
  */
 - (IBAction)saveFavoriteToFile:(id)sender
 {
-#ifndef SP_CODA
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
 	[panel setAllowedFileTypes:@[SPFileExtensionSQL]];
@@ -333,12 +322,10 @@
 	{
 		[self savePanelDidEnd:panel returnCode:returnCode contextInfo:@"saveQuery"];
 	}];
-#endif
 }
 
 - (IBAction)exportFavorites:(id)sender
 {
-#ifndef SP_CODA
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
 	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
@@ -352,12 +339,10 @@
 	{
 		[self savePanelDidEnd:panel returnCode:returnCode contextInfo:@"exportFavorites"];
 	}];
-#endif
 }
 
 - (IBAction)importFavoritesByAdding:(id)sender
 {
-#ifndef SP_CODA
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 
 	[panel setCanSelectHiddenExtension:YES];
@@ -371,7 +356,6 @@
 	{
 		[self importPanelDidEnd:panel returnCode:returnCode contextInfo:NULL];
 	}];
-#endif
 }
 
 - (IBAction)importFavoritesByReplacing:(id)sender
@@ -455,7 +439,6 @@
  */
 - (IBAction)closeQueryManagerSheet:(id)sender
 {
-#ifndef SP_CODA
 
 	// First check for ESC if pressed while inline editing
 	if(![sender tag] && isTableCellEditing) {
@@ -486,16 +469,13 @@
 		// Inform all opened documents to update the query favorites list
 		[[NSNotificationCenter defaultCenter] postNotificationName:SPQueryFavoritesHaveBeenUpdatedNotification object:self];
 	}
-#endif
 
 }
 
-#ifndef SP_CODA
 - (IBAction)showHelp:(id)sender
 {
 	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:NSLocalizedString(@"https://sequel-ace.com/favorites.html", @"Localized help page for query favourites - do not localize if no translated webpage is available")]];
 }
-#endif
 
 #pragma mark -
 #pragma mark TableView datasource methods
@@ -813,7 +793,6 @@
  */
 - (void)importPanelDidEnd:(NSOpenPanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
-#ifndef SP_CODA
 
 	if (returnCode == NSModalResponseOK) {
 
@@ -887,7 +866,6 @@
 			}
 		}
 	}
-#endif
 }
 
 /**
@@ -895,7 +873,6 @@
  */
 - (void)savePanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
-#ifndef SP_CODA
 
 	if([contextInfo isEqualToString:@"saveQuery"]) {
 		if (returnCode == NSModalResponseOK) {
@@ -955,7 +932,6 @@
 
 		}
 	}
-#endif
 }
 
 #pragma mark -

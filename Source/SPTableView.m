@@ -107,7 +107,6 @@
  */
 - (NSMenu *)menuForEvent:(NSEvent *)event
 {
-#ifndef SP_CODA /* menuForEvent: */
 	// Try to retrieve a reference to the table document (assuming this is frontmost tab)
 	SPDatabaseDocument *parentTableDocument = nil;
 	
@@ -148,7 +147,7 @@
 		[self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
 		[[self window] makeFirstResponder:self];
 	}
-#endif
+
 	return [self menu];
 }
 
@@ -314,34 +313,6 @@ pass_keyDown_to_super:
 {
 	emptyDoubleClickAction = aSelector;
 }
-
-#ifdef SP_CODA
-
-- (void)delete:(id)sender
-{
-	if ( [[self delegate] respondsToSelector:@selector(removeField:)] )
-	{
-		[[self delegate] performSelector:@selector(removeField:) withObject:self];
-	}
-	else if ( [[self delegate] respondsToSelector:@selector(removeIndex:)] )
-	{
-		[[self delegate] performSelector:@selector(removeIndex:) withObject:self];
-	}
-}
-
-
-- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
-{
-	if ( [menuItem action] == @selector(delete:) )
-	{	
-		if ( [self numberOfSelectedRows] == 0 )
-			return NO;
-	}
-	
-	return YES;
-}
-
-#endif
 
 /**
  * On a double click, determine whether the action was in the empty area
