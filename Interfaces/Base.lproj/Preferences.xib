@@ -1595,6 +1595,20 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <binding destination="117" name="value" keyPath="values.CustomQueryEnableSyntaxHighlighting" id="kJw-7M-n52"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="UnY-1b-NTN">
+                    <rect key="frame" x="270" y="18" width="144" height="18"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <buttonCell key="cell" type="check" title="Bracket highlighting" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="vxK-rA-lkM">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <connections>
+                            <binding destination="117" name="value" keyPath="values.CustomQueryEnableBracketHighliting" id="VaB-NN-oGg"/>
+                        </connections>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.CustomQueryEnableBracketHighlighting" id="635-un-YeG"/>
+                    </connections>
+                </button>
             </subviews>
             <point key="canvasLocation" x="200" y="1302.5"/>
         </customView>
