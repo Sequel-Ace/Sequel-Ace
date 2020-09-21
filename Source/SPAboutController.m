@@ -31,7 +31,7 @@
 #import "SPAboutController.h"
 #import "SPOSInfo.h"
 
-static NSString *SPSnapshotBuildIndicator = @"beta";
+static NSString *SPSnapshotBuildIndicator = @"Beta";
 
 static NSString *SPCreditsFilename = @"Credits";
 static NSString *SPLicenseFilename = @"License";
