@@ -33,14 +33,10 @@
 
 @interface SPContentFilterManager : NSWindowController <NSOpenSavePanelDelegate>
 {
-#ifndef SP_CODA /* ivars */
 	NSUserDefaults *prefs;
-#endif
 	
 	SPDatabaseDocument *tableDocumentInstance;
-#ifndef SP_CODA /* ivars */
 	NSURL *documentFileURL;
-#endif
 
 	IBOutlet id encodingPopUp;
 	IBOutlet id contentFilterTableView;

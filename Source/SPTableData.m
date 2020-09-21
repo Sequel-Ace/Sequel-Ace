@@ -1162,10 +1162,8 @@
 
 		SPRowCountQueryUsageLevels rowCountLevel = SPRowCountFetchAlways;
 		NSInteger rowCountCheapBoundary = 5242880;
-#ifndef SP_CODA
 		rowCountLevel = (SPRowCountQueryUsageLevels)[[[NSUserDefaults standardUserDefaults] objectForKey:SPTableRowCountQueryLevel] integerValue];
 		rowCountCheapBoundary = [[[NSUserDefaults standardUserDefaults] objectForKey:SPTableRowCountCheapSizeBoundary] integerValue];
-#endif
 
 		if (rowCountLevel == SPRowCountFetchNever
 			|| (rowCountLevel == SPRowCountFetchIfCheap
@@ -1451,19 +1449,5 @@
 	while (pthread_mutex_trylock(&dataProcessingLock)) usleep(10000);
 	pthread_mutex_unlock(&dataProcessingLock);
 }
-
-#ifdef SP_CODA /* glue */
-
-- (void)setTableDocumentInstance:(SPDatabaseDocument *)doc
-{
-	tableDocumentInstance = doc;
-}
-
-- (void)setTableListInstance:(SPTablesList *)list
-{
-	tableListInstance = list;
-}
-
-#endif
 
 @end

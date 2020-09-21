@@ -30,13 +30,9 @@
 
 #import "SPAlertSheets.h"
 #import "SPTooltip.h"
-#ifndef SP_CODA /* headers */
 #import "SPBundleHTMLOutputController.h"
-#endif
 #import "SPCustomQuery.h"
-#ifndef SP_CODA /* headers */
 #import "SPAppController.h"
-#endif
 #import "SPFieldEditorController.h"
 #import "SPTextView.h"
 #import "SPWindowController.h"
@@ -504,7 +500,6 @@
 	[self setEditable:editableStatus];
 }
 
-#ifndef SP_CODA
 - (IBAction)executeBundleItemForInputField:(id)sender
 {
 
@@ -889,6 +884,5 @@
 	else if([anEvent deltaZ]<-5.0)
 		[self makeTextSizeSmaller];
 }
-#endif
 
 @end

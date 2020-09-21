@@ -34,11 +34,9 @@
 
 @interface SPQueryFavoriteManager : NSWindowController <NSOpenSavePanelDelegate>
 {
-#ifndef SP_CODA /* ivars */
 	NSUserDefaults *prefs;
-
 	NSURL *delegatesFileURL;
-#endif
+
 	SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet NSPopUpButton *encodingPopUp;
 	IBOutlet NSTableView *favoritesTableView;
@@ -56,8 +54,6 @@
 }
 
 - (id)initWithDelegate:(id)managerDelegate;
-
-#ifndef SP_CODA
 
 // Accessors
 - (NSMutableArray *)queryFavoritesForFileURL:(NSURL *)fileURL;
@@ -79,6 +75,5 @@
 - (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
 - (void)importPanelDidEnd:(NSOpenPanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
 - (void)savePanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
-#endif
 
 @end

@@ -123,15 +123,9 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		staticPrefix = nil;
 		suggestions = nil;
 		autocompletePlaceholderWasInserted = NO;
-#ifndef SP_CODA
 		prefs = [NSUserDefaults standardUserDefaults];
-#endif
 
-#ifndef SP_CODA
 		tableFont = [NSUnarchiver unarchiveObjectWithData:[[NSUserDefaults standardUserDefaults] dataForKey:SPCustomQueryEditorFont]];
-#else
-		tableFont = [NSFont userFixedPitchFontOfSize:10.0];
-#endif
 		[self setupInterface];
 
 		syncArrowImages = [[NSArray alloc] initWithObjects:[NSImage imageNamed:@"sync_arrows_01"],
@@ -1087,14 +1081,13 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	if(backtickMode && !triggerMode) {
 		[theView performSelector:@selector(moveRight:)];
 	}
-#ifndef SP_CODA
+
 	// If it's a function or procedure append () and if a argument list can be retieved insert them as snippets
 	else if([prefs boolForKey:SPCustomQueryFunctionCompletionInsertsArguments] && ([[[filtered objectAtIndex:[theTableView selectedRow]] objectForKey:@"image"] hasPrefix:@"func"] || [[[filtered objectAtIndex:[theTableView selectedRow]] objectForKey:@"image"] hasPrefix:@"proc"]) && ![aString hasSuffix:@")"]) {
 		NSString *functionArgumentSnippet = [NSString stringWithFormat:@"(%@)", [[SPQueryController sharedQueryController] argumentSnippetForFunction:aString]];
 		[theView insertAsSnippet:functionArgumentSnippet atRange:[theView selectedRange]];
 		if([functionArgumentSnippet length] == 2) [theView performSelector:@selector(moveLeft:)];
 	}
-#endif
 }
 
 - (void)completeAndInsertSnippet

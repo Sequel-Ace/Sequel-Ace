@@ -39,14 +39,10 @@
 #import "SPTextAndLinkCell.h"
 #import "SPTooltip.h"
 #import "SPAlertSheets.h"
-#ifndef SP_CODA /* headers */
 #import "SPBundleHTMLOutputController.h"
-#endif
 #import "SPGeometryDataView.h"
-#ifndef SP_CODA /* headers */
 #import "SPBundleEditorController.h"
 #import "SPAppController.h"
-#endif
 #import "SPTablesList.h"
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseContentViewDelegate.h"
@@ -103,7 +99,6 @@ static const NSInteger kBlobAsImageFile = 4;
  */
 - (void)copy:(id)sender
 {
-#ifndef SP_CODA /* copy table rows */
 	NSString *tmp = nil;
 	
 	if ([sender tag] == SPEditMenuCopyAsSQL || [sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
@@ -133,23 +128,12 @@ static const NSInteger kBlobAsImageFile = 4;
 			[pb setString:tmp forType:NSTabularTextPboardType];
 		}
 	}
-#endif
 }
-
-#ifdef SP_CODA
-
-- (void)delete:(id)sender
-{
-        [tableInstance removeRow:self];
-}
-
-#endif
 
 /**
  * Get selected rows a string of newline separated lines of tab separated fields
  * the value in each field is from the objects description method
  */
-#ifndef SP_CODA /* get rows as string */
 - (NSString *)rowsAsTabStringWithHeaders:(BOOL)withHeaders onlySelectedRows:(BOOL)onlySelected blobHandling:(NSInteger)withBlobHandling
 {
 	if (onlySelected && [self numberOfSelectedRows] == 0) return nil;
@@ -416,7 +400,6 @@ static const NSInteger kBlobAsImageFile = 4;
 
 	return result;
 }
-#endif
 
 /*
  * Return selected rows as SQL INSERT INTO `foo` VALUES (baz) string.
@@ -829,11 +812,9 @@ static const NSInteger kBlobAsImageFile = 4;
 	NSRange linebreakRange;
 	double rowStep;
 	unichar breakChar;
-#ifndef SP_CODA /* patch */
+
 	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
-#else
-	NSFont *tableFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
-#endif
+
 	NSUInteger columnIndex = (NSUInteger)[[columnDefinition objectForKey:@"datacolumnindex"] integerValue];
 	NSDictionary *stringAttributes = @{NSFontAttributeName : tableFont};
 	Class spmysqlGeometryData = [SPMySQLGeometryData class];
@@ -939,7 +920,6 @@ static const NSInteger kBlobAsImageFile = 4;
 - (NSMenu *)menuForEvent:(NSEvent *)event 
 {
 	NSMenu *menu = [self menu];
-#ifndef SP_CODA /* menuForEvent: */
 
 	if(![[self delegate] isKindOfClass:[SPCustomQuery class]] && ![[self delegate] isKindOfClass:[SPTableContent class]]) return menu;
 
@@ -1006,7 +986,7 @@ static const NSInteger kBlobAsImageFile = 4;
 
 		[bundleSubMenuItem release];
 	}
-#endif
+
 	return menu;
 
 }
@@ -1041,7 +1021,6 @@ static const NSInteger kBlobAsImageFile = 4;
  */
 - (BOOL)validateMenuItem:(NSMenuItem*)anItem
 {
-#ifndef SP_CODA /* validateMenuItem: */
 	NSInteger menuItemTag = [anItem tag];
 
 	if ([anItem action] == @selector(performFindPanelAction:)) {
@@ -1067,17 +1046,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	if (menuItemTag == SPEditMenuCopyAsSQL || menuItemTag == SPEditMenuCopyAsSQLNoAutoInc) {
 		return (columnDefinitions != nil && [self numberOfSelectedRows] > 0);
 	}
-#endif
-#ifdef SP_CODA
-	if ( [anItem action] == @selector(selectAll:) )
-		return YES;
-		
-	if ( [anItem action] == @selector(delete:) )
-	{
-		if ( [self numberOfSelectedRows] > 0 )
-			return YES;
-	}
-#endif
+
 	return NO;
 }
 
@@ -1248,9 +1217,7 @@ static const NSInteger kBlobAsImageFile = 4;
 - (BOOL)shouldUseFieldEditorForRow:(NSUInteger)rowIndex column:(NSUInteger)colIndex checkWithLock:(pthread_mutex_t *)dataLock
 {
 	// Return YES if the multiple line editing button is enabled - triggers sheet editing on all cells.
-#ifndef SP_CODA
 	if ([prefs boolForKey:SPEditInSheetEnabled]) return YES;
-#endif
 	
 	// Retrieve the column definition
 	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
@@ -1300,7 +1267,6 @@ static const NSInteger kBlobAsImageFile = 4;
 
 - (IBAction)executeBundleItemForDataTable:(id)sender
 {
-#ifndef SP_CODA /* executeBundleItemForDataTable: */
 	NSInteger idx = [sender tag] - 1000000;
 	NSString *infoPath = nil;
 	NSArray *bundleItems = [SPAppDelegate bundleItemsForScope:SPBundleScopeDataTable];
@@ -1591,7 +1557,6 @@ static const NSInteger kBlobAsImageFile = 4;
 	}
 
 	if (cmdData) [cmdData release];
-#endif
 }
 
 #pragma mark -
@@ -1609,9 +1574,7 @@ static const NSInteger kBlobAsImageFile = 4;
 - (void)dealloc
 {
 	if (columnDefinitions) SPClear(columnDefinitions);
-#ifndef SP_CODA
 	SPClear(prefs);
-#endif
 
 	[super dealloc];
 }

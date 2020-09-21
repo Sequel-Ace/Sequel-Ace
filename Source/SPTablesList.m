@@ -166,7 +166,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
 
 	if (selectedTableName) previousSelectedTable = [[NSString alloc] initWithString:selectedTableName];
-#ifndef SP_CODA /* table list filtering */
+
 	if (isTableListFiltered) {
 		previousFilterString = [[NSString alloc] initWithString:[listFilterField stringValue]];
 		if (filteredTables) [filteredTables release];
@@ -177,13 +177,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[self onMainThread] clearFilter];
 	}
 	tableListContainsViews = NO;
-#endif
 	tableListIsSelectable = YES;
-#ifndef SP_CODA
 	[self deselectAllTables];
 
 	tableListIsSelectable = previousTableListIsSelectable;
-#endif
 	SPMainQSync(^{
 		//this has to be executed en-block on the main queue, otherwise the table view might have a chance to access released memory before we tell it to throw away everything.
 		[tables removeAllObjects];
@@ -249,7 +246,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Reorder the tables in alphabetical order
 		[tables sortArrayUsingSelector:@selector(localizedCompare:) withPairedMutableArrays:tableTypes, nil];
 
-#ifndef SP_CODA /* table procedures and functions */
 		/* Grab the procedures and functions
 		 *
 		 * Using information_schema gives us more info (for information window perhaps?) but breaks
@@ -279,7 +275,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				}
 			}
 		}
-#endif
 
 		// Restore encoding if appropriate
 		if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -288,7 +283,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 	}
 
-#ifndef SP_CODA
 	// Add the table headers even if no tables were found
 	if (tableListContainsViews) {
 		[tables insertObject:NSLocalizedString(@"TABLES & VIEWS",@"header for table & views list") atIndex:0];
@@ -298,15 +292,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 	
 	[tableTypes insertObject:[NSNumber numberWithInteger:SPTableTypeNone] atIndex:0];
-#endif
 
-#ifndef SP_CODA /* ui manipulation */
 	[[tablesListView onMainThread] reloadData];
-#else
-	[sidebarViewController setTableNames:[self allTableNames] selectedTableName:selectedTableName];
-	[sidebarViewController tableViewSelectionDidChange:nil];
-
-#endif
 
 	// if the previous selected table still exists, select it
 	// but not if the update was called from SPTableData since it calls that method
@@ -315,9 +302,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ( ![sender isKindOfClass:[SPTableData class]] && previousSelectedTable != nil && [tables indexOfObject:previousSelectedTable] < [tables count]) {
 		NSInteger itemToReselect = [tables indexOfObject:previousSelectedTable];
 		tableListIsSelectable = YES;
-#ifndef SP_CODA /* ui manipulation */
 		[[tablesListView onMainThread] selectRowIndexes:[NSIndexSet indexSetWithIndex:itemToReselect] byExtendingSelection:NO];
-#endif
 		tableListIsSelectable = previousTableListIsSelectable;
 		if (selectedTableName) [selectedTableName release];
 		selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemToReselect]];
@@ -328,7 +313,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		selectedTableType = SPTableTypeNone;
 	}
 
-#ifndef SP_CODA /* table list filtering */
 	// Determine whether or not to preserve the existing filter, and whether to
 	// show or hide the list filter based on the number of tables
 	if ([tables count] > 20) {
@@ -348,7 +332,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[[listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
 		});
 	}
-#endif
 
 	if (previousSelectedTable) [previousSelectedTable release];
 	if (previousFilterString) [previousFilterString release];
@@ -502,15 +485,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	NSArray *buttons = [alert buttons];
 
-#ifndef SP_CODA
 	// Change the alert's cancel button to have the key equivalent of return
 	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-#else
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"\r"]; // Return = OK
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\e"]; // Esc = Cancel
-#endif
 
 	NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 
@@ -590,7 +568,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 						contextInfo:SPRemoveTable];
 }
 
-#ifndef SP_CODA /* whole table operations */
 /**
  * Copies a table/view/proc/func, if desired with content
  */
@@ -739,7 +716,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
 }
 
-#endif
 
 #pragma mark -
 #pragma mark Alert sheet methods
@@ -806,12 +782,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if (object == tableNameField) {
 		[addTableButton setEnabled:[self isTableNameValid:[tableNameField stringValue] forType: SPTableTypeTable]];
 	}
-#ifndef SP_CODA
 
 	else if (object == copyTableNameField) {
 		[copyTableButton setEnabled:[self isTableNameValid:[copyTableNameField stringValue] forType:[self tableType]]];
 	}
-#endif
 }
 
 /**
@@ -829,11 +803,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if (object == tableNameField) {
 		[addTableButton performClick:object];
 	}
-#ifndef SP_CODA
 	else if (object == copyTableNameField) {
 		[copyTableButton performClick:object];
 	}
-#endif
 }
 
 /**
@@ -848,13 +820,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	// First handle empty or multiple selections
 	if (!selectionDetails || ![selectionDetails objectForKey:@"name"]) {
-#ifndef SP_CODA
 		NSIndexSet *indexes = [tablesListView selectedRowIndexes];
-#endif
 		// Update the selected table name and type
 		if (selectedTableName) SPClear(selectedTableName);
-
-#ifndef SP_CODA /* ui manipulation */
 
 		// Set gear menu items Remove/Duplicate table/view according to the table types
 		// if at least one item is selected
@@ -963,7 +931,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[tableSubMenu itemAtIndex:9] setHidden:NO];
 		[[tableSubMenu itemAtIndex:10] setHidden:NO];
 		[[tableSubMenu itemAtIndex:11] setHidden:NO];
-#endif
 
 		return;
 	}
@@ -977,7 +944,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	selectedTableName = [[NSString alloc] initWithString:selectedItemName];
 	selectedTableType = selectedItemType;
 
-#ifndef SP_CODA /* ui manipulation */
 	// Remove the "current selection" item for filtered lists if appropriate
 	if (isTableListFiltered && [tablesListView selectedRow] < (NSInteger)[filteredTables count] - 2 && [filteredTables count] > 2
 		&& [[filteredTableTypes objectAtIndex:[filteredTableTypes count]-2] integerValue] == SPTableTypeNone
@@ -1188,7 +1154,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
 		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Function Syntax",@"Table List : Context Menu : copy CREATE FUNCTION syntax")];
 	}
-#endif
 }
 
 - (void)deselectAllTables
@@ -1429,7 +1394,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// If no match found, return failure
 	if (itemIndex == NSNotFound) return NO;
 
-#ifndef SP_CODA /* table list filtering */
 	if (!isTableListFiltered) {
 		[tablesListView selectRowIndexes:[NSIndexSet indexSetWithIndex:itemIndex] byExtendingSelection:NO];
 	}
@@ -1441,7 +1405,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 		else {
 			[self deselectAllTables];
-#endif
 			if (selectedTableName) [selectedTableName release];
 			
 			selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemIndex]];
@@ -1450,17 +1413,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[self updateFilter:self];
 			
 			[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
-#ifndef SP_CODA /* table list filtering */
 		}
 	}
 
 	[tablesListView scrollRowToVisible:[tablesListView selectedRow]];
-#endif
 
 	return YES;
 }
-
-#ifndef SP_CODA /* tableView datasource/delegate */
 
 /**
  * Try to select items using the provided names in theNames; returns YES if at least
@@ -1505,7 +1464,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	return YES;
 }
-#endif
 
 #pragma mark -
 #pragma mark Data validation
@@ -1571,7 +1529,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	return isValid;
 }
 
-#ifndef SP_CODA
 #pragma mark -
 #pragma mark Datasource methods
 
@@ -1603,7 +1560,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	return ![tableDocumentInstance isWorking];
 }
-#endif
 
 /**
  * Renames a table (in tables-array and mysql-db).
@@ -1658,16 +1614,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [tableDocumentInstance parentWindow], [myException reason]);
 	}
 
-#ifndef SP_CODA
 	// Set window title to reflect the new table name
 	[tableDocumentInstance updateWindowTitle:self];
-#endif
 
 	// Query the structure of all databases in the background (mainly for completion)
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 }
 
-#ifndef SP_CODA
 #pragma mark -
 #pragma mark TableView delegate methods
 
@@ -1713,7 +1666,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	
 	return NO;
 }
-#endif
 
 /**
  * Table view delegate method
@@ -1734,7 +1686,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	return [tableDocumentInstance couldCommitCurrentViewActions];
 }
 
-#ifndef SP_CODA
 /**
  * Loads a table in content or source view (if tab selected)
  */
@@ -2021,7 +1972,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[[tableDocumentInstance parentWindow] makeFirstResponder:tablesListView];
 }
-#endif
 
 /**
  * Update the filter search.
@@ -2035,7 +1985,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		if (selectedTableName) SPClear(selectedTableName);
 	}
 
-#ifndef SP_CODA
 	if ([[listFilterField stringValue] length]) {
 		if (isTableListFiltered) {
 			[filteredTables release];
@@ -2058,7 +2007,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				if (substringRange.location == NSNotFound) continue;
 			}
 
-#ifndef SP_CODA
 			// Add a title if necessary
 			if ((tableType == SPTableTypeTable || tableType == SPTableTypeView) && lastTableType == NSNotFound)
 			{
@@ -2074,7 +2022,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[filteredTables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
 				[filteredTableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 			}
-#endif
 			lastTableType = tableType;
 
 			// Add the item
@@ -2101,20 +2048,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	else if (isTableListFiltered) {
 		isTableListFiltered = NO;
 		[filteredTables release];
-#endif
 		filteredTables = tables;
-#ifndef SP_CODA
 		[filteredTableTypes release];
 		filteredTableTypes = tableTypes;
 	}
-#endif
 
-#ifndef SP_CODA
 	// Reselect correct row and reload the table view display
 	if ([tablesListView numberOfRows] < (NSInteger)[filteredTables count]) [tablesListView noteNumberOfRowsChanged];
 	if (selectedTableName) [tablesListView selectRowIndexes:[NSIndexSet indexSetWithIndex:[filteredTables indexOfObject:selectedTableName]] byExtendingSelection:NO];
 	[tablesListView reloadData];
-#endif
 }
 
 /**
@@ -2124,13 +2066,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void) selectTableAtIndex:(NSNumber *)row
 {
 	NSUInteger rowIndex = [row unsignedIntegerValue];
-#ifndef SP_CODA
 	if (rowIndex == NSNotFound || rowIndex > [filteredTables count] || [[filteredTableTypes objectAtIndex:rowIndex] integerValue] == SPTableTypeNone)
 		return;
-#else
-	if (rowIndex == NSNotFound)
-		return;
-#endif
 
 	[tablesListView selectRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex] byExtendingSelection:NO];
 }
@@ -2145,9 +2082,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	tableListIsSelectable = NO;
 	[toolbarAddButton setEnabled:NO];
-#ifndef SP_CODA
 	[toolbarActionsButton setEnabled:NO];
-#endif
 	[toolbarReloadButton setEnabled:NO];
 }
 
@@ -2158,9 +2093,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	tableListIsSelectable = YES;
 	[toolbarAddButton setEnabled:YES];
-#ifndef SP_CODA
 	[toolbarActionsButton setEnabled:YES];
-#endif
 	[toolbarReloadButton setEnabled:YES];
 }
 
@@ -2172,7 +2105,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	tableListIsSelectable = isSelectable;
 }
 
-#ifndef SP_CODA
 #pragma mark -
 #pragma mark SplitView Delegate Methods
 
@@ -2208,18 +2140,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	return NO;
 }
 
-#endif
-
-
-#pragma mark -
-#pragma mark Other
-
-#ifdef SP_CODA /* glue */
-- (void)setDatabaseDocument:(SPDatabaseDocument*)val
-{
-	tableDocumentInstance = val;
-}
-#endif
 
 #pragma mark -
 #pragma mark Private API
@@ -2334,19 +2254,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[self deselectAllTables];
 
-#ifndef SP_CODA
 	[tableDocumentInstance updateWindowTitle:self];
-#endif
-	
-#ifdef SP_CODA
-	[sidebarViewController setTableNames:filteredTables selectedTableName:nil];
-#endif
 
 	// Query the structure of all databases in the background (mainly for completion)
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 }
-
-#ifndef SP_CODA /* operations performed on whole tables */
 
 /**
  * Trucates the selected table(s).
@@ -2378,7 +2290,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[tableDataInstance resetStatusData];
 }
-#endif
 
 /**
  * Adds a new table table to the database using the selected character set encoding and storage engine on a separate thread.
@@ -2531,7 +2442,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 }
 
-#ifndef SP_CODA
 /**
  * Copies the currently selected object (table, view, procedure, function, etc.).
  */
@@ -2730,7 +2640,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Query the structure of all databases in the background (mainly for completion)
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 }
-#endif
 
 /**
  * Renames a table, view, procedure or function. Also handles only changes in case!

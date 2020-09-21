@@ -48,10 +48,8 @@
 #import "SPHistoryController.h"
 #import "SPGeometryDataView.h"
 #import "SPTextView.h"
-#ifndef SP_CODA /* headers */
 #import "SPAppController.h"
 #import "SPBundleHTMLOutputController.h"
-#endif
 #import "SPCustomQuery.h"
 #import "SPThreadAdditions.h"
 #import "SPTableFilterParser.h"
@@ -122,20 +120,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @implementation SPTableContent
 
-#ifdef SP_CODA
-@synthesize addButton;
-@synthesize duplicateButton;
-@synthesize paginationNextButton;
-@synthesize paginationPreviousButton;
-@synthesize reloadButton;
-@synthesize removeButton;
-@synthesize tableContentView;
-@synthesize tableDataInstance;
-@synthesize tableDocumentInstance;
-@synthesize tableSourceInstance;
-@synthesize tablesListInstance;
-#endif
-
 #pragma mark -
 
 - (id)init
@@ -153,12 +137,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		tableRowsCount         = 0;
 		previousTableRowsCount = 0;
 
-#ifndef SP_CODA
 		activeFilter               = SPTableContentFilterSourceNone;
 		schemeFilter               = nil;
 		paginationViewController   = [[ContentPaginationViewController alloc] init]; // the view itself is lazily loaded
 		paginationPopover          = nil;
-#endif
 
 		selectedTable = nil;
 		sortCol       = nil;
@@ -207,8 +189,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (_mainNibLoaded) return;
 	_mainNibLoaded = YES;
 
-#ifndef SP_CODA /* ui manipulation */
-
 	// initially hide the filter rule editor
 	[self updateFilterRuleEditorSize:0.0 animate:NO];
 
@@ -244,7 +224,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[paginationView setFrame:paginationViewFrame];
 		[[paginationButton superview] addSubview:paginationView];
 	}
-#endif
 
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
@@ -370,9 +349,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView reloadData];
 	isFiltered = NO;
 	isLimited = NO;
-#ifndef SP_CODA
 	[countText setStringValue:@""];
-#endif
 
 	// Reset sort column
 	if (sortCol) SPClear(sortCol);
@@ -386,10 +363,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Disable pagination
 	[paginationPreviousButton setEnabled:NO];
-#ifndef SP_CODA
 	[paginationButton setEnabled:NO];
 	[paginationButton setTitle:@""];
-#endif
 	[paginationNextButton setEnabled:NO];
 
 	// Disable table action buttons
@@ -400,10 +375,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Clear restoration settings
 	[self clearDetailsToRestore];
 
-#ifndef SP_CODA
 	[filterTableController setColumns:nil];
 	activeFilter = SPTableContentFilterSourceNone;
-#endif
 }
 
 /**
@@ -415,17 +388,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	NSString *newTableName;
 	NSInteger sortColumnNumberToRestore = NSNotFound;
-#ifndef SP_CODA
 	NSNumber *colWidth;
-#endif
 	NSArray *columnNames;
 	NSMutableDictionary *preservedColumnWidths = nil;
 	NSTableColumn *theCol;
 
 	BOOL enableInteraction =
-#ifndef SP_CODA /* checking toolbar state */
 	 ![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent] || 
-#endif
 	 ![tableDocumentInstance isWorking];
 
 	if (!tableDetails) {
@@ -438,10 +407,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		newTableName = [tableDetails objectForKey:@"name"];
 	}
 
-#ifndef SP_CODA
 	// Ensure the pagination view hides itself if visible, after a tiny delay for smoothness
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
-#endif
 
 	// Reset table key store for use in argumentForRow:
 	if (keys) SPClear(keys);
@@ -495,10 +462,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[NSArrayObjectAtIndex([tableContentView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
 		[tableContentView removeTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], 0)];
 	}
-#ifndef SP_CODA
 	// Remove existing columns from the filter table
 	[filterTableController setColumns:nil];
-#endif
 
 	// Retrieve the field names and types for this table from the data cache. This is used when requesting all data as part
 	// of the fieldListForQuery method, and also to decide whether or not to preserve the current filter/sort settings.
@@ -533,11 +498,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSString *nullValue = [prefs objectForKey:SPNullValue];
-#ifndef SP_CODA /* get font from prefs */
 	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
-#else
-	NSFont *tableFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
-#endif
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
@@ -613,13 +574,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Assign the data cell
 		[theCol setDataCell:dataCell];
 
-#ifndef SP_CODA /* prefs access */
 		// Set the width of this column to saved value if exists
 		colWidth = [[[[prefs objectForKey:SPTableColumnWidths] objectForKey:[NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]]] objectForKey:[tablesListInstance tableName]] objectForKey:[columnDefinition objectForKey:@"name"]];
 		if ( colWidth ) {
 			[theCol setWidth:[colWidth floatValue]];
 		}
-#endif
 
 		// Set the column to be reselected for sorting if appropriate
 		if (sortColumnToRestore && [sortColumnToRestore isEqualToString:[columnDefinition objectForKey:@"name"]])
@@ -736,9 +695,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	SPMySQLStreamingResultStore *resultStore;
 	NSInteger rowsToLoad = [[tableDataInstance statusValueForKey:@"Rows"] integerValue];
 
-#ifndef SP_CODA
 	[[countText onMainThread] setStringValue:NSLocalizedString(@"Loading table data...", @"Loading table data string")];
-#endif
 
 	// Notify any listeners that a query has started
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
@@ -748,10 +705,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	
 	// Start construction of the query string
 	queryString = [NSMutableString stringWithFormat:@"SELECT %@%@ FROM %@", 
-#ifndef SP_CODA
 			(activeFilter == SPTableContentFilterSourceTableFilter && filterString && [filterTableController isDistinct]) ? @"DISTINCT " :
-#endif
-			@"", 
+			@"",
 			[self fieldListForQuery], [selectedTable backtickQuotedString]];
 
 	if ([filterString length]) {
@@ -930,9 +885,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
 	if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
-#ifndef SP_CODA
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
-#endif
 			NSString *errorDetail;
 			if([filterString length])
 				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [mySQLConnection lastErrorMessage]];
@@ -941,7 +894,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		
 			SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [tableDocumentInstance parentWindow], errorDetail);
 		}
-#ifndef SP_CODA
 		// Filter task came from filter table
 		else if(activeFilter == SPTableContentFilterSourceTableFilter) {
 			[[filterTableController onMainThread] setFilterError:[mySQLConnection lastErrorID]
@@ -949,14 +901,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			                                            sqlstate:[mySQLConnection lastSqlstate]];
 		}
 	} 
-#endif
-	else 
+	else
 	{
-#ifndef SP_CODA
 		// Trigger a full reload if required
 		if (fullTableReloadRequired) [self reloadTable:self];
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
-#endif
 	}
 }
 
@@ -979,14 +928,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Start the data downloading
 	[theResultStore startDownload];
 
-#ifndef SP_CODA
 #warning Private ivar accessed from outside (#2978)
 	NSProgressIndicator *dataLoadingIndicator = [tableDocumentInstance valueForKey:@"queryProgressBar"];
-#else
-	NSProgressIndicator *dataLoadingIndicator = [tableDocumentInstance queryProgressBar];
-#endif
 
-#ifndef SP_CODA
 	// Set the column load states on the table values store
 	if ([prefs boolForKey:SPLoadBlobsAsNeeded]) {
 		for ( i = 0; i < dataColumnsCount ; i++ ) {
@@ -995,7 +939,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 	}
-#endif
 
 	// Set up the table updates timer and wait for it to notify this thread about completion
 	[[self onMainThread] initTableLoadTimer];
@@ -1026,7 +969,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (NSString *)tableFilterString
 {
 
-#ifndef SP_CODA
 	// If filter command was passed by sequelace url scheme
 	if(activeFilter == SPTableContentFilterSourceURLScheme) {
 		if(schemeFilter) return schemeFilter;
@@ -1036,7 +978,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if(activeFilter == SPTableContentFilterSourceTableFilter && [[filterTableController window] isVisible]) {
 		return [filterTableController tableFilterString];
 	}
-#endif
 	if(activeFilter == SPTableContentFilterSourceRuleFilter && showFilterRuleEditor) {
 		// If the clause has the placeholder $BINARY that placeholder will be replaced
 		// by BINARY if the user pressed ⇧ while invoking 'Filter' otherwise it will
@@ -1118,9 +1059,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[countString appendFormat:NSLocalizedString(@"%@ %@ selected", @"text showing how many rows are selected"), [numberFormatter stringFromNumber:[NSNumber numberWithInteger:selectedRows]], rowString];
 	}
 
-#ifndef SP_CODA
 	[countText setStringValue:countString];
-#endif
 }
 
 /**
@@ -1262,7 +1201,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// (Keycode 51 is backspace, 117 is delete.)
 	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
 
-#ifndef SP_CODA
 
 	BOOL resetPaging = NO; // if filtering was triggered by pressing the "Filter" button, reset to page 1
 	
@@ -1288,7 +1226,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		activeFilter = SPTableContentFilterSourceNone;
 		resetPaging = YES;
 	}
-#endif
 
 	NSString *taskString;
 
@@ -1306,9 +1243,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[sender becomeFirstResponder];
 	}
 
-#ifndef SP_CODA
 	[self setPaginationViewVisibility:NO];
-#endif
 
 	// Select the correct pagination value.
 	// If the filter button was used, or if pagination is disabled, reset to page one
@@ -1348,10 +1283,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)filterTableTask
 {
 	@autoreleasepool {
-#ifndef SP_CODA
 		// Update history
 		[spHistoryControllerInstance updateHistoryEntries];
-#endif
 
 		// Reset and reload data using the new filter settings
 		[self setSelectionToRestore:[[self onMainThread] selectionDetailsAllowingIndexSelection:NO]];
@@ -1512,12 +1445,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  * When the Pagination button is pressed, show or hide the pagination
  * layer depending on the current state.
  */
-#ifndef SP_CODA
 - (IBAction) togglePagination:(NSButton *)sender
 {
 	[self setPaginationViewVisibility:([sender state] == NSOnState)];
 }
-#endif
 
 - (void)popoverDidClose:(NSNotification *)notification
 {
@@ -1530,7 +1461,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setPaginationViewVisibility:(BOOL)makeVisible
 {
-#ifndef SP_CODA
 	NSRect paginationViewFrame = [paginationView frame];
 	
 	if(makeVisible) {
@@ -1571,7 +1501,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	[[paginationView animator] setFrame:paginationViewFrame];
-#endif
 }
 
 /**
@@ -1593,10 +1522,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Set up the next page button
 	[paginationNextButton setEnabled:(limitResults && contentPage < maxPage ? enabledMode : NO)];
 
-#ifndef SP_CODA
 	// As long as a table is selected (which it will be if this is called), enable pagination detail button
 	[paginationButton setEnabled:enabledMode];
-#endif
 
 	// "1" is the minimum page, so maxPage must not be less (which it would be for empty tables)
 	if(maxPage < 1) maxPage = 1;
@@ -1727,9 +1654,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	isEditingRow = YES;
 	isEditingNewRow = YES;
 	currentlyEditingRow = [tableContentView selectedRow];
-#ifndef SP_CODA
 	if ( [multipleLineEditingButton state] == NSOffState )
-#endif
 		[tableContentView editColumn:0 row:[tableContentView numberOfRows]-1 withEvent:nil select:YES];
 }
 
@@ -1761,7 +1686,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Row contents
 	tempRow = [tableValues rowContentsAtIndex:[tableContentView selectedRow]];
 
-#ifndef SP_CODA
 	// If we don't show blobs, read data for this duplicate column from db
 	if ([prefs boolForKey:SPLoadBlobsAsNeeded]) {
 		
@@ -1775,7 +1699,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [selectedTable backtickQuotedString], whereArgument]];
 		dbDataRow = [queryResult getRowAsArray];
 	}
-#endif
 
 	// Set autoincrement fields to NULL
 	queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
@@ -1789,12 +1712,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ([[row objectForKey:@"Extra"] isEqualToString:@"auto_increment"]) {
 			[tempRow replaceObjectAtIndex:i withObject:[NSNull null]];
 		} 
-		else if ([tableDataInstance columnIsBlobOrText:[row objectForKey:@"Field"]] && 
-#ifndef SP_CODA
-				[prefs boolForKey:SPLoadBlobsAsNeeded] 
-#else
-				NO
-#endif
+		else if ([tableDataInstance columnIsBlobOrText:[row objectForKey:@"Field"]] &&
+				[prefs boolForKey:SPLoadBlobsAsNeeded]
 				&& dbDataRow) {
 			[tempRow replaceObjectAtIndex:i withObject:[dbDataRow objectAtIndex:i]];
 		}
@@ -1812,13 +1731,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	isEditingNewRow = YES;
 	
 	currentlyEditingRow = [tableContentView selectedRow];
-#ifndef SP_CODA
 	if ([multipleLineEditingButton state]) {
-#endif
 		[tableContentView editColumn:0 row:[tableContentView selectedRow] withEvent:nil select:YES];
-#ifndef SP_CODA
 	}
-#endif
 }
 
 /**
@@ -1841,15 +1756,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	NSArray *buttons = [alert buttons];
 
-#ifndef SP_CODA
 	// Change the alert's cancel button to have the key equivalent of return
 	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-#else
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"\r"];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\e"];
-#endif
 
 	[alert setShowsSuppressionButton:NO];
 	[[alert suppressionButton] setState:NSOffState];
@@ -1863,9 +1773,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// If table has PRIMARY KEY ask for resetting the auto increment after deletion if given
 		if(![[tableDataInstance statusValueForKey:@"Auto_increment"] isNSNull]) {
 			[alert setShowsSuppressionButton:YES];
-#ifndef SP_CODA
 			[[alert suppressionButton] setState:([prefs boolForKey:SPResetAutoIncrementAfterDeletionOfAllRows]) ? NSOnState : NSOffState];
-#endif
 			[[[alert suppressionButton] cell] setControlSize:NSSmallControlSize];
 			[[[alert suppressionButton] cell] setFont:[NSFont systemFontOfSize:11]];
 			[[alert suppressionButton] setTitle:NSLocalizedString(@"Reset AUTO_INCREMENT after deletion?", @"reset auto_increment after deletion of all rows message")];
@@ -1898,13 +1806,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSString *wherePart;
 	NSInteger i, errors;
 	BOOL consoleUpdateStatus;
-	BOOL reloadAfterRemovingRow = 
-#ifndef SP_CODA
-	[prefs boolForKey:SPReloadAfterRemovingRow]
-#else
-	NO
-#endif
-	;
+	BOOL reloadAfterRemovingRow = [prefs boolForKey:SPReloadAfterRemovingRow];
+
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
 
@@ -1925,13 +1828,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				// Reset auto increment if suppression button was ticked
 				if([[alert suppressionButton] state] == NSOnState) {
 					[tableSourceInstance setAutoIncrementTo:@1];
-#ifndef SP_CODA
 					[prefs setBool:YES forKey:SPResetAutoIncrementAfterDeletionOfAllRows];
-#endif
 				} else {
-#ifndef SP_CODA
 					[prefs setBool:NO forKey:SPResetAutoIncrementAfterDeletionOfAllRows];
-#endif
 				}
 
 				[self reloadTable:self];
@@ -2395,11 +2294,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				return;
 			}
 
-#ifndef SP_CODA
 			// Save existing scroll position and details and mark that state is being modified
 			[spHistoryControllerInstance updateHistoryEntries];
 			[spHistoryControllerInstance setModifyingState:YES];
-#endif
 
 			id targetFilterValue = [tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
@@ -2443,15 +2340,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			[self setRuleEditorVisible:YES animate:YES];
 
-#ifndef SP_CODA
 			// End modifying state
 			[spHistoryControllerInstance setModifyingState:NO];
-#endif
 
 			// End the task
 			[tableDocumentInstance endTask];
 
-#ifndef SP_CODA
 			if (tableFilterRequired) {
 				// If the same table is the target, trigger a filter task on the main thread
 				[self performSelectorOnMainThread:@selector(filterTable:) withObject:self waitUntilDone:NO];
@@ -2460,7 +2354,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				// See [SPHistoryController restoreViewStates]
 				[spHistoryControllerInstance setNavigatingFK:YES];
 			}
-#endif
 		});
 	}
 }
@@ -2490,7 +2383,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// If no rows have been changed, show error if appropriate.
 	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
-#ifndef SP_CODA
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
 			SPOnewayAlertSheet(
 				NSLocalizedString(@"Warning", @"warning"),
@@ -2500,7 +2392,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		} else {
 			NSBeep();
 		}
-#endif
 
 		// If creating a new row, remove the row; otherwise revert the row contents
 		if (isEditingNewRow) {
@@ -2527,7 +2418,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// New row created successfully
 		if ( isEditingNewRow ) {
-#ifndef SP_CODA
 			if ( [prefs boolForKey:SPReloadAfterAddingRow] ) {
 
 				// Save any edits which have been started but not saved to the underlying table/data structures
@@ -2540,23 +2430,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				[self loadTableValues];
 			}
 			else {
-#endif
 				// Set the insertId for fields with auto_increment
 				for ( i = 0; i < [dataColumns count] ; i++ ) {
 					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
 						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
 					}
 				}
-#ifndef SP_CODA
 			}
-#endif
 			isEditingNewRow = NO;
 
 		// Existing row edited successfully
 		} else {
 
 			// Reload table if set to - otherwise no action required.
-#ifndef SP_CODA
 			if ([prefs boolForKey:SPReloadAfterEditingRow]) {
 
 				// Save any edits which have been started but not saved to the underlying table/data structures
@@ -2568,7 +2454,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				previousTableRowsCount = tableRowsCount;
 				[self loadTableValues];
 			}
-#endif
 		}
 		currentlyEditingRow = -1;
 
@@ -2917,7 +2802,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// When the option to not show blob or text options is set, we have a problem - we don't have
 		// the right values to use in the WHERE statement.  Throw an error if this is the case.
-#ifndef SP_CODA
 		if ( [prefs boolForKey:SPLoadBlobsAsNeeded] && [self tableContainsBlobOrTextColumns] ) {
 			SPOnewayAlertSheet(
 				NSLocalizedString(@"Error", @"error"),
@@ -2928,7 +2812,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView deselectAll:self];
 			return @"";
 		}
-#endif
 	}
 
 	NSMutableString *argument = [NSMutableString string];
@@ -3009,7 +2892,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (NSString *)fieldListForQuery
 {
-#ifndef SP_CODA
 	if (([prefs boolForKey:SPLoadBlobsAsNeeded]) && [dataColumns count]) {
 
 		NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
@@ -3028,7 +2910,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		return (tableHasBlobs) ? [fields componentsJoinedByString:@", "] : @"*";
 
 	}
-#endif
 		return @"*";
 
 }
@@ -3260,7 +3141,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
-#ifndef SP_CODA
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
 				SPOnewayAlertSheet(
 					NSLocalizedString(@"Warning", @"warning"),
@@ -3270,7 +3150,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			} else {
 				NSBeep();
 			}
-#endif
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 			return;
@@ -3366,14 +3245,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			primaryKeyFieldIndexes[i] = [[tableDataInstance columnNames] indexOfObject:[primaryKeyFieldNames objectAtIndex:i]];
 			if (primaryKeyFieldIndexes[i] == NSNotFound) {
 				problemColumns = YES;
-#ifndef SP_CODA
 			} else {
 				if ([prefs boolForKey:SPLoadBlobsAsNeeded]) {
 					if ([tableDataInstance columnIsBlobOrText:[primaryKeyFieldNames objectAtIndex:i]]) {
 						problemColumns = YES;
 					}
 				}
-#endif
 			}
 		}
 
@@ -3649,11 +3526,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		maxNumRowsIsEstimate = NO;
 		[tableDataInstance setStatusValue:[NSString stringWithFormat:@"%ld", (long)maxNumRows] forKey:@"Rows"];
 		[tableDataInstance setStatusValue:@"y" forKey:@"RowsCountAccurate"];
-#ifndef SP_CODA
 		[[tableInfoInstance onMainThread] tableChanged:nil];
 #warning Private ivar accessed from outside (#2978)
 		[[[tableDocumentInstance valueForKey:@"extendedTableInfoInstance"] onMainThread] loadTable:selectedTable];
-#endif
 
 	} else {
 
@@ -3701,9 +3576,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 		[tableDataInstance setStatusValue:[NSString stringWithFormat:@"%ld", (long)maxNumRows] forKey:@"Rows"];
 		[tableDataInstance setStatusValue:maxNumRowsIsEstimate?@"n":@"y" forKey:@"RowsCountAccurate"];
-#ifndef SP_CODA
 		[[tableInfoInstance onMainThread] tableChanged:nil];
-#endif
 	}
 }
 
@@ -3719,10 +3592,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setDelegate:nil];
 	for (NSDictionary *columnDefinition in dataColumns) {
 
-#ifndef SP_CODA
 		// Skip columns with saved widths
 		if ([[[[prefs objectForKey:SPTableColumnWidths] objectForKey:[NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]]] objectForKey:[tablesListInstance tableName]] objectForKey:[columnDefinition objectForKey:@"name"]]) continue;
-#endif
 
 		// Otherwise set the column width
 		NSTableColumn *aTableColumn = [tableContentView tableColumnWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
@@ -3742,11 +3613,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	isWorking = YES;
 
-#ifndef SP_CODA /* Only proceed if this view is selected */
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent])
 		return;
-#endif
 
 	[addButton setEnabled:NO];
 	[removeButton setEnabled:NO];
@@ -3757,9 +3626,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableRowsSelectable = NO;
 	[paginationPreviousButton setEnabled:NO];
 	[paginationNextButton setEnabled:NO];
-#ifndef SP_CODA
 	[paginationButton setEnabled:NO];
-#endif
 }
 
 /**
@@ -3769,11 +3636,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	isWorking = NO;
 
-#ifndef SP_CODA /* Only proceed if this view is selected */
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent])
 		return;
-#endif
 
 	if ( ![[tableDataInstance statusValueForKey:@"Rows"] isNSNull] && selectedTable && [selectedTable length] && [tableDataInstance tableEncoding]) {
 		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable)];
@@ -3808,7 +3673,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-#ifndef SP_CODA /* observe pref changes */
 	// a parent class (or cocoa) can also use KVO, so we need to watch out to only catch those KVO messages we requested
 	if(context == TableContentKVOContext) {
 		// Display table veiew vertical gridlines preference changed
@@ -3831,7 +3695,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
-#endif
 }
 
 #pragma mark -
@@ -4047,7 +3910,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 #pragma mark - SPTableContentFilter
 
-#ifndef SP_CODA
 
 /**
  * Makes the content filter field have focus by making it the first responder.
@@ -4065,7 +3927,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[ruleFilterController focusFirstInputField];
 }
 
-#endif
 
 #pragma mark -
 #pragma mark TableView delegate methods
@@ -4125,7 +3986,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	[self updateCountText];
 
-#ifndef SP_CODA /* triggered commands */
 	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 
 	for (NSString *cmdPath in triggeredCommands)
@@ -4172,7 +4032,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 	}
-#endif
 }
 
 /**
@@ -4191,16 +4050,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSString *table = [tablesListInstance tableName];
 
 	// Get tableColumnWidths object
-#ifndef SP_CODA
 	if ([prefs objectForKey:SPTableColumnWidths] != nil ) {
 		tableColumnWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
 	}
 	else {
-#endif
 		tableColumnWidths = [NSMutableDictionary dictionary];
-#ifndef SP_CODA
 	}
-#endif
 
 	// Get the database object
 	if  ([tableColumnWidths objectForKey:database] == nil) {
@@ -4222,9 +4077,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[[tableColumnWidths objectForKey:database] objectForKey:table]
 	 setObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[notification userInfo] objectForKey:@"NSTableColumn"] width]]
 	 forKey:[[[[notification userInfo] objectForKey:@"NSTableColumn"] headerCell] stringValue]];
-#ifndef SP_CODA
 	[prefs setObject:tableColumnWidths forKey:SPTableColumnWidths];
-#endif
 }
 
 /**
@@ -4410,7 +4263,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Get the column width
 	NSUInteger targetWidth = [tableContentView autodetectWidthForColumnDefinition:columnDefinition maxRows:500];
 
-#ifndef SP_CODA
 	// Clear any saved widths for the column
 	NSString *dbKey = [NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]];
 	NSString *tableKey = [tablesListInstance tableName];
@@ -4437,7 +4289,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		[prefs setObject:[NSDictionary dictionaryWithDictionary:savedWidths] forKey:SPTableColumnWidths];
 	}
-#endif
 
 	// Return the width, while the delegate is empty to prevent column resize notifications
 	[tableContentView setDelegate:nil];
@@ -4512,7 +4363,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 }
 
-#ifndef SP_CODA
 /**
  * Show the table cell content as tooltip
  *
@@ -4596,7 +4446,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	return nil;
 }
-#endif
 
 #pragma mark -
 #pragma mark Control delegate methods
@@ -4770,11 +4619,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	pthread_mutex_destroy(&tableValuesLock);
 	SPClear(dataColumns);
 	SPClear(oldRow);
-#ifndef SP_CODA
 	SPClear(paginationPopover);
 	SPClear(paginationViewController);
 
-#endif
 	if (selectedTable)          SPClear(selectedTable);
 	if (keys)                   SPClear(keys);
 	if (sortCol)                SPClear(sortCol);

@@ -36,11 +36,7 @@
 #import "SPMySQLDataTypes.h"
 
 // Required category additions
-#ifndef SP_CODA
 #import "SPMySQLStringAdditions.h"
-#else
-#import <SPMySQL/SPMySQL.h>
-#endif
 
 // MySQL Connection Delegate and Proxy protocols
 #import "SPMySQLConnectionDelegate.h"

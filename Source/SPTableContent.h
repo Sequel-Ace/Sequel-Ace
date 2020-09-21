@@ -64,11 +64,9 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet SPTableData* tableDataInstance;
 	IBOutlet SPTableStructure *tableSourceInstance;
 
-#ifndef SP_CODA
 	IBOutlet SPTableInfo *tableInfoInstance;
 	IBOutlet SPHistoryController *spHistoryControllerInstance;
-#endif
-	
+
 	IBOutlet SPCopyTable *tableContentView;
 
 	IBOutlet NSButton *toggleRuleFilterButton;
@@ -76,17 +74,12 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet NSButton *duplicateButton;
 	IBOutlet NSButton *removeButton;
 	IBOutlet NSButton *reloadButton;
-#ifndef SP_CODA
 	IBOutlet NSButton *multipleLineEditingButton;
 	IBOutlet NSTextField *countText;
-#endif
 
 	IBOutlet NSButton *paginationPreviousButton;
-#ifndef SP_CODA
 	IBOutlet NSButton *paginationButton;
-#endif
 	IBOutlet NSButton *paginationNextButton;
-#ifndef SP_CODA
 	IBOutlet NSView *contentViewPane;
 	ContentPaginationViewController *paginationViewController;
 	NSPopover *paginationPopover;
@@ -96,7 +89,6 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet SPRuleFilterController *ruleFilterController;
 	IBOutlet SPFilterTableController *filterTableController;
 	BOOL scrollViewHasRubberbandScrolling;
-#endif
 	SPMySQLConnection *mySQLConnection;
 
 	BOOL _mainNibLoaded;
@@ -127,11 +119,9 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 	NSUInteger contentPage;
 
-#ifndef SP_CODA
 	SPTableContentFilterSource activeFilter;
 	SPTableContentFilterSource activeFilterToRestore;
 	NSString *schemeFilter;
-#endif
 
 	BOOL sortColumnToRestoreIsAsc;
 	BOOL tableRowsSelectable;
@@ -140,9 +130,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	NSDictionary *selectionToRestore;
 	NSRect selectionViewportToRestore;
 
-#ifndef SP_CODA
 	NSInteger paginationViewHeight;
-#endif
 
 	NSTimer *tableLoadTimer;
 	NSUInteger tableLoadInterfaceUpdateInterval;
@@ -174,20 +162,6 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	NSDictionary *filtersToRestore;
 }
 
-#ifdef SP_CODA /* glue */
-@property (assign) NSButton* addButton;
-@property (assign) NSButton* duplicateButton;
-@property (assign) NSButton* removeButton;
-@property (assign) NSButton* reloadButton;
-@property (assign) NSButton* paginationNextButton;
-@property (assign) NSButton* paginationPreviousButton;
-@property (assign) SPDatabaseDocument* tableDocumentInstance;
-@property (assign) SPTablesList* tablesListInstance;
-@property (assign) SPCopyTable* tableContentView;
-@property (assign) SPTableData* tableDataInstance;
-@property (assign) SPTableStructure* tableSourceInstance;
-#endif
-
 - (void)setFieldEditorSelectedRange:(NSRange)aRange;
 - (NSRange)fieldEditorSelectedRange;
 
@@ -213,9 +187,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 // Pagination
 - (IBAction)navigatePaginationFromButton:(id)sender;
-#ifndef SP_CODA
 - (IBAction)togglePagination:(NSButton *)sender;
-#endif
 - (void)setPaginationViewVisibility:(BOOL)makeVisible;
 - (void)updatePaginationState;
 

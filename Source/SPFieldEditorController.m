@@ -62,11 +62,7 @@ typedef enum {
  */
 - (id)init
 {
-#ifndef SP_CODA
 	if ((self = [super initWithWindowNibName:@"FieldEditorSheet"]))
-#else
-	if ((self = [super initWithWindowNibName:@"SQLFieldEditorSheet"]))
-#endif
 	{
 		// force the nib to be loaded
 		(void) [self window];
@@ -118,7 +114,6 @@ typedef enum {
 		[menuItem setEnabled:NO];
 		[menu addItem:menuItem];
 		[menuItem release];
-#ifndef SP_CODA
 		NSUInteger tag = 2;
 
 		// Load default QL types
@@ -170,7 +165,6 @@ typedef enum {
 
 		qlTypes = [@{SPQuickLookTypes : qlTypesItems} retain];
 		[qlTypesItems release];
-#endif
 
 		fieldType = @"";
 		fieldEncoding = @"";
@@ -186,19 +180,15 @@ typedef enum {
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-#ifndef SP_CODA
 	// On Mac OSX 10.6 QuickLook runs non-modal thus order out the panel
 	// if still visible
 	if ([[QLPreviewPanel sharedPreviewPanel] isVisible]) {
 		[[QLPreviewPanel sharedPreviewPanel] orderOut:nil];
 	}
-#endif
 
 	[self setEditedFieldInfo:nil];
 	if ( sheetEditData ) SPClear(sheetEditData);
-#ifndef SP_CODA
 	if ( qlTypes )       SPClear(qlTypes);
-#endif
 	if ( tmpFileName )   SPClear(tmpFileName);
 	if ( tmpDirPath )    SPClear(tmpDirPath);
 	if ( esUndoManager ) SPClear(esUndoManager);
@@ -309,7 +299,6 @@ typedef enum {
 		usedSheet = editSheet;
 
 		NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
-#ifndef SP_CODA
 		// Based on user preferences, either use:
 		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
 		// 2. The font used for the tablew view (GlobalResultTableFont, per the "MySQL Content Font" preference option);
@@ -321,16 +310,10 @@ typedef enum {
 		} else if ([prefs boolForKey:SPUseMonospacedFonts]) {
 			textEditorFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize];
 		}
-#endif			
+
 		[editTextView setFont:textEditorFont];
 
-		[editTextView setContinuousSpellCheckingEnabled:
-#ifndef SP_CODA
-		[prefs boolForKey:SPBlobTextEditorSpellCheckingEnabled]
-#else
-		NO
-#endif
-		];
+		[editTextView setContinuousSpellCheckingEnabled:[prefs boolForKey:SPBlobTextEditorSpellCheckingEnabled]];
 
 		[hexTextView setFont:[NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize]];
 
@@ -635,10 +618,8 @@ typedef enum {
 
 - (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
-#ifndef SP_CODA
 	// Remember spell cheecker status
 	[prefs setBool:[editTextView isContinuousSpellCheckingEnabled] forKey:SPBlobTextEditorSpellCheckingEnabled];
-#endif
 }
 
 /**
@@ -699,17 +680,10 @@ typedef enum {
 			NSString *unformatted = [SPJSONFormatter stringByUnformattingString:returnData];
 			if(unformatted) returnData = unformatted;
 		}
-		
-#ifdef SP_CODA /* patch */
-		if ( [callerInstance isKindOfClass:[SPCustomQuery class]] )
-			[(SPCustomQuery*)callerInstance processFieldEditorResult:returnData contextInfo:contextInfo];
-		else if ( [callerInstance isKindOfClass:[SPTableContent class]] )
-			[(SPTableContent*)callerInstance processFieldEditorResult:returnData contextInfo:contextInfo];
-#else
+
 		if([callerInstance respondsToSelector:@selector(processFieldEditorResult:contextInfo:)]) {
 			[(id <SPFieldEditorControllerDelegate>)callerInstance processFieldEditorResult:returnData contextInfo:contextInfo];
 		}
-#endif
 	}
 }
 
@@ -849,12 +823,10 @@ typedef enum {
  */
 - (IBAction)quickLookFormatButton:(id)sender
 {
-#ifndef SP_CODA
 	if(qlTypes != nil && [[qlTypes objectForKey:@"QuickLookTypes"] count] > (NSUInteger)[sender tag] - 2) {
 		NSDictionary *type = [[qlTypes objectForKey:@"QuickLookTypes"] objectAtIndex:[sender tag] - 2];
 		[self invokeQuickLookOfType:[type objectForKey:@"Extension"] treatAsText:([[type objectForKey:@"treatAsText"] integerValue])];
 	}
-#endif
 }
 
 /**
@@ -915,7 +887,6 @@ typedef enum {
  */
 - (void)invokeQuickLookOfType:(NSString *)type treatAsText:(BOOL)isText
 {
-#ifndef SP_CODA
 	// See Developer example "QuickLookDownloader"
 	// file:///Developer/Documentation/DocSets/com.apple.adc.documentation.AppleSnowLeopard.CoreReference.docset/Contents/Resources/Documents/samplecode/QuickLookDownloader/index.html#//apple_ref/doc/uid/DTS40009082
 
@@ -935,7 +906,6 @@ typedef enum {
 
 	[editSheetProgressBar stopAnimation:self];
 
-#endif
 }
 
 #pragma mark - QLPreviewPanelController methods
@@ -945,13 +915,9 @@ typedef enum {
  */
 - (void)beginPreviewPanelControl:(QLPreviewPanel *)panel
 {
-#ifndef SP_CODA
-
 	// This document is now responsible of the preview panel
 	[panel setDelegate:self];
 	[panel setDataSource:self];
-
-#endif
 }
 
 /**

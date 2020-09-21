@@ -30,11 +30,7 @@
 
 @interface SPBundleCommandRunner : NSObject
 
-#ifndef SP_CODA /* run self as bash commands */
-
 + (NSString *)runBashCommand:(NSString *)command withEnvironment:(NSDictionary *)shellEnvironment atCurrentDirectoryPath:(NSString *)path error:(NSError **)theError;
 + (NSString *)runBashCommand:(NSString *)command withEnvironment:(NSDictionary *)shellEnvironment atCurrentDirectoryPath:(NSString *)path callerInstance:(id)caller contextInfo:(NSDictionary *)contextInfo error:(NSError **)theError;
-
-#endif
 
 @end

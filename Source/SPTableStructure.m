@@ -124,15 +124,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 @implementation SPTableStructure
 
-#ifdef SP_CODA
-@synthesize indexesController;
-@synthesize indexesTableView;
-@synthesize addFieldButton;
-@synthesize duplicateFieldButton;
-@synthesize removeFieldButton;
-@synthesize reloadFieldsButton;
-#endif
-
 #pragma mark -
 #pragma mark Initialisation
 
@@ -285,19 +276,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSInteger insertIndex = ([tableSourceView numberOfSelectedRows] == 0 ? [tableSourceView numberOfRows] : [tableSourceView selectedRow] + 1);
 
-#ifndef SP_CODA /* prefs access */
 	BOOL allowNull = [[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"] ? NO : [prefs boolForKey:SPNewFieldsAllowNulls];
 	
 	[tableFields insertObject:[NSMutableDictionary
 							   dictionaryWithObjects:[NSArray arrayWithObjects:@"", @"INT", @"", @"0", @"0", @"0", allowNull ? @"1" : @"0", @"", [prefs stringForKey:SPNullValue], @"None", @"", nil]
 							   forKeys:@[@"name", @"type", @"length", @"unsigned", @"zerofill", @"binary", @"null", @"Key", @"default", @"Extra", @"comment"]]
 					  atIndex:insertIndex];
-#else
-	[tableFields insertObject:[NSMutableDictionary
-							   dictionaryWithObjects:[NSArray arrayWithObjects:@"", @"INT", @"", @"0", @"0", @"0", @"1", @"", @"NULL", @"None", @"", @0, @0, nil]
-							   forKeys:[NSArray arrayWithObjects:@"name", @"type", @"length", @"unsigned", @"zerofill", @"binary", @"null", @"Key", @"default", @"Extra", @"comment", @"encoding", @"collation", nil]]
-					  atIndex:insertIndex];
-#endif
 
 	[tableSourceView reloadData];
 	[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:insertIndex] byExtendingSelection:NO];
@@ -488,15 +472,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSArray *buttons = [alert buttons];
 
-#ifndef SP_CODA
 	// Change the alert's cancel button to have the key equivalent of return
 	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-#else
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"\r"];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\e"];
-#endif
 
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
 					  modalDelegate:self 
@@ -621,9 +600,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (IBAction)unhideIndexesView:(id)sender
 {
-#ifndef SP_CODA
 	[tablesIndexesSplitView setPosition:[tablesIndexesSplitView frame].size.height-130 ofDividerAtIndex:0];
-#endif
 }
 
 #pragma mark -
@@ -655,10 +632,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (value == nil) {
 		// reload data and bail
 		[tableDataInstance resetAllData];
-#ifndef SP_CODA
 		[extendedTableInfoInstance loadTable:selTable];
 		[tableInfoInstance tableChanged:nil];
-#endif
 		return;
 	}
 
@@ -677,14 +652,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[tableDataInstance resetStatusData];
 	if([tableDocumentInstance currentlySelectedView] == SPTableViewStatus) {
 		[tableDataInstance resetAllData];
-#ifndef SP_CODA
 		[extendedTableInfoInstance loadTable:selTable];
-#endif
 	}
 
-#ifndef SP_CODA
 	[tableInfoInstance tableChanged:nil];
-#endif
 }
 
 /**
@@ -863,11 +834,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[addFieldButton setEnabled:NO];
 			[duplicateFieldButton setEnabled:NO];
 			[removeFieldButton setEnabled:NO];
-#ifndef SP_CODA
 			[addIndexButton setEnabled:NO];
 			[removeIndexButton setEnabled:NO];
 			[editTableButton setEnabled:NO];
-#endif
 			[tablesListInstance updateTables:self];
 			return NO;
 		}
@@ -1120,7 +1089,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
-#ifndef SP_CODA
 
 	// Order out current sheet to suppress overlapping of sheets
 	if ([sheet respondsToSelector:@selector(orderOut:)])
@@ -1151,7 +1119,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			isCurrentExtraAutoIncrement = NO;
 		}
 	}
-#endif
 }
 
 /**
@@ -1188,7 +1155,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-#ifndef SP_CODA /* observe prefs change */
 	// Display table veiew vertical gridlines preference changed
 	if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [tableSourceView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
@@ -1205,7 +1171,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[tableSourceView reloadData];
 		[indexesTableView reloadData];
 	}
-#endif
 }
 
 #pragma mark -
@@ -1349,26 +1314,20 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)startDocumentTaskForTab:(NSNotification *)aNotification
 {
-#ifndef SP_CODA /* check toolbar mode */
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableStructure]) return;
-#endif
 
 	[tableSourceView setEnabled:NO];
 	[addFieldButton setEnabled:NO];
 	[removeFieldButton setEnabled:NO];
 	[duplicateFieldButton setEnabled:NO];
 	[reloadFieldsButton setEnabled:NO];
-#ifndef SP_CODA
 	[editTableButton setEnabled:NO];
-#endif
 
 	[indexesTableView setEnabled:NO];
-#ifndef SP_CODA
 	[addIndexButton setEnabled:NO];
 	[removeIndexButton setEnabled:NO];
 	[refreshIndexesButton setEnabled:NO];
-#endif
 }
 
 /**
@@ -1376,10 +1335,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification
 {
-#ifndef SP_CODA /* check toolbar mode */
 	// Only re-enable elements if the current tab is the structure view
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableStructure]) return;
-#endif
 
 	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable);
 
@@ -1393,18 +1350,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	[reloadFieldsButton setEnabled:YES];
-#ifndef SP_CODA
 	[editTableButton setEnabled:YES];
-#endif
 
 	[indexesTableView setEnabled:YES];
 	[indexesTableView displayIfNeeded];
 
-#ifndef SP_CODA
 	[addIndexButton setEnabled:editingEnabled && ![[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"]];
 	[removeIndexButton setEnabled:(editingEnabled && ([indexesTableView numberOfSelectedRows] > 0))];
 	[refreshIndexesButton setEnabled:YES];
-#endif
 }
 
 #pragma mark -
@@ -1731,9 +1684,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSMutableDictionary *newDefaultValues;
 
 	BOOL enableInteraction =
-#ifndef SP_CODA /* patch */
 	![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableStructure] ||
-#endif
 	![tableDocumentInstance isWorking];
 
 	// Update the selected table name
@@ -1750,11 +1701,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[addFieldButton setEnabled:NO];
 	[duplicateFieldButton setEnabled:NO];
 	[removeFieldButton setEnabled:NO];
-#ifndef SP_CODA
 	[addIndexButton setEnabled:NO];
 	[removeIndexButton setEnabled:NO];
 	[editTableButton setEnabled:NO];
-#endif
 
 	// If no table is selected, refresh the table/index display to blank and return
 	if (!selectedTable) {
@@ -1784,18 +1733,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	defaultValues = [[NSDictionary dictionaryWithDictionary:newDefaultValues] retain];
 
-#ifndef SP_CODA
 	// Enable the edit table button
 	[editTableButton setEnabled:enableInteraction];
-#endif
 
 	// If a view is selected, disable the buttons; otherwise enable.
 	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && enableInteraction;
 
 	[addFieldButton setEnabled:editingEnabled];
-#ifndef SP_CODA
 	[addIndexButton setEnabled:editingEnabled && ![[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"]];
-#endif
 
 	// Reload the views
 	[indexesTableView reloadData];
@@ -1951,14 +1896,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 				// Asks the user to add an index to query if AUTO_INCREMENT is set and field isn't indexed
 				if ((![currentRow objectForKey:@"Key"] || [[currentRow objectForKey:@"Key"] isEqualToString:@""])) {
-#ifndef SP_CODA
 					[chooseKeyButton selectItemWithTag:SPPrimaryKeyMenuTag];
 
 					[NSApp beginSheet:keySheet
 					   modalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self
 					   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
 						  contextInfo:@"autoincrementindex" ];
-#endif
 				}
 			}
 			else {
@@ -2322,7 +2265,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 #pragma mark -
 #pragma mark Split view delegate methods
-#ifndef SP_CODA /* Split view delegate methods */
 
 - (BOOL)splitView:(NSSplitView *)sender canCollapseSubview:(NSView *)subview
 {
@@ -2358,7 +2300,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 }
-#endif
 
 #pragma mark -
 #pragma mark Combo box delegate methods

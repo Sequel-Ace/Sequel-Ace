@@ -39,9 +39,7 @@
 #import "SPTextAndLinkCell.h"
 #import "SPTooltip.h"
 #import "SPCopyTable.h"
-#ifndef SP_CODA /* headers */
 #import "SPQueryFavoriteManager.h"
-#endif
 #import "SPQueryController.h"
 #import "SPEncodingPopupAccessory.h"
 #import "SPDataStorage.h"
@@ -53,10 +51,8 @@
 #import "RegexKitLite.h"
 #import "SPThreadAdditions.h"
 #import "SPConstants.h"
-#ifndef SP_CODA /* headers */
 #import "SPAppController.h"
 #import "SPBundleHTMLOutputController.h"
-#endif
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
@@ -114,14 +110,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @end
 
 @implementation SPCustomQuery
-
-#ifdef SP_CODA
-@synthesize textView;
-@synthesize customQueryView;
-@synthesize tableDocumentInstance;
-@synthesize tablesListInstance;
-@synthesize affectedRowsText;
-#endif
 
 @synthesize runAllButton;
 @synthesize textViewWasChanged;
@@ -279,7 +267,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)chooseQueryFavorite:(id)sender
 {
-#ifndef SP_CODA /* ui manip for query favorites */
 	if ([queryFavoritesButton indexOfSelectedItem] == 1) {
 
 		// This should never evaluate to true as we are now performing menu validation, meaning the 'Save Query to Favorites' menu item will
@@ -351,7 +338,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// The actual query strings have been already stored as tooltip
 		[textView insertAsSnippet:[[queryFavoritesButton selectedItem] toolTip] atRange:NSMakeRange([textView selectedRange].location, 0)];
 	}
-#endif
 }
 
 /*
@@ -359,7 +345,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)chooseQueryHistory:(id)sender
 {
-#ifndef SP_CODA
 	[prefs synchronize];
 
 	// Choose history item
@@ -374,7 +359,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		[textView insertText:[[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:[queryHistoryButton indexOfSelectedItem]-7]];
 	}
-#endif
 }
 
 /**
@@ -392,7 +376,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)gearMenuItemSelected:(id)sender
 {
-#ifndef SP_CODA
 	if ( sender == previousHistoryMenuItem ) {
 		NSInteger numberOfHistoryItems = [[SPQueryController sharedQueryController] numberOfHistoryItemsForFileURL:[tableDocumentInstance fileURL]];
 		currentHistoryOffsetIndex++;
@@ -426,7 +409,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 		historyItemWasJustInserted = NO;
 	}
-#endif
 
 	// "Shift Right" menu item - indent the selection with an additional tab.
 	if (sender == shiftRightMenuItem) {
@@ -470,10 +452,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// "Indent new lines" toggle
 	if (sender == autoindentMenuItem) {
 		BOOL enableAutoindent = !([autoindentMenuItem state] == NSOffState);
-#ifndef SP_CODA /* prefs access */
+
 		[prefs setBool:enableAutoindent forKey:SPCustomQueryAutoIndent];
 		[prefs synchronize];
-#endif
+
 		[autoindentMenuItem setState:enableAutoindent?NSOnState:NSOffState];
 		[textView setAutoindent:enableAutoindent];
 	}
@@ -481,15 +463,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// "Auto-pair characters" toggle
 	if (sender == autopairMenuItem) {
 		BOOL enableAutopair = !([autopairMenuItem state] == NSOffState);
-#ifndef SP_CODA /* prefs access */
+
 		[prefs setBool:enableAutopair forKey:SPCustomQueryAutoPairCharacters];
 		[prefs synchronize];
-#endif
+
 		[autopairMenuItem setState:enableAutopair?NSOnState:NSOffState];
 		[textView setAutopair:enableAutopair];
 	}
 
-#ifndef SP_CODA /* prefs access */
+
 	// "Auto-help" toggle
 	if (sender == autohelpMenuItem) {
 		BOOL enableAutohelp = !([autohelpMenuItem state] == NSOffState);
@@ -498,15 +480,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[autohelpMenuItem setState:enableAutohelp?NSOnState:NSOffState];
 		[textView setAutohelp:enableAutohelp];
 	}
-#endif
+
 
 	// "Auto-uppercase keywords" toggle
 	if (sender == autouppercaseKeywordsMenuItem) {
 		BOOL enableAutouppercaseKeywords = !([autouppercaseKeywordsMenuItem state] == NSOffState);
-#ifndef SP_CODA /* prefs access */
+
 		[prefs setBool:enableAutouppercaseKeywords forKey:SPCustomQueryAutoUppercaseKeywords];
 		[prefs synchronize];
-#endif
+
 		[autouppercaseKeywordsMenuItem setState:enableAutouppercaseKeywords?NSOnState:NSOffState];
 		[textView setAutouppercaseKeywords:enableAutouppercaseKeywords];
 	}
@@ -514,7 +496,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 - (IBAction)saveQueryHistory:(id)sender
 {
-#ifndef SP_CODA
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
 	[panel setAllowedFileTypes:@[SPFileExtensionSQL]];
@@ -544,7 +525,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			if (error) [[NSAlert alertWithError:error] runModal];
 		}
     }];
-#endif
 }
 
 - (IBAction)copyQueryHistory:(id)sender
@@ -561,7 +541,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)clearQueryHistory:(id)sender
 {
-#ifndef SP_CODA
 	NSString *infoString;
 
 	if ([tableDocumentInstance isUntitled])
@@ -588,7 +567,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 					  modalDelegate:self
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
 						contextInfo:@"clearHistory"];
-#endif
 }
 
 /* *
@@ -759,9 +737,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// BOOL queriesSeparatedByDelimiter = NO;
 
 		NSCharacterSet *whitespaceAndNewlineSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
-#ifndef SP_CODA /* [tableDocumentInstance setQueryMode:] */
 		[tableDocumentInstance setQueryMode:SPCustomQueryQueryMode];
-#endif
 
 		// Notify listeners that a query has started
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
@@ -980,12 +956,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[errors setString:[mySQLConnection lastErrorMessage]];
 		}
 
-#ifndef SP_CODA
 		// add query to history
 		if(!reloadingExistingResult && [usedQuery length]) {
 			[self performSelectorOnMainThread:@selector(addHistoryEntry:) withObject:usedQuery waitUntilDone:NO];
 		}
-#endif
 
 		// Update status/errors text
 		NSDictionary *statusDetails = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -1047,9 +1021,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// Restore automatic query retries
 		[mySQLConnection setRetryQueriesOnConnectionFailure:YES];
 
-#ifndef SP_CODA /* [tableDocumentInstance setQueryMode:] */
 		[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-#endif
 
 		// If no results were returned, redraw the empty table and post notifications before returning.
 		if ( ![resultData count] ) {
@@ -1058,7 +1030,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			// Notify any listeners that the query has completed
 			[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
-#ifndef SP_CODA /* notification */
 			// Perform the notification for query completion
 			NSUserNotification *notification = [[NSUserNotification alloc] init];
 			notification.title = @"Query Finished";
@@ -1067,7 +1038,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 			[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
 			[notification release];
-#endif
 
 			// Set up the callback if present
 			if ([taskArguments objectForKey:@"callback"]) {
@@ -1091,7 +1061,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		//query finished
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
-#ifndef SP_CODA /* notification */
 		// Query finished notification
 		NSUserNotification *notification = [[NSUserNotification alloc] init];
 		notification.title = @"Query Finished";
@@ -1100,7 +1069,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
 		[notification release];
-#endif
 
 		// Set up the callback if present
 		if ([taskArguments objectForKey:@"callback"]) {
@@ -1450,13 +1418,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// If errors occur, display them
 	if ( [mySQLConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
-
-#ifndef SP_CODA
 		// set the error text
 		[errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 		[errorText setString:[errorsString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
 		[[errorTextScrollView verticalScroller] setFloatValue:1.0f];
-#endif
 
 		// try to select the line x of the first error if error message with ID 1064 contains "at line x"
 		// by capturing the last number of the error string
@@ -1522,17 +1487,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[errorText setString:NSLocalizedString(@"There were no errors.", @"text shown when query was successfull")];
 	}
 
-#ifndef SP_CODA /* show/hide errror view */
 	// Show or hide the error area if necessary
 	if ([errorsString length] && [queryInfoPaneSplitView isCollapsibleSubviewCollapsed]) {
 		[queryInfoPaneSplitView toggleCollapse:self];
 	} else if (![errorsString length] && ![queryInfoPaneSplitView isCollapsibleSubviewCollapsed]) {
 		[queryInfoPaneSplitView toggleCollapse:self];
 	}
-#else
-	if ( [errorsString length] > 0 )
-		NSRunAlertPanel(LOCAL(@"Query Error"), @"%@", LOCAL(@"OK"), nil, nil, errorsString);
-#endif
 }
 
 #pragma mark -
@@ -1755,25 +1715,16 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Set up the interface
 
 	[customQueryView setVerticalMotionCanBeginDrag:NO];
-#ifndef SP_CODA
 	[autoindentMenuItem setState:([prefs boolForKey:SPCustomQueryAutoIndent]?NSOnState:NSOffState)];
 	[autopairMenuItem setState:([prefs boolForKey:SPCustomQueryAutoPairCharacters]?NSOnState:NSOffState)];
 	[autohelpMenuItem setState:([prefs boolForKey:SPCustomQueryUpdateAutoHelp]?NSOnState:NSOffState)];
 	[autouppercaseKeywordsMenuItem setState:([prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]?NSOnState:NSOffState)];
-#else
-	[autoindentMenuItem setState:(YES?NSOnState:NSOffState)];
-	[autopairMenuItem setState:(YES?NSOnState:NSOffState)];
-	[autohelpMenuItem setState:(YES?NSOnState:NSOffState)];
-	[autouppercaseKeywordsMenuItem setState:(YES?NSOnState:NSOffState)];
-#endif
 
-#ifndef SP_CODA
 	if ( [[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] )
 		[self performSelectorOnMainThread:@selector(historyItemsHaveBeenUpdated:) withObject:nil waitUntilDone:YES];
 
 	// Populate query favorites
 	[self queryFavoritesHaveBeenUpdated:nil];
-#endif
 }
 
 /**
@@ -1813,11 +1764,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	// Update font size on the table
-#ifndef SP_CODA
 	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
-#else
-	NSFont *tableFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
-#endif
 	[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// If there are no table columns to add, return
@@ -1854,7 +1801,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
 		[theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@", [columnDefinition objectForKey:@"name"], [columnDefinition objectForKey:@"type"], ([columnDefinition objectForKey:@"char_length"]) ? [NSString stringWithFormat:@"(%@)", [columnDefinition objectForKey:@"char_length"]] : @""]];
 
-#ifndef SP_CODA
 		// Set the width of this column to saved value if exists and maps to a real column
 		if ([columnDefinition objectForKey:@"org_name"] && [(NSString *)[columnDefinition objectForKey:@"org_name"] length]) {
 			NSNumber *colWidth = [[[[prefs objectForKey:SPTableColumnWidths] objectForKey:[NSString stringWithFormat:@"%@@%@", [columnDefinition objectForKey:@"db"], [tableDocumentInstance host]]] objectForKey:[columnDefinition objectForKey:@"org_table"]] objectForKey:[columnDefinition objectForKey:@"org_name"]];
@@ -1862,7 +1808,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 				[theCol setWidth:[colWidth floatValue]];
 			}
 		}
-#endif
 
 		[customQueryView addTableColumn:theCol];
 		[theCol release];
@@ -1933,10 +1878,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[customQueryView setDelegate:nil];
 	for (NSDictionary *columnDefinition in cqColumnDefinition) {
 
-#ifndef SP_CODA
 		// Skip columns with saved widths
 		if ([[[[prefs objectForKey:SPTableColumnWidths] objectForKey:[NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]]] objectForKey:[tablesListInstance tableName]] objectForKey:[columnDefinition objectForKey:@"name"]]) continue;
-#endif
 
 		// Otherwise set the column width
 		NSTableColumn *aTableColumn = [customQueryView tableColumnWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
@@ -2179,7 +2122,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
-#ifndef SP_CODA
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
 				SPOnewayAlertSheet(
 					NSLocalizedString(@"Warning", @"warning"),
@@ -2189,23 +2131,18 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			} else {
 				NSBeep();
 			}
-#endif
 			return;
 		}
 
 		// On success reload table data by executing the last query if reloading is enabled
-#ifndef SP_CODA
 		if ([prefs boolForKey:SPReloadAfterEditingRow]) {
 			reloadingExistingResult = YES;
 			[self storeCurrentResultViewForRestoration];
 			[self performQueries:@[lastExecutedQuery] withCallback:NULL];
 		} else {
-#endif
 			// otherwise, just update the data in the data storage
 			[resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
-#ifndef SP_CODA
 		}
-#endif
 	} else {
 		SPOnewayAlertSheet(
 			NSLocalizedString(@"Error", @"error"),
@@ -2702,11 +2639,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)tableViewSelectionDidChange:(NSNotification *)aNotification
 {
-
 	// Check our notification object is our table content view
 	if ([aNotification object] != customQueryView) return;
-	
-#ifndef SP_CODA /* triggered commands */
+
 	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
@@ -2744,7 +2679,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			}
 		}
 	}
-#endif
 }
 
 /**
@@ -2769,15 +2703,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	NSString *host_db = [NSString stringWithFormat:@"%@@%@", [columnDefinition objectForKey:@"db"], [tableDocumentInstance host]];
 
 	// Retrieve or instantiate the tableColumnWidths object
-#ifndef SP_CODA
 	if ([prefs objectForKey:SPTableColumnWidths] != nil) {
 		tableColumnWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
 	} else {
-#endif
 		tableColumnWidths = [NSMutableDictionary dictionary];
-#ifndef SP_CODA
 	}
-#endif
 
 	// Edit or create database object
 	if  ([tableColumnWidths objectForKey:host_db] == nil) {
@@ -2795,9 +2725,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// Save the column size
 	[[[tableColumnWidths objectForKey:host_db] objectForKey:table] setObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[aNotification userInfo] objectForKey:@"NSTableColumn"] width]] forKey:col];
-#ifndef SP_CODA
 	[prefs setObject:tableColumnWidths forKey:SPTableColumnWidths];
-#endif
 }
 
 /**
@@ -2812,7 +2740,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	NSUInteger targetWidth = [customQueryView autodetectWidthForColumnDefinition:columnDefinition maxRows:500];
 
 	// Clear any saved widths for the column
-#ifndef SP_CODA
 	NSString *dbKey = [NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]];
 	NSString *tableKey = [tablesListInstance tableName];
 	NSMutableDictionary *savedWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
@@ -2832,7 +2759,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 		[prefs setObject:[NSDictionary dictionaryWithDictionary:savedWidths] forKey:SPTableColumnWidths];
 	}
-#endif
 
 	// Return the width, while the delegate is empty to prevent column resize notifications
 	[customQueryView setDelegate:nil];
@@ -2938,7 +2864,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)controlTextDidChange:(NSNotification *)notification
 {
-#ifndef SP_CODA
 	if ([notification object] == queryFavoriteNameTextField)
 		[saveQueryFavoriteButton setEnabled:[[queryFavoriteNameTextField stringValue] length]];
 	else if ([notification object] == queryFavoritesSearchField){
@@ -2947,20 +2872,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	else if ([notification object] == queryHistorySearchField) {
 		[self filterQueryHistory:nil];
 	}
-#endif
 }
 
-#ifndef SP_CODA
 - (NSUndoManager *)undoManagerForTextView:(NSTextView *)aTextView
 {
 	return [tableDocumentInstance undoManager];
 }
-#endif
 
 #pragma mark -
 #pragma mark SplitView delegate methods
-
-#ifndef SP_CODA /* splitview delegate methods */
 
 /**
  * Tells the split views that they can collapse views
@@ -2978,8 +2898,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	return (splitView == queryInfoPaneSplitView ? NSZeroRect : proposedEffectiveRect);
 }
-
-#endif
 
 /**
  * Set the MySQL version as X.Y
@@ -3005,7 +2923,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 }
 
-#ifndef SP_CODA
 /**
  * Show the data for "HELP 'currentWord' invoked by autohelp"
  */
@@ -3030,12 +2947,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[textView setAutohelp:NO];
 }
 
-#endif
-
 #pragma mark -
 #pragma mark Query favorites manager delegate methods
-
-#ifndef SP_CODA
 
 /**
  * Rebuild history popup menu.
@@ -3138,7 +3051,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Reapply the filter
 	[self filterQueryFavorites:nil];
 }
-#endif
 
 #pragma mark -
 #pragma mark Database content view delegate methods
@@ -3166,11 +3078,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	isWorking = YES;
 
-#ifndef SP_CODA /* check selected view */
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery])
 		return;
-#endif
 
 	tableRowsSelectable = NO;
 	[runAllButton setEnabled:NO];
@@ -3186,11 +3096,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	isWorking = NO;
 
-#ifndef SP_CODA /* check active tab */
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery])
 		return;
-#endif
 
 	tableRowsSelectable = YES;
 	[runAllButton setEnabled:YES];
@@ -3260,7 +3168,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		return;
 	}
 
-#ifndef SP_CODA
 	if ([contextInfo isEqualToString:@"clearHistory"]) {
 		if (returnCode == NSModalResponseOK) {
 			// Remove items in the query controller
@@ -3312,7 +3219,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	[queryFavoriteNameTextField setStringValue:@""];
-#endif
 }
 
 /**
@@ -3320,7 +3226,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-#ifndef SP_CODA
 	// Control "Save ... to Favorites"
 	if ( [menuItem tag] == SP_SAVE_SELECTION_FAVORTITE_MENUITEM_TAG ) {
 		if ([[textView string] length] < 1) return NO;
@@ -3356,9 +3261,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	return YES;
-#else
-	return NO;
-#endif
 }
 
 - (void)processFieldEditorResult:(id)data contextInfo:(NSDictionary*)contextInfo
@@ -3444,7 +3346,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	return self;
 }
 
-#ifndef SP_CODA
 /**
  * Filters the query favorites menu.
  */
@@ -3473,7 +3374,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", [queryHistorySearchField stringValue]]])];
 	}
 }
-#endif
 
 /**
  * If user selected a table cell which is a blob field and tried to edit it
@@ -3564,7 +3464,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (BOOL)control:(NSControl*)control textView:(NSTextView*)aTextView doCommandBySelector:(SEL)command
 {
-#ifndef SP_CODA
 	if(control == queryHistorySearchField || control == queryFavoritesSearchField) {
 		if(command == @selector(moveDown:) || command == @selector(moveUp:)) {
 			[queryHistorySearchField abortEditing];
@@ -3581,10 +3480,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		}
 	}
-
-	else
-#endif
-		if([control isKindOfClass:[SPCopyTable class]]) {
+	else if([control isKindOfClass:[SPCopyTable class]]) {
 
 		// Check firstly if SPCopyTable can handle command
 		if([customQueryView control:control textView:aTextView doCommandBySelector:command])
@@ -3616,11 +3512,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[customQueryView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 	[self updateQueryInteractionInterface];
 
-#ifndef SP_CODA
 	// Set pre-defined menu tags
 	[queryFavoritesSaveAsMenuItem setTag:SP_SAVE_SELECTION_FAVORTITE_MENUITEM_TAG];
 	[queryFavoritesSaveAllMenuItem setTag:SP_SAVE_ALL_FAVORTITE_MENUITEM_TAG];
-#endif
 
 	// Set up the split views
 	[queryEditorSplitView setMinSize:100 ofSubviewAtIndex:0];
@@ -3628,12 +3522,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	[queryInfoPaneSplitView setCollapsibleSubviewIndex:1];
 	[queryInfoPaneSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
-	
-	
-#ifndef SP_CODA
+
 	// Set the structure and index view's vertical gridlines if required
 	[customQueryView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
-#endif
 
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -3661,10 +3552,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	                                             name:SPUserClosedHelpViewerNotification
 	                                           object:[tableDocumentInstance helpViewerClient]];
 
-#ifndef SP_CODA
 	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
-#endif
-
 }
 
 #pragma mark -
@@ -3732,9 +3620,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-#ifndef SP_CODA
 	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
-#endif
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 
 	[self clearQueryLoadTimer];

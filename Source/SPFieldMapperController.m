@@ -103,12 +103,10 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		tablesListInstance = [theDelegate valueForKeyPath:@"tablesListInstance"];
 		databaseDataInstance = [tablesListInstance valueForKeyPath:@"databaseDataInstance"];
 
-#ifndef SP_CODA /* init ivars */
 		if(![prefs objectForKey:SPLastImportIntoNewTableType])
 			[prefs setObject:@"Default" forKey:SPLastImportIntoNewTableType];
 		if(![prefs objectForKey:SPLastImportIntoNewTableEncoding])
 			[prefs setObject:@"Default" forKey:SPLastImportIntoNewTableEncoding];
-#endif
 	}
 
 	return self;
@@ -407,10 +405,8 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 {
 	// Only save selection if the user selected 'OK'
 	if ([sender tag]) {
-#ifndef SP_CODA
 		[prefs setObject:[newTableInfoEnginePopup titleOfSelectedItem] forKey:SPLastImportIntoNewTableType];
 		[prefs setObject:[newTableInfoEncodingPopup titleOfSelectedItem] forKey:SPLastImportIntoNewTableEncoding];
-#endif
 	}
 
 	[NSApp endSheet:[sender window] returnCode:[sender tag]];
@@ -479,7 +475,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[createString appendString:[columnDetails componentsJoinedByString:@", \n"]];
 		[createString appendString:@")"];
 
-#ifndef SP_CODA
 		if(![[prefs objectForKey:SPLastImportIntoNewTableType] isEqualToString:@"Default"])
 			[createString appendFormat:@" ENGINE=%@", [prefs objectForKey:SPLastImportIntoNewTableType]];
 		if(![[prefs objectForKey:SPLastImportIntoNewTableEncoding] isEqualToString:@"Default"]) {
@@ -487,7 +482,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			if (!encodingName) encodingName = @"utf8";
 			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
 		}
-#endif
 
 		[mySQLConnection queryString:createString];
 
@@ -756,11 +750,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	}
 	[fieldMapperTableView reloadData];
 
-#ifndef SP_CODA
 	// Remember last field alignment if not "custom order"
 	if([[alignByPopup selectedItem] tag] != 3)
 		[prefs setInteger:[[alignByPopup selectedItem] tag] forKey:SPCSVFieldImportMappingAlignment];
-#endif
 
 }
 /*
@@ -1044,9 +1036,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[newTableInfoEnginePopup addItemWithTitle:[engine objectForKey:@"Engine"]];
 	}
 
-#ifndef SP_CODA
 	[newTableInfoEnginePopup selectItemWithTitle:[prefs objectForKey:SPLastImportIntoNewTableType]];
-#endif
 
 	// Populate the table encoding popup button with a default menu item
 	[newTableInfoEncodingPopup removeAllItems];
@@ -1075,9 +1065,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[newTableInfoEncodingPopup insertItemWithTitle:utf8MenuItemTitle atIndex:2];
 		}
 
-#ifndef SP_CODA
 		[newTableInfoEncodingPopup selectItemWithTitle:[prefs objectForKey:SPLastImportIntoNewTableEncoding]];
-#endif
 	}
 
 	[NSApp beginSheet:newTableInfoWindow
@@ -1104,12 +1092,10 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	while([insertPullDownButton numberOfItems] > (([[self selectedImportMethod] isEqualToString:@"UPDATE"]) ? 6 : 5))
 		[insertPullDownButton removeItemAtIndex:[insertPullDownButton numberOfItems]-1];
 
-#ifndef SP_CODA
 	// Add recent global value menu
 	if([prefs objectForKey:SPGlobalValueHistory] && [[prefs objectForKey:SPGlobalValueHistory] isKindOfClass:[NSArray class]] && [[prefs objectForKey:SPGlobalValueHistory] count])
 		for(id item in [prefs objectForKey:SPGlobalValueHistory])
 			[recentGlobalValueMenu addItemWithTitle:item action:@selector(insertRecentGlobalValue:) keyEquivalent:@""];
-#endif
 
 	// Add column placeholder
 	NSInteger i = 0;
@@ -1323,7 +1309,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)resizeWindowByHeightDelta:(NSInteger)delta
 {
-#ifndef SP_CODA /* resizeWindowByHeightDelta: */
 	NSAutoresizingMaskOptions tableMask = [fieldMapperTableScrollView autoresizingMask];
 	NSAutoresizingMaskOptions headerSwitchMask = [importFieldNamesHeaderSwitch autoresizingMask];
 	NSAutoresizingMaskOptions alignPopupMask = [alignByPopup autoresizingMask];
@@ -1377,7 +1362,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[advancedUpdateView setAutoresizingMask:updateViewMask];
 	[advancedInsertView setAutoresizingMask:insertViewMask];
 	[advancedBox setAutoresizingMask:NSViewNotSizable|NSViewWidthSizable|NSViewMaxYMargin|NSViewMaxXMargin|NSViewMinXMargin];
-#endif
 }
 
 - (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
@@ -1550,13 +1534,11 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	NSInteger alignment = 0;
 
-#ifndef SP_CODA
 	if([prefs integerForKey:SPCSVFieldImportMappingAlignment]
 			&& [prefs integerForKey:SPCSVFieldImportMappingAlignment] >= 0
 			&& [prefs integerForKey:SPCSVFieldImportMappingAlignment] < 4) {
 		alignment = [prefs integerForKey:SPCSVFieldImportMappingAlignment];
 	}
-#endif
 
 	if(alignment == 2) {
 		// Set matching names only if csv file has a header
@@ -1710,11 +1692,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-#ifndef SP_CODA
 	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
 
 	[aCell setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-#endif
 }
 
 - (void)tableView:(NSTableView*)aTableView didClickTableColumn:(NSTableColumn *)aTableColumn
@@ -2025,19 +2005,15 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 			// Store anObject as recent global value if it's new
 			NSMutableArray *recents = [NSMutableArray array];
-#ifndef SP_CODA
 			if([prefs objectForKey:SPGlobalValueHistory] && [[prefs objectForKey:SPGlobalValueHistory] isKindOfClass:[NSArray class]] && [[prefs objectForKey:SPGlobalValueHistory] count])
 				[recents setArray:[prefs objectForKey:SPGlobalValueHistory]];
-#endif
 			if([recents containsObject:anObject])
 				[recents removeObject:anObject];
 			[recents insertObject:anObject atIndex:0];
 			while([recents count] > 20)
 				[recents removeObjectAtIndex:[recents count]-1];
-#ifndef SP_CODA
 			if([recents count])
 				[prefs setObject:recents forKey:SPGlobalValueHistory];
-#endif
 
 			// Re-init recent menu
 			[recentGlobalValueMenu removeAllItems];
