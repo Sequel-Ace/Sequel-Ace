@@ -156,6 +156,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize colorIndex;
 @synthesize timeZoneMode;
 @synthesize timeZoneIdentifier;
+@synthesize allowDataLocalInfile;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -967,6 +968,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 	}
 	
+	//Special prefs
+	[self setAllowDataLocalInfile:([fav objectForKey:SPFavoriteAllowDataLocalInfileKey] ? [[fav objectForKey:SPFavoriteAllowDataLocalInfileKey] intValue] : NSOffState)];
+	
 	// SSL details
 	[self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSOffState)];
 	[self setSslKeyFileLocationEnabled:([fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] intValue] : NSOffState)];
@@ -1114,6 +1118,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		@(NSOffState),
 		@(NSOffState),
 		@(NSOffState),
+		@(NSOffState),
 		@"",
 		@"",
 		@"",
@@ -1133,6 +1138,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		SPFavoritePortKey,
 		SPFavoriteTimeZoneModeKey,
 		SPFavoriteTimeZoneIdentifierKey,
+		SPFavoriteAllowDataLocalInfileKey,
 		SPFavoriteUseSSLKey,
 		SPFavoriteSSLKeyFileLocationEnabledKey,
 		SPFavoriteSSLCertificateFileLocationEnabledKey,
@@ -1364,6 +1370,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	 }];
 }
 
+
+
+- (IBAction)allowLocalDataInfileChanged:(id)sender {
+    [self _startEditingConnection];
+}
+
 #pragma mark -
 #pragma mark Time Zone changes
 
@@ -1540,6 +1552,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[theFavorite setObject:[NSNumber numberWithInteger:[self colorIndex]] forKey:SPFavoriteColorIndexKey];
 	[theFavorite setObject:[NSNumber numberWithInteger:[self timeZoneMode]] forKey:SPFavoriteTimeZoneModeKey];
 	_setOrRemoveKey(SPFavoriteTimeZoneIdentifierKey, [self timeZoneIdentifier]);
+	//Special prefs
+	[theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
 	// SSL details
 	[theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
 	[theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -2256,6 +2270,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// The connection will otherwise ask the delegate for passwords in the Keychain.
 		if ((!connectionKeychainItemName || isTestingConnection) && [self password]) {
 			[mySQLConnection setPassword:[self password]];
+		}
+		
+		if([self allowDataLocalInfile]) {
+			[mySQLConnection setAllowDataLocalInfile:YES];
 		}
 
 		// Enable SSL if set
@@ -3636,6 +3654,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	       forKeyPath:SPFavoritePortKey
 	          options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
 	          context:NULL];
+	
+	[self addObserver:self
+		   forKeyPath:SPFavoriteAllowDataLocalInfileKey
+			  options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
+			  context:NULL];
 
 	[self addObserver:self
 	       forKeyPath:SPFavoriteUseSSLKey
@@ -3897,6 +3920,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self removeObserver:self forKeyPath:SPFavoriteDatabaseKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSocketKey];
 	[self removeObserver:self forKeyPath:SPFavoritePortKey];
+	[self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
 	[self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];

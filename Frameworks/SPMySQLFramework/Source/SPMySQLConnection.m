@@ -62,6 +62,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 @synthesize port;
 @synthesize useSocket;
 @synthesize socketPath;
+@synthesize allowDataLocalInfile;
 @synthesize useSSL;
 @synthesize sslKeyFilePath;
 @synthesize sslCertificatePath;
@@ -616,6 +617,11 @@ asm(".desc ___crashreporter_info__, 0x10");
     
     // Some servers have issues when we try caching_sha2_password first; let's always try mysql_native_password first; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/141
     mysql_options(theConnection, MYSQL_DEFAULT_AUTH, [@"mysql_native_password" UTF8String]);
+
+    // Allow using LOAD DATA LOCAL INFILE ...; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/245
+    if(allowDataLocalInfile) {
+        mysql_options(theConnection, MYSQL_OPT_LOCAL_INFILE, [@"On" UTF8String]);
+    }
 
 	// Set up the connection variables in the format MySQL needs, from the class-wide variables
 	const char *theHost = NULL;
