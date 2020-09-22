@@ -1393,7 +1393,10 @@
  */
 - (IBAction)openAboutPanel:(id)sender
 {
-	if (!aboutController) aboutController = [[SPAboutController alloc] init];
+	if (!aboutController) {
+		aboutController = [[SPAboutController alloc] init];
+		aboutController.window.delegate = self;
+	}
 
 	[aboutController showWindow:self];
 }
@@ -2498,6 +2501,20 @@
 - (void)tabDragStarted:(id)sender
 {
 	[NSApp arrangeInFront:self];
+}
+
+#pragma mark - NSWindowDelegate
+
+- (void)windowWillClose:(NSNotification *)notification
+{
+	id window = notification.object;
+	if (!window) { return; }
+
+	if (window == aboutController.window) {
+		aboutController.window.delegate = nil;
+		[aboutController autorelease];
+		aboutController = nil;
+	}
 }
 
 #pragma mark -
