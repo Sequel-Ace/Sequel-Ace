@@ -1142,7 +1142,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             <point key="canvasLocation" x="200" y="836"/>
         </customView>
         <customView id="802" userLabel="Editor">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="445"/>
+            <rect key="frame" x="0.0" y="0.0" width="580" height="451"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <userGuides>
                 <userLayoutGuide location="147" affinity="minX"/>
@@ -1150,11 +1150,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             </userGuides>
             <subviews>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1085">
-                    <rect key="frame" x="204" y="394" width="356" height="5"/>
+                    <rect key="frame" x="204" y="400" width="356" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1083">
-                    <rect key="frame" x="423" y="231" width="140" height="14"/>
+                    <rect key="frame" x="423" y="237" width="140" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="secs" id="1084">
                         <font key="font" metaFont="message" size="11"/>
@@ -1166,7 +1166,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1046">
-                    <rect key="frame" x="405" y="227" width="15" height="22"/>
+                    <rect key="frame" x="405" y="233" width="15" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <stepperCell key="cell" controlSize="small" continuous="YES" enabled="NO" alignment="left" increment="0.10000000000000001" minValue="0.10000000000000001" maxValue="5" doubleValue="1" id="1047">
                         <font key="font" metaFont="message" size="11"/>
@@ -1178,7 +1178,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1045">
-                    <rect key="frame" x="269" y="231" width="96" height="14"/>
+                    <rect key="frame" x="269" y="237" width="96" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" alignment="right" title="Delay by:" id="1048">
                         <font key="font" metaFont="message" size="11"/>
@@ -1190,7 +1190,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1044">
-                    <rect key="frame" x="370" y="229" width="29" height="19"/>
+                    <rect key="frame" x="370" y="235" width="29" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" title=".1" drawsBackground="YES" usesSingleLineMode="YES" id="1049">
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" positiveFormat="#.0" alwaysShowsDecimalSeparator="YES" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="1" minimumFractionDigits="1" maximumFractionDigits="1" decimalSeparator="." groupingSeparator="" id="1050">
@@ -1210,7 +1210,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button hidden="YES" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1043">
-                    <rect key="frame" x="269" y="18" width="292" height="18"/>
+                    <rect key="frame" x="269" y="24" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Balanced brace highlighting" bezelStyle="regularSquare" imagePosition="left" alignment="left" enabled="NO" state="on" inset="2" id="1051">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1218,7 +1218,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </buttonCell>
                 </button>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1517">
-                    <rect key="frame" x="423" y="128" width="140" height="14"/>
+                    <rect key="frame" x="423" y="134" width="140" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="secs" id="1527">
                         <font key="font" metaFont="message" size="11"/>
@@ -1230,7 +1230,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1518">
-                    <rect key="frame" x="405" y="124" width="15" height="22"/>
+                    <rect key="frame" x="405" y="130" width="15" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <stepperCell key="cell" controlSize="small" continuous="YES" enabled="NO" alignment="left" increment="0.10000000000000001" minValue="0.5" maxValue="5" doubleValue="1" id="1526">
                         <font key="font" metaFont="message" size="11"/>
@@ -1242,7 +1242,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1519">
-                    <rect key="frame" x="269" y="128" width="96" height="14"/>
+                    <rect key="frame" x="269" y="134" width="96" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" alignment="right" title="Delay by:" id="1525">
                         <font key="font" metaFont="message" size="11"/>
@@ -1254,7 +1254,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1520">
-                    <rect key="frame" x="370" y="126" width="29" height="19"/>
+                    <rect key="frame" x="370" y="132" width="29" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" title=".5" drawsBackground="YES" usesSingleLineMode="YES" id="1523">
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" positiveFormat="#.0" alwaysShowsDecimalSeparator="YES" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="1" minimumFractionDigits="1" maximumFractionDigits="1" decimalSeparator="." groupingSeparator="" id="1524">
@@ -1274,7 +1274,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1521">
-                    <rect key="frame" x="270" y="151" width="292" height="18"/>
+                    <rect key="frame" x="270" y="157" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Auto-Completion" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="1522">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1285,7 +1285,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="q6h-n2-3a8">
-                    <rect key="frame" x="270" y="96" width="292" height="18"/>
+                    <rect key="frame" x="270" y="102" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Complete with Backticks" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="vGo-VU-lIt">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1296,7 +1296,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1542">
-                    <rect key="frame" x="270" y="68" width="292" height="18"/>
+                    <rect key="frame" x="270" y="74" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Insert function arguments" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="1543">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1307,7 +1307,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1128">
-                    <rect key="frame" x="270" y="207" width="292" height="18"/>
+                    <rect key="frame" x="270" y="213" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Highlight current query" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="1129">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1318,7 +1318,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1042">
-                    <rect key="frame" x="270" y="283" width="292" height="18"/>
+                    <rect key="frame" x="270" y="289" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Auto uppercase keywords" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="1052">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1329,7 +1329,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1041">
-                    <rect key="frame" x="270" y="254" width="292" height="18"/>
+                    <rect key="frame" x="270" y="260" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Update help while typing" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="1053">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1340,7 +1340,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1040">
-                    <rect key="frame" x="270" y="312" width="292" height="18"/>
+                    <rect key="frame" x="270" y="318" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Auto pair characters" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="1054">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1351,7 +1351,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1039">
-                    <rect key="frame" x="270" y="367" width="292" height="18"/>
+                    <rect key="frame" x="270" y="373" width="292" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Indent new lines" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="1055">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1362,7 +1362,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1037" customClass="SPFontPreviewTextField">
-                    <rect key="frame" x="204" y="405" width="207" height="22"/>
+                    <rect key="frame" x="204" y="411" width="207" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" id="1057">
                         <font key="font" metaFont="system"/>
@@ -1371,7 +1371,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1036">
-                    <rect key="frame" x="433" y="398" width="133" height="32"/>
+                    <rect key="frame" x="433" y="404" width="133" height="32"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="push" title="Select…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1058">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1382,7 +1382,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1034">
-                    <rect key="frame" x="17" y="407" width="182" height="17"/>
+                    <rect key="frame" x="17" y="413" width="182" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Font:" id="1060">
                         <font key="font" metaFont="system"/>
@@ -1391,7 +1391,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1497">
-                    <rect key="frame" x="469" y="35" width="15" height="22"/>
+                    <rect key="frame" x="469" y="46" width="15" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <stepperCell key="cell" controlSize="small" continuous="YES" alignment="left" minValue="1" maxValue="20" doubleValue="1" id="1498">
                         <font key="font" metaFont="message" size="11"/>
@@ -1402,7 +1402,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1499">
-                    <rect key="frame" x="269" y="39" width="164" height="16"/>
+                    <rect key="frame" x="270" y="48" width="164" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Tab Stop Width:" id="1500">
                         <font key="font" metaFont="system"/>
@@ -1411,7 +1411,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1505">
-                    <rect key="frame" x="439" y="37" width="23" height="19"/>
+                    <rect key="frame" x="439" y="48" width="23" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" drawsBackground="YES" usesSingleLineMode="YES" id="1506">
                         <numberFormatter key="formatter" formatterBehavior="default10_4" localizesFormat="NO" numberStyle="decimal" lenient="YES" minimumIntegerDigits="1" maximumIntegerDigits="309" maximumFractionDigits="3" id="1507">
@@ -1428,7 +1428,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <popUpButton toolTip="Manage Color Theme" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1669">
-                    <rect key="frame" x="20" y="64" width="24" height="24"/>
+                    <rect key="frame" x="20" y="70" width="24" height="24"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <popUpButtonCell key="cell" type="smallSquare" bezelStyle="smallSquare" imagePosition="only" alignment="center" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" pullsDown="YES" arrowPosition="noArrow" autoenablesItems="NO" selectedItem="1672" id="1670">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1463,7 +1463,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </popUpButtonCell>
                 </popUpButton>
                 <scrollView fixedFrame="YES" horizontalLineScroll="22" horizontalPageScroll="10" verticalLineScroll="22" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1682">
-                    <rect key="frame" x="20" y="95" width="222" height="288"/>
+                    <rect key="frame" x="20" y="101" width="222" height="288"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
                         <rect key="frame" x="1" y="1" width="220" height="286"/>
@@ -1519,7 +1519,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </scroller>
                 </scrollView>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1738">
-                    <rect key="frame" x="49" y="69" width="93" height="14"/>
+                    <rect key="frame" x="49" y="75" width="93" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Color Theme:" id="1739">
                         <font key="font" metaFont="message" size="11"/>
@@ -1528,7 +1528,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <textField toolTip="The name of the current set color theme" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1740">
-                    <rect key="frame" x="144" y="69" width="101" height="14"/>
+                    <rect key="frame" x="144" y="75" width="101" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="theme name" id="1741">
                         <font key="font" metaFont="message" size="11"/>
@@ -1547,7 +1547,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2185">
-                    <rect key="frame" x="270" y="339" width="162" height="18"/>
+                    <rect key="frame" x="270" y="345" width="162" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Soft indent" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="2186">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1558,7 +1558,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2188">
-                    <rect key="frame" x="439" y="338" width="23" height="19"/>
+                    <rect key="frame" x="439" y="344" width="23" height="19"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" drawsBackground="YES" usesSingleLineMode="YES" id="2189">
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" allowsFloats="NO" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="42" id="2203">
@@ -1574,7 +1574,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2196">
-                    <rect key="frame" x="469" y="336" width="15" height="22"/>
+                    <rect key="frame" x="469" y="342" width="15" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <stepperCell key="cell" controlSize="small" continuous="YES" alignment="left" minValue="1" maxValue="32" doubleValue="1" id="2197">
                         <font key="font" metaFont="message" size="11"/>
@@ -1585,7 +1585,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xIN-qP-ogl">
-                    <rect key="frame" x="269" y="179" width="294" height="18"/>
+                    <rect key="frame" x="269" y="185" width="294" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Syntax highlighting" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="VHx-Tf-Rw2">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1595,8 +1595,22 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <binding destination="117" name="value" keyPath="values.CustomQueryEnableSyntaxHighlighting" id="kJw-7M-n52"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="UnY-1b-NTN">
+                    <rect key="frame" x="270" y="18" width="144" height="18"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <buttonCell key="cell" type="check" title="Bracket highlighting" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="vxK-rA-lkM">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <connections>
+                            <binding destination="117" name="value" keyPath="values.CustomQueryEnableBracketHighliting" id="VaB-NN-oGg"/>
+                        </connections>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.CustomQueryEnableBracketHighlighting" id="635-un-YeG"/>
+                    </connections>
+                </button>
             </subviews>
-            <point key="canvasLocation" x="200" y="1302.5"/>
+            <point key="canvasLocation" x="200" y="1305.5"/>
         </customView>
         <menu id="1547" userLabel="Context Menu">
             <items>

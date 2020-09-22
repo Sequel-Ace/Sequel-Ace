@@ -359,6 +359,7 @@ extern NSString *SPCustomQueryAutoUppercaseKeywords;
 extern NSString *SPCustomQueryUpdateAutoHelp;
 extern NSString *SPCustomQueryAutoHelpDelay;
 extern NSString *SPCustomQueryHighlightCurrentQuery;
+extern NSString *SPCustomQueryEnableBracketHighlighting;
 extern NSString *SPCustomQueryEditorTabStopWidth;
 extern NSString *SPCustomQueryEditorCompleteWithBackticks;
 extern NSString *SPCustomQueryAutoComplete;
