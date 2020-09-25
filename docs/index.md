@@ -9,4 +9,4 @@ Get started using Sequel Ace quickly by browsing through this online documentati
 
 ---
 
-Edit these pages at https://github.com/Sequel-Ace/Sequel-Ace/tree/master/docs
+Edit these pages at https://github.com/Sequel-Ace/Sequel-Ace/tree/release/docs
