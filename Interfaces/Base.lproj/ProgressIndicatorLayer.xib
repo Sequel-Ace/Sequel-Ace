@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097.3" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097.3"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -22,34 +22,50 @@
             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
             <subviews>
                 <box autoresizesSubviews="NO" boxType="custom" borderType="none" borderWidth="0.0" cornerRadius="15" title="Box" titlePosition="noTitle" transparent="YES" id="10">
-                    <rect key="frame" x="0.0" y="-70" width="437" height="160"/>
+                    <rect key="frame" x="0.0" y="0.0" width="437" height="90"/>
                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                     <view key="contentView" id="caA-53-JzL">
-                        <rect key="frame" x="0.0" y="0.0" width="437" height="160"/>
+                        <rect key="frame" x="0.0" y="0.0" width="437" height="90"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <box autoresizesSubviews="NO" boxType="custom" borderType="none" cornerRadius="9" title="Box" titlePosition="noTitle" id="38">
-                                <rect key="frame" x="0.0" y="70" width="436" height="90"/>
+                                <rect key="frame" x="0.0" y="0.0" width="436" height="90"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <view key="contentView" id="7lo-Wi-p5Y">
                                     <rect key="frame" x="0.0" y="0.0" width="436" height="90"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" preferredMaxLayoutWidth="322" translatesAutoresizingMaskIntoConstraints="NO" id="15">
-                                            <rect key="frame" x="97" y="30" width="326" height="49"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="11" customClass="YRKSpinningProgressIndicator">
+                                            <rect key="frame" x="20" y="10" width="70" height="70"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" constant="70" id="Nuh-iv-aLu"/>
+                                                <constraint firstAttribute="height" constant="70" id="cQ4-hH-plo"/>
+                                            </constraints>
+                                        </customView>
+                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" preferredMaxLayoutWidth="322" translatesAutoresizingMaskIntoConstraints="NO" id="15">
+                                            <rect key="frame" x="98" y="63" width="320" height="16"/>
                                             <textFieldCell key="cell" controlSize="mini" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="left" title="Multiline Label" id="16">
                                                 <font key="font" metaFont="systemBold"/>
                                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                             </textFieldCell>
                                         </textField>
-                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="45">
-                                            <rect key="frame" x="251" y="10" width="175" height="19"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                            <buttonCell key="cell" type="roundRect" title="Cancel" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="46" customClass="BGHUDButtonCell">
+                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fHc-do-wgk">
+                                            <rect key="frame" x="98" y="11" width="184" height="16"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" constant="180" id="Gt8-s1-kRN"/>
+                                            </constraints>
+                                            <textFieldCell key="cell" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="left" title="Query execution time label" id="e5b-ly-IyA">
+                                                <font key="font" metaFont="systemBold"/>
+                                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="45">
+                                            <rect key="frame" x="288" y="10" width="128" height="19"/>
+                                            <buttonCell key="cell" type="roundRect" title="Cancel" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="46">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" metaFont="titleBar" size="12"/>
+                                                <font key="font" metaFont="controlContent"/>
                                                 <string key="keyEquivalent">.</string>
                                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                             </buttonCell>
@@ -57,24 +73,23 @@
                                                 <action selector="cancelTask:" target="-2" id="49"/>
                                             </connections>
                                         </button>
-                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="fHc-do-wgk">
-                                            <rect key="frame" x="97" y="11" width="148" height="17"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                            <textFieldCell key="cell" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="left" title="Query execution time label" id="e5b-ly-IyA">
-                                                <font key="font" metaFont="systemBold"/>
-                                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                            </textFieldCell>
-                                        </textField>
                                     </subviews>
+                                    <constraints>
+                                        <constraint firstItem="15" firstAttribute="leading" secondItem="11" secondAttribute="trailing" constant="10" id="6UK-xU-DAZ"/>
+                                        <constraint firstAttribute="bottom" secondItem="fHc-do-wgk" secondAttribute="bottom" constant="11" id="9eV-Ud-QS3"/>
+                                        <constraint firstItem="11" firstAttribute="leading" secondItem="7lo-Wi-p5Y" secondAttribute="leading" constant="20" id="Jn8-86-RZP"/>
+                                        <constraint firstAttribute="trailing" secondItem="15" secondAttribute="trailing" constant="20" id="MH8-cb-GGO"/>
+                                        <constraint firstItem="fHc-do-wgk" firstAttribute="leading" secondItem="11" secondAttribute="trailing" constant="10" id="UPE-Ex-kEZ"/>
+                                        <constraint firstAttribute="trailing" secondItem="45" secondAttribute="trailing" constant="20" id="Yr6-o7-uxN"/>
+                                        <constraint firstItem="15" firstAttribute="top" secondItem="7lo-Wi-p5Y" secondAttribute="top" constant="11" id="cM4-Hn-uU1"/>
+                                        <constraint firstItem="45" firstAttribute="leading" secondItem="fHc-do-wgk" secondAttribute="trailing" constant="8" id="dgC-TX-m4g"/>
+                                        <constraint firstAttribute="bottom" secondItem="45" secondAttribute="bottom" constant="11" id="wW5-AN-2EH"/>
+                                        <constraint firstItem="11" firstAttribute="centerY" secondItem="7lo-Wi-p5Y" secondAttribute="centerY" id="zyI-l8-tli"/>
+                                    </constraints>
                                 </view>
                                 <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
                                 <color key="fillColor" white="0.25403225419999997" alpha="0.80000001190000003" colorSpace="calibratedWhite"/>
                             </box>
-                            <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="11" customClass="YRKSpinningProgressIndicator">
-                                <rect key="frame" x="13" y="79" width="73" height="73"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                            </customView>
                         </subviews>
                     </view>
                     <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>

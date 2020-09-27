@@ -1478,7 +1478,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	taskCanBeCancelled = YES;
 
-	[taskCancelButton setTitle:buttonTitle];
+	NSMutableAttributedString *colorTitle = [[NSMutableAttributedString alloc]
+											 initWithString:buttonTitle
+											 attributes:@{NSForegroundColorAttributeName: [NSColor whiteColor]}
+											 ];
+    [taskCancelButton setAttributedTitle:colorTitle];
 	[taskCancelButton setEnabled:YES];
 	[taskCancelButton setHidden:NO];
 }
