@@ -37,7 +37,6 @@ static NSString *SPCreditsFilename = @"Credits";
 static NSString *SPLicenseFilename = @"License";
 
 static NSString *SPAboutPanelNibName = @"AboutPanel";
-static NSString *SPShortVersionHashKey = @"SPVersionShortHash";
 
 @interface SPAboutController ()
 
@@ -57,15 +56,15 @@ static NSString *SPShortVersionHashKey = @"SPVersionShortHash";
 
 - (void)awakeFromNib
 {
-	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+	NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
 	
 	// If the name string contains 'Beta' then this is obviously a beta build.
-	NSRange matchRange = [[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey] rangeOfString:SPSnapshotBuildIndicator];
+	NSRange matchRange = [[infoDictionary objectForKey:(NSString*)kCFBundleNameKey] rangeOfString:SPSnapshotBuildIndicator];
 
 	BOOL isSnapshotBuild = matchRange.location != NSNotFound;
 	
 	// Set the application name, but only include the major version if this is not a nightly build.
-	[appNameVersionTextField setStringValue:[NSString stringWithFormat:@"Sequel Ace %@%@", version, (isSnapshotBuild ? @" Beta" : @"")]];
+	[appNameVersionTextField setStringValue:[NSString stringWithFormat:@"Sequel Ace%@", (isSnapshotBuild ? @" Beta" : @"")]];
 
 	[self _setVersionLabel:isSnapshotBuild];
 	
@@ -108,23 +107,13 @@ static NSString *SPShortVersionHashKey = @"SPVersionShortHash";
 	NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
 
 	// Get version numbers
+	NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
 	NSString *bundleVersion = [infoDictionary objectForKey:(NSString *)kCFBundleVersionKey];
-	NSString *versionHash = [infoDictionary objectForKey:SPShortVersionHashKey];
 
-	BOOL hashIsEmpty = !versionHash && ![versionHash length];
-
-	NSString *textFieldString;
-
-	if (!bundleVersion && ![bundleVersion length] && hashIsEmpty) {
-		textFieldString = @"";
-	}
-	else {
-		textFieldString =
-		 [NSString stringWithFormat:@"%@ %@%@",
-		  isSnapshotBuild ? NSLocalizedString(@"Beta Build", @"beta build label") : NSLocalizedString(@"Build", @"build label"),
-		  bundleVersion,
-		  hashIsEmpty ? @"" : [NSString stringWithFormat:@" (%@)", versionHash]];
-	}
+	NSString *textFieldString = [NSString stringWithFormat:@"Version %@\n%@ %@",
+		version,
+		isSnapshotBuild ? NSLocalizedString(@"Beta Build", @"beta build label") : NSLocalizedString(@"Build", @"build label"),
+		bundleVersion];
 
 	[appBuildVersionTextField setStringValue:textFieldString];
 }
