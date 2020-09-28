@@ -40,7 +40,7 @@
 	NSUInteger collapsibleSubviewIndex;
 	BOOL collapsibleSubviewCollapsed;
 
-	double animationStartTime;
+	uint64_t animationStartTime;
 	double animationDuration;
 	NSTimer *animationTimer;
 	SPSplitViewAnimationRetainCycleBypass *animationRetainCycleBypassObject;

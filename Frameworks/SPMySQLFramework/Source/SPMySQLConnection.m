@@ -373,7 +373,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	// Update the connection tracking use variable if the connection was confirmed,
 	// as at least a mysql_ping will have been used.
 	if (connectionVerified) {
-		lastConnectionUsedTime = mach_absolute_time();
+        lastConnectionUsedTime = _monotonicTime();
 	}
 
 	return connectionVerified;
@@ -399,7 +399,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	}
 	
 	// If the connection was recently used, return success
-	if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 30) {
+	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 30) {
 		return YES;
 	}
 	
@@ -417,7 +417,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 {
 	if (initialConnectTime == 0) return -1;
 
-	return _elapsedSecondsSinceAbsoluteTime(initialConnectTime);
+	return _timeIntervalSinceMonotonicTime(initialConnectTime);
 }
 
 /**
@@ -497,7 +497,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// If a connection is already active in some form, throw an exception
 	if (state != SPMySQLDisconnected && state != SPMySQLConnectionLostInBackground) {
 		@synchronized (self) {
-			double diff = _elapsedSecondsSinceAbsoluteTime(initialConnectTime);
+			double diff = _timeIntervalSinceMonotonicTime(initialConnectTime);
 			asprintf(&__crashreporter_info__, "Attempted to connect a connection that is not disconnected (SPMySQLConnectionState=%d).\nIf state==2: Previous connection made %lfs ago from: %s", state, diff, [_debugLastConnectedEvent cStringUsingEncoding:NSUTF8StringEncoding]);
 			__builtin_trap();
 		}
@@ -535,7 +535,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnected;
 
 	@synchronized (self) {
-		initialConnectTime = mach_absolute_time();
+		initialConnectTime = _monotonicTime();
 		[_debugLastConnectedEvent release];
 		_debugLastConnectedEvent = [[NSString alloc] initWithFormat:@"thread=%@ stack=%@",[NSThread currentThread],[NSThread callStackSymbols]];
 	}
@@ -774,11 +774,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
 			// takes less than the requested 0.1s, sleep instead.
 			while (reconnectingThread) {
-				uint64_t loopIterationStart_t = mach_absolute_time();
+				uint64_t loopIterationStart_t = _monotonicTime();
 
 				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-				if (_elapsedSecondsSinceAbsoluteTime(loopIterationStart_t) < 0.1) {
-					usleep(100000 - (useconds_t)(1000000 * _elapsedSecondsSinceAbsoluteTime(loopIterationStart_t)));
+				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.1) {
+					usleep(100000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
 				}
 			}
 
@@ -829,17 +829,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// to allow it to disconnect.
 			if ([proxy state] != SPMySQLProxyIdle) {
 
-				proxyWaitStart_t = mach_absolute_time();
+				proxyWaitStart_t = _monotonicTime();
 				while ([proxy state] != SPMySQLProxyIdle) {
-					loopIterationStart_t = mach_absolute_time();
+					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_elapsedSecondsSinceAbsoluteTime(proxyWaitStart_t) > timeout) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
-					if (_elapsedSecondsSinceAbsoluteTime(loopIterationStart_t) < 0.25) {
-						usleep(250000 - (useconds_t)(1000000 * _elapsedSecondsSinceAbsoluteTime(loopIterationStart_t)));
+					if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
+						usleep(250000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
 					}
 				}
 			}
@@ -848,9 +848,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[proxy connect];
 
 			// Wait while the proxy connects
-			proxyWaitStart_t = mach_absolute_time();
+			proxyWaitStart_t = _monotonicTime();
 			while (1) {
-				loopIterationStart_t = mach_absolute_time();
+				loopIterationStart_t = _monotonicTime();
 
 				// If the proxy has connected, record the new local port and break out of the loop
 				if ([proxy state] == SPMySQLProxyConnected) {
@@ -859,7 +859,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				}
 
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_elapsedSecondsSinceAbsoluteTime(proxyWaitStart_t) > (timeout + 1)) {
+				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
 					[proxy disconnect];
 					break;
 				}
@@ -868,13 +868,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 				// the proxy. Capture how long this interface action took, standardising the
 				// overall time.
 				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
-				if (_elapsedSecondsSinceAbsoluteTime(loopIterationStart_t) < 0.25) {
-					usleep((useconds_t)(250000 - (1000000 * _elapsedSecondsSinceAbsoluteTime(loopIterationStart_t))));
+				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
+					usleep((useconds_t)(250000 - (1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t))));
 				}
 
 				// Extend the connection timeout by any interface time
 				if ([proxy state] == SPMySQLProxyWaitingForAuth) {
-					proxyWaitStart_t += mach_absolute_time() - loopIterationStart_t;
+					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
 				}
 			}
 
@@ -968,7 +968,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	BOOL hostReachable;
 	// In a loop until success or the timeout, test reachability
-	uint64_t loopStart_t = mach_absolute_time();
+	uint64_t loopStart_t = _monotonicTime();
 	while (1) {
 		SCNetworkReachabilityFlags reachabilityStatus;
 
@@ -987,7 +987,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (hostReachable) break;
 
 		// If the timeout has been exceeded, break out of the loop
-		if (_elapsedSecondsSinceAbsoluteTime(loopStart_t) >= timeoutSeconds) break;
+		if (_timeIntervalSinceMonotonicTime(loopStart_t) >= timeoutSeconds) break;
 
 		// Sleep before the next loop iteration
 		usleep(250000);
@@ -1018,10 +1018,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLDisconnecting;
 
 	// Allow any pings or cancelled queries  to complete, inside a time limit of ten seconds
-	uint64_t disconnectStartTime_t = mach_absolute_time();
+	uint64_t disconnectStartTime_t = _monotonicTime();
 	while (![self _tryLockConnection]) {
 		usleep(100000);
-		if (_elapsedSecondsSinceAbsoluteTime(disconnectStartTime_t) > 10) {
+		if (_timeIntervalSinceMonotonicTime(disconnectStartTime_t) > 10) {
 			NSLog(@"%s: Could not acquire connection lock within time limit (10s). Forcing unlock!",__PRETTY_FUNCTION__);
 			break;
 		}
@@ -1125,7 +1125,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 - (void)_restoreConnectionVariables
 {
 	mysqlConnectionThreadId = mySQLConnection->thread_id;
-	initialConnectTime = mach_absolute_time();
+	initialConnectTime = _monotonicTime();
 
 	[self selectDatabase:database];
 
