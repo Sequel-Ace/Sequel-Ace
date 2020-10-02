@@ -1831,16 +1831,21 @@
 							if([theMods rangeOfString:@"~"].length) mask = mask | NSEventModifierFlagOption;
 							if([theMods rangeOfString:@"$"].length) mask = mask | NSEventModifierFlagShift;
 
-							if(![[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]])
+							if(![[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]]) {
 								[[bundleKeyEquivalents objectForKey:scope] setObject:[NSMutableArray array] forKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]];
-
-							if(!doBundleUpdate || (doBundleUpdate && (![[cmdData objectForKey:SPBundleFileIsDefaultBundleKey] boolValue] || processDefaultBundles)))
-								[[[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]] addObject:
-											[NSDictionary dictionaryWithObjectsAndKeys:
-													infoPath, @"path",
-													[cmdData objectForKey:SPBundleFileNameKey], @"title",
-													([cmdData objectForKey:SPBundleFileTooltipKey]) ?: @"", @"tooltip",
-											nil]];
+							}
+							for (NSDictionary *keyInfo in [[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]]) {
+								if([keyInfo objectForKey:@"uuid"] == [cmdData objectForKey:SPBundleFileUUIDKey]) {
+									[[[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]] removeObject:keyInfo];
+								}
+							}
+							[[[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]] addObject:
+									[NSDictionary dictionaryWithObjectsAndKeys:
+											infoPath, @"path",
+											[cmdData objectForKey:SPBundleFileNameKey], @"title",
+											([cmdData objectForKey:SPBundleFileTooltipKey]) ?: @"", @"tooltip",
+											 [cmdData objectForKey:SPBundleFileUUIDKey], "uuid",
+									nil]];
 
 							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
 						}
