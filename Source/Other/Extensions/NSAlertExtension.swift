@@ -56,6 +56,7 @@ import AppKit
 	/// - Parameters:
 	///   - title: String for title of the alert
 	///   - message: String for informative message
+	///   - accessoryView: NSView to be used as accessory view
 	///   - primaryButtonTitle: String for main confirm button
 	///   - primaryButtonHandler: Optional block that's invoked when user hits primary button or Enter
 	///   - cancelButtonHandler: Optional block that's invoked when user hits cancel button or Escape
@@ -78,5 +79,26 @@ import AppKit
 		} else {
 			cancelButtonHandler?()
 		}
+	}
+
+	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title, informative subtitle message and accessory view.
+	/// - Parameters:
+	///   - title: String for title of the alert
+	///   - message: String for informative message
+	///   - accessoryView: NSView to be used as accessory view
+	///   - callback: Optional block that's invoked when user hits OK button
+	/// - Returns: Nothing
+	static func createAccessoryWarningAlert(title: String,
+								   message: String,
+								   accessoryView: NSView,
+								   callback: (() -> ())? = nil) {
+		let alert = NSAlert()
+		alert.alertStyle = .critical
+		alert.messageText = title
+		alert.informativeText = message
+		alert.accessoryView = accessoryView
+		alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+		alert.runModal()
+		callback?()
 	}
 }

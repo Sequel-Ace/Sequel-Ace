@@ -107,7 +107,7 @@
 	BOOL isCurrentExtraAutoIncrement;
 	NSString *autoIncrementIndex;
 	
-	BOOL isEditingRow, isEditingNewRow, isSavingRow, alertSheetOpened;
+	BOOL isEditingRow, isEditingNewRow, isSavingRow;
 }
 
 - (void)showErrorSheetWith:(NSDictionary *)errorDictionary;

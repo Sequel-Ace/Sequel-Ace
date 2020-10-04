@@ -121,7 +121,6 @@
 	BOOL isTableListFiltered;
 	BOOL tableListIsSelectable;
 	BOOL tableListContainsViews;
-	BOOL alertSheetOpened;
 
 	NSFont *smallSystemFont;
 	

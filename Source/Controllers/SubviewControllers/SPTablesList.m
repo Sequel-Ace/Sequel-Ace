@@ -54,12 +54,13 @@
 #import "SPCharsetCollationHelper.h"
 #import "SPConstants.h"
 
+#import "Sequel_Ace-Swift.h"
+
 #import <SPMySQL/SPMySQL.h>
 
 // Constants
 //
 // Actions
-static NSString *SPAddRow         = @"SPAddRow";
 static NSString *SPAddNewTable    = @"SPAddNewTable";
 static NSString *SPRemoveTable    = @"SPRemoveTable";
 static NSString *SPTruncateTable  = @"SPTruncateTable";
@@ -733,10 +734,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[sheet window] orderOut:nil];
 	}
 
-	if ([contextInfo isEqualToString:SPAddRow]) {
-		alertSheetOpened = NO;
-	}
-	else if ([contextInfo isEqualToString:SPRemoveTable]) {
+	if ([contextInfo isEqualToString:SPRemoveTable]) {
 		if (returnCode == NSAlertDefaultReturn) {
 			[self _removeTable:[[(NSAlert *)sheet suppressionButton] state] == NSOnState];
 		}
@@ -1678,10 +1676,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// End editing (otherwise problems when user hits reload button)
 	[[tableDocumentInstance parentWindow] endEditingFor:nil];
 
-	if ( alertSheetOpened ) {
-		return NO;
-	}
-
 	// We have to be sure that document views have finished editing
 	return [tableDocumentInstance couldCommitCurrentViewActions];
 }
@@ -2421,19 +2415,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 		else {
 			// Error while creating new table
-			alertSheetOpened = YES;
 
-			SPBeginAlertSheet(
-				NSLocalizedString(@"Error adding new table", @"error adding new table message"),
-				NSLocalizedString(@"OK", @"OK button"),
-				nil,
-				nil,
-				[tableDocumentInstance parentWindow],
-				self,
-				@selector(sheetDidEnd:returnCode:contextInfo:),
-				SPAddRow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:^{
+
+			}];
 
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
