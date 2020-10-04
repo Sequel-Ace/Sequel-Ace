@@ -116,7 +116,6 @@
 - (IBAction)addField:(id)sender;
 - (IBAction)duplicateField:(id)sender;
 - (IBAction)removeField:(id)sender;
-- (void)removeFieldSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (IBAction)resetAutoIncrement:(id)sender;
 - (void)resetAutoincrementSheetDidEnd:(NSWindow *)theSheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (void)takeAutoIncrementFrom:(NSTextField *)field;
@@ -132,7 +131,6 @@
 - (NSArray *)convertIndexResultToArray:(SPMySQLResult *)theResult;
 - (BOOL)saveRowOnDeselect;
 - (BOOL)addRowToDB;
-- (void)addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (void)setAutoIncrementTo:(NSNumber *)value;
 
 // Accessors

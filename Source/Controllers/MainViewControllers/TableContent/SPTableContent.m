@@ -2673,7 +2673,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Handle the user decision as a result of an addRow error.
  */
-- (void) addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
+- (void)addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
