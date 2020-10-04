@@ -128,6 +128,8 @@
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }
 
+@property (readonly) SPTableView *tablesListView;
+
 // IBAction methods
 - (IBAction)updateTables:(nullable id)sender;
 - (IBAction)addTable:(nullable id)sender;

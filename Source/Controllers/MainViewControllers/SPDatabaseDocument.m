@@ -5000,8 +5000,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			}
 
 			// Scroll to table
-#warning Private ivar accessed from outside (#2978)
-			[[[tablesListInstance valueForKeyPath:@"tablesListView"] onMainThread] scrollRowToVisible:tableIndex];
+			[[tablesListInstance.tablesListView onMainThread] scrollRowToVisible:tableIndex];
 		}
 
 		// update UI on main thread
@@ -5732,8 +5731,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	// Otherwise position the sheet beneath the tab bar if it's visible
-#warning Private ivar accessed from outside (#2978)
-	rect.origin.y -= [[parentWindowController valueForKey:@"tabBar"] frame].size.height - 1;
+	rect.origin.y -= [parentWindowController.tabBar frame].size.height - 1;
 
 	return rect;
 }
