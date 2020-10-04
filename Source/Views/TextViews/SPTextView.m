@@ -3646,7 +3646,7 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse)
 	boundingRect = [self convertRect:boundingRect toView:nil];
 
 	// Convert the window position to a screen position
-	NSPoint screenPosition = [[self window] convertBaseToScreen:NSMakePoint(boundingRect.origin.x, boundingRect.origin.y)];
+	NSPoint screenPosition = [[self window] convertPointToScreen:NSMakePoint(boundingRect.origin.x, boundingRect.origin.y)];
 
 	// Adjust the popup x location to compensate for horizontal padding and icon
 	screenPosition.x -= 26;
