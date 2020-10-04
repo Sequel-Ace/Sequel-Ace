@@ -40,7 +40,7 @@
 struct SPRawFileHandles {
 	FILE *file;
 	BZFILE *bzfile;
-	gzFile *gzfile;
+	gzFile gzfile;
 };
 
 @interface SPFileHandle ()
@@ -105,7 +105,7 @@ struct SPRawFileHandles {
 				// Test to see if the file is gzip compressed
 				if(!gzdirect(gzfile)) {
 					compressionFormat = SPGzipCompression;
-					wrappedFile->gzfile = &gzfile;
+					wrappedFile->gzfile = gzfile;
 				}
 				else {
 					// ...not gzip

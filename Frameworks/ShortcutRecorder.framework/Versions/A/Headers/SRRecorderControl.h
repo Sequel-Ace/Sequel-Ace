@@ -12,7 +12,7 @@
 //      Jamie Kirkpatrick
 
 #import <Cocoa/Cocoa.h>
-#import "SRRecorderCell.h"
+#import <ShortcutRecorder/SRRecorderCell.h>
 
 @interface SRRecorderControl : NSControl
 {
