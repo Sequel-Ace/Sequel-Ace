@@ -3295,7 +3295,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// this is a delegate method of the field editor controller. calling release
 	// now would risk a dealloc while it is still our parent on the stack:
-	[fieldEditor autorelease], fieldEditor = nil;
+	[fieldEditor autorelease];
+	fieldEditor = nil;
 
 	// Preserve focus and restore selection indexes if appropriate
 	[[tableDocumentInstance parentWindow] makeFirstResponder:customQueryView]; 
