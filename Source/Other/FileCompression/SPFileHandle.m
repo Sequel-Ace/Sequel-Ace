@@ -97,7 +97,7 @@ struct SPRawFileHandles {
 		if (fileMode == O_RDONLY) {
 			// Test for GZIP (by opening the file with gz and checking what happens)
 			{
-				gzFile *gzfile = gzopen(path, "rb");
+				gzFile gzfile = gzopen(path, "rb");
 				
 				// Set gzip buffer
 				gzbuffer(gzfile, 131072);
@@ -105,7 +105,7 @@ struct SPRawFileHandles {
 				// Test to see if the file is gzip compressed
 				if(!gzdirect(gzfile)) {
 					compressionFormat = SPGzipCompression;
-					wrappedFile->gzfile = gzfile;
+					wrappedFile->gzfile = &gzfile;
 				}
 				else {
 					// ...not gzip
