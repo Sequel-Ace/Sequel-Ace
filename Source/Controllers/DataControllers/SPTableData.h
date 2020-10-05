@@ -32,8 +32,7 @@
 @class SPTablesList;
 @class SPMySQLConnection;
 
-@interface SPTableData : NSObject 
-{
+@interface SPTableData: NSObject {
 	IBOutlet SPDatabaseDocument* tableDocumentInstance;
 	IBOutlet SPTablesList* tableListInstance;
 
@@ -61,7 +60,7 @@
 - (NSString *) tableCreateSyntax;
 - (NSArray *) columns;
 - (NSDictionary *) columnWithName:(NSString *)colName;
-- (NSArray *) columnNames;
+- (NSArray *)columnNames;
 - (NSDictionary *) columnAtIndex:(NSInteger)index;
 - (NSArray *) getConstraints;
 - (NSArray *) triggers;

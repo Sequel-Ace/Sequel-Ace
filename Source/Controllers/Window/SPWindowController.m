@@ -239,8 +239,7 @@
 	[newWindow setTitle:[[[[tabView selectedTabViewItem] identifier] parentWindow] title]];
 
 	// New window's tabBar control
-#warning Private ivar accessed from outside (#2978)
-	PSMTabBarControl *control = [newWindowController valueForKey:@"tabBar"];
+	PSMTabBarControl *control = newWindowController.tabBar;
 
 	// Add the selected tab to the new window
 	[[control cells] insertObject:selectedCell atIndex:0];
@@ -850,8 +849,7 @@
 	[newWindow setTitle:[[[tabViewItem identifier] parentWindow] title]];
 
 	// Return the window's tab bar
-#warning Private ivar accessed from outside (#2978)
-	return [newWindowController valueForKey:@"tabBar"];
+	return newWindowController.tabBar;
 }
 
 /**

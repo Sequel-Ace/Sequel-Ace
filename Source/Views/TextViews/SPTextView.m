@@ -559,10 +559,9 @@ retry:
 			for (id obj in [tablesListInstance allViewNames])
 				[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:obj, @"display", @"table-view-small-square", @"image", @"", @"isRef", nil]];
 
-#warning Private ivar accessed from outside (#2978)
 			// Add field names to completions list for currently selected table
 			if ([tableDocumentInstance table] != nil)
-				for (id obj in [[tableDocumentInstance valueForKeyPath:@"tableDataInstance"] valueForKey:@"columnNames"])
+				for (id obj in [tableDocumentInstance.tableDataInstance columnNames])
 					[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:obj, @"display", @"field-small-square", @"image", @"", @"isRef", nil]];
 
 			// Add proc/func only for MySQL version 5 or higher
@@ -1472,8 +1471,7 @@ retry:
 			}
 		}
 		else {
-#warning Private ivar accessed from outside (#2978)
-			arr = [NSArray arrayWithArray:[[tableDocumentInstance valueForKeyPath:@"tableDataInstance"] valueForKey:@"columnNames"]];
+			arr = [NSArray arrayWithArray:[tableDocumentInstance.tableDataInstance columnNames]];
 
 			if(arr == nil) {
 				arr = @[];

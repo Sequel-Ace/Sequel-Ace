@@ -928,8 +928,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Start the data downloading
 	[theResultStore startDownload];
 
-#warning Private ivar accessed from outside (#2978)
-	NSProgressIndicator *dataLoadingIndicator = [tableDocumentInstance valueForKey:@"queryProgressBar"];
+	NSProgressIndicator *dataLoadingIndicator = tableDocumentInstance.queryProgressBar;
 
 	// Set the column load states on the table values store
 	if ([prefs boolForKey:SPLoadBlobsAsNeeded]) {
@@ -3326,10 +3325,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Provide a getter for the table's list view width
  */
-- (CGFloat) tablesListWidth
-{
-#warning Private ivar accessed from outside (#2978)
-	return [[[[tableDocumentInstance valueForKey:@"contentViewSplitter"] subviews] objectAtIndex:0] frame].size.width;
+- (CGFloat)tablesListWidth {
+	return [[[tableDocumentInstance.contentViewSplitter subviews] objectAtIndex:0] frame].size.width;
 }
 
 /**
@@ -3527,9 +3524,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[tableDataInstance setStatusValue:[NSString stringWithFormat:@"%ld", (long)maxNumRows] forKey:@"Rows"];
 		[tableDataInstance setStatusValue:@"y" forKey:@"RowsCountAccurate"];
 		[[tableInfoInstance onMainThread] tableChanged:nil];
-#warning Private ivar accessed from outside (#2978)
-		[[[tableDocumentInstance valueForKey:@"extendedTableInfoInstance"] onMainThread] loadTable:selectedTable];
-
+		[[tableDocumentInstance.extendedTableInfoInstance onMainThread] loadTable:selectedTable];
 	} else {
 
 		// Trigger an update via the SPTableData instance if preferences require it, and if
