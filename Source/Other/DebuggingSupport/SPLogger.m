@@ -36,6 +36,8 @@
 #import <sys/dir.h>
 #import <sys/types.h>
 
+#import "Sequel_Ace-Swift.h"
+
 static SPLogger *logger = nil;
 
 @interface SPLogger ()
@@ -212,14 +214,14 @@ int _isSPLeaksLog(const struct direct *entry);
 	if ([fileManager fileExistsAtPath:logFilePath]) {
 		if (![fileManager isWritableFileAtPath:logFilePath]) {
 			initializedSuccessfully = NO;
-			NSRunAlertPanel(@"Logging error", @"Log file exists but is not writeable; no debug log will be generated!", @"OK", nil, nil);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Log file exists but is not writeable; no debug log will be generated!", "") callback:nil];
 		}
 		// Otherwise try creating one
 	} 
 	else {
 		if (![fileManager createFileAtPath:logFilePath contents:[NSData data] attributes:nil]) {
 			initializedSuccessfully = NO;
-			NSRunAlertPanel(@"Logging error", @"Could not create log file for writing; no debug log will be generated!", @"OK", nil, nil);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Could not create log file for writing; no debug log will be generated!", "") callback:nil];
 		}
 	}
 	
@@ -229,7 +231,7 @@ int _isSPLeaksLog(const struct direct *entry);
 		
 		if (!logFileHandle) {
 			initializedSuccessfully = NO;
-			NSRunAlertPanel(@"Logging error", @"Could not open log file for writing; no debug log will be generated!", @"OK", nil, nil);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Could not open log file for writing; no debug log will be generated!", "") callback:nil];
 		} 
 		else {
 			[logFileHandle retain];

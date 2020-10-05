@@ -48,6 +48,8 @@
 #import "SPSyntaxParser.h"
 #import "SPHelpViewerClient.h"
 
+#import "Sequel_Ace-Swift.h"
+
 #import <SPMySQL/SPMySQL.h>
 
 #pragma mark -
@@ -3366,29 +3368,16 @@ retry:
 		// Check size and NSFileType
 		NSDictionary *attr = [[NSFileManager defaultManager] attributesOfItemAtPath:filepath error:nil];
 
-		if(attr)
-		{
+		if (attr) {
 			NSNumber *filesize = [attr objectForKey:NSFileSize];
 			NSString *filetype = [attr objectForKey:NSFileType];
-			if(filetype == NSFileTypeRegular && filesize)
-			{
+			if(filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
-				if([filesize unsignedLongValue] > 1000000)
-				{
-					NSAlert *alert = [[NSAlert alloc] init];
-					[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-					[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-					[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"),
-						[NSString stringForByteSize:[filesize longLongValue]]]];
-					[alert setHelpAnchor:filepath];
-					[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-					[alert setAlertStyle:NSWarningAlertStyle];
-					[alert beginSheetModalForWindow:[self window] 
-						modalDelegate:self 
-						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
-						contextInfo:nil];
-					[alert release];
-					
+				if ([filesize unsignedLongValue] > 1000000) {
+					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
+					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:message primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
+						[self insertFileContentOfFile:filepath];
+					} cancelButtonHandler:nil];
 				} else
 					[self insertFileContentOfFile:filepath];
 			}
@@ -3438,17 +3427,6 @@ retry:
 	return [super performDragOperation:sender];
 }
 
-/**
- * Confirmation sheetDidEnd method
- */
-- (void)dragAlertSheetDidEnd:(NSAlert *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-
-	[[sheet window] orderOut:nil];
-	if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn)
-		[self insertFileContentOfFile:[sheet helpAnchor]];
-
-}
 /**
  * Convert a NSPoint, usually the mouse location, to
  * a character index of the text view.
@@ -3666,7 +3644,7 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse)
 	boundingRect = [self convertRect:boundingRect toView:nil];
 
 	// Convert the window position to a screen position
-	NSPoint screenPosition = [[self window] convertBaseToScreen:NSMakePoint(boundingRect.origin.x, boundingRect.origin.y)];
+	NSPoint screenPosition = [[self window] convertPointToScreen:NSMakePoint(boundingRect.origin.x, boundingRect.origin.y)];
 
 	// Adjust the popup x location to compensate for horizontal padding and icon
 	screenPosition.x -= 26;
