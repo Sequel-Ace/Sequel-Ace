@@ -215,7 +215,6 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
 - (BOOL)saveRowToTable;
 - (NSMutableString *)deriveQueryString;
-- (void) addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (NSString *)argumentForRow:(NSInteger)row;
 - (NSString *)argumentForRow:(NSInteger)row excludingLimits:(BOOL)excludeLimits;
 - (NSString *)argumentForRow:(NSUInteger)rowIndex ofTable:(NSString *)tableForColumn andDatabase:(NSString *)database includeBlobs:(BOOL)includeBlobs;

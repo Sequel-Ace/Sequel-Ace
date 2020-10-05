@@ -65,9 +65,8 @@
 
 	toolbarItemVisible = NO;
 
-#warning Private ivar accessed from outside (#2978)
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarWillAddItem:) name:NSToolbarWillAddItemNotification object:[theDocument valueForKey:@"mainToolbar"]];
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarDidRemoveItem:) name:NSToolbarDidRemoveItemNotification object:[theDocument valueForKey:@"mainToolbar"]];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarWillAddItem:) name:NSToolbarWillAddItemNotification object:theDocument.mainToolbar];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarDidRemoveItem:) name:NSToolbarDidRemoveItemNotification object:theDocument.mainToolbar];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startDocumentTask:) name:SPDocumentTaskStartNotification object:theDocument];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(endDocumentTask:) name:SPDocumentTaskEndNotification object:theDocument];
 }
@@ -180,10 +179,8 @@
  * State tracking is necessary as manipulating items not on the toolbar
  * can cause crashes.
  */
-- (void)setupInterface
-{
-#warning Private ivar accessed from outside (#2978)
-	NSArray *toolbarItems = [[theDocument valueForKey:@"mainToolbar"] items];
+- (void)setupInterface {
+	NSArray *toolbarItems = [theDocument.mainToolbar items];
 
 	for (NSToolbarItem *toolbarItem in toolbarItems) {
 		if ([[toolbarItem itemIdentifier] isEqualToString:SPMainToolbarHistoryNavigation]) {

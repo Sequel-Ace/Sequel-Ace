@@ -50,10 +50,9 @@
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import "Sequel_Ace-Swift.h"
 
-static NSString *SPRemoveField = @"SPRemoveField";
-static NSString *SPRemoveFieldAndForeignKey = @"SPRemoveFieldAndForeignKey";
+#import <SPMySQL/SPMySQL.h>
 
 @interface SPFieldTypeHelp ()
 
@@ -431,16 +430,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Check if the user tries to delete the last defined field in table
 	// Note that because of better menu item validation, this check will now never evaluate to true.
 	if ([tableSourceView numberOfRows] < 2) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while deleting field", @"Error while deleting field")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button")
-									   alternateButton:nil
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"You cannot delete the last field in a table. Delete the table instead.", @"You cannot delete the last field in a table. Delete the table instead.")];
-
-		[alert setAlertStyle:NSCriticalAlertStyle];
-
-		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"cannotremovefield"];
-
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while deleting field", @"Error while deleting field") message:NSLocalizedString(@"You cannot delete the last field in a table. Delete the table instead.", @"You cannot delete the last field in a table. Delete the table instead.") callback:nil];
 	}
 
 	NSString *field = [[tableFields objectAtIndex:anIndex] objectForKey:@"name"];
@@ -462,25 +452,31 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Delete field '%@'?", @"delete field message"), field]
-									 defaultButton:NSLocalizedString(@"Delete", @"delete button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:hasForeignKey ? NSLocalizedString(@"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.", @"delete field and foreign key informative message"), referencedTable : NSLocalizedString(@"Are you sure you want to delete the field '%@'? This action cannot be undone.", @"delete field informative message"), field];
+	NSString *alertMessage;
+	if (hasForeignKey) {
+		alertMessage = [NSString stringWithFormat:NSLocalizedString(@"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.", @"delete field and foreign key informative message"), referencedTable];
+	} else {
+		alertMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the field '%@'? This action cannot be undone.", @"delete field informative message"), field];
+	}
+	[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Delete field '%@'?", @"delete field message"), field] message:alertMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+		[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
 
-	NSArray *buttons = [alert buttons];
+		NSNumber *removeKey = [NSNumber numberWithBool:hasForeignKey];
 
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
+		if ([NSThread isMainThread]) {
+			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", tableDocumentInstance)
+									   target:self
+									 selector:@selector(_removeFieldAndForeignKey:)
+									   object:removeKey];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
-					  modalDelegate:self 
-					 didEndSelector:@selector(removeFieldSheetDidEnd:returnCode:contextInfo:) 
-						contextInfo:hasForeignKey ? SPRemoveFieldAndForeignKey : SPRemoveField];
+			[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
+													callbackObject:self
+												  callbackFunction:NULL];
+		} else {
+			[self _removeFieldAndForeignKey:removeKey];
+		}
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -533,36 +529,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	[self setAutoIncrementTo:(NSNumber *)obj];
-}
-
-/**
- * Process the remove field sheet closing, performing the delete if the user
- * confirmed the action.
- */
-- (void)removeFieldSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	[[alert window] orderOut:nil];
-
-	if (returnCode == NSAlertDefaultReturn) {
-		[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
-
-		NSNumber *removeKey = [NSNumber numberWithBool:[(NSString *)contextInfo isEqualToString:SPRemoveFieldAndForeignKey]];
-
-		if ([NSThread isMainThread]) {
-			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", tableDocumentInstance)
-									   target:self 
-									 selector:@selector(_removeFieldAndForeignKey:) 
-									   object:removeKey];
-
-			[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") 
-													callbackObject:self 
-												  callbackFunction:NULL];
-		}
-		else {
-			[self _removeFieldAndForeignKey:removeKey];
-		}
-	}
 }
 
 /**
@@ -738,8 +704,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	if ((!isEditingRow) || (currentlyEditingRow == -1)) return YES;
 
-	if (alertSheetOpened) return NO;
-
 	// Save any edits which have been started but not saved to the underlying table/data structures
 	// yet - but not if currently undoing/redoing, as this can cause a processing loop
 	if (![[[[tableSourceView window] firstResponder] undoManager] isUndoing] && ![[[[tableSourceView window] firstResponder] undoManager] isRedoing]) {
@@ -817,13 +781,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		return YES;
 	}
 	else {
-		alertSheetOpened = YES;
-		if([mySQLConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [mySQLConnection lastErrorMessage]]
-			);
+		if ([mySQLConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [mySQLConnection lastErrorMessage]] callback:nil];
 
 			isEditingRow = NO;
 			isEditingNewRow = NO;
@@ -840,20 +799,24 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[tablesListInstance updateTables:self];
 			return NO;
 		}
-		// Problem: alert sheet doesn't respond to first click
+
 		if (isEditingNewRow) {
-			SPBeginAlertSheet(NSLocalizedString(@"Error adding field", @"error adding field message"),
-							  NSLocalizedString(@"Edit row", @"Edit row button"),
-							  NSLocalizedString(@"Discard changes", @"discard changes button"), nil, [tableDocumentInstance parentWindow], self, @selector(addRowErrorSheetDidEnd:returnCode:contextInfo:), NULL,
-							  [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"),
-							  [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]]);
-		}
-		else {
-			SPBeginAlertSheet(NSLocalizedString(@"Error changing field", @"error changing field message"),
-							  NSLocalizedString(@"Edit row", @"Edit row button"),
-							  NSLocalizedString(@"Discard changes", @"discard changes button"), nil, [tableDocumentInstance parentWindow], self, @selector(addRowErrorSheetDidEnd:returnCode:contextInfo:), NULL,
-							  [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@", @"error changing field informative message"),
-							  [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]]);
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]];
+			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error adding field", @"error adding field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
+				[self addRowSheetPrimaryAction];
+			} cancelButtonHandler:^{
+				[self cancelRowEditing];
+				[tableSourceView reloadData];
+			}];
+
+		} else {
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]];
+			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error changing field", @"error changing field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
+				[self addRowSheetPrimaryAction];
+			} cancelButtonHandler:^{
+				[self cancelRowEditing];
+				[tableSourceView reloadData];
+			}];
 		}
 
 		return NO;
@@ -1096,8 +1059,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	else if ([sheet respondsToSelector:@selector(window)])
 		[[sheet window] orderOut:nil];
 
-	alertSheetOpened = NO;
-
 	if(contextInfo && [contextInfo isEqualToString:@"autoincrementindex"]) {
 		if (returnCode) {
 			switch ([[chooseKeyButton selectedItem] tag]) {
@@ -1121,28 +1082,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 }
 
-/**
- * Perform the action requested in the Add Row error sheet.
- */
-- (void)addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	[[alert window] orderOut:nil];
-	
-	alertSheetOpened = NO;
-	
-	// Remain in edit mode - reselect the row and resume editing
-	if (returnCode == NSAlertDefaultReturn) {
-		
-		// Problem: reentering edit mode for first cell doesn't function
-		[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-		[tableSourceView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
-	}
-	
-	// Discard changes and cancel editing
-	else {
-		[self cancelRowEditing];
-	}
+- (void)addRowSheetPrimaryAction {
+
+	// Problem: reentering edit mode for first cell doesn't function
+	[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
+	[tableSourceView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 
 	[tableSourceView reloadData];
 }

@@ -186,8 +186,7 @@
 /**
  * Retrieve column names for the current table as an array, using or refreshing the cache as appropriate.
  */
-- (NSArray *) columnNames
-{
+- (NSArray *)columnNames {
 	// If processing is already in action, wait for it to complete
 	[self _loopWhileWorking];
 

@@ -121,12 +121,13 @@
 	BOOL isTableListFiltered;
 	BOOL tableListIsSelectable;
 	BOOL tableListContainsViews;
-	BOOL alertSheetOpened;
 
 	NSFont *smallSystemFont;
 	
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }
+
+@property (readonly) SPTableView *tablesListView;
 
 // IBAction methods
 - (IBAction)updateTables:(nullable id)sender;

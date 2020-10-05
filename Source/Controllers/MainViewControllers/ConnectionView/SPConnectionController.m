@@ -3304,8 +3304,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		dbDocument = document;
 
 		databaseConnectionSuperview = [dbDocument databaseView];
-#warning Private ivar accessed from outside (#2978)
-		databaseConnectionView = [dbDocument valueForKey:@"contentViewSplitter"];
+		databaseConnectionView = dbDocument.contentViewSplitter;
 
 		// Keychain references
 		connectionKeychainItemName = nil;
