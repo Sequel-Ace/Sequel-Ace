@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import "SPMySQLConstants.h"
+#import <SPMySQL/SPMySQLConstants.h>
 
 @protocol SPMySQLConnectionDelegate <NSObject>
 @optional

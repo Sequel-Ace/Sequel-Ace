@@ -30,7 +30,7 @@
 
 
 #import <SPMySQL/SPMySQL.h>
-#import "SPMySQLStreamingResultStoreDelegate.h"
+#import <SPMySQL/SPMySQLStreamingResultStoreDelegate.h>
 #include <malloc/malloc.h>
 
 typedef char SPMySQLStreamingResultStoreRowData;
