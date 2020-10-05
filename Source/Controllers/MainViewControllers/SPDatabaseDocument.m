@@ -84,6 +84,8 @@
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
 
+#import "Sequel_Ace-Swift.h"
+
 #import <SPMySQL/SPMySQL.h>
 
 #include <libkern/OSAtomic.h>
@@ -889,25 +891,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
 
-	NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Delete database '%@'?", @"delete database message"), [self database]]
-	                                 defaultButton:NSLocalizedString(@"Delete", @"delete button")
-	                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-	                                   otherButton:nil
-	                     informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the database '%@'? This operation cannot be undone.", @"delete database informative message"), [self database]];
-
-	NSArray *buttons = [alert buttons];
-
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-
-	[alert setAlertStyle:NSCriticalAlertStyle];
-
-	[alert beginSheetModalForWindow:parentWindow
-	                  modalDelegate:self
-	                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	                    contextInfo:@"removeDatabase"];
+	NSString *title = [NSString stringWithFormat:NSLocalizedString(@"Delete database '%@'?", @"delete database message"), [self database]];
+	NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the database '%@'? This operation cannot be undone.", @"delete database informative message"), [self database]];
+	[NSAlert createDefaultAlertWithTitle:title message:message primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+		[self _removeDatabase];
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -1019,12 +1007,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[[sheet window] orderOut:nil];
 	}
 
-	// Remove the current database
-	if ([contextInfo isEqualToString:@"removeDatabase"]) {
-		if (returnCode == NSAlertDefaultReturn) {
-			[self _removeDatabase];
-		}
-	}
 	// Add a new database
 	else if ([contextInfo isEqualToString:@"addDatabase"]) {
 		[addDatabaseCharsetHelper setEnabled:NO];
@@ -1060,10 +1042,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if (returnCode == NSModalResponseOK) {
 			[self _alterDatabase];
 		}
-	}
-	// Close error status sheet for OPTIMIZE, CHECK, REPAIR etc.
-	else if ([contextInfo isEqualToString:@"statusError"]) {
-		if (statusValues) SPClear(statusValues);
 	}
 }
 
@@ -1942,27 +1920,19 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	
 	if(message) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Check %@", @"CHECK one or more tables - result title"), what]
-		                                 defaultButton:@"OK"
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", message];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Check %@", @"CHECK one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) SPClear(statusValues);
+		if (statusValues) {
+			SPClear(statusValues);
+		}
 		statusValues = [resultStatuses retain];
-		NSAlert *alert = [[NSAlert new] autorelease];
-		[alert setInformativeText:message];
-		[alert setMessageText:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message")];
-		[alert setAccessoryView:statusTableAccessoryView];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"statusError"];
+
+		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
+			if (statusValues) {
+				SPClear(statusValues);
+			}
+		}];
 	}
 }
 
@@ -2016,27 +1986,16 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	
 	if(message) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Analyze %@", @"ANALYZE one or more tables - result title"), what]
-		                                 defaultButton:@"OK"
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", message];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Analyze %@", @"ANALYZE one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		if (statusValues) SPClear(statusValues);
 		statusValues = [resultStatuses retain];
-		NSAlert *alert = [[NSAlert new] autorelease];
-		[alert setInformativeText:message];
-		[alert setMessageText:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message")];
-		[alert setAccessoryView:statusTableAccessoryView];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"statusError"];
+		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
+			if (statusValues) {
+				SPClear(statusValues);
+			}
+		}];
 	}
 }
 
@@ -2091,27 +2050,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	if(message) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Optimize %@", @"OPTIMIZE one or more tables - result title"), what]
-		                                 defaultButton:@"OK"
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", message];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimize %@", @"OPTIMIZE one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		if (statusValues) SPClear(statusValues);
 		statusValues = [resultStatuses retain];
-		NSAlert *alert = [[NSAlert new] autorelease];
-		[alert setInformativeText:message];
-		[alert setMessageText:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message")];
-		[alert setAccessoryView:statusTableAccessoryView];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"statusError"];
+
+		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
+			if (statusValues) {
+				SPClear(statusValues);
+			}
+		}];
 	}
 }
 
@@ -2165,27 +2114,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	if(message) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Repair %@", @"REPAIR one or more tables - result title"), what]
-		                                 defaultButton:@"OK"
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", message];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:nil
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Repair %@", @"REPAIR one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		if (statusValues) SPClear(statusValues);
 		statusValues = [resultStatuses retain];
-		NSAlert *alert = [[NSAlert new] autorelease];
-		[alert setInformativeText:message];
-		[alert setMessageText:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message")];
-		[alert setAccessoryView:statusTableAccessoryView];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"statusError"];
+
+		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
+			if (statusValues) {
+				SPClear(statusValues);
+			}
+		}];
 	}
 }
 
@@ -2239,27 +2178,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	if(message) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Flush %@", @"FLUSH one or more tables - result title"), what]
-		                                 defaultButton:@"OK"
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", message];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Flush %@", @"FLUSH one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		if (statusValues) SPClear(statusValues);
 		statusValues = [resultStatuses retain];
-		NSAlert *alert = [[NSAlert new] autorelease];
-		[alert setInformativeText:message];
-		[alert setMessageText:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message")];
-		[alert setAccessoryView:statusTableAccessoryView];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"statusError"];
+
+		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
+			if (statusValues) {
+				SPClear(statusValues);
+			}
+		}];
 	}
 }
 
@@ -2280,15 +2209,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Check for errors, only displaying if the connection hasn't been terminated
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Unable to perform the checksum", @"unable to perform the checksum")
-			                                 defaultButton:@"OK"
-			                               alternateButton:nil
-			                                   otherButton:nil
-			                     informativeTextWithFormat:NSLocalizedString(@"An error occurred while performing the checksum on %@.\n\nMySQL said:%@",@"an error occurred while performing the checksum on the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]];
-			[alert beginSheetModalForWindow:parentWindow
-			                  modalDelegate:nil
-			                 didEndSelector:NULL
-			                    contextInfo:NULL];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while performing the checksum on %@.\n\nMySQL said:%@",@"an error occurred while performing the checksum on the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to perform the checksum", @"unable to perform the checksum") message:alertMessage callback:nil];
 		}
 
 		return;
@@ -2298,26 +2220,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSArray *resultStatuses = [theResult getAllRows];
 	if([selectedItems count] == 1) {
 		message = [[resultStatuses lastObject] objectForKey:@"Checksum"];
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Checksum %@", @"checksum %@ message"), what]
-		                                 defaultButton:@"OK"
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:NSLocalizedString(@"Table checksum: %@", @"table checksum: %@"), message];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:nil
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"Table checksum: %@", @"table checksum: %@"), message];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksum %@", @"checksum %@ message"), what] message:alertMessage callback:nil];
 	} else {
 		if (statusValues) SPClear(statusValues);
 		statusValues = [resultStatuses retain];
-		NSAlert *alert = [[NSAlert new] autorelease];
-		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what]];
-		[alert setMessageText:NSLocalizedString(@"Table checksum",@"table checksum message")];
-		[alert setAccessoryView:statusTableAccessoryView];
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"statusError"];
+
+		[NSAlert createAccessoryWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what] message:message accessoryView:statusTableAccessoryView callback:^{
+			if (statusValues) {
+				SPClear(statusValues);
+			}
+		}];
 	}
 }
 
@@ -2467,19 +2380,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	
 	if ([mySQLConnection queryErrored] && ([result numberOfRows] == 0)) {
 
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Unable to get list of users", @"unable to get list of users message")
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table.", @"unable to get list of users informative message")];
-		
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		
-		[alert beginSheetModalForWindow:parentWindow
-		                  modalDelegate:self
-		                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                    contextInfo:@"cannotremovefield"];
-	
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to get list of users", @"unable to get list of users message") message:NSLocalizedString(@"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table.", @"unable to get list of users informative message") callback:nil];
 		return;
 	}
 	
@@ -3192,16 +3093,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			                                                          options:0
 			                                                            error:&error];
 
-			if(error) {
-				NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while converting session data", @"error while converting session data")
-				                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-				                               alternateButton:nil
-				                                   otherButton:nil
-				                     informativeTextWithFormat:@"%@", [error localizedDescription]];
-
-				[alert setAlertStyle:NSCriticalAlertStyle];
-				[alert runModal];
-				
+			if (error) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting session data", @"error while converting session data") message:[error localizedDescription] callback:nil];
 				return;
 			}
 			
@@ -3319,14 +3212,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[spf release];
 
 		if (error) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while converting connection data", @"error while converting connection data")
-			                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-			                               alternateButton:nil
-			                                   otherButton:nil
-			                     informativeTextWithFormat:@"%@", [error localizedDescription]];
-
-			[alert setAlertStyle:NSCriticalAlertStyle];
-			[alert runModal];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting connection data", @"error while converting connection data") message:[error localizedDescription] callback:nil];
 			return NO;
 		}
 
@@ -3417,14 +3303,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	                                                            error:&error];
 
 	if (error) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while converting connection data", @"error while converting connection data")
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", [error localizedDescription]];
-
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting connection data", @"error while converting connection data") message:[error localizedDescription] callback:nil];
 		return NO;
 	}
 
@@ -4749,67 +4628,44 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  * Initialise the document with the connection file at the supplied path.
  * Returns whether the document was initialised successfully.
  */
-- (BOOL)setStateFromConnectionFile:(NSString *)path
-{
+- (BOOL)setStateFromConnectionFile:(NSString *)path {
 	NSString *encryptpw = nil;
 	NSMutableDictionary *data = nil;
 	NSDictionary *spf = nil;
+	NSError *error = nil;
 
-	{
-		NSError *error = nil;
-		
-		// Read the property list data, and unserialize it.
-		NSData *pData = [NSData dataWithContentsOfFile:path options:NSUncachedRead error:&error];
-		
-		if(pData && !error) {
-			spf = [[NSPropertyListSerialization propertyListWithData:pData
-			                                                 options:NSPropertyListImmutable
-			                                                  format:NULL
-			                                                   error:&error] retain];
-		}
-		
-		if (!spf || error) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")
-			                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-			                               alternateButton:nil
-			                                   otherButton:nil
-			                     informativeTextWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
-			
-			[alert setAlertStyle:NSCriticalAlertStyle];
-			[alert runModal];
-			if (spf) [spf release];
-			[self closeAndDisconnect];
-			return NO;
-		}
+	// Read the property list data, and unserialize it.
+	NSData *pData = [NSData dataWithContentsOfFile:path options:NSUncachedRead error:&error];
+
+	if(pData && !error) {
+		spf = [[NSPropertyListSerialization propertyListWithData:pData
+														 options:NSPropertyListImmutable
+														  format:NULL
+														   error:&error] retain];
+	}
+
+	if (!spf || error) {
+		NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file") message:message callback:nil];
+		[self closeAndDisconnect];
+		[spf release];
+		return NO;
 	}
 
 	// If the .spf format is unhandled, error.
 	if (![[spf objectForKey:SPFFormatKey] isEqualToString:SPFConnectionContentType]) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Unknown file format", @"warning")]
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:NSLocalizedString(@"The chosen file “%@” contains ‘%@’ data.", @"message while reading a spf file which matches non-supported formats."), path, [spf objectForKey:SPFFormatKey]];
-
-		[alert setAlertStyle:NSWarningAlertStyle];
-		[spf release];
+		NSString *message = [NSString stringWithFormat:NSLocalizedString(@"The chosen file “%@” contains ‘%@’ data.", @"message while reading a spf file which matches non-supported formats."), path, [spf objectForKey:SPFFormatKey]];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Unknown file format", @"warning")] message:message callback:nil];
 		[self closeAndDisconnect];
-		[alert runModal];
+		[spf release];
 		return NO;
 	}
 
 	// Error if the expected data source wasn't present in the file
 	if (![spf objectForKey:@"data"]) {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")]
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:NSLocalizedString(@"No data found.", @"no data found")];
-
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
-		[spf release];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"No data found.", @"no data found") callback:nil];
 		[self closeAndDisconnect];
+		[spf release];
 		return NO;
 	}
 
@@ -4880,14 +4736,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[unarchiver finishDecoding];
 		}
 		if (data == nil) {
-			NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")]
-			                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-			                               alternateButton:nil
-			                                   otherButton:nil
-			                     informativeTextWithFormat:NSLocalizedString(@"Wrong data format or password.", @"wrong data format or password")];
-
-			[alert setAlertStyle:NSAlertStyleCritical];
-			[alert runModal];
+			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"Wrong data format or password.", @"wrong data format or password") callback:nil];
 			[self closeAndDisconnect];
 			[spf release];
 			return NO;
@@ -4902,14 +4751,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		} else {
 			informativeText = NSLocalizedString(@"No connection data found.", @"no connection data found");
 		}
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")]
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:@"%@", informativeText];
-
-		[alert setAlertStyle:NSAlertStyleCritical];
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:informativeText callback:nil];
 		[self closeAndDisconnect];
 		[spf release];
 		return NO;
@@ -7033,36 +6875,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Continue to print?", @"continue to print message")
-											 defaultButton:NSLocalizedString(@"Print", @"print button")
-										   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-											   otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print.", @"continue to print informative message"), [self table], [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:resultRows]]];
-
-			NSArray *buttons = [alert buttons];
-
-			// Change the alert's cancel button to have the key equivalent of return
-			[[buttons objectAtIndex:0] setKeyEquivalent:@"p"];
-			[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-			[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-
-			[alert beginSheetModalForWindow:[self parentWindow] modalDelegate:self didEndSelector:@selector(printWarningDidEnd:returnCode:contextInfo:) contextInfo:NULL];
-
+			NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print.", @"continue to print informative message"), [self table], [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:resultRows]]];
+			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Continue to print?", @"continue to print message") message:message primaryButtonTitle:NSLocalizedString(@"Print", @"print button") primaryButtonHandler:^{
+				[self startPrintDocumentOperation];
+			} cancelButtonHandler:nil];
 			return;
 		}
 	}
 
 	[self startPrintDocumentOperation];
-}
-
-/**
- * Called when the print warning dialog is dismissed.
- */
-- (void)printWarningDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if (returnCode == NSAlertDefaultReturn) {
-		[self startPrintDocumentOperation];
-	}
 }
 
 /**

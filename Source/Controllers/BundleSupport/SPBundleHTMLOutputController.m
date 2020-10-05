@@ -34,6 +34,8 @@
 #import "SPAppController.h"
 #import "SPBundleCommandRunner.h"
 
+#import "Sequel_Ace-Swift.h"
+
 static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 @class WebScriptCallFrame;
@@ -533,14 +535,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 {
 	NSString *mes = [NSString stringWithFormat:@"Failed to parse JavaScript source:\nline = %lu\nerror = %@ with\n%@\nfor source = \n%@", (unsigned long)lineNumber, [error localizedDescription], [error userInfo], source];
 
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"JavaScript Parsing Error", @"javascript parsing error")
-									 defaultButton:NSLocalizedString(@"OK", @"OK button")
-								   alternateButton:nil
-									  otherButton:nil
-						informativeTextWithFormat:@"%@", mes];
-
-	[alert setAlertStyle:NSCriticalAlertStyle];
-	[alert runModal];
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"JavaScript Parsing Error", @"javascript parsing error") message:mes callback:nil];
 }
 
 - (void)webView:(WebView *)webView exceptionWasRaised:(WebScriptCallFrame *)frame sourceId:(NSInteger)sid line:(NSInteger)lineno forWebFrame:(WebFrame *)webFrame
@@ -553,14 +548,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		return;
 	}
 
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"JavaScript Exception", @"javascript exception")
-									 defaultButton:NSLocalizedString(@"OK", @"OK button")
-								   alternateButton:nil
-									  otherButton:nil
-						informativeTextWithFormat:@"%@", mes];
-
-	[alert setAlertStyle:NSCriticalAlertStyle];
-	[alert runModal];
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"JavaScript Exception", @"javascript exception") message:mes callback:nil];
 }
 /**
  * JavaScript window.system.getShellEnvironmentForName('a_key') function to
@@ -670,14 +658,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		uuid = [call webScriptValueAtIndex:1];
 	}
 	else {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while executing JavaScript BASH command", @"error while executing javascript bash command")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button")
-									   alternateButton:nil
-										  otherButton:nil
-							informativeTextWithFormat:NSLocalizedString(@"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.", @"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.")];
-
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while executing JavaScript BASH command", @"error while executing javascript bash command") message:NSLocalizedString(@"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.", @"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.") callback:nil];
 		return @"";
 	}
 
@@ -707,14 +688,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	}
 
 	if(err != nil) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while executing JavaScript BASH command", @"error while executing javascript bash command")
-										 defaultButton:NSLocalizedString(@"OK", @"OK button")
-									   alternateButton:nil
-										  otherButton:nil
-							informativeTextWithFormat:@"%@", [err localizedDescription]];
-
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while executing JavaScript BASH command", @"error while executing javascript bash command") message:[err localizedDescription] callback:nil];
 		return @"";
 	}
 
