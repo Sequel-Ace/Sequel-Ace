@@ -28,9 +28,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 
-#import "QKQueryTypes.h"
-#import "QKQueryDatabases.h"
-#import "QKQueryOperators.h"
+#import <QueryKit/QKQueryTypes.h>
+#import <QueryKit/QKQueryDatabases.h>
+#import <QueryKit/QKQueryOperators.h>
 
 @class QKQueryOrderBy;
 @class QKQueryParameter;
