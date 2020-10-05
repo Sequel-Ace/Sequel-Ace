@@ -262,9 +262,15 @@
 @property (readwrite, assign) BOOL isProcessing;
 @property (readwrite, retain) NSString *processID;
 
+@property (readonly) NSToolbar *mainToolbar;
+@property (readonly) NSProgressIndicator* queryProgressBar;
+
+@property (readonly) SPSplitView *contentViewSplitter;
+@property (readonly) SPExtendedTableInfo *extendedTableInfoInstance;
 @property (readonly) SPServerSupport *serverSupport;
 @property (readonly) SPDatabaseStructure *databaseStructureRetrieval;
 @property (readonly) SPDataImport *tableDumpInstance;
+@property (readonly) SPTableData *tableDataInstance;
 @property (readonly) SPTablesList *tablesListInstance;
 @property (readonly) SPCustomQuery *customQueryInstance;
 @property (readonly) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;

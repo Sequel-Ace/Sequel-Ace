@@ -35,6 +35,8 @@
 #import "SPCategoryAdditions.h"
 #import "SPFunctions.h"
 
+#import "Sequel_Ace-Swift.h"
+
 // Constants
 static NSString *SPSaveColorScheme          = @"SaveColorScheme";
 static NSString *SPDefaultColorSchemeName   = @"Default";
@@ -900,16 +902,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	                                                          options:0
 	                                                            error:&error];
 	
-	if(error) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while converting color scheme data", @"error while converting color scheme data")
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-		                               alternateButton:nil 
-		                                   otherButton:nil 
-		                     informativeTextWithFormat:@"%@", [error localizedDescription]];
-		
-		[alert setAlertStyle:NSCriticalAlertStyle];
-		[alert runModal];
-		
+	if (error) {
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting color scheme data", @"error while converting color scheme data") message:[error localizedDescription] callback:nil];
 		return;
 	}
 	
@@ -934,15 +928,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		}
 		
 		if (!theme || error) {
-			NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while reading data file", @"error while reading data file")]
-			                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-			                               alternateButton:nil
-			                                   otherButton:nil
-			                     informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [error localizedDescription]];
-			
-			[alert setAlertStyle:NSCriticalAlertStyle];
-			[alert runModal];
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading data file", @"error while reading data file") message:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [error localizedDescription]] callback:nil];
 			[self updateDisplayColorThemeName];
 			return NO;
 		}
@@ -1037,23 +1023,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		SPLog(@"root key 'settings' is missing, has an unexpected type or is empty in theme file!");
 	}
 
-	if(actuallyLoaded > 0) {
+	if( actuallyLoaded > 0) {
 		[colorSettingTableView setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 		[colorSettingTableView reloadData];
-	} 
-	else {
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Error while reading data file", @"error while reading data file")]
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-		                               alternateButton:nil 
-		                                   otherButton:nil 
-		                     informativeTextWithFormat:NSLocalizedString(@"No color theme data found.", @"error that no color theme found")];
-		
-		[alert setAlertStyle:NSInformationalAlertStyle];
-		[alert runModal];
-		
+	} else {
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading data file", @"error while reading data file")] message:NSLocalizedString(@"No color theme data found.", @"error that no color theme found") callback:nil];
 		return NO;
 	}
-	
 	return YES;
 }
 
@@ -1062,8 +1038,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 /**
  * Dealloc.
  */
-- (void)dealloc
-{
+- (void)dealloc {
 	if (themePath)           SPClear(themePath);
 	if (editThemeListItems)  SPClear(editThemeListItems);
 	if (editorColors)        SPClear(editorColors);

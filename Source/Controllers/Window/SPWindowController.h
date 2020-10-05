@@ -45,6 +45,8 @@
 	SPDatabaseDocument *selectedTableDocument;
 }
 
+@property (readonly) PSMTabBarControl *tabBar;
+
 // Database connection management
 - (IBAction)addNewConnection:(id)sender;
 - (IBAction)moveSelectedTabInNewWindow:(id)sender;
