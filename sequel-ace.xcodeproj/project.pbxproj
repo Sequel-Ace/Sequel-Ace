@@ -1358,6 +1358,7 @@
 				17B548621E81FFA600175D5A /* SPCreateDatabaseInfo.m */,
 			);
 			name = "Database Actions";
+			path = DatabaseActions;
 			sourceTree = "<group>";
 		};
 		1198F5B41174EDDE00670590 /* Database Actions */ = {
@@ -1378,6 +1379,7 @@
 				29FA88221114619E00D1AF3D /* SPTableTriggers.m */,
 			);
 			name = "Table Triggers";
+			path = TableTriggers;
 			sourceTree = "<group>";
 		};
 		171156501E8B0F40002E6363 /* Table Relations */ = {
@@ -1387,6 +1389,7 @@
 				387BBBA70FBCB6CB00B31746 /* SPTableRelations.m */,
 			);
 			name = "Table Relations";
+			path = TableRelations;
 			sourceTree = "<group>";
 		};
 		171312CF109D23CA00FB465F /* Cells */ = {
@@ -1409,7 +1412,7 @@
 				500DA4B51BEFF877000773FE /* SPComboBoxCell.h */,
 				500DA4B61BEFF877000773FE /* SPComboBoxCell.m */,
 			);
-			name = Cells;
+			path = Cells;
 			sourceTree = "<group>";
 		};
 		173284E51088FEC20062E892 /* Data */ = {
@@ -1418,7 +1421,7 @@
 				173284E81088FEDE0062E892 /* SPConstants.h */,
 				173284E91088FEDE0062E892 /* SPConstants.m */,
 			);
-			name = Data;
+			path = Data;
 			sourceTree = "<group>";
 		};
 		173567BA12AC1306000DCCEF /* Bundle Support */ = {
@@ -1432,6 +1435,7 @@
 				BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */,
 			);
 			name = "Bundle Support";
+			path = BundleSupport;
 			sourceTree = "<group>";
 		};
 		17386E08151924E9002DC206 /* Table Content */ = {
@@ -1441,6 +1445,7 @@
 				17E6414F0EF01EF6001BC333 /* SPTableContent.m */,
 			);
 			name = "Table Content";
+			path = TableContent;
 			sourceTree = "<group>";
 		};
 		173C836C11AAD24300B8B084 /* Exporters */ = {
@@ -1460,8 +1465,9 @@
 				173C837811AAD2AE00B8B084 /* SPPDFExporter.m */,
 				173C837511AAD2AE00B8B084 /* SPHTMLExporter.h */,
 				173C837611AAD2AE00B8B084 /* SPHTMLExporter.m */,
+				173C837C11AAD2C500B8B084 /* Delegate Protocols */,
 			);
-			name = Exporters;
+			path = Exporters;
 			sourceTree = "<group>";
 		};
 		173C837C11AAD2C500B8B084 /* Delegate Protocols */ = {
@@ -1487,6 +1493,7 @@
 				4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */,
 			);
 			name = "Core Data";
+			path = CoreData;
 			sourceTree = "<group>";
 		};
 		173E70A6107FF61D008733C9 /* Main View Controllers */ = {
@@ -1509,13 +1516,14 @@
 				171156501E8B0F40002E6363 /* Table Relations */,
 			);
 			name = "Main View Controllers";
+			path = MainViewControllers;
 			sourceTree = "<group>";
 		};
 		173E70D2107FF687008733C9 /* Subview Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				501B1D161728A3DA0017C92E /* SPCharsetCollationHelper.h */,
 				967D875A24B67B4300BAE934 /* SPAutosizingTextView.swift */,
+				501B1D161728A3DA0017C92E /* SPCharsetCollationHelper.h */,
 				501B1D171728A3DA0017C92E /* SPCharsetCollationHelper.m */,
 				17CC97F110B4ABE90034CD7A /* SPAboutController.h */,
 				17CC97F210B4ABE90034CD7A /* SPAboutController.m */,
@@ -1550,6 +1558,7 @@
 				17F2FB322172561400CA4358 /* Help Viewer */,
 			);
 			name = "Subview Controllers";
+			path = SubviewControllers;
 			sourceTree = "<group>";
 		};
 		173E70D4107FF6E7008733C9 /* Data Controllers */ = {
@@ -1569,6 +1578,7 @@
 				584D87911514101E00F24774 /* SPDatabaseStructure.m */,
 			);
 			name = "Data Controllers";
+			path = DataControllers;
 			sourceTree = "<group>";
 		};
 		173E70D5107FF7AF008733C9 /* Other */ = {
@@ -1579,7 +1589,7 @@
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
 				5806B76311A991EC00813A88 /* SPDocumentController.m */,
 			);
-			name = Other;
+			path = Other;
 			sourceTree = "<group>";
 		};
 		1740F8350FC3069700CF3699 /* Templates */ = {
@@ -1624,16 +1634,7 @@
 				296DC8B00F909194002A3258 /* RegexKitLite.h */,
 				296DC8AB0F909194002A3258 /* RegexKitLite.m */,
 			);
-			name = RegexKitLite;
-			sourceTree = "<group>";
-		};
-		1798D17215BE9B8E008690E6 /* Protocols */ = {
-			isa = PBXGroup;
-			children = (
-				1798F1861550175B004B0AB8 /* SPFavoritesImportProtocol.h */,
-				1798F1831550175B004B0AB8 /* SPFavoritesExportProtocol.h */,
-			);
-			name = Protocols;
+			path = RegexKitLite;
 			sourceTree = "<group>";
 		};
 		1798F1801550172A004B0AB8 /* Import & Export */ = {
@@ -1641,11 +1642,13 @@
 			children = (
 				1798F1841550175B004B0AB8 /* SPFavoritesImporter.h */,
 				1798F1851550175B004B0AB8 /* SPFavoritesImporter.m */,
+				1798F1861550175B004B0AB8 /* SPFavoritesImportProtocol.h */,
 				1798F1811550175B004B0AB8 /* SPFavoritesExporter.h */,
 				1798F1821550175B004B0AB8 /* SPFavoritesExporter.m */,
-				1798D17215BE9B8E008690E6 /* Protocols */,
+				1798F1831550175B004B0AB8 /* SPFavoritesExportProtocol.h */,
 			);
 			name = "Import & Export";
+			path = ImportExport;
 			sourceTree = "<group>";
 		};
 		1798F192155017FB004B0AB8 /* Tree Nodes */ = {
@@ -1660,6 +1663,7 @@
 				5037F79A1B00148000733564 /* SPNamedNode.h */,
 			);
 			name = "Tree Nodes";
+			path = TreeNodes;
 			sourceTree = "<group>";
 		};
 		17BFC80D10D3FF5200A3B112 /* Icons */ = {
@@ -1679,7 +1683,7 @@
 				58A8A78F11A036C000B95749 /* SPWindowController.h */,
 				58A8A79011A036C000B95749 /* SPWindowController.m */,
 			);
-			name = Window;
+			path = Window;
 			sourceTree = "<group>";
 		};
 		17D38EFB12777B2300672B13 /* Data Import */ = {
@@ -1691,6 +1695,7 @@
 				BCE0025C11173D2A009DA533 /* SPFieldMapperController.m */,
 			);
 			name = "Data Import";
+			path = DataImport;
 			sourceTree = "<group>";
 		};
 		17D38F691279E17D00672B13 /* Table Structure */ = {
@@ -1702,6 +1707,7 @@
 				17D38F6F1279E23A00672B13 /* SPTableFieldValidation.m */,
 			);
 			name = "Table Structure";
+			path = TableStructure;
 			sourceTree = "<group>";
 		};
 		17D38FC2127B0C9500672B13 /* Connection View */ = {
@@ -1713,6 +1719,7 @@
 				1798F1801550172A004B0AB8 /* Import & Export */,
 			);
 			name = "Connection View";
+			path = ConnectionView;
 			sourceTree = "<group>";
 		};
 		17D390A6127B54F300672B13 /* Preferences */ = {
@@ -1725,7 +1732,7 @@
 				17D390A8127B556F00672B13 /* SPPreferencePaneProtocol.h */,
 				17D390A7127B551400672B13 /* Panes */,
 			);
-			name = Preferences;
+			path = Preferences;
 			sourceTree = "<group>";
 		};
 		17D390A7127B551400672B13 /* Panes */ = {
@@ -1746,7 +1753,7 @@
 				65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */,
 				65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */,
 			);
-			name = Panes;
+			path = Panes;
 			sourceTree = "<group>";
 		};
 		17DC8825126B222D00E9AAEC /* Third Party */ = {
@@ -1762,6 +1769,7 @@
 				296DC8A40F90914B002A3258 /* MGTemplateEngine */,
 			);
 			name = "Third Party";
+			path = ThirdParty;
 			sourceTree = "<group>";
 		};
 		17DC8826126B22F200E9AAEC /* Views */ = {
@@ -1772,7 +1780,7 @@
 				BC05F1C3101241DF008A97F8 /* YRKSpinningProgressIndicator.h */,
 				BC05F1C4101241DF008A97F8 /* YRKSpinningProgressIndicator.m */,
 			);
-			name = Views;
+			path = Views;
 			sourceTree = "<group>";
 		};
 		17DC8827126B32F300E9AAEC /* Table Views */ = {
@@ -1785,6 +1793,7 @@
 				171C398D16BD634600209EC6 /* SPDatabaseContentViewDelegate.h */,
 			);
 			name = "Table Views";
+			path = TableViews;
 			sourceTree = "<group>";
 		};
 		17DC8828126B332F00E9AAEC /* Accessory Views */ = {
@@ -1796,6 +1805,7 @@
 				BC01BCCE104024BE006BDEE7 /* SPEncodingPopupAccessory.m */,
 			);
 			name = "Accessory Views";
+			path = AccessoryViews;
 			sourceTree = "<group>";
 		};
 		17DC8829126B337900E9AAEC /* Text Views */ = {
@@ -1809,6 +1819,7 @@
 				BC1944CF1297291800A236CD /* SPBundleCommandTextView.m */,
 			);
 			name = "Text Views";
+			path = TextViews;
 			sourceTree = "<group>";
 		};
 		17DC886A126B378A00E9AAEC /* Category Additions */ = {
@@ -1833,6 +1844,7 @@
 				BC4DF1971158FB280059FABD /* SPNavigatorOutlineView.m */,
 			);
 			name = "Outline Views";
+			path = OutlineViews;
 			sourceTree = "<group>";
 		};
 		17E5954F14F304000054EE08 /* Products */ = {
@@ -1892,7 +1904,7 @@
 				17D390A6127B54F300672B13 /* Preferences */,
 				173E70D5107FF7AF008733C9 /* Other */,
 			);
-			name = Controllers;
+			path = Controllers;
 			sourceTree = "<group>";
 		};
 		17E6415D0EF01EF9001BC333 /* Model */ = {
@@ -1911,7 +1923,7 @@
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
 				173E70A1107FF495008733C9 /* Core Data */,
 			);
-			name = Model;
+			path = Model;
 			sourceTree = "<group>";
 		};
 		17E641670EF01F19001BC333 /* Views */ = {
@@ -1942,7 +1954,7 @@
 				17DF51241163C68600E3F396 /* Outline Views */,
 				17DC8828126B332F00E9AAEC /* Accessory Views */,
 			);
-			name = Views;
+			path = Views;
 			sourceTree = "<group>";
 		};
 		17E6416E0EF01F3B001BC333 /* Other */ = {
@@ -1960,7 +1972,7 @@
 				584754CC120A05660057631F /* QuickLook Plugin */,
 				58DA884E103E1597000B98DF /* Debugging & Support */,
 			);
-			name = Other;
+			path = Other;
 			sourceTree = "<group>";
 		};
 		17E6416F0EF01F4C001BC333 /* Keychain */ = {
@@ -1969,7 +1981,7 @@
 				17E641730EF01F80001BC333 /* SPKeychain.h */,
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
 			);
-			name = Keychain;
+			path = Keychain;
 			sourceTree = "<group>";
 		};
 		17E641720EF01F6B001BC333 /* SSH Tunnel */ = {
@@ -1980,6 +1992,7 @@
 				58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */,
 			);
 			name = "SSH Tunnel";
+			path = SSHTunnel;
 			sourceTree = "<group>";
 		};
 		17E6418B0EF01FF7001BC333 /* Images */ = {
@@ -2126,6 +2139,7 @@
 				9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */,
 			);
 			name = "Help Viewer";
+			path = HelpViewer;
 			sourceTree = "<group>";
 		};
 		17F5B1491048C4C000FC794F /* Data Export */ = {
@@ -2139,9 +2153,9 @@
 				582F02301370B52600B30621 /* SPExportFileNameTokenObject.m */,
 				17F90E451210B41100274C98 /* Model */,
 				173C836C11AAD24300B8B084 /* Exporters */,
-				173C837C11AAD2C500B8B084 /* Delegate Protocols */,
 			);
 			name = "Data Export";
+			path = DataExport;
 			sourceTree = "<group>";
 		};
 		17F90E451210B41100274C98 /* Model */ = {
@@ -2150,7 +2164,7 @@
 				17F90E461210B42700274C98 /* SPExportFile.h */,
 				17F90E471210B42700274C98 /* SPExportFile.m */,
 			);
-			name = Model;
+			path = Model;
 			sourceTree = "<group>";
 		};
 		17FC36AE141425D600AC3602 /* Frameworks */ = {
@@ -2178,7 +2192,7 @@
 				3876E15B1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.h */,
 				3876E15C1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m */,
 			);
-			name = Controls;
+			path = Controls;
 			sourceTree = "<group>";
 		};
 		19C28FB0FE9D524F11CA2CBB /* Products */ = {
@@ -2245,7 +2259,7 @@
 				296DC8B50F909194002A3258 /* MGTemplateStandardFilters.h */,
 				296DC8B40F909194002A3258 /* MGTemplateStandardFilters.m */,
 			);
-			name = MGTemplateEngine;
+			path = MGTemplateEngine;
 			sourceTree = "<group>";
 		};
 		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
@@ -2298,7 +2312,7 @@
 				5089B0261BE714E300E226CD /* SPIdMenu.m */,
 				50A77DA61E8EB903007466BC /* SPCompatibility.h */,
 			);
-			name = Utility;
+			path = Utility;
 			sourceTree = "<group>";
 		};
 		50D3C3591A771C2300B5429C /* Other */ = {
@@ -2320,7 +2334,7 @@
 				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
 				51C8597B24C8A31400A8C7C4 /* StringExtension.swift */,
 			);
-			name = Extensions;
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		583CE39511722B70008F148E /* File Compression */ = {
@@ -2330,6 +2344,7 @@
 				5885CF49116A63B200A85ACB /* SPFileHandle.m */,
 			);
 			name = "File Compression";
+			path = FileCompression;
 			sourceTree = "<group>";
 		};
 		584754CC120A05660057631F /* QuickLook Plugin */ = {
@@ -2340,6 +2355,7 @@
 				584754D1120A05910057631F /* GenerateThumbnailForURL.m */,
 			);
 			name = "QuickLook Plugin";
+			path = QuicklookPlugin;
 			sourceTree = "<group>";
 		};
 		584756F7120A1B0B0057631F /* QuickLook Plugin */ = {
@@ -2464,7 +2480,7 @@
 			children = (
 				58B9095B11C3A3EC000826E5 /* xibLocalizationPostprocessor.m */,
 			);
-			name = Localization;
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		58D1006813A57FAE0092E019 /* Localization Strings Files */ = {
@@ -2486,6 +2502,7 @@
 				50EAB5B71A8FBB08008F627A /* SPOSInfo.m */,
 			);
 			name = "Debugging & Support";
+			path = DebuggingSupport;
 			sourceTree = "<group>";
 		};
 		58FEF15E0F23D60A00518E8E /* Parsing */ = {
@@ -2507,7 +2524,7 @@
 				73F70A941E4E547500636550 /* SPJSONFormatter.h */,
 				73F70A951E4E547500636550 /* SPJSONFormatter.m */,
 			);
-			name = Parsing;
+			path = Parsing;
 			sourceTree = "<group>";
 		};
 		96D494B8249C07940092F335 /* SSH Helpers */ = {
@@ -2556,6 +2573,7 @@
 				500DA4BB1BF0CD57000773FE /* SPScreenAdditions.m */,
 			);
 			name = "Category Additions";
+			path = CategoryAdditions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
