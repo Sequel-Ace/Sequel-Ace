@@ -51,30 +51,24 @@ void SPApplyRevisionChanges(void)
 	currentVersionNumber = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] integerValue];
 	
 	// Get the current revision
-	if ([prefs objectForKey:SPLastUsedVersion]) recordedVersionNumber = [[prefs objectForKey:SPLastUsedVersion] integerValue];
-	
-	//Set version number back down if we're somehow too far ahead
-	if (currentVersionNumber < recordedVersionNumber) {
-		[prefs setObject:[NSNumber numberWithInteger:currentVersionNumber] forKey:SPLastUsedVersion];
-		[importantUpdateNotes release];
-		return;
+	if ([prefs objectForKey:SPLastUsedVersion]) {
+		recordedVersionNumber = [[prefs objectForKey:SPLastUsedVersion] integerValue];
 	}
 
-	// Skip processing if the current version matches or is less than recorded version
-	if (currentVersionNumber <= recordedVersionNumber) {
-		[importantUpdateNotes release];
-		return;
+	// Check if version changed at all
+	if (currentVersionNumber != recordedVersionNumber) {
+		// Update the prefs revision
+		[prefs setObject:[NSNumber numberWithInteger:currentVersionNumber] forKey:SPLastUsedVersion];
+
+		// Inform SPAppController to check installed default Bundles for available updates
+		[prefs setObject:@YES forKey:@"doBundleUpdate"];
 	}
-	
-	// If no recorded version, update to current revision and skip processing
+
+	// If no recorded version, or current version matches or is less than recorded version, don't show release notes or do version-specific processing
 	if (!recordedVersionNumber) {
-		[prefs setObject:[NSNumber numberWithInteger:currentVersionNumber] forKey:SPLastUsedVersion];
 		[importantUpdateNotes release];
 		return;
 	}
-
-	// Inform SPAppController to check installed default Bundles for available updates
-	[prefs setObject:@YES forKey:@"doBundleUpdate"];
 
 	
 	// This is how you add release notes and run specific migration steps
@@ -85,10 +79,9 @@ void SPApplyRevisionChanges(void)
 	// Display any important release notes, if any.  Call this after a slight delay to prevent double help
 	// menus - see http://www.cocoabuilder.com/archive/cocoa/6200-two-help-menus-why.html .
 	[SPPreferencesUpgrade performSelector:@selector(showPostMigrationReleaseNotes:) withObject:importantUpdateNotes afterDelay:0.1];
-	[importantUpdateNotes release];
 
-	// Update the prefs revision
-	[prefs setObject:[NSNumber numberWithInteger:currentVersionNumber] forKey:SPLastUsedVersion];
+	//Release the release notes object
+	[importantUpdateNotes release];
 }
 
 /**
