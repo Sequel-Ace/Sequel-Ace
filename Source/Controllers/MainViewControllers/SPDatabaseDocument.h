@@ -73,8 +73,8 @@
 	IBOutlet SPTableTriggers *tableTriggersInstance;
 	IBOutlet SPCustomQuery *customQueryInstance;
 	IBOutlet SPDataImport *tableDumpInstance;
-	IBOutlet SPTableData *tableDataInstance;
-	IBOutlet SPExtendedTableInfo *extendedTableInfoInstance;
+	@public IBOutlet SPTableData *tableDataInstance;
+	@public IBOutlet SPExtendedTableInfo *extendedTableInfoInstance;
 	IBOutlet SPDatabaseData *databaseDataInstance;
 	IBOutlet id spHistoryControllerInstance;
 	IBOutlet id exportControllerInstance;
@@ -108,7 +108,7 @@
 	
 	SPCharsetCollationHelper *alterDatabaseCharsetHelper;
 
-	IBOutlet NSProgressIndicator* queryProgressBar;
+	@public IBOutlet NSProgressIndicator* queryProgressBar;
 	IBOutlet NSBox *taskProgressLayer;
 	IBOutlet id taskProgressIndicator;
 	IBOutlet id taskDescriptionText;
@@ -136,7 +136,7 @@
 	IBOutlet NSTabView *tableTabView;
 	
 	IBOutlet NSTableView *tableInfoTable;
-	IBOutlet SPSplitView *contentViewSplitter;
+	@public IBOutlet SPSplitView *contentViewSplitter;
 	IBOutlet SPSplitView *tableInfoSplitView;
 	
 	IBOutlet NSPopUpButton *encodingPopUp;
@@ -214,7 +214,7 @@
 	id taskCancellationCallbackObject;
 	SEL taskCancellationCallbackSelector;
 	
-	NSToolbar *mainToolbar;
+	@public NSToolbar *mainToolbar;
 	NSToolbarItem *chooseDatabaseToolbarItem;
 	
 	WebView *printWebView;
@@ -262,15 +262,9 @@
 @property (readwrite, assign) BOOL isProcessing;
 @property (readwrite, retain) NSString *processID;
 
-@property (readonly) NSToolbar *mainToolbar;
-@property (readonly) NSProgressIndicator* queryProgressBar;
-
-@property (readonly) SPSplitView *contentViewSplitter;
-@property (readonly) SPExtendedTableInfo *extendedTableInfoInstance;
 @property (readonly) SPServerSupport *serverSupport;
 @property (readonly) SPDatabaseStructure *databaseStructureRetrieval;
 @property (readonly) SPDataImport *tableDumpInstance;
-@property (readonly) SPTableData *tableDataInstance;
 @property (readonly) SPTablesList *tablesListInstance;
 @property (readonly) SPCustomQuery *customQueryInstance;
 @property (readonly) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;

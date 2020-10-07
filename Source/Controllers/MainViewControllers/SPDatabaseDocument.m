@@ -4842,7 +4842,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			}
 
 			// Scroll to table
-			[[tablesListInstance.tablesListView onMainThread] scrollRowToVisible:tableIndex];
+			[[tablesListInstance->tablesListView onMainThread] scrollRowToVisible:tableIndex];
 		}
 
 		// update UI on main thread
