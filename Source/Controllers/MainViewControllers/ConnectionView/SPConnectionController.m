@@ -3304,7 +3304,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		dbDocument = document;
 
 		databaseConnectionSuperview = [dbDocument databaseView];
-		databaseConnectionView = dbDocument.contentViewSplitter;
+		databaseConnectionView = dbDocument->contentViewSplitter;
 
 		// Keychain references
 		connectionKeychainItemName = nil;
