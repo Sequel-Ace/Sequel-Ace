@@ -1420,7 +1420,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if (queryExecutionTimer) {
 			queryStartDate = [[NSDate alloc] init];
 			[self showQueryExecutionTime];
-			[queryExecutionTimer invalidate], SPClear(queryExecutionTimer);
+			[queryExecutionTimer invalidate];
 			SPClear(queryExecutionTimer);
 		}
 		
@@ -7226,7 +7226,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (selectedDatabase) SPClear(selectedDatabase);
 	if (mySQLVersion) SPClear(mySQLVersion);
 	if (taskDrawTimer) (void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
-	if (queryExecutionTimer) [queryExecutionTimer invalidate], SPClear(queryExecutionTimer);
+	if (queryExecutionTimer) {
+		[queryExecutionTimer invalidate];
+		SPClear(queryExecutionTimer);
+	}
 	if (taskFadeInStartDate) SPClear(taskFadeInStartDate);
 	if (queryEditorInitString) SPClear(queryEditorInitString);
 	if (sqlFileURL) SPClear(sqlFileURL);

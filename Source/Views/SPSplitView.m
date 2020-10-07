@@ -883,8 +883,13 @@
 
 		// If the animation has reached the end, ensure completion tasks are run
 		if (animationProgress == 1) {
-			if (animationTimer) [animationTimer invalidate], SPClear(animationTimer);
-			if (animationRetainCycleBypassObject) SPClear(animationRetainCycleBypassObject);
+			if (animationTimer) {
+				[animationTimer invalidate];
+				SPClear(animationTimer);
+			}
+			if (animationRetainCycleBypassObject) {
+				SPClear(animationRetainCycleBypassObject);
+			}
 
 			// If uncollapsing, restore the original view and remove the helper
 			if (!collapsibleSubviewCollapsed) {
