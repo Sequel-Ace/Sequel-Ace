@@ -60,7 +60,7 @@
 	IBOutlet SPTableTriggers *tableTriggersInstance;
 
 	IBOutlet NSWindow *copyTableSheet;
-	IBOutlet SPTableView *tablesListView;
+	@public IBOutlet SPTableView *tablesListView;
 	IBOutlet NSButton *copyTableButton;
 	IBOutlet NSTextField *copyTableNameField;
 	IBOutlet NSTextField *copyTableMessageField;
@@ -126,8 +126,6 @@
 	
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }
-
-@property (readonly) SPTableView *tablesListView;
 
 // IBAction methods
 - (IBAction)updateTables:(nullable id)sender;

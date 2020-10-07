@@ -561,7 +561,7 @@ retry:
 
 			// Add field names to completions list for currently selected table
 			if ([tableDocumentInstance table] != nil)
-				for (id obj in [tableDocumentInstance.tableDataInstance columnNames])
+				for (id obj in [tableDocumentInstance->tableDataInstance columnNames])
 					[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:obj, @"display", @"field-small-square", @"image", @"", @"isRef", nil]];
 
 			// Add proc/func only for MySQL version 5 or higher
@@ -1471,7 +1471,7 @@ retry:
 			}
 		}
 		else {
-			arr = [NSArray arrayWithArray:[tableDocumentInstance.tableDataInstance columnNames]];
+			arr = [NSArray arrayWithArray:[tableDocumentInstance->tableDataInstance columnNames]];
 
 			if(arr == nil) {
 				arr = @[];
