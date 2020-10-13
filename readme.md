@@ -33,9 +33,13 @@ brew cask install sequel-ace
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
 
-Please always checkout from the `dev` branch and submit PRs against this branch as well. The `master` branch is reserved for macOS App Store releases only.
-
 Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects). This lists the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
+
+## Branches
+
+- main: Main is our active development branch. All contribution PRs should be pointed at main!
+- staging: Staging is used for pending app store submissions and release candidates
+- release: Release represents what's currently on the app store. All non-release PRs to release will be rejected.
 
 ## Compatibility
 

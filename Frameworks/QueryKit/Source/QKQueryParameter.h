@@ -28,8 +28,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 
-#import "QKQueryOperators.h"
-#import "QKQueryGenericParameter.h"
+#import <QueryKit/QKQueryOperators.h>
+#import <QueryKit/QKQueryGenericParameter.h>
 
 /**
  * @class QKQueryParameter QKQueryParameter.h
