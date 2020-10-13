@@ -29,6 +29,17 @@ To install an unoffical community maintained [Homebrew](https://brew.sh) [Cask](
 brew cask install sequel-ace
 ```
 
+### Moving saved connection list from Sequel Pro
+
+To move your quick connect list from Sequel Pro to Sequel Ace just copy the file
+
+~/Library/Application Support/Sequel Pro/Data/Favorites.plist
+to ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application Support/Sequel Ace/Data
+
+```cp ~/Library/Application\ Support/Sequel\ Pro/Data/Favorites.plist ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data```
+
+Note that passwords are not copied this way, because they are stored in Keychain.
+
 ## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
