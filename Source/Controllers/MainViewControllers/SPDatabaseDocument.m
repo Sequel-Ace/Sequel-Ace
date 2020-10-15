@@ -1008,7 +1008,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	// Add a new database
-	else if ([contextInfo isEqualToString:@"addDatabase"]) {
+	if ([contextInfo isEqualToString:@"addDatabase"]) {
 		[addDatabaseCharsetHelper setEnabled:NO];
 
 		if (returnCode == NSModalResponseOK) {
