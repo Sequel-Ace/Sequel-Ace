@@ -40,7 +40,7 @@
 struct SPRawFileHandles {
 	FILE *file;
 	BZFILE *bzfile;
-	gzFile *gzfile;
+	gzFile gzfile;
 };
 
 @interface SPFileHandle ()
@@ -97,7 +97,7 @@ struct SPRawFileHandles {
 		if (fileMode == O_RDONLY) {
 			// Test for GZIP (by opening the file with gz and checking what happens)
 			{
-				gzFile *gzfile = gzopen(path, "rb");
+				gzFile gzfile = gzopen(path, "rb");
 				
 				// Set gzip buffer
 				gzbuffer(gzfile, 131072);

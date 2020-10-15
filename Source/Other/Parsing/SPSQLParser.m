@@ -1037,7 +1037,7 @@
 - (id) description {
 	return [string description];
 }
-- (NSUInteger) replaceOccurrencesOfString:(NSString *)target withString:(NSString *)replacement options:(NSUInteger)options range:(NSRange)searchRange {
+- (NSUInteger)replaceOccurrencesOfString:(NSString *)target withString:(NSString *)replacement options:(NSUInteger)options range:(NSRange)searchRange {
 	return [string replaceOccurrencesOfString:target withString:replacement options:options range:searchRange];
 	[self _clearCharCache];
 }
