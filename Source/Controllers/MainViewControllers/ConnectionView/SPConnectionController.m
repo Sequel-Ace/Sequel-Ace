@@ -3332,10 +3332,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[socketColorField setColorList:colorList];
 		[socketColorField   bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
 
-		// An instance of NSMenuItem can not be assigned to more than one menu so we have to create separate arrays.
-		standardTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
-		sshTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
-		socketTimeZoneField.menu.itemArray = [self generateTimeZoneMenuItems];
+		// An instance of NSMenuItem can not be assigned to more than one menu so we have to clone items.
+		// Cannot bulk set items on macOS < 10.14, must removeAllItems and addItem https://github.com/Sequel-Ace/Sequel-Ace/issues/403
+		[standardTimeZoneField.menu removeAllItems];
+		[sshTimeZoneField.menu removeAllItems];
+		[socketTimeZoneField.menu removeAllItems];
+		for (NSMenuItem *menuItem in [self generateTimeZoneMenuItems]) {
+			[standardTimeZoneField.menu addItem:[menuItem copy]];
+			[sshTimeZoneField.menu addItem:[menuItem copy]];
+			[socketTimeZoneField.menu addItem:[menuItem copy]];
+		}
 
 		[self registerForNotifications];
 
