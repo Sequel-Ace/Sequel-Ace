@@ -50,6 +50,8 @@
 @property(readwrite,retain) NSString *docUUID;
 
 @property(assign) BOOL suppressExceptionAlerting;
+@property(assign) BOOL restoreFrame;
+@property(assign) CGRect origFrame;
 
 - (IBAction)printDocument:(id)sender;
 

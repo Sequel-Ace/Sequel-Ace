@@ -66,6 +66,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 @synthesize windowUUID;
 @synthesize docUUID;
 @synthesize suppressExceptionAlerting;
+@synthesize restoreFrame, origFrame;
 
 - (id)init
 {
@@ -98,7 +99,19 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 - (void)displayURLString:(NSString *)url withOptions:(NSDictionary *)displayOptions
 {
 	[[self window] makeKeyAndOrderFront:nil];
+	
+	if(displayOptions.count>0 && [displayOptions objectForKey:@"x"] != nil){
+		
+		CGRect tmpFrame = [[self window] frame];
+		origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
+		restoreFrame = YES;
+		[[self window] setFrame:CGRectMake([displayOptions[@"x"] doubleValue] , [displayOptions[@"y"] doubleValue], [displayOptions[@"w"] doubleValue], [displayOptions[@"h"] doubleValue]) display:YES];
+		
+	}
+	
 	[[webView mainFrame] loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:url]]];
+	
+
 }
 
 - (id)webView
@@ -284,6 +297,12 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 - (void)windowWillClose:(NSNotification *)notification
 {
+	
+	if(restoreFrame == YES){
+		[[self window] setFrame:origFrame display:YES];
+		restoreFrame = NO;
+	}
+	
 	[[webView mainFrame] loadHTMLString:@"<html></html>" baseURL:nil];
 
 	[webView close];
