@@ -522,6 +522,7 @@ extern NSString *SPFavoriteSSLCACertFileLocationEnabledKey;
 extern NSString *SPFavoriteSSLCACertFileLocationKey;
 extern NSString *SPFavoriteUseCompressionKey;
 extern NSString *SPConnectionFavoritesChangedNotification;
+extern NSString *SPConnectionShownSocketHelp;
 
 extern NSString *SPFFormatKey;
 extern NSString *SPFVersionKey;
