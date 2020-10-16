@@ -48,6 +48,7 @@
 @property(readwrite,retain) NSString *initHTMLSourceString;
 @property(readwrite,retain) NSString *windowUUID;
 @property(readwrite,retain) NSString *docUUID;
+@property(readwrite,retain) NSString *windowType;
 
 @property(assign) BOOL suppressExceptionAlerting;
 @property(assign) BOOL restoreFrame;

@@ -66,7 +66,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 @synthesize windowUUID;
 @synthesize docUUID;
 @synthesize suppressExceptionAlerting;
-@synthesize restoreFrame, origFrame;
+@synthesize restoreFrame, origFrame, windowType;
 
 - (id)init
 {
@@ -100,18 +100,26 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 {
 	[[self window] makeKeyAndOrderFront:nil];
 	
-	if(displayOptions.count>0 && [displayOptions objectForKey:@"x"] != nil){
-		
-		CGRect tmpFrame = [[self window] frame];
-		origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
-		restoreFrame = YES;
-		[[self window] setFrame:CGRectMake([displayOptions[@"x"] doubleValue] , [displayOptions[@"y"] doubleValue], [displayOptions[@"w"] doubleValue], [displayOptions[@"h"] doubleValue]) display:YES];
-		
+	// only do this if invoked with SPConnectionShownSocketHelp = YES in the displayOptions
+	if(displayOptions.count > 0 && [[displayOptions objectForKey:SPConnectionShownSocketHelp] boolValue] == YES){
+		if([displayOptions objectForKey:@"frame"] != nil){
+			SPLog(@"Changing frame rect");
+
+			NSDictionary *frameDict = [NSDictionary dictionaryWithDictionary:[displayOptions objectForKey:@"frame"]];
+			CGRect tmpFrame = [[self window] frame];
+			
+			// save the current frame for restore
+			origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
+			restoreFrame = YES;
+			windowType = SPConnectionShownSocketHelp;
+			// set the new wider frame
+			[[self window] setFrame:CGRectMake([frameDict[@"x"] doubleValue], [frameDict[@"y"] doubleValue], [frameDict[@"w"] doubleValue], [frameDict[@"h"] doubleValue]) display:YES];
+			
+		}
 	}
 	
 	[[webView mainFrame] loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:url]]];
 	
-
 }
 
 - (id)webView
@@ -302,6 +310,12 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		[[self window] setFrame:origFrame display:YES];
 		restoreFrame = NO;
 	}
+	if(windowType == SPConnectionShownSocketHelp){
+		windowType = nil;
+		// set straight away, or wait for them to close the window?
+		// decided to wait for them to close the window
+		[[NSUserDefaults standardUserDefaults] setBool:YES forKey:SPConnectionShownSocketHelp];
+	}
 	
 	[[webView mainFrame] loadHTMLString:@"<html></html>" baseURL:nil];
 
@@ -418,14 +432,14 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 - (void)webView:(WebView *)sender didFailProvisionalLoadWithError:(NSError *)error forFrame:(WebFrame *)frame
 {
 	if(error) {
-		NSLog(@"%@", [error localizedDescription]);
+		NSLog(@"didFailProvisionalLoadWithError %@", [error localizedDescription]);
 	}
 }
 
 - (void)webView:(WebView *)webView didFailLoadWithError:(NSError*)error forFrame:(WebFrame *)frame
 {
 	if(error) {
-		NSLog(@"%@", [error localizedDescription]);
+		NSLog(@"didFailLoadWithError %@", [error localizedDescription]);
 	}
 }
 
