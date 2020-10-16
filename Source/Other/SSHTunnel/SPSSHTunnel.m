@@ -40,7 +40,7 @@
 #import <netinet/in.h>
 #import <CommonCrypto/CommonDigest.h>
 
-static unsigned short getRandomPort();
+static unsigned short getRandomPort(void);
 
 @interface SPSSHTunnel ()
 

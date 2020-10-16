@@ -1069,7 +1069,7 @@ set_input:
 						  NSLocalizedString(@"Continue", @"continue button"), 
 						  NSLocalizedString(@"Cancel", @"cancel button"), nil, [tableDocumentInstance parentWindow], self, 
 						  @selector(tableListChangedAlertDidEnd:returnCode:contextInfo:), NULL,
-						  [NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %d additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), diff]);
+						  [NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), (unsigned long)diff]);
 	}
 	else {
 		[self initializeExportUsingSelectedOptions];

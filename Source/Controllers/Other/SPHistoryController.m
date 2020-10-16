@@ -288,7 +288,7 @@
 
 		BOOL databaseIsTheSame = [[currentHistoryEntry objectForKey:@"database"] isEqualToString:theDatabase];
 		BOOL tableIsTheSame    = [[currentHistoryEntry objectForKey:@"table"] isEqualToString:theTable];
-		BOOL viewIsTheSame     = ([[currentHistoryEntry objectForKey:@"view"] unsignedIntegerValue] == theView);
+		BOOL viewIsTheSame     = ([[currentHistoryEntry objectForKey:@"view"] integerValue] == theView);
 		// If the table is the same, and the filter settings haven't changed, delete the
 		// last entry so it can be replaced.  This updates navigation within a table, rather than
 		// creating a new entry every time detail is changed.

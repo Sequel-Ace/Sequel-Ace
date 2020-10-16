@@ -2778,11 +2778,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSMutableArray *tooltipParts = [NSMutableArray arrayWithCapacity:2];
 
 		if (favCount || !groupCount) {
-			[tooltipParts addObject:[NSString stringWithFormat:((favCount == 1) ? NSLocalizedString(@"%d favorite", @"favorite singular label (%d == 1)") : NSLocalizedString(@"%d favorites", @"favorites plural label (%d != 1)")), favCount]];
+			[tooltipParts addObject:[NSString stringWithFormat:((favCount == 1) ? NSLocalizedString(@"%lu favorite", @"favorite singular label (%d == 1)") : NSLocalizedString(@"%lu favorites", @"favorites plural label (%d != 1)")), (unsigned long)favCount]];
 		}
 
 		if (groupCount) {
-			[tooltipParts addObject:[NSString stringWithFormat:((groupCount == 1) ? NSLocalizedString(@"%d group", @"favorite group singular label (%d == 1)") : NSLocalizedString(@"%d groups", @"favorite groups plural label (%d != 1)")), groupCount]];
+			[tooltipParts addObject:[NSString stringWithFormat:((groupCount == 1) ? NSLocalizedString(@"%lu group", @"favorite group singular label (%d == 1)") : NSLocalizedString(@"%lu groups", @"favorite groups plural label (%d != 1)")), (unsigned long)groupCount]];
 		}
 
 		toolTip = [NSString stringWithFormat:@"%@ - %@", [[node representedObject] nodeName], [tooltipParts componentsJoinedByString:@", "]];
