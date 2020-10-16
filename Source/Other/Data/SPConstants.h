@@ -464,6 +464,7 @@ extern NSString *SPCopyContentOnTableCopy;
 extern NSString *SPDonationsURL;
 extern NSString *SPMySQLSearchURL;
 extern NSString *SPDevURL;
+extern NSString *SPDocsSocketConnection;
 
 // Toolbar constants
 //
