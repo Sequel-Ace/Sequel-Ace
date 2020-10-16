@@ -66,6 +66,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 @synthesize windowUUID;
 @synthesize docUUID;
 @synthesize suppressExceptionAlerting;
+@synthesize restoreFrame, origFrame, windowType;
 
 - (id)init
 {
@@ -91,6 +92,26 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 - (void)displayHTMLContent:(NSString *)content withOptions:(NSDictionary *)displayOptions
 {
 	[[self window] orderFront:nil];
+//	[[self window] makeKeyAndOrderFront:nil];
+	
+	// only do this if invoked with SPConnectionShownSocketHelp = YES in the displayOptions
+	if(displayOptions.count > 0 && [[displayOptions objectForKey:SPConnectionShownSocketHelp] boolValue] == YES){
+		if([displayOptions objectForKey:@"frame"] != nil){
+			SPLog(@"Changing frame rect");
+
+			NSDictionary *frameDict = [NSDictionary dictionaryWithDictionary:[displayOptions objectForKey:@"frame"]];
+			CGRect tmpFrame = [[self window] frame];
+			
+			// save the current frame for restore
+			origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
+			restoreFrame = YES;
+			windowType = SPConnectionShownSocketHelp;
+			// set the new wider frame
+			[[self window] setFrame:CGRectMake([frameDict[@"x"] doubleValue], [frameDict[@"y"] doubleValue], [frameDict[@"w"] doubleValue], [frameDict[@"h"] doubleValue]) display:YES];
+			
+		}
+	}
+	
 	[self setInitHTMLSourceString:content];
 	[[webView mainFrame] loadHTMLString:content baseURL:nil];
 }
@@ -98,7 +119,27 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 - (void)displayURLString:(NSString *)url withOptions:(NSDictionary *)displayOptions
 {
 	[[self window] makeKeyAndOrderFront:nil];
+	
+	// only do this if invoked with SPConnectionShownSocketHelp = YES in the displayOptions
+	if(displayOptions.count > 0 && [[displayOptions objectForKey:SPConnectionShownSocketHelp] boolValue] == YES){
+		if([displayOptions objectForKey:@"frame"] != nil){
+			SPLog(@"Changing frame rect");
+
+			NSDictionary *frameDict = [NSDictionary dictionaryWithDictionary:[displayOptions objectForKey:@"frame"]];
+			CGRect tmpFrame = [[self window] frame];
+			
+			// save the current frame for restore
+			origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
+			restoreFrame = YES;
+			windowType = SPConnectionShownSocketHelp;
+			// set the new wider frame
+			[[self window] setFrame:CGRectMake([frameDict[@"x"] doubleValue], [frameDict[@"y"] doubleValue], [frameDict[@"w"] doubleValue], [frameDict[@"h"] doubleValue]) display:YES];
+			
+		}
+	}
+	
 	[[webView mainFrame] loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:url]]];
+	
 }
 
 - (id)webView
@@ -284,6 +325,19 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 - (void)windowWillClose:(NSNotification *)notification
 {
+	
+	if(restoreFrame == YES){
+		SPLog(@"Restoring original frame");
+		[[self window] setFrame:origFrame display:YES];
+		restoreFrame = NO;
+	}
+	if(windowType == SPConnectionShownSocketHelp){
+		windowType = nil;
+		// set straight away, or wait for them to close the window?
+		// decided to wait for them to close the window
+		[[NSUserDefaults standardUserDefaults] setBool:YES forKey:SPConnectionShownSocketHelp];
+	}
+	
 	[[webView mainFrame] loadHTMLString:@"<html></html>" baseURL:nil];
 
 	[webView close];
@@ -399,14 +453,14 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 - (void)webView:(WebView *)sender didFailProvisionalLoadWithError:(NSError *)error forFrame:(WebFrame *)frame
 {
 	if(error) {
-		NSLog(@"%@", [error localizedDescription]);
+		NSLog(@"didFailProvisionalLoadWithError %@", [error localizedDescription]);
 	}
 }
 
 - (void)webView:(WebView *)webView didFailLoadWithError:(NSError*)error forFrame:(WebFrame *)frame
 {
 	if(error) {
-		NSLog(@"%@", [error localizedDescription]);
+		NSLog(@"didFailLoadWithError %@", [error localizedDescription]);
 	}
 }
 
