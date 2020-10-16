@@ -205,6 +205,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #pragma mark -
 #pragma mark Connection processes
 
+-(BOOL)connected{
+	
+	SPReachability *reachability = [SPReachability reachabilityForInternetConnection];
+	NetworkStatus networkStatus = [reachability currentReachabilityStatus];
+	return networkStatus != NotReachable;
+
+}
+
+
 /**
  * Starts the connection process; invoked when user hits the connect button
  * or double-clicks on a favourite.
@@ -3095,9 +3104,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[self setHost:@""];
 	}
 	
-	
-	
-	
 	if (selectedTabView == SPSocketConnection) {
 		
 		// check we don't already have this window open
@@ -3113,9 +3119,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 		
 		if(correspondingWindowFound == NO){
-			SPLog(@"SPSocketConnection chosen, and no current window open");
 			if([prefs boolForKey:SPConnectionShownSocketHelp] == NO){
-				SPLog(@"SPConnectionShownSocketHelp never shown");
+				SPLog(@"SPSocketConnection chosen, no current window open, and not show before");
+
+				NSError *error = nil;
+				
 				// show socket help
 				self.socketHelpWindowUUID = [NSString stringWithNewUUID];
 				SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
@@ -3124,9 +3132,28 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
 				NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : tmpDic2};
 				
-				[bundleController displayURLString:SPDocsSocketConnection withOptions:tmpDict];
-				[SPAppDelegate addHTMLOutputController:bundleController];
-				
+				if ([self connected]) {
+					SPLog(@"Connected, loading remote URL");
+					[bundleController displayURLString:SPDocsSocketConnection withOptions:tmpDict];
+				}
+				else{
+					SPLog(@"Not connected, loading local file");
+					NSString *path = [[NSBundle mainBundle] pathForResource:@"local-connection" ofType:@"html"];
+					SPLog(@"path: %@", path);
+					
+					NSString *html = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+					
+					if(error == nil){
+						// slightly larger
+						NSMutableDictionary *mutDict = [tmpDict mutableCopy];
+						mutDict[@"frame"] = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @600};
+						
+						[bundleController displayHTMLContent:html withOptions:mutDict];
+					}
+				}
+				if(error == nil){
+					[SPAppDelegate addHTMLOutputController:bundleController];
+				}
 				// set straight away, or wait for them to close the window?
 				//[prefs setBool:YES forKey:SPConnectionShownSocketHelp];
 			}

@@ -31,6 +31,8 @@
 #import "SPConnectionControllerDelegateProtocol.h"
 #import "SPFavoritesExportProtocol.h"
 #import "SPFavoritesImportProtocol.h"
+#import "SPReachability.h"
+
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -260,6 +262,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
 -(void)showValidationAlertForError:(NSError*)err;
 -(void)reRequestSecureAccess;
+-(BOOL)connected;
 
 // Favorites interaction
 - (void)updateFavoriteSelection:(id)sender;

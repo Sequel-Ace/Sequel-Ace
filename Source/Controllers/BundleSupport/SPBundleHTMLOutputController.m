@@ -92,6 +92,26 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 - (void)displayHTMLContent:(NSString *)content withOptions:(NSDictionary *)displayOptions
 {
 	[[self window] orderFront:nil];
+//	[[self window] makeKeyAndOrderFront:nil];
+	
+	// only do this if invoked with SPConnectionShownSocketHelp = YES in the displayOptions
+	if(displayOptions.count > 0 && [[displayOptions objectForKey:SPConnectionShownSocketHelp] boolValue] == YES){
+		if([displayOptions objectForKey:@"frame"] != nil){
+			SPLog(@"Changing frame rect");
+
+			NSDictionary *frameDict = [NSDictionary dictionaryWithDictionary:[displayOptions objectForKey:@"frame"]];
+			CGRect tmpFrame = [[self window] frame];
+			
+			// save the current frame for restore
+			origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
+			restoreFrame = YES;
+			windowType = SPConnectionShownSocketHelp;
+			// set the new wider frame
+			[[self window] setFrame:CGRectMake([frameDict[@"x"] doubleValue], [frameDict[@"y"] doubleValue], [frameDict[@"w"] doubleValue], [frameDict[@"h"] doubleValue]) display:YES];
+			
+		}
+	}
+	
 	[self setInitHTMLSourceString:content];
 	[[webView mainFrame] loadHTMLString:content baseURL:nil];
 }
@@ -307,6 +327,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 {
 	
 	if(restoreFrame == YES){
+		SPLog(@"Restoring original frame");
 		[[self window] setFrame:origFrame display:YES];
 		restoreFrame = NO;
 	}
