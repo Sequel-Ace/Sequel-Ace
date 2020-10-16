@@ -173,7 +173,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize connectionKeychainItemAccount;
 @synthesize connectionSSHKeychainItemName;
 @synthesize connectionSSHKeychainItemAccount;
-
+@synthesize socketHelpWindowUUID;
 @synthesize isConnecting;
 @synthesize isEditingConnection;
 
@@ -3082,35 +3082,60 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)tabView:(NSTabView *)tabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem
 {
 	NSInteger selectedTabView = [tabView indexOfTabViewItem:tabViewItem];
-
+	
+	
 	if (selectedTabView == previousType) return;
-
+	
 	[self _startEditingConnection];
-
+	
 	[self resizeTabViewToConnectionType:selectedTabView animating:YES];
-
+	
 	// Update the host as appropriate
 	if ((selectedTabView != SPSocketConnection) && [[self host] isEqualToString:@"localhost"]) {
 		[self setHost:@""];
 	}
 	
+	
+	
+	
 	if (selectedTabView == SPSocketConnection) {
-		SPLog(@"SPSocketConnection chosen");
-		if([prefs boolForKey:SPConnectionShownSocketHelp] == NO){
-			SPLog(@"SPConnectionShownSocketHelp never shown");
-			// show socket help
-			SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
-			[bundleController setWindowUUID:[NSString stringWithNewUUID]];
-			NSDictionary *tmpDict = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
-			[bundleController displayURLString:@"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection" withOptions:tmpDict];
-			[SPAppDelegate addHTMLOutputController:bundleController];
-			[prefs setBool:YES forKey:SPConnectionShownSocketHelp];
-
+		
+		// check we don't already have this window open
+		BOOL correspondingWindowFound = NO;
+		for(id win in [NSApp windows]) {
+			if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
+				if([[[win delegate] windowUUID] isEqualToString:socketHelpWindowUUID]) {
+					correspondingWindowFound = YES;
+					SPLog(@"correspondingWindowFound: %hhd", correspondingWindowFound);
+					break;
+				}
+			}
+		}
+		
+		if(correspondingWindowFound == NO){
+			SPLog(@"SPSocketConnection chosen, and no current window open");
+			if([prefs boolForKey:SPConnectionShownSocketHelp] == NO){
+				SPLog(@"SPConnectionShownSocketHelp never shown");
+				// show socket help
+				self.socketHelpWindowUUID = [NSString stringWithNewUUID];
+				SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
+				[bundleController setWindowUUID:socketHelpWindowUUID];
+				
+				NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
+				NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : tmpDic2};
+				
+				[bundleController displayURLString:SPDocsSocketConnection withOptions:tmpDict];
+				[SPAppDelegate addHTMLOutputController:bundleController];
+				
+				// set straight away, or wait for them to close the window?
+				//[prefs setBool:YES forKey:SPConnectionShownSocketHelp];
+			}
 		}
 	}
-
+	
+	
 	previousType = selectedTabView;
-
+	
 	[self _favoriteTypeDidChange];
 }
 
