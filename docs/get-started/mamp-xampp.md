@@ -1,16 +1,15 @@
--   [Getting Connected](../get-started/)
--   [Making Queries](../queries.html)
--   [Keyboard Shortcuts](../shortcuts.html)
--   [Reference](../ref/)
--   [Bundles](../bundles/)
--   [Contribute](../contribute/)
+- [Getting Connected](../get-started/)
+- [Making Queries](../queries.html)
+- [Keyboard Shortcuts](../shortcuts.html)
+- [Reference](../ref/)
+- [Bundles](../bundles/)
+- [Contribute](../contribute/)
 
 <hr>
 
 ### Connecting to MAMP or XAMPP
 
 This page describes how to connect to the MySQL Server of [MAMP](http://www.mamp.info/) or [XAMPP](http://www.apachefriends.org/en/xampp-macosx.html) running on the same computer as Sequel Ace. If you want to connect to MAMP/XAMPP running on a different computer, please see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
-
 
 #### MAMP
 
@@ -32,6 +31,7 @@ You can also connect via a TCP/IP connection.
 
 Enter 127.0.0.1 for the Host. Enter root for the username and for the password. The default MySQL port used by MAMP is 8889.
 
+**Important**: Under Server & Services -> MySQL, check `Allow network access to MySQL` and select `only from this Mac`.
 
 #### XAMPP
 
