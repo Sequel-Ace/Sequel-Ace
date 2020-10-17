@@ -81,8 +81,8 @@
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
-		96A15075253B9272006E3F4D /* libssl.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; };
-		96A15078253B9274006E3F4D /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; };
+		96A150E8253B99B2006E3F4D /* libssl.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		96A150E9253B99B7006E3F4D /* libcrypto.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BECAB35424EDD163004FD17E /* TimeZone.h in Headers */ = {isa = PBXBuildFile; fileRef = BECAB35224EDD163004FD17E /* TimeZone.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BECAB35524EDD163004FD17E /* TimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BECAB35324EDD163004FD17E /* TimeZone.m */; };
 /* End PBXBuildFile section */
@@ -96,6 +96,20 @@
 			remoteInfo = SPMySQL.framework;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		26F0BF1024A0052100A43B20 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				96A150E9253B99B7006E3F4D /* libcrypto.1.1.dylib in CopyFiles */,
+				96A150E8253B99B2006E3F4D /* libssl.1.1.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
@@ -204,8 +218,6 @@
 				8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */,
 				584292A714C34B36000F8438 /* libmysqlclient.a in Frameworks */,
 				58C00ADA14E4959A00AC489A /* SystemConfiguration.framework in Frameworks */,
-				96A15075253B9272006E3F4D /* libssl.1.1.dylib in Frameworks */,
-				96A15078253B9274006E3F4D /* libcrypto.1.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -236,7 +248,6 @@
 				58428DF514BA5A03000F8438 /* Scripts */,
 				0867D69AFE84028FC02AAC07 /* Linked Frameworks */,
 				034768DFFF38A50411DB9C8B /* Products */,
-				96A15074253B9272006E3F4D /* Frameworks */,
 			);
 			name = SPMySQLFramework;
 			sourceTree = "<group>";
@@ -453,13 +464,6 @@
 			name = "Result Categories";
 			sourceTree = "<group>";
 		};
-		96A15074253B9272006E3F4D /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -543,6 +547,7 @@
 				8DC2EF520486A6940098B216 /* Resources */,
 				8DC2EF540486A6940098B216 /* Sources */,
 				8DC2EF560486A6940098B216 /* Frameworks */,
+				26F0BF1024A0052100A43B20 /* CopyFiles */,
 				26F0BF1324A0053E00A43B20 /* ShellScript */,
 				26F0BF1424A0069300A43B20 /* ShellScript */,
 			);
@@ -737,8 +742,6 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
-					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
-					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
