@@ -15,10 +15,6 @@
 		269BA7E7249FC988005E4896 /* client_plugin.h in Headers */ = {isa = PBXBuildFile; fileRef = 269BA7E1249FC988005E4896 /* client_plugin.h */; };
 		269BA7E8249FC988005E4896 /* psi_memory.h in Headers */ = {isa = PBXBuildFile; fileRef = 269BA7E3249FC988005E4896 /* psi_memory.h */; };
 		269BA7E9249FC988005E4896 /* psi_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 269BA7E4249FC988005E4896 /* psi_base.h */; };
-		269BA7EB249FDC97005E4896 /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; };
-		269BA7ED249FDCB1005E4896 /* libssl.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; };
-		26F0BF1124A0052B00A43B20 /* libcrypto.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		26F0BF1224A0053100A43B20 /* libssl.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1811BC0C64100104523 /* DataConversion_Tests.m */; };
 		507FF23B1BC0E8CA00104523 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* SPMySQL.framework */; };
 		507FF23D1BC157B500104523 /* SPMySQLStringAdditions_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */; };
@@ -58,7 +54,6 @@
 		586AA81414F6C648007F82BF /* SPMySQLArrayAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 586AA81214F6C648007F82BF /* SPMySQLArrayAdditions.h */; };
 		5884127714CC63830078027F /* SPMySQL.h in Headers */ = {isa = PBXBuildFile; fileRef = 5884127614CC63830078027F /* SPMySQL.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		588412A814CC7A4D0078027F /* Locking.h in Headers */ = {isa = PBXBuildFile; fileRef = 588412A614CC7A4D0078027F /* Locking.h */; };
-		5884133C14CCEC6B0078027F /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 5884133B14CCEC6B0078027F /* libz.dylib */; };
 		5884142714CCF5190078027F /* Conversion.h in Headers */ = {isa = PBXBuildFile; fileRef = 5884142514CCF5190078027F /* Conversion.h */; };
 		5884142814CCF5190078027F /* Conversion.m in Sources */ = {isa = PBXBuildFile; fileRef = 5884142614CCF5190078027F /* Conversion.m */; };
 		588414BD14CE3B110078027F /* SPMySQLConnectionDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 588414BC14CE3B110078027F /* SPMySQLConnectionDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -86,6 +81,8 @@
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
+		96A15075253B9272006E3F4D /* libssl.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; };
+		96A15078253B9274006E3F4D /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; };
 		BECAB35424EDD163004FD17E /* TimeZone.h in Headers */ = {isa = PBXBuildFile; fileRef = BECAB35224EDD163004FD17E /* TimeZone.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BECAB35524EDD163004FD17E /* TimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BECAB35324EDD163004FD17E /* TimeZone.m */; };
 /* End PBXBuildFile section */
@@ -99,20 +96,6 @@
 			remoteInfo = SPMySQL.framework;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		26F0BF1024A0052100A43B20 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 6;
-			files = (
-				26F0BF1224A0053100A43B20 /* libssl.1.1.dylib in CopyFiles */,
-				26F0BF1124A0052B00A43B20 /* libcrypto.1.1.dylib in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
@@ -220,10 +203,9 @@
 			files = (
 				8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */,
 				584292A714C34B36000F8438 /* libmysqlclient.a in Frameworks */,
-				269BA7EB249FDC97005E4896 /* libcrypto.1.1.dylib in Frameworks */,
-				269BA7ED249FDCB1005E4896 /* libssl.1.1.dylib in Frameworks */,
-				5884133C14CCEC6B0078027F /* libz.dylib in Frameworks */,
 				58C00ADA14E4959A00AC489A /* SystemConfiguration.framework in Frameworks */,
+				96A15075253B9272006E3F4D /* libssl.1.1.dylib in Frameworks */,
+				96A15078253B9274006E3F4D /* libcrypto.1.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,6 +236,7 @@
 				58428DF514BA5A03000F8438 /* Scripts */,
 				0867D69AFE84028FC02AAC07 /* Linked Frameworks */,
 				034768DFFF38A50411DB9C8B /* Products */,
+				96A15074253B9272006E3F4D /* Frameworks */,
 			);
 			name = SPMySQLFramework;
 			sourceTree = "<group>";
@@ -470,6 +453,13 @@
 			name = "Result Categories";
 			sourceTree = "<group>";
 		};
+		96A15074253B9272006E3F4D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -553,7 +543,6 @@
 				8DC2EF520486A6940098B216 /* Resources */,
 				8DC2EF540486A6940098B216 /* Sources */,
 				8DC2EF560486A6940098B216 /* Frameworks */,
-				26F0BF1024A0052100A43B20 /* CopyFiles */,
 				26F0BF1324A0053E00A43B20 /* ShellScript */,
 				26F0BF1424A0069300A43B20 /* ShellScript */,
 			);
@@ -748,9 +737,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -781,9 +775,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1064,9 +1063,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1180,9 +1184,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1259,9 +1268,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
