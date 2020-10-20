@@ -3651,6 +3651,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (cqColumnDefinition)      SPClear(cqColumnDefinition);
 	if (selectionIndexToRestore) SPClear(selectionIndexToRestore);
 	if (currentQueryRanges)      SPClear(currentQueryRanges);
+	
+	[self.bracketHighlighter dealloc];
 
 	[super dealloc];
 }
