@@ -115,6 +115,11 @@
 	_enabled = enabled;
 }
 
+-(void)dealloc {
+	self.textView = nil;
+	[super dealloc];
+}
+
 
 
 @end
