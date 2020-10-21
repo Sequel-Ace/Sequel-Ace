@@ -250,7 +250,7 @@ NSString *SPCopyContentOnTableCopy                    = @"CopyContentOnTableCopy
 // URLs
 NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/refman/%@/%@/%@.html";
 NSString *SPDevURL                               = @"https://github.com/Sequel-Ace/Sequel-Ace";
-
+NSString *SPDocsSocketConnection 				 = @"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection";
 // Toolbar constants
 
 // Main window toolbar
@@ -318,6 +318,7 @@ NSString *SPFavoriteSSLCACertFileLocationEnabledKey      = @"sslCACertFileLocati
 NSString *SPFavoriteSSLCACertFileLocationKey             = @"sslCACertFileLocation";
 NSString *SPFavoriteUseCompressionKey                    = @"useCompression";
 NSString *SPConnectionFavoritesChangedNotification       = @"SPConnectionFavoritesChanged";
+NSString *SPConnectionShownSocketHelp			         = @"SPConnectionShownSocketHelp";
 
 NSString *SPFFormatKey = @"format";
 NSString *SPFVersionKey = @"version";

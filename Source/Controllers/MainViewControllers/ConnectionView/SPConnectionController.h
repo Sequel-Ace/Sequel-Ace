@@ -31,6 +31,8 @@
 #import "SPConnectionControllerDelegateProtocol.h"
 #import "SPFavoritesExportProtocol.h"
 #import "SPFavoritesImportProtocol.h"
+#import "SPReachability.h"
+
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -223,6 +225,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, assign) NSInteger sshKeyLocationEnabled;
 @property (readwrite, retain) NSString *sshKeyLocation;
 @property (readwrite, retain) NSString *sshPort;
+@property (readwrite, retain) NSString *socketHelpWindowUUID;
 @property (readwrite, copy, nonatomic) NSString *connectionKeychainID;
 @property (readwrite, retain) NSString *connectionKeychainItemName;
 @property (readwrite, retain) NSString *connectionKeychainItemAccount;
@@ -259,6 +262,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
 -(void)showValidationAlertForError:(NSError*)err;
 -(void)reRequestSecureAccess;
+-(BOOL)connected;
 
 // Favorites interaction
 - (void)updateFavoriteSelection:(id)sender;
