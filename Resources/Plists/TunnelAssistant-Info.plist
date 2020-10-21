@@ -170,7 +170,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.2.2</string>
 	<key>CFBundleVersion</key>
-	<string>2104</string>
+	<string>2105</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
