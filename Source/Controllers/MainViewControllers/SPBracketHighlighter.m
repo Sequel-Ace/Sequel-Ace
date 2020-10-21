@@ -38,8 +38,7 @@
 @property NSInteger pos1;
 @property NSInteger pos2;
 
-@property NSColor *highlightColor;
-
+@property(readwrite, strong) NSColor *highlightColor;
 
 @end
 
