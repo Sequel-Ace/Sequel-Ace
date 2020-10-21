@@ -130,7 +130,7 @@
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
-		1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */; };
+		1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1AF5A262250AC401009885DF /* SPBrackets.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25F250AC401009885DF /* SPBrackets.m */; };
 		265446DF24A1616900376B48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC89E0F8FD336002A3258 /* WebKit.framework */; };
