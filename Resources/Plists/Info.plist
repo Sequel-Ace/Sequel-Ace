@@ -174,7 +174,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.2.2</string>
+	<string>2.2.3</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -197,7 +197,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>2105</string>
+	<string>2108</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
