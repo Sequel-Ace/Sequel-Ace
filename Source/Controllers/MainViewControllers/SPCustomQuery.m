@@ -3714,7 +3714,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 - (void)dealloc
 {
-	SPClear(updateHandler);
+	[updateHandler release];
+	updateHandler = nil;
 	[super dealloc];
 }
 
