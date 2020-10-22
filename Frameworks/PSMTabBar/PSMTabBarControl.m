@@ -2195,7 +2195,7 @@
 	return YES;
 }
 
-// jcs - this is harldy ever called with any meaningful values, won't fix for the moment - 2020-10-22
+// TODO: jcs - this is hardly ever called with any meaningful values, won't fix for the moment - 2020-10-22
 - (id)accessibilityAttributeValue:(NSString *)attribute {
 	id attributeValue = nil;
 	if ([attribute isEqualToString: NSAccessibilityRoleAttribute]) {

@@ -2052,6 +2052,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	row = [fieldMapperTableView editedRow];
 	column = [fieldMapperTableView editedColumn];
 
+	// TODO: jcs - using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
 	BOOL isCellComplex = ([[fieldMapperTableView preparedCellAtColumn:column row:row] isKindOfClass:[NSComboBoxCell class]]) ? YES : NO;
 
 	// Trap tab key
