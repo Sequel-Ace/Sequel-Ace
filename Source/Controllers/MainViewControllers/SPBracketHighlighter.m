@@ -38,8 +38,7 @@
 @property NSInteger pos1;
 @property NSInteger pos2;
 
-@property NSColor *highlightColor;
-
+@property(readwrite, strong) NSColor *highlightColor;
 
 @end
 
@@ -50,7 +49,7 @@
 	self.textView = textView;
 	self.pos1 = NSNotFound;
 	self.pos2 = NSNotFound;
-	self.highlightColor = [NSColor colorWithRed: 0xe6/255.0 green: 0xc9 /255.0 blue:0x09/255.0 alpha:1.0];
+	self.highlightColor = [NSColor systemTealColor];
 	self.enabled = YES;
 	return self;
 }

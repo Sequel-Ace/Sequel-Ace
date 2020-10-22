@@ -464,6 +464,7 @@ extern NSString *SPCopyContentOnTableCopy;
 extern NSString *SPDonationsURL;
 extern NSString *SPMySQLSearchURL;
 extern NSString *SPDevURL;
+extern NSString *SPDocsSocketConnection;
 
 // Toolbar constants
 //
@@ -479,7 +480,7 @@ extern NSString *SPMainToolbarTableInfo;
 extern NSString *SPMainToolbarTableRelations;
 extern NSString *SPMainToolbarTableTriggers;
 extern NSString *SPMainToolbarUserManager;
-extern NSString **SPViewModeToMainToolbarMap[];
+extern NSString __strong **SPViewModeToMainToolbarMap[];
 
 // Preferences toolbar
 extern NSString *SPPreferenceToolbarGeneral;
@@ -522,6 +523,7 @@ extern NSString *SPFavoriteSSLCACertFileLocationEnabledKey;
 extern NSString *SPFavoriteSSLCACertFileLocationKey;
 extern NSString *SPFavoriteUseCompressionKey;
 extern NSString *SPConnectionFavoritesChangedNotification;
+extern NSString *SPConnectionShownSocketHelp;
 
 extern NSString *SPFFormatKey;
 extern NSString *SPFVersionKey;

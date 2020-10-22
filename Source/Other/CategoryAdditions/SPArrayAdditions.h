@@ -72,7 +72,7 @@ static inline void NSMutableArrayAddObject(NSMutableArray *self, id anObject)
 
 static inline void NSMutableArrayReplaceObject(NSArray *self, CFIndex idx, id anObject) 
 {
-	CFArraySetValueAtIndex((CFMutableArrayRef)self, idx, anObject);
+	CFArraySetValueAtIndex((CFMutableArrayRef)self, idx, (__bridge const void *)(anObject));
 }
 
 @interface NSArray (SPArrayAdditions)
