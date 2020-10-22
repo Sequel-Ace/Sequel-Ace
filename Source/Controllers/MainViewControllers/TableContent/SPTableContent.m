@@ -4497,8 +4497,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[NSArrayObjectAtIndex([tableContentView tableColumns], column) identifier] integerValue]];
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
-		NSPoint pos = [[tableDocumentInstance parentWindow] convertBaseToScreen:[tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil]];
-
+		
+		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
+		NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(tblContentViewPoint.x, tblContentViewPoint.y, 0,0)];
+		NSPoint pos = NSMakePoint(screenRect.origin.x, screenRect.origin.y);
+		
 		pos.y -= 20;
 
 		switch (numberOfPossibleUpdateRows)
