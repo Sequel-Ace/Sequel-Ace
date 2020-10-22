@@ -2524,6 +2524,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// I believe these class matches are not ever met at present.
 			if ([rowObject isKindOfClass:[NSCalendarDate class]]) {
+				SPLog(@"object was NSCalendarDate");
 				fieldValue = [mySQLConnection escapeAndQuoteString:[rowObject description]];
 			} else if ([rowObject isKindOfClass:[NSNumber class]]) {
 				fieldValue = [rowObject stringValue];
@@ -3096,6 +3097,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		NSString *newObject = nil;
 		if ( [anObject isKindOfClass:[NSCalendarDate class]] ) {
+			SPLog(@"object was NSCalendarDate");
 			newObject = [mySQLConnection escapeAndQuoteString:[anObject description]];
 		} else if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];

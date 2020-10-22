@@ -2081,6 +2081,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		NSString *newObject = nil;
 		if ( [anObject isKindOfClass:[NSCalendarDate class]] ) {
+			SPLog(@"object was NSCalendarDate");
 			newObject = [mySQLConnection escapeAndQuoteString:[anObject description]];
 		} else if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];
