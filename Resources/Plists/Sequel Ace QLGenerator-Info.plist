@@ -32,7 +32,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.2.2</string>
 	<key>CFBundleVersion</key>
-	<string>2104</string>
+	<string>2105</string>
 	<key>CFPlugInDynamicRegisterFunction</key>
 	<string></string>
 	<key>CFPlugInDynamicRegistration</key>
