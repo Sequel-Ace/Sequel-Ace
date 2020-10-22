@@ -2804,7 +2804,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Load accessory nib each time.
 		// Note that the top-level objects aren't released automatically, but are released when the panel ends.
-		if (![NSBundle loadNibNamed:@"SaveSPFAccessory" owner:self]) {
+		if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
 			NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
 			return;
 		}
@@ -2857,7 +2857,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Load accessory nib each time.
 		// Note that the top-level objects aren't released automatically, but are released when the panel ends.
-		if (![NSBundle loadNibNamed:@"SaveSPFAccessory" owner:self]) {
+		if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
 			NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
 			return;
 		}
@@ -4689,7 +4689,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
 
 				// Break the run loop if editSheet was closed
-				if ([NSApp runModalSession:session] != NSRunContinuesResponse || ![inputTextWindow isVisible]) break;
+				if ([NSApp runModalSession:session] != NSModalResponseContinue || ![inputTextWindow isVisible]) break;
 
 				// Execute code on DefaultRunLoop
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
