@@ -1,0 +1,1 @@
+../../../FirebaseCrashlytics/Crashlytics/Crashlytics/Handlers/FIRCLSSignal.h

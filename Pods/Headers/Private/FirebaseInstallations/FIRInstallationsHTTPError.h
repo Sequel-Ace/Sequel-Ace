@@ -1,0 +1,1 @@
+../../../FirebaseInstallations/FirebaseInstallations/Source/Library/Errors/FIRInstallationsHTTPError.h

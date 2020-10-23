@@ -1,0 +1,1 @@
+../../../FirebaseInstallations/FirebaseCore/Sources/Private/FirebaseCoreInternal.h

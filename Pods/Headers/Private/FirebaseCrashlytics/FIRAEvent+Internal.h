@@ -1,0 +1,1 @@
+../../../FirebaseCrashlytics/Crashlytics/Crashlytics/Helpers/FIRAEvent+Internal.h

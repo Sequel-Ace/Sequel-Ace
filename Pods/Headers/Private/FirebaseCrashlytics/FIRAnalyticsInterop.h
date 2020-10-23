@@ -1,0 +1,1 @@
+../../../FirebaseCrashlytics/Interop/Analytics/Public/FIRAnalyticsInterop.h

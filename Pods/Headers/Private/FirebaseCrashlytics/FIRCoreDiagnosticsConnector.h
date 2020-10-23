@@ -1,0 +1,1 @@
+../../../FirebaseCrashlytics/FirebaseCore/Sources/Private/FIRCoreDiagnosticsConnector.h
