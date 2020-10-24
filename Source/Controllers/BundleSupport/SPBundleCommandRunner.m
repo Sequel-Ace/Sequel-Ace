@@ -235,13 +235,13 @@
 	// Listen to ⌘. to terminate
 	while(1) {
 		if(![bashTask isRunning] || [bashTask processIdentifier] == 0) break;
-		NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
 											untilDate:[NSDate distantPast]
 											   inMode:NSDefaultRunLoopMode
 											  dequeue:YES];
 		usleep(1000);
 		if(!event) continue;
-		if ([event type] == NSKeyDown) {
+		if ([event type] == NSEventTypeKeyDown) {
 			unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 			if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 				[bashTask terminate];

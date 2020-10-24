@@ -195,10 +195,10 @@
 
 	// Set the line position based on the initial control size
 	switch ([[self cell] controlSize]) {
-		case NSMiniControlSize:
+		case NSControlSizeMini:
 			lineOffset = kSPComboPopupButtonLineOffsetMini;
 		break;
-		case NSSmallControlSize:
+		case NSControlSizeSmall:
 			lineOffset = kSPComboPopupButtonLineOffsetSmall;
 		break;
 		default:

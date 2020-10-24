@@ -518,7 +518,7 @@ cleanup_thread_and_pool:
 		if (mySQLConnection) {
 			[self _cancelAllThreadsAndWait];
 
-			[mySQLConnection autorelease], mySQLConnection = nil; // note: aConnection could be == mySQLConnection
+			(void)([mySQLConnection autorelease]), mySQLConnection = nil; // note: aConnection could be == mySQLConnection
 		}
 
 		// Create a copy of the supplied connection

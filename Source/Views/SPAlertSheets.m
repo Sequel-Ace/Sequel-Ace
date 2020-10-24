@@ -122,7 +122,7 @@
 								 beforeDate:[NSDate distantFuture]];
 
 		// Break the run loop if sheet was closed
-		if ([NSApp runModalSession:session] != NSRunContinuesResponse || ![[alert window] isVisible]) break;
+		if ([NSApp runModalSession:session] != NSModalResponseContinue || ![[alert window] isVisible]) break;
 
 		// Execute code on DefaultRunLoop
 		[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode 

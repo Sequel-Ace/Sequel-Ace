@@ -4689,7 +4689,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
 
 				// Break the run loop if editSheet was closed
-				if ([NSApp runModalSession:session] != NSRunContinuesResponse || ![inputTextWindow isVisible]) break;
+				if ([NSApp runModalSession:session] != NSModalResponseContinue || ![inputTextWindow isVisible]) break;
 
 				// Execute code on DefaultRunLoop
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
