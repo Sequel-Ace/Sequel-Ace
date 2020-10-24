@@ -69,7 +69,7 @@ post_install do |installer_representation|
       # let Xcode decide what archs are built
       # this is an Xcode settings recommendation
       config.build_settings.delete('ARCHS')
-      if config.name == "Release"
+      if config.name == "Release" or config.name == "Distribution"
         # Build all archs
         config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
       else
