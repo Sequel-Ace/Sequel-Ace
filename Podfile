@@ -10,8 +10,12 @@ platform :osx, '10.12'
 
 # end
 
-# inhibit warning
-install! 'cocoapods', :warn_for_unused_master_specs_repo => false
+# inhibit warning on > 1.9.3
+if Gem::Version.new(Pod::VERSION) > Gem::Version.new('1.9.3')
+  install! 'cocoapods', :warn_for_unused_master_specs_repo => false
+end
+
+
 
 target 'Sequel Ace' do
   # Comment the next line if you don't want to use dynamic frameworks
