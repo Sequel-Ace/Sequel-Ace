@@ -42,3 +42,39 @@ end
 #   # Pods for xibLocalizationPostprocessor
 
 # end
+
+# ** Import/update licences **
+#
+# Firebase etc Apache License 2.0 (and some others) so we need include License and copyright notices
+# What I wanted to do here was to take our current Licence.rtf and re-create it in Markdown: License.md
+# The reason for the new file is that we want it at the top of Licence.rtf and you can't use pandoc to concat rtf + md -> rtf.
+# Strangely, you can oncat  md + rtf -> rtf. Anyway, we do md + md -> rtf
+# Then, I created an empty Pods-Sequel Ace-acknowledgements.markdown for state changes
+# On pod install, this code checks to see if the licenses have changed, if they have, copy to Pods-Sequel Ace-acknowledgements.markdown
+# Then I use pandoc (https://pandoc.org/index.html) to concatenate License.md + Pods-Sequel Ace-acknowledgements.markdown
+# and output to License.rtf
+
+post_install do |installer_representation|
+
+  require 'fileutils'
+  
+  unless FileUtils.identical?("Pods/Target Support Files/Pods-Sequel Ace/Pods-Sequel Ace-acknowledgements.markdown", "Resources/Pods-Sequel Ace-acknowledgements.markdown")
+    puts "not identical"
+    FileUtils.cp_r("Pods/Target Support Files/Pods-Sequel Ace/Pods-Sequel Ace-acknowledgements.markdown", "Resources/Pods-Sequel Ace-acknowledgements.markdown", :remove_destination => true)
+    
+    if system("hash pandoc 2> /dev/null")
+      puts "pandoc installed"
+      if system("pandoc -s 'Resources/License.md' 'Resources/Pods-Sequel Ace-acknowledgements.markdown' -o 'Resources/License.rtf' 2> /dev/null")
+        puts "new license file generated"
+      else
+        puts "pandoc error, check license.rtf"
+      end
+    else
+      puts "pandoc not installed. Try brew install pandoc"
+    end
+  end
+  
+#  can't get this to work right now...
+#  system("for file in *.xcconfig; do sed -i ''  's/-framework "CoreTelephony" //g'; done")
+  
+end
