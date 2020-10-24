@@ -35,6 +35,8 @@
 @class SPBundleEditorController;
 @class SPWindowController;
 
+@import Firebase;
+
 @interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate>
 {
 	SPAboutController *aboutController;
