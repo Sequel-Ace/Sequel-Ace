@@ -59,7 +59,7 @@ post_install do |installer_representation|
 
   installer_representation.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
-      # let Xcode decide what arch are built
+      # let Xcode decide what archs are built
       # this is an Xcode settings recommendation
       config.build_settings.delete('ARCHS')
       if config.name == "Release"
@@ -68,6 +68,14 @@ post_install do |installer_representation|
       else
         # Only build active arch
         config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+      end
+      
+      # just in case pods messes this up
+      # set symbols correctly
+      if config.name == "Debug"
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf'
+      else
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
       end
     end
   end
