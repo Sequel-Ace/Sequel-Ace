@@ -44,7 +44,7 @@
 	SPDatabaseDocument *selectedTableDocument;
 }
 
-@property (readonly) IBOutlet PSMTabBarControl *tabBar;
+@property (readonly, retain) IBOutlet PSMTabBarControl *tabBar;
 
 // Database connection management
 - (IBAction)addNewConnection:(id)sender;

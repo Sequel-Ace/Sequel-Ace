@@ -945,7 +945,6 @@
 	[tabBar destroyAnimations];
 	
 	SPClear(managedDatabaseConnections);
-	SPClear(tabBar);
 
 	[super dealloc];
 }
