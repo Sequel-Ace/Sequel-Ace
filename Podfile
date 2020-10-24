@@ -1,4 +1,4 @@
-source 'https://github.com/CocoaPods/Specs.git'
+source 'https://cdn.cocoapods.org/'
 # Uncomment the next line to define a global platform for your project
 platform :osx, '10.12'
 
@@ -9,6 +9,9 @@ platform :osx, '10.12'
 #   # Pods for PSMTabBar
 
 # end
+
+# inhibit warning
+install! 'cocoapods', :warn_for_unused_master_specs_repo => false
 
 target 'Sequel Ace' do
   # Comment the next line if you don't want to use dynamic frameworks
