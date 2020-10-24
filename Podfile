@@ -1,3 +1,4 @@
+source 'https://github.com/CocoaPods/Specs.git'
 # Uncomment the next line to define a global platform for your project
 platform :osx, '10.12'
 
@@ -56,6 +57,22 @@ end
 
 post_install do |installer_representation|
 
+  installer_representation.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      # let Xcode decide what arch are built
+      # this is an Xcode settings recommendation
+      config.build_settings.delete('ARCHS')
+      if config.name == "Release"
+        # Build all archs
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+      else
+        # Only build active arch
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+      end
+    end
+  end
+    
+    
   require 'fileutils'
   
   unless FileUtils.identical?("Pods/Target Support Files/Pods-Sequel Ace/Pods-Sequel Ace-acknowledgements.markdown", "Resources/Pods-Sequel Ace-acknowledgements.markdown")
