@@ -54,6 +54,8 @@
 
 @implementation SPWindowController
 
+@synthesize tabBar;
+
 #pragma mark -
 #pragma mark Initialisation
 
@@ -943,7 +945,8 @@
 	[tabBar destroyAnimations];
 	
 	SPClear(managedDatabaseConnections);
-	
+	SPClear(tabBar);
+
 	[super dealloc];
 }
 
