@@ -105,8 +105,19 @@ post_install do |installer_representation|
       puts "pandoc not installed. Try brew install pandoc"
     end
   end
+
   
-#  can't get this to work right now...
-#  system("for file in *.xcconfig; do sed -i ''  's/-framework "CoreTelephony" //g'; done")
-  
+  # a minimal ruby version of sed (doesn't work with regexes)
+  def justLikeSed(file, text_to_replace, text_to_put_in_place)
+      text = File.read(file)
+      File.open(file, 'w+'){|f| f << text.gsub(text_to_replace, text_to_put_in_place)}
+  end
+
+  # remove CoreTelephony from the build configs, it's an iOS-only requirement
+  # see: https://github.com/firebase/firebase-ios-sdk/blob/bde8e07844577ecc44799b82c88273ca96a93f2a/GoogleDataTransport/GDTCORLibrary/Internal/GDTCORPlatform.h#L31-L33
+  Dir.glob('**/Pods*.xcconfig') do |filename|
+    puts "Removing CoreTelephony from: " + filename
+    justLikeSed(filename , '-framework "CoreTelephony" ' , '')
+  end
+
 end
