@@ -205,5 +205,7 @@
 	<false/>
 	<key>ShowWarningBeforeExecuteQuery</key>
 	<false/>
+	<key>NSApplicationCrashOnExceptions</key>
+	<true/>
 </dict>
 </plist>
