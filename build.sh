@@ -22,9 +22,23 @@ set -e
 
 MODE="$1"
 
+if ! hash xcpretty 2> /dev/null; then
+  echo "xcpretty not installed. Try gem install xcpretty"
+  trap - EXIT
+  exit 1
+fi
+
+if hash pod 2> /dev/null; then
+  pod install
+else
+  echo "pod not installed. Try gem install cocoapods"
+  trap - EXIT
+  exit 1
+fi
+
 if [ "$MODE" = "tests" ]; then
   echo "Running Sequel Ace Unit tests"
-  set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Sequel Ace" -destination "platform=macOS,arch=x86_64" test CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c
+  set -o pipefail && xcodebuild test -workspace sequel-ace.xcworkspace -scheme "Sequel Ace" -destination "platform=macOS,arch=x86_64" test CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c
   success="1"
 fi
 
