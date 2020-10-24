@@ -29,7 +29,7 @@ if ! hash xcpretty 2> /dev/null; then
 fi
 
 if hash pod 2> /dev/null; then
-  pod install --no-repo-update
+  pod install
 else
   echo "pod not installed. Try gem install cocoapods"
   trap - EXIT
