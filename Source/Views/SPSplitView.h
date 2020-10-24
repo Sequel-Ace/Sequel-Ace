@@ -32,7 +32,7 @@
 
 @interface SPSplitView : NSSplitView <NSSplitViewDelegate>
 {
-	id<NSSplitViewDelegate> delegate;
+	id<NSSplitViewDelegate, AllowSplitViewResizing> delegate;
 
 	IBOutlet NSButton *collapseToggleButton;
 	IBOutlet NSView *additionalDragHandleView;
