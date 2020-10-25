@@ -2819,7 +2819,7 @@ set_input:
 				break; //we've hit an unterminated token
 			}
 			NSString *tokenString = [remainder substringToIndex:closeCurl.location+1];
-			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:tokenString];
+			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:[tokenString lowercaseString]];
 			if(tokenObject) {
 				[processedTokens addObject:tokenObject];
 			}
