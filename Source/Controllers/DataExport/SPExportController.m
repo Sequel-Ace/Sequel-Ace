@@ -2851,11 +2851,20 @@ set_input:
 
 	NSUInteger start = 0;
 	for(id obj in [exportCustomFilenameTokenField objectValue]) {
+		
+		SPLog(@"obj = %@", obj);
+		
 		NSUInteger length;
 		BOOL isText = NO;
 		if(IS_STRING(obj)) {
 			length = [obj length];
 			isText = YES;
+			
+			// only attempt tokenization if string contains a { or }
+			if([(NSString*)obj containsString:@"{"] == NO && [(NSString*)obj containsString:@"}"] == NO){
+				SPLog(@"string does not contain token delimiters");
+				return;
+			}
 		}
 		else if(IS_TOKEN(obj)) {
 			length = 1; // tokens are seen as one char by the textview
