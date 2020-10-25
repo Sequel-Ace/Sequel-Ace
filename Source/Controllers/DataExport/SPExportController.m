@@ -2819,7 +2819,7 @@ set_input:
 				break; //we've hit an unterminated token
 			}
 			NSString *tokenString = [remainder substringToIndex:closeCurl.location+1];
-			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:tokenString];
+			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:[tokenString lowercaseString]];
 			if(tokenObject) {
 				[processedTokens addObject:tokenObject];
 			}
@@ -2851,11 +2851,28 @@ set_input:
 
 	NSUInteger start = 0;
 	for(id obj in [exportCustomFilenameTokenField objectValue]) {
+		
+		SPLog(@"obj = %@", obj);
+		
 		NSUInteger length;
 		BOOL isText = NO;
 		if(IS_STRING(obj)) {
 			length = [obj length];
 			isText = YES;
+			
+			// we already know this is an NSString, but anyway, safety first.
+			// hmmm, check for nil?
+			// see tests
+			// obj = (NSString*)obj; is twice as fast as:
+			// obj = [NSString cast:obj]; which is twice as fast as
+			// obj = [NSString stringWithString:obj];
+			obj = [NSString cast:obj]; // this doesn't leak, it uses the same memory address
+			
+			// only attempt tokenization if string contains a { or }
+			if([obj containsString:@"{"] == NO && [obj containsString:@"}"] == NO){
+				SPLog(@"string does not contain token delimiters");
+				return;
+			}
 		}
 		else if(IS_TOKEN(obj)) {
 			length = 1; // tokens are seen as one char by the textview

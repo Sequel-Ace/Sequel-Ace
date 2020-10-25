@@ -56,6 +56,11 @@
 	return [list containsObject:self];
 }
 
++ (instancetype)cast:(id)object
+{
+	return [object isKindOfClass:self] ? object : nil;
+}
+
 @end
 
 // method swizzling to try and reproduce #2297
