@@ -2860,8 +2860,16 @@ set_input:
 			length = [obj length];
 			isText = YES;
 			
+			// we already know this is an NSString, but anyway, safety first.
+			// hmmm, check for nil?
+			// see tests
+			// obj = (NSString*)obj; is twice as fast as:
+			// obj = [NSString cast:obj]; which is twice as fast as
+			// obj = [NSString stringWithString:obj];
+			obj = [NSString cast:obj]; // this doesn't leak, it uses the same memory address
+			
 			// only attempt tokenization if string contains a { or }
-			if([(NSString*)obj containsString:@"{"] == NO && [(NSString*)obj containsString:@"}"] == NO){
+			if([obj containsString:@"{"] == NO && [obj containsString:@"}"] == NO){
 				SPLog(@"string does not contain token delimiters");
 				return;
 			}
