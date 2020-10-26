@@ -124,7 +124,7 @@
 #pragma mark -
 #pragma mark Delegate management
 
-- (void)setDelegate:(id<NSSplitViewDelegate>)aDelegate
+- (void)setDelegate:(id<NSSplitViewDelegate, AllowSplitViewResizing>)aDelegate
 {
 	delegate = aDelegate;
 }
@@ -749,7 +749,7 @@
 	viewMaximumSizes = [[NSMutableArray alloc] initWithCapacity:l];
 	[self _ensureDefaultSubviewSizesToIndex:l-1];
 
-	delegate = [super delegate];
+	delegate = (id<NSSplitViewDelegate, AllowSplitViewResizing>)[super delegate];
 	
 	[super setDelegate:self];
 }
