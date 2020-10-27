@@ -483,7 +483,7 @@
 {
 	PSMTabBarCell *theCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:theItem]];
 	
-	[[theCell indicator] setControlSize:NSSmallControlSize];
+	[[theCell indicator] setControlSize:NSControlSizeSmall];
 	
 	SPDatabaseDocument *theDocument = [theItem identifier];
 	
