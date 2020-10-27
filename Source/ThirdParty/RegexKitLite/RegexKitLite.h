@@ -229,7 +229,6 @@ extern NSString * const RKLICURegexSubjectStringErrorKey;
 - (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex range:(NSRange)range NS_SWIFT_NAME(componentsMatched(byRegex:range:));
 - (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range capture:(NSInteger)capture error:(NSError **)error NS_SWIFT_NAME(componentsMatched(byRegex:range:capture:error:));
 
-
 - (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex NS_SWIFT_NAME(captureComponents(matchedByRegex:));
 - (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex range:(NSRange)range NS_SWIFT_NAME(captureComponents(matchedByRegex:range:));;
 - (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error NS_SWIFT_NAME(captureComponents(matchedByRegex:options:range:error:));

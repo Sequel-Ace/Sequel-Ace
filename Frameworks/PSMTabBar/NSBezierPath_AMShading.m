@@ -8,7 +8,6 @@
 
 #import "NSBezierPath_AMShading.h"
 
-
 @implementation NSBezierPath (AMShading)
 
 static void linearShadedColor(void *info, const CGFloat *in, CGFloat *out)

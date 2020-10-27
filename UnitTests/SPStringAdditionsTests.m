@@ -48,7 +48,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 @implementation SPStringAdditionsTests
 
-
 - (void)testPerformance_StringWithString {
 	// this is on main thread
 	[self measureBlock:^{

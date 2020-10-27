@@ -11,7 +11,6 @@
 #import <XCTest/XCTest.h>
 #import "SPDateAdditions.h"
 
-
 @interface SPDateAdditionsTests : XCTestCase
 
 @end
@@ -118,10 +117,8 @@
 
 	XCTAssertEqualObjects(str1, str2);
 
-
 }
 #pragma clang diagnostic pop
-
 
 // OLD method for testing
 #pragma clang diagnostic push

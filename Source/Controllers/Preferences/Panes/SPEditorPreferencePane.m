@@ -61,7 +61,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 @synthesize fileManager;
 
-
 #pragma mark -
 #pragma mark Initialisation
 

@@ -42,7 +42,6 @@
 
 @end
 
-
 @implementation SPCharsetCollationHelper
 
 @synthesize databaseData;

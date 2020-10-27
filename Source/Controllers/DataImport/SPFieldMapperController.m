@@ -450,7 +450,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			currentIndex = [toBeEditedRowIndexes indexGreaterThanIndex:currentIndex];
 		}
 
-
 	}
 
 	// Try to create the new TABLE
@@ -498,7 +497,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 
 	}
-
 
 	[advancedReplaceView setHidden:YES];
 	[advancedUpdateView setHidden:YES];
@@ -876,7 +874,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-
 	[fieldMappingTableColumnNames removeAllObjects];
 	[fieldMappingTableDefaultValues removeAllObjects];
 	[fieldMappingTableTypes removeAllObjects];
@@ -960,7 +957,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[fieldMapperTableView editColumn:2 row:newIndex withEvent:nil select:YES];
 
 }
-
 
 /*
  * Remove currently new added column
@@ -1874,7 +1870,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-
 	else if(aTableView == globalValuesTableView) {
 		if ([[aTableColumn identifier] isEqualToString:SPTableViewValueIndexColumnID]) {
 			return [NSString stringWithFormat:@"%ld.", (long)(numberOfImportColumns + rowIndex + 1)];
@@ -1888,7 +1883,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			return [fieldMappingGlobalValuesSQLMarked objectAtIndex:numberOfImportColumns + rowIndex];
 
 	}
-
 
 	return nil;
 }
@@ -2037,7 +2031,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 }
 
-
 /*
  * Trap the enter, escape, tab and arrow keys, overriding default behaviour and continuing/ending editing,
  * only within the current row of the tableView only in newTableMode.
@@ -2142,7 +2135,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		return YES;
 	}
 
-
 	// Trap the escape key
 	else if (  [[control window] methodForSelector:command] == [[control window] methodForSelector:@selector(cancelOperation:)] )
 	{
@@ -2162,7 +2154,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 #pragma mark -
 #pragma mark NSTextField delegates
-
 
 /*
  * Validate some user input in newTableMode

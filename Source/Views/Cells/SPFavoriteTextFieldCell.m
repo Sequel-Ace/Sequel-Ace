@@ -90,7 +90,6 @@
 	[super drawWithFrame:cellFrame inView:controlView];
 }
 
-
 /**
  * Draws the actual cell, with a divider if appropriate.
  */

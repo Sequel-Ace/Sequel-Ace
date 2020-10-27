@@ -42,7 +42,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	return NSMakeRect(inRect.origin.x + inRect.size.width - 15, inRect.origin.y - 1, 12, inRect.size.height);
 }
 
-
 #pragma mark -
 #pragma mark Setup and teardown
 
@@ -94,7 +93,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	copy->linkAction = linkAction;
 	return copy;
 }
-
 
 #pragma mark -
 #pragma mark Enabling link functionality

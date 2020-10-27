@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "SPMySQLConnection.h"
 #import "SPMySQL Private APIs.h"
 
@@ -42,7 +41,6 @@
  * added via an NSString category; however these methods are safer and more complete
  * as they use the current connection encoding to quote characters.
  */
-
 
 /**
  * Take a string, escapes any special character, and surrounds it with single quotes

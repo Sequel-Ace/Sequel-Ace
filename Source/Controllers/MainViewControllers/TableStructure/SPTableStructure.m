@@ -887,7 +887,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if(!specialFieldTypes) {
 
-
 		if ([theRowType isEqualToString:@"JSON"]) {
 			// we "see" JSON as a string, but it is not internally to MySQL and so doesn't allow CHARACTER SET/BINARY/COLLATE either.
 		}

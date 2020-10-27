@@ -32,8 +32,6 @@
 
 @implementation SPTableTextFieldCell
 
-
-
 /**
  * Initialise
  */

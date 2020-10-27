@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Server Info.h"
 #import "SPMySQL Private APIs.h"
 

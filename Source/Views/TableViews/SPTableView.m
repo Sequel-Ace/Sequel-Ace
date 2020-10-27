@@ -343,5 +343,4 @@ pass_keyDown_to_super:
 	[super setDoubleAction:@selector(_doubleClickAction)];
 }
 
-
 @end

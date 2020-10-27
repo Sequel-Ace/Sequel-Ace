@@ -52,7 +52,6 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 	return _colorSupport;
 }
 
-
 + (NSArray *)defaultColorList
 {
 	return [NSArray arrayWithObjects:

@@ -107,7 +107,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	}
 }
 
-
 #pragma mark -
 #pragma mark Retrieving rows and cells
 

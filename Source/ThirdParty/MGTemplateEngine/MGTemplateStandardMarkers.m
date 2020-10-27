@@ -69,7 +69,6 @@
 
 //==============================================================================
 
-
 @implementation MGTemplateStandardMarkers
 {
 	__weak MGTemplateEngine *engine; // weak ref
@@ -93,7 +92,6 @@
 	return self;
 }
 
-
 - (NSArray *)markers
 {
 	return @[
@@ -108,7 +106,6 @@
 	];
 }
 
-
 - (NSArray *)endMarkersForMarker:(NSString *)marker
 {
 	if ([marker isEqualToString:FOR_START]) {
@@ -122,7 +119,6 @@
 	}
 	return nil;
 }
-
 
 - (NSObject *)markerEncountered:(NSString *)marker withArguments:(NSArray *)args inRange:(NSRange)markerRange
 				   blockStarted:(BOOL *)blockStarted blockEnded:(BOOL *)blockEnded
@@ -567,7 +563,6 @@
 	return nil;
 }
 
-
 - (BOOL)currentBlock:(NSDictionary *)blockInfo matchesTopOfStack:(NSMutableArray *)stack
 {
 	if (blockInfo && [stack count] > 0) { // end-tag should always have blockInfo, and correspond to a stack frame.
@@ -580,7 +575,6 @@
 	}
 	return NO;
 }
-
 
 - (BOOL)argIsTrue:(NSString *)arg
 {
@@ -597,7 +591,6 @@
 	}
 	return argTrue;
 }
-
 
 - (BOOL)argIsNumeric:(NSString *)arg integerValue:(NSInteger *)val checkVariables:(BOOL)checkVars
 {
@@ -625,7 +618,6 @@
 	return numeric;
 }
 
-
 - (void)engineFinishedProcessingTemplate
 {
 	// Clean up stacks etc.
@@ -635,6 +627,5 @@
 	commentStack = [[NSMutableArray alloc] init];
 	cycles = [[NSMutableDictionary alloc] init];
 }
-
 
 @end

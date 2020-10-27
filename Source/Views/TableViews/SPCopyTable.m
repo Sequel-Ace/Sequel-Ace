@@ -1399,7 +1399,6 @@ static const NSInteger kBlobAsImageFile = 4;
 			return;
 		}
 
-
 		// Create an array of table column mappings for fast iteration
 		NSArray *columns = [self tableColumns];
 		NSUInteger numColumns = [columns count];
@@ -1461,7 +1460,6 @@ static const NSInteger kBlobAsImageFile = 4;
 			if (cmdData) [cmdData release];
 			return;
 		}
-
 
 		NSString *output = [SPBundleCommandRunner runBashCommand:cmd withEnvironment:env 
 										atCurrentDirectoryPath:nil 

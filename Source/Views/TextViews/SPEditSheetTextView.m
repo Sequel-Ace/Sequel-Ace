@@ -170,7 +170,6 @@
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
 
-
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
 		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
 

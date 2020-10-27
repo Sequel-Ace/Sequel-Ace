@@ -65,7 +65,6 @@
 
 #import "Sequel_Ace-Swift.h"
 
-
 /**
  * This is the unique KVO context of code that resides in THIS class.
  * Do not try to give it to other classes, ESPECIALLY NOT child classes!
@@ -882,7 +881,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (cqColumnDefinition) [cqColumnDefinition release];
 	cqColumnDefinition = [[resultStore fieldDefinitions] retain];
 
-
 	// Notify listenters that the query has finished
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
@@ -1148,7 +1146,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableLoadTimerTicksSinceLastUpdate = 0;
 }
 
-
 #pragma mark -
 #pragma mark Table interface actions
 
@@ -1201,7 +1198,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// can trigger the effect of clicking the "clear filter" button in the field.
 	// (Keycode 51 is backspace, 117 is delete.)
 	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
-
 
 	BOOL resetPaging = NO; // if filtering was triggered by pressing the "Filter" button, reset to page 1
 	
@@ -2090,7 +2086,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 }
 
-
 #pragma mark -
 #pragma mark Data accessors
 
@@ -2593,7 +2588,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	return queryString;
 }
 
-
 /**
  * Tries to write a new row to the table.
  * Returns YES if row is written to table, otherwise NO; also returns YES if no row
@@ -2872,7 +2866,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	return argument;
 }
 
-
 /**
  * Returns YES if the table contains any columns which are of any of the blob or text types,
  * NO otherwise.
@@ -3000,8 +2993,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 }
 
-
-
 /**
  * Show Error sheet (can be called from inside of a endSheet selector)
  * via [self performSelector:@selector(showErrorSheetWithTitle:) withObject: afterDelay:]
@@ -3127,7 +3118,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString],
 				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryStr]];
 
-
 		// Check for errors while UPDATE
 		if ([mySQLConnection queryErrored]) {
 			SPOnewayAlertSheet(
@@ -3140,7 +3130,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 			return;
 		}
-
 
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
@@ -3892,7 +3881,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		return YES;
 	}
 
-
 	return NO;
 }
 
@@ -3909,7 +3897,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 #pragma mark - SPTableContentFilter
 
-
 /**
  * Makes the content filter field have focus by making it the first responder.
  */
@@ -3925,7 +3912,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[toggleRuleFilterButton setState:NSOnState];
 	[ruleFilterController focusFirstInputField];
 }
-
 
 #pragma mark -
 #pragma mark TableView delegate methods

@@ -44,7 +44,6 @@
 
 @implementation SPBracketHighlighter
 
-
 -(instancetype)initWithTextView:(NSTextView *)textView {
 	self.textView = textView;
 	self.pos1 = NSNotFound;
@@ -73,7 +72,6 @@
 		}
 	}
 
-
 }
 
 -(void)highlightOn {
@@ -84,7 +82,6 @@
 		[self.textView.textStorage addAttribute:NSBackgroundColorAttributeName value:self.highlightColor range:NSMakeRange(self.pos2, 1)];
 	}
 }
-
 
 -(BOOL)isValidPosition:(NSInteger)position {
 	return (position != NSNotFound && position >= 0 && position < (NSInteger) self.text.length);
@@ -113,7 +110,5 @@
 	}
 	_enabled = enabled;
 }
-
-
 
 @end

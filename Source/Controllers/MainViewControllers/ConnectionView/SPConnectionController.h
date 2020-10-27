@@ -33,7 +33,6 @@
 #import "SPFavoritesImportProtocol.h"
 #import "SPReachability.h"
 
-
 #import <SPMySQL/SPMySQL.h>
 
 @class SPDatabaseDocument, 

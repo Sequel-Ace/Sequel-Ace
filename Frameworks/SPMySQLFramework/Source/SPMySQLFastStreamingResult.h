@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 @interface SPMySQLFastStreamingResult : SPMySQLStreamingResult {
 
 	// Linked list setup

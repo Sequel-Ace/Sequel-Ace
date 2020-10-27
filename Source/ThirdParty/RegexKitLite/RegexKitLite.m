@@ -692,7 +692,6 @@ static NSUInteger rkl_dtrace_eventID, rkl_dtrace_compiledCacheLookups, rkl_dtrac
 #define rkl_dtrace_utf16ConversionCache(a0, a1, a2, a3, a4) do { unsigned int _a0 = (a0); if((_a0 & RKLConversionRequiredLookupFlag) != 0U) { rkl_dtrace_conversionBufferLookups++; if((_a0 & RKLCacheHitLookupFlag) != 0U) { rkl_dtrace_conversionBufferHits++; } } if(RKL_EXPECTED(REGEXKITLITE_CONVERTEDSTRINGU16CACHE_ENABLED(), 0L)) { double hitRate = 0.0; if(rkl_dtrace_conversionBufferLookups > 0UL) { hitRate = ((double)rkl_dtrace_conversionBufferHits / (double)rkl_dtrace_conversionBufferLookups) * 100.0; } REGEXKITLITE_CONVERTEDSTRINGU16CACHE(rkl_dtrace_eventID, _a0, &hitRate, a1, a2, a3, a4); } } while(0)
 #define rkl_dtrace_utf16ConversionCacheWithEventID(c0, a0, a1, a2, a3, a4) do { unsigned int _a0 = (a0); if((_a0 & RKLConversionRequiredLookupFlag) != 0U) { rkl_dtrace_conversionBufferLookups++; if((_a0 & RKLCacheHitLookupFlag) != 0U) { rkl_dtrace_conversionBufferHits++; } } if(RKL_EXPECTED(REGEXKITLITE_CONVERTEDSTRINGU16CACHE_ENABLED(), 0L)) { double hitRate = 0.0; if(rkl_dtrace_conversionBufferLookups > 0UL) { hitRate = ((double)rkl_dtrace_conversionBufferHits / (double)rkl_dtrace_conversionBufferLookups) * 100.0; } REGEXKITLITE_CONVERTEDSTRINGU16CACHE(c0, _a0, &hitRate, a1, a2, a3, a4); } } while(0)
 
-
 // \342\200\246 == UTF8 for HORIZONTAL ELLIPSIS, aka triple dots '...'
 #define RKL_UTF8_ELLIPSE "\342\200\246"
 

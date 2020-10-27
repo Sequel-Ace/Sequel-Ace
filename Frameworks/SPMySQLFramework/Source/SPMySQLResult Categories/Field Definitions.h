@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 @interface SPMySQLResult (Field_Definitions)
 
 - (NSArray *)fieldDefinitions;

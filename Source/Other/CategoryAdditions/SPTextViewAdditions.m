@@ -334,7 +334,6 @@
 	}
 }
 
-
 /*
  * Transpose adjacent characters, or if a selection is given reverse the selected characters.
  * If the caret is at the absolute end of the text field it transpose the two last charaters.

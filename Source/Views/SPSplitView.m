@@ -71,7 +71,6 @@
 
 @end
 
-
 @implementation SPSplitView
 
 + (void)initialize {

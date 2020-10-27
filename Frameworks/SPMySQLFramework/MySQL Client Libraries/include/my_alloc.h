@@ -37,7 +37,6 @@ typedef struct st_used_mem
   unsigned int	size;		   /* size of block */
 } USED_MEM;
 
-
 typedef struct st_mem_root
 {
   USED_MEM *free;                  /* blocks with free memory in it */

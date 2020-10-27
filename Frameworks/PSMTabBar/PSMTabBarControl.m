@@ -1489,7 +1489,6 @@
 
 // NSDraggingSource
 
-
 - (NSDragOperation)draggingSession:(NSDraggingSession *)session sourceOperationMaskForDraggingContext:(NSDraggingContext)context{
 		
 	return (context == NSDraggingContextWithinApplication ? NSDragOperationMove : NSDragOperationNone);

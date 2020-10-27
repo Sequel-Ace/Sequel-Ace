@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 typedef enum {
 	SPMySQLResultFieldAsUnhandled    = 0,
 	SPMySQLResultFieldAsString       = 1,

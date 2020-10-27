@@ -401,7 +401,6 @@ retry:
 			else
 				aTableName_id = [NSString stringWithFormat:@"%@%@%@", currentDb, SPUniqueSchemaDelimiter, aTableName];
 
-
 			// Put information_schema and/or mysql db at the end if not selected
 			// 5.5.3+ also has performance_schema
 			NSString* mysql_id = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, SPMySQLDatabase];
@@ -591,7 +590,6 @@ retry:
 		[NSObject cancelPreviousPerformRequestsWithTarget:self
 								selector:@selector(doAutoCompletion) 
 								object:nil];
-
 
 	NSRange r = [self selectedRange];
 
@@ -901,7 +899,6 @@ retry:
 	[completionPopup orderFront:self];
 	[completionPopup insertAutocompletePlaceholder];
 }
-
 
 /**
  * Returns the associated line number for a character position inside of the SPTextView
@@ -1233,7 +1230,6 @@ retry:
 		return YES;
 
 }
-
 
 /**
  * Shifts the selection, if any, leftwards by un-indenting any selected lines by one tab if possible.
@@ -1582,7 +1578,6 @@ retry:
 		
 	}
 }
-
 
 /**
  * Selects the current snippet defined by “currentSnippetIndex”
@@ -2089,7 +2084,6 @@ retry:
 								selector:@selector(doAutoCompletion) 
 								object:nil];
 
-
 	NSEventModifierFlags allFlags = (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand);
 	
 	// Check if user pressed ⌥ to allow composing of accented characters.
@@ -2572,7 +2566,6 @@ retry:
 	return autouppercaseKeywordsEnabled;
 }
 
-
 /**
  * If enabled it shows the MySQL Help for the current word (not inside quotes) or for the selection
  * after an adjustable delay if the textView is idle, i.e. no user interaction.
@@ -2997,7 +2990,6 @@ retry:
 	return funkyPath;
 }
 
-
 #pragma mark -
 #pragma mark context menu
 
@@ -3351,7 +3343,6 @@ retry:
 		// if (([filenamesAttributes fileHFSTypeCode] == 'clpt' && [filenamesAttributes fileHFSCreatorCode] == 'MACS') || [[filename pathExtension] isEqualToString:@"textClipping"] == YES) {
 		// 	
 		// }
-
 
 		// Set the new insertion point
 		NSPoint draggingLocation = [sender draggingLocation];

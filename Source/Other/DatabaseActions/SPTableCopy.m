@@ -38,7 +38,6 @@
 
 @end
 
-
 @implementation SPTableCopy
 
 - (BOOL)copyTable:(NSString *)tableName from:(NSString *)sourceDatabase to:(NSString *)targetDatabase

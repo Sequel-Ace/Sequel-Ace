@@ -52,7 +52,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	return NSMakeRect(inRect.origin.x + inRect.size.width - 30, inRect.origin.y - 1, 15, inRect.size.height);
 }
 
-
 @synthesize activityName;
 @synthesize activityInfo;
 @synthesize contextInfo;
@@ -110,7 +109,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 
 	return cell;
 }
-
 
 /**
  * Draws the actual cell.

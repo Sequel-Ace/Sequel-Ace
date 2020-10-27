@@ -41,7 +41,6 @@
 
 @end
 
-
 /**
  * Set up a static function to allow fast calling with cached selectors
  */

@@ -136,7 +136,6 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 */
 - (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected;
 
-
 /*
  * Set all necessary data from the table content view.
  */

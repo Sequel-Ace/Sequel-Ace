@@ -814,7 +814,6 @@
 	[nullableNumericFields removeAllObjects];
 	[nullableNumericFieldsMapIndex removeAllIndexes];
 
-
 	// Open a filehandle for the CSV file
 	csvFileHandle = [SPFileHandle fileHandleForReadingAtPath:filename];
 	

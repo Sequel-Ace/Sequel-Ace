@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Encoding.h"
 #import "SPMySQLStringAdditions.h"
 
@@ -162,7 +161,6 @@
 
 #pragma mark -
 #pragma mark Encoding storage and restoration
-
 
 /**
  * Store a previous encoding setting, to allow it to be easily restored

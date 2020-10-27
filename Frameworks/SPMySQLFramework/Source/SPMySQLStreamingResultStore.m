@@ -83,7 +83,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 	free(aRow);
 }
 
-
 #pragma mark - Setup and teardown
 
 /**

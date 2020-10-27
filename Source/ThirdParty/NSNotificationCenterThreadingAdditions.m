@@ -27,7 +27,6 @@
     [anInfoDictionary release];
 }
 
-
 - (void)postNotificationOnMainThread:(NSNotification *)aNotification {
     if( pthread_main_np() ) return [self postNotification:aNotification];
     [[self class] performSelectorOnMainThread:@selector( _postNotification: ) withObject:aNotification waitUntilDone:NO];

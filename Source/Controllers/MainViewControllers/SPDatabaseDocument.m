@@ -119,7 +119,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)_addPreferenceObservers;
 - (void)_removePreferenceObservers;
 
-
 #pragma mark - SPDatabaseViewControllerPrivateAPI
 
 - (void)_loadTabTask:(NSNumber *)tabViewItemIndexNumber;
@@ -725,7 +724,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	      contextInfo:@"addDatabase"];
 }
 
-
 /**
  * Show UI for the ALTER DATABASE statement
  * @warning Make sure this method is only called on mysql 4.1+ servers!
@@ -968,7 +966,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// shutdown successful.
 	// Until s.o. has a good UI idea, do nothing. Sequel Ace should figure out the connection loss soon enough
 }
-
 
 /**
  * Returns an array of all available database names
@@ -1262,7 +1259,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 }
 
-
 /**
  * Show query execution time on progress window.
  */
@@ -1317,7 +1313,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 	}
 }
-
 
 /**
  * Updates the task description shown to the user.
@@ -2443,7 +2438,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[newTableDocument setStateFromConnectionFile:[[self fileURL] path]];
 }
 
-
 /**
  * Ask the connection controller to initiate connection, if it hasn't
  * already.  Used to support automatic connections on window open,
@@ -2616,7 +2610,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	return tabTitle;
 }
-
 
 /**
  * Returns the currently selected database
@@ -3789,7 +3782,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark Toolbar Methods
 
-
 /**
  * set up the standard toolbar
  */
@@ -4060,8 +4052,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	return YES;
 }
 
-
-
 #pragma mark -
 #pragma mark Tab methods
 
@@ -4120,7 +4110,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Return YES by default
 	return YES;
 }
-
 
 /**
  * Invoked when the parent tab is about to close
@@ -5674,7 +5663,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	return NO;
 }
 
-
 #pragma mark -
 #pragma mark Status accessory view
 
@@ -5709,7 +5697,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	_isSavedInBundle = savedInBundle;
 }
-
 
 #pragma mark -
 #pragma mark Private API
@@ -6487,7 +6474,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self endTask];
 	}
 }
-
 
 /**
  * In a threaded task, load the currently selected table/view/proc/function.

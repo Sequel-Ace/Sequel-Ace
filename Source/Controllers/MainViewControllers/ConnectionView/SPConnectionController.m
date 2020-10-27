@@ -73,7 +73,6 @@ static NSString *SPConnectionViewNibName   = @"ConnectionView";
 const static NSInteger SPUseServerTimeZoneTag = -1;
 const static NSInteger SPUseSystemTimeZoneTag = -2;
 
-
 @interface SPConnectionController ()
 
 // Privately redeclare as read/write to get the synthesized setter
@@ -202,7 +201,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return networkStatus != NotReachable;
 
 }
-
 
 /**
  * Starts the connection process; invoked when user hits the connect button
@@ -1318,8 +1316,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	 }];
 }
 
-
-
 - (IBAction)allowLocalDataInfileChanged:(id)sender {
     [self _startEditingConnection];
 }
@@ -1344,7 +1340,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setTimeZoneIdentifier:selectedItem.title];
 			break;
 	}
-
 
 	[standardTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
 	[sshTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
@@ -1402,7 +1397,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-
 /**
  * Alert sheet callback method - invoked when the error sheet is closed.
  */
@@ -1455,7 +1449,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Ensure that a socket connection is not inadvertently used
 	if (![self _checkHost]) return;
-
 
 	// Set up the favourite, or get the mutable dictionary for the current favourite.
 	NSMutableDictionary *theFavorite;
@@ -2621,7 +2614,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 #pragma mark SplitView delegate methods
 
-
 /**
  * When the split view is resized, trigger a resize in the hidden table
  * width as well, to keep the connection view and connected view in sync.
@@ -2639,10 +2631,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return 145.f;
 }
 
-
 #pragma mark -
 #pragma mark Outline view delegate methods
-
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item
 {
@@ -2834,10 +2824,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self _setNodeIsExpanded:YES fromNotification:notification];
 }
 
-
 #pragma mark -
 #pragma mark Outline view drag & drop
-
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView writeItems:(NSArray *)items toPasteboard:(NSPasteboard *)pboard
 {
@@ -2987,10 +2975,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return acceptedDrop;
 }
 
-
 #pragma mark -
 #pragma mark Textfield delegate methods
-
 
 /**
  * React to control text changes in the connection interface
@@ -3061,10 +3047,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-
 #pragma mark -
 #pragma mark Tab bar delegate methods
-
 
 /**
  * Trigger a resize action whenever the tab view changes. The connection
@@ -3151,7 +3135,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self _favoriteTypeDidChange];
 }
 
-
 #pragma mark -
 #pragma mark Color Selector delegate
 
@@ -3162,7 +3145,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 #pragma mark -
 #pragma mark Scroll view notifications
-
 
 /**
  * As the scrollview resizes, keep the details centered within it if
@@ -3197,10 +3179,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-
 #pragma mark -
 #pragma mark Menu Validation
-
 
 /**
  * Menu item validation.
@@ -3266,10 +3246,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return YES;
 }
 
-
 #pragma mark -
 #pragma mark Favorites import/export delegate methods
-
 
 /**
  * Called by the favorites importer when the imported data is available.
@@ -3325,10 +3303,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 }
 
-
 #pragma mark -
 #pragma mark Private API
-
 
 /**
  * Sets the expanded state of the node from the supplied outline view notification.
@@ -3342,7 +3318,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	[node setNodeIsExpanded:expanded];
 }
-
 
 #pragma mark - SPConnectionControllerInitializer
 
@@ -3776,7 +3751,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 #pragma mark - SPConnectionControllerDataSource
 
-
 /**
  * Return the number of children for the specified item in the favourites tree.
  * Note that to support the "Quick Connect" entry, the returned count is amended
@@ -3847,7 +3821,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 	}
 }
-
 
 #pragma mark -
 

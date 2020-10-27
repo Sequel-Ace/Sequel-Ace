@@ -591,7 +591,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		[draggedRows addObject:[NSNumber numberWithInteger:rowIndex]];
 	}];
 
-
 	NSInteger destinationRow = row;
 	NSInteger offset = 0;
 
@@ -883,7 +882,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	}
 }
 
-
 /**
  * Save panel did end method.
  */
@@ -896,7 +894,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			NSMutableDictionary *spfdata = [NSMutableDictionary dictionary];
 			NSMutableDictionary *cfdata = [NSMutableDictionary dictionary];
 			NSMutableArray *filterData = [NSMutableArray array];
-
 
 			[spfdata setObject:@1 forKey:SPFVersionKey];
 			[spfdata setObject:SPFContentFiltersContentType forKey:SPFFormatKey];

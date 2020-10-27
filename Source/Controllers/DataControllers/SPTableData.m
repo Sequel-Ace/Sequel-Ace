@@ -337,7 +337,6 @@
 	[status removeAllObjects];
 }
 
-
 /**
  * Flushes any field/column-related caches.
  */
@@ -1293,7 +1292,6 @@
 		[fieldDetails setObject:@"blobdata" forKey:@"typegrouping"];
 	}
 	[detailString release];
-
 
 	// Set up some column defaults for all columns
 	[fieldDetails setValue:@YES forKey:@"null"];

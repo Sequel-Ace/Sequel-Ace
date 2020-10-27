@@ -69,7 +69,6 @@
 	
 }
 
-
 /**
  *  Convenience method that returns a formatted string representing the receiver's date formatted to a given date format, time zone and locale
  *
@@ -91,6 +90,5 @@
     [formatter setLocale:locale];
     return [formatter stringFromDate:self];
 }
-
 
 @end

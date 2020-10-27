@@ -37,7 +37,6 @@
 
 @end
 
-
 @implementation MGTemplateEngine
 {
 	NSMutableArray *_openBlocksStack;
@@ -52,7 +51,6 @@
 
 #pragma mark Creation and destruction
 
-
 + (NSString *)engineVersion
 {
 	// 1.0.0	20 May 2008
@@ -60,12 +58,10 @@
 	return @"1.0.1";
 }
 
-
 + (MGTemplateEngine *)templateEngine
 {
 	return [[MGTemplateEngine alloc] init];
 }
-
 
 - (id)init
 {
@@ -94,27 +90,22 @@
 
 #pragma mark Managing persistent values.
 
-
 - (void)setObject:(id)anObject forKey:(id)aKey
 {
 	[_globals setObject:anObject forKey:aKey];
 }
-
 
 - (void)addEntriesFromDictionary:(NSDictionary *)dict
 {
 	[_globals addEntriesFromDictionary:dict];
 }
 
-
 - (id)objectForKey:(id)aKey
 {
 	return [_globals objectForKey:aKey];
 }
 
-
 #pragma mark Configuration and extensibility.
-
 
 - (void)loadMarker:(id<MGTemplateMarker>)marker
 {
@@ -133,7 +124,6 @@
 	}
 }
 
-
 - (void)loadFilter:(id<MGTemplateFilter>)filter
 {
 	if (filter) {
@@ -151,9 +141,7 @@
 	}
 }
 
-
 #pragma mark  Delegate
-
 
 - (void)reportError:(NSString *)errorStr code:(NSInteger)code continuing:(BOOL)continuing
 {
@@ -174,7 +162,6 @@
 	}
 }
 
-
 - (void)reportBlockBoundaryStarted:(BOOL)started
 {
 	id<MGTemplateEngineDelegate> __strong delegate = self.delegate;
@@ -192,7 +179,6 @@
 	}
 }
 
-
 - (void)reportTemplateProcessingFinished
 {
 	id<MGTemplateEngineDelegate> __strong delegate = self.delegate;
@@ -202,9 +188,7 @@
 	}
 }
 
-
 #pragma mark Utilities.
-
 
 - (id)valueForVariable:(NSString *)var parent:(id __autoreleasing *)parent parentKey:(NSString * __autoreleasing *)parentKey
 {
@@ -319,7 +303,6 @@
 	return result;
 }
 
-
 - (void)setValue:(id)newValue forVariable:(NSString *)var forceCurrentStackFrame:(BOOL)inStackFrame
 {
 	id parent = nil;
@@ -353,7 +336,6 @@
 	}
 }
 
-
 - (id)resolveVariable:(NSString *)var
 {
 	id parent = nil;
@@ -363,15 +345,12 @@
 	return result;
 }
 
-
 - (NSDictionary *)templateVariables
 {
 	return [NSDictionary dictionaryWithDictionary:_templateVariables];
 }
 
-
 #pragma mark Processing templates.
-
 
 - (NSString *)processTemplate:(NSString *)templateString withVariables:(NSDictionary *)variables
 {
@@ -624,7 +603,6 @@ but current block was started by \"%@\" marker",
 	return output;
 }
 
-
 - (NSString *)processTemplateInFileAtPath:(NSString *)templatePath withVariables:(NSDictionary *)variables
 {
 	NSString *result = nil;
@@ -635,7 +613,6 @@ but current block was started by \"%@\" marker",
 	}
 	return result;
 }
-
 
 #pragma mark Properties
 

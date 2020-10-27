@@ -27,7 +27,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 @interface SPMySQLGeometryData : NSObject <NSCopying>
 {
 	// Holds the WKB bytes coming from SQL server

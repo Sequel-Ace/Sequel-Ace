@@ -382,7 +382,6 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	return newString;
 }
 
-
 - (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis
 {
 	NSString *str = self;

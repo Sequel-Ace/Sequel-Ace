@@ -67,7 +67,6 @@
 	NSTextContainer  *container;
 	NSTextView       *clientView;
 
-
 }
 
 @property(retain) NSColor *alternateTextColor;

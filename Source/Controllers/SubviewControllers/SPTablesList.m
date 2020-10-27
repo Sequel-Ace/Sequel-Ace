@@ -391,7 +391,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		  contextInfo:(__bridge void * _Null_unspecified)(SPAddNewTable)];
 }
 
-
 - (IBAction)tableEncodingButtonChanged:(id)sender
 {
 	NSString *fmtStrDefaultId      = NSLocalizedString(@"Default (%@)",@"Add Table : Collation : Default ($1 = collation name)");
@@ -716,7 +715,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
 }
-
 
 #pragma mark -
 #pragma mark Alert sheet methods
@@ -1493,7 +1491,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// empty table names are invalid
 	if([fieldStr length] == 0) return NO;
 
-
 	NSArray *similarTables;
 	switch (tableType) {
 		case SPTableTypeView:
@@ -2133,7 +2130,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	return NO;
 }
-
 
 #pragma mark -
 #pragma mark Private API

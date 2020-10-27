@@ -128,7 +128,6 @@
 	return markerInfo;
 }
 
-
 - (NSArray *)argumentsFromString:(NSString *)argString
 {
 	// Extract arguments from argString, taking care not to break single- or double-quoted arguments,

@@ -50,7 +50,6 @@ static NSString *SPGlobalPrivilegesTabIdentifier = @"Global Privileges";
 static NSString *SPResourcesTabIdentifier = @"Resources";
 static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
-
 @interface SPUserManager ()
 
 - (void)_initializeTree:(NSArray *)items;
@@ -1400,7 +1399,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[connection queryString:grantStatement];
 	return [self _checkAndDisplayMySqlError];
 }
-
 
 /**
  * Revoke the supplied privileges from the specified user and host

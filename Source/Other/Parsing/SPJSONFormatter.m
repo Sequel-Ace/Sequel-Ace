@@ -30,9 +30,7 @@
 
 #import "SPJSONFormatter.h"
 
-
 static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
-
 
 @implementation SPJSONFormatter
 
@@ -223,7 +221,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 	
 	return [unformatted autorelease];
 }
-
 
 @end
 

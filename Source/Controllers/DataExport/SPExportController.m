@@ -1257,7 +1257,6 @@ set_input:
 	[exportButton setEnabled:[enable boolValue]];
 }
 
-
 #pragma mark - SPExportInitializer
 
 /**
@@ -1858,7 +1857,6 @@ set_input:
 								   options:NSLiteralSearch
 									 range:NSMakeRange(0, [lineEnding length])];
 
-
 	[lineEnding replaceOccurrencesOfString:@"\\n" withString:@"\n"
 								   options:NSLiteralSearch
 									 range:NSMakeRange(0, [lineEnding length])];
@@ -2184,7 +2182,6 @@ set_input:
 
 		//note that there will be no tableName if the export is done from a query result without a database selected (or empty).
 		filename = [self expandCustomFilenameFormatUsingTableName:[[tablesListInstance tables] objectOrNilAtIndex:1]];
-
 
 		if (![[self customFilenamePathExtension] length] && [extension length] > 0) filename = [filename stringByAppendingPathExtension:extension];
 	}

@@ -8,7 +8,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-
 @interface PSMOverflowPopUpButton : NSPopUpButton {
     NSImage         *_PSMTabBarOverflowPopUpImage;
     NSImage         *_PSMTabBarOverflowDownPopUpImage;

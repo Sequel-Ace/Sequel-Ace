@@ -304,7 +304,6 @@ static CGFloat slow_in_out (CGFloat t)
 	NSString *bgColor = ([displayOptions objectForKey:@"backgroundcolor"]) ? [displayOptions objectForKey:@"backgroundcolor"] : tooltipColor;
 	BOOL isTransparent = ([displayOptions objectForKey:@"transparent"]) ? YES : NO;
 
-
 	fullContent = [NSString stringWithFormat:fullContent, isTransparent ? @"transparent" : bgColor, content];
 	[[webView mainFrame] loadHTMLString:fullContent baseURL:nil];
 

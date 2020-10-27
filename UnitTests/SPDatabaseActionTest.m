@@ -31,10 +31,8 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
-
 #import "SPDatabaseAction.h"
 #import <SPMySQL/SPMySQL.h>
-
 
 @interface SPDatabaseActionTest : XCTestCase
 
@@ -57,7 +55,6 @@
 	
 	OCMVerifyAll(mockConnection);
 }
-
 
 - (void)testCreateDatabase_02_allParams
 {

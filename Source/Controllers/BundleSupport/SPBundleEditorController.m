@@ -107,7 +107,6 @@
 
 	bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil] retain];
 
-
 	touchedBundleArray = [[NSMutableArray alloc] initWithCapacity:1];
 	commandBundleTree = [[NSMutableDictionary alloc] initWithCapacity:1];
 	sortDescriptor = [[NSSortDescriptor alloc] initWithKey:kBundleNameKey ascending:YES selector:@selector(localizedCompare:)];
@@ -949,7 +948,6 @@
 
 	// Remove unnecessary keys
 	[saveDict removeObjectsForKeys:@[kBundleNameKey]];
-
 
 	if(!isNewBundle) {
 		NSDictionary *cmdData = nil;

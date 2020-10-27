@@ -1007,5 +1007,4 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
     return self;
 }
 
-
 @end

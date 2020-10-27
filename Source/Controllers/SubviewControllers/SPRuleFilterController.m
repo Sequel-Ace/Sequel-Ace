@@ -922,7 +922,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[displayValues release];
 }
 
-
 /**
  * This method recursively fills up the passed-in criteria and displayValues arrays with objects in the way the
  * NSRuleEditor would, so they can be used with the -setCriteria:andDisplayValues:forRowAtIndex: call.

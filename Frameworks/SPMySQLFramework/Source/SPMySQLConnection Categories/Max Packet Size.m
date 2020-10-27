@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Max Packet Size.h"
 #import "SPMySQL Private APIs.h"
 

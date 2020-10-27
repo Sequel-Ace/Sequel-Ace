@@ -273,7 +273,6 @@
 		return [super trackMouse:theEvent inRect:cellFrame ofView:controlView untilMouseUp:untilMouseUp];
 	}
 
-
 	// Custom tracking to be performed - indent the vertical button area slightly
 	activeRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y + heightIndent, cellFrame.size.width - [(SPComboPopupButton *)controlView lineOffset] + 1, cellFrame.size.height - fabs(2 * heightIndent));
 

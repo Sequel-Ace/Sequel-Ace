@@ -333,7 +333,6 @@ enum trackingAreaIDs
 	[circlePath stroke];
 }
 
-
 #pragma mark -
 #pragma mark Mouse Handling
 

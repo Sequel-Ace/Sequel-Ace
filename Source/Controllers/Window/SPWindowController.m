@@ -501,7 +501,6 @@
 	[theDocument addObserver:self forKeyPath:@"isProcessing" options:0 context:nil];
 }
 
-
 - (void)_switchOutSelectedTableDocument:(SPDatabaseDocument *)newDoc
 {
 	NSAssert([NSThread isMainThread], @"Switching the selectedTableDocument via a background thread is not supported!");

@@ -32,7 +32,6 @@
 
 @implementation SPNotificationsPreferencePane
 
-
 #pragma mark -
 #pragma mark Preference pane protocol methods
 

@@ -9,7 +9,6 @@
 #import <Cocoa/Cocoa.h>
 #import "PSMTabBarControl.h"
 
-
 @interface PSMProgressIndicator : NSProgressIndicator {
 
 }

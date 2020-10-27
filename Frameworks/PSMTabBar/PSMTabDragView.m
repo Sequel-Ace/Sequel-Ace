@@ -8,7 +8,6 @@
 
 #import "PSMTabDragView.h"
 
-
 @implementation PSMTabDragView
 
 - (id)initWithFrame:(NSRect)frame {

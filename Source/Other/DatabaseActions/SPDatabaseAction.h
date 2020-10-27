@@ -44,7 +44,6 @@
  */
 @property (nonnull, readwrite, assign) SPMySQLConnection *connection;
 
-
 /**
  * @property tablesList
  */

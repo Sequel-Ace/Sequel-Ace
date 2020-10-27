@@ -225,7 +225,6 @@
 	}
 }
 
-
 - (void)externalApplicationWantsToOpenADatabaseConnection:(NSNotification *)notification
 {
 	NSDictionary *userInfo = [notification userInfo];
@@ -415,7 +414,6 @@
 				// Show 'Import' button only if there's a connection available
 				if ([self frontDocument])
 					[alert addButtonWithTitle:NSLocalizedString(@"Import", @"import button")];
-
 
 				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"),
 										   [NSString stringForByteSize:[filesize longLongValue]]]];
@@ -834,7 +832,6 @@
 	else
 		parameter = @[];
 
-
 	// Handle commands which don't need a connection window
 	if([command isEqualToString:@"chooseItemFromList"]) {
 		NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], (passedProcessID && [passedProcessID length]) ? passedProcessID : @""];
@@ -994,9 +991,6 @@
 		[fileManager removeItemAtPath:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], passedProcessID] error:nil];
 		[fileManager removeItemAtPath:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], passedProcessID] error:nil];
 		[fileManager removeItemAtPath:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], passedProcessID] error:nil];
-
-
-
 	} else {
 		SPOnewayAlertSheet(
 			NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error"),
@@ -1680,7 +1674,6 @@
 										NSDictionary *cmdDataOld = nil;
 										{
 											NSError *readError = nil;
-
 
 											NSData *pDataOld = [NSData dataWithContentsOfFile:oldBundlePath options:NSUncachedRead error:&readError];
 

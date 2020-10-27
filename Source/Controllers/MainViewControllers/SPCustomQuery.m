@@ -99,7 +99,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)_updateProgress;
 @end
 
-
 @interface SPCustomQuery ()
 
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
@@ -473,7 +472,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[textView setAutopair:enableAutopair];
 	}
 
-
 	// "Auto-help" toggle
 	if (sender == autohelpMenuItem) {
 		BOOL enableAutohelp = !([autohelpMenuItem state] == NSOffState);
@@ -482,7 +480,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[autohelpMenuItem setState:enableAutohelp?NSOnState:NSOffState];
 		[textView setAutohelp:enableAutohelp];
 	}
-
 
 	// "Auto-uppercase keywords" toggle
 	if (sender == autouppercaseKeywordsMenuItem) {
@@ -614,7 +611,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[self performQueriesTask:taskArguments];
 	}
 }
-
 
 /**
 *  Method that checks if an array of SQL queries contain any destructive SQL
@@ -1216,7 +1212,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	[queries release];
-
 
 	queryRange = NSIntersectionRange(queryRange, NSMakeRange(0, [[textView string] length]));
 	if (!queryRange.length) {

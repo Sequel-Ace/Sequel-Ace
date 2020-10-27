@@ -29,7 +29,6 @@
 
 #import <netdb.h>
 
-
 @interface SPReachability ()
 
 @property (nonatomic, assign) SCNetworkReachabilityRef  reachabilityRef;
@@ -37,7 +36,6 @@
 -(BOOL)isReachableWithFlags:(SCNetworkReachabilityFlags)flags;
 
 @end
-
 
 @implementation SPReachability
 
@@ -66,7 +64,6 @@
     return [self reachabilityWithAddress:&zeroAddress];
 }
 
-
 // Initialization methods
 
 -(instancetype)initWithReachabilityRef:(SCNetworkReachabilityRef)ref
@@ -91,8 +88,6 @@
         self.reachabilityRef = nil;
     }	
 }
-
-
 
 #pragma mark - reachability tests
 

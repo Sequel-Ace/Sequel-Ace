@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Data Conversion.h"
 
 #ifdef SPMYSQL_FOR_UNIT_TESTING

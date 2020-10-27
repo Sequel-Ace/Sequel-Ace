@@ -545,7 +545,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 #pragma mark -
 #pragma mark IBActions
 
-
 - (IBAction)reloadAllStructures:(id)sender
 {
 
@@ -598,7 +597,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 	@try{
 
-
 		NSString *connectionID = nil;
 		if(parentObject && [[parentObject allKeys] count])
 			connectionID = [[[[parentObject allKeys] objectAtIndex:0] componentsSeparatedByString:SPUniqueSchemaDelimiter] objectAtIndex:0];
@@ -622,7 +620,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		NSMutableDictionary *structure = [NSMutableDictionary dictionary];
 		[structure setObject:[NSMutableDictionary dictionary] forKey:connectionID];
-
 
 		NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF CONTAINS[c] %@", pattern];
 		NSArray *filteredItems = [[allSchemaKeys objectForKey:connectionID] filteredArrayUsingPredicate:predicate];
@@ -679,7 +676,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		
 		isFiltering = NO;
 	}
-
 
 }
 
@@ -1140,7 +1136,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		
 	return YES;
 }
-
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {

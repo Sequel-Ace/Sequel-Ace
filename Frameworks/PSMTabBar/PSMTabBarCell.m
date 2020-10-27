@@ -253,7 +253,6 @@
 	_hasLargeImage = value;
 }
 
-
 - (NSInteger)count
 {
     return _count;

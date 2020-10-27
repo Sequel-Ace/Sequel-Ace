@@ -499,7 +499,6 @@
 	return [self trimAndReturnStringFromCharacter:fromCharacter toCharacter:toCharacter trimmingInclusively:inclusiveTrim returningInclusively:inclusiveReturn skippingBrackets:skipBrackets ignoringQuotedStrings:YES];
 }
 
-
 /**
  * As trimAndReturnStringFromCharacter: toCharacter: ..., but allows control over whether characters
  * within quoted strings are ignored.
@@ -508,7 +507,6 @@
 {
 	return [self trimAndReturnStringFromCharacter:fromCharacter toCharacter:toCharacter trimmingInclusively:inclusiveTrim returningInclusively:inclusiveReturn skippingBrackets:NO ignoringQuotedStrings:ignoreQuotedStrings];
 }
-
 
 /**
  * As trimAndReturnStringFromCharacter: toCharacter: ..., but allows control over both bracketing

@@ -30,7 +30,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-
 @interface SPComboPopupButton : NSPopUpButton <NSMenuDelegate> {
 	BOOL menuIsOpen;
 	BOOL shouldDrawNonHighlightState;

@@ -170,7 +170,6 @@
 
 }
 
-
 /**
  * Shifts the selection, if any, leftwards by un-indenting any selected lines by one tab if possible.
  * If the caret is within a line, the selection is not changed after the undent; if the selection has
@@ -610,7 +609,6 @@
 
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
-
 
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
 		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];

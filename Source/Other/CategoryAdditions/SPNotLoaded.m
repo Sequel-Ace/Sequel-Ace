@@ -74,7 +74,6 @@ static SPNotLoaded *notLoaded = nil;
 
 @end
 
-
 /**
  * This Category is intended to allow easy testing of all objects for SPNotLoaded.
  */

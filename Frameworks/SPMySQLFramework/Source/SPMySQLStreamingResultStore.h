@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import <SPMySQL/SPMySQL.h>
 #import <SPMySQL/SPMySQLStreamingResultStoreDelegate.h>
 #include <malloc/malloc.h>
