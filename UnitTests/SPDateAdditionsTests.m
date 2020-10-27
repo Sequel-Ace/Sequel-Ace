@@ -37,7 +37,7 @@
 			@autoreleasepool {
 				// exec on bg thread
 				uint64_t startTime = [NSDate monotonicTime];
-				startTimeNEW = 0;
+				startTime = 0;
 			}
 		}
 
