@@ -245,17 +245,19 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	if ([connectionLock condition] != SPMySQLConnectionIdle) {
 		[self _unlockConnection];
 	}
-	[connectionLock release], connectionLock = nil;
-
+    
+    SPClear(connectionLock);
 	[encoding release];
-	if (encodingToRestore) [encodingToRestore release], encodingToRestore = nil;
-	if (previousEncoding) [previousEncoding release], previousEncoding = nil;
+    
+    SPClear(encodingToRestore);
+    SPClear(previousEncoding);
+    SPClear(database);
+    SPClear(databaseToRestore);
+    SPClear(serverVariableVersion);
+    SPClear(queryErrorMessage);
+    SPClear(querySqlstate);
+    SPClear(connectionLock);
 
-	if (database) [database release], database = nil;
-	if (databaseToRestore) [databaseToRestore release], databaseToRestore = nil;
-	if (serverVariableVersion) [serverVariableVersion release], serverVariableVersion = nil;
-	if (queryErrorMessage) [queryErrorMessage release], queryErrorMessage = nil;
-	if (querySqlstate) [querySqlstate release], querySqlstate = nil;
 	[delegateDecisionLock release];
 
 	[_debugLastConnectedEvent release];
@@ -482,7 +484,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 //http://alastairs-place.net/blog/2013/01/10/interesting-os-x-crash-report-tidbits/
 /* CrashReporter info */
-const char *__crashreporter_info__ = NULL;
+char *__crashreporter_info__ = NULL;
 asm(".desc ___crashreporter_info__, 0x10");
 
 @implementation SPMySQLConnection (PrivateAPI)
@@ -542,7 +544,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 	lastConnectionUsedTime = initialConnectTime;
 
 	// Copy the server version string to the instance variable
-	if (serverVariableVersion) [serverVariableVersion release], serverVariableVersion = nil;
+    SPClear(serverVariableVersion);
+
 	// the mysql_get_server_info() function
 	//   * returns the version name that is part of the initial connection handshake.
 	//   * Unless the connection failed, it will always return a non-null buffer containing at least a '\0'.
@@ -893,12 +896,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectSucceeded = YES;
 			if (databaseToRestore) {
 				[self selectDatabase:databaseToRestore];
-				[databaseToRestore release], databaseToRestore = nil;
+                SPClear(databaseToRestore);
 			}
 			if (encodingToRestore) {
 				[self setEncoding:encodingToRestore];
 				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
-				[encodingToRestore release], encodingToRestore = nil;
+                SPClear(encodingToRestore);
 			}
 		}
 			// If the connection failed and the connection is permitted to retry,
@@ -1034,9 +1037,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		mysql_close(mySQLConnection);
 	}
 	mySQLConnection = NULL;
-	if (serverVariableVersion) [serverVariableVersion release], serverVariableVersion = nil;
+    SPClear(serverVariableVersion);
 	serverVersionNumber = 0;
-	if (database) [database release], database = nil;
+    SPClear(database);
 	state = SPMySQLDisconnected;
 	[self _unlockConnection];
 

@@ -1750,7 +1750,7 @@ cleanup:
 	
 	// Set up the interface
 	[switchButton setButtonType:NSSwitchButton];
-	[switchButton setControlSize:NSSmallControlSize];
+	[switchButton setControlSize:NSControlSizeSmall];
 	[switchButton release];
 
 	CGFloat monospacedFontSize = [[NSUserDefaults standardUserDefaults] floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];

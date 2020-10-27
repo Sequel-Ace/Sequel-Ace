@@ -30,6 +30,12 @@
 
 #include <mach/mach_time.h>
 
+#ifndef SPClear
+#define SPClear(__v) ((__v) == nil ?:[__v release], __v = nil);
+#endif
+
+
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 

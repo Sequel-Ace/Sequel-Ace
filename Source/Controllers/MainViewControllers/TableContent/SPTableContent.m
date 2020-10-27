@@ -530,7 +530,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
 			[dataCell setCompletes:YES];
-			[dataCell setControlSize:NSSmallControlSize];
+			[dataCell setControlSize:NSControlSizeSmall];
 			// add prefs NULL value representation if NULL value is allowed for that field
 			if([[columnDefinition objectForKey:@"null"] boolValue])
 				[dataCell addItemWithObjectValue:nullValue];
@@ -550,7 +550,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"integer"]
 			|| [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"float"])
 		{
-			[dataCell setAlignment:NSRightTextAlignment];
+			[dataCell setAlignment:NSTextAlignmentRight];
 		}
 
 		[dataCell setEditable:YES];
@@ -1751,7 +1751,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	                                   otherButton:nil
 	                     informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -1773,7 +1773,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if(![[tableDataInstance statusValueForKey:@"Auto_increment"] isNSNull]) {
 			[alert setShowsSuppressionButton:YES];
 			[[alert suppressionButton] setState:([prefs boolForKey:SPResetAutoIncrementAfterDeletionOfAllRows]) ? NSOnState : NSOffState];
-			[[[alert suppressionButton] cell] setControlSize:NSSmallControlSize];
+			[[[alert suppressionButton] cell] setControlSize:NSControlSizeSmall];
 			[[[alert suppressionButton] cell] setFont:[NSFont systemFontOfSize:11]];
 			[[alert suppressionButton] setTitle:NSLocalizedString(@"Reset AUTO_INCREMENT after deletion?", @"reset auto_increment after deletion of all rows message")];
 		}
