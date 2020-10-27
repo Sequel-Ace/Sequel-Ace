@@ -136,7 +136,7 @@
 
 - (void)dealloc
 {
-	SPClear(fieldTypes);
+	
 	
 	[super dealloc];
 }

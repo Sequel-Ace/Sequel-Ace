@@ -92,9 +92,9 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	//TODO this should be changed to the variant with …context: after 10.6 support is removed!
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	SPClear(filterTableData);
-	SPClear(lastEditedFilterTableValue);
-	SPClear(filterTableDefaultOperator);
+	
+	
+	
 	[super dealloc];
 }
 
@@ -334,7 +334,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	   modalForWindow:[self window]
 	    modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:SPTableFilterSetDefaultOperator];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPTableFilterSetDefaultOperator)];
 }
 
 /**

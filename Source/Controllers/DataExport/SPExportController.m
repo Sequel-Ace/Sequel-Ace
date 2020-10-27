@@ -1325,8 +1325,7 @@ set_input:
 	// I think...
 	// userChosenDirectory leaks if we don't release here
 	// the panel wasn't leaking according to Leaks instrument.
-	SPClear(userChosenDirectory);
-//	SPClear(changeExportOutputPathPanel);
+	
 
 	// Display export finished notification
 	[self displayExportFinishedNotification];
@@ -1343,7 +1342,7 @@ set_input:
 	NSArray *dataArray = nil;
 
 	// Get rid of the cached connection encoding
-	if (previousConnectionEncoding) SPClear(previousConnectionEncoding);
+	
 
 	createCustomFilename = ([[exportCustomFilenameTokenField stringValue] length] > 0);
 
@@ -2071,8 +2070,7 @@ set_input:
 
 	[self _hideExportProgress];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:files];
-	[alert autorelease];
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(files)];
 }
 
 /**
@@ -2080,7 +2078,7 @@ set_input:
  */
 - (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-	NSArray *files = (NSArray *)contextInfo;
+	NSArray *files = (__bridge NSArray *)contextInfo;
 
 	// Ignore the files that exist and remove the associated exporters
 	if (returnCode == SPExportErrorSkipErrorFiles) {
@@ -3932,19 +3930,7 @@ set_input:
 	// relinquish access to userChosenDirectory
 	[userChosenDirectory stopAccessingSecurityScopedResource];
 	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
-		
-    SPClear(tables);
-	SPClear(exporters);
-	SPClear(exportFiles);
-	SPClear(operationQueue);
-	SPClear(exportFilename);
-	SPClear(localizedTokenNames);
-	SPClear(appScopedBookmark);
-	SPClear(userChosenDirectory);
-	SPClear(previousConnectionEncoding);
-	SPClear(changeExportOutputPathPanel);
-	SPClear(startTime);
-	
+
 	[self setServerSupport:nil];
 	
 	[super dealloc];
@@ -3964,12 +3950,12 @@ BOOL IS_STRING(id x)
 	return [x isKindOfClass:[NSString class]];
 }
 
-NSNumber *IsOn(id obj)
+NSNumber *IsOn(NSButton *obj)
 {
 	return (([obj state] == NSOnState)? @YES : @NO);
 }
 
-void SetOnOff(NSNumber *ref,id obj)
+void SetOnOff(NSNumber *ref,NSButton *obj)
 {
 	[obj setState:([ref boolValue] ? NSOnState : NSOffState)];
 }

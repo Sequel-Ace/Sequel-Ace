@@ -70,7 +70,7 @@ static id NSNullPointer;
 		currentRowIndex = 0;
 
 		fieldDefinitions = NULL;
-		fieldNames = NULL;
+		fieldNames = nil;
 
 		defaultRowReturnType = SPMySQLResultRowAsDictionary;
 	}
@@ -97,11 +97,12 @@ static id NSNullPointer;
 
 		// Cache the field definitions and build up an array of cached field names and types
 		fieldDefinitions = mysql_fetch_fields(resultSet);
-		fieldNames = calloc(numberOfFields,sizeof(NSString *));
+        NSMutableArray *mutableFieldNames = [[NSMutableArray alloc] initWithCapacity:numberOfFields];
 		for (NSUInteger i = 0; i < numberOfFields; i++) {
 			MYSQL_FIELD aField = fieldDefinitions[i];
-			fieldNames[i] = [[self _stringWithBytes:aField.name length:aField.name_length] retain];
+            [mutableFieldNames insertObject:[self _stringWithBytes:aField.name length:aField.name_length] atIndex:i];
 		}
+        fieldNames = [NSArray arrayWithArray:mutableFieldNames];
 	}
 
 	return self;
@@ -111,11 +112,6 @@ static id NSNullPointer;
 {
 	if (resultSet) {
 		mysql_free_result(resultSet);
-
-		for (NSUInteger i = 0; i < numberOfFields; i++) {
-			[fieldNames[i] release];
-		}
-		free(fieldNames);
 	}
 
 	[super dealloc];
@@ -156,7 +152,7 @@ static id NSNullPointer;
  */
 - (NSArray *)fieldNames
 {
-	return [NSArray arrayWithObjects:fieldNames count:numberOfFields];
+	return fieldNames;
 }
 
 /**
@@ -271,7 +267,7 @@ static id NSNullPointer;
  * the instance default, as specified in setDefaultRowReturnType: or defaulting to
  * NSDictionary.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	// If the start index is out of bounds, return 0 to indicate end of results
 	if (state->state >= numberOfRows) return 0;

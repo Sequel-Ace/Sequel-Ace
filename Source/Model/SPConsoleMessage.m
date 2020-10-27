@@ -65,10 +65,10 @@
 
 - (void)dealloc
 {
-	SPClear(message);
-	SPClear(messageDate);
-	SPClear(messageDatabase);
-	SPClear(messageConnection);
+	
+	
+	
+	
 	
 	[super dealloc];
 }

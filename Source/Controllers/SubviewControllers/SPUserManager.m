@@ -510,13 +510,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 - (void)beginSheetModalForWindow:(NSWindow *)docWindow completionHandler:(void (^)(void))callback
 {
-	//copy block from stack to heap, otherwise it wouldn't live long enough to be invoked later.
-	void *heapCallback = callback? Block_copy(callback) : NULL;
-
 	[docWindow beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
-		//directly invoking callback would risk that we are dealloc'd while still in this run loop iteration.
-		dispatch_async(dispatch_get_main_queue(), heapCallback);
-		Block_release(heapCallback);
+		callback();
 	}];
 }
 
@@ -573,12 +568,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		[self.window beginSheet:errorsSheet completionHandler:nil];
 		
-		SPClear(errorsString);
+		
 		
 		return;
 	}
 	
-	SPClear(errorsString);
+	
 
 	// Otherwise, close the sheet
 	[NSApp endSheet:[self window] returnCode:0];
@@ -871,7 +866,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)_clearData
 {
 	[managedObjectContext reset];
-	SPClear(managedObjectContext);
+	
 }
 
 /**
@@ -1825,18 +1820,18 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {	
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 
-    SPClear(managedObjectContext);
-    SPClear(persistentStoreCoordinator);
-    SPClear(managedObjectModel);
-	SPClear(privColumnToGrantMap);
-	SPClear(connection);
-	SPClear(privsSupportedByServer);
-	SPClear(schemas);
-	SPClear(availablePrivs);
-	SPClear(grantedSchemaPrivs);
-	SPClear(treeSortDescriptor);
-	SPClear(treeSortDescriptors);
-	SPClear(serverSupport);
+    
+    
+    
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }

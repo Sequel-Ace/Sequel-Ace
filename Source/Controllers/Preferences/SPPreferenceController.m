@@ -32,6 +32,9 @@
 #import "SPTablesPreferencePane.h"
 #import "SPEditorPreferencePane.h"
 #import "SPGeneralPreferencePane.h"
+#import "SPNotificationsPreferencePane.h"
+#import "SPNetworkPreferencePane.h"
+#import "SPFilePreferencePane.h"
 
 @interface SPPreferenceController () <NSWindowDelegate>
 
@@ -335,13 +338,13 @@
 
 - (void)dealloc
 {
-	SPClear(preferencePanes);
-	SPClear(generalItem);
-	SPClear(tablesItem);
-	SPClear(notificationsItem);
-	SPClear(editorItem);
-	SPClear(networkItem);
-	SPClear(fileItem);
+	
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }

@@ -59,7 +59,7 @@
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-	if ([(NSString *)context isEqualToString:@"PrinterSettingsChanged"]) {
+	if ([(__bridge NSString *)context isEqualToString:@"PrinterSettingsChanged"]) {
 		if (printWebView) 
 			[[printWebView preferences] setShouldPrintBackgrounds:[[defaultsController valueForKeyPath:@"values.PrintBackground"] boolValue]];
 	} 

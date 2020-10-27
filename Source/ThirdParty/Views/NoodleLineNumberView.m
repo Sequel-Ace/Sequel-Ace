@@ -499,7 +499,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 - (void)invalidateLineIndices
 {
 
-	if (lineIndices) SPClear(lineIndices);
+	
 
 }
 

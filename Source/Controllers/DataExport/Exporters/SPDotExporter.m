@@ -224,12 +224,12 @@
 {
 	delegate = nil;
 	
-	SPClear(dotExportTables);
-	SPClear(dotExportCurrentTable);
-	SPClear(dotTableData);
-	SPClear(dotDatabaseHost);
-	SPClear(dotDatabaseName);
-	SPClear(dotDatabaseVersion);
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }

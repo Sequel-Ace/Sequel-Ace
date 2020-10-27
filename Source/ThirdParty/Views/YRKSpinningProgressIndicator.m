@@ -179,9 +179,8 @@
     }
 }
 
-- (void) animateInBackgroundThread
+- (void)animateInBackgroundThread
 {
-	NSAutoreleasePool *animationPool = [[NSAutoreleasePool alloc] init];
 	
 	// Set up the animation speed to subtly change with size > 32.
 	useconds_t animationDelay = 38000 + (2000 * ([self bounds].size.height / 32));
@@ -192,13 +191,9 @@
 		usleep(animationDelay);
 		poolFlushCounter++;
 		if (poolFlushCounter > 256) {
-			[animationPool drain];
-			animationPool = [[NSAutoreleasePool alloc] init];
 			poolFlushCounter = 0;
 		}
 	} while (![[NSThread currentThread] isCancelled]); 
-
-	[animationPool release];
 }
 
 - (void)startAnimation:(id)sender

@@ -104,21 +104,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	if(schemaDataFiltered)  SPClear(schemaDataFiltered);
-	if(allSchemaKeys)       SPClear(allSchemaKeys);
-	if(schemaData)          SPClear(schemaData);
-	if(infoArray)           SPClear(infoArray);
-	if(updatingConnections) SPClear(updatingConnections);
-	if(expandStatus2)       SPClear(expandStatus2);
-	if(cachedSortedKeys)    SPClear(cachedSortedKeys);
-
-	SPClear(connectionIcon);
-	SPClear(databaseIcon);
-	SPClear(tableIcon);
-	SPClear(viewIcon);
-	SPClear(procedureIcon);
-	SPClear(functionIcon);
-	SPClear(fieldIcon);
 
 	[super dealloc];
 }
@@ -127,14 +112,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
  */
 
 - (id)copyWithZone:(NSZone *)zone { return self; }
-
-- (id)retain { return self; }
-
-- (NSUInteger)retainCount { return NSUIntegerMax; }
-
-- (id)autorelease { return self; }
-
-- (oneway void)release { }
 
 /**
  * Set the window's auto save name and initialise display

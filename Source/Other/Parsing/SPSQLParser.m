@@ -594,7 +594,7 @@
 		stringIndex++;
 		queryLength = nextIndex - stringIndex - delimiterLengthMinusOne;
 		if (queryLength > 0)
-			CFArrayAppendValue((CFMutableArrayRef)resultsArray, (NSString *)(*subString)(string, @selector(substringWithRange:), NSMakeRange(stringIndex, queryLength)));
+			CFArrayAppendValue((CFMutableArrayRef)resultsArray, (__bridge const void *)((NSString *)(*subString)(string, @selector(substringWithRange:), NSMakeRange(stringIndex, queryLength))));
 
 		stringIndex = nextIndex;
 	}
@@ -811,7 +811,7 @@
 										
 										// Drop back to standard non-delimiter mode if the delimiter has ended
 										if ([delimiter isEqualToString:[NSString stringWithFormat:@"%C", character]]) {
-											if (delimiter) SPClear(delimiter);
+											
 											delimiterLengthMinusOne = 0;
 										}
 										
@@ -1043,7 +1043,7 @@
 }
 - (void) setString:(NSString *)aString {
 	[string setString:aString];
-	if (delimiter) SPClear(delimiter);
+	
 	delimiterLengthMinusOne = 0;
 	lastMatchIsDelimiter = NO;
 	[self _clearCharCache];
@@ -1061,8 +1061,8 @@
 	[self _clearCharCache];
 }
 - (void) dealloc {
-	SPClear(string);
-	if (delimiter) SPClear(delimiter);
+	
+	
 	if (charCacheEnd != -1) free(stringCharCache);
 	[super dealloc];
 }

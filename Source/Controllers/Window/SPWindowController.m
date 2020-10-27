@@ -561,8 +561,6 @@
 	{
 		[tabView removeTabViewItem:eachItem];
 	}
-
-	[self autorelease];
 }
 
 /**
@@ -944,7 +942,7 @@
 	// Tear down the animations on the tab bar to stop redraws
 	[tabBar destroyAnimations];
 	
-	SPClear(managedDatabaseConnections);
+	
 
 	[super dealloc];
 }

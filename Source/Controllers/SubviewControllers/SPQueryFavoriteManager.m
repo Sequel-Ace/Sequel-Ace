@@ -949,7 +949,7 @@
 
 - (void)dealloc
 {
-	SPClear(favorites);
+	
 	
 	[super dealloc];
 }

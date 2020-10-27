@@ -202,7 +202,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	   modalForWindow:[[self view] window]
 	    modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:SPSaveColorScheme];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPSaveColorScheme)];
 	
 }
 
@@ -215,7 +215,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![fileManager fileExistsAtPath:selectedPath isDirectory:nil]) {
 		if ([fileManager copyItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension] toPath:selectedPath error:nil]) {
 			
-			if (editThemeListItems) SPClear(editThemeListItems);
+			
 			
 			editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
 			
@@ -245,7 +245,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 				[prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 			}
 			
-			if (editThemeListItems) SPClear(editThemeListItems);
+			
 			
 			editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
 			
@@ -322,7 +322,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	[[NSColorPanel sharedColorPanel] close];
 	
-	if (editThemeListItems) SPClear(editThemeListItems);
+	
 	
 	editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
 	
@@ -600,7 +600,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		}
 		
 		// Reload everything needed
-		if (editThemeListItems) SPClear(editThemeListItems);
+		
 		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
 		
 		[editThemeListTable reloadData];
@@ -1039,10 +1039,10 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
  * Dealloc.
  */
 - (void)dealloc {
-	if (themePath)           SPClear(themePath);
-	if (editThemeListItems)  SPClear(editThemeListItems);
-	if (editorColors)        SPClear(editorColors);
-	if (editorNameForColors) SPClear(editorNameForColors);
+	
+	;
+	
+	
 	
 	[super dealloc];
 }

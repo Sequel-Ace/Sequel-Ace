@@ -1119,9 +1119,9 @@
 	// Remove temporary drag file if any
 	if(draggedFilePath) {
 		[fileManager removeItemAtPath:draggedFilePath error:nil];
-		SPClear(draggedFilePath);
+		
 	}
-	if(oldBundleName) SPClear(oldBundleName);
+	
 }
 
 #pragma mark -
@@ -1262,13 +1262,13 @@
 
 	// Remember selected bundle name to reset the name if the user cancelled
 	// the editing of the bundle name
-	if(oldBundleName) SPClear(oldBundleName);
+	
 	if(![[self _currentSelectedObject] objectForKey:kChildrenKey]) {
 		oldBundleName = [[[self _currentSelectedObject] objectForKey:kBundleNameKey] retain];
 		[self _enableBundleDataInput:YES bundleEnabled:![[[self _currentSelectedObject] objectForKey:@"disabled"] boolValue]];
 	} else {
 		[self _enableBundleDataInput:NO bundleEnabled:NO];
-		if(oldBundleName) SPClear(oldBundleName);
+		
 	}
 
 	// Remember the selected bundle name in touchedBundleArray to save only those 
@@ -1413,7 +1413,7 @@
 			[commandBundleTreeController rearrangeObjects];
 			[commandsOutlineView reloadData];
 
-			if(oldBundleName) SPClear(oldBundleName);
+			
 			oldBundleName = [[[self _currentSelectedObject] objectForKey:kBundleNameKey] retain];
 			if(oldBundleName != nil && ![touchedBundleArray containsObject:oldBundleName])
 				[touchedBundleArray addObject:oldBundleName];
@@ -1504,7 +1504,7 @@
 	// Remove old temporary drag file if any
 	if(draggedFilePath) {
 		[fileManager removeItemAtPath:draggedFilePath error:nil];
-		SPClear(draggedFilePath);
+		
 	}
 
 	NSImage *dragImage;
@@ -2103,40 +2103,40 @@
 
 - (void)dealloc
 {
-	SPClear(inputGeneralScopePopUpMenu);
-	SPClear(inputInputFieldScopePopUpMenu);
-	SPClear(inputDataTableScopePopUpMenu);
-	SPClear(outputGeneralScopePopUpMenu);
-	SPClear(outputInputFieldScopePopUpMenu);
-	SPClear(outputDataTableScopePopUpMenu);
-	SPClear(inputFallbackInputFieldScopePopUpMenu);
-	SPClear(triggerInputFieldPopUpMenu);
-	SPClear(triggerDataTablePopUpMenu);
-	SPClear(triggerGeneralPopUpMenu);
-	SPClear(withBlobDataTablePopUpMenu);
-	SPClear(inputNonePopUpMenu);
 	
-	SPClear(inputGeneralScopeArray);
-	SPClear(inputInputFieldScopeArray);
-	SPClear(inputDataTableScopeArray);
-	SPClear(outputGeneralScopeArray);
-	SPClear(outputInputFieldScopeArray);
-	SPClear(outputDataTableScopeArray);
-	SPClear(inputFallbackInputFieldScopeArray);
-	SPClear(triggerInputFieldArray);
-	SPClear(triggerDataTableArray);
-	SPClear(triggerGeneralArray);
-	SPClear(withBlobDataTableArray);
 	
-	SPClear(shellVariableSuggestions);
-	SPClear(deletedDefaultBundles);
-	SPClear(fileManager);
 	
-	if (touchedBundleArray) SPClear(touchedBundleArray);
-	if (commandBundleTree) SPClear(commandBundleTree);
-	if (sortDescriptor) SPClear(sortDescriptor);
-	if (bundlePath) SPClear(bundlePath);
-	if (esUndoManager) SPClear(esUndoManager);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }

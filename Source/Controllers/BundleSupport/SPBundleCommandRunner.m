@@ -31,6 +31,7 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
+#import "SPWindowController.h"
 
 // Defined to suppress warnings
 @interface NSObject (SPBundleMethods)
@@ -303,7 +304,7 @@
 	// Read STDOUT saved to file
 	if([fileManager fileExistsAtPath:stdoutFilePath isDirectory:nil]) {
 		NSString *stdoutContent = [NSString stringWithContentsOfFile:stdoutFilePath encoding:NSUTF8StringEncoding error:nil];
-		if(bashTask) SPClear(bashTask);
+		
 		[fileManager removeItemAtPath:stdoutFilePath error:nil];
 		if(stdoutContent != nil) {
 			if (status == 0) {

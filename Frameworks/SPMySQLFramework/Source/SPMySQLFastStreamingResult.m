@@ -296,7 +296,7 @@ typedef struct st_spmysqlstreamingrowdata {
  * the instance default, as specified in setDefaultRowReturnType: or defaulting to
  * NSDictionary.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	// To avoid lock issues, return one row at a time.
 	id nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);

@@ -50,8 +50,8 @@
 
 - (void)dealloc
 {
-    SPClear(_borderColor);
-    SPClear(_gradient);
+    
+    
 
     [super dealloc];
 }

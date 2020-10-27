@@ -78,9 +78,9 @@ void init(SPButtonBar *obj)
 
 - (void)dealloc
 {
-	SPClear(lightImage);
-	SPClear(darkImage);
-	SPClear(systemColorOfName);
+	
+	
+	
 	[super dealloc];
 }
 

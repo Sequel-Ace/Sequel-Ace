@@ -172,7 +172,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Re-init sort order
 	isDesc = NO;
 	sortColumn = nil;
-	if(sortField) SPClear(sortField);
+	
 
 	// Retrieve the custom query string and split it into separate SQL queries
 	queryParser = [[SPSQLParser alloc] initWithString:[textView string]];
@@ -216,7 +216,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Re-init sort order
 	isDesc = NO;
 	sortColumn = nil;
-	if(sortField) SPClear(sortField);
+	
 
 	// If the current selection is a single caret position, run the current query.
 	if (selectedRange.length == 0) {
@@ -753,7 +753,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		// Remove all the columns if not reloading the table
 		if(!reloadingExistingResult) {
-			SPClear(cqColumnDefinition);
+			
 			[[self onMainThread] updateTableView];
 		}
 
@@ -1584,7 +1584,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	if (queryLoadTimer) {
 		[queryLoadTimer invalidate];
-		SPClear(queryLoadTimer);
+		
 	}
 }
 
@@ -1837,7 +1837,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)setResultSelectedRowIndexesToRestore:(NSIndexSet *)theIndexSet
 {
-	if (selectionIndexToRestore) SPClear(selectionIndexToRestore);
+	
 
 	if (theIndexSet) selectionIndexToRestore = [[NSIndexSet alloc] initWithIndexSet:theIndexSet];
 }
@@ -2257,7 +2257,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         // this is the same as saying (isDesc && !invert) || (!isDesc && invert)
         if (isDesc != invert) {
-			SPClear(sortField);
+			
 		} else {
 			isDesc = !isDesc;
 		}
@@ -2376,7 +2376,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	if ([mySQLConnection queryErrored]) {
 		sortColumn = nil;
-		if(sortField) SPClear(sortField);
+		
 		return;
 	}
 
@@ -3294,11 +3294,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 	}
 
-	// this is a delegate method of the field editor controller. calling release
-	// now would risk a dealloc while it is still our parent on the stack:
-	[fieldEditor autorelease];
-	fieldEditor = nil;
-
 	// Preserve focus and restore selection indexes if appropriate
 	[[tableDocumentInstance parentWindow] makeFirstResponder:customQueryView]; 
 	if (selectionIndexToRestore)
@@ -3645,19 +3640,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 
 	[self clearQueryLoadTimer];
-	SPClear(usedQuery);
-	SPClear(lastExecutedQuery);
-	SPClear(resultData);
-	SPClear(favoritesManager);
-
-	if(fieldEditor) SPClear(fieldEditor);
-
-	if (sortField)               SPClear(sortField);
-	if (cqColumnDefinition)      SPClear(cqColumnDefinition);
-	if (selectionIndexToRestore) SPClear(selectionIndexToRestore);
-	if (currentQueryRanges)      SPClear(currentQueryRanges);
-	
-	[self.bracketHighlighter dealloc];
 
 	[super dealloc];
 }

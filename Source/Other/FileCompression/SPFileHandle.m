@@ -463,11 +463,11 @@ struct SPRawFileHandles {
 {
 	[self closeFile];
 	
-	if (processingThread) SPClear(processingThread);
+	
 	
 	free(wrappedFile);
 	free(wrappedFilePath);
-	SPClear(buffer);
+	
 	
 	pthread_mutex_destroy(&bufferLock);
 	

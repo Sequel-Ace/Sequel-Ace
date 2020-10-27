@@ -571,7 +571,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 			}
 		}
 
-		SPClear(copy);
+		
 
 		// In the event that we removed duplicate columns reload the table view to ensure that the next time
 		// it is open we don't cause the table view to ask for rows that no longer exist.
@@ -627,19 +627,17 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 {
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
-	
-	NSDictionary *info = [(id)contextInfo autorelease]; //we explicitly retained it beforehand, because Cocoa does NOT!
 
 	if (returnCode == NSAlertDefaultReturn) {
 		[dbDocument startTaskWithDescription:NSLocalizedString(@"Removing index...", @"removing index task status message")];
 
 		if ([NSThread isMainThread]) {
-			[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index removal thread", dbDocument) target:self selector:@selector(_removeIndexUsingDetails:) object:info];
+			[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index removal thread", dbDocument) target:self selector:@selector(_removeIndexUsingDetails:) object:(__bridge id)(contextInfo)];
 
 			[dbDocument enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") callbackObject:self callbackFunction:NULL];
 		}
 		else {
-			[self _removeIndexUsingDetails:info];
+			[self _removeIndexUsingDetails:(__bridge NSDictionary *)(contextInfo)];
 		}
 	}
 }
@@ -999,12 +997,24 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		NSArray *fkColumns = [[fkInfo objectForKey:@"columns"] sortedArrayUsingSelector:@selector(compare:)];
 		if(![myColumns isEqualToArray:fkColumns]) continue;
 		if(constraintName != nil) {
-			goto no_or_multiple_matches; //we already found a matching FK, but there is another one!? -> abort
+			SPOnewayAlertSheet(
+				NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title"),
+				[dbDocument parentWindow],
+				[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]]
+			);
+			return;
 		}
 		constraintName = [fkInfo objectForKey:@"name"];
 	}
 	
-	if(!constraintName) goto no_or_multiple_matches; //we found no matching FK
+	if(!constraintName) {
+		SPOnewayAlertSheet(
+			NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title"),
+			[dbDocument parentWindow],
+			[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]]
+		);
+		return;
+	}
 	
 	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553 : title")
 									 defaultButton:NSLocalizedString(@"Delete Both", @"table structure : indexes : delete index : error 1553 : delete index and FK button")
@@ -1025,15 +1035,6 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	                  modalDelegate:self
 	                 didEndSelector:@selector(removeIndexSheetDidEnd:returnCode:contextInfo:)
 	                    contextInfo:[@{@"Key_name" : keyName, @"ForeignKey": constraintName} retain]]; // contextInfo is NOT retained by Cocoa!
-	
-	return;
-	
-no_or_multiple_matches:
-	SPOnewayAlertSheet(
-		NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title"),
-		[dbDocument parentWindow],
-		[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]]
-	);
 }
 
 /**
@@ -1102,14 +1103,14 @@ no_or_multiple_matches:
 
 - (void)dealloc
 {
-	SPClear(table);
-	SPClear(indexes);
-	SPClear(fields);
+	
+	
+	
 
-	SPClear(supportsLength);
-	SPClear(requiresLength);
+	
+	
 
-	if (indexedFields) SPClear(indexedFields);
+	
 
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
 	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts]; //TODO: update to ...context: variant after 10.6

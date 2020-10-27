@@ -62,7 +62,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 @implementation SPBundleHTMLOutputController
 
 @synthesize docTitle;
-@synthesize initHTMLSourceString;
+@synthesize initialHTMLSourceString;
 @synthesize windowUUID;
 @synthesize docUUID;
 @synthesize suppressExceptionAlerting;
@@ -112,7 +112,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		}
 	}
 	
-	[self setInitHTMLSourceString:content];
+	[self setInitialHTMLSourceString:content];
 	[[webView mainFrame] loadHTMLString:content baseURL:nil];
 }
 
@@ -167,7 +167,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 - (void)dealloc
 {
-	if(webPreferences) SPClear(webPreferences);
+	
 	[super dealloc];
 }
 
@@ -198,7 +198,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 			if([webView canGoBack])
 				[webView goBack:nil];
 			else
-				[[webView mainFrame] loadHTMLString:[self initHTMLSourceString] baseURL:nil];
+				[[webView mainFrame] loadHTMLString:[self initialHTMLSourceString] baseURL:nil];
 			return;
 		}
 		if([theEvent keyCode] == 124) // goForward
@@ -342,7 +342,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 	[webView close];
 
-	[self setInitHTMLSourceString:@""];
+	[self setInitialHTMLSourceString:@""];
 
 	windowUUID = @"";
 	docUUID = @"";
@@ -425,7 +425,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 			[listener use];
 			break;
 			case WebNavigationTypeReload:
-			[[aWebView mainFrame] loadHTMLString:[self initHTMLSourceString] baseURL:nil];
+			[[aWebView mainFrame] loadHTMLString:[self initialHTMLSourceString] baseURL:nil];
 			break;
 			default:
 			[listener use];

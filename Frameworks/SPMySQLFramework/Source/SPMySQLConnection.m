@@ -246,17 +246,17 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 		[self _unlockConnection];
 	}
     
-    SPClear(connectionLock);
+    
 	[encoding release];
     
-    SPClear(encodingToRestore);
-    SPClear(previousEncoding);
-    SPClear(database);
-    SPClear(databaseToRestore);
-    SPClear(serverVariableVersion);
-    SPClear(queryErrorMessage);
-    SPClear(querySqlstate);
-    SPClear(connectionLock);
+    
+    
+    
+    
+    
+    
+    
+    
 
 	[delegateDecisionLock release];
 
@@ -544,7 +544,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	lastConnectionUsedTime = initialConnectTime;
 
 	// Copy the server version string to the instance variable
-    SPClear(serverVariableVersion);
+    
 
 	// the mysql_get_server_info() function
 	//   * returns the version name that is part of the initial connection handshake.
@@ -896,12 +896,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectSucceeded = YES;
 			if (databaseToRestore) {
 				[self selectDatabase:databaseToRestore];
-                SPClear(databaseToRestore);
+                
 			}
 			if (encodingToRestore) {
 				[self setEncoding:encodingToRestore];
 				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
-                SPClear(encodingToRestore);
+                
 			}
 		}
 			// If the connection failed and the connection is permitted to retry,
@@ -1037,9 +1037,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		mysql_close(mySQLConnection);
 	}
 	mySQLConnection = NULL;
-    SPClear(serverVariableVersion);
+    
 	serverVersionNumber = 0;
-    SPClear(database);
+    
 	state = SPMySQLDisconnected;
 	[self _unlockConnection];
 

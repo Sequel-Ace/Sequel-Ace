@@ -144,19 +144,19 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	if(stateTimer != nil) {
 		[stateTimer invalidate];
-		SPClear(stateTimer);
+		
 	}
-	SPClear(mutablePrefix);
-	SPClear(textualInputCharacters);
-	SPClear(originalFilterString);
+	
+	
+	
 	[theTableView setDataSource:nil];
 	[theTableView setDelegate:nil];
-	SPClear(theTableView);
-	if (staticPrefix)               SPClear(staticPrefix);
-	if (syncArrowImages)            SPClear(syncArrowImages);
-	if (suggestions)                SPClear(suggestions);
-	if (filtered)                   SPClear(filtered);
-	if (databaseStructureRetrieval) SPClear(databaseStructureRetrieval);
+	
+	
+	
+	
+	
+	
 
 	[super dealloc];
 }
@@ -166,7 +166,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	// Invalidate the timer now to prevent retain cycles preventing deallocation
 	if (stateTimer != nil) {
 		[stateTimer invalidate];
-		SPClear(stateTimer);
+		
 	}
 
 	closeMe = YES;
@@ -188,8 +188,8 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			isQueryingDatabaseStructure = NO;
 			if(stateTimer) {
 				[stateTimer invalidate];
-				SPClear(stateTimer);
-				if(syncArrowImages) SPClear(syncArrowImages);
+				
+				
 				[[self onMainThread] reInvokeCompletion];
 				closeMe = YES;
 				return;
@@ -204,7 +204,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 {
 	if(stateTimer) {
 		[stateTimer invalidate];
-		SPClear(stateTimer);
+		
 	}
 	[theView setCompletionIsOpen:NO];
 	[self close];

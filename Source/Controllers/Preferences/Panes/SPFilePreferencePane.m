@@ -60,8 +60,8 @@
 		[url stopAccessingSecurityScopedResource];
 	}
 	
-	SPClear(bookmarks);
-	SPClear(resolvedBookmarks);
+	
+	
 	
 	[super dealloc];
 }

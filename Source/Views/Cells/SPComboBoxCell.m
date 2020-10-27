@@ -67,13 +67,9 @@ static NSString *_CellWillDismissNotification = @"NSComboBoxCellWillDismissNotif
 
 - (NSWindow *)spPopUpWindow
 {
-	NSWindow *popUp;
-	Ivar popUpVar = object_getInstanceVariable(self,"_popUp",(void **)&popUp);
-	if(popUpVar) {
-		const char *typeEnc = ivar_getTypeEncoding(popUpVar);
-		if(typeEnc[0] == '@' && [popUp isKindOfClass:[NSWindow class]]) { // it is an object and of class NSWindow
-			return popUp;
-		}
+	id popUp = [self valueForKey:@"_popUp"];
+	if (popUp && [popUp isKindOfClass:[NSWindow class]]) {
+		return popUp;
 	}
 	return nil;
 }

@@ -334,8 +334,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[sshPasswordField undoManager] removeAllActionsWithTarget:sshPasswordField];
 		}
 		else {
-			SPClear(connectionKeychainItemName);
-			SPClear(connectionKeychainItemAccount);
+			
+			
 		}
 	}
 	
@@ -345,8 +345,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[sshSSHPasswordField undoManager] removeAllActionsWithTarget:sshSSHPasswordField];
 		} 
 		else {
-			SPClear(connectionSSHKeychainItemName);
-			SPClear(connectionSSHKeychainItemAccount);
+			
+			
 		}
 	}
 
@@ -385,14 +385,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (mySQLConnection) {
 		[mySQLConnection setDelegate:nil];
 		[NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController cancellation background disconnect",dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
-		[mySQLConnection autorelease];
-		mySQLConnection = nil;
 	}
 
 	// Cancel the SSH tunnel if present
 	if (sshTunnel) {
 		[sshTunnel disconnect];
-		SPClear(sshTunnel);
 	}
 
 	// Restore the connection interface
@@ -507,7 +504,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// underlyingQueue = The dispatch queue used to execute operations
 		// just so happens that in this case it's the main queue anyway
 		dispatch_async(NSOperationQueue.currentQueue.underlyingQueue, ^{
-			SPClear(keySelectionPanel);
+			
 		});
 		
 		NSError *err=nil;
@@ -863,10 +860,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Clear the keychain referral items as appropriate
 	[self setConnectionKeychainID:nil];
-	if (connectionKeychainItemName) SPClear(connectionKeychainItemName);
-	if (connectionKeychainItemAccount) SPClear(connectionKeychainItemAccount);
-	if (connectionSSHKeychainItemName) SPClear(connectionSSHKeychainItemName);
-	if (connectionSSHKeychainItemAccount) SPClear(connectionSSHKeychainItemAccount);
+	
+	
+	
+	
 
 	SPTreeNode *node = [self selectedFavoriteNode];
 	if ([node isGroup]) node = nil;
@@ -875,7 +872,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	NSDictionary *fav = [[node representedObject] nodeFavorite];
 	
 	// Keep a copy of the favorite as it currently stands
-	if (currentFavorite) SPClear(currentFavorite);
+	
 	currentFavorite = [fav copy];
 	
 	[connectionResizeContainer setHidden:NO];
@@ -956,8 +953,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	if (![[self password] length]) {
 		[self setPassword:nil];
-		SPClear(connectionKeychainItemName);
-		SPClear(connectionKeychainItemAccount);
+		
+		
 	}
 
 	// Store the selected favorite ID for use with the document on connection
@@ -971,8 +968,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	if (![[self sshPassword] length]) {
 		[self setSshPassword:nil];
-		SPClear(connectionSSHKeychainItemName);
-		SPClear(connectionSSHKeychainItemAccount);
+		
+		
 	}
 
 	[prefs setInteger:[[fav objectForKey:SPFavoriteIDKey] integerValue] forKey:SPLastFavoriteID];
@@ -1204,7 +1201,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[alert beginSheetModalForWindow:[dbDocument parentWindow]
 			                  modalDelegate:self
 			                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-			                    contextInfo:SPRemoveNode];
+								contextInfo:(__bridge void * _Nullable)(SPRemoveNode)];
 		}
 		else {
 			[self _removeNode:node];
@@ -1644,7 +1641,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		[self _stopEditingConnection];
 
-		if (currentFavorite) SPClear(currentFavorite);
+		
 		currentFavorite = [theFavorite copy];
 
 		[self _sortFavorites];
@@ -1748,7 +1745,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 	}
 	
-	[nodes sortUsingFunction:_compareFavoritesUsingKey context:key];
+	[nodes sortUsingFunction:_compareFavoritesUsingKey context:(__bridge void * _Nullable)(key)];
 
 	if (reverseFavoritesSort) [nodes reverse];
 
@@ -1768,7 +1765,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key)
 {
-	NSString *dictKey = (NSString *)key;
+	NSString *dictKey = (__bridge NSString *)key;
 	id value1, value2;
 	
 	BOOL isNamedComparison = [dictKey isEqualToString:SPFavoriteNameKey];
@@ -2127,11 +2124,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (mySQLConnection) {
 		[mySQLConnection setDelegate:nil];
 		[NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
-		[mySQLConnection autorelease];
-		mySQLConnection = nil;
 	}
 	
-	if (sshTunnel) (void)([sshTunnel setConnectionStateChangeSelector:nil delegate:nil]), SPClear(sshTunnel);
+	if (sshTunnel) {
+		[sshTunnel setConnectionStateChangeSelector:nil delegate:nil];
+	}
 	
 	
 	for(NSURL *url in resolvedBookmarks){
@@ -2312,9 +2309,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				// Tidy up
 				isConnecting = NO;
 
-				if (sshTunnel) (void)([sshTunnel disconnect]), SPClear(sshTunnel);
+				if (sshTunnel) {
+					[sshTunnel disconnect];
+				}
 
-				SPClear(mySQLConnection);
+				
 				if (!cancellingConnection) [self _restoreConnectionInterface];
 
 				return;
@@ -2330,9 +2329,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				// Tidy up
 				isConnecting = NO;
 
-				if (sshTunnel) SPClear(sshTunnel);
-
-				SPClear(mySQLConnection);
+				
 				[self _restoreConnectionInterface];
 				if (isTestingConnection) {
 					[self _showConnectionTestResult:NSLocalizedString(@"Invalid database", @"Invalid database very short status message")];
@@ -2468,7 +2465,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[favoritesOutlineView display];
 
 	// Release the tunnel if set - will now be retained by the connection
-	if (sshTunnel) SPClear(sshTunnel);
+	
 
 	// Pass the connection to the document and clean up the interface
 	[self addConnectionToDocument];
@@ -2543,7 +2540,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Release as appropriate
 	if (sshTunnel) {
-		(void)([sshTunnel disconnect]), SPClear(sshTunnel);
+		[sshTunnel disconnect];
 
 		// If the SSH tunnel connection failed because the port it was trying to bind to was already in use take note
 		// of it so we can give the user the option of connecting via standard connection and use the existing tunnel.
@@ -3882,29 +3879,29 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
 
-	SPClear(keychain);
-	SPClear(prefs);
+	
+	
 
-	SPClear(folderImage);
-	SPClear(quickConnectItem);
-	SPClear(quickConnectCell);
+	
+	
+	
 
 	
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
 
-	SPClear(nibObjectsToRelease);
-	SPClear(bookmarks);
-	SPClear(resolvedBookmarks);
+	
+	
+	
 
 	[self setConnectionKeychainID:nil];
-	if (connectionKeychainItemName)       SPClear(connectionKeychainItemName);
-	if (connectionKeychainItemAccount)    SPClear(connectionKeychainItemAccount);
-	if (connectionSSHKeychainItemName)    SPClear(connectionSSHKeychainItemName);
-	if (connectionSSHKeychainItemAccount) SPClear(connectionSSHKeychainItemAccount);
+	
+	
+	
+	
 
-	if (currentFavorite) SPClear(currentFavorite);
+	
 
 	[super dealloc];
 }

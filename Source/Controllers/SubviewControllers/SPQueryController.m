@@ -134,14 +134,6 @@ static SPQueryController *sharedQueryController = nil;
 
 - (id)copyWithZone:(NSZone *)zone { return self; }
 
-- (id)retain { return self; }
-
-- (NSUInteger)retainCount { return NSUIntegerMax; }
-
-- (id)autorelease { return self; }
-
-- (oneway void)release { }
-
 #pragma mark -
 #pragma mark QueryConsoleController
 
@@ -1116,19 +1108,19 @@ static SPQueryController *sharedQueryController = nil;
 	messagesVisibleSet = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	SPClear(dateFormatter);
+	
 
-	SPClear(messagesFullSet);
-	SPClear(messagesFilteredSet);
-	SPClear(activeFilterString);
+	
+	
+	
 
-	SPClear(favoritesContainer);
-	SPClear(historyContainer);
-	SPClear(contentFilterContainer);
+	
+	
+	
 
-	if (completionKeywordList) SPClear(completionKeywordList);
-	if (completionFunctionList) SPClear(completionFunctionList);
-	if (functionArgumentSnippets) SPClear(functionArgumentSnippets);
+	
+	
+	
 	
 	pthread_mutex_destroy(&consoleLock);
 

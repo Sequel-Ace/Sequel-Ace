@@ -50,6 +50,7 @@
 #import "SPCopyTable.h"
 #import "SPSyntaxParser.h"
 #import "SPOSInfo.h"
+#import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
 
 #import "Sequel_Ace-Swift.h"
@@ -1019,7 +1020,7 @@
  */
 - (NSString*)doSQLSyntaxHighlightForString:(NSString*)sqlText cssLike:(BOOL)cssLike
 {
-	NSMutableString *sqlHTML = [[[NSMutableString alloc] initWithCapacity:[sqlText length]] autorelease];
+	NSMutableString *sqlHTML = [[NSMutableString alloc] initWithCapacity:[sqlText length]];
 
 	NSString *tokenColor;
 	NSString *cssId;
@@ -1454,7 +1455,7 @@
  */
 - (void)setSessionURL:(NSString *)urlString
 {
-	if(_sessionURL) SPClear(_sessionURL);
+	
 	if(urlString)
 		_sessionURL = [[NSURL fileURLWithPath:urlString] retain];
 }
@@ -1896,7 +1897,7 @@
 				}
 
 				// Sort items for menus
-				NSSortDescriptor *sortDescriptor = [[[NSSortDescriptor alloc] initWithKey:SPBundleInternLabelKey ascending:YES] autorelease];
+				NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:SPBundleInternLabelKey ascending:YES];
 				for(NSString* scope in [bundleItems allKeys]) {
 					[[bundleItems objectForKey:scope] sortUsingDescriptors:@[sortDescriptor]];
 					[[bundleCategories objectForKey:scope] sortUsingSelector:@selector(compare:)];
@@ -1962,7 +1963,7 @@
 
 		// Add last scope (General) not as submenu
 		if(k < [scopes count]-1) {
-			bundleMenu = [[[NSMenu alloc] init] autorelease];
+			bundleMenu = [[NSMenu alloc] init];
 			[bundleMenu setAutoenablesItems:YES];
 			bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:[scopeTitles objectAtIndex:k] action:nil keyEquivalent:@""];
 			[bundleSubMenuItem setTag:10000000];
@@ -2529,8 +2530,6 @@
 
 	if (window == aboutController.window) {
 		aboutController.window.delegate = nil;
-		[aboutController autorelease];
-		aboutController = nil;
 	}
 }
 
@@ -2540,23 +2539,23 @@
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	if (bundleItems)                SPClear(bundleItems);
-	if (bundleUsedScopes)           SPClear(bundleUsedScopes);
-	if (bundleHTMLOutputController) SPClear(bundleHTMLOutputController);
-	if (bundleCategories)           SPClear(bundleCategories);
-	if (bundleTriggers)             SPClear(bundleTriggers);
-	if (bundleKeyEquivalents)       SPClear(bundleKeyEquivalents);
-	if (installedBundleUUIDs)       SPClear(installedBundleUUIDs);
-	if (runningActivitiesArray)     SPClear(runningActivitiesArray);
+	
+	
+	
+	
+	
+	
+	
+	
 
-	SPClear(prefsController);
-	SPClear(fileManager);
+	
+	
 
-	if (aboutController) SPClear(aboutController);
-	if (bundleEditorController) SPClear(bundleEditorController);
+	
+	
 
-	if (_sessionURL) SPClear(_sessionURL);
-	if (_spfSessionDocData) SPClear(_spfSessionDocData);
+	
+	
 
 	[super dealloc];
 }

@@ -167,7 +167,7 @@
 
 @property (assign) NSButton* runAllButton;
 @property (assign) BOOL textViewWasChanged;
-@property (assign) SPBracketHighlighter *bracketHighlighter;
+@property (retain) SPBracketHighlighter *bracketHighlighter;
 
 // IBAction methods
 - (IBAction)runPrimaryQueryAction:(id)sender;

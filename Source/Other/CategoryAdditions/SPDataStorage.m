@@ -134,7 +134,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		// Modify unloaded cells as appropriate
 		for (NSUInteger i = 0; i < numberOfColumns; i++) {
 			if (unloadedColumns[i]) {
-				CFArraySetValueAtIndex((CFMutableArrayRef)dataArray, i, notLoaded);
+				CFArraySetValueAtIndex((CFMutableArrayRef)dataArray, i, (__bridge const void *)(notLoaded));
 			}
 		}
 		
@@ -245,7 +245,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
  * Note that rows are currently retrieved individually to avoid mutation and locking issues,
  * although this could be improved on.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	NSMutableArray *targetRow = nil;
 	size_t srcObject;
@@ -271,7 +271,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 			// Modify unloaded cells as appropriate
 			for (NSUInteger i = 0; i < numberOfColumns; i++) {
 				if (unloadedColumns[i]) {
-					CFArraySetValueAtIndex((CFMutableArrayRef)targetRow, i, notLoaded);
+					CFArraySetValueAtIndex((CFMutableArrayRef)targetRow, i, (__bridge const void *)(notLoaded));
 				}
 			}
 		}
@@ -341,7 +341,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 			}
 			
 			// Add the new row to the editable store
-			[editedRows insertPointer:newArray atIndex:anIndex];
+			[editedRows insertPointer:(__bridge void * _Nullable)(newArray) atIndex:anIndex];
 			editedRowCount++;
 			
 			// Update the underlying store to keep counts and indices correct
@@ -366,7 +366,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	@try {
 		@synchronized(self) {
 			[self _checkNewRow:newArray];
-			[editedRows replacePointerAtIndex:anIndex withPointer:newArray];
+			[editedRows replacePointerAtIndex:anIndex withPointer:(__bridge void * _Nullable)(newArray)];
 		}
 	}
 	@finally {
@@ -389,7 +389,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		// Make sure that the row in question is editable
 		if (editableRow == nil) {
 			editableRow = [self rowContentsAtIndex:rowIndex]; //already returns a copy, so we don't have to go via -replaceRowAtIndex:withRowContents:
-			[editedRows replacePointerAtIndex:rowIndex withPointer:editableRow];
+			[editedRows replacePointerAtIndex:rowIndex withPointer:(__bridge void * _Nullable)(editableRow)];
 		}
 	}
 
@@ -548,9 +548,9 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 - (void) dealloc
 {
 	@synchronized(self) {
-		SPClear(dataStorage);
-		SPClear(editedRows);
-		SPClear(dataDownloadedLock);
+		
+		
+		
 		if (unloadedColumns) {
 			(void)(free(unloadedColumns)), unloadedColumns = NULL;
 		}
@@ -574,7 +574,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 - (void)_addRowUnsafeUnchecked:(NSMutableArray *)aRow
 {
 	// Add the new row to the editable store
-	[editedRows addPointer:aRow];
+	[editedRows addPointer:(__bridge void * _Nullable)aRow];
 	editedRowCount++;
 	
 	// Update the underlying store as well to keep counts correct

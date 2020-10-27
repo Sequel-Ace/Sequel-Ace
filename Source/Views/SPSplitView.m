@@ -111,12 +111,10 @@
 
 - (void)dealloc
 {
-	SPClear(viewMinimumSizes);
-	SPClear(viewMaximumSizes);
-
-	if (animationTimer) (void)([animationTimer invalidate]), SPClear(animationTimer);
-	if (animationRetainCycleBypassObject) SPClear(animationRetainCycleBypassObject);
-
+	if (animationTimer) {
+		[animationTimer invalidate];
+	}
+	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[super dealloc];
 }
@@ -224,7 +222,7 @@
 		// If collapsing, ensure the original view is wrapped in a helper view to avoid
 		// animation resizes of the contained view.  (Uncollapses will already be wrapped.)
 		if (![viewToAnimate isMemberOfClass:[SPSplitViewHelperView class]]) { 
-			[[[SPSplitViewHelperView alloc] initReplacingView:viewToAnimate inVerticalSplitView:[self isVertical]] autorelease];
+			[[SPSplitViewHelperView alloc] initReplacingView:viewToAnimate inVerticalSplitView:[self isVertical]];
 			viewToAnimate = [[self subviews] objectAtIndex:collapsibleSubviewIndex];
 		}
 
@@ -239,8 +237,10 @@
 
 	// Otherwise, start an animation.
 	} else {
-		if (animationTimer) (void)([animationTimer invalidate]), SPClear(animationTimer);
-		if (animationRetainCycleBypassObject) SPClear(animationRetainCycleBypassObject);
+		if (animationTimer) {
+			[animationTimer invalidate];
+		}
+		
 		animationStartTime = [NSDate monotonicTimeInterval];
 
 		// Determine the animation length, in seconds, starting with a quarter of a second
@@ -885,10 +885,10 @@
 		if (animationProgress == 1) {
 			if (animationTimer) {
 				[animationTimer invalidate];
-				SPClear(animationTimer);
+				
 			}
 			if (animationRetainCycleBypassObject) {
-				SPClear(animationRetainCycleBypassObject);
+				
 			}
 
 			// If uncollapsing, restore the original view and remove the helper
@@ -1175,12 +1175,12 @@
 	// see #3271 - This is a quick workaround for 10.14 not properly redrawing the view
 	[wrappedView setNeedsDisplay:YES];
 
-	SPClear(wrappedView);
+	
 }
 
 - (void)dealloc
 {
-	if (wrappedView) SPClear(wrappedView);
+	
 
 	[super dealloc];
 }

@@ -499,7 +499,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
  * Note that rows are currently retrieved individually to avoid mutation and locking issues,
  * although this could be improved on.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	NSMutableArray *theRow = SPMySQLResultStoreGetRow(self, state->state);
 

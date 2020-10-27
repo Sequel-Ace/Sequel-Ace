@@ -447,9 +447,9 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 
 - (void)dealloc
 {
-    SPClear(unfilteredList);
-	SPClear(filteredList);
-	SPClear(highlightAttrs);
+    
+	
+	
 
 	[super dealloc];
 }

@@ -248,13 +248,14 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	NSError *error = nil;
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 	
-	if (favoritesData) SPClear(favoritesData);
+	
 	
 	NSString *dataPath = [fileManager applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error];
 	
 	if (error) {
 		NSLog(@"Error retrieving data directory path: %@", [error localizedDescription]);
-		goto end_cleanup;
+		pthread_mutex_unlock(&favoritesLock);
+		return;
 	}
 	
 	NSString *favoritesFile = [dataPath stringByAppendingPathComponent:SPFavoritesDataFile];
@@ -274,7 +275,8 @@ static SPFavoritesController *sharedFavoritesController = nil;
 																		error:&error];
 		if (error) {
 			NSLog(@"Error converting default favorites data to plist format: %@", error);
-			goto end_cleanup;
+			pthread_mutex_unlock(&favoritesLock);
+			return;
 		}
 		else if (plistData) {
 			[plistData writeToFile:favoritesFile options:NSAtomicWrite error:&error];
@@ -286,8 +288,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
 		
 		favoritesData = newFavorites;
 	}
-
-end_cleanup:
 	pthread_mutex_unlock(&favoritesLock);
 }
 
@@ -388,7 +388,8 @@ end_cleanup:
 		pthread_mutex_lock(&writeLock);
 
 		if (!favoritesTree) {
-			goto end_cleanup;
+			pthread_mutex_unlock(&writeLock);
+			return;
 		}
 
 		NSError *error = nil;
@@ -405,7 +406,8 @@ end_cleanup:
 		                                                                error:&error];
 		if (error) {
 			NSLog(@"Error converting favorites data to plist format: %@", error);
-			goto end_cleanup;
+			pthread_mutex_unlock(&writeLock);
+			return;
 		}
 
 		NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -414,7 +416,8 @@ end_cleanup:
 
 		if (error) {
 			NSLog(@"Error retrieving data directory path: %@", [error localizedDescription]);
-			goto end_cleanup;
+			pthread_mutex_unlock(&writeLock);
+			return;
 		}
 
 		NSString *favoritesFile = [dataPath stringByAppendingPathComponent:SPFavoritesDataFile];
@@ -433,7 +436,8 @@ end_cleanup:
 			// We can't move it so try and delete it
 			if (![fileManager removeItemAtPath:favoritesFile error:&error] && error) {
 				NSLog(@"Unable to delete existing favorites data file during save. Something is wrong, permissions perhaps: %@", [error localizedDescription]);
-				goto end_cleanup;
+				pthread_mutex_unlock(&writeLock);
+				return;
 			}
 		}
 
@@ -456,8 +460,6 @@ end_cleanup:
 			// Remove the original backup
 			[fileManager removeItemAtPath:favoritesBackupFile error:NULL];
 		}
-
-end_cleanup:
 		pthread_mutex_unlock(&writeLock);
 	}
 }
@@ -482,8 +484,8 @@ end_cleanup:
 
 - (void)dealloc
 {
-	if (favoritesTree) SPClear(favoritesTree);
-	if (favoritesData) SPClear(favoritesData);
+	
+	
 	
 	pthread_mutex_destroy(&writeLock);
 	pthread_mutex_destroy(&favoritesLock);

@@ -1218,7 +1218,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [row count]; j++)
 		{
 			if ([[row objectAtIndex:j] isNSNull]) {
-				[row replaceObjectAtIndex:j withObject:(NSString *)escapedNullValue];
+				[row replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
@@ -1237,7 +1237,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [eachIndex count]; j++)
 		{
 			if ([[eachIndex objectAtIndex:j] isNSNull]) {
-				[eachIndex replaceObjectAtIndex:j withObject:(NSString *)escapedNullValue];
+				[eachIndex replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
@@ -1632,7 +1632,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	![tableDocumentInstance isWorking];
 
 	// Update the selected table name
-	if (selectedTable) SPClear(selectedTable);
+	
 	if (newTableName) selectedTable = [[NSString alloc] initWithString:newTableName];
 
 	[indexesController setTable:selectedTable];
@@ -1666,7 +1666,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[indexesController setFields:tableFields];
 	[indexesController setIndexes:[tableDetails objectForKey:@"tableIndexes"]];
 
-	if (defaultValues) SPClear(defaultValues);
+	
 
 	newDefaultValues = [NSMutableDictionary dictionaryWithCapacity:[tableFields count]];
 
@@ -2458,16 +2458,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	SPClear(tableFields);
-	SPClear(oldRow);
-	SPClear(enumFields);
-	SPClear(typeSuggestions);
-	SPClear(extraFieldSuggestions);
+	
+	
+	
+	
+	
 
-	SPClear(fieldValidation);
+	
 
-	if (defaultValues) SPClear(defaultValues);
-	if (selectedTable) SPClear(selectedTable);
+	
+	
 
 	[super dealloc];
 }

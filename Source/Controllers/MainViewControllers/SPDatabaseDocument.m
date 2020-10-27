@@ -83,6 +83,8 @@
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
+#import "PSMTabBarController.h"
+#import "PSMTabBarControl.h"
 
 #import "Sequel_Ace-Swift.h"
 
@@ -420,7 +422,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Update the selected database if appropriate
 	if ([connectionController database] && ![[connectionController database] isEqualToString:@""]) {
-		if (selectedDatabase) SPClear(selectedDatabase);
+		
 		selectedDatabase = [[NSString alloc] initWithString:[connectionController database]];
 		[spHistoryControllerInstance updateHistoryEntries];
 	}
@@ -507,7 +509,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (queryEditorInitString && [queryEditorInitString length]) {
 		[self viewQuery:self];
 		[customQueryInstance doPerformLoadQueryService:queryEditorInitString];
-		SPClear(queryEditorInitString);
+		
 	}
 
 	if (spfSession != nil) {
@@ -585,8 +587,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
 	[[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
 
-	if (allDatabases) SPClear(allDatabases);
-	if (allSystemDatabases) SPClear(allSystemDatabases);
+	
+	
 	
 	NSArray *theDatabaseList = [mySQLConnection databases];
 
@@ -749,7 +751,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	   modalForWindow:parentWindow
 	    modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:SPAlterDatabaseAction];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPAlterDatabaseAction)];
 }
 
 - (IBAction)compareDatabase:(id)sender
@@ -834,7 +836,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		                                     docWindow:parentWindow
 		                                 modalDelegate:self
 		                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		                                   contextInfo:SPConfirmCopyDatabaseAction
+										   contextInfo:(__bridge void *)(SPConfirmCopyDatabaseAction)
 		                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]
 		                                    returnCode:&confirmCopyDatabaseReturnCode];
 
@@ -848,7 +850,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	   modalForWindow:parentWindow
 		modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:SPCopyDatabaseAction];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPCopyDatabaseAction)];
 }
 
 /**
@@ -878,7 +880,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	   modalForWindow:parentWindow
 	    modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:SPRenameDatabaseAction];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPRenameDatabaseAction)];
 }
 
 /**
@@ -1080,13 +1082,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			// TODO: there have been crash reports because dbName == nil at this point. When could that happen?
 			if([dbName unboxNull]) {
 				if(![dbName isEqualToString:selectedDatabase]) {
-					if (selectedDatabase) SPClear(selectedDatabase);
+					
 					selectedDatabase = [[NSString alloc] initWithString:dbName];
 					[chooseDatabaseButton selectItemWithTitle:selectedDatabase];
 					[self updateWindowTitle:self];
 				}
 			} else {
-				if (selectedDatabase) SPClear(selectedDatabase);
+				
 				[chooseDatabaseButton selectItemAtIndex:0];
 				[self updateWindowTitle:self];
 			}
@@ -1310,8 +1312,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// If the window has been fully faded in, clean up the timer.
 	if (alphaValue == 1.0) {
-		(void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
-		SPClear(taskFadeInStartDate);
+		[taskDrawTimer invalidate];
+		
+		
 	}
 }
 
@@ -1413,15 +1416,16 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Cancel the draw timer if it exists
 		if (taskDrawTimer) {
-			(void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
-			SPClear(taskFadeInStartDate);
+			[taskDrawTimer invalidate];
+			
+			
 		}
 
 		if (queryExecutionTimer) {
 			queryStartDate = [[NSDate alloc] init];
 			[self showQueryExecutionTime];
 			[queryExecutionTimer invalidate];
-			SPClear(queryExecutionTimer);
+			
 		}
 		
 		// Hide the task interface and reset to indeterminate
@@ -1696,7 +1700,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	NSString *mysqlEncoding = [[databaseDataInstance getDatabaseDefaultCharacterSet] retain];
 
-	SPClear(selectedDatabaseEncoding);
+	
 
 	// Fallback or older version? -> set encoding to mysql default encoding latin1
 	if ( !mysqlEncoding ) {
@@ -1924,13 +1928,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		if (statusValues) {
-			SPClear(statusValues);
+			
 		}
 		statusValues = [resultStatuses retain];
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
-				SPClear(statusValues);
+				
 			}
 		}];
 	}
@@ -1989,11 +1993,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Analyze %@", @"ANALYZE one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) SPClear(statusValues);
+		
 		statusValues = [resultStatuses retain];
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
-				SPClear(statusValues);
+				
 			}
 		}];
 	}
@@ -2053,12 +2057,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimize %@", @"OPTIMIZE one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) SPClear(statusValues);
+		
 		statusValues = [resultStatuses retain];
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
-				SPClear(statusValues);
+				
 			}
 		}];
 	}
@@ -2117,12 +2121,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Repair %@", @"REPAIR one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) SPClear(statusValues);
+		
 		statusValues = [resultStatuses retain];
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
-				SPClear(statusValues);
+				
 			}
 		}];
 	}
@@ -2181,12 +2185,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Flush %@", @"FLUSH one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) SPClear(statusValues);
+		
 		statusValues = [resultStatuses retain];
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
-				SPClear(statusValues);
+				
 			}
 		}];
 	}
@@ -2223,12 +2227,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"Table checksum: %@", @"table checksum: %@"), message];
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksum %@", @"checksum %@ message"), what] message:alertMessage callback:nil];
 	} else {
-		if (statusValues) SPClear(statusValues);
+		
 		statusValues = [resultStatuses retain];
 
 		[NSAlert createAccessoryWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what] message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
-				SPClear(statusValues);
+				
 			}
 		}];
 	}
@@ -2385,7 +2389,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 	
 	[userManagerInstance beginSheetModalForWindow:parentWindow completionHandler:^(){
-		SPClear(userManagerInstance);
+		
 	}];
 }
 
@@ -2907,7 +2911,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[panel setNameFieldStringValue:filename];
 
 	[panel beginSheetModalForWindow:parentWindow completionHandler:^(NSInteger returnCode) {
-		[self saveConnectionPanelDidEnd:panel returnCode:returnCode contextInfo:contextInfo];
+		[self saveConnectionPanelDidEnd:panel returnCode:returnCode contextInfo:(__bridge void *)(contextInfo)];
 	}];
 }
 /**
@@ -2967,10 +2971,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[[saveConnectionEncryptString window] makeFirstResponder:[[saveConnectionEncryptString window] initialFirstResponder]];
 
 			[self saveDocumentWithFilePath:fileName inBackground:NO onlyPreferences:NO contextInfo:nil];
-
-			// Manually loaded nibs don't have their top-level objects released automatically - do that here.
-			[saveConnectionAccessory autorelease];
-			saveConnectionAccessory = nil;
 
 			if(contextInfo == @"saveSPFfileAndClose") [self closeAndDisconnect];
 		}
@@ -3179,7 +3179,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				                                     docWindow:parentWindow
 				                                 modalDelegate:self
 				                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-				                                   contextInfo:SPSaveDocumentPreferences
+				                                   contextInfo:(__bridge void *)SPSaveDocumentPreferences
 				                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Connection data file “%@” couldn't be read. Please try to save the document under a different name.\n\nDetails: %@", @"message error while reading connection data file and suggesting to save it under a differnet name"), [fileName lastPathComponent], [error localizedDescription]]
 				                                    returnCode:&saveDocPrefSheetStatus];
 				
@@ -4861,7 +4861,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		});
 
 		// dealloc spfSession data
-		SPClear(spfSession);
+		
 
 		// End the task
 		[self endTask];
@@ -5913,7 +5913,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// that's why we can run this on main thread
 	[databaseStructureRetrieval queryDbStructureWithUserInfo:nil];
 
-	if (selectedDatabase) SPClear(selectedDatabase);
+	
 	
 	[self setDatabases:self];
 	
@@ -5962,7 +5962,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			}
 
 			[[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
-			if (selectedDatabase) SPClear(selectedDatabase);
+			
 			selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
 
 			[databaseDataInstance resetAllData];
@@ -6371,7 +6371,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (!aTable) {
 
 		// Update the selected table name and type
-		if (selectedTableName) SPClear(selectedTableName);
+		
 
 		selectedTableType = SPTableTypeNone;
 
@@ -6924,7 +6924,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	[[printWebView mainFrame] loadHTMLString:HTMLString baseURL:nil];
 
-	if (printThread) SPClear(printThread);
+	
 }
 
 /**
@@ -7143,8 +7143,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		columns = [[NSArray alloc] initWithArray:[[tableTriggersInstance triggerDataForPrinting] objectAtIndex:0] copyItems:YES];
 	}
 
-	if (columns) [columns autorelease];
-
 	return columns;
 }
 
@@ -7197,19 +7195,19 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	
 	// see -(void)awakeFromNib for the reasoning behind this.
-	SPClear(chooseDatabaseButton);
-	SPClear(historyControl);
+	
+	
 
-	SPClear(nibObjectsToRelease);
 	
-	SPClear(databaseStructureRetrieval);
 	
-	SPClear(allDatabases);
-	SPClear(allSystemDatabases);
-	SPClear(gotoDatabaseController);
-	SPClear(undoManager);
-	SPClear(printWebView);
-	SPClear(selectedDatabaseEncoding);
+	
+	
+	
+	
+	
+	
+	
+	
 
 	[taskProgressWindow close];
 	
@@ -7217,34 +7215,36 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
 	[connectionController setDelegate:nil];
-	SPClear(connectionController);
 	
-	if (selectedTableName) SPClear(selectedTableName);
-	if (processListController) SPClear(processListController);
-	if (serverVariablesController) SPClear(serverVariablesController);
-	if (mySQLConnection) SPClear(mySQLConnection);
-	if (selectedDatabase) SPClear(selectedDatabase);
-	if (mySQLVersion) SPClear(mySQLVersion);
-	if (taskDrawTimer) (void)([taskDrawTimer invalidate]), SPClear(taskDrawTimer);
+	
+	
+	
+	
+	
+	
+	
+	if (taskDrawTimer) {
+		[taskDrawTimer invalidate];
+	}
 	if (queryExecutionTimer) {
 		[queryExecutionTimer invalidate];
-		SPClear(queryExecutionTimer);
+		
 	}
-	if (taskFadeInStartDate) SPClear(taskFadeInStartDate);
-	if (queryEditorInitString) SPClear(queryEditorInitString);
-	if (sqlFileURL) SPClear(sqlFileURL);
-	if (spfFileURL) SPClear(spfFileURL);
-	if (spfPreferences) SPClear(spfPreferences);
-	if (spfSession) SPClear(spfSession);
-	if (spfDocData) SPClear(spfDocData);
-	if (mainToolbar) SPClear(mainToolbar);
-	if (titleAccessoryView) SPClear(titleAccessoryView);
-	if (taskProgressWindow) SPClear(taskProgressWindow);
-	if (serverSupport) SPClear(serverSupport);
-	if (processID) SPClear(processID);
-	if (runningActivitiesArray) SPClear(runningActivitiesArray);
-	if (alterDatabaseCharsetHelper) SPClear(alterDatabaseCharsetHelper);
-	if (addDatabaseCharsetHelper) SPClear(addDatabaseCharsetHelper);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }

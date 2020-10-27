@@ -306,7 +306,7 @@
 		// Reset progress cancelled from any previous runs
 		progressCancelled = NO;
 
-		if (lastFilename) SPClear(lastFilename);
+		
 
 		lastFilename = [[NSString stringWithString:[[openPanel URL] path]] retain];
 
@@ -328,7 +328,7 @@
 							  [tableDocumentInstance parentWindow],	// Window to attach to
 							  self,	// Modal delegate
 							  @selector(importOverwriteWarningSheetDidEnd:returnCode:contextInfo:),	// Did end selector
-							  importFileName,	// Contextual info for selectors
+							  (__bridge void *)(importFileName),	// Contextual info for selectors
 							  NSLocalizedString(@"The chosen import file can potentially overwrite existing data. You should use caution when proceeding with the import.", @"message of warning when trying to import data when tables already exist."));
 
 			return;
@@ -382,8 +382,7 @@
 	NSTimeInterval interval;
 	startDate = [NSDate date];
 #endif
-	
-	NSAutoreleasePool *importPool;
+
 	SPFileHandle *sqlFileHandle;
 	NSMutableData *sqlDataBuffer;
 	const unsigned char *sqlDataBufferBytes;
@@ -480,7 +479,6 @@
 	[mySQLConnection updateServerStatusBits:&serverStatus];
 	[sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
 	sqlDataBuffer = [[NSMutableData alloc] init];
-	importPool = [[NSAutoreleasePool alloc] init];
 	while (1) {
 		if (progressCancelled) break;
 
@@ -503,9 +501,6 @@
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)", @"SQL read error, including detail from system"), (long)queriesPerformed, [exception reason]]
 			);
-			[sqlParser release];
-			[sqlDataBuffer release];
-			[importPool drain];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 			return;
@@ -559,9 +554,6 @@
 						[tableDocumentInstance parentWindow],
 						[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed.", @"SQL encoding read error"), displayEncoding, (long)queriesPerformed]
 					);
-					[sqlParser release];
-					[sqlDataBuffer release];
-					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 					return;
@@ -569,7 +561,6 @@
 
 				// Add the NSString segment to the SQL parser and release it
 				[sqlParser appendString:sqlString];
-				[sqlString release];
 
 				if (allDataRead) break;
 
@@ -593,9 +584,6 @@
 			[self _closeAndStopProgressSheet];
 			[errors appendString:NSLocalizedString(@"The connection to the server was lost during the import.  The import is only partially complete.", @"Connection lost during import error message")];
 			[self showErrorSheetWithMessage:errors];
-			[sqlParser release];
-			[sqlDataBuffer release];
-			[importPool drain];
 
 			return;
 		}
@@ -705,10 +693,6 @@
 
 		// If all the data has been read, break out of the processing loop
 		if (allDataRead) break;
-
-		// Reset the autorelease pool
-		[importPool drain];
-		importPool = [[NSAutoreleasePool alloc] init];
 	}
 
 	// If any text remains in the SQL parser, it's an unterminated query - execute it.
@@ -735,9 +719,6 @@
 	if (sqlModeToRestore) {
 		[mySQLConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
 	}
-	[sqlParser release];
-	[sqlDataBuffer release];
-	[importPool drain];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 
@@ -796,7 +777,6 @@
  */
 - (void)importCSVFile:(NSString *)filename
 {
-	NSAutoreleasePool *importPool;
 	SPFileHandle *csvFileHandle;
 	NSMutableData *csvDataBuffer;
 	const unsigned char *csvDataBufferBytes;
@@ -918,7 +898,6 @@
 	});
 
 	csvDataBuffer = [[NSMutableData alloc] init];
-	importPool = [[NSAutoreleasePool alloc] init];
 	while (1) {
 		if (progressCancelled) break;
 
@@ -934,12 +913,7 @@
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)", @"CSV read error, including detail string from system"), (long)rowsImported, [exception reason]]
 			);
-			[csvParser release];
-			[csvDataBuffer release];
-			[parsedRows release];
-			[parsePositions release];
 			[self _resetFieldMappingGlobals];
-			[importPool drain];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 				[fileManager removeItemAtPath:filename error:nil];
@@ -986,12 +960,7 @@
 							[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported.", @"CSV encoding read error"), displayEncoding, (long)rowsImported]
 						);
 					});
-					[csvParser release];
-					[csvDataBuffer release];
-					[parsedRows release];
-					[parsePositions release];
 					[self _resetFieldMappingGlobals];
-					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -1033,12 +1002,7 @@
 			{
 				[self _closeAndStopProgressSheet];
 				if (![self buildFieldMappingArrayWithData:parsedRows isPreview:!allDataRead ofSoureFile:filename]) {
-					[csvParser release];
-					[csvDataBuffer release];
-					[parsedRows release];
-					[parsePositions release];
 					[self _resetFieldMappingGlobals];
-					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -1110,12 +1074,7 @@
 			// If not, check the connection if appropriate and then clean up and exit if appropriate.
 			if (![mySQLConnection isConnected] && ([mySQLConnection userTriggeredDisconnect] || ![mySQLConnection checkConnection])) {
 				[self _closeAndStopProgressSheet];
-				[csvParser release];
-				[csvDataBuffer release];
-				[parsedRows release];
-				[parsePositions release];
 				[self _resetFieldMappingGlobals];
-				[importPool drain];
 				[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 				if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 					[fileManager removeItemAtPath:filename error:nil];
@@ -1265,19 +1224,10 @@
 		
 		// If all the data has been read, break out of the processing loop
 		if (allDataRead) break;
-
-		// Reset the autorelease pool
-		[importPool drain];
-		importPool = [[NSAutoreleasePool alloc] init];
 	}
 
 	// Clean up
-	[csvParser release];
-	[csvDataBuffer release];
-	[parsedRows release];
-	[parsePositions release];
 	[self _resetFieldMappingGlobals];
-	[importPool drain];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 		[fileManager removeItemAtPath:filename error:nil];
@@ -1297,7 +1247,6 @@
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 
 	SPMainQSync(^{
 
@@ -1395,7 +1344,7 @@
 
 	// If the mapping was cancelled, abort the import
 	if (fieldMapperSheetStatus == SPFieldMapperCancelled) {
-		goto cleanup;
+		return success;
 	}
 
 	// Get mapping settings and preset some global variables
@@ -1424,7 +1373,7 @@
 		|| ![csvImportHeaderString length])
 	{
 		NSBeep();
-		goto cleanup;
+		return success;
 	}
 
 	// Store target table definitions
@@ -1449,12 +1398,6 @@
 		[prefs setBool:[importFieldNamesSwitch state] forKey:SPCSVImportFirstLineIsHeader];
 	});
 	success = YES;
-	
-cleanup:
-	dispatch_async(dispatch_get_main_queue(), ^{
-		[fieldMapperController release];
-	});
-
 	return success;
 }
 
@@ -1837,13 +1780,13 @@ cleanup:
  */
 - (void)_resetFieldMappingGlobals
 {
-	if (csvImportTailString) SPClear(csvImportTailString);
-	if (csvImportHeaderString) SPClear(csvImportHeaderString);
-	if (fieldMappingArray) SPClear(fieldMappingArray);
-	if (fieldMappingGlobalValueArray) SPClear(fieldMappingGlobalValueArray);
-	if (fieldMappingTableColumnNames) SPClear(fieldMappingTableColumnNames);
-	if (fieldMappingTableDefaultValues) SPClear(fieldMappingTableDefaultValues);
-	if (fieldMapperOperator) SPClear(fieldMapperOperator);
+	
+	
+	
+	
+	
+	
+	
 }
 
 /**
@@ -1913,19 +1856,19 @@ cleanup:
 
 - (void)dealloc
 {	
-	if (fieldMappingImportArray)       SPClear(fieldMappingImportArray);
-	if (geometryFields)                SPClear(geometryFields);
-	if (geometryFieldsMapIndex)        SPClear(geometryFieldsMapIndex);
-	if (bitFields)                     SPClear(bitFields);
-	if (nullableNumericFields)         SPClear(nullableNumericFields);
-	if (bitFieldsMapIndex)             SPClear(bitFieldsMapIndex);
-	if (nullableNumericFieldsMapIndex) SPClear(nullableNumericFieldsMapIndex);
-	if (lastFilename)                  SPClear(lastFilename);
-	if (prefs)                         SPClear(prefs);
-	if (selectedTableTarget)           SPClear(selectedTableTarget);
 	
-	SPClear(nibObjectsToRelease);
-	SPClear(fileManager);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }

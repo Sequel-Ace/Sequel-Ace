@@ -97,7 +97,8 @@
 	    (![self sqlDatabaseName])     || ([[self sqlDatabaseName] isEqualToString:@""]) ||
 	    (![self sqlDatabaseVersion]   || ([[self sqlDatabaseName] isEqualToString:@""])))
 	{
-		goto end_cleanup;
+		[self endCleanup:oldSqlMode];
+		return;
 	}
 
 	sqlTableDataInstance = [[[SPTableData alloc] init] autorelease];
@@ -120,7 +121,10 @@
 	for (NSArray *item in [self sqlExportTables])
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 
 		NSMutableArray *targetArray;
 		switch ([NSArrayObjectAtIndex(item, 4) intValue]) {
@@ -257,7 +261,10 @@
 	for (NSArray *table in tables) 
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 		
 		[self setSqlCurrentTableExportIndex:[self sqlCurrentTableExportIndex]+1];
 		NSString *tableName = NSArrayObjectAtIndex(table, 0);
@@ -419,9 +426,6 @@
 				// Iterate through the rows to construct a VALUES group for each
 				NSUInteger rowsWrittenForTable = 0;
 				NSUInteger rowsWrittenForCurrentStmt = 0;
-				BOOL cleanAutoReleasePool = NO;
-				
-				NSAutoreleasePool *sqlExportPool = [[NSAutoreleasePool alloc] init];
 				
 				// Inform the delegate that we are about to start writing the data to disk
 				[delegate performSelectorOnMainThread:@selector(sqlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -433,12 +437,11 @@
 					if ([self isCancelled]) {
 						[connection cancelCurrentQuery];
 						[streamingResult cancelResultLoad];
-						[streamingResult release];
-						[sqlExportPool release];
 						free(useRawDataForColumnAtIndex);
 						free(useRawHexDataForColumnAtIndex);
 
-						goto end_cleanup;
+						[self endCleanup:oldSqlMode];
+						return;
 					}
 
 					// Update the progress
@@ -465,9 +468,6 @@
 
 						queryLength = 0;
 						rowsWrittenForCurrentStmt = 0;
-
-						// Use the opportunity to drain and reset the autorelease pool at the end of this row
-						cleanAutoReleasePool = YES;
 					}
 					else if (rowsWrittenForTable == 0) {
 						[sqlString setString:@"\n\t("];
@@ -545,13 +545,6 @@
 
 					// Write this row to the file
 					[self writeUTF8String:sqlString];
-
-					// Clean autorelease pool if so decided earlier
-					if (cleanAutoReleasePool) {
-						[sqlExportPool release];
-						sqlExportPool = [[NSAutoreleasePool alloc] init];
-						cleanAutoReleasePool = NO;
-					}
 					
 					rowsWrittenForTable++;
 					rowsWrittenForCurrentStmt++;
@@ -565,9 +558,6 @@
 				[metaString appendFormat:@"/*!40000 ALTER TABLE %@ ENABLE KEYS */;\nUNLOCK TABLES;\n", [tableName backtickQuotedString]];
 				
 				[self writeUTF8String:metaString];
-				
-				// Drain the autorelease pool
-				[sqlExportPool release];
 			
 				// Release the result set
 				[streamingResult release];
@@ -599,7 +589,10 @@
 				for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
 				{
 					// Check for cancellation flag
-					if ([self isCancelled]) goto end_cleanup;
+					if ([self isCancelled]) {
+						[self endCleanup:oldSqlMode];
+						return;
+					}
 					
 					NSDictionary *triggers = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 					
@@ -641,7 +634,10 @@
 	for (NSString *viewName in viewSyntaxes)
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 		
 		[metaString setString:@"\n\n"];
 
@@ -657,7 +653,10 @@
 	for (NSString *procedureType in @[@"PROCEDURE", @"FUNCTION"])
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 		
 		// Retrieve the array of selected procedures or functions, and skip export if not selected
 		NSMutableArray *items;
@@ -683,7 +682,10 @@
 			for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
 			{
 				// Check for cancellation flag
-				if ([self isCancelled]) goto end_cleanup;
+				if ([self isCancelled]) {
+					[self endCleanup:oldSqlMode];
+					return;
+				}
 
 				NSDictionary *proceduresList = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 				NSString *procedureName = [NSString stringWithFormat:@"%@", [proceduresList objectForKey:@"Name"]];
@@ -696,8 +698,8 @@
 				{
 					// Check for cancellation flag
 					if ([self isCancelled]) {
-						[proceduresList release];
-						goto end_cleanup;
+						[self endCleanup:oldSqlMode];
+						return;
 					}
 					
 					if ([NSArrayObjectAtIndex(item, 0) isEqualToString:procedureName]) {
@@ -821,12 +823,13 @@
 	// Inform the delegate that the export process is complete
 	[delegate performSelectorOnMainThread:@selector(sqlExportProcessComplete:) withObject:self waitUntilDone:NO];
 
-end_cleanup:
+	[self endCleanup:oldSqlMode];
+}
+
+- (void)endCleanup:(NSString *)oldSqlMode {
 	if(oldSqlMode) {
 		[connection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@",[oldSqlMode tickQuotedString]]];
 	}
-	[errors release];
-	[sqlString release];
 }
 
 /**
@@ -937,20 +940,6 @@ end_cleanup:
 	[fieldString release];
 	
 	return [placeholderSyntax autorelease];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(sqlExportTables);
-	SPClear(sqlDatabaseHost);
-	SPClear(sqlDatabaseName);
-	SPClear(sqlExportCurrentTable);
-	SPClear(sqlDatabaseVersion);
-	SPClear(sqlExportErrors);
-	
-	[super dealloc];
 }
 
 @end

@@ -140,7 +140,7 @@
 
 - (void)dealloc
 {
-	if (fieldType) SPClear(fieldType);
+	
 	
 	[super dealloc];
 }

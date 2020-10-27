@@ -487,8 +487,8 @@
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	SPClear(info);
-	SPClear(activities);
+	
+	
 	
 	[super dealloc];
 }

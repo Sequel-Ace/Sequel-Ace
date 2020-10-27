@@ -421,7 +421,7 @@ enum trackingAreaIDs
 // -------------------------------------------------------------------------------
 - (void)dealloc
 {
-	SPClear(trackingAreas);
+	
 	
 	[super dealloc];
 }

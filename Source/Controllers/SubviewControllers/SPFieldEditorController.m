@@ -187,12 +187,12 @@ typedef enum {
 	}
 
 	[self setEditedFieldInfo:nil];
-	if ( sheetEditData ) SPClear(sheetEditData);
-	if ( qlTypes )       SPClear(qlTypes);
-	if ( tmpFileName )   SPClear(tmpFileName);
-	if ( tmpDirPath )    SPClear(tmpDirPath);
-	if ( esUndoManager ) SPClear(esUndoManager);
-	if ( contextInfo )   SPClear(contextInfo);
+	
+	
+	
+	
+	
+	
 	
 	[super dealloc];
 }
@@ -500,7 +500,7 @@ typedef enum {
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
 		}
 		
-		if (stringValue) SPClear(stringValue);
+		
 
 		editSheetWillBeInitialized = NO;
 

@@ -235,9 +235,9 @@ static CGFloat slow_in_out (CGFloat t)
 - (void)dealloc
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	SPClear(didOpenAtDate);
-	SPClear(webView);
-	SPClear(webPreferences);
+	
+	
+	
 	[super dealloc];
 }
 
@@ -453,7 +453,6 @@ static CGFloat slow_in_out (CGFloat t)
 {
 	if(animationTimer)
 	{
-		[[self retain] autorelease];
 		[animationTimer invalidate];
 		[self setValue:nil forKey:@"animationTimer"];
 		[self setValue:nil forKey:@"animationStart"];

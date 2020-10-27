@@ -228,7 +228,7 @@
 
 - (void)dealloc
 {
-	if (exportFileHandle) SPClear(exportFileHandle);
+	
 	
 	[super dealloc];
 }

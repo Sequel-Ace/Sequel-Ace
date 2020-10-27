@@ -47,6 +47,7 @@
 #import "SPEditorTokens.h"
 #import "SPSyntaxParser.h"
 #import "SPHelpViewerClient.h"
+#import "SPTableData.h"
 
 #import "Sequel_Ace-Swift.h"
 
@@ -3575,17 +3576,8 @@ retry:
 	[prefs removeObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords];
 
 	if (completionIsOpen) (void)([completionPopup close]), completionIsOpen = NO;
-	SPClear(prefs);
-	SPClear(lineNumberView);
-	if(queryHiliteColor)           SPClear(queryHiliteColor);
-	if(queryEditorBackgroundColor) SPClear(queryEditorBackgroundColor);
-	if(commentColor)               SPClear(commentColor);
-	if(quoteColor)                 SPClear(quoteColor);
-	if(keywordColor)               SPClear(keywordColor);
-	if(backtickColor)              SPClear(backtickColor);
-	if(numericColor)               SPClear(numericColor);
-	if(variableColor)              SPClear(variableColor);
-	if(otherTextColor)             SPClear(otherTextColor);
+	
+	
 	[super dealloc];
 }
 

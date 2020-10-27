@@ -317,15 +317,15 @@
 	[status removeAllObjects];
 
 	if (triggers != nil) {
-		SPClear(triggers);
+		
 	}
 
 	if (tableEncoding != nil) {
-		SPClear(tableEncoding);
+		
 	}
 
 	if (tableCreateSyntax != nil) {
-		SPClear(tableCreateSyntax);
+		
 	}
 }
 
@@ -499,7 +499,7 @@
 	// connection reconnect dialog to appear and the user chose to close the connection.
 	if (!syntaxResult) return nil;
 
-	if (tableCreateSyntax != nil) SPClear(tableCreateSyntax);
+	
 
 	// A NULL value indicates that the user does not have permission to view the syntax
 	if ([[syntaxResult objectAtIndex:1] isNSNull]) {
@@ -873,7 +873,7 @@
 	}
 
 	// Retrieve the table syntax string
-	if (tableCreateSyntax) SPClear(tableCreateSyntax);
+	
 	NSString *syntaxString = [[theResult getRowAsArray] objectAtIndex:1];
 	
 	// Crash reports indicate that this does happen, however I'm not sure why.
@@ -1113,7 +1113,7 @@
 				[NSApp mainWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [mySQLConnection lastErrorMessage]]
 			);
-			if (triggers) SPClear(triggers);
+			
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 
@@ -1424,15 +1424,15 @@
  */
 - (void)dealloc
 {
-	SPClear(columns);
-	SPClear(columnNames);
-	SPClear(constraints);
-	SPClear(status);
-	SPClear(primaryKeyColumns);
+	
+	
+	
+	
+	
 
-	if (triggers)          SPClear(triggers);
-	if (tableEncoding)     SPClear(tableEncoding);
-	if (tableCreateSyntax) SPClear(tableCreateSyntax);
+	
+	
+	
 	[self setConnection:nil];
 
 	pthread_mutex_destroy(&dataProcessingLock);

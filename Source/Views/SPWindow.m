@@ -30,6 +30,7 @@
 
 #import "SPWindow.h"
 #import "SPWindowController.h"
+#import "SPDatabaseDocument.h"
 
 @implementation SPWindow
 

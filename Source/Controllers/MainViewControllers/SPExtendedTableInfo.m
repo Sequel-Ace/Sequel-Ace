@@ -146,7 +146,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
 					  modalDelegate:self 
 					 didEndSelector:@selector(confirmChangeTableTypeDidEnd:returnCode:contextInfo:) 
-						contextInfo:dataDict];
+						contextInfo:(__bridge void * _Nullable)(dataDict)];
 }
 
 /**
@@ -747,7 +747,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	SPClear(connection);
+	
 	
 	[super dealloc];
 }

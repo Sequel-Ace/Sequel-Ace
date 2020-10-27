@@ -719,8 +719,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 - (void)dealloc
 {
-	SPClear(triggerData);
-	SPClear(editedTrigger);
+	
+	
 
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 

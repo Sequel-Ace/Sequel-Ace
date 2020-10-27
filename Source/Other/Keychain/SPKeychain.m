@@ -91,7 +91,7 @@
 		if ((SecTrustedApplicationCreateFromPath(NULL, &sequelProRef) == noErr) &&
 			(SecTrustedApplicationCreateFromPath([helperPath UTF8String], &sequelProHelperRef) == noErr)) {
 
-			NSArray *trustedApps = [NSArray arrayWithObjects:(id)sequelProRef, (id)sequelProHelperRef, nil];
+			NSArray *trustedApps = [NSArray arrayWithObjects:(__bridge id)sequelProRef, (__bridge id)sequelProHelperRef, nil];
 
 			status = SecAccessCreate((CFStringRef)name, (CFArrayRef)trustedApps, &passwordAccessRef);
 

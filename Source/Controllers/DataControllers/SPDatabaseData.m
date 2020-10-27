@@ -90,12 +90,12 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 	[storageEngines removeAllObjects];
 	
 	@synchronized(charsetCollationLock) {
-		SPClear(characterSetEncoding);
-		SPClear(defaultCollationForCharacterSet);
-		SPClear(defaultCharacterSetEncoding);
-		SPClear(defaultCollation);
-		SPClear(serverDefaultCharacterSetEncoding);
-		SPClear(serverDefaultCollation);
+		
+		
+		
+		
+		
+		
 		
 		[collations removeAllObjects];
 		[characterSetEncodings removeAllObjects];
@@ -160,7 +160,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		if (encoding && ((characterSetEncoding == nil) || (![characterSetEncoding isEqualToString:encoding]) || ([characterSetCollations count] == 0))) {
 			
 			[characterSetEncoding release];
-			SPClear(defaultCollationForCharacterSet); //depends on encoding
+			 //depends on encoding
 			[characterSetCollations removeAllObjects];
 			
 			characterSetEncoding = [[NSString alloc] initWithString:encoding];
@@ -597,14 +597,14 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 {
 	[self resetAllData];
 	
-	SPClear(storageEngines);
+	
 	@synchronized(charsetCollationLock) {
-		SPClear(collations);
-		SPClear(characterSetEncodings);
-		SPClear(characterSetCollations);
-		SPClear(cachedCollationsByEncoding);
+		
+		
+		
+		
 	}
-	SPClear(charsetCollationLock);
+	
 	
 	[super dealloc];
 }

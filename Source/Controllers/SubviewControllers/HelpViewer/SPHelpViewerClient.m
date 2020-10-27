@@ -129,7 +129,7 @@
 		[theTitle setString:NSLocalizedString(@"Error", @"Mysql Help Viewer : window title : query error")];
 		NSString *errMsg = [NSString stringWithFormat:@"ERROR %lu (%@): %@", (unsigned long)[mySQLConnection lastErrorID], [mySQLConnection lastSqlstate], [mySQLConnection lastErrorMessage]];
 		[theHelp appendFormat:@"<b>%@:</b><br><p class='error'>%@</p>", NSLocalizedString(@"MySQL Help Query Failed", @"Mysql Help Viewer : title of error message"), errMsg];
-		goto generate_help;
+		return [self generateHelp:theTitle theHelp:theHelp];
 	}
 
 	// nothing found?
@@ -141,7 +141,7 @@
 		if(![theResult numberOfRows]) {
 			[theTitle appendFormat:@": %@", NSLocalizedString(@"No Results", @"Mysql Help Viewer : window title : nothing found")];
 			[theHelp appendFormat:@"<em class='nothing'>%@</em>", NSLocalizedString(@"No results found.", @"Mysql Help Viewer : Search : No results")];
-			goto generate_help;
+			return [self generateHelp:theTitle theHelp:theHelp];
 		}
 	}
 
@@ -223,26 +223,25 @@
 		[theHelp appendString:@"</ul>"];
 	}
 
-	[tableDetails release];
+	return [self generateHelp:theTitle theHelp:theHelp];
+}
 
-generate_help:
-	{ // C syntax disallows a new variable directly following a label…
-		NSString *addBodyClass = @"";
-		// Add CSS class if running in dark UI mode (10.14+)
-		if (@available(macOS 10.14, *)) {
-			NSString *match = [[[controller window] effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
-			// aqua is already the default theme
-			if ([NSAppearanceNameDarkAqua isEqualToString:match]) {
-				addBodyClass = @"dark";
-			}
+- (NSString *)generateHelp:(NSString *)theTitle theHelp:(NSString *)theHelp {
+	NSString *addBodyClass = @"";
+	// Add CSS class if running in dark UI mode (10.14+)
+	if (@available(macOS 10.14, *)) {
+		NSString *match = [[[controller window] effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
+		// aqua is already the default theme
+		if ([NSAppearanceNameDarkAqua isEqualToString:match]) {
+			addBodyClass = @"dark";
 		}
-
-		return [engine processTemplate:helpHTMLTemplate withVariables:@{
-			@"bodyClass": addBodyClass,
-			@"title": theTitle,
-			@"body": theHelp,
-		}];
 	}
+
+	return [engine processTemplate:helpHTMLTemplate withVariables:@{
+		@"bodyClass": addBodyClass,
+		@"title": theTitle,
+		@"body": theHelp,
+	}];
 }
 
 + (NSString *)linkToHelpTopic:(NSString *)aTopic
@@ -289,9 +288,9 @@ generate_help:
 
 	mySQLConnection = nil;
 
-	SPClear(controller);
-	SPClear(helpHTMLTemplate);
-	SPClear(engine);
+	
+	
+	
 
 	[super dealloc];
 }

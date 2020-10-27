@@ -68,7 +68,7 @@ static inline NSString *PathForHTMLResource(NSString *named)
 OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview, CFURLRef url, CFStringRef contentTypeUTI, CFDictionaryRef options)
 {
 	@autoreleasepool {
-		NSURL *myURL = (NSURL *)url;
+		NSURL *myURL = (__bridge NSURL *)url;
 		NSString *urlExtension = [[[myURL path] pathExtension] lowercaseString];
 
 		NSString *html = nil;
@@ -123,12 +123,10 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 			[props setObject:[NSNumber numberWithInt:NSUTF8StringEncoding] forKey:(NSString *)kQLPreviewPropertyStringEncodingKey];
 			[props setObject:@"text/html" forKey:(NSString *)kQLPreviewPropertyMIMETypeKey];
 
-			QLPreviewRequestSetDataRepresentation(
-				preview,
-				(CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
-				kUTTypeHTML,
-				(CFDictionaryRef)props
-			);
+			QLPreviewRequestSetDataRepresentation(preview,
+												  (CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
+												  kUTTypeHTML,
+												  (__bridge CFDictionaryRef)props);
 
 			[props release];
 			[imgProps release];
@@ -579,7 +577,6 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 		
 		// now loop through all the tokens
 		NSUInteger poolCount = 0;
-		NSAutoreleasePool *loopPool = [[NSAutoreleasePool alloc] init];
 		while ((token=yylex())){
 			skipFontTag = NO;
 			switch (token) {
@@ -618,7 +615,7 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 			
 			if (QLPreviewRequestIsCancelled(preview)) {
 				if (sqlHTML) {
-					SPClear(sqlHTML);
+					
 				}
 				if (truncatedString) {
 					[truncatedString release];
@@ -628,18 +625,14 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 					[sqlText release];
 					sqlHTML = nil;
 				}
-				[loopPool release];
 				return nil;
 			}
 			
 			poolCount++;
 			if (poolCount > 1000) {
 				poolCount = 0;
-				[loopPool release];
-				loopPool = [[NSAutoreleasePool alloc] init];
 			}
 		}
-		[loopPool release];
 		[sqlHTML appendString:truncatedString];
 		[sqlText release];
 		[truncatedString release];

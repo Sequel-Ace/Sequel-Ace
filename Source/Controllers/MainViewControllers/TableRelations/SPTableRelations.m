@@ -326,7 +326,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 		[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 
-		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:SPRemoveRelation];
+		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(SPRemoveRelation)];
 	}
 }
 
@@ -687,8 +687,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:SPUseMonospacedFonts];
 
-	SPClear(relationData);
-	SPClear(takenConstraintNames);
+	
+	
 
 	[super dealloc];
 }

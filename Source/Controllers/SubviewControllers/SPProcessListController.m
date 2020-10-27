@@ -417,7 +417,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		if (returnCode == NSAlertDefaultReturn) [self _startAutoRefreshTimerWithInterval:[customIntervalTextField integerValue]];
 	}
 	else {
-		NSDictionary *userInfo = [(NSDictionary *)contextInfo autorelease]; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
+		NSDictionary *userInfo = [(__bridge NSDictionary *)contextInfo autorelease]; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
 		if (returnCode == NSAlertDefaultReturn) {
 			long long processId = [[userInfo objectForKey:SPKillIdKey] longLongValue];
 			
@@ -517,7 +517,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 {	
 	// If the filtered array is allocated and it's not a reference to the processes array get rid of it
 	if ((processesFiltered) && (processesFiltered != processes)) {
-		SPClear(processesFiltered);
+		
 	}
 	
 	// Kill the auto refresh timer if running
@@ -571,7 +571,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// If the auto refresh timer is running, kill it
 	if (autoRefreshTimer && [autoRefreshTimer isValid]) {		
 		[autoRefreshTimer invalidate];
-		SPClear(autoRefreshTimer);
+		
 	}
 }
 
@@ -734,7 +734,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// If the filtered array is allocated and its not a reference to the processes array,
 	// relase it to prevent memory leaks upon the next allocation.
 	if ((processesFiltered) && (processesFiltered != processes)) {
-		SPClear(processesFiltered);
+		
 	}
 	
 	processesFiltered = [[NSMutableArray alloc] init];
@@ -872,9 +872,9 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 
 	[self _removePreferenceObservers];
 
-	SPClear(processes);
 	
-	if (autoRefreshTimer) SPClear(autoRefreshTimer);
+	
+	
 	
 	[super dealloc];
 }

@@ -266,7 +266,7 @@ NSString *SPMainToolbarTableRelations            = @"SwitchToTableRelationsToolb
 NSString *SPMainToolbarTableTriggers             = @"SwitchToTableTriggersToolbarItemIdentifier";
 NSString *SPMainToolbarUserManager               = @"SwitchToUserManagerToolbarItemIdentifier";
 
-NSString **SPViewModeToMainToolbarMap[] =
+NSString __strong **SPViewModeToMainToolbarMap[] =
 {
 	nil,
 	&SPMainToolbarTableStructure,
@@ -449,10 +449,3 @@ NSString *SPURLSchemeQueryResultMetaPathHeader     = @"~/tmp/SP_QUERY_META_";
 
 NSString *SPCommonCryptoExceptionName = @"SPCommonCryptoException";
 NSString *SPErrorDomain = @"SPErrorDomain";
-
-void inline _SPClear(id *addr) {
-	if (addr == nil) {
-		return;
-	}
-	(void)([*addr release]), *addr = nil;
-}

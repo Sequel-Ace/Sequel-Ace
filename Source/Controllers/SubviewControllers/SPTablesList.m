@@ -310,7 +310,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemToReselect] integerValue];
 	} 
 	else {
-		if (selectedTableName) SPClear(selectedTableName);
+		
 		selectedTableType = SPTableTypeNone;
 	}
 
@@ -388,7 +388,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	   modalForWindow:[tableDocumentInstance parentWindow]
 		modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:SPAddNewTable];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPAddNewTable)];
 }
 
 
@@ -566,7 +566,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
 					  modalDelegate:self 
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) 
-						contextInfo:SPRemoveTable];
+						contextInfo:(__bridge void * _Nullable)(SPRemoveTable)];
 }
 
 /**
@@ -612,7 +612,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	   modalForWindow:[tableDocumentInstance parentWindow]
 		modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:SPDuplicateTable];
+		  contextInfo:(__bridge void * _Null_unspecified)SPDuplicateTable];
 }
 
 /**
@@ -666,7 +666,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[alert setInformativeText:NSLocalizedString(@"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.", @"truncate tables informative message")];
 	}
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:SPTruncateTable];
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(SPTruncateTable)];
 }
 
 /**
@@ -820,7 +820,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if (!selectionDetails || ![selectionDetails objectForKey:@"name"]) {
 		NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 		// Update the selected table name and type
-		if (selectedTableName) SPClear(selectedTableName);
+		
 
 		// Set gear menu items Remove/Duplicate table/view according to the table types
 		// if at least one item is selected
@@ -1696,7 +1696,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[tableInfoInstance tableChanged:nil];
 		}
 		
-		if (selectedTableName) SPClear(selectedTableName);
+		
 		
 		selectedTableType = SPTableTypeNone;
 		
@@ -1719,7 +1719,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Save existing scroll position and details
 	[spHistoryControllerInstance updateHistoryEntries];
 
-	if (selectedTableName) SPClear(selectedTableName);
+	
 	
 	selectedTableName = [[NSString alloc] initWithString:newName];
 	selectedTableType = newType;
@@ -1976,7 +1976,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] > 1) {
 		[self deselectAllTables];
 
-		if (selectedTableName) SPClear(selectedTableName);
+		
 	}
 
 	if ([[listFilterField stringValue] length]) {
@@ -2750,13 +2750,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	SPClear(tables);
-	SPClear(tableTypes);
+	
+	
 
-	if (isTableListFiltered && filteredTables)     SPClear(filteredTables);
-	if (isTableListFiltered && filteredTableTypes) SPClear(filteredTableTypes);
-	if (selectedTableName)                         SPClear(selectedTableName);
-	if (addTableCharsetHelper)                     SPClear(addTableCharsetHelper);
+	
+	
+	
+	
 	
 	[super dealloc];
 }

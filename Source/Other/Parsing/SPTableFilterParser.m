@@ -60,7 +60,6 @@
 
 - (void)dealloc
 {
-	SPClear(_clause);
 	
 	[self setCurrentField:nil];
 	[self setArgument:nil];

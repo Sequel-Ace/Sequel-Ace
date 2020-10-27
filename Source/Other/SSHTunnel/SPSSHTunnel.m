@@ -138,8 +138,8 @@ static unsigned short getRandomPort(void);
 {
 
 	// As this object is not a NSWindowController, use manual top-level nib item management
-	if (sshQuestionDialog) SPClear(sshQuestionDialog);
-	if (sshPasswordDialog) SPClear(sshPasswordDialog);
+	
+	
 
 	parentWindow = theWindow;
 	if (![NSBundle.mainBundle loadNibNamed:@"SSHQuestionDialog" owner:self topLevelObjects:nil]) {
@@ -179,7 +179,7 @@ static unsigned short getRandomPort(void);
  */
 - (BOOL)setPasswordKeychainName:(NSString *)theName account:(NSString *)theAccount
 {
-	if (password) SPClear(password);
+	
 
 	passwordInKeychain = YES;
 	keychainName = [[NSString alloc] initWithString:theName];
@@ -506,8 +506,8 @@ static unsigned short getRandomPort(void);
 		}
 
 		// On tunnel close, clean up, ready for re-use if the delegate reconnects.
-		SPClear(task);
-		SPClear(standardError);
+		
+		
 		[[NSNotificationCenter defaultCenter] removeObserver:self
 		                                                name:NSFileHandleDataAvailableNotification
 		                                              object:nil];
@@ -523,8 +523,8 @@ static unsigned short getRandomPort(void);
 		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
 		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
 
-		SPClear(taskEnvironment);
-		SPClear(taskArguments);
+		
+		
 	}
 }
 
@@ -731,7 +731,7 @@ static unsigned short getRandomPort(void);
 	NSString *thePassword = nil;
 	if (requestedPassphrase) {
 		thePassword = [NSString stringWithString:requestedPassphrase];
-		SPClear(requestedPassphrase);
+		
 	}
 
 	// Unlock the lock again
@@ -799,7 +799,7 @@ static unsigned short getRandomPort(void);
 			SPKeychain *keychain = [[SPKeychain alloc] init];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
 			[keychain release];
-			SPClear(currentKeyName);
+			
 		}
 	}
 	
@@ -816,28 +816,28 @@ static unsigned short getRandomPort(void);
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self disconnect];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	SPClear(sshHost);
-	SPClear(sshLogin);
-	SPClear(remoteHost);
-	SPClear(tunnelConnectionName);
-	SPClear(tunnelConnectionVerifyHash);
+	
+	
+	
+	
+	
 	[tunnelConnection invalidate];
-	SPClear(tunnelConnection);
+	
 	[self setLastError:nil];
-	SPClear(lastErrorLock);
-	SPClear(debugMessages);
-	SPClear(debugMessagesLock);
+	
+	
+	
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
-	SPClear(answerAvailableLock);
-	SPClear(password);
-	SPClear(keychainName);
-	SPClear(keychainAccount);
-	SPClear(identityFilePath);
+	
+	
+	
+	
+	
 
 	// As this object is not a NSWindowController, use manual top-level nib item management
-	SPClear(sshQuestionDialog);
-	SPClear(sshPasswordDialog);
+	
+	
 	
 	[super dealloc];
 }

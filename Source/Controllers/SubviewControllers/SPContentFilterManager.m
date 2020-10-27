@@ -941,9 +941,9 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 - (void)dealloc
 {
-	SPClear(contentFilters);
-	SPClear(filterType);
-	SPClear(documentFileURL);
+	
+	
+	
 	
 	[super dealloc];
 }

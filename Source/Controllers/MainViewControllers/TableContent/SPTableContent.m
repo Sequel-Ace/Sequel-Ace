@@ -56,6 +56,8 @@
 #import "SPFunctions.h"
 #import "SPRuleFilterController.h"
 #import "SPFilterTableController.h"
+#import "SPSplitView.h"
+#import "SPExtendedTableInfo.h"
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
@@ -352,7 +354,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[countText setStringValue:@""];
 
 	// Reset sort column
-	if (sortCol) SPClear(sortCol);
+	
 	isDesc = NO;
 
 	// Empty and disable filter options
@@ -411,7 +413,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
 
 	// Reset table key store for use in argumentForRow:
-	if (keys) SPClear(keys);
+	
 
 	// Check the supplied table name.  If it matches the old one, a reload is being performed;
 	// reload the data in-place to maintain table state if possible.
@@ -426,7 +428,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Otherwise store the newly selected table name and reset the data
 	} else {
-		if (selectedTable) SPClear(selectedTable);
+		
 		if (newTableName) selectedTable = [[NSString alloc] initWithString:newTableName];
 		previousTableRowsCount = 0;
 		contentPage = 1;
@@ -605,7 +607,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Otherwise, clear sorting
 	} else {
 		if (sortCol) {
-			SPClear(sortCol);
+			
 		}
 		isDesc = NO;
 	}
@@ -1083,7 +1085,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	if (tableLoadTimer) {
 		[tableLoadTimer invalidate];
-		SPClear(tableLoadTimer);
+		
 	}
 }
 
@@ -1210,7 +1212,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 	// If a string was supplied, use a custom query from that URL scheme
 	else if([sender isKindOfClass:[NSString class]] && [(NSString *)sender length]) {
-		if(schemeFilter) SPClear(schemeFilter);
+		
 		schemeFilter = [sender retain];
 		activeFilter = SPTableContentFilterSourceURLScheme;
 		resetPaging = YES;
@@ -1356,7 +1358,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// this is the same as saying (isDesc && !invert) || (!isDesc && invert)
 			if (isDesc != invert) {
-				SPClear(sortCol);
+				
 			}
 			else {
 				isDesc = !isDesc;
@@ -1793,7 +1795,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow]
 	                  modalDelegate:self
 	                 didEndSelector:@selector(removeRowSheetDidEnd:returnCode:contextInfo:)
-	                    contextInfo:contextInfo];
+						contextInfo:(__bridge void * _Nullable)(contextInfo)];
 }
 
 /**
@@ -1810,7 +1812,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
 
-	if ( [(NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
+	if ( [(__bridge NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
 		if ( returnCode == NSAlertDefaultReturn ) {
 
 			// Check if the user is currently editing a row, and revert to ensure a somewhat
@@ -1843,7 +1845,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					afterDelay:0.3];
 			}
 		}
-	} else if ( [(NSString*)contextInfo isEqualToString:@"removerow"] ) {
+	} else if ( [(__bridge NSString*)contextInfo isEqualToString:@"removerow"] ) {
 		if ( returnCode == NSAlertDefaultReturn ) {
 			[selectedRows addIndexes:[tableContentView selectedRowIndexes]];
 
@@ -3346,7 +3348,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setSortColumnNameToRestore:(NSString *)theSortColumnName isAscending:(BOOL)isAscending
 {
-	if (sortColumnToRestore) SPClear(sortColumnToRestore);
+	
 
 	if (theSortColumnName) {
 		sortColumnToRestore = [[NSString alloc] initWithString:theSortColumnName];
@@ -3367,7 +3369,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setSelectionToRestore:(NSDictionary *)theSelection
 {
-	if (selectionToRestore) SPClear(selectionToRestore);
+	
 
 	if (theSelection) selectionToRestore = [theSelection copy];
 }
@@ -3386,7 +3388,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void) setFiltersToRestore:(NSDictionary *)filterSettings
 {
 	[filterSettings retain];
-	SPClear(filtersToRestore);
+	
 	filtersToRestore = filterSettings;
 }
 
@@ -4612,25 +4614,25 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:tableContentView];
 
-	if(fieldEditor) SPClear(fieldEditor);
+	
 
 	[self clearTableLoadTimer];
-	SPClear(tableValues);
+	
 	pthread_mutex_destroy(&tableValuesLock);
-	SPClear(dataColumns);
-	SPClear(oldRow);
-	SPClear(paginationPopover);
-	SPClear(paginationViewController);
+	
+	
+	
+	
 
-	if (selectedTable)          SPClear(selectedTable);
-	if (keys)                   SPClear(keys);
-	if (sortCol)                SPClear(sortCol);
-	SPClear(usedQuery);
-	if (sortColumnToRestore)    SPClear(sortColumnToRestore);
-	if (selectionToRestore)     SPClear(selectionToRestore);
-	if (cqColumnDefinition)     SPClear(cqColumnDefinition);
+	
+	
+	
+	
+	
+	
+	
 
-	SPClear(filtersToRestore);
+	
 
 	[super dealloc];
 }

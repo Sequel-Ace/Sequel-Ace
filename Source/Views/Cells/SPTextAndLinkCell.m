@@ -70,7 +70,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (void) dealloc
 {
-	if (linkButton) SPClear(linkButton);
+	
 
 	[super dealloc];
 }

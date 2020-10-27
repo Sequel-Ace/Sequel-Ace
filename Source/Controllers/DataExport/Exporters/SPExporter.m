@@ -130,10 +130,10 @@
  */
 - (void)dealloc
 {
-	if (exportData) SPClear(exportData);
-	if (connection) SPClear(connection);
+	
+	
 	[self setServerSupport:nil];
-	if (exportOutputFile) SPClear(exportOutputFile);
+	
 	
 	[super dealloc];
 }

@@ -585,7 +585,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				}];
 				[item setTarget:self];
 				[item setAction:@selector(_menuItemInRuleEditorClicked:)];
-				[item autorelease];
 			}
 			return item;
 		}
@@ -1065,10 +1064,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	// WARNING: THIS MUST COME AFTER -unbind:! See the class comment on ModelContainer for the reasoning
-	SPClear(_modelContainer);
-	SPClear(columns);
-	SPClear(contentFilters);
-	SPClear(numberOfDefaultFilters);
+	
+	
+	
+	
 	[super dealloc];
 }
 

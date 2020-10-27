@@ -153,7 +153,10 @@
 		BOOL structureWasUpdated = NO;
 
 		[self _addToListAndWaitForFrontCancellingOtherThreads:[[userInfo objectForKey:@"cancelQuerying"] boolValue]];
-		if([[NSThread currentThread] isCancelled]) goto cleanup_thread_and_pool;
+		if([[NSThread currentThread] isCancelled]) {
+			[self _removeThreadFromList];
+			return;
+		}
 
 		// This thread is now first on the stack, and about to process the structure.
 		[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureIsUpdating" object:self];
@@ -231,7 +234,16 @@
 
 		// If it has been determined that no new structure needs to be retrieved, clean up and return.
 		if (!shouldQueryStructure) {
-			goto update_globals_and_cleanup;
+			// Update the global variables
+			[self _updateGlobalVariablesWithStructure:queriedStructure keys:queriedStructureKeys];
+
+			if(structureWasUpdated) {
+				// Notify that the structure querying has been performed
+				[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureWasUpdated" object:self];
+			}
+
+			// Remove this thread from the processing stack
+			[self _removeThreadFromList];
 		}
 
 		// Retrieve the tables and views for this database from SPTablesList
@@ -255,7 +267,8 @@
 		if ([tablesAndViews count] > 2000) {
 			NSLog(@"%lu items in database %@. Only 2000 items can be parsed. Stopped parsing.", (unsigned long)[tablesAndViews count], currentDatabase);
 
-			goto cleanup_thread_and_pool;
+			[self _removeThreadFromList];
+			return;
 		}
 
 #if 0
@@ -296,8 +309,9 @@
 			// check the connection.
 			// also NO if thread is cancelled which is fine, too (same consequence).
 			if(![self _checkConnection]) {
-				goto cleanup_thread_and_pool;
-			}
+				[self _removeThreadFromList];
+			 return;
+		 }
 
 			// Retrieve the column details
 			theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@ FROM %@", [aTableName backtickQuotedString], [currentDatabase backtickQuotedString]]];
@@ -354,7 +368,8 @@
 			// check the connection.
 			// also NO if thread is cancelled which is fine, too (same consequence).
 			if(![self _checkConnection]) {
-				goto cleanup_thread_and_pool;
+				[self _removeThreadFromList];
+				return;
 			}
 
 			// Retrieve the column details (only those we need so we don't fetch the whole function body which might be huge)
@@ -391,7 +406,6 @@
 			}
 		}
 
-update_globals_and_cleanup:
 		// Update the global variables
 		[self _updateGlobalVariablesWithStructure:queriedStructure keys:queriedStructureKeys];
 
@@ -400,7 +414,6 @@ update_globals_and_cleanup:
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureWasUpdated" object:self];
 		}
 
-cleanup_thread_and_pool:
 		// Remove this thread from the processing stack
 		[self _removeThreadFromList];
 	}
@@ -460,15 +473,15 @@ cleanup_thread_and_pool:
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
 	[self _destroy:nil];
-	SPClear(structureRetrievalThreads);
+	
 	
 	pthread_mutex_destroy(&threadManagementLock);
 	pthread_mutex_destroy(&dataLock);
 	pthread_mutex_destroy(&connectionCheckLock);
 	
-	if (mySQLConnection) SPClear(mySQLConnection);
-	if (structure) SPClear(structure);
-	if (allKeysofDbStructure) SPClear(allKeysofDbStructure);
+	
+	
+	
 	
 	[super dealloc];
 }

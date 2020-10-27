@@ -57,8 +57,6 @@
 	
 	NSThread *newThread = [[NSThread alloc] initWithTarget:namedThread selector:@selector(run:) object:anArgument];
 	[newThread start];
-	[newThread autorelease];
-	[namedThread autorelease];
 }
 
 @end
@@ -88,9 +86,9 @@
 
 - (void)dealloc
 {
-	SPClear(object);
+	
 	selector = NULL;
-	SPClear(name);
+	
 	[super dealloc];
 }
 

@@ -71,9 +71,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		[url stopAccessingSecurityScopedResource];
 	}
 	
-	SPClear(sslCiphers);
-	SPClear(bookmarks);
-	SPClear(resolvedBookmarks);
+	
+	
+	
 	
 	[super dealloc];
 }

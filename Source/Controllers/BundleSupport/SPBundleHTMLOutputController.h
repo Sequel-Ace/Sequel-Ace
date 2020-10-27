@@ -35,7 +35,7 @@
 	IBOutlet WebView *webView;
 
 	NSString *docTitle;
-	NSString *initHTMLSourceString;
+	NSString *initialHTMLSourceString;
 	NSString *windowUUID;
 	NSString *docUUID;
 	
@@ -45,7 +45,7 @@
 }
 
 @property(readwrite,retain) NSString *docTitle;
-@property(readwrite,retain) NSString *initHTMLSourceString;
+@property(readwrite,retain) NSString *initialHTMLSourceString;
 @property(readwrite,retain) NSString *windowUUID;
 @property(readwrite,retain) NSString *docUUID;
 @property(readwrite,retain) NSString *windowType;

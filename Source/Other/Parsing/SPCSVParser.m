@@ -55,7 +55,7 @@
 	// Loop through the results fetching process
 	while ((csvRowArray = [self getRowAsArrayAndTrimString:NO stringIsComplete:YES]))
 	{
-		CFArrayAppendValue((CFMutableArrayRef)csvArray, csvRowArray);
+		CFArrayAppendValue((CFMutableArrayRef)csvArray, (__bridge const void *)(csvRowArray));
 	}
 
 	// Return the array
@@ -469,7 +469,7 @@
  */
 - (void) setNullReplacementString:(NSString *)nullString
 {
-	if (nullReplacementString) SPClear(nullReplacementString);
+	
 
 	if (nullString) nullReplacementString = [[NSString alloc] initWithString:nullString];
 }
@@ -576,7 +576,7 @@
 {
 	NSMutableString *charactersToSkip;
 
-	if (skipCharacterSet) SPClear(skipCharacterSet);
+	
 
 	charactersToSkip = [[NSMutableString alloc] init];
 	if (![fieldEndString isEqualToString:@" "] && ![fieldQuoteString isEqualToString:@" "] && ![escapeString isEqualToString:@" "] && ![lineEndString isEqualToString:@" "])
@@ -650,17 +650,17 @@
 	return self;
 }
 - (void) dealloc {
-	SPClear(csvString);
-	SPClear(fieldEndString);
-	SPClear(lineEndString);
-	SPClear(fieldQuoteString);
-	SPClear(escapeString);
-	SPClear(escapedFieldEndString);
-	SPClear(escapedLineEndString);
-	SPClear(escapedFieldQuoteString);
-	SPClear(escapedEscapeString);
-	if (nullReplacementString) SPClear(nullReplacementString);
-	if (skipCharacterSet)      SPClear(skipCharacterSet);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	[super dealloc];
 }
 
