@@ -3020,7 +3020,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// Otherwise, in tables, save back to the row store
 			} else {
-				[tableValues replaceObjectInRow:row column:[theTableColumn identifier] integerValue] withObject:[[data copy]];
+				[tableValues replaceObjectInRow:row column:[[theTableColumn identifier] integerValue] withObject:[data copy]];
 			}
 		}
 	}

@@ -109,7 +109,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 
 		// Add a formatter for linebreak display
-		[column dataCell] setFormatter:[[SPDataCellFormatter new]];
+		[[column dataCell] setFormatter:[SPDataCellFormatter new]];
 	
 		// Also, if available restore the table's column widths
 		NSNumber *columnWidth = [[prefs objectForKey:SPProcessListTableColumnWidths] objectForKey:[[column headerCell] stringValue]];
@@ -670,7 +670,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 				// interfere with the NSTableView's reload cycle and there is no way
 				// to know when it starts/ends. We only know it will happen on the
 				// main thread, so we have to interlock with that.
-				[processes onMainThread] addObject:[[rowsFixed copy]];
+				[[processes onMainThread] addObject:[rowsFixed copy]];
 			}
 		}
 
