@@ -38,7 +38,6 @@
 	NSColorList *scl = [NSColorList colorListNamed:@"System"];
 	NSColor *color = [scl colorWithKey:name];
 	if(color) {
-		[color retain];
 		currentColor = color;
 		[self setNeedsDisplay:YES];
 	}
@@ -51,9 +50,5 @@
 	}
 }
 
-- (void)dealloc
-{
-	[super dealloc];
-}
 
 @end

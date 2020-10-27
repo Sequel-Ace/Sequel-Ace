@@ -165,7 +165,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 	
 	_identifierQuote = EMPTY_STRING;
 	
-    if (_query) (void)([_query release]), _query = [[NSMutableString alloc] init];
+    if (_query) (void)(_query), _query = [[NSMutableString alloc] init];
 }
 
 #pragma mark -
@@ -410,7 +410,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 		return fields;
 	}
 	
-	for (NSString *field in _fields)
+	for (__strong NSString *field in _fields)
 	{		
 		field = [field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 		
@@ -589,16 +589,15 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 - (void)dealloc
 {
-    if (_table) (void)([_table release]), _table = nil;
-    if (_database) (void)([_database release]), _database = nil;
-    if (_query) (void)([_query release]), _query = nil;
-    if (_parameters) (void)([_parameters release]), _parameters = nil;
-    if (_fields) (void)([_fields release]), _fields = nil;
-    if (_updateParameters) (void)([_updateParameters release]), _updateParameters = nil;
-    if (_groupByFields) (void)([_groupByFields release]), _groupByFields = nil;
-    if (_orderByFields) (void)([_orderByFields release]), _orderByFields = nil;
+    if (_table) (void)(_table), _table = nil;
+    if (_database) (void)(_database), _database = nil;
+    if (_query) (void)(_query), _query = nil;
+    if (_parameters) (void)(_parameters), _parameters = nil;
+    if (_fields) (void)(_fields), _fields = nil;
+    if (_updateParameters) (void)(_updateParameters), _updateParameters = nil;
+    if (_groupByFields) (void)(_groupByFields), _groupByFields = nil;
+    if (_orderByFields) (void)(_orderByFields), _orderByFields = nil;
 	
-	[super dealloc];
 }
 
 @end

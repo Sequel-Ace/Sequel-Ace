@@ -244,8 +244,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	}
 
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-
-	[super dealloc];
 }
 
 #pragma mark -

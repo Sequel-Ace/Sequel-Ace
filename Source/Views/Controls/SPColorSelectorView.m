@@ -98,7 +98,7 @@ enum trackingAreaIDs
 {
 	if ([binding isEqualToString:@"selectedTag"]) {
 		[observableObject addObserver:self forKeyPath:keyPath options:0 context:nil];
-		observer = [observableObject retain];
+		observer = observableObject;
 		observerKeyPath = [keyPath copy];
 	}
 	else {
@@ -415,11 +415,5 @@ enum trackingAreaIDs
 // -------------------------------------------------------------------------------
 //	dealloc:
 // -------------------------------------------------------------------------------
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
 
 @end

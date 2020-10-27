@@ -69,8 +69,8 @@
 
 }
 
-@property(retain) NSColor *alternateTextColor;
-@property(retain) NSColor *backgroundColor;
+@property(strong) NSColor *alternateTextColor;
+@property(strong) NSColor *backgroundColor;
 
 - (NSFont*)font;
 - (void)setFont:(NSFont*)aFont;

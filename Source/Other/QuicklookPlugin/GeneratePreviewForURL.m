@@ -124,7 +124,7 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 			[props setObject:@"text/html" forKey:(NSString *)kQLPreviewPropertyMIMETypeKey];
 
 			QLPreviewRequestSetDataRepresentation(preview,
-												  (CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
+												  (__bridge CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
 												  kUTTypeHTML,
 												  (__bridge CFDictionaryRef)props);
 		}
@@ -150,10 +150,10 @@ NSString *PreviewForSPF(NSURL *myURL, NSInteger *previewHeight) {
 											 error:&readError];
 	
 	if(pData && !readError) {
-		spf = [[NSPropertyListSerialization propertyListWithData:pData
+		spf = [NSPropertyListSerialization propertyListWithData:pData
 														 options:NSPropertyListImmutable
 														  format:NULL
-														   error:&readError] retain];
+														   error:&readError];
 	}
 	
 	NSString *html = nil;
@@ -381,10 +381,10 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 											 error:&readError];
 	
 	if(pData && !readError) {
-		spf = [[NSPropertyListSerialization propertyListWithData:pData
+		spf = [NSPropertyListSerialization propertyListWithData:pData
 														 options:NSPropertyListImmutable
 														  format:NULL
-														   error:&readError] retain];
+														   error:&readError];
 	}
 	
 	if(!spf || readError) {
@@ -436,10 +436,10 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 			NSDictionary *sessionSpf = nil;
 			pData = [NSData dataWithContentsOfFile:spfPath options:NSUncachedRead error:&readError];
 			if(pData && !readError) {
-				sessionSpf = [[NSPropertyListSerialization propertyListWithData:pData
+				sessionSpf = [NSPropertyListSerialization propertyListWithData:pData
 																		options:NSPropertyListImmutable
 																		 format:NULL
-																		  error:&readError] retain];
+																		  error:&readError];
 			}
 			
 			if(!sessionSpf || readError) {

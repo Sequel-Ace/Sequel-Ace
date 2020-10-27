@@ -813,10 +813,10 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				NSData *pData = [NSData dataWithContentsOfFile:filename options:NSUncachedRead error:&error];
 				
 				if(pData && !error) {
-					spf = [[NSPropertyListSerialization propertyListWithData:pData
+					spf = [NSPropertyListSerialization propertyListWithData:pData
 																	 options:NSPropertyListImmutable
 																	  format:NULL
-																	   error:&error] retain];
+																	   error:&error];
 				}
 				
 				if(!spf || error) {
@@ -927,13 +927,5 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 #pragma mark -
 
-- (void)dealloc
-{
-	
-	
-	
-	
-	[super dealloc];
-}
 
 @end

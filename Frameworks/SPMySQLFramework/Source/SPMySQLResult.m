@@ -113,8 +113,6 @@ static id NSNullPointer;
 	if (resultSet) {
 		mysql_free_result(resultSet);
 	}
-
-	[super dealloc];
 }
 
 #pragma mark -

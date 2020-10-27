@@ -277,7 +277,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	// Call dealloc on super to clean up everything else, and to throw an exception if
 	// the parent connection hasn't been cleaned up correctly.
-	[super dealloc];
 }
 
 #pragma mark - Result set information
@@ -317,7 +316,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 	// Construct a mutable array and add all the cells in the row
 	NSMutableArray *rowArray = [NSMutableArray arrayWithCapacity:numberOfFields];
 	for (NSUInteger columnIndex = 0; columnIndex < numberOfFields; columnIndex++) {
-		CFArrayAppendValue((CFMutableArrayRef)rowArray, SPMySQLResultStoreObjectAtRowAndColumn(self, rowIndex, columnIndex));
+		CFArrayAppendValue((CFMutableArrayRef)rowArray, (__bridge const void *)(SPMySQLResultStoreObjectAtRowAndColumn(self, rowIndex, columnIndex)));
 	}
 
 	return rowArray;
@@ -510,7 +509,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+	state->mutationsPtr = (__bridge unsigned long *)self;
 
 	return 1;
 }

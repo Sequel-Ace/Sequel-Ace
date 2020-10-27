@@ -18,14 +18,14 @@
 
 @interface ICUTemplateMatcher : NSObject <MGTemplateEngineMatcher>
 
-@property(atomic,assign) MGTemplateEngine *engine; // weak ref
-@property(atomic,retain) NSString *markerStart;
-@property(atomic,retain) NSString *markerEnd;
-@property(atomic,retain) NSString *exprStart;
-@property(atomic,retain) NSString *exprEnd;
-@property(atomic,retain) NSString *filterDelimiter;
-@property(atomic,retain) NSString *templateString;
-@property(atomic,retain) NSString *regex;
+@property(atomic,weak) MGTemplateEngine *engine; // weak ref
+@property(atomic,strong) NSString *markerStart;
+@property(atomic,strong) NSString *markerEnd;
+@property(atomic,strong) NSString *exprStart;
+@property(atomic,strong) NSString *exprEnd;
+@property(atomic,strong) NSString *filterDelimiter;
+@property(atomic,strong) NSString *templateString;
+@property(atomic,strong) NSString *regex;
 
 + (ICUTemplateMatcher *)matcherWithTemplateEngine:(MGTemplateEngine *)theEngine;
 

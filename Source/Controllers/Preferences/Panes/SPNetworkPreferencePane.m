@@ -75,7 +75,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	
 	
 	
-	[super dealloc];
 }
 
 #pragma mark -

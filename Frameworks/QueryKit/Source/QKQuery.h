@@ -47,7 +47,7 @@
 {
 	NSString *_database;
 	NSString *_table;
-	NSString *_identifierQuote;
+	NSString *__weak _identifierQuote;
 	
 	NSMutableString *_query;
 	
@@ -66,27 +66,27 @@
 /**
  * @property database The database the query is to be run against (optional).
  */
-@property(readwrite, retain) NSString *database;
+@property(readwrite, strong) NSString *database;
 
 /**
  * @property table The table the query is to be run against.
  */
-@property(readwrite, retain) NSString *table; 
+@property(readwrite, strong) NSString *table; 
 
 /**
  * @property parameters The parameters (constraints) of the query.
  */
-@property(readwrite, retain) NSMutableArray *parameters;
+@property(readwrite, strong) NSMutableArray *parameters;
 
 /**
  * @property fields The fields of the query.
  */
-@property(readwrite, retain) NSMutableArray *fields;
+@property(readwrite, strong) NSMutableArray *fields;
 
 /**
  * @property updateFields The fields of an UPDATE query.
  */
-@property(readwrite, retain) NSMutableArray *updateParameters;
+@property(readwrite, strong) NSMutableArray *updateParameters;
 
 /**
  * @property queryType The type of query to be built.
@@ -116,7 +116,7 @@
 /**
  * @property identifierQuote The character to use when quoting identifiers.
  */
-@property(readonly) NSString *identifierQuote;
+@property(weak, readonly) NSString *identifierQuote;
 
 + (QKQuery *)queryTable:(NSString *)table;
 + (QKQuery *)queryTable:(NSString *)table database:(NSString *)database;

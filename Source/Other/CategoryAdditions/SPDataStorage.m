@@ -73,7 +73,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 			}
 		}
 
-		[newDataStorage retain];
 
 		NSPointerArray *newEditedRows = [[NSPointerArray alloc] init];
 		NSUInteger newNumberOfColumns = [newDataStorage numberOfFields];
@@ -550,7 +549,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	
-	[super dealloc];
 }
 
 #pragma mark - Private API

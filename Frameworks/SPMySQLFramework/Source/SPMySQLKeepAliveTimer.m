@@ -92,11 +92,6 @@
 	}
 }
 
-- (void)dealloc
-{
-	[super dealloc];
-}
-
 #pragma mark - Private API
 
 /**
@@ -105,7 +100,7 @@
  */
 - (void)_initKeepAliveTimer
 {
-	wrappedTimer = [[NSTimer scheduledTimerWithTimeInterval:timerRepeatInterval target:self	selector:@selector(_forwardPing) userInfo:nil repeats:YES] retain];
+	wrappedTimer = [NSTimer scheduledTimerWithTimeInterval:timerRepeatInterval target:self	selector:@selector(_forwardPing) userInfo:nil repeats:YES];
 }
 
 /**

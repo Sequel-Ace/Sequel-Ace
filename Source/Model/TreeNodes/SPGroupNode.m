@@ -124,11 +124,5 @@ static NSString *SPGroupNodeIsExpandedKey = @"SPGroupNodeIsExpanded";
 
 #pragma mark -
 
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
 
 @end

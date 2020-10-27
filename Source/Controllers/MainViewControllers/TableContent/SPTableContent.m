@@ -78,7 +78,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 @interface ContentPaginationViewController : NSViewController
 {
-	id target;
+	id __unsafe_unretained target;
 	SEL action;
 
 	NSNumber *page;
@@ -92,7 +92,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)makeInputFirstResponder;
 - (BOOL)isFirstResponderInside;
 
-@property (assign, nonatomic) id target;
+@property (unsafe_unretained, nonatomic) id target;
 @property (assign, nonatomic) SEL action;
 
 // IB Bindings
@@ -749,7 +749,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Perform and process the query
 	[tableContentView performSelectorOnMainThread:@selector(noteNumberOfRowsChanged) withObject:nil waitUntilDone:YES];
 	[self setUsedQuery:queryString];
-	resultStore = [[mySQLConnection resultStoreFromQueryString:queryString] retain];
+	resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
 
 	// Ensure the number of columns are unchanged; if the column count has changed, abort the load
 	// and queue a full table reload.
@@ -772,7 +772,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		previousTableRowsCount = tableRowsCount;
 		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT 0,%ld", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
 		[self setUsedQuery:queryString];
-		resultStore = [[mySQLConnection resultStoreFromQueryString:queryString] retain];
+		resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
 		if (resultStore) {
 			[self updateResultStore:resultStore approximateRowCount:[prefs integerForKey:SPLimitResultsValue]];
 		}
@@ -872,7 +872,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	});
 
 	// Retrieve and cache the column definitions for editing views
-	cqColumnDefinition = [[resultStore fieldDefinitions] retain];
+	cqColumnDefinition = [resultStore fieldDefinitions];
 
 	// Notify listenters that the query has finished
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
@@ -1065,7 +1065,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableLoadLastRowCount = 0;
 	tableLoadTimerTicksSinceLastUpdate = 0;
 
-	tableLoadTimer = [[NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(tableLoadUpdate:) userInfo:nil repeats:YES] retain];
+	tableLoadTimer = [NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(tableLoadUpdate:) userInfo:nil repeats:YES];
 }
 
 /**
@@ -1202,7 +1202,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If a string was supplied, use a custom query from that URL scheme
 	else if([sender isKindOfClass:[NSString class]] && [(NSString *)sender length]) {
 		
-		schemeFilter = [sender retain];
+		schemeFilter = sender;
 		activeFilter = SPTableContentFilterSourceURLScheme;
 		resetPaging = YES;
 	}
@@ -3007,7 +3007,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ([data isKindOfClass:[NSString class]]
 			&& [data isEqualToString:[prefs objectForKey:SPNullValue]] && [[NSArrayObjectAtIndex(dataColumns, [[theTableColumn identifier] integerValue]) objectForKey:@"null"] boolValue])
 		{
-			data = [[NSNull null] retain];
+			data = [NSNull null];
 		}
 		if(isFieldEditable) {
 			if ([tablesListInstance tableType] == SPTableTypeView) {
@@ -3016,7 +3016,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				isEditingRow = NO;
 
 				// update the field and refresh the table
-				[self saveViewCellValue:[[data copy] autorelease] forTableColumn:theTableColumn row:row];
+				[self saveViewCellValue:[data copy] forTableColumn:theTableColumn row:row];
 
 			// Otherwise, in tables, save back to the row store
 			} else {
@@ -3027,7 +3027,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	
 	// this is a delegate method of the field editor controller. calling release
 	// now would risk a dealloc while it is still our parent on the stack:
-	(void)([fieldEditor autorelease]), fieldEditor = nil;
+	(void)(fieldEditor), fieldEditor = nil;
 
 	[[tableContentView window] makeFirstResponder:tableContentView];
 
@@ -3357,7 +3357,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setFiltersToRestore:(NSDictionary *)filterSettings
 {
-	[filterSettings retain];
 	
 	filtersToRestore = filterSettings;
 }
@@ -4598,7 +4597,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	
 
-	[super dealloc];
 }
 
 @end
@@ -4640,11 +4638,5 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	);
 }
 
-- (void)dealloc
-{
-	[self setPage:nil];
-	[self setMaxPage:nil];
-	[super dealloc];
-}
 
 @end

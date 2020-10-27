@@ -10,35 +10,35 @@
 		1713ECB014F96A5C0013C4F0 /* QKSelectQueryOrderByTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1713ECAF14F96A5C0013C4F0 /* QKSelectQueryOrderByTests.m */; };
 		1713ECD814F970BB0013C4F0 /* QKSelectQueryGroupByTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1713ECD714F970BB0013C4F0 /* QKSelectQueryGroupByTests.m */; };
 		1719E47D151E8CA7003F98C5 /* QKQueryUpdateParameter.h in Headers */ = {isa = PBXBuildFile; fileRef = 1719E47B151E8CA7003F98C5 /* QKQueryUpdateParameter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		1719E47E151E8CA7003F98C5 /* QKQueryUpdateParameter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1719E47C151E8CA7003F98C5 /* QKQueryUpdateParameter.m */; };
+		1719E47E151E8CA7003F98C5 /* QKQueryUpdateParameter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1719E47C151E8CA7003F98C5 /* QKQueryUpdateParameter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		1719E4BD151F51F1003F98C5 /* QKUpdateQueryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1719E4BA151F51EA003F98C5 /* QKUpdateQueryTests.m */; };
 		1726972915AAF6CE009586E1 /* QKQueryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1726972815AAF6CE009586E1 /* QKQueryTests.m */; };
 		1726976715AC3DD2009586E1 /* QKQueryDatabases.h in Headers */ = {isa = PBXBuildFile; fileRef = 1726976515AC3DD2009586E1 /* QKQueryDatabases.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		1726979515AEE939009586E1 /* QKQueryStringAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1726979315AEE939009586E1 /* QKQueryStringAdditions.h */; };
-		1726979615AEE939009586E1 /* QKQueryStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1726979415AEE939009586E1 /* QKQueryStringAdditions.m */; };
-		173F094A15B5720A00371974 /* QKQueryConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = 173F094915B5720A00371974 /* QKQueryConstants.m */; };
+		1726979615AEE939009586E1 /* QKQueryStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1726979415AEE939009586E1 /* QKQueryStringAdditions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		173F094A15B5720A00371974 /* QKQueryConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = 173F094915B5720A00371974 /* QKQueryConstants.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		17577F6715A98FEA00CDF67A /* QKTestConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = 17577F6615A98FEA00CDF67A /* QKTestConstants.m */; };
 		17577FC615A99AC000CDF67A /* QKQueryConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 17577FC415A99AC000CDF67A /* QKQueryConstants.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		1757801E15A9A14400CDF67A /* QKQueryGenericParameter.h in Headers */ = {isa = PBXBuildFile; fileRef = 1757801C15A9A14400CDF67A /* QKQueryGenericParameter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		1757801F15A9A14400CDF67A /* QKQueryGenericParameter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1757801D15A9A14400CDF67A /* QKQueryGenericParameter.m */; };
+		1757801F15A9A14400CDF67A /* QKQueryGenericParameter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1757801D15A9A14400CDF67A /* QKQueryGenericParameter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		179FEECA15B6CE50009B34F0 /* QKTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 179FEEC915B6CE50009B34F0 /* QKTestCase.m */; };
 		179FEF8E15BA7EB0009B34F0 /* QKDeleteQueryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 179FEF8D15BA7EB0009B34F0 /* QKDeleteQueryTests.m */; };
 		17E5951F14F301DF0054EE08 /* QKQuery.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5951614F301DF0054EE08 /* QKQuery.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		17E5952014F301DF0054EE08 /* QKQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5951714F301DF0054EE08 /* QKQuery.m */; };
+		17E5952014F301DF0054EE08 /* QKQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5951714F301DF0054EE08 /* QKQuery.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		17E5952114F301DF0054EE08 /* QKQueryOperators.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5951814F301DF0054EE08 /* QKQueryOperators.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E5952214F301DF0054EE08 /* QKQueryParameter.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5951914F301DF0054EE08 /* QKQueryParameter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		17E5952314F301DF0054EE08 /* QKQueryParameter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5951A14F301DF0054EE08 /* QKQueryParameter.m */; };
+		17E5952314F301DF0054EE08 /* QKQueryParameter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5951A14F301DF0054EE08 /* QKQueryParameter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		17E5952414F301DF0054EE08 /* QKQueryTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5951B14F301DF0054EE08 /* QKQueryTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E5952514F301DF0054EE08 /* QKQueryUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5951C14F301DF0054EE08 /* QKQueryUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		17E5952614F301DF0054EE08 /* QKQueryUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5951D14F301DF0054EE08 /* QKQueryUtilities.m */; };
+		17E5952614F301DF0054EE08 /* QKQueryUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5951D14F301DF0054EE08 /* QKQueryUtilities.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		17E5952714F301DF0054EE08 /* QueryKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E5951E14F301DF0054EE08 /* QueryKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E595F214F3058F0054EE08 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17E595F114F3058F0054EE08 /* Foundation.framework */; };
 		17E596A814F308160054EE08 /* QKSelectQueryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E5969814F307B70054EE08 /* QKSelectQueryTests.m */; };
 		17E596A914F308250054EE08 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17E595F114F3058F0054EE08 /* Foundation.framework */; };
 		17F48BA815B27F6400C6455B /* QKQueryOrderBy.h in Headers */ = {isa = PBXBuildFile; fileRef = 17F48BA615B27F6400C6455B /* QKQueryOrderBy.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		17F48BA915B27F6500C6455B /* QKQueryOrderBy.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F48BA715B27F6400C6455B /* QKQueryOrderBy.m */; };
+		17F48BA915B27F6500C6455B /* QKQueryOrderBy.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F48BA715B27F6400C6455B /* QKQueryOrderBy.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		17F48BC315B289C100C6455B /* QKQueryConstruct.h in Headers */ = {isa = PBXBuildFile; fileRef = 17F48BC115B289C100C6455B /* QKQueryConstruct.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		17F48BC415B289C100C6455B /* QKQueryConstruct.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F48BC215B289C100C6455B /* QKQueryConstruct.m */; };
+		17F48BC415B289C100C6455B /* QKQueryConstruct.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F48BC215B289C100C6455B /* QKQueryConstruct.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		17F620BE14F961C1003E7290 /* QueryKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* QueryKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -481,6 +481,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -598,6 +599,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
@@ -647,6 +649,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -823,6 +826,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";

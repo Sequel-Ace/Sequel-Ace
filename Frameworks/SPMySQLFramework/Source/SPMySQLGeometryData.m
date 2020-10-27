@@ -90,14 +90,6 @@ typedef struct st_point_2d_
 }
 
 /**
- * copyWithZone
- */
-- (id)copyWithZone:(NSZone *)zone
-{
-	return [self retain];
-}
-
-/**
  * Return the hex representation of the WKB buffer (only for convenience)
  */
 - (NSString*)description
@@ -795,7 +787,6 @@ typedef struct st_point_2d_
 - (void)dealloc
 {
 	if (geoBuffer && bufferLength) free(geoBuffer);
-	[super dealloc];
 }
 
 @end

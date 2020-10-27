@@ -76,10 +76,10 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		[self setClientView:[aScrollView documentView]];
 		[self setAlternateTextColor:[NSColor whiteColor]];
 		lineIndices = nil;
-		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
 			[self font], NSFontAttributeName, 
 			[self textColor], NSForegroundColorAttributeName,
-			nil] retain];
+			nil];
 
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
@@ -114,7 +114,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	[super dealloc];
 }
 
 #pragma mark -
@@ -124,11 +123,11 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	if (font != aFont)
 	{
 		font;
-		font = [aFont retain];
-		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
+		font = aFont;
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
 			font, NSFontAttributeName, 
 			[self textColor], NSForegroundColorAttributeName,
-			nil] retain];
+			nil];
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
 		maxHeightOfGlyph = s.height;
@@ -149,11 +148,11 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	if (textColor != color)
 	{
 		textColor;
-		textColor  = [color retain];
-		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
+		textColor  = color;
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
 			[self font], NSFontAttributeName, 
 			textColor, NSForegroundColorAttributeName,
-			nil] retain];
+			nil];
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
 		maxHeightOfGlyph = s.height;
@@ -440,17 +439,17 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	{
 		if ([decoder allowsKeyedCoding])
 		{
-			font = [[decoder decodeObjectForKey:NOODLE_FONT_CODING_KEY] retain];
-			textColor = [[decoder decodeObjectForKey:NOODLE_TEXT_COLOR_CODING_KEY] retain];
-			alternateTextColor = [[decoder decodeObjectForKey:NOODLE_ALT_TEXT_COLOR_CODING_KEY] retain];
-			backgroundColor = [[decoder decodeObjectForKey:NOODLE_BACKGROUND_COLOR_CODING_KEY] retain];
+			font = [decoder decodeObjectForKey:NOODLE_FONT_CODING_KEY];
+			textColor = [decoder decodeObjectForKey:NOODLE_TEXT_COLOR_CODING_KEY];
+			alternateTextColor = [decoder decodeObjectForKey:NOODLE_ALT_TEXT_COLOR_CODING_KEY];
+			backgroundColor = [decoder decodeObjectForKey:NOODLE_BACKGROUND_COLOR_CODING_KEY];
 		}
 		else
 		{
-			font = [[decoder decodeObject] retain];
-			textColor = [[decoder decodeObject] retain];
-			alternateTextColor = [[decoder decodeObject] retain];
-			backgroundColor = [[decoder decodeObject] retain];
+			font = [decoder decodeObject];
+			textColor = [decoder decodeObject];
+			alternateTextColor = [decoder decodeObject];
+			backgroundColor = [decoder decodeObject];
 		}
 	}
 	return self;

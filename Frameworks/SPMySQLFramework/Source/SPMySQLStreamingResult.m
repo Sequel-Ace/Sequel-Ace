@@ -100,8 +100,6 @@
 		[parentConnection _unlockConnection];
 		[NSException raise:NSInternalInconsistencyException format:@"Parent connection remains locked after SPMySQLStreamingResult use"];
 	}
-
-	[super dealloc];
 }
 
 #pragma mark -

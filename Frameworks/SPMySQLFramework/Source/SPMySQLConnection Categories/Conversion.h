@@ -54,7 +54,7 @@ static inline const char* _cStringForStringWithEncoding(NSString* aString, NSStr
 	if (!cachedSelector) cachedSelector = @selector(_cStringForString:usingEncoding:returningLengthAs:);
 	if (!cachedMethodPointer) cachedMethodPointer = [SPMySQLConnection methodForSelector:cachedSelector];
 
-	return (const char *)(*cachedMethodPointer)(cachedClass, cachedSelector, aString, anEncoding, cStringLengthPointer);
+	return (__bridge const char *)(*cachedMethodPointer)(cachedClass, cachedSelector, aString, anEncoding, cStringLengthPointer);
 }
 
 /**

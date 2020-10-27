@@ -118,7 +118,7 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 				curTokenString = [[NSString alloc] initWithBytesNoCopy:(void *)(&stateInfo.str[curToken.pos]) length:curToken.len encoding:NSUTF8StringEncoding freeWhenDone:NO];
 				//for everything except strings get rid of surrounding whitespace
 				if(curToken.tok != JSON_TOK_STRINGDATA) {
-					NSString *newTokenString = [[curTokenString stringByTrimmingCharactersInSet:wsNlCharset] retain];
+					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
 					curTokenString = newTokenString;
 				}
 				freeMe = curTokenString;
@@ -200,7 +200,7 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 				curTokenString = [[NSString alloc] initWithBytesNoCopy:(void *)(&stateInfo.str[curToken.pos]) length:curToken.len encoding:NSUTF8StringEncoding freeWhenDone:NO];
 				//for everything except strings get rid of surrounding whitespace
 				if(curToken.tok != JSON_TOK_STRINGDATA) {
-					NSString *newTokenString = [[curTokenString stringByTrimmingCharactersInSet:wsNlCharset] retain];
+					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
 					curTokenString = newTokenString;
 				}
 				freeMe = curTokenString;

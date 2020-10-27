@@ -72,7 +72,7 @@ extern NSString *SPTableViewDatabaseColumnID;
 	pthread_mutex_t consoleLock;
 }
 
-@property (readwrite, retain) NSFont *consoleFont;
+@property (readwrite, strong) NSFont *consoleFont;
 
 + (SPQueryController *)sharedQueryController;
 

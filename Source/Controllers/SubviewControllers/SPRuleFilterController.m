@@ -135,7 +135,7 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 }
 @property(copy, nonatomic) NSString *name;
 @property(copy, nonatomic) NSString *typegrouping;
-@property(retain, nonatomic) NSArray *operatorCache;
+@property(strong, nonatomic) NSArray *operatorCache;
 @property(assign, nonatomic) NSUInteger opCacheVersion;
 @end
 
@@ -148,13 +148,13 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 @interface OpNode : RuleNode {
 	// Note: The main purpose of this field is to have @"=" for column A and @"=" for column B to return NO in -isEqual:
 	//       because otherwise NSRuleEditor will get confused and blow up.
-	ColumnNode *parentColumn;
+	ColumnNode *__weak parentColumn;
 	NSDictionary *settings;
 	NSDictionary *filter;
 }
-@property (assign, nonatomic) ColumnNode *parentColumn;
-@property (retain, nonatomic) NSDictionary *settings;
-@property (retain, nonatomic) NSDictionary *filter;
+@property (weak, nonatomic) ColumnNode *parentColumn;
+@property (strong, nonatomic) NSDictionary *settings;
+@property (strong, nonatomic) NSDictionary *filter;
 /**
  * This method is only a shortcut to `-[[node filter] objectForKey:@"MenuLabel"]`
  */
@@ -167,7 +167,7 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 	NSString *initialValue;
 }
 @property (copy, nonatomic) NSString *initialValue;
-@property (retain, nonatomic) NSDictionary *filter;
+@property (strong, nonatomic) NSDictionary *filter;
 @property (assign, nonatomic) NSUInteger argIndex;
 @end
 
@@ -175,7 +175,7 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 	NSDictionary *filter;
 	NSUInteger labelIndex;
 }
-@property (retain, nonatomic) NSDictionary *filter;
+@property (strong, nonatomic) NSDictionary *filter;
 @property (assign, nonatomic) NSUInteger labelIndex;
 @end
 
@@ -221,7 +221,7 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 	NSMutableArray *model;
 }
 // This is the binding used by NSRuleEditor for the current state
-@property (retain, nonatomic) NSMutableArray *model;
+@property (strong, nonatomic) NSMutableArray *model;
 @end
 
 #pragma mark -
@@ -1060,7 +1060,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	
 	
 	
-	[super dealloc];
 }
 
 /**
@@ -1320,7 +1319,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		// build it recursively
 		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY error:&innerError];
 
-		[innerError retain]; // carry the error (if any) outside of the scope of the autoreleasepool
+		 // carry the error (if any) outside of the scope of the autoreleasepool
 	}
 
 	if(innerError) {
@@ -1504,7 +1503,7 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		// for backwards compatibility. this key was added later
 		//                        vvvvvvvvvvvvv
 		[enabler setInitialState:(!enabledValue || [enabledValue boolValue])];
-		[criteria addObject:[enabler autorelease]];
+		[criteria addObject:enabler];
 
 		// add column
 		[criteria addObject:col];
@@ -1852,12 +1851,6 @@ BOOL SerIsGroup(NSDictionary *dict)
 	return self;
 }
 
-- (void)dealloc
-{
-	[self setFilter:nil];
-	[self setSettings:nil];
-	[super dealloc];
-}
 
 - (NSUInteger)hash {
 	return (([parentColumn hash] << 16) ^ [settings hash] ^ [super hash]);
@@ -1895,12 +1888,6 @@ BOOL SerIsGroup(NSDictionary *dict)
 	return self;
 }
 
-- (void)dealloc
-{
-	[self setInitialValue:nil];
-	[self setFilter:nil];
-	[super dealloc];
-}
 
 - (NSUInteger)hash {
 	// initialValue does not count towards hash because two Args are not different if only the initialValue differs
@@ -1934,11 +1921,6 @@ BOOL SerIsGroup(NSDictionary *dict)
 	return self;
 }
 
-- (void)dealloc
-{
-	[self setFilter:nil];
-	[super dealloc];
-}
 
 - (NSUInteger)hash {
 	return ((labelIndex << 16) ^ [filter hash] ^ [super hash]);
@@ -1995,11 +1977,6 @@ BOOL SerIsGroup(NSDictionary *dict)
 	return self;
 }
 
-- (void)dealloc
-{
-	[self setModel:nil];
-	[super dealloc];
-}
 
 // KVO
 

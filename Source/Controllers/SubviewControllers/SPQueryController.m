@@ -81,7 +81,7 @@ static SPQueryController *sharedQueryController = nil;
 + (id)allocWithZone:(NSZone *)zone
 {
 	@synchronized(self) {
-		return [[self sharedQueryController] retain];
+		return [self sharedQueryController];
 	}
 	
 	return nil;
@@ -666,21 +666,21 @@ static SPQueryController *sharedQueryController = nil;
 	}
 	else {
 		if ([completionPlist objectForKey:SPCompletionTokensKeywordsKey]) {
-			completionKeywordList = [[NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensKeywordsKey]] retain];
+			completionKeywordList = [NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensKeywordsKey]];
 		}
 		else {
 			errorDescription = [NSString stringWithFormat:@"No '%@' array found.", SPCompletionTokensKeywordsKey];
 		}
 
 		if ([completionPlist objectForKey:SPCompletionTokensFunctionsKey]) {
-			completionFunctionList = [[NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensFunctionsKey]] retain];
+			completionFunctionList = [NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensFunctionsKey]];
 		}
 		else {
 			errorDescription = [NSString stringWithFormat:@"No '%@' array found.", SPCompletionTokensFunctionsKey];
 		}
 
 		if ([completionPlist objectForKey:SPCompletionTokensSnippetsKey]) {
-			functionArgumentSnippets = [[NSDictionary dictionaryWithDictionary:[completionPlist objectForKey:SPCompletionTokensSnippetsKey]] retain];
+			functionArgumentSnippets = [NSDictionary dictionaryWithDictionary:[completionPlist objectForKey:SPCompletionTokensSnippetsKey]];
 		}
 		else {
 			errorDescription = [NSString stringWithFormat:@"No '%@' dictionary found.", SPCompletionTokensSnippetsKey];
@@ -984,9 +984,9 @@ static SPQueryController *sharedQueryController = nil;
 
 		for (NSString* history in [historyContainer objectForKey:[fileURL absoluteString]])
 		{
-			historyMenuItem = [[[NSMenuItem alloc] initWithTitle:([history length] > 64) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:63]] : history
+			historyMenuItem = [[NSMenuItem alloc] initWithTitle:([history length] > 64) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:63]] : history
 														  action:NULL
-												   keyEquivalent:@""] autorelease];
+												   keyEquivalent:@""];
 
 			[historyMenuItem setToolTip:([history length] > 256) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:255]] : history];
 			[returnArray addObject:historyMenuItem];
@@ -1111,7 +1111,6 @@ static SPQueryController *sharedQueryController = nil;
 	
 	pthread_mutex_destroy(&consoleLock);
 
-	[super dealloc];
 }
 
 @end

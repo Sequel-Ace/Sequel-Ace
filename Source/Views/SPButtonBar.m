@@ -72,17 +72,10 @@ static void init(SPButtonBar *obj);
 
 void init(SPButtonBar *obj)
 {
-	obj->lightImage = [[NSImage imageNamed:@"button_bar_spacer"] retain];
-	obj->darkImage  = [[NSImage imageNamed:@"button_bar_spacer_dark"] retain];
+	obj->lightImage = [NSImage imageNamed:@"button_bar_spacer"];
+	obj->darkImage  = [NSImage imageNamed:@"button_bar_spacer_dark"];
 }
 
-- (void)dealloc
-{
-	
-	
-	
-	[super dealloc];
-}
 
 - (BOOL)isInDarkMode
 {

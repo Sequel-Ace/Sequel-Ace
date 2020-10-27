@@ -103,7 +103,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		
 		// key is:   The name of the actual column in the mysql.users / mysql.db table
 		// value is: The "Privilege" value from "SHOW PRIVILEGES" with " " replaced by "_" and "_priv" appended
-		privColumnToGrantMap = [@{
+		privColumnToGrantMap = @{
 			@"Grant_priv":               @"Grant_option_priv",
 			@"Show_db_priv":             @"Show_databases_priv",
 			@"Create_tmp_table_priv":    @"Create_temporary_tables_priv",
@@ -111,7 +111,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			@"Repl_client_priv":         @"Replication_client_priv",
 			@"Truncate_versioning_priv": @"Delete_versioning_rows_priv", // MariaDB only, 10.3.4 only
 			@"Delete_history_priv":      @"Delete_versioning_rows_priv", // MariaDB only, since 10.3.5
-		} retain];
+		};
 	
 		schemas = [[NSMutableArray alloc] init];
 		availablePrivs = [[NSMutableArray alloc] init];
@@ -262,7 +262,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	{
 		NSDictionary *item = [items objectAtIndex:i];
 		NSString *username = [item objectForKey:@"User"];
-		NSArray *parentResults = [[self _fetchUserWithUserName:username] retain];
+		NSArray *parentResults = [self _fetchUserWithUserName:username];
 		SPUserMO *parent;
 		SPUserMO *child;
 		
@@ -367,7 +367,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (void)_initializeChild:(NSManagedObject *)child withItem:(NSDictionary *)item
 {
-	for (NSString *key in item)
+	for (__strong NSString *key in item)
 	{
 		// In order to keep the priviledges a little more dynamic, just
 		// go through the keys that have the _priv suffix.  If a priviledge is
@@ -424,7 +424,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		SPPrivilegesMO *dbPriv = [NSEntityDescription insertNewObjectForEntityForName:@"Privileges" inManagedObjectContext:[self managedObjectContext]];
 		
-		for (NSString *key in rowDict)
+		for (__strong NSString *key in rowDict)
 		{
 			if ([key hasSuffix:@"_priv"]) {
 				
@@ -456,7 +456,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (NSManagedObjectModel *)managedObjectModel 
 {	
 	if (!managedObjectModel) {
-		managedObjectModel = [[NSManagedObjectModel mergedModelFromBundles:nil] retain];
+		managedObjectModel = [NSManagedObjectModel mergedModelFromBundles:nil];
 	}
     return managedObjectModel;
 }
@@ -1693,7 +1693,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	if ([cell isKindOfClass:[ImageAndTextCell class]])
 	{
 		// Determines which Image to display depending on parent or child object
-		NSImage *image = [[NSImage imageNamed:[(SPUserMO *)[item  representedObject] parent] ? NSImageNameNetwork : NSImageNameUser] retain];
+		NSImage *image = [NSImage imageNamed:[(SPUserMO *)[item  representedObject] parent] ? NSImageNameNetwork : NSImageNameUser];
 
 		[image setSize:(NSSize){16, 16}];
 		[(ImageAndTextCell *)cell setImage:image];
@@ -1828,7 +1828,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	
 	
 	
-	[super dealloc];
 }
 
 @end

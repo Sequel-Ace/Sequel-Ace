@@ -47,7 +47,7 @@
 /**
  * @property nodeName The group node's name
  */
-@property (readwrite, retain) NSString *nodeName;
+@property (readwrite, strong) NSString *nodeName;
 
 /**
  * @property nodeIsExpanded Indicates whether the group node is expanded

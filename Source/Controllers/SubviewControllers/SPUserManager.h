@@ -43,7 +43,7 @@
 	NSDictionary *privColumnToGrantMap;
 	
 	SPMySQLConnection *connection;
-	SPDatabaseDocument *databaseDocument;
+	SPDatabaseDocument *__weak databaseDocument;
 	SPServerSupport *serverSupport;
 
 	IBOutlet SPSplitView *splitView;
@@ -85,18 +85,18 @@
 	BOOL requiresPost576PasswordHandling;
 }
 
-@property (nonatomic, retain) SPMySQLConnection *connection;
-@property (nonatomic, assign) SPDatabaseDocument *databaseDocument;
-@property (nonatomic, retain) SPServerSupport *serverSupport;
-@property (nonatomic, retain) NSPersistentStoreCoordinator *persistentStoreCoordinator;
-@property (nonatomic, retain, readonly) NSManagedObjectModel *managedObjectModel;
-@property (nonatomic, retain) NSManagedObjectContext *managedObjectContext;
-@property (nonatomic, retain) NSMutableDictionary *privsSupportedByServer;
+@property (nonatomic, strong) SPMySQLConnection *connection;
+@property (nonatomic, weak) SPDatabaseDocument *databaseDocument;
+@property (nonatomic, strong) SPServerSupport *serverSupport;
+@property (nonatomic, strong) NSPersistentStoreCoordinator *persistentStoreCoordinator;
+@property (nonatomic, strong, readonly) NSManagedObjectModel *managedObjectModel;
+@property (nonatomic, strong) NSManagedObjectContext *managedObjectContext;
+@property (nonatomic, strong) NSMutableDictionary *privsSupportedByServer;
 
-@property (nonatomic, retain) NSArray *treeSortDescriptors;
-@property (nonatomic, retain) NSMutableArray *schemas;
-@property (nonatomic, retain) NSMutableArray *grantedSchemaPrivs;
-@property (nonatomic, retain) NSMutableArray *availablePrivs;
+@property (nonatomic, strong) NSArray *treeSortDescriptors;
+@property (nonatomic, strong) NSMutableArray *schemas;
+@property (nonatomic, strong) NSMutableArray *grantedSchemaPrivs;
+@property (nonatomic, strong) NSMutableArray *availablePrivs;
 @property (nonatomic, readonly) BOOL isInitializing;
 
 // Add/Remove users
