@@ -385,7 +385,6 @@
 	}
 
 	if (tableEncoding != nil) {
-		[tableEncoding release];
 	}
 	tableEncoding = [[NSString alloc] initWithString:[tableData objectForKey:@"encoding"]];
 	[primaryKeyColumns addObjectsFromArray:[tableData objectForKey:@"primarykeyfield"]];
@@ -426,7 +425,6 @@
 	}
 
 	if (tableEncoding != nil) {
-		[tableEncoding release];
 	}
 	tableEncoding = [[NSString alloc] initWithString:[viewData objectForKey:@"encoding"]];
 
@@ -733,8 +731,6 @@
 					//  CONSTRAINT [constraint_name] CHECK (expression)
 					SPLog(@"Skipping unrecognized CONSTRAINT in CREATE stmt: %@", fieldsParser);
 				}
-				
-				[constraintDetails release];
 			}
 			
 			// primary key
@@ -781,9 +777,6 @@
 			}
 		}
 	}
-	[fieldStrings release];
-	[fieldsParser release];
-	[tableColumn release];
 
 	// Extract the encoding from the table properties string - other details come from TABLE STATUS.
 	NSString *encodingString = nil;
@@ -813,16 +806,11 @@
 		encodingString = [[NSString alloc] initWithString:@"latin1"];
 	}
 
-	[createTableParser release];
-
 	// this will be 'Table' or 'View'
 	[tableData setObject:tableType forKey:@"type"];
 	[tableData setObject:[NSString stringWithString:encodingString] forKey:@"encoding"];
 	[tableData setObject:[NSArray arrayWithArray:tableColumns] forKey:@"columns"];
 	[tableData setObject:[NSArray arrayWithArray:constraints] forKey:@"constraints"];
-
-	[encodingString release];
-	[tableColumns release];
 
 	return tableData;
 }
@@ -942,8 +930,6 @@
 		// Add the column to the list
 		[tableColumns addObject:[NSDictionary dictionaryWithDictionary:tableColumn]];
 	}
-	[fieldParser release];
-	[tableColumn release];
 
 	// The character set has to be guessed at via the database encoding.
 	// Add the details to the data object.
@@ -951,8 +937,6 @@
 	if (tableDocumentInstance)
 		[viewData setObject:[NSString stringWithString:[tableDocumentInstance databaseEncoding]] forKey:@"encoding"];
 	[viewData setObject:[NSArray arrayWithArray:tableColumns] forKey:@"columns"];
-
-	[tableColumns release];
 
 	if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
@@ -1119,8 +1103,6 @@
 		pthread_mutex_unlock(&dataProcessingLock);
 		return NO;
 	}
-
-	if (triggers) [triggers release];
 	triggers = [[NSArray alloc] initWithArray:[theResult getAllRows]];
 
 	if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -1234,7 +1216,6 @@
 				[detailParts replaceObjectAtIndex:i withObject:[detailParser unquotedString]];
 			}
 			[fieldDetails setObject:[NSArray arrayWithArray:detailParts] forKey:@"values"];
-			[detailParts release];
 
 		// For types with required or optional decimals, store as appropriate
 		} else if ([detailParser isEqualToString:@"REAL"] || [detailParser isEqualToString:@"DOUBLE"] || [detailParser isEqualToString:@"FLOAT"] || [detailParser isEqualToString:@"DECIMAL"] || [detailParser isEqualToString:@"NUMERIC"]) {
@@ -1246,16 +1227,13 @@
 				[detailParser setString:NSArrayObjectAtIndex(detailParts, 1)];
 				[fieldDetails setObject:[detailParser unquotedString] forKey:@"decimals"];
 			}
-			[detailParts release];
 
 		// Otherwise capture the length only.
 		} else {
 			[detailParser setString:[fieldParser stringFromCharacter:'(' toCharacter:')' inclusively:NO]];
 			[fieldDetails setObject:[detailParser unquotedString] forKey:@"length"];
 		}
-		[detailParser release];
 	}
-	[fieldParser release];
 
 	// Also capture a general column type "group" to allow behavioural switches
 	detailString = [[NSString alloc] initWithString:[fieldDetails objectForKey:@"type"]];
@@ -1291,7 +1269,6 @@
 	} else {
 		[fieldDetails setObject:@"blobdata" forKey:@"typegrouping"];
 	}
-	[detailString release];
 
 	// Set up some column defaults for all columns
 	[fieldDetails setValue:@YES forKey:@"null"];
@@ -1363,7 +1340,6 @@
 				[fieldDetails setObject:[NSNull null] forKey:@"default"];
 			else
 				[fieldDetails setValue:[detailParser unquotedString] forKey:@"default"];
-			[detailParser release];
 			definitionPartsIndex++;
 
 		// Special timestamp/datetime case - Whether fields are set to update the current timestamp
@@ -1378,7 +1354,6 @@
 		} else if ([detailString isEqualToString:@"COMMENT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
 			detailParser = [[SPSQLParser alloc] initWithString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1)];
 			[fieldDetails setValue:[detailParser unquotedString] forKey:@"comment"];
-			[detailParser release];
 			definitionPartsIndex++;
 
 		// Preserve unhandled details to avoid losing information when rearranging columns etc
@@ -1387,11 +1362,9 @@
 			[[fieldDetails objectForKey:@"unparsed"] appendString:@" "];
 			[[fieldDetails objectForKey:@"unparsed"] appendString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex)];
 		}
-
-		[detailString release];
 	}
 
-	return [fieldDetails autorelease];
+	return fieldDetails;
 }
 
 /**

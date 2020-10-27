@@ -245,7 +245,6 @@
 					}
 					
 					[xmlItem setString:[NSString stringWithString:dataConversionString]];
-					[dataConversionString release];
 				}
 
 				// Check for null value using a pointer comparison; as [NSNull null] is a singleton this works correctly.

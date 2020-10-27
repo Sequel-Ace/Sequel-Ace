@@ -38,7 +38,7 @@
 
 + (QKQueryOrderBy *)orderByField:(NSString *)field descending:(BOOL)descending
 {
-	return [[[QKQueryOrderBy alloc] initWithField:field descending:descending] autorelease];
+	return [[QKQueryOrderBy alloc] initWithField:field descending:descending] ;
 }
 
 - (id)init

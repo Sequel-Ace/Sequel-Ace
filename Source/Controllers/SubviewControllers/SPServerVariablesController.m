@@ -296,7 +296,6 @@
 	variablesFiltered = [[NSMutableArray alloc] init];
 	
 	if ([filterString length] == 0) {
-		[variablesFiltered release];
 		variablesFiltered = variables;
 		
 		[saveVariablesButton setEnabled:YES];
@@ -365,7 +364,6 @@
 		// Copy the string to the pasteboard
 		[pasteBoard declareTypes:@[NSStringPboardType] owner:nil];
 		[pasteBoard setString:string forType:NSStringPboardType];
-		[string release];
 	}
 }
 

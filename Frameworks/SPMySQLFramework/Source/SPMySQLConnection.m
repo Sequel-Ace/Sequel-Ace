@@ -224,7 +224,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 	// Clear the keepalive timer
 	[keepAliveTimer invalidate];
-	[keepAliveTimer release];
 
 	// If a keepalive thread is active, cancel it
 	[self _cancelKeepAlives];
@@ -235,7 +234,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	// Clean up the connection proxy, if any
 	if (proxy) {
 		[proxy setConnectionStateChangeSelector:NULL delegate:nil];
-		[proxy release];
 	}
 	
 	[self setSslCipherList:nil];
@@ -244,22 +242,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	if ([connectionLock condition] != SPMySQLConnectionIdle) {
 		[self _unlockConnection];
 	}
-    
-    
-	[encoding release];
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-	[delegateDecisionLock release];
-
-	[_debugLastConnectedEvent release];
 
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
@@ -535,7 +517,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	@synchronized (self) {
 		initialConnectTime = mach_absolute_time();
-		[_debugLastConnectedEvent release];
 		_debugLastConnectedEvent = [[NSString alloc] initWithFormat:@"thread=%@ stack=%@",[NSThread currentThread],[NSThread callStackSymbols]];
 	}
 
@@ -1097,7 +1078,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
 
 	// Update instance variables
-	if (encoding) [encoding release];
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[self _cStringForString:encoding]];
 	encodingUsesLatin1Transport = NO;
@@ -1112,8 +1092,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self queryString:@"SET wait_timeout=600"];
 		}
 	}
-
-	[variables release];
 }
 
 /**

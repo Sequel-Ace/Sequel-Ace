@@ -81,7 +81,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 + (QKQuery *)queryTable:(NSString *)table database:(NSString *)database
 {
-	return [[[QKQuery alloc] initWithTable:table database:database] autorelease];
+	return [[QKQuery alloc] initWithTable:table database:database] ;
 }
 
 + (QKQuery *)selectQueryFromTable:(NSString *)table
@@ -91,7 +91,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 + (QKQuery *)selectQueryFromTable:(NSString *)table database:(NSString *)database
 {
-	QKQuery *query = [[[QKQuery alloc] initWithTable:table database:database] autorelease];
+	QKQuery *query = [[QKQuery alloc] initWithTable:table database:database] ;
 	
 	[query setQueryType:QKSelectQuery];
 	

@@ -375,7 +375,6 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 }
 
 #pragma mark -
@@ -553,7 +552,6 @@ set_input:
 	[sender retain];
 	[operationQueue waitUntilAllOperationsAreFinished];
 	[self performSelectorOnMainThread:@selector(_queueIsEmptyAfterCancelling:) withObject:sender waitUntilDone:NO];
-	[sender release];
 }
 
 - (void)_queueIsEmptyAfterCancelling:(id)sender
@@ -738,15 +736,11 @@ set_input:
 				[newItem insertObject:[[tables objectAtIndex:i] objectAtIndex:0] atIndex:0];
 				
 				[tables replaceObjectAtIndex:i withObject:newItem];
-				
-				[newItem release];
 			}
 		}
 	}
 	
 	[exportTableList reloadData];
-	
-	[tableDict release];
 }
 
 /**
@@ -1243,8 +1237,6 @@ set_input:
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeDropSyntaxCheck state]] forKey:SPSQLExportDropEnabled];
 
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController export button updater",tableDocumentInstance) target:self selector:@selector(_toggleExportButton:) object:uiStateDict];
-	
-	[uiStateDict release];
 }
 
 /**
@@ -1558,8 +1550,6 @@ set_input:
 		[sqlExporter setExportOutputFile:file];
 
 		[exporters addObject:sqlExporter];
-
-		[sqlExporter release];
 	}
 	// XML export
 	else if (exportType == SPXMLExport) {
@@ -1657,8 +1647,6 @@ set_input:
 		[dotExporter setExportOutputFile:file];
 
 		[exporters addObject:dotExporter];
-
-		[dotExporter release];
 	}
 
 	// For each of the created exporters, set their generic properties
@@ -1709,8 +1697,6 @@ set_input:
 	else {
 		[self startExport];
 	}
-
-	[problemFiles release];
 }
 
 /**
@@ -1774,7 +1760,7 @@ set_input:
 		[csvExporter setExportOutputFile:file];
 	}
 
-	return [csvExporter autorelease];
+	return csvExporter;
 }
 
 /**
@@ -1838,7 +1824,7 @@ set_input:
 		[xmlExporter setExportOutputFile:file];
 	}
 
-	return [xmlExporter autorelease];
+	return xmlExporter;
 }
 
 #pragma mark - SPExportFileUtilitiesPrivateAPI
@@ -1966,8 +1952,6 @@ set_input:
 
 			[exporters removeObjectsInArray:exportersToRemove];
 
-			[exportersToRemove release];
-
 			// Check the parent folder to see if it still is present
 			BOOL parentIsFolder = NO;
 			if (![[NSFileManager defaultManager] fileExistsAtPath:[[[file exportFilePath] stringByDeletingLastPathComponent] stringByExpandingTildeInPath] isDirectory:&parentIsFolder] || !parentIsFolder) {
@@ -2094,8 +2078,6 @@ set_input:
 			}
 		}
 
-		[files release];
-
 		// If we're now left with no exporters, cancel the export operation
 		if ([exporters count] == 0) {
 			[exportFiles removeAllObjects];
@@ -2128,8 +2110,6 @@ set_input:
 			}
 		}
 
-		[files release];
-
 		// Start the export after a short delay to give this sheet a chance to close
 		[self performSelector:@selector(startExport) withObject:nil afterDelay:0.1];
 
@@ -2142,8 +2122,6 @@ set_input:
 		{
 			[file delete];
 		}
-
-		[files release];
 
 		// Finally get rid of all the exporters and files
 		[exportFiles removeAllObjects];
@@ -2460,8 +2438,6 @@ set_input:
 							 withString:@"-"
 								options:NSLiteralSearch
 								  range:NSMakeRange(0, [string length])];
-
-	[dateFormatter release];
 
 	// Don't allow empty strings - if an empty string resulted, revert to the default string
 	if (![string length]) [string setString:[self generateDefaultExportFilename]];

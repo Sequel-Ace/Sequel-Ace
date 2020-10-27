@@ -125,7 +125,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 	if([type isEqualToString:@"text"]) {
 		NSString* html = nil;
-		NSMutableString* text = [[(NSString*)content mutableCopy] autorelease];
+		NSMutableString* text = [(NSString*)content mutableCopy] ;
 		if(text)
 		{
 			[text replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, [text length])];
@@ -179,7 +179,6 @@ static CGFloat slow_in_out (CGFloat t)
 		[tip sizeToContent];
 		[tip orderFront:self];
 		[tip performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
-		[backgroundImageView release];
 	}
 	else {
 		[tip setContent:(NSString*)content withOptions:displayOptions];
@@ -409,7 +408,6 @@ static CGFloat slow_in_out (CGFloat t)
 	}
 
 	[appKeyWindow setAcceptsMouseMovedEvents:didAcceptMouseMovedEvents];
-	[appKeyWindow release];
 
 	[self orderOut:self];
 

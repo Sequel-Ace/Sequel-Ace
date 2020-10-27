@@ -59,7 +59,7 @@
 	}
 
 	// Return the array
-	return [csvArray autorelease];
+	return csvArray;
 }
 
 /**
@@ -391,11 +391,8 @@
 	if (convertString) {
 		theString = [self _convertDisplayString:theString];
 	}
-
-	[fieldEndString release];
 	fieldEndString = [[NSString alloc] initWithString:theString];
 	fieldEndLength = [fieldEndString length];
-	[escapedFieldEndString release];
 	escapedFieldEndString = [[NSString alloc] initWithFormat:@"%@%@", escapeString, fieldEndString];
 
 	[self _updateSkipCharacterSet];
@@ -411,11 +408,8 @@
 	if (convertString) {
 		theString = [self _convertDisplayString:theString];
 	}
-
-	[lineEndString release];
 	lineEndString = [[NSString alloc] initWithString:theString];
 	lineEndLength = [lineEndString length];
-	[escapedLineEndString release];
 	escapedLineEndString = [[NSString alloc] initWithFormat:@"%@%@", escapeString, lineEndString];
 
 	[self _updateSkipCharacterSet];
@@ -431,11 +425,8 @@
 	if (convertString) {
 		theString = [self _convertDisplayString:theString];
 	}
-
-	[fieldQuoteString release];
 	fieldQuoteString = [[NSString alloc] initWithString:theString];
 	fieldQuoteLength = [fieldQuoteString length];
-	[escapedFieldQuoteString release];
 	escapedFieldQuoteString = [[NSString alloc] initWithFormat:@"%@%@", escapeString, fieldQuoteString];
 	escapeStringIsFieldQuoteString = [fieldQuoteString isEqualToString:escapeString];
 
@@ -452,11 +443,8 @@
 	if (convertString) {
 		theString = [self _convertDisplayString:theString];
 	}
-
-	[escapeString release];
 	escapeString = [[NSString alloc] initWithString:theString];
 	escapeLength = [escapeString length];
-	[escapedEscapeString release];
 	escapedEscapeString = [[NSString alloc] initWithFormat:@"%@%@", escapeString, escapeString];
 	escapeStringIsFieldQuoteString = [fieldQuoteString isEqualToString:escapeString];
 
@@ -586,8 +574,6 @@
 
 	if ([charactersToSkip length])
 		skipCharacterSet = [[NSCharacterSet characterSetWithCharactersInString:charactersToSkip] retain];
-
-	[charactersToSkip release];
 }
 
 /**

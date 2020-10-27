@@ -158,7 +158,7 @@
  */
 - (void)_setupToolbar
 {
-	toolbar = [[[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"] autorelease];
+	toolbar = [[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"] ;
 
 	// General preferences
 	generalItem = [[NSToolbarItem alloc] initWithItemIdentifier:[generalPreferencePane preferencePaneIdentifier]];
@@ -292,7 +292,7 @@
 		return fileItem;
 	}
 
-	return [[[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] autorelease];
+	return [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] ;
 }
 
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)aToolbar

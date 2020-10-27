@@ -127,9 +127,6 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 												  (CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
 												  kUTTypeHTML,
 												  (__bridge CFDictionaryRef)props);
-
-			[props release];
-			[imgProps release];
 		}
 	}
 
@@ -181,8 +178,6 @@ NSString *PreviewForSPF(NSURL *myURL, NSInteger *previewHeight) {
 			html = (*fp)(spf,myURL,previewHeight);
 		}
 	}
-
-	[spf release];
 	
 	return html;
 }
@@ -241,8 +236,6 @@ NSString *PreviewForConnectionSPF(NSDictionary *spf, NSURL *myURL, NSInteger *pr
 			[dateFormatter stringFromDate:[fileAttributes fileModificationDate]],
 			autoConnect
 	];
-	
-	[dateFormatter release];
 
 	return html;
 }
@@ -395,7 +388,6 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 	}
 	
 	if(!spf || readError) {
-		[spf release];
 		return nil;
 	}
 	
@@ -508,8 +500,6 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 			spfsHTML
 	];
 	
-	[spf release];
-	
 	return html;
 }
 
@@ -559,10 +549,7 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 		// truncate large files since Finder blocks
 		if([filesize unsignedLongValue] > kMaxSQLFileSize) {
 			NSString *truncatedSqlText = [[NSString alloc] initWithString:[sqlText substringToIndex:kMaxSQLFileSize-1]];
-			[sqlText release];
 			sqlText = [[NSString alloc] initWithString:truncatedSqlText];
-			[truncatedSqlText release];
-			[truncatedString release];
 			truncatedString = [[NSString alloc] initWithString:@"\n ✂ ..."];
 		}
 		
@@ -618,11 +605,9 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 					
 				}
 				if (truncatedString) {
-					[truncatedString release];
 					sqlHTML = nil;
 				}
 				if (sqlText) {
-					[sqlText release];
 					sqlHTML = nil;
 				}
 				return nil;
@@ -634,8 +619,6 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 			}
 		}
 		[sqlHTML appendString:truncatedString];
-		[sqlText release];
-		[truncatedString release];
 		
 	}
 	
@@ -651,7 +634,6 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 			sqlHTML
 			];
 	if(previewHeight != NULL) *previewHeight = 495;
-	[sqlHTML release];
 	
 	return html;
 }

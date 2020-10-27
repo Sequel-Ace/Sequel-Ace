@@ -30,8 +30,6 @@
 
 - (void)dealloc
 {
-    [_PSMTabBarOverflowPopUpImage release];
-	[_PSMTabBarOverflowDownPopUpImage release];
     [super dealloc];
 }
 

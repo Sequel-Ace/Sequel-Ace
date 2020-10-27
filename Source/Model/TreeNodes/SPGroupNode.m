@@ -72,12 +72,12 @@ static NSString *SPGroupNodeIsExpandedKey = @"SPGroupNodeIsExpanded";
 
 + (SPGroupNode *)groupNodeWithName:(NSString *)name
 {
-	return [[[self alloc] initWithName:name] autorelease];
+	return [[self alloc] initWithName:name] ;
 }
 
 + (SPGroupNode *)groupNodeWithDictionary:(NSDictionary *)dict
 {
-	return [[[self alloc] initWithDictionary:dict] autorelease];
+	return [[self alloc] initWithDictionary:dict] ;
 }
 
 #pragma mark -

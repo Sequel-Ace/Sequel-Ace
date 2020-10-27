@@ -109,7 +109,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 
 		// Add a formatter for linebreak display
-		[[column dataCell] setFormatter:[[SPDataCellFormatter new] autorelease]];
+		[column dataCell] setFormatter:[[SPDataCellFormatter new]];
 	
 		// Also, if available restore the table's column widths
 		NSNumber *columnWidth = [[prefs objectForKey:SPProcessListTableColumnWidths] objectForKey:[[column headerCell] stringValue]];
@@ -417,7 +417,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		if (returnCode == NSAlertDefaultReturn) [self _startAutoRefreshTimerWithInterval:[customIntervalTextField integerValue]];
 	}
 	else {
-		NSDictionary *userInfo = [(__bridge NSDictionary *)contextInfo autorelease]; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
+		NSDictionary *userInfo = (__bridge NSDictionary *)contextInfo; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
 		if (returnCode == NSAlertDefaultReturn) {
 			long long processId = [[userInfo objectForKey:SPKillIdKey] longLongValue];
 			
@@ -670,8 +670,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 				// interfere with the NSTableView's reload cycle and there is no way
 				// to know when it starts/ends. We only know it will happen on the
 				// main thread, so we have to interlock with that.
-				[[processes onMainThread] addObject:[[rowsFixed copy] autorelease]];
-				[rowsFixed release];
+				[processes onMainThread] addObject:[[rowsFixed copy]];
 			}
 		}
 
@@ -740,7 +739,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	processesFiltered = [[NSMutableArray alloc] init];
 	
 	if ([filterString length] == 0) {
-		[processesFiltered release];
 		processesFiltered = processes;
 		
 		[saveProcessesButton setEnabled:YES];

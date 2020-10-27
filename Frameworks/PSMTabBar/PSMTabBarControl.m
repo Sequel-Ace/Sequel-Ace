@@ -217,15 +217,6 @@
 	while ( (nextCell = [enumerator nextObject]) ) {
 		[self removeTabForCell:nextCell];
 	}
-	
-    [_overflowPopUpButton release];
-    [_cells release];
-	[_controller release];
-    [tabView release];
-    [_addTabButton release];
-    [partnerView release];
-    [_lastMouseDownEvent release];
-    [style release];
     
     [self unregisterDraggedTypes];
 	
@@ -254,8 +245,7 @@
 	[center removeObserver:self name:NSWindowDidMoveNotification object:nil];
 	
 	if (_showHideAnimationTimer) {
-		[_showHideAnimationTimer invalidate];
-		[_showHideAnimationTimer release]; _showHideAnimationTimer = nil;
+		[_showHideAnimationTimer invalidate]; _showHideAnimationTimer = nil;
 	}
 	
     if (aWindow) {
@@ -290,7 +280,6 @@
 - (void)setLastMouseDownEvent:(NSEvent *)event
 {
     [event retain];
-    [_lastMouseDownEvent release];
     _lastMouseDownEvent = event;
 }
 
@@ -321,7 +310,6 @@
 - (void)setTabView:(NSTabView *)view
 {
     [view retain];
-    [tabView release];
     tabView = view;
 }
 
@@ -338,7 +326,7 @@
 - (void)setStyle:(id <PSMTabStyle>)newStyle
 {
     if (style != newStyle) {
-        [style autorelease];
+        style;
         style = [newStyle retain];
         
         // restyle add tab button
@@ -375,8 +363,6 @@
 	}
 
     [self setStyle:newStyle];
-
-    [newStyle release];
 }
 
 - (PSMTabBarOrientation)orientation
@@ -680,7 +666,6 @@
 	
     // add to collection
     [_cells addObject:cell];
-    [cell release];
     if ((NSInteger)[_cells count] == [tabView numberOfTabViewItems]) {
         [self update]; // don't update unless all are accounted for!
 	}
@@ -916,7 +901,6 @@
     NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithDouble:myOriginalOrigin], @"myOriginalOrigin", [NSNumber numberWithDouble:partnerOriginalOrigin], @"partnerOriginalOrigin", [NSNumber numberWithDouble:myOriginalSize], @"myOriginalSize", [NSNumber numberWithDouble:partnerOriginalSize], @"partnerOriginalSize", [NSNumber numberWithDouble:myTargetOrigin], @"myTargetOrigin", [NSNumber numberWithDouble:partnerTargetOrigin], @"partnerTargetOrigin", [NSNumber numberWithDouble:myTargetSize], @"myTargetSize", [NSNumber numberWithDouble:partnerTargetSize], @"partnerTargetSize", nil];
 	if (_showHideAnimationTimer) {
 		[_showHideAnimationTimer invalidate];
-		[_showHideAnimationTimer release];
 	}
     _showHideAnimationTimer = [[NSTimer scheduledTimerWithTimeInterval:(1.0 / 30.0) target:self selector:@selector(animateShowHide:) userInfo:userInfo repeats:YES] retain];
 }
@@ -982,8 +966,7 @@
 			}
 		}
 		
-		[_showHideAnimationTimer invalidate];
-		[_showHideAnimationTimer release]; _showHideAnimationTimer = nil;
+		[_showHideAnimationTimer invalidate]; _showHideAnimationTimer = nil;
     }
     [[self window] display];
 }
@@ -1005,7 +988,6 @@
 
 - (void)setPartnerView:(id)view
 {
-    [partnerView release];
     [view retain];
     partnerView = view;
 }
@@ -1014,15 +996,12 @@
 {
 	// Stop any animations that may be running
 
-	[_animationTimer invalidate];
-	[_animationTimer release]; _animationTimer = nil;
+	[_animationTimer invalidate]; _animationTimer = nil;
 	
-	[_showHideAnimationTimer invalidate];
-	[_showHideAnimationTimer release]; _showHideAnimationTimer = nil;
+	[_showHideAnimationTimer invalidate]; _showHideAnimationTimer = nil;
 
 	// Also unwind the spring, if it's wound.
-	[_springTimer invalidate];
-	[_springTimer release]; _springTimer = nil;
+	[_springTimer invalidate]; _springTimer = nil;
 }
 
 #pragma mark -
@@ -1075,8 +1054,7 @@
     [_overflowPopUpButton setMenu:overflowMenu];
 
 	if (_animationTimer) {
-		[_animationTimer invalidate];
-		[_animationTimer release]; _animationTimer = nil;
+		[_animationTimer invalidate]; _animationTimer = nil;
 	}	
 
     if (animate) {
@@ -1099,7 +1077,6 @@
 														  selector:@selector(_animateCells:)
 														  userInfo:[NSArray arrayWithObjects:targetFrames, animation, nil]
 														   repeats:YES] retain];
-		[animation release];
 		[[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSEventTrackingRunLoopMode];
 		[self _animateCells:_animationTimer];
 
@@ -1193,8 +1170,7 @@
             [_addTabButton setFrame:frame];
         }
 
-		[_animationTimer invalidate];
-		[_animationTimer release]; _animationTimer = nil;
+		[_animationTimer invalidate]; _animationTimer = nil;
 		
         for (NSUInteger i = 0; i < cellCount; i++) {
             currentCell = [_cells objectAtIndex:i];
@@ -1559,13 +1535,12 @@
 
 			//If the user has dragged to a different tab, reset the timer.
 			if (_tabViewItemWithSpring != [cell representedObject]) {
-				[_springTimer invalidate];
-				[_springTimer release]; _springTimer = nil;
+				[_springTimer invalidate]; _springTimer = nil;
 				_tabViewItemWithSpring = [cell representedObject];
 			}
 			if (!_springTimer) {
 				//Finder's default delay time, as of Tiger, is 668 ms. If the user has never changed it, there's no setting in its defaults, so we default to that amount.
-				NSNumber *delayNumber = [(NSNumber *)CFPreferencesCopyAppValue((CFStringRef)@"SpringingDelayMilliseconds", (CFStringRef)@"com.apple.finder") autorelease];
+				NSNumber *delayNumber = (NSNumber *)CFPreferencesCopyAppValue((CFStringRef)@"SpringingDelayMilliseconds", (CFStringRef)@"com.apple.finder");
 				NSTimeInterval delaySeconds = delayNumber ? [delayNumber doubleValue] / 1000.0 : 0.668;
 				_springTimer = [[NSTimer scheduledTimerWithTimeInterval:delaySeconds
 																 target:self
@@ -1589,8 +1564,7 @@
 
 - (void)draggingExited:(id <NSDraggingInfo>)sender
 {
-	[_springTimer invalidate];
-	[_springTimer release]; _springTimer = nil;
+	[_springTimer invalidate]; _springTimer = nil;
 
     [[PSMTabDragAssistant sharedDragAssistant] draggingExitedTabBar:self];
 }
@@ -1637,8 +1611,7 @@
 	[tabView selectTabViewItem:[cell representedObject]];
 
 	_tabViewItemWithSpring = nil;
-	[_springTimer invalidate];
-	[_springTimer release]; _springTimer = nil;
+	[_springTimer invalidate]; _springTimer = nil;
 }
 
 #pragma mark -
@@ -1661,7 +1634,6 @@
         if (![[self delegate] tabView:tabView shouldCloseTabViewItem:item]) {
             // fix mouse downed close button
             [sender setCloseButtonPressed:NO];
-            [sender release];
             return;
         }
     }
@@ -1669,8 +1641,6 @@
     [item retain];
     
 	[tabView removeTabViewItem:item];
-    [item release];
-    [sender release];
 }
 
 - (void)tabClick:(id)sender
@@ -1857,8 +1827,6 @@
 			[_cells insertObject:thisCell atIndex:0];
 			[thisCell setIsInOverflowMenu:NO];	//very important else we get a fun recursive loop going
 			[[_cells objectAtIndex:[_cells count] - 1] setIsInOverflowMenu:YES]; //these 2 lines are pretty uncool and this logic needs to be updated
-			[thisCell release];
-			[tabViewItem release];
 			
 			[aTabView setDelegate:tempDelegate];
 			

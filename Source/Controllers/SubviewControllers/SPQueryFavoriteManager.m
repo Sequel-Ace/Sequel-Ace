@@ -92,7 +92,7 @@
 	// change will be stored in the prefs at once)
 	if([prefs objectForKey:SPQueryFavorites]) {
 		for(id fav in [prefs objectForKey:SPQueryFavorites])
-			[favorites addObject:[[fav mutableCopy] autorelease]];
+			[favorites addObject:[fav mutableCopy]];
 	}
 
 	[favorites addObject:[NSDictionary dictionaryWithObjectsAndKeys:
@@ -103,7 +103,7 @@
 
 	if([[SPQueryController sharedQueryController] favoritesForFileURL:delegatesFileURL]) {
 		for(id fav in [[SPQueryController sharedQueryController] favoritesForFileURL:delegatesFileURL])
-			[favorites addObject:[[fav mutableCopy] autorelease]];
+			[favorites addObject:[fav mutableCopy]];
 	}
 
 	// Select the first query if any		
@@ -671,8 +671,8 @@
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[[NSMutableData alloc] init] autorelease];
-	NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] autorelease];
+	NSMutableData *indexdata = [[NSMutableData alloc] init] ;
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] ;
 	[archiver encodeObject:rows forKey:@"indexdata"];
 	[archiver finishEncoding];
 	[pboard setData:indexdata forType:SPFavoritesPasteboardDragType];
@@ -708,7 +708,7 @@
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]] autorelease];
+	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]] ;
 	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
 	[unarchiver finishDecoding];
 
@@ -749,8 +749,6 @@
 
 	[favoritesTableView reloadData];
 	[favoritesArrayController rearrangeObjects];
-	[draggedIndexes release];
-	[draggedRows release];
 
 	return YES;
 }
@@ -821,7 +819,6 @@
 
 				[alert setAlertStyle:NSCriticalAlertStyle];
 				[alert runModal];
-				if (spf) [spf release];
 				return;
 			}
 
@@ -851,7 +848,6 @@
 				[favoritesTableView reloadData];
 				[favoritesTableView selectRowIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(insertionIndexStart, insertionIndexEnd - insertionIndexStart)] byExtendingSelection:NO];
 				[favoritesTableView scrollRowToVisible:insertionIndexEnd];
-				[spf release];
 			} else {
 				NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithString:NSLocalizedString(@"Error while reading data file", @"error while reading data file")]
 												 defaultButton:NSLocalizedString(@"OK", @"OK button") 
@@ -861,7 +857,6 @@
 
 				[alert setAlertStyle:NSInformationalAlertStyle];
 				[alert runModal];
-				[spf release];
 				return;
 			}
 		}

@@ -41,7 +41,7 @@
 {
 
 	// Return an autoreleased trampoline object
-	return [[[SPMainThreadTrampoline alloc] initWithObject:self] autorelease];
+	return [[SPMainThreadTrampoline alloc] initWithObject:self] ;
 }
 
 /**
@@ -83,7 +83,6 @@
 	[theInvocation retainArguments];
 	[trampolineObject retain];
 	[theInvocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:trampolineObject waitUntilDone:YES];
-	[trampolineObject release];
 }
 
 /**
@@ -121,7 +120,6 @@
 	// Retain the object while performing calls on it
 	[trampolineObject retain];
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:nil waitUntilDone:YES];
-	[trampolineObject release];
 
 	return nil;
 }
@@ -140,8 +138,6 @@
 	[trampolineObject retain];
 	[theObject retain];
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:theObject waitUntilDone:YES];
-	[theObject release];
-	[trampolineObject release];
 
 	return nil;
 }

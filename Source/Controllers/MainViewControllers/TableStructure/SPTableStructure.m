@@ -89,7 +89,7 @@ static inline SPFieldTypeHelp *MakeFieldTypeHelp(NSString *typeName,NSString *ty
 	[obj setTypeRange:      typeRange];
 	[obj setTypeDescription:typeDescription];
 	
-	return [obj autorelease];
+	return obj;
 }
 
 struct _cmpMap {
@@ -717,7 +717,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		if (![[theRow objectForKey:@"unsigned"] boolValue]) {
 			NSMutableDictionary *rowCpy = [theRow mutableCopy];
 			[rowCpy setObject:@YES forKey:@"unsigned"];
-			theRow = [rowCpy autorelease];
+			theRow = rowCpy;
 		}
 	}
 
@@ -1208,8 +1208,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	[tempResult2 addObject:temp];
 
-	[temp release];
-
 	for (i = 0; i < [structureQueryResult numberOfRows]; i++) {
 		NSMutableArray *row = [[structureQueryResult getRowAsArray] mutableCopy];
 
@@ -1222,8 +1220,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		[tempResult addObject:row];
-
-		[row release];
 	}
 
 	for (i = 0; i < [indexesQueryResult numberOfRows]; i++) {
@@ -1241,8 +1237,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		[tempResult2 addObject:eachIndex];
-
-		[eachIndex release];
 	}
 
 	CFRelease(escapedNullValue);
@@ -1398,7 +1392,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Make a mutable copy out of the cached [tableDataInstance columns] since we're adding infos
 	for (id col in [tableDataInstance columns])
 	{
-		[theTableFields addObject:[[col mutableCopy] autorelease]];
+		[theTableFields addObject:[col mutableCopy]];
 	}
 
 	// Retrieve the indexes for the table
@@ -1595,8 +1589,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Send the query finished/work complete notification
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
-
-	[theTableFields release];
 }
 
 /**
@@ -2012,8 +2004,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
-
-	[originalRow release];
 
 	return YES;
 }

@@ -123,8 +123,6 @@ int _isSPLeaksLog(const struct direct *entry);
 	[logFileHandle seekToEndOfFile];
 	[logFileHandle writeData:[[NSString stringWithFormat:@"%@ %@\n", [[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:[NSLocale autoupdatingCurrentLocale]], logString] dataUsingEncoding:NSUTF8StringEncoding]];
 	[logFileHandle synchronizeFile];
-
-	[logString release];
 }
 
 - (void)dumpLeaks

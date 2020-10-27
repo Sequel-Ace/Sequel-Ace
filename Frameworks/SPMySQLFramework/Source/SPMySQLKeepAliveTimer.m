@@ -94,7 +94,6 @@
 
 - (void)dealloc
 {
-	[wrappedTimer release];
 	[super dealloc];
 }
 

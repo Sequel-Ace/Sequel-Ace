@@ -24,7 +24,6 @@
     [[self defaultCenter] postNotificationName:name 
                                         object:object 
                                       userInfo:nil];
-    [anInfoDictionary release];
 }
 
 - (void)postNotificationOnMainThread:(NSNotification *)aNotification {

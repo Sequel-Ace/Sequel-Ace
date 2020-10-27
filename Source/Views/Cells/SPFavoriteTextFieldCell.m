@@ -124,8 +124,6 @@
 
 		[NSBezierPath strokeLineFromPoint:startPoint toPoint:endPoint];
 
-		[lineGlow release];
-
 		[NSGraphicsContext restoreGraphicsState];
 	}
 }

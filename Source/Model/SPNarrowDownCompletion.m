@@ -343,7 +343,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[self setHasShadow:YES];
 	[self setAlphaValue:0.9f];
 
-	NSScrollView* scrollView = [[[NSScrollView alloc] initWithFrame:NSZeroRect] autorelease];
+	NSScrollView* scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect] ;
 	[scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	[scrollView setAutohidesScrollers:YES];
 	[scrollView setHasVerticalScroller:YES];
@@ -357,15 +357,15 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[theTableView setHeaderView:nil];
 
 	{
-		NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:@"image"] autorelease];
-		[column setDataCell:[[NSImageCell new] autorelease]];
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"image"] ;
+		[column setDataCell:[NSImageCell new]];
 		[theTableView addTableColumn:column];
 		[column setMinWidth:0];
 		[column setWidth:20];
 	}
 
 	{
-		NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:@"name"] autorelease];
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"name"] ;
 		[column setEditable:NO];
 		[[column dataCell] setFont:[NSFont systemFontOfSize:12]];
 		[theTableView addTableColumn:column];
@@ -373,14 +373,14 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	{
-		NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:@"type"] autorelease];
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"type"] ;
 		[column setEditable:NO];
 		[theTableView addTableColumn:column];
 		[column setWidth:139];
 	}
 
 	{
-		NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:@"list"] autorelease];
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"list"] ;
 		[column setEditable:NO];
 		[theTableView addTableColumn:column];
 		[column setMinWidth:0];
@@ -388,7 +388,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	{
-		NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:@"path"] autorelease];
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"path"] ;
 		[column setEditable:NO];
 		[theTableView addTableColumn:column];
 		[column setWidth:95];
@@ -511,18 +511,17 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			[b setControlSize:NSMiniControlSize];
 			{
 				NSMenu *m = [[NSMenu alloc] init];
-				NSMenuItem *aMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Type Declaration:", @"type declaration header") action:NULL keyEquivalent:@""] autorelease];
+				NSMenuItem *aMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Type Declaration:", @"type declaration header") action:NULL keyEquivalent:@""] ;
 				[aMenuItem setEnabled:NO];
 				[m addItem:aMenuItem];
 				[m addItemWithTitle:[[filtered objectAtIndex:rowIndex] objectForKey:@"list"] action:NULL keyEquivalent:@""];
 				[b setMenu:m];
-				[m release];
 			}
 			[b setPreferredEdge:NSMinXEdge];
 			[b setArrowPosition:NSPopUpArrowAtCenter];
 			[b setFont:[NSFont systemFontOfSize:11]];
 			[b setBordered:NO];
-			return [b autorelease];
+			return b;
 		}
 	}
 	else if([identifier isEqualToString:@"type"]) {
@@ -531,7 +530,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			[b setEditable:NO];
 			[b setAlignment:NSRightTextAlignment];
 			[b setFont:[NSFont systemFontOfSize:11]];
-			return [b autorelease];
+			return b;
 		}
 	}
 	else if ([identifier isEqualToString:@"path"]) {
@@ -554,13 +553,12 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 					[m removeItemAtIndex:0];
 				}
 				[b setMenu:m];
-				[m release];
 			}
 			[b setPreferredEdge:NSMinXEdge];
 			[b setArrowPosition:([b numberOfItems] > 1 ? NSPopUpArrowAtCenter : NSPopUpNoArrow)];
 			[b setFont:[NSFont systemFontOfSize:11]];
 			[b setBordered:NO];
-			return [b autorelease];
+			return b;
 		}
 	}
 
@@ -683,8 +681,6 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 							[newFiltered addObject:s];
 						}
 					}
-
-					[fuzzyRegexp release];
 				}
 				else {
 					NSPredicate* predicate;
@@ -698,7 +694,6 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 				}
 			}
 			@catch(id ae) {
-				if(newFiltered) [newFiltered release];
 				NSLog(@"%@", @"Couldn't filter suggestion due to internal regexp error");
 				closeMe = YES;
 				return;
@@ -711,7 +706,6 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 
 	if(![newFiltered count]) {
 		if(autoCompletionMode) {
-			[newFiltered release];
 			closeMe = YES;
 			return;
 		}
@@ -720,7 +714,6 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			if([[self filterString] hasSuffix:@"."]) {
 				[theView setCompletionWasReinvokedAutomatically:YES];
 				[theView doCompletionByUsingSpellChecker:dictMode fuzzyMode:fuzzyMode autoCompleteMode:NO];
-				[newFiltered release];
 				closeMe = YES;
 				return;
 			}
@@ -731,7 +724,6 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	if(autoCompletionMode && [newFiltered count] == 1 && [[[self filterString] lowercaseString] isEqualToString:[[[newFiltered objectAtIndex:0] objectForKey:@"display"] lowercaseString]]) {
-		[newFiltered release];
 		closeMe = YES;
 		return;
 	}
@@ -756,10 +748,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	// newHeight is currently the new height for theTableView, but we need to resize the whole window
 	// so here we use the difference in height to find the new height for the window
 	[self setFrame:NSMakeRect(old.x, old.y-newHeight, maxWindowWidth, newHeight) display:YES];
-
-	if (filtered) [filtered release];
 	filtered = [newFiltered retain];
-	[newFiltered release];
 	if(!dictMode) [self checkSpaceForAllowedCharacter];
 	[theTableView reloadData];
 	[theTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:(isQueryingDatabaseStructure)?1:0] byExtendingSelection:NO];

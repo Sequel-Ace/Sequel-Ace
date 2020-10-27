@@ -45,8 +45,6 @@
 		
 		[self replaceObjectAtIndex:i withObject:NSArrayObjectAtIndex(self, j)];
 		[self replaceObjectAtIndex:j withObject:obj];
-		
-		[obj release];
 	}
 }
 

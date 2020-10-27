@@ -61,7 +61,7 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 
 + (SPFavoriteNode *)favoriteNodeWithDictionary:(NSMutableDictionary *)dictionary
 {
-	return [[[self alloc] initWithDictionary:dictionary] autorelease];
+	return [[self alloc] initWithDictionary:dictionary] ;
 }
 
 #pragma mark -
@@ -73,7 +73,7 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 	
 	[node setNodeFavorite:[[self nodeFavorite] copyWithZone:zone]];
 	
-	return [node autorelease];
+	return node;
 }
 
 #pragma mark -

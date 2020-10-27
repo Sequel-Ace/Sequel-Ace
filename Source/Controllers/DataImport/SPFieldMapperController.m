@@ -125,7 +125,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Note: [fileSourcePath setURL:[NSURL fileWithPath:sourcePath]] does NOT work
 	// if Sequel Ace runs localized. Reason unknown, it seems to be a NSPathControl bug.
 	// Ask HansJB for more info.
-	NSPathControl *pc = [[[NSPathControl alloc] initWithFrame:NSZeroRect] autorelease];
+	NSPathControl *pc = [[NSPathControl alloc] initWithFrame:NSZeroRect] ;
 	[pc setURL:[NSURL fileURLWithPath:sourcePath]];
 	if([pc pathComponentCells])
 		[fileSourcePath setPathComponentCells:[pc pathComponentCells]];
@@ -580,7 +580,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					[fieldMappingTableDefaultValues addObject:@"0"];
 				}
 				targetTableHasPrimaryKey = YES;
-				if (primaryKeyFields) [primaryKeyFields release];
 				primaryKeyFields = [[tableDetails objectForKey:@"primarykeyfield"] retain];
 			} else {
 				if([column objectForKey:@"unique"]) {
@@ -600,8 +599,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[fieldMappingTableTypes addObject:[NSString stringWithString:type]];
 		}
 	}
-
-	[selectedTableData release];
 	[[importMethodPopup menu] setAutoenablesItems:NO];
 	[[importMethodPopup itemWithTitle:@"REPLACE"] setEnabled:(targetTableHasPrimaryKey|isReplacePossible)];
 	[skipexistingRowsCheckBox setEnabled:targetTableHasPrimaryKey];
@@ -1008,7 +1005,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	for(i=0; i<[fieldMappingTableColumnNames count]; i++)
 		[fieldMappingTableTypes addObject:type];
 	[fieldMapperTableView reloadData];
-	[type release];
 }
 
 /*
@@ -1408,7 +1404,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 						[fuzzyRegexp appendFormat:@".*?%c",c];
 				}
 				dist -= [tableHeadName rangeOfRegex:fuzzyRegexp].length;
-				[fuzzyRegexp release];
 
 			} else {
 				// Levenshtein distance == 0 means that both names are equal set dist to 
@@ -1428,7 +1423,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	}
 
 	// Sort the matrix according distance
-	NSSortDescriptor *sortByDistance = [[[NSSortDescriptor alloc] initWithKey:@"dist" ascending:YES] autorelease];
+	NSSortDescriptor *sortByDistance = [[NSSortDescriptor alloc] initWithKey:@"dist" ascending:YES] ;
 	[distMatrix sortUsingDescriptors:[NSArray arrayWithObjects:sortByDistance, nil]];
 
 	NSMutableArray *matchedFile  = [NSMutableArray array];
@@ -1839,7 +1834,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[aTableColumn setDataCell:typeComboxBox];
 				return [fieldMappingTableTypes objectAtIndex:rowIndex];
 			} else {
-				NSTokenFieldCell *b = [[[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]] autorelease];
+				NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]] ;
 				[b setEditable:NO];
 				[b setAlignment:NSLeftTextAlignment];
 				[b setWraps:NO];
@@ -2089,7 +2084,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 		// If newTableNameTextField is active enter key closes the sheet
 		if(control == newTableNameTextField) {
-			NSButton *b = [[[NSButton alloc] init] autorelease];
+			NSButton *b = [[NSButton alloc] init] ;
 			[b setTag:1];
 			[self closeSheet:b];
 			return YES;

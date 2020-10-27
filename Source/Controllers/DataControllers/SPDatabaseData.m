@@ -158,8 +158,6 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 {
 	@synchronized(charsetCollationLock) {
 		if (encoding && ((characterSetEncoding == nil) || (![characterSetEncoding isEqualToString:encoding]) || ([characterSetCollations count] == 0))) {
-			
-			[characterSetEncoding release];
 			 //depends on encoding
 			[characterSetCollations removeAllObjects];
 			
@@ -239,7 +237,7 @@ copy_return:
 				}
 			}
 		}
-		return [[defaultCollationForCharacterSet copy] autorelease]; // -copy accepts nil, -stringWithString: does not
+		return [defaultCollationForCharacterSet copy] ; // -copy accepts nil, -stringWithString: does not
 	}
 }
 
@@ -415,7 +413,7 @@ copy_return:
 			defaultCharacterSetEncoding = [[self _getSingleVariableValue:variable] retain];
 		}
 		
-		return [[defaultCharacterSetEncoding copy] autorelease];
+		return [defaultCharacterSetEncoding copy] ;
 	}
 }
 
@@ -433,7 +431,7 @@ copy_return:
 			defaultCollation = [[self _getSingleVariableValue:@"collation_database"] retain];
 		}
 			
-		return [[defaultCollation copy] autorelease];
+		return [defaultCollation copy] ;
 	}
 }
 
@@ -453,7 +451,7 @@ copy_return:
 			serverDefaultCharacterSetEncoding = [[self _getSingleVariableValue:variable] retain];
 		}
 		
-		return [[serverDefaultCharacterSetEncoding copy] autorelease];
+		return [serverDefaultCharacterSetEncoding copy] ;
 	}
 }
 
@@ -471,7 +469,7 @@ copy_return:
 			serverDefaultCollation = [[self _getSingleVariableValue:@"collation_server"] retain];
 		}
 		
-		return [[serverDefaultCollation copy] autorelease];
+		return [serverDefaultCollation copy] ;
 	}
 }
 
@@ -563,7 +561,7 @@ copy_return:
 		
 		[outData addObject:convertedCollation];
 	}
-	return [outData autorelease];
+	return outData;
 }
 
 /**

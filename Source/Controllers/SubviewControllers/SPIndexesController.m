@@ -195,15 +195,13 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	for (NSDictionary *field in fields)
 	{
 		if (![indexedFieldNames containsObject:[field objectForKey:@"name"]]) {
-			initialField = [[field mutableCopy] autorelease];
+			initialField = [field mutableCopy] ;
 			break;
 		}
 	}
 
 	// If no initial field has been selected yet - all fields are indexed - add the first field.
 	if (!initialField) initialField = [fields objectAtIndex:0];
-	
-	[indexedFieldNames release];
 
 	// Reset the indexed columns
 	[indexedFields removeAllObjects];
@@ -336,7 +334,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		for (NSDictionary *field in fields)
 		{
 			if (![indexedFields containsObject:field]) {
-				[indexedFields addObject:[[field mutableCopy] autorelease]];
+				[indexedFields addObject:[field mutableCopy]];
 				break;
 			}
 		}
@@ -484,8 +482,6 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	NSString *name = [[availableFields objectAtIndex:index] objectForKey:@"name"];
 	
-	[availableFields release];
-	
 	return name;
 }
 
@@ -523,7 +519,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 	[indexedFields removeAllObjects];
 
-	if ([fields count]) [indexedFields addObject:[[[fields objectAtIndex:0] mutableCopy] autorelease]];
+	if ([fields count]) [indexedFields addObject:[[fields objectAtIndex:0] mutableCopy]];
 	
 	[indexedColumnsTableView reloadData];
 }
@@ -731,7 +727,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// SPATIAL index types are only available using the MyISAM engine
 	if (isMyISAMTable) {
 		if ([[dbDocument serverSupport] supportsSpatialExtensions]) {
-			NSMenuItem *spatialMenuItem = [[[NSMenuItem alloc] init] autorelease];
+			NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init] ;
 			
 			[spatialMenuItem setTitle:NSLocalizedString(@"SPATIAL", @"spatial index menu item title")];
 			[spatialMenuItem setTag:SPSpatialMenuTag];
@@ -742,7 +738,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	// FULLTEXT only works with MyISAM and (InnoDB since 5.6.4)
 	if (isMyISAMTable || (isInnoDBTable && [[dbDocument serverSupport] supportsFulltextOnInnoDB])) {
-		NSMenuItem *fullTextMenuItem = [[[NSMenuItem alloc] init] autorelease];
+		NSMenuItem *fullTextMenuItem = [[NSMenuItem alloc] init] ;
 		
 		[fullTextMenuItem setTitle:NSLocalizedString(@"FULLTEXT", @"full text index menu item title")];
 		[fullTextMenuItem setTag:SPFullTextMenuTag];
@@ -879,14 +875,12 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 					[tableStructure loadTable:table];
 				}
 			}
-
-			[tempIndexedColumns release];
 		}
 
 		SPMainQSync(^{
 			// Reset indexed fields to default
 			[indexedFields removeAllObjects];
-			[indexedFields addObject:[[[fields objectAtIndex:0] mutableCopy] autorelease]];
+			[indexedFields addObject:[[fields objectAtIndex:0] mutableCopy]];
 			[indexedColumnsTableView reloadData];
 		});
 

@@ -38,7 +38,7 @@
 {
 	SPExportFileNameTokenObject *obj = [[SPExportFileNameTokenObject alloc] init];
 	[obj setTokenId:token];
-	return [obj autorelease];
+	return obj;
 }
 
 - (NSString *)description

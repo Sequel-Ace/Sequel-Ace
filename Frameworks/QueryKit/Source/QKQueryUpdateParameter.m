@@ -36,7 +36,7 @@
 
 + (QKQueryUpdateParameter *)queryUpdateParamWithField:(NSString *)field value:(id)value
 {
-	return [[[QKQueryUpdateParameter alloc] initUpdateParamWithField:field value:value] autorelease];
+	return [[QKQueryUpdateParameter alloc] initUpdateParamWithField:field value:value] ;
 }
 
 - (id)initUpdateParamWithField:(NSString *)field value:(id)value

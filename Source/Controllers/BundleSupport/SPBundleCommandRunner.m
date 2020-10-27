@@ -287,14 +287,14 @@
 
 		if(status == 9 || userTerminated) return @"";
 		if(theError != NULL) {
-			NSMutableString *errMessage = [[[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] autorelease];
+			NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] ;
 			[errMessage replaceOccurrencesOfString:[NSString stringWithFormat:@"%@: ", scriptFilePath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
-			*theError = [[[NSError alloc] initWithDomain:NSPOSIXErrorDomain
+			*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 													code:status
 												userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
 														  errMessage,
 														  NSLocalizedDescriptionKey,
-														  nil]] autorelease];
+														  nil]];
 		} else {
 			NSBeep();
 		}
@@ -312,14 +312,14 @@
 			} else {
 				if(theError != NULL) {
 					if(status == 9 || userTerminated) return @"";
-					NSMutableString *errMessage = [[[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] autorelease];
+					NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] ;
 					[errMessage replaceOccurrencesOfString:[SPBundleTaskScriptCommandFilePath stringByExpandingTildeInPath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
-					*theError = [[[NSError alloc] initWithDomain:NSPOSIXErrorDomain
+					*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 															code:status
 														userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
 																  errMessage,
 																  NSLocalizedDescriptionKey,
-																  nil]] autorelease];
+																  nil]];
 				} else {
 					NSBeep();
 				}
@@ -333,8 +333,6 @@
 			NSBeep();
 		}
 	}
-
-	if (bashTask) [bashTask release];
 	[fileManager removeItemAtPath:stdoutFilePath error:nil];
 	return @"";
 }

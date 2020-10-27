@@ -199,7 +199,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}];
 	
-	return [string autorelease];
+	return string;
 }
 
 /**
@@ -546,8 +546,6 @@ static SPQueryController *sharedQueryController = nil;
 
 		[consoleString appendFormat:@"%@\n", [message message]];
 	}
-	
-	[messageCopy release];
 
 	return consoleString;
 }
@@ -745,7 +743,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}
 
-	return [[[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes] autorelease];
+	return [[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes] ;
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
@@ -771,7 +769,6 @@ static SPQueryController *sharedQueryController = nil;
 		if (![favoritesContainer objectForKey:[new absoluteString]]) {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[favoritesContainer setObject:arr forKey:[new absoluteString]];
-			[arr release];
 		}
 
 		// Set the global history coming from the Prefs as default if available
@@ -780,12 +777,10 @@ static SPQueryController *sharedQueryController = nil;
 				NSMutableArray *arr = [[NSMutableArray alloc] init];
 				[arr addObjectsFromArray:[prefs objectForKey:SPQueryHistory]];
 				[historyContainer setObject:arr forKey:[new absoluteString]];
-				[arr release];
 			}
 			else {
 				NSMutableArray *arr = [[NSMutableArray alloc] init];
 				[historyContainer setObject:[NSMutableArray array] forKey:[new absoluteString]];
-				[arr release];
 			}
 		}
 
@@ -804,12 +799,10 @@ static SPQueryController *sharedQueryController = nil;
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[arr addObjectsFromArray:[contextInfo objectForKey:SPQueryFavorites]];
 			[favoritesContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 		else {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[favoritesContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 	}
 
@@ -818,12 +811,10 @@ static SPQueryController *sharedQueryController = nil;
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[arr addObjectsFromArray:[contextInfo objectForKey:SPQueryHistory]];
 			[historyContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 		else {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[historyContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 	}
 
@@ -834,7 +825,6 @@ static SPQueryController *sharedQueryController = nil;
 		else {
 			NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
 			[contentFilterContainer setObject:dict forKey:[fileURL absoluteString]];
-			[dict release];
 		}
 	}
 
@@ -880,7 +870,6 @@ static SPQueryController *sharedQueryController = nil;
 		[c setDictionary:[contentFilterContainer objectForKey:[fileURL absoluteString]]];
 		[c setObject:contentFilterArray forKey:filterType];
 		[contentFilterContainer setObject:c forKey:[fileURL absoluteString]];
-		[c release];
 	}
 }
 
@@ -949,7 +938,6 @@ static SPQueryController *sharedQueryController = nil;
 		}
 
 		[self replaceHistoryByArray:[uniquifier itemTitles] forFileURL:fileURL];
-		[uniquifier release];
 	}
 
 	// Save history items coming from each Untitled document in the global Preferences successively
@@ -967,7 +955,6 @@ static SPQueryController *sharedQueryController = nil;
 		}
 
 		[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
-		[uniquifier release];
 	}
 }
 
@@ -1069,7 +1056,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}
 
-	return [result autorelease];
+	return result;
 }
 
 #pragma mark -

@@ -510,8 +510,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 	[data addObject:headings];
 
-	[headings release];
-
 	// Get the relation data
 	for (NSDictionary *trigger in triggerData)
 	{
@@ -526,8 +524,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		[temp addObject:[trigger objectForKey:SPTriggerSQLMode]];
 
 		[data addObject:temp];
-
-		[temp release];
 	}
 
 	return data;
@@ -546,7 +542,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	NSDictionary *trigger = [triggerData objectAtIndex:index];
 	
 	// Cache the original trigger in the event that the editing process fails and we need to recreate it.
-	if (editedTrigger) [editedTrigger release];
 	editedTrigger = [trigger copy];
 	
 	[triggerNameTextField setStringValue:[trigger objectForKey:SPTriggerName]];

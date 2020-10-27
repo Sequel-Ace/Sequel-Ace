@@ -219,7 +219,6 @@
 						modalDelegate:self 
 						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
 						contextInfo:nil];
-					[alert release];
 					
 				} else
 					[self insertFileContentOfFile:filepath];
@@ -291,9 +290,6 @@
 	result=[[NSString alloc] initWithData:[handle readDataToEndOfFile]
 		encoding:NSASCIIStringEncoding];
 
-	[pipe release];
-	[task release];
-
 	// UTF16/32 files are detected as application/octet-stream resp. audio/mpeg
 	if( [result hasPrefix:@"text/plain"] 
 		|| [[[aPath pathExtension] lowercaseString] isEqualToString:SPFileExtensionSQL] 
@@ -322,7 +318,6 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			[self insertText:@""]; // Invoke keyword uppercasing
 			return;
 		}
@@ -331,13 +326,10 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			[self insertText:@""]; // Invoke keyword uppercasing
 			return;
 		}
 	}
-	
-	[result release];
 
 	NSLog(@"%@ ‘%@’.", NSLocalizedString(@"Couldn't read the file content of", @"Couldn't read the file content of"), aPath);
 }

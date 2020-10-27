@@ -49,7 +49,7 @@ int main(int argc, const char *argv[])
 		}
 
 		if (argc > 1) {
-			argument = [[[NSString alloc] initWithCString:argv[1] encoding:NSUTF8StringEncoding] autorelease];
+			argument = [[NSString alloc] initWithCString:argv[1] encoding:NSUTF8StringEncoding] ;
 		}
 
 		// Check if we're being asked a question and respond if so
@@ -94,11 +94,8 @@ int main(int argc, const char *argv[])
 
 				if ([keychain passwordExistsForName:keychainName account:keychainAccount]) {
 					printf("%s\n", [[keychain getPasswordForName:keychainName account:keychainAccount] UTF8String]);
-					[keychain release];
 					return 0;
 				}
-
-				[keychain release];
 
 				// If retrieving the password failed, log an error and fall back to requesting from the GUI
 				NSLog(@"SSH Tunnel: specified keychain password not found");
@@ -148,11 +145,8 @@ int main(int argc, const char *argv[])
 
 				if ([keychain passwordExistsForName:@"SSH" account:keyName]) {
 					printf("%s\n", [[keychain getPasswordForName:@"SSH" account:keyName] UTF8String]);
-					[keychain release];
 					return 0;
 				}
-
-				[keychain release];
 			}
 
 			// Not found in the keychain - we need to ask the GUI.

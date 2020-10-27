@@ -106,10 +106,6 @@
 	if([clause replaceOccurrencesOfString:@"%@" withString:@"%@" options:NSLiteralSearch range:NSMakeRange(0, [clause length])] != numberOfArguments) {
 		SPLog(@"Error while setting filter string. “NumberOfArguments” differs from the number of arguments specified in “Clause”.");
 		NSBeep();
-		[argument release];
-		[firstBetweenArgument release];
-		[secondBetweenArgument release];
-		[clause release];
 		return nil;
 	}
 	
@@ -136,11 +132,6 @@
 	} else {
 		[filterString appendString:clause];
 	}
-	
-	[argument release];
-	[firstBetweenArgument release];
-	[secondBetweenArgument release];
-	[clause release];
 	
 	// Return the filter string
 	return filterString;
@@ -185,7 +176,7 @@
 		[arg flushCachedRegexData];
 	}
 	
-	return [arg autorelease];
+	return arg;
 }
 
 @end

@@ -93,7 +93,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	if ([[prefs objectForKey:SPContentFilters] objectForKey:filterType]) {
 		for (id fav in [[prefs objectForKey:SPContentFilters] objectForKey:filterType])
 		{
-			id f = [[fav mutableCopy] autorelease];
+			id f = [fav mutableCopy] ;
 
 			if ([f objectForKey:@"ConjunctionLabels"]) {
 				[f setObject:[[f objectForKey:@"ConjunctionLabels"] objectAtIndex:0] forKey:@"ConjunctionLabel"];
@@ -114,7 +114,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		id filters = [[SPQueryController sharedQueryController] contentFilterForFileURL:documentFileURL];
 		if([filters objectForKey:filterType])
 			for(id fav in [filters objectForKey:filterType])
-				[contentFilters addObject:[[fav mutableCopy] autorelease]];
+				[contentFilters addObject:[fav mutableCopy]];
 	}
 
 	// Select the first query if any
@@ -193,10 +193,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				[d removeObjectForKey:@"ConjunctionLabels"];
 			}
 			[d removeObjectForKey:@"ConjunctionLabel"];
-			[conjLabel release];
 			[d setObject:[NSNumber numberWithInteger:numOfArgs] forKey:@"NumberOfArguments"];
 			[filters addObject:d];
-			[d release];
 		}
 		else {
 			break;
@@ -385,7 +383,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		id cf = [[prefs objectForKey:SPContentFilters] mutableCopy];
 		[cf setObject:[self contentFilterForFileURL:nil] forKey:filterType];
 		[prefs setObject:cf forKey:SPContentFilters];
-		[cf release];
 
 		// Inform all opened documents to update the query favorites list
 		[[NSNotificationCenter defaultCenter] postNotificationName:SPContentFiltersHaveBeenUpdatedNotification object:self];
@@ -545,8 +542,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[[NSMutableData alloc] init] autorelease];
-	NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] autorelease];
+	NSMutableData *indexdata = [[NSMutableData alloc] init] ;
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] ;
 	[archiver encodeObject:rows forKey:@"indexdata"];
 	[archiver finishEncoding];
 	[pboard setData:indexdata forType:SPContentFilterPasteboardDragType];
@@ -581,7 +578,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]] autorelease];
+	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]] ;
 	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
 	[unarchiver finishDecoding];
 
@@ -622,8 +619,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	[contentFilterTableView reloadData];
 	[contentFilterArrayController rearrangeObjects];
-	[draggedIndexes release];
-	[draggedRows release];
 	return YES;
 }
 
@@ -737,7 +732,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			[c replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:@"<field>"];
 			[c flushCachedRegexData];
 			[resultingClauseContentLabel setStringValue:[NSString stringWithFormat:@"%@%@", ([suppressLeadingFieldPlaceholderCheckbox state] == NSOnState) ? @"" : @"<field> ", c]];
-			[c release];
 		}
 
 	}
@@ -834,7 +828,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 					
 					[alert setAlertStyle:NSCriticalAlertStyle];
 					[alert runModal];
-					if (spf) [spf release];
 					return;
 				}
 			}
@@ -865,7 +858,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				[contentFilterTableView reloadData];
 				[contentFilterTableView selectRowIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(insertionIndexStart, insertionIndexEnd - insertionIndexStart)] byExtendingSelection:NO];
 				[contentFilterTableView scrollRowToVisible:insertionIndexEnd];
-				[spf release];
 			} else {
 				NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithString:SP_FILE_PARSER_ERROR_TITLE_STRING]
 												 defaultButton:NSLocalizedString(@"OK", @"OK button")
@@ -875,7 +867,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 				[alert setAlertStyle:NSInformationalAlertStyle];
 				[alert runModal];
-				[spf release];
 				return;
 			}
 		}

@@ -49,7 +49,6 @@
 						[a1 retain];
 						[array1 replaceObjectAtIndex: d + stride withObject:b1];
 						[array1 replaceObjectAtIndex: d withObject: a1];
-						[a1 release];
 						va_start(argumentList, array1);		 
 						while ((eachObject = va_arg(argumentList, id))) {
 							id ax = [eachObject objectAtIndex:d+stride];
@@ -57,12 +56,9 @@
 							[ax retain];
 							[eachObject replaceObjectAtIndex: d + stride withObject:bx];
 							[eachObject replaceObjectAtIndex: d withObject: ax];
-							[ax release];
 						}
 						va_end(argumentList);
 					}
-
-					[a release];
 
 					if (stride > d)
 						break;

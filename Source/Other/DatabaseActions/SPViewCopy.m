@@ -53,7 +53,6 @@
 		NSUInteger replaced = [createStatement replaceOccurrencesOfString:search withString:[NSString stringWithFormat:@"VIEW %@.%@", [targetDatabase backtickQuotedString], [view backtickQuotedString]] options:0 range:range];
 		
 		if (replaced != 1) {
-			[createStatement release];
 
 			return NO;
 		}
@@ -65,13 +64,9 @@
 											  range:NSMakeRange(0, [createStatement length])];
 		
 		[connection queryString:createStatement];		
-		
-		[createStatement release];
 				
 		return ![connection queryErrored];
 	}
-	
-	[createStatement release];
 	
 	return NO;
 }

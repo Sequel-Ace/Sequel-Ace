@@ -100,7 +100,7 @@
 	[dialog initDialog];
 	
 	NSInteger cnt = 0;
-	NSMenu *theMenu = [[[NSMenu alloc] init] autorelease];
+	NSMenu *theMenu = [[NSMenu alloc] init] ;
 	
 	for (id item in theList) 
 	{
@@ -126,7 +126,6 @@
         if (aMenuItem) {
             [aMenuItem setTag:cnt++];
             [theMenu addItem:aMenuItem];
-            [aMenuItem release];
         }
 	}
 	

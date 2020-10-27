@@ -244,7 +244,6 @@
 		for(NSString* title in menu->items) {
 			NSMenuItem *anItem = [[NSMenuItem alloc] initWithTitle:[menuItemTitles objectForKey:title] action:menu->action keyEquivalent:@""];
 			[menu->menu addItem:anItem];
-			[anItem release];
 		}
 	}
 
@@ -253,15 +252,12 @@
 	anItem = [[NSMenuItem alloc] initWithTitle:SP_BUNDLEEDITOR_SCOPE_GENERAL_STRING action:@selector(scopeButtonChanged:) keyEquivalent:@""];
 	[anItem setTag:kGeneralScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:SP_BUNDLEEDITOR_SCOPE_INPUTFIELD_STRING action:@selector(scopeButtonChanged:) keyEquivalent:@""];
 	[anItem setTag:kInputFieldScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:SP_BUNDLEEDITOR_SCOPE_DATATABLE_STRING action:@selector(scopeButtonChanged:) keyEquivalent:@""];
 	[anItem setTag:kDataTableScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
-	[anItem release];
 	[scopePopupButton setMenu:inputGeneralScopePopUpMenu];
 
 	[keyEquivalentField setCanCaptureGlobalHotKeys:YES];
@@ -448,8 +444,6 @@
 			[commandsOutlineView reloadData];
 		}
 	}
-
-	[oldScope release];
 
 	[self _updateBundleDataView];
 
@@ -768,7 +762,6 @@
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Save-Bundle-Error : OK button")];
 			[alert setAlertStyle:NSCriticalAlertStyle];
 			[alert runModal]; //blocks
-			[alert release];
 		}
 	}];
 }
@@ -964,7 +957,6 @@
 			if(!cmdData || error) {
 				NSLog(@"“%@” file couldn't be read. (error=%@)", cmdFilePath, error);
 				NSBeep();
-				if (cmdData) [cmdData release];
 				return NO;
 			}
 		}
@@ -974,8 +966,6 @@
 			return YES;
 		if([cmdData objectForKey:SPBundleFileIsDefaultBundleKey]) 
 			[saveDict setObject:@YES forKey:SPBundleFileDefaultBundleWasModifiedKey];
-		
-		if (cmdData) [cmdData release];
 	}
 
 	// Remove a given old command.plist file
@@ -1675,7 +1665,6 @@
 				if(!cmdData || readError) {
 					NSLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError);
 					NSBeep();
-					if (cmdData) [cmdData release];
 				}
 				else {
 					if([cmdData objectForKey:SPBundleFileNameKey] && [[cmdData objectForKey:SPBundleFileNameKey] length] && [cmdData objectForKey:SPBundleFileScopeKey])
@@ -1758,7 +1747,6 @@
 						}
 
 					}
-					if (cmdData) [cmdData release];
 				}
 			}
 		}
@@ -1944,7 +1932,7 @@
 		return;
 	}
 
-	NSMutableString *metaString = [[[NSMutableString alloc] init] autorelease];
+	NSMutableString *metaString = [[NSMutableString alloc] init] ;
 	if ([currentDict objectForKey:@"author"]) {
 		[metaString appendFormat:@"(%@) ", [currentDict objectForKey:@"author"]];
 	} else if ([currentDict objectForKey:@"contact"]) {

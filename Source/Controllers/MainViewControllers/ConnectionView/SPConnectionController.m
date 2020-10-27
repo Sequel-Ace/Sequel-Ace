@@ -1307,7 +1307,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[savePanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
 		if (returnCode == NSModalResponseOK) {
-			SPFavoritesExporter *exporter = [[[SPFavoritesExporter alloc] init] autorelease];
+			SPFavoritesExporter *exporter = [[SPFavoritesExporter alloc] init] ;
 
 			[exporter setDelegate:self];
 
@@ -1727,7 +1727,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	// If this node only has one child and it's not another group node, don't bother proceeding
 	if (([nodes count] == 1) && (![[nodes objectAtIndex:0] isGroup])) {
-		[nodes release];
 		return;
 	}
 
@@ -1743,8 +1742,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (reverseFavoritesSort) [nodes reverse];
 
 	[[node mutableChildNodes] setArray:nodes];
-	
-	[nodes release];
 }
 
 /**
@@ -2721,7 +2718,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSMutableAttributedString *editedCellString = [[cell attributedStringValue] mutableCopy];
 		[editedCellString addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithDeviceWhite:0.25f alpha:1.f] range:NSMakeRange(0, [editedCellString length])];
 		[cell setAttributedStringValue:editedCellString];
-		[editedCellString release];
 	}
 }
 
@@ -3473,8 +3469,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[timeZoneMenuItems addObject:NSMenuItem.separatorItem];
 		}
 		NSMenuItem *entry = [[NSMenuItem alloc] initWithTitle:tzIdentifier action:nil keyEquivalent:@""];
-		[timeZoneMenuItems addObject:entry]; // adding to an array retains the object
-		[entry release]; // so we can release here. otherwise we leak.
+		[timeZoneMenuItems addObject:entry]; // adding to an array retains the object // so we can release here. otherwise we leak.
 	}
 
 	return timeZoneMenuItems;
@@ -3521,7 +3516,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	[nibLoader instantiateWithOwner:self topLevelObjects:&connectionViewTopLevelObjects];
 	[nibObjectsToRelease addObjectsFromArray:connectionViewTopLevelObjects];
-	[nibLoader release];
 
 }
 

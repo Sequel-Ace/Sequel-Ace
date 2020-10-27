@@ -383,18 +383,16 @@
 	myArrayOfTabs = [NSMutableArray arrayWithCapacity:numberOfTabs];
 	aTab = [[NSTextTab alloc] initWithType:NSLeftTabStopType location:tabWidth];
 	[myArrayOfTabs addObject:aTab];
-	[aTab release];
 	for(i=1; i<numberOfTabs; i++) {
 		aTab = [[NSTextTab alloc] initWithType:NSLeftTabStopType location:tabWidth + ((float)i * tabWidth)];
 		[myArrayOfTabs addObject:aTab];
-		[aTab release];
 	}
 	paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
 	[paragraphStyle setTabStops:myArrayOfTabs];
 	// Soft wrapped lines are indented slightly
 	[paragraphStyle setHeadIndent:4.0f];
 
-	NSMutableDictionary *textAttributes = [[[NSMutableDictionary alloc] initWithCapacity:1] autorelease];
+	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1] ;
 	[textAttributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
 
 	NSRange range = NSMakeRange(0, [[self textStorage] length]);
@@ -407,8 +405,6 @@
 	[self setFont:tvFont];
 
 	[self setEditable:oldEditableStatus];
-
-	[paragraphStyle release];
 }
 
 /**
@@ -571,8 +567,6 @@
 		whitespaceScanner = [[NSScanner alloc] initWithString:currentLine];
 		[whitespaceScanner setCharactersToBeSkipped:nil];
 		[whitespaceScanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:&indentString];
-		[whitespaceScanner release];
-		[currentLine release];
 
 		// Always add the newline, whether or not we want to indent the next line
 		[self insertNewline:self];
@@ -657,7 +651,6 @@
 						modalDelegate:self 
 						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
 						contextInfo:nil];
-					[alert release];
 					
 				} else
 					[self insertFileContentOfFile:filepath];
@@ -732,9 +725,6 @@
 	result=[[NSString alloc] initWithData:[handle readDataToEndOfFile]
 		encoding:NSASCIIStringEncoding];
 
-	[aPipe release];
-	[aTask release];
-
 	// UTF16/32 files are detected as application/octet-stream resp. audio/mpeg
 	if( [result hasPrefix:@"text/plain"] 
 		|| [[[aPath pathExtension] lowercaseString] isEqualToString:SPFileExtensionSQL] 
@@ -763,7 +753,6 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
@@ -771,12 +760,9 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			return;
 		}
 	}
-	
-	[result release];
 
 	NSLog(@"%@ ‘%@’.", NSLocalizedString(@"Couldn't read the file content of", @"Couldn't read the file content of"), aPath);
 }

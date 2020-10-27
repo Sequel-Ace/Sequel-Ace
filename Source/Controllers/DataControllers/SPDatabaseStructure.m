@@ -123,7 +123,7 @@
 	pthread_mutex_lock(&connectionCheckLock);
 	SPMySQLConnection *c = [mySQLConnection retain];
 	pthread_mutex_unlock(&connectionCheckLock);
-	return [c autorelease];
+	return c;
 }
 
 - (SPDatabaseDocument *)delegate

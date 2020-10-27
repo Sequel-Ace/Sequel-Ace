@@ -189,7 +189,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		// Retrieve the last connection error message.
 		NSString *errorText = [connection lastErrorMessage];
 		
-		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+		NSAlert *alert = [[NSAlert alloc] init] ;
 		
 		[alert setMessageText:NSLocalizedString(@"Error creating relation", @"error creating relation message")];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -387,7 +387,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	//dim the database name if it matches the current database
 	if([[tableColumn identifier] isEqualToString:SPRelationFKDatabaseKey] && [[tableDocumentInstance database] isEqual:data]) {
 		NSDictionary *textAttributes = @{NSForegroundColorAttributeName: [NSColor lightGrayColor]};
-		data = [[[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes] autorelease];
+		data = [[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes] ;
 	}
 	return data;
 }
@@ -443,8 +443,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	
 	[data addObject:headings];
-	
-	[headings release];
 
 	// Get the relation data
 	for (NSDictionary *eachRelation in relationData)
@@ -459,8 +457,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[temp addObject:([eachRelation objectForKey:SPRelationOnDeleteKey]) ? [eachRelation objectForKey:SPRelationOnDeleteKey] : @""];
 
 		[data addObject:temp];
-
-		[temp release];
 	}
 	
 	return data; 
@@ -676,8 +672,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[refColumnPopUpButton setEnabled:YES];
 		[confirmAddRelationButton setEnabled:YES];
 	}
-	
-	[columnInfo release];
 }
 
 #pragma mark -

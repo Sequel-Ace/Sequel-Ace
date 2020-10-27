@@ -36,10 +36,7 @@
 	}
 	
 	if (_animation) {
-		[_animation release];
 	}
-	
-	[_view release];
 	[super dealloc];
 }
 
@@ -76,7 +73,6 @@
 		//An animation already exists, get the current progress
 		progress = 1.0f - [_animation currentProgress];
 		[_animation stopAnimation];
-		[_animation release];
 	}
 	
 	//begin animating
@@ -110,7 +106,6 @@
 	[[self window] setFrame:frame display:YES];
 	
 	if (![_animation isAnimating]) {
-		[_animation release];
 		_animation = nil;
 		[timer invalidate];
 		_timer = nil;

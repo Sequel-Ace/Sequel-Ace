@@ -309,7 +309,7 @@ static id NSNullPointer;
  */
 - (id)_stringWithBytes:(const void *)bytes length:(NSUInteger)length
 {
-    NSString *str = [[[NSString alloc] initWithBytes:bytes length:length encoding:stringEncoding] autorelease];
+    NSString *str = [[NSString alloc] initWithBytes:bytes length:length encoding:stringEncoding] ;
     
     return (str == nil) ? @"" : str;
 }
@@ -336,7 +336,7 @@ static id NSNullPointer;
 	NSString *ascii = [[NSString alloc] initWithBytes:bytes length:length encoding:NSASCIIStringEncoding];
 	if(ascii){
 		if(outLossy) *outLossy = YES;
-		return [ascii autorelease];
+		return ascii;
 	}
 	
 	//if even that failed we lose.

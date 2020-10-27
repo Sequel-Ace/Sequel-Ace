@@ -19,8 +19,6 @@
 
 - (void)dealloc
 {
-	[_image release];
-	[_alternateImage release];
 	[super dealloc];
 }
 
@@ -51,7 +49,6 @@
 
 - (void)setImage:(NSImage *)image
 {
-	[_image release];
 	_image = [image retain];
 }
 
@@ -62,7 +59,6 @@
 
 - (void)setAlternateImage:(NSImage *)image
 {
-	[_alternateImage release];
 	_alternateImage = [image retain];
 }
 

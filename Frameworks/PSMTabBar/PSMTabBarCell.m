@@ -81,12 +81,8 @@
 
 - (void)dealloc
 {
-	[_countColor release];
 	
 	[_indicator removeFromSuperviewWithoutNeedingDisplay];
-
-    [_indicator release];
-	[_backgroundColor release];
     [super dealloc];
 }
 
@@ -271,7 +267,6 @@
 
 - (void)setCountColor:(NSColor *)color
 {
-	[_countColor release];
 	_countColor = [color retain];
 }
 
@@ -319,7 +314,6 @@
 - (void)setBackgroundColor:(NSColor *)aColor
 {
 	[aColor retain];
-	[_backgroundColor release];
 	_backgroundColor = aColor;
 }
 
@@ -425,7 +419,7 @@
 	tabDrawFrame.origin.x -= cellFrame.origin.x;
 
 	// Draw the tab into a new image
-	NSImage *image = [[[NSImage alloc] initWithSize:cellFrame.size] autorelease];
+	NSImage *image = [[NSImage alloc] initWithSize:cellFrame.size] ;
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED < 1060
 	[image setFlipped:YES];
@@ -449,7 +443,6 @@
 		NSRect indicatorRect = NSMakeRect(indicatorPoint.x, indicatorPoint.y, [pieImage size].width, [pieImage size].height);
 		[pieImage drawInRect:indicatorRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
         [image unlockFocus];
-        [pieImage release];
     }
 
 	return image;

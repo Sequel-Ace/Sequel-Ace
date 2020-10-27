@@ -29,8 +29,6 @@
     if ([newTimeZoneIdentifier isEqualToString:timeZoneIdentifier]) {
         return YES;
     }
-
-	[timeZoneIdentifier release];
 	timeZoneIdentifier = nil;
     if (!newTimeZoneIdentifier || [newTimeZoneIdentifier isEqualToString:@""]) {
         [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];

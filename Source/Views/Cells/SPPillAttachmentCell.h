@@ -41,7 +41,7 @@
  * NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
  * SPPillAttachmentCell *cell   = [[SPPillAttachmentCell alloc] init];
  * [cell setStringValue:@"..."];
- * [attachment setAttachmentCell:[cell autorelease];
+ * attachment setAttachmentCell:[cell;
  * NSAttributedString *att = [NSAttributedString attributedStringWithAttachment:[attachment autorelease]];
  * [otherAttributedString appendAttributedString:att];
  *

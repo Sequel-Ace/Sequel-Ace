@@ -325,10 +325,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	
 	[[rootNode mutableChildNodes] addObject:favoritesNode];
 	
-	[rootGroupNode release];
-	[favoritesGroupNode release];
-	[favoritesNode release];
-	
 	favoritesTree = rootNode;
 		
 	pthread_mutex_unlock(&favoritesLock);
@@ -355,8 +351,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
 		
 		treeNode = [[SPTreeNode alloc] initWithRepresentedObject:node];
 		
-		[node release];
-		
 		[treeNode setIsGroup:YES];
 				
 		for (NSDictionary *favorite in [nodeData objectForKey:SPFavoriteChildrenKey])
@@ -370,11 +364,9 @@ static SPFavoritesController *sharedFavoritesController = nil;
 		node = [[SPFavoriteNode alloc] initWithDictionary:[NSMutableDictionary dictionaryWithDictionary:nodeData]];
 		
 		treeNode = [[SPTreeNode alloc] initWithRepresentedObject:node];
-		
-		[node release];
 	}
 		
-	return [treeNode autorelease];
+	return treeNode;
 }
 
 /**

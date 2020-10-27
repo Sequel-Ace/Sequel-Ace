@@ -144,8 +144,6 @@ static NSString *SPDatabaseImage = @"database-small";
 		
 		[items addObject:groupItem];
 		
-		[groupItem release];
-		
 		for (SPTreeNode *childNode in [node childNodes])
 		{
 			NSArray *innerItems = [self _constructMenuItemsForNode:childNode atLevel:level];
@@ -164,8 +162,6 @@ static NSString *SPDatabaseImage = @"database-small";
 		[menuItem setTarget:self];
 		
 		[items addObject:menuItem];
-		
-		[menuItem release];
 	}
 	
 	return items;

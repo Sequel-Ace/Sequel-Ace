@@ -114,13 +114,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[NSColor setIgnoresAlpha:NO];
 	
 	NSTableColumn *column = [[colorSettingTableView tableColumns] objectAtIndex:0];
-	NSTextFieldCell *textCell = [[[NSTextFieldCell alloc] init] autorelease];
+	NSTextFieldCell *textCell = [[NSTextFieldCell alloc] init] ;
 	
 	[textCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 	
 	column = [[colorSettingTableView tableColumns] objectAtIndex: 1];
 	
-	SPColorWellCell *colorCell = [[[SPColorWellCell alloc] init] autorelease];
+	SPColorWellCell *colorCell = [[SPColorWellCell alloc] init] ;
 	
 	[colorCell setEditable:YES];
 	[colorCell setTarget:self];
@@ -365,8 +365,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[themeSelectionMenu addItem:defaultItem];
 	[themeSelectionMenu addItem:[NSMenuItem separatorItem]];
 	
-	[defaultItem release];
-	
 	NSArray *foundThemes = [self _getAvailableThemes];
 	
 	if ([foundThemes count]) {
@@ -377,8 +375,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			[loadItem setTarget:self];
 			
 			[themeSelectionMenu addItem:loadItem];
-			
-			[loadItem release];
 		}
 		
 		[themeSelectionMenu addItem:[NSMenuItem separatorItem]];
@@ -391,8 +387,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[editItem setTarget:self];
 	
 	[themeSelectionMenu addItem:editItem];
-	
-	[editItem release];
 }
 
 /**

@@ -46,9 +46,6 @@
 
 - (void)dealloc
 {
-    [_cellTrackingRects release];
-    [_closeButtonTrackingRects release];
-    [_cellFrames release];
     [super dealloc];
 }
 
@@ -529,8 +526,6 @@ static NSInteger potentialMinimumForArray(NSArray *array, NSInteger minimum)
     PSMTabBarCell *cell;
     NSTabViewItem *selectedTabViewItem = [[_control tabView] selectedTabViewItem];
     NSMenuItem *menuItem;
-    
-	[_overflowMenu release];
 	_overflowMenu = nil;
     
     for (i = 0; i < cellCount; i++) {

@@ -92,8 +92,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	}
 	
 	free(oldUnloadedColumns);
-	[oldEditedRows release];
-	[oldDataStorage release];
 	
 	// the only delegate callback is resultStoreDidFinishLoadingData:.
 	// We can't set the delegate before exchanging the dataStorage ivar since then
@@ -307,7 +305,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	@finally {
-		[newArray release];
 	}
 }
 
@@ -348,7 +345,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	@finally {
-		[newArray release];
 	}
 }
 
@@ -369,7 +365,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	@finally {
-		[newArray release];
 	}
 }
 

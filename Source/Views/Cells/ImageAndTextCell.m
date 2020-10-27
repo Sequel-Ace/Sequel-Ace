@@ -47,7 +47,6 @@
 }
 
 - (void)dealloc {
-	[image release];
 	image = nil;
 	[super dealloc];
 }
@@ -64,7 +63,6 @@
 {
 	if (anImage != image)
 	{
-		[image release];
 		image = [anImage retain];
 	}
 }

@@ -41,7 +41,7 @@
 
 + (QKQueryParameter *)queryParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value
 {
-	return [[[QKQueryParameter alloc] initParamWithField:field operator:op value:value] autorelease];
+	return [[QKQueryParameter alloc] initParamWithField:field operator:op value:value] ;
 }
 
 - (id)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value

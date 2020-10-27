@@ -60,13 +60,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)dealloc
 {
-    [_sourceTabBar release];
-    [_destinationTabBar release];
-    [_participatingTabBars release];
-    [_draggedCell release];
-    [_animationTimer release];
-    [_sineCurveWidths release];
-    [_targetCell release];
     [super dealloc];
 }
 
@@ -81,7 +74,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 - (void)setSourceTabBar:(PSMTabBarControl *)tabBar
 {
     [tabBar retain];
-    [_sourceTabBar release];
     _sourceTabBar = tabBar;
 }
 
@@ -93,7 +85,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 - (void)setDestinationTabBar:(PSMTabBarControl *)tabBar
 {
     [tabBar retain];
-    [_destinationTabBar release];
     _destinationTabBar = tabBar;
 }
 
@@ -105,7 +96,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 - (void)setDraggedCell:(PSMTabBarCell *)cell
 {
     [cell retain];
-    [_draggedCell release];
     _draggedCell = cell;
 }
 
@@ -147,7 +137,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 - (void)setTargetCell:(PSMTabBarCell *)cell
 {
     [cell retain];
-    [_targetCell release];
     _targetCell = cell;
 }
 
@@ -219,8 +208,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	} else {
 		[control dragImage:dragImage at:cellFrame.origin offset:offset event:event pasteboard:pboard source:control slideBack:YES];
 	}
-	
-	[control release];
 }
 
 - (void)draggingEnteredTabBar:(PSMTabBarControl *)control atPoint:(NSPoint)mouseLoc
@@ -238,7 +225,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 		// Add a single placeholder to the tab bar and tell the new tab bar to update.
 		// The placeholder is later removed by distributePlaceholdersInTabBar:.
-		PSMTabBarCell *pc = [[[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] autorelease];
+		PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] ;
 		[[control cells] addObject:pc];
 		[control update:NO];
 
@@ -533,13 +520,11 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	
 	if (_draggedTab) {
 		[[_draggedTab window] orderOut:nil];
-		[_draggedTab release];
 		_draggedTab = nil;
 	}
 	
 	if (_draggedView) {
 		[[_draggedView window] orderOut:nil];
-		[_draggedView release];
 		_draggedView = nil;
 	}
 	
@@ -697,7 +682,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	} else {
 		//the delegate doesn't give a custom image, so use an image of the view
 		NSView *tabView = [[cell representedObject] view];
-		viewImage = [[[NSImage alloc] initWithSize:[tabView frame].size] autorelease];
+		viewImage = [[NSImage alloc] initWithSize:[tabView frame].size] ;
 		[viewImage lockFocus];
 		[tabView drawRect:[tabView bounds]];
 		[viewImage unlockFocus];
@@ -713,7 +698,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 - (NSImage *)_miniwindowImageOfWindow:(NSWindow *)window
 {
 	NSRect rect = [window frame];
-	NSImage *image = [[[NSImage alloc] initWithSize:rect.size] autorelease];
+	NSImage *image = [[NSImage alloc] initWithSize:rect.size] ;
 	[image lockFocus];
 	rect.origin = NSZeroPoint;
 	CGContextCopyWindowCaptureContentsToRect([[NSGraphicsContext currentContext] graphicsPort], *(CGRect *)&rect, [NSApp contextID], [window windowNumber], 0);
@@ -762,7 +747,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	
 	if (![animation isAnimating]) {
 		[timer invalidate];
-		[animation release];
 	}
 }
 
@@ -928,7 +912,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	
     // replace dragged cell with a placeholder, and clean up surrounding cells
     NSInteger cellIndex = [cells indexOfObject:cell];
-    PSMTabBarCell *pc = [[[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:YES inControlView:control] autorelease];
+    PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:YES inControlView:control] ;
     [cells replaceObjectAtIndex:cellIndex withObject:pc];
     [cells removeObjectAtIndex:(cellIndex + 1)];
     [cells removeObjectAtIndex:(cellIndex - 1)];
@@ -943,11 +927,11 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 {
     NSUInteger i, numVisibleTabs = [control numberOfVisibleTabs];
     for (i = 0; i < numVisibleTabs; i++) {
-        PSMTabBarCell *pc = [[[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] autorelease];
+        PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] ;
         [[control cells] insertObject:pc atIndex:(2 * i)];
     }
 	
-	PSMTabBarCell *pc = [[[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] autorelease];
+	PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] ;
 	if ([[control cells] count] > (2 * numVisibleTabs)) {
 		[[control cells] insertObject:pc atIndex:(2 * numVisibleTabs)];
 	} else {

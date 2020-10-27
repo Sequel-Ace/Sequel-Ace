@@ -389,7 +389,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				[node setName:[colDef objectForKey:@"name"]];
 				[node setTypegrouping:[colDef objectForKey:@"typegrouping"]];
 				[columns addObject:node];
-				[node release];
 			}
 		}
 
@@ -458,7 +457,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if(!criterion) {
 			EnableNode *node = [[EnableNode alloc] init];
 			[node setAllowsMixedState:YES];
-			return [node autorelease];
+			return node;
 		}
 		RuleNodeType type = [(RuleNode *) criterion type];
 		// compound rows are only for "AND"/"OR" groups
@@ -468,13 +467,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				case 0: [node setValue:@"AND"]; break;
 				case 1: [node setValue:@"OR"]; break;
 			}
-			return [node autorelease];
+			return node;
 		}
 	}
 	else if(rowType == NSRuleEditorRowTypeSimple) {
 		// this is the enable checkbox
 		if(!criterion) {
-			return [[[EnableNode alloc] init] autorelease];
+			return [[EnableNode alloc] init] ;
 		}
 		RuleNodeType type = [(RuleNode *) criterion type];
 		// this is the column field
@@ -492,7 +491,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				ArgNode *arg = [[ArgNode alloc] init];
 				[arg setFilter:filter];
 				[arg setArgIndex:0];
-				return [arg autorelease];
+				return arg;
 			}
 		}
 		// the child of an argument can only be the conjunction label if more arguments follow
@@ -503,7 +502,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				ConnectorNode *node = [[ConnectorNode alloc] init];
 				[node setFilter:filter];
 				[node setLabelIndex:argIndex]; // label 0 follows argument 0
-				return [node autorelease];
+				return node;
 			}
 		}
 		// the child of a conjunction is the next argument, if we have one
@@ -514,7 +513,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				ArgNode *arg = [[ArgNode alloc] init];
 				[arg setFilter:[node filter]];
 				[arg setArgIndex:([node labelIndex]+1)];
-				return [arg autorelease];
+				return arg;
 			}
 		}
 	}
@@ -540,7 +539,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setState:([node initialState] ? NSOnState : NSOffState)];
 			[check setTarget:self];
 			[check setAction:@selector(_checkboxClicked:)];
-			return [check autorelease];
+			return check;
 		}
 		case RuleNodeTypeColumn: {
 			/*
@@ -553,7 +552,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			}];
 			[item setTarget:self];
 			[item setAction:@selector(_menuItemInRuleEditorClicked:)];
-			return [item autorelease];
+			return item;
 		}
 		case RuleNodeTypeOperator: {
 			OpNode *node = (OpNode *)criterion;
@@ -607,7 +606,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			//adjust width, to make the field wider
 			frame.size.width = 500; //TODO determine a good width (possibly from the field type size) - how to access the rule editors bounds?
 			[textField setFrame:frame];
-			return [textField autorelease];
+			return textField;
 		}
 		case RuleNodeTypeConnector: {
 			// a simple string for once
@@ -900,9 +899,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		            tryingToPreserveOldCriteria:[oldCriteria subarrayWithRange:stripRange]
 		                          displayValues:[oldDisplayValues subarrayWithRange:stripRange]];
 
-		[oldCriteria release];
-		[oldDisplayValues release];
-
 		//and update the row to its new state
 		[self _doChangeToRuleEditorData:^{
 			[filterRuleEditor setCriteria:criteria andDisplayValues:displayValues forRowAtIndex:row];
@@ -917,9 +913,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			}
 		}
 	}
-
-	[criteria release];
-	[displayValues release];
 }
 
 /**
@@ -1197,7 +1190,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				} else {
 					tooltip = @"";
 				}
-				[tip release];
 			}
 
 			OpNode *node = [[OpNode alloc] init];
@@ -1210,7 +1202,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			}];
 			[node setFilter:filter];
 			[compareItems addObject:node];
-			[node release];
 			i++;
 		}
 	}
@@ -1222,7 +1213,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			@"isSeparator": @YES,
 		}];
 		[compareItems addObject:node];
-		[node release];
 	}
 
 	{
@@ -1237,7 +1227,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			@"filterType": compareType,
 		}];
 		[compareItems addObject:node];
-		[node release];
 	}
 
 	return compareItems;
@@ -1257,7 +1246,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// init query favorites controller
 	[[NSUserDefaults standardUserDefaults] synchronize];
 
-	if(contentFilterManager) [contentFilterManager release];
 	contentFilterManager = [[SPContentFilterManager alloc] initWithDatabaseDocument:tableDocumentInstance forFilterType:filterType];
 
 	// Open query favorite manager
@@ -1336,17 +1324,15 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
 	if(innerError) {
-		[filterString release];
-		if(err) *err = [innerError autorelease];
+		if(err) *err = innerError;
 		return nil;
 	}
 
 	if(err) *err = nil;
 
 	NSString *out = [filterString copy];
-	[filterString release];
 
-	return [out autorelease];
+	return out;
 }
 
 - (NSDictionary *)serializedFilter
@@ -1397,7 +1383,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				SerFilterGroupChildren: children,
 			};
 		}
-		[children release];
 		return out;
 	}
 	else {
@@ -1432,7 +1417,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			out = [NSMutableDictionary dictionaryWithDictionary:out];
 			[(NSMutableDictionary *)out setObject:[op filter] forKey:SerFilterExprDefinition];
 		}
-		[filterValues release];
 		return out;
 	}
 }
@@ -1467,8 +1451,6 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 
 	//finally update all checkboxes
 	[self _recalculateCheckboxStatesFromRow:-1];
-
-	[newModel release];
 }
 
 - (NSMutableDictionary *)_restoreSerializedFilter:(NSDictionary *)serialized
@@ -1487,13 +1469,11 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		// those have to be mutable arrays for the rule editor to work
 		NSMutableArray *criteria = [NSMutableArray arrayWithArray:@[checkbox,criterion]];
 		[obj setObject:criteria forKey:@"criteria"];
-		[checkbox release];
 
 		id checkDisplayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:checkbox inRow:-1];
 		id displayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:criterion inRow:-1];
 		NSMutableArray *displayValues = [NSMutableArray arrayWithArray:@[checkDisplayValue,displayValue]];
 		[obj setObject:displayValues forKey:@"displayValues"];
-		[criterion release];
 
 		NSArray *children = [serialized objectForKey:SerFilterGroupChildren];
 		NSMutableArray *subrows = [[NSMutableArray alloc] initWithCapacity:[children count]];
@@ -1501,7 +1481,6 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 			_addIfNotNil(subrows, [self _restoreSerializedFilter:child]);
 		}
 		[obj setObject:subrows forKey:@"subrows"];
-		[subrows release];
 	}
 	else {
 		[obj setObject:@(NSRuleEditorRowTypeSimple) forKey:@"rowType"];
@@ -1565,14 +1544,12 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 				[node setFilter:[op filter]];
 				[node setLabelIndex:(i-1)]; // label 0 follows argument 0
 				[criteria addObject:node];
-				[node release];
 			}
 			ArgNode *arg = [[ArgNode alloc] init];
 			[arg setArgIndex:i];
 			[arg setFilter:[op filter]];
 			[arg setInitialValue:[values objectAtIndex:i]];
 			[criteria addObject:arg];
-			[arg release];
 		}
 		
 		[obj setObject:criteria forKey:@"criteria"];
@@ -1590,10 +1567,9 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		[obj setObject:displayValues forKey:@"displayValues"];
 	}
 
-	return [obj autorelease];
+	return obj;
 
 fail:
-	[obj release];
 	return nil;
 }
 
@@ -1758,12 +1734,9 @@ BOOL SerIsGroup(NSDictionary *dict)
 			if(err) *err = [NSError errorWithDomain:SPErrorDomain code:3 userInfo:@{
 				NSLocalizedDescriptionKey: NSLocalizedString(@"No valid SQL expression could be generated. Perhaps the filter definition is invalid.", @"filter to sql conversion : internal error : SPTableFilterParser failed"),
 			}];
-			[parser release];
 			return;
 		}
 		[out appendString:sql];
-
-		[parser release];
 	}
 	
 	if(wrap) [out appendString:@")"];

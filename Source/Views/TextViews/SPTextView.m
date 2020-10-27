@@ -351,9 +351,6 @@ retry:
 			NSArray *functionList = [[NSArray arrayWithArray:[[SPQueryController sharedQueryController] functionList]] retain];
 			for(id s in functionList)
 				[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:s, @"display", @"func-small", @"image", nil]];
-
-			[functionList release];
-			[keywordList release];
 		}
 
 	}
@@ -538,7 +535,6 @@ retry:
 					}
 				}
 			}
-			if(desc) [desc release];
 		} else {
 
 			// [possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:NSLocalizedString(@"fetching table data…", @"fetching table data for completion in progress message"), @"path", @"", @"noCompletion", nil]];
@@ -577,7 +573,7 @@ retry:
 		}
 	}
 
-	return [possibleCompletions autorelease];
+	return possibleCompletions;
 
 }
 
@@ -1363,7 +1359,7 @@ retry:
 								selector:@selector(doAutoCompletion) 
 								object:nil];
 
-	NSMutableArray *possibleCompletions = [[[NSMutableArray alloc] initWithCapacity:0] autorelease];
+	NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:0] ;
 
 	NSString *connectionID;
 	if(tableDocumentInstance)
@@ -1437,7 +1433,6 @@ retry:
 			NSArray *allFields = [theTable allKeys];
 			NSSortDescriptor *desc = [[NSSortDescriptor alloc] initWithKey:nil ascending:YES selector:@selector(localizedCompare:)];
 			NSArray *sortedFields = [allFields sortedArrayUsingDescriptors:@[desc]];
-			[desc release];
 			for(id field in sortedFields) {
 				if(![field hasPrefix:@"  "]) {
 					NSArray *def = [theTable objectForKey:field];
@@ -1628,7 +1623,7 @@ retry:
 							return;
 						} else {
 							NSArray *list = [[snip substringWithRange:NSMakeRange(1*offset,[snip length]-(2*offset))] componentsSeparatedByString:@"¦"];
-							NSMutableArray *possibleCompletions = [[[NSMutableArray alloc] initWithCapacity:[list count]] autorelease];
+							NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:[list count]] ;
 							for(id w in list)
 								[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:w, @"display", @"dummy-small", @"image", nil]];
 
@@ -1705,7 +1700,6 @@ retry:
 
 		if (snip == nil) return;
 		if (![snip length]) {
-			[snip release];
 			return;
 		}
 
@@ -1824,8 +1818,6 @@ retry:
 			snippetControlArray[snipCnt].location = snipRange.location + targetRange.location;
 			snippetControlArray[snipCnt].length   = [theHintString length];
 			snippetControlArray[snipCnt].task     = 0;
-
-			[theHintString release];
 
 			// Adjust successive snippets
 			for(i=0; i<COUNT_OF(snippetControlArray); i++)
@@ -2452,8 +2444,6 @@ retry:
 		whitespaceScanner = [[NSScanner alloc] initWithString:currentLine];
 		[whitespaceScanner setCharactersToBeSkipped:nil];
 		[whitespaceScanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:&indentString];
-		[whitespaceScanner release];
-		[currentLine release];
 
 		// Always add the newline, whether or not we want to indent the next line
 		[self insertNewline:self];
@@ -2843,18 +2833,16 @@ retry:
 	myArrayOfTabs = [NSMutableArray arrayWithCapacity:numberOfTabs];
 	aTab = [[NSTextTab alloc] initWithType:NSLeftTabStopType location:tabWidth];
 	[myArrayOfTabs addObject:aTab];
-	[aTab release];
 	for(i=1; i<numberOfTabs; i++) {
 		aTab = [[NSTextTab alloc] initWithType:NSLeftTabStopType location:tabWidth + ((float)i * tabWidth)];
 		[myArrayOfTabs addObject:aTab];
-		[aTab release];
 	}
 	paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
 	[paragraphStyle setTabStops:myArrayOfTabs];
 	// Soft wrapped lines are indented slightly
 	[paragraphStyle setHeadIndent:4.0f];
 
-	NSMutableDictionary *textAttributes = [[[NSMutableDictionary alloc] initWithCapacity:1] autorelease];
+	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1] ;
 	[textAttributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
 
 	NSRange range = NSMakeRange(0, [[self textStorage] length]);
@@ -2867,8 +2855,6 @@ retry:
 	[self setFont:tvFont];
 
 	[self setEditable:oldEditableStatus];
-
-	[paragraphStyle release];
 }
 
 - (void)drawViewBackgroundInRect:(NSRect)rect {
@@ -3018,7 +3004,6 @@ retry:
 		[showMySQLHelpForMenuItem setTag:SP_CQ_SEARCH_IN_MYSQL_HELP_MENU_ITEM_TAG];
 		[showMySQLHelpForMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagControl];
 		[menu insertItem:showMySQLHelpForMenuItem atIndex:4];
-		[showMySQLHelpForMenuItem release];
 	} else {
 		[[menu itemWithTag:SP_CQ_SEARCH_IN_MYSQL_HELP_MENU_ITEM_TAG] setTitle:showMySQLHelpFor];
 	}
@@ -3027,14 +3012,12 @@ retry:
 		NSMenuItem *copyAsRTFMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Copy as RTF", @"Copy as RTF") action:@selector(copyAsRTF) keyEquivalent:@""];
 		[copyAsRTFMenuItem setTag:SP_CQ_COPY_AS_RTF_MENU_ITEM_TAG];
 		[menu insertItem:copyAsRTFMenuItem atIndex:2];
-		[copyAsRTFMenuItem release];
 	}
 	if ([[[self class] defaultMenu] itemWithTag:SP_CQ_SELECT_CURRENT_QUERY_MENU_ITEM_TAG] == nil)
 	{
 		NSMenuItem *selectCurrentQueryMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Select Active Query", @"Select Active Query") action:@selector(selectCurrentQuery:) keyEquivalent:@""];
 		[selectCurrentQueryMenuItem setTag:SP_CQ_SELECT_CURRENT_QUERY_MENU_ITEM_TAG];
 		[menu insertItem:selectCurrentQueryMenuItem atIndex:4];
-		[selectCurrentQueryMenuItem release];
 	}
 	// Hide "Select Active Query" if self is not editable
 	[[menu itemAtIndex:4] setHidden:![self isEditable]];
@@ -3064,7 +3047,7 @@ retry:
 	if(customQueryInstance && bundleItems && [bundleItems count]) {
 		[menu addItem:[NSMenuItem separatorItem]];
 
-		NSMenu *bundleMenu = [[[NSMenu alloc] init] autorelease];
+		NSMenu *bundleMenu = [[NSMenu alloc] init] ;
 		NSMenuItem *bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundles", @"bundles menu item label") action:nil keyEquivalent:@""];
 		[bundleSubMenuItem setTag:10000000];
 
@@ -3075,8 +3058,8 @@ retry:
 		NSMutableArray *categoryMenus = [NSMutableArray array];
 		if([bundleCategories count]) {
 			for(NSString* title in bundleCategories) {
-				[categorySubMenus addObject:[[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""] autorelease]];
-				[categoryMenus addObject:[[[NSMenu alloc] init] autorelease]];
+				[categorySubMenus addObject:[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""]];
+				[categoryMenus addObject:[[NSMenu alloc] init]];
 				[bundleMenu addItem:[categorySubMenus lastObject]];
 				[bundleMenu setSubmenu:[categoryMenus lastObject] forItem:[categorySubMenus lastObject]];
 			}
@@ -3091,7 +3074,7 @@ retry:
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq] autorelease];
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq] ;
 
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -3107,8 +3090,6 @@ retry:
 				[bundleMenu addItem:mItem];
 			}
 		}
-
-		[bundleSubMenuItem release];
 
 	}
 
@@ -3384,7 +3365,7 @@ retry:
 		NSUInteger characterIndex = [self characterIndexOfPoint:draggingLocation];
 		[self setSelectedRange:NSMakeRange(characterIndex,0)];
 
-		NSKeyedUnarchiver *unarchiver = [[[NSKeyedUnarchiver alloc] initForReadingWithData:[pboard dataForType:SPNavigatorPasteboardDragType]] autorelease];
+		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[pboard dataForType:SPNavigatorPasteboardDragType]] ;
 		NSArray *draggedItems = [[NSArray alloc] initWithArray:(NSArray *)[unarchiver decodeObjectForKey:@"itemdata"]];
 		[unarchiver finishDecoding];
 
@@ -3412,7 +3393,6 @@ retry:
 		}
 		[self breakUndoCoalescing];
 		[self insertText:dragString];
-		if (draggedItems) [draggedItems release];
 		return YES;
 	}
 
@@ -3468,9 +3448,6 @@ retry:
 	result=[[NSString alloc] initWithData:[handle readDataToEndOfFile]
 		encoding:NSASCIIStringEncoding];
 
-	[aPipe release];
-	[aTask release];
-
 	// UTF16/32 files are detected as application/octet-stream resp. audio/mpeg
 	if( [result hasPrefix:@"text/plain"] 
 		|| [[[aPath pathExtension] lowercaseString] isEqualToString:SPFileExtensionSQL] 
@@ -3499,7 +3476,6 @@ retry:
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			// [self insertText:@""]; // Invoke keyword uppercasing
 			return;
 		}
@@ -3508,13 +3484,10 @@ retry:
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			// [self insertText:@""]; // Invoke keyword uppercasing
 			return;
 		}
 	}
-	
-	[result release];
 
 	NSLog(@"%@ ‘%@’.", NSLocalizedString(@"Couldn't read the file content of", @"Couldn't read the file content of"), aPath);
 }

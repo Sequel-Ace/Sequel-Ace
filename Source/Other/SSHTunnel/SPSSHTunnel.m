@@ -167,8 +167,6 @@ static unsigned short getRandomPort(void);
 {
 	NSString *expandedPath = [thePath stringByExpandingTildeInPath];
 	if (![[NSFileManager defaultManager] fileExistsAtPath:expandedPath]) return NO;
-
-	if (identityFilePath) [identityFilePath release];
 	identityFilePath = [[NSString alloc] initWithString:expandedPath];
 	return YES;
 }
@@ -219,7 +217,6 @@ static unsigned short getRandomPort(void);
 - (void)setLastError:(NSString *)msg
 {
 	@synchronized(lastErrorLock) {
-		if (lastError) [lastError release];
 		lastError = msg? [[NSString alloc] initWithString:msg] : nil;
 	}
 }
@@ -616,8 +613,6 @@ static unsigned short getRandomPort(void);
 	if (connectionState != SPMySQLProxyIdle) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify];
 	}
-
-	[notificationText release];
 }
 
 /*
@@ -798,7 +793,6 @@ static unsigned short getRandomPort(void);
 		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSOnState) {
 			SPKeychain *keychain = [[SPKeychain alloc] init];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
-			[keychain release];
 			
 		}
 	}

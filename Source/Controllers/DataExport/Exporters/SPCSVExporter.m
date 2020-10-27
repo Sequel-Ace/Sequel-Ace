@@ -146,8 +146,6 @@
 					|| [tableColumnTypeGrouping isEqualToString:@"float"])
 			]]; 
 		}
-		
-		[tableDetails release];
 	}
 
 	// Make a streaming request for the data if the data array isn't set
@@ -277,7 +275,6 @@
 				}
 				
 				[csvCellString setString:[NSString stringWithString:dataConversionString]];
-				[dataConversionString release];
 			}
 			else if ([csvCell isKindOfClass:[SPMySQLGeometryData class]]) {
 				[csvCellString setString:[csvCell wktString]];

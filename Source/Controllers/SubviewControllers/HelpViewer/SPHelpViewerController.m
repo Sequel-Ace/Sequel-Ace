@@ -193,7 +193,6 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 	if(addToHistory) {
 		WebHistoryItem *aWebHistoryItem = [[WebHistoryItem alloc] initWithURLString:[NSString stringWithFormat:@"applewebdata://%@", searchString] title:searchString lastVisitedTimeInterval:[[NSDate date] timeIntervalSinceDate:[NSDate distantFuture]]];
 		[[helpWebView backForwardList] addItem:aWebHistoryItem];
-		[aWebHistoryItem release];
 	}
 
 	// validate goback/forward buttons
@@ -386,7 +385,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
  */
 - (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
 {
-	NSMutableArray *webViewMenuItems = [[defaultMenuItems mutableCopy] autorelease];
+	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy] ;
 
 	if (webViewMenuItems) {
 		// Remove all needless default menu items
@@ -435,13 +434,11 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 		[searchInMySQLonline setEnabled:YES];
 		[searchInMySQLonline setTarget:self];
 		[webViewMenuItems insertObject:searchInMySQLonline atIndex:0];
-		[searchInMySQLonline release];
 
 		searchInMySQL = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in MySQL Help", @"Search in MySQL Help") action:@selector(showHelpForWebViewSelection:) keyEquivalent:@""];
 		[searchInMySQL setEnabled:YES];
 		[searchInMySQL setTarget:self];
 		[webViewMenuItems insertObject:searchInMySQL atIndex:0];
-		[searchInMySQL release];
 	}
 
 	return webViewMenuItems;

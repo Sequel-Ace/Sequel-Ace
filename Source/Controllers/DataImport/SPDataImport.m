@@ -118,7 +118,6 @@
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ImportAccessory" bundle:[NSBundle mainBundle]];
 	[nibLoader instantiateWithOwner:self topLevelObjects:&importAccessoryTopLevelObjects];
 	[nibObjectsToRelease addObjectsFromArray:importAccessoryTopLevelObjects];
-	[nibLoader release];
 
 	// Set the accessory view's tabview to tabless (left in for easier editing in IB)
 	[importTabView setTabViewType:NSNoTabsNoBorder];
@@ -749,7 +748,6 @@
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 
 #ifdef DEBUG
 	endDate = [NSDate date];
@@ -968,7 +966,6 @@
 
 				// Add the NSString segment to the CSV parser and release it
 				[csvParser appendString:csvString];
-				[csvString release];
 
 				if (allDataRead) break;
 
@@ -1101,7 +1098,6 @@
 						[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 					else
 						[mySQLConnection queryString:query];
-					[query release];
 				} else {
 					if(insertRemainingRowsAfterUpdate) {
 						[insertRemainingBaseString setString:@"INSERT INTO "];
@@ -1127,7 +1123,6 @@
 							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 						else
 							[mySQLConnection queryString:query];
-						[query release];
 
 						if ([mySQLConnection queryErrored]) {
 							[[tableDocumentInstance onMainThread] showConsole:nil];
@@ -1145,7 +1140,6 @@
 								[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 							else
 								[mySQLConnection queryString:query];
-							[query release];
 
 							if ([mySQLConnection queryErrored]) {
 								[errors appendFormat:
@@ -1182,7 +1176,6 @@
 							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 						else
 							[mySQLConnection queryString:query];
-						[query release];
 
 						if ([mySQLConnection queryErrored]) {
 							[errors appendFormat:
@@ -1309,7 +1302,6 @@
 	fieldMappingImportArrayIsPreview = dataIsPreviewData;
 
 	// Set the import array
-	if (fieldMappingImportArray) [fieldMappingImportArray release];
 	fieldMappingImportArray = [[NSArray alloc] initWithArray:importData];
 	numberOfImportDataColumns = [[importData objectAtIndex:0] count];
 
@@ -1379,7 +1371,6 @@
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
 	NSDictionary *targetTableDetails = [selectedTableData informationForTable:selectedTableTarget];
-	[selectedTableData release];
 
 	// Store all field names which are of typegrouping 'geometry' and 'bit', and check if
 	// numeric columns can hold NULL values to map empty strings to.
@@ -1693,7 +1684,6 @@
 	// Set up the interface
 	[switchButton setButtonType:NSSwitchButton];
 	[switchButton setControlSize:NSControlSizeSmall];
-	[switchButton release];
 
 	CGFloat monospacedFontSize = [[NSUserDefaults standardUserDefaults] floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
 
@@ -1842,11 +1832,6 @@
 			}
 		}
 	}
-
-	if (fileCheckOutput) [fileCheckOutput release];
-
-	[fileTask release];
-	[filePipe release];
 
 	return lineEnding;
 }

@@ -174,7 +174,7 @@ enum trackingAreaIDs
 				baseColor, 0.5,
 				shadowColor, 1.0, nil];
 	
-	return [gradient autorelease];
+	return gradient;
 }
 
 // -------------------------------------------------------------------------------
@@ -296,7 +296,6 @@ enum trackingAreaIDs
 	[circlePath appendBezierPath:[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(dotRect.origin.x+1.0, dotRect.origin.y-2.0, dotRect.size.width-2.0, dotRect.size.height)]];
 	[circlePath setWindingRule:NSEvenOddWindingRule];
 	[grad drawInBezierPath:circlePath angle:-90.0];
-	[grad release];
 	
 	// top center gloss
 	NSGradient *grad2 = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedWhite:1.0 alpha:0.18]
@@ -306,7 +305,6 @@ enum trackingAreaIDs
 					toCenter:NSMakePoint(NSMidX(dotRect), NSMaxY(dotRect) - 2.0)
 					  radius:4.0
 					 options:0];
-	[grad2 release];
 	
 	// draw a dark outline
 	circlePath = [NSBezierPath bezierPathWithOvalInRect:dotRect];
@@ -315,7 +313,6 @@ enum trackingAreaIDs
 	[circlePath appendBezierPath:[NSBezierPath bezierPathWithOvalInRect:NSInsetRect(dotRect, 1.0, 1.0)]];
 	[circlePath setWindingRule:NSEvenOddWindingRule];
 	[grad3 drawInBezierPath:circlePath angle:-90.0];
-	[grad3 release];
 }
 
 - (void)_drawDotFlatStyleWithColor:(NSColor *)color insideRect:(NSRect)colorSquareRect

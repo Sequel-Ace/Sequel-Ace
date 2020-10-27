@@ -52,8 +52,6 @@
 		[createTableStatement insertString:[targetDatabase backtickQuotedString] atIndex:13];
 
 		[connection queryString:createTableStatement];		
-	
-		[createTableStatement release];
 		
 		return ![connection queryErrored];
 	}

@@ -123,7 +123,7 @@
 
 	// Unlock and return
 	[self _unlockConnection];
-	return [theResult autorelease];
+	return theResult;
 }
 
 /**

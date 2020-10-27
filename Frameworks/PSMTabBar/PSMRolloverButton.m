@@ -33,7 +33,6 @@
 - (void)setUsualImage:(NSImage *)newImage
 {
     [newImage retain];
-    [_usualImage release];
     _usualImage = newImage;
 
 	[self setImage:_usualImage];
@@ -47,7 +46,6 @@
 - (void)setRolloverImage:(NSImage *)newImage
 {
     [newImage retain];
-    [_rolloverImage release];
     _rolloverImage = newImage;
 }
 
@@ -195,9 +193,6 @@
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
 	[self removeTrackingRect];
-
-	[_rolloverImage release];
-	[_usualImage release];
 
 	[super dealloc];
 }

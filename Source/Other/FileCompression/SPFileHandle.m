@@ -196,7 +196,7 @@ struct SPRawFileHandles {
 	if (file == NULL) return nil;
 
 	// Return an autoreleased file handle
-	return [[[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode] autorelease];
+	return [[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode] ;
 }
 
 #pragma mark -
@@ -419,8 +419,6 @@ struct SPRawFileHandles {
 			}
 
 			pthread_mutex_unlock(&bufferLock);
-
-			[dataToBeWritten release];
 		}
 	}
 }

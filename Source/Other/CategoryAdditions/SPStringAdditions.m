@@ -43,7 +43,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 {
 	double size = byteSize;
 	
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
 	
 	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 	
@@ -89,7 +89,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
  */ 
 + (NSString *)stringForTimeInterval:(double)timeInterval
 {
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
 
 	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
@@ -158,7 +158,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	
 	CFRelease(uuidObj);
 	
-	return [newUUID autorelease];
+	return newUUID;
 }
 
 /**
@@ -200,8 +200,6 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	}
 
 	NSString *result = [NSString stringWithString:holder];
-
-	[holder release];
 
 	return result;
 }
@@ -301,8 +299,6 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	
 	[tblSyntax appendString:@"\n"];
 	[tblSyntax appendString:from];
-	
-	[from release];
 	
 	// Where clause at a new line if given
 	[tblSyntax replaceOccurrencesOfString:@" WHERE (" withString:@"\nWHERE (" options:NSLiteralSearch range:NSMakeRange(0, [tblSyntax length])];

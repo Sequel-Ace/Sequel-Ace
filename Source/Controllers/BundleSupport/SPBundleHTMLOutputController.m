@@ -284,7 +284,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[printPanel addAccessoryController:printAccessory];
 
 	[[NSPageLayout pageLayout] addAccessoryController:printAccessory];
-	[printAccessory release];
 
 	[op runOperationModalForWindow:[self window]
 		delegate:self
@@ -348,15 +347,13 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	docUUID = @"";
 
 	[SPAppDelegate removeHTMLOutputController:self];
-
-	[self release];
 }
 
 #pragma mark -
 
 - (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
 {
-	NSMutableArray *webViewMenuItems = [[defaultMenuItems mutableCopy] autorelease];
+	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy] ;
 
 	[webViewMenuItems addObject:[NSMenuItem separatorItem]];
 
@@ -365,17 +362,14 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[anItem setEnabled:YES];
 	[anItem setTarget:self];
 	[webViewMenuItems addObject:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Save Page As…", @"save page as menu item title") action:@selector(saveDocument) keyEquivalent:@""];
 	[anItem setEnabled:YES];
 	[anItem setTarget:self];
 	[webViewMenuItems addObject:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Print Page…", @"print page menu item title") action:@selector(printDocument:) keyEquivalent:@""];
 	[anItem setEnabled:YES];
 	[anItem setTarget:self];
 	[webViewMenuItems addObject:anItem];
-	[anItem release];
 
 	return webViewMenuItems;
 }
@@ -474,7 +468,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[alert setInformativeText:(message)?:@""];
 	[alert setMessageText:@"JavaScript"];
 	[alert runModal];
-	[alert release];
 }
 
 - (BOOL)webView:(WebView *)sender runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame
@@ -486,8 +479,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[alert setMessageText:@"JavaScript"];
 
 	NSUInteger returnCode = [alert runModal];
-
-	[alert release];
 
 	if(returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) return YES;
 	return NO;

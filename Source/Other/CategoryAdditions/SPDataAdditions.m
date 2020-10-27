@@ -537,8 +537,6 @@ fail_cleanup:
 		[retVal appendFormat:@"%@  %@ %s\n", location, hex, buffer];
 
 		// clean up
-		[hex release];
-		[location release];
 		free( buffer );
 	}
 
@@ -550,7 +548,7 @@ fail_cleanup:
  */
 - (NSString *)stringRepresentationUsingEncoding:(NSStringEncoding)encoding
 {	
-	NSString *string = [[[NSString alloc] initWithData:self encoding:encoding] autorelease];
+	NSString *string = [[NSString alloc] initWithData:self encoding:encoding] ;
 	
 	return !string ? [[[NSString alloc] initWithData:self encoding:NSASCIIStringEncoding] autorelease] : string;
 }

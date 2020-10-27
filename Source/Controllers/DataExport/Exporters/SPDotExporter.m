@@ -112,7 +112,6 @@
 	{
 		// Check for cancellation flag
 		if ([self isCancelled]) {
-			[fkInfo release];
 			
 			return;
 		}
@@ -162,7 +161,6 @@
 			{
 				// Check for cancellation flag
 				if ([self isCancelled]) {
-					[fkInfo release];
 					
 					return;
 				}
@@ -200,8 +198,6 @@
 	{
 		[metaString appendFormat:@"%@;\n", item];
 	}
-	
-	[fkInfo release];
 	
 	[metaString appendString:@"}\n"];
 	

@@ -58,7 +58,7 @@
  */
 + (SPExportFile *)exportFileAtPath:(NSString *)path
 {
-	return [[[SPExportFile alloc] initWithFilePath:path] autorelease];
+	return [[SPExportFile alloc] initWithFilePath:path] ;
 }
 
 /**

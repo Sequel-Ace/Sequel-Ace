@@ -223,7 +223,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 {
 	[tableRowAutoIncrement setEditable:NO];
 	
-	NSNumberFormatter *fmt = [[[NSNumberFormatter alloc] init] autorelease];
+	NSNumberFormatter *fmt = [[NSNumberFormatter alloc] init] ;
 	[fmt setNumberStyle:NSNumberFormatterDecimalStyle];
 	NSNumber *value = [fmt numberFromString:[tableRowAutoIncrement stringValue]];
 	
@@ -535,7 +535,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		return tableInfo;
 	}
 
-	NSString *HTMLString = [[[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding] autorelease];
+	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding] ;
 
 	[tableInfo setObject:HTMLString forKey:@"createSyntax"];
 
@@ -592,8 +592,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[tableTypePopUpButton selectItemWithTitle:[contextInfo objectForKey:SPUpdateTableTypeCurrentType]];
 	}
-	
-	[contextInfo release];
 }
 
 #pragma mark -
@@ -711,7 +709,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
 			// Create date formatter
-			NSDateFormatter *dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
+			NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init] ;
 
 			[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
 
@@ -725,7 +723,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLAverageRowLengthField] ||
 				 [key isEqualToString:SPMySQLAutoIncrementField]) {
 
-			NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+			NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
 
 			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 

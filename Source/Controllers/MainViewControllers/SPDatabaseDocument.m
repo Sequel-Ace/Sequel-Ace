@@ -237,7 +237,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NSArray *dbViewTopLevelObjects = nil;
 		NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"DBView" bundle:[NSBundle mainBundle]];
 		[nibLoader instantiateWithOwner:self topLevelObjects:&dbViewTopLevelObjects];
-		[nibLoader release];
 		[nibObjectsToRelease addObjectsFromArray:dbViewTopLevelObjects];
 
 		databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
@@ -316,7 +315,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		[nibObjectsToRelease addObjectsFromArray:connectionDialogTopLevelObjects];
 	}
-	[nibLoader release];
 
 	NSArray *progressIndicatorLayerTopLevelObjects = nil;
 	nibLoader = [[NSNib alloc] initWithNibNamed:@"ProgressIndicatorLayer" bundle:[NSBundle mainBundle]];
@@ -325,7 +323,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		[nibObjectsToRelease addObjectsFromArray:progressIndicatorLayerTopLevelObjects];
 	}
-	[nibLoader release];
 
 	// Retain the icon accessory view to allow it to be added and removed from windows
 	[titleAccessoryView retain];
@@ -337,7 +334,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[progressIndicatorShadow setShadowBlurRadius:1.0f];
 	[progressIndicatorShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
 	[taskProgressIndicator setShadow:progressIndicatorShadow];
-	[progressIndicatorShadow release];
 	taskProgressWindow = [[NSWindow alloc] initWithContentRect:[taskProgressLayer bounds] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
 	[taskProgressWindow setReleasedWhenClosed:NO];
 	[taskProgressWindow setOpaque:NO];
@@ -487,7 +483,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 
 	// Init Custom Query editor with the stored queries in a spf file if given.
 	[spfDocData setObject:@NO forKey:@"save_editor_content"];
@@ -497,7 +492,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if ([[spfSession objectForKey:@"queries"] isKindOfClass:[NSData class]]) {
 			NSString *q = [[NSString alloc] initWithData:[[spfSession objectForKey:@"queries"] decompress] encoding:NSUTF8StringEncoding];
 			[self initQueryEditorWithString:q];
-			[q release];
 		}
 		else {
 			[self initQueryEditorWithString:[spfSession objectForKey:@"queries"]];
@@ -1331,10 +1325,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSAttributedString *string = [[NSAttributedString alloc] initWithString:description attributes:attributes];
 
 	[taskDescriptionText setAttributedStringValue:string];
-
-	[string release];
-	[attributes release];
-	[textShadow release];
 }
 
 /**
@@ -1835,7 +1825,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		notification.soundName = NSUserNotificationDefaultSoundName;
 
 		[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-		[notification release];
 
 		return;
 	}
@@ -2281,7 +2270,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		notification.soundName = NSUserNotificationDefaultSoundName;
 
 		[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-		[notification release];
 	}
 }
 
@@ -2460,7 +2448,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 }
 
 /**
@@ -2665,7 +2652,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSet]];
 	[dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollation]];
 	
-	return [dbInfo autorelease];
+	return dbInfo;
 }
 
 /**
@@ -3175,8 +3162,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				                                   contextInfo:(__bridge void *)SPSaveDocumentPreferences
 				                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Connection data file “%@” couldn't be read. Please try to save the document under a different name.\n\nDetails: %@", @"message error while reading connection data file and suggesting to save it under a differnet name"), [fileName lastPathComponent], [error localizedDescription]]
 				                                    returnCode:&saveDocPrefSheetStatus];
-				
-				if (spf) [spf release];
 
 				return saveDocPrefSheetStatus == NSAlertAlternateReturn;
 			}
@@ -3185,7 +3170,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// For dispatching later
 		if (![[spf objectForKey:SPFFormatKey] isEqualToString:SPFConnectionContentType]) {
 			NSLog(@"SPF file format is not 'connection'.");
-			[spf release];
 			return NO;
 		}
 
@@ -3201,8 +3185,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		                                                           format:NSPropertyListXMLFormat_v1_0
 		                                                          options:0
 		                                                            error:&error];
-
-		[spf release];
 
 		if (error) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting connection data", @"error while converting connection data") message:[error localizedDescription] callback:nil];
@@ -3270,8 +3252,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Convert the content selection to encoded data
 		if ([[spfData objectForKey:@"session"] objectForKey:@"contentSelection"]) {
 			NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[spfData objectForKey:@"session"]];
-			NSMutableData *dataToEncode = [[[NSMutableData alloc] init] autorelease];
-			NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode] autorelease];
+			NSMutableData *dataToEncode = [[NSMutableData alloc] init] ;
+			NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode] ;
 			[archiver encodeObject:[sessionInfo objectForKey:@"contentSelection"] forKey:@"data"];
 			[archiver finishEncoding];
 			[sessionInfo setObject:dataToEncode forKey:@"contentSelection"];
@@ -3281,8 +3263,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[spfStructure setObject:spfData forKey:@"data"];
 	}
 	else {
-		NSMutableData *dataToEncrypt = [[[NSMutableData alloc] init] autorelease];
-		NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt] autorelease];
+		NSMutableData *dataToEncrypt = [[NSMutableData alloc] init] ;
+		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt] ;
 		[archiver encodeObject:spfData forKey:@"data"];
 		[archiver finishEncoding];
 		[spfStructure setObject:[dataToEncrypt dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
@@ -3331,8 +3313,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Store doc data permanently
 		[spfDocData removeAllObjects];
 		[spfDocData addEntriesFromDictionary:spfDocData_temp];
-
-		[preferences release];
 	}
 
 	return YES;
@@ -3714,7 +3694,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];
 	if (!imagePath) return;
 
-	NSImage *image = [[[NSImage alloc] initByReferencingFile:imagePath] autorelease];
+	NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath] ;
 	[titleImageView setImage:image];
 }
 
@@ -3748,7 +3728,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if ((controllerClass = NSClassFromString(@"NSTitlebarAccessoryViewController"))) { // OS X 10.11 and later
 			[titleAccessoryView setFrame:NSMakeRect(0, 0, titleAccessoryView.frame.size.width, 120)]; // make it really tall, so that it's on the top right of the title/toolbar area, instead of the bottom right (AppKit will not prevent it from going behind the toolbar)
 			
-			NSTitlebarAccessoryViewController *accessoryViewController = [[[controllerClass alloc] init] autorelease];
+			NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init] ;
 			accessoryViewController.view = titleAccessoryView;
 			accessoryViewController.layoutAttribute = NSLayoutAttributeRight;
 			[parentWindow addTitlebarAccessoryViewController:accessoryViewController];
@@ -3816,7 +3796,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar
 {
-	NSToolbarItem *toolbarItem = [[[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] autorelease];
+	NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] ;
 
 	if ([itemIdentifier isEqualToString:SPMainToolbarDatabaseSelection]) {
 		[toolbarItem setLabel:NSLocalizedString(@"Select Database", @"toolbar item for selecting a db")];
@@ -4099,7 +4079,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[killTask setArguments:[NSArray arrayWithObjects:@"-c", [NSString stringWithFormat:@"kill -9 -%ld", (long)pid], nil]];
 		[killTask launch];
 		[killTask waitUntilExit];
-		[killTask release];
 	}
 
 	[[SPNavigatorController sharedNavigatorController] performSelectorOnMainThread:@selector(removeConnection:) withObject:[self connectionID] waitUntilDone:YES];
@@ -4254,7 +4233,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)setFileURL:(NSURL *)theURL
 {
 	[theURL retain];
-	[spfFileURL release];
 	spfFileURL  = theURL;
 	if ([parentWindowController selectedTableDocument] == self) {
 		if (spfFileURL && [spfFileURL isFileURL]) [parentWindow setRepresentedURL:spfFileURL];
@@ -4267,7 +4245,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSURL *)fileURL
 {
-	return [[spfFileURL copy] autorelease];
+	return [spfFileURL copy] ;
 }
 
 /**
@@ -4608,8 +4586,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self connect];
 	}
 
-	if (keychain) [keychain release];
-
 	return YES;
 }
 
@@ -4637,7 +4613,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file") message:message callback:nil];
 		[self closeAndDisconnect];
-		[spf release];
 		return NO;
 	}
 
@@ -4646,7 +4621,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NSString *message = [NSString stringWithFormat:NSLocalizedString(@"The chosen file “%@” contains ‘%@’ data.", @"message while reading a spf file which matches non-supported formats."), path, [spf objectForKey:SPFFormatKey]];
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Unknown file format", @"warning")] message:message callback:nil];
 		[self closeAndDisconnect];
-		[spf release];
 		return NO;
 	}
 
@@ -4654,7 +4628,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if (![spf objectForKey:@"data"]) {
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"No data found.", @"no data found") callback:nil];
 		[self closeAndDisconnect];
-		[spf release];
 		return NO;
 	}
 
@@ -4698,7 +4671,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				}
 			} else {
 				[self closeAndDisconnect];
-				[spf release];
 				return NO;
 			}
 		}
@@ -4710,7 +4682,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// If a content selection data key exists in the session, decode it
 		if ([[[data objectForKey:@"session"] objectForKey:@"contentSelection"] isKindOfClass:[NSData class]]) {
 			NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[data objectForKey:@"session"]];
-			NSKeyedUnarchiver *unarchiver = [[[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]] autorelease];
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]] ;
 			[sessionInfo setObject:[unarchiver decodeObjectForKey:@"data"] forKey:@"contentSelection"];
 			[unarchiver finishDecoding];
 			[data setObject:sessionInfo forKey:@"session"];
@@ -4718,16 +4690,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	else if ([[spf objectForKey:@"data"] isKindOfClass:[NSData class]]) {
 		NSData *decryptdata = nil;
-		decryptdata = [[[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]] autorelease];
+		decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]] ;
 		if (decryptdata != nil && [decryptdata length]) {
-			NSKeyedUnarchiver *unarchiver = [[[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata] autorelease];
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata] ;
 			data = [NSMutableDictionary dictionaryWithDictionary:(NSDictionary *)[unarchiver decodeObjectForKey:@"data"]];
 			[unarchiver finishDecoding];
 		}
 		if (data == nil) {
 			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"Wrong data format or password.", @"wrong data format or password") callback:nil];
 			[self closeAndDisconnect];
-			[spf release];
 			return NO;
 		}
 	}
@@ -4742,7 +4713,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		}
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:informativeText callback:nil];
 		[self closeAndDisconnect];
-		[spf release];
 		return NO;
 	}
 
@@ -4788,8 +4758,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Set the state dictionary, triggering an autoconnect if appropriate
 	[self setState:data];
-
-	[spf release];
 
 	return YES;
 }
@@ -5326,7 +5294,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 									if (!displayString) displayString = [[NSString alloc] initWithData:cell encoding:NSASCIIStringEncoding];
 									if (displayString) {
 										[result appendFormat:@"\"%@\"", [displayString stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
-										[displayString release];
 									} else {
 										[result appendString:@"\"\""];
 									}
@@ -5365,7 +5332,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 									if (!displayString) displayString = [[NSString alloc] initWithData:cell encoding:NSASCIIStringEncoding];
 									if (displayString) {
 										[result appendFormat:@"%@", [[displayString stringByReplacingOccurrencesOfString:@"\n" withString:@"↵"] stringByReplacingOccurrencesOfString:@"\t" withString:@"⇥"]];
-										[displayString release];
 									} else {
 										[result appendString:@""];
 									}
@@ -5748,8 +5714,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 												   to:newDatabaseName
 										  withContent:[[databaseDetails objectForKey:SPNewDatabaseCopyContent] boolValue]];
 
-		[databaseCopy release];
-
 		// Select newly created database
 		[[self onMainThread] selectDatabase:newDatabaseName item:nil];
 
@@ -5798,8 +5762,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName]
 		);
 	}
-	
-	[dbActionRename release];
 }
 
 /**
@@ -5824,7 +5786,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	BOOL res = [dbAction createDatabase:[databaseNameField stringValue]
 	                       withEncoding:[addDatabaseCharsetHelper selectedCharset]
 	                          collation:[addDatabaseCharsetHelper selectedCollation]];
-	[dbAction release];
 	
 	if (!res) {
 		// An error occurred
@@ -6007,7 +5968,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	for (NSString* cmdPath in triggeredCommands) 
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[[NSMenuItem alloc] init] autorelease];
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
 		
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -6390,7 +6351,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	BOOL isReloading = (selectedTableName && [selectedTableName isEqualToString:aTable]);
 
 	// Store the new name
-	if (selectedTableName) [selectedTableName release];
 
 	selectedTableName = [[NSString alloc] initWithString:aTable];
 	selectedTableType = aTableType;
@@ -6598,7 +6558,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		for(NSString* cmdPath in triggeredCommands)
 		{
 			NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-			NSMenuItem *aMenuItem = [[[NSMenuItem alloc] init] autorelease];
+			NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
 			[aMenuItem setTag:0];
 			[aMenuItem setToolTip:[data objectAtIndex:0]];
 
@@ -6818,7 +6778,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[printPanel addAccessoryController:printAccessory];
 
 	[[NSPageLayout pageLayout] addAccessoryController:printAccessory];
-	[printAccessory release];
 
 	[op setPrintPanel:printPanel];
 
@@ -6855,7 +6814,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		if (resultRows > rowLimit) {
 
-			NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+			NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
 
 			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
@@ -6962,9 +6921,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				[printData setObject:indexColumns forKey:@"indexColumns"];
 
 				if ([indexes count]) [printData setObject:@1 forKey:@"hasIndexes"];
-
-				[rows release];
-				[indexes release];
 			}
 				// Table content view
 			else if (view == SPTableViewContent) {
@@ -6980,8 +6936,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 				[printData setObject:rows forKey:@"rows"];
 				[connection setValue:[tableContentInstance usedQuery] forKey:@"query"];
-
-				[rows release];
 			}
 				// Custom query view
 			else if (view == SPTableViewCustomQuery) {
@@ -6997,8 +6951,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 				[printData setObject:rows forKey:@"rows"];
 				[connection setValue:[customQueryInstance usedQuery] forKey:@"query"];
-
-				[rows release];
 			}
 				// Table relations view
 			else if (view == SPTableViewRelations) {
@@ -7013,8 +6965,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				];
 
 				[printData setObject:rows forKey:@"rows"];
-
-				[rows release];
 			}
 				// Table triggers view
 			else if (view == SPTableViewTriggers) {
@@ -7029,8 +6979,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				];
 
 				[printData setObject:rows forKey:@"rows"];
-
-				[rows release];
 			}
 
 			[printData setObject:heading forKey:@"heading"];

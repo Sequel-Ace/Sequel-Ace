@@ -149,7 +149,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	if (maxWidth < mainStringWidth) {
 		for (i = 0; i <= [mainString length]; i++) {
 			if ([[mainString attributedSubstringFromRange:NSMakeRange(0, i)] size].width >= maxWidth && i >= 3) {
-				mainString = [[[NSMutableAttributedString alloc] initWithString:[[[mainString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self mainStringAttributedStringAttributes]] autorelease];
+				mainString = [[NSMutableAttributedString alloc] initWithString:[[[mainString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self mainStringAttributedStringAttributes]] ;
 			}
 		}
 	}
@@ -157,7 +157,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	if (maxWidth < subStringWidth) {
 		for (i = 0; i <= [subString length]; i++) {
 			if ([[subString attributedSubstringFromRange:NSMakeRange(0, i)] size].width >= maxWidth && i >= 3) {
-				subString = [[[NSMutableAttributedString alloc] initWithString:[[[subString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self subStringAttributedStringAttributes]] autorelease];
+				subString = [[NSMutableAttributedString alloc] initWithString:[[[subString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self subStringAttributedStringAttributes]] ;
 			}
 		}
 	}
@@ -256,7 +256,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 						[killTask launch];
 						[killTask waitUntilExit];
 						status = [killTask terminationStatus];
-						[killTask release];
 					}
 				}
 				// Remove it from the list directly since the list will be updated in the background
@@ -337,7 +336,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (NSAttributedString *)constructSubStringAttributedString
 {
-	return [[[NSAttributedString alloc] initWithString:activityInfo attributes:[self subStringAttributedStringAttributes]] autorelease];
+	return [[NSAttributedString alloc] initWithString:activityInfo attributes:[self subStringAttributedStringAttributes]] ;
 }
 
 /**
@@ -345,7 +344,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (NSAttributedString *)attributedStringForFavoriteName
 {	
-	return [[[NSAttributedString alloc] initWithString:activityName attributes:[self mainStringAttributedStringAttributes]] autorelease];
+	return [[NSAttributedString alloc] initWithString:activityName attributes:[self mainStringAttributedStringAttributes]] ;
 }
 
 /**

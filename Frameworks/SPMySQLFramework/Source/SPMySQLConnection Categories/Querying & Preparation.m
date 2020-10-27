@@ -113,7 +113,7 @@
 
 	// Free up any memory and return
 	free(escBuffer);
-	return [escapedString autorelease];
+	return escapedString;
 }
 
 /**
@@ -166,7 +166,7 @@
 
 	// Free up any memory and return
 	free(hexBuffer);
-	return [hexString autorelease];
+	return hexString;
 }
 
 #pragma mark -
@@ -427,7 +427,7 @@
 	// Store the result time on the response object
 	[theResult _setQueryExecutionTime:queryExecutionTime];
 
-	return [theResult autorelease];
+	return theResult;
 }
 
 #pragma mark -

@@ -39,7 +39,6 @@
 	NSColor *color = [scl colorWithKey:name];
 	if(color) {
 		[color retain];
-		[currentColor release];
 		currentColor = color;
 		[self setNeedsDisplay:YES];
 	}
@@ -54,7 +53,6 @@
 
 - (void)dealloc
 {
-	[currentColor release];
 	[super dealloc];
 }
 

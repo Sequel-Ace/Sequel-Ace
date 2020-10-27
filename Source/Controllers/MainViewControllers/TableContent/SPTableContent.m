@@ -526,7 +526,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Set up the data cell depending on the column type
 		id dataCell;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[[NSComboBoxCell alloc] initTextCell:@""] autorelease];
+			dataCell = [[NSComboBoxCell alloc] initTextCell:@""] ;
 			[dataCell setButtonBordered:NO];
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
@@ -539,12 +539,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Add a foreign key arrow if applicable
 		} else if ([columnDefinition objectForKey:@"foreignkeyreference"]) {
-			dataCell = [[[SPTextAndLinkCell alloc] initTextCell:@""] autorelease];
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
 			[dataCell setTarget:self action:@selector(clickLinkArrow:)];
 
 		// Otherwise instantiate a text-only cell
 		} else {
-			dataCell = [[[SPTextAndLinkCell alloc] initTextCell:@""] autorelease];
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
 		}
 
 		// Set the column to right-aligned for numeric data types
@@ -558,7 +558,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Set the line break mode and an NSFormatter subclass which displays line breaks nicely
 		[dataCell setLineBreakMode:NSLineBreakByTruncatingTail];
-		[dataCell setFormatter:[[SPDataCellFormatter new] autorelease]];
+		[dataCell setFormatter:[SPDataCellFormatter new]];
 
 		// Set field length limit if field is a varchar to match varchar length
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"string"]
@@ -587,13 +587,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Add the column to the table
 		[tableContentView addTableColumn:theCol];
-		[theCol release];
 	}
 
 	// If the table has been reloaded and the previously selected sort column is still present, reselect it.
 	if (sortColumnNumberToRestore != NSNotFound) {
 		theCol = [tableContentView tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)sortColumnNumberToRestore]];
-		if (sortCol) [sortCol release];
 		sortCol = [[NSNumber alloc] initWithInteger:sortColumnNumberToRestore];
 		[tableContentView setHighlightedTableColumn:theCol];
 		isDesc = !sortColumnToRestoreIsAsc;
@@ -676,7 +674,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableValues = [[SPDataStorage alloc] init];
 	[tableContentView setTableData:tableValues];
 	pthread_mutex_unlock(&tableValuesLock);
-	[tableValuesTransition release];
 }
 
 /**
@@ -768,7 +765,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (!fullTableReloadRequired && resultStore) {
 		[self updateResultStore:resultStore approximateRowCount:rowsToLoad];
 	}
-	if (resultStore) [resultStore release];
 
 	// If the result is empty, and a late page is selected, reset the page
 	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
@@ -779,7 +775,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		resultStore = [[mySQLConnection resultStoreFromQueryString:queryString] retain];
 		if (resultStore) {
 			[self updateResultStore:resultStore approximateRowCount:[prefs integerForKey:SPLimitResultsValue]];
-			[resultStore release];
 		}
 	}
 
@@ -834,7 +829,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 							[lookupString appendString:[SPDataStorageObjectAtRowAndColumn(tableValues, i, primaryKeyFieldIndexes[j]) description]];
 						}
 						if ([selectionKeysToRestore objectForKey:lookupString]) rowMatches = YES;
-						[lookupString release];
 					}
 					
 					if (rowMatches) {
@@ -878,7 +872,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	});
 
 	// Retrieve and cache the column definitions for editing views
-	if (cqColumnDefinition) [cqColumnDefinition release];
 	cqColumnDefinition = [[resultStore fieldDefinitions] retain];
 
 	// Notify listenters that the query has finished
@@ -1008,7 +1001,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	NSString *rowString;
 	NSMutableString *countString = [NSMutableString string];
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
 	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
 	// Set up a couple of common strings
@@ -1328,7 +1321,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)setUsedQuery:(NSString *)query
 {
-	if (usedQuery) [usedQuery release];
 	usedQuery = [[NSString alloc] initWithString:query];
 }
 
@@ -1369,8 +1361,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 
 			[[tableContentView onMainThread] setIndicatorImage:nil inTableColumn:[[tableContentView onMainThread] tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)[sortCol integerValue]]]];
-
-			if (sortCol) [sortCol release];
 
 			sortCol = [[NSNumber alloc] initWithInteger:[[tableColumn identifier] integerValue]];
 		}
@@ -2201,8 +2191,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 						(long)imageWidth,
 						[[image TIFFRepresentationUsingCompression:NSTIFFCompressionJPEG factor:0.01f] base64Encoding]];
 				}
-				
-				[v release];
 				[tempRow addObject:[NSString stringWithFormat:@"%@%@", [o wktString], imageStr]];
 			}
 			else {
@@ -2230,8 +2218,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					}
 					[tempRow addObject:str];
 				}
-				
-				if(image) [image release];
 			}
 		}
 		
@@ -2573,15 +2559,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if(![whereArg length]) {
 			SPLog(@"Did not find plausible WHERE condition for UPDATE.");
 			NSBeep();
-			[rowFieldsToSave release];
-			[rowValuesToSave release];
 			return (NSMutableString*)@"";
 		}
 		[queryString appendFormat:@" WHERE %@", whereArg];
 	}
-
-	[rowFieldsToSave release];
-	[rowValuesToSave release];
 	
 	SPLog(@"query: %@", queryString);
 
@@ -3039,7 +3020,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// Otherwise, in tables, save back to the row store
 			} else {
-				[tableValues replaceObjectInRow:row column:[[theTableColumn identifier] integerValue] withObject:[[data copy] autorelease]];
+				[tableValues replaceObjectInRow:row column:[theTableColumn identifier] integerValue] withObject:[[data copy]];
 			}
 		}
 	}
@@ -3976,7 +3957,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	for (NSString *cmdPath in triggeredCommands)
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[[NSMenuItem alloc] init] autorelease];
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
 
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -4383,7 +4364,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			pthread_mutex_lock(&tableValuesLock);
 
 			if (row < (NSInteger)tableRowsCount && [[tableColumn identifier] integerValue] < (NSInteger)[tableValues columnCount]) {
-				theValue = [[SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy] autorelease];
+				theValue = [SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy] ;
 			}
 
 			pthread_mutex_unlock(&tableValuesLock);
@@ -4397,7 +4378,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if (theValue == nil) return nil;
 
 		if ([theValue isKindOfClass:[NSData class]]) {
-			image = [[[NSImage alloc] initWithData:theValue] autorelease];
+			image = [[NSImage alloc] initWithData:theValue] ;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
@@ -4410,11 +4391,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				[v release];
 				return nil;
 			}
-
-			[v release];
 		}
 
 		// Show the cell string value as tooltip (including line breaks and tabs)

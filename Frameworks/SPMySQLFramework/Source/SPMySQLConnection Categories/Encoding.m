@@ -100,7 +100,6 @@
 
 	// Connection encoding was successfully set, update the instance settings,
 	// and return success.
-	[encoding release];
 	encoding = [[NSString alloc] initWithString:theEncoding];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[theEncoding UTF8String]];
 	encodingUsesLatin1Transport = NO;
@@ -168,7 +167,6 @@
  */
 - (void)storeEncodingForRestoration
 {
-	if (previousEncoding) [previousEncoding release];
 	previousEncoding = [[NSString alloc] initWithString:encoding];
 	previousEncodingUsesLatin1Transport = encodingUsesLatin1Transport;
 }

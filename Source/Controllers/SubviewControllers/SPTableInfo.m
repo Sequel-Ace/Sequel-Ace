@@ -134,7 +134,7 @@
  */
 - (void)tableChanged:(NSNotification *)notification
 {
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
 	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
 	[info removeAllObjects];
@@ -343,7 +343,7 @@
 	} 
 	else {
 		if (rowIndex == 0) {
-			SPTableTextFieldCell *c = [[[SPTableTextFieldCell alloc] initTextCell:NSLocalizedString(@"ACTIVITIES", @"header for activities pane")] autorelease];
+			SPTableTextFieldCell *c = [[SPTableTextFieldCell alloc] initTextCell:NSLocalizedString(@"ACTIVITIES", @"header for activities pane")] ;
 			
 			[tableColumn setDataCell:c];
 			
@@ -351,7 +351,7 @@
 		}
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
 			NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
-			SPActivityTextFieldCell *c = [[[SPActivityTextFieldCell alloc] init] autorelease];
+			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init] ;
 			
 			[c setActivityName:[[dict objectForKey:@"contextInfo"] objectForKey:@"name"]];
 			
@@ -368,7 +368,7 @@
 			return [dict objectForKey:@"name"];
 		} 
 		else {
-			SPActivityTextFieldCell *c = [[[SPActivityTextFieldCell alloc] init] autorelease];
+			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init] ;
 			
 			[c setActivityName:@"..."];
 			[c setActivityInfo:@""];
@@ -468,7 +468,7 @@
 
 - (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate
 {
-	NSDateFormatter *dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
+	NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init] ;
 
 	[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
 

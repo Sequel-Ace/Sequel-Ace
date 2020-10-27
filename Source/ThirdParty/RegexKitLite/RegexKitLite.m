@@ -1760,7 +1760,7 @@ static NSException *rkl_NSExceptionForRegex(NSString *regexString, RKLRegexOptio
 static NSDictionary *rkl_makeAssertDictionary(const char *function, const char *file, int line, NSString *format, ...) {
   va_list varArgsList;
   va_start(varArgsList, format);
-  NSString * RKL_GC_VOLATILE formatString   = [[[NSString alloc] initWithFormat:format arguments:varArgsList] autorelease];
+  NSString * RKL_GC_VOLATILE formatString   = [[NSString alloc] initWithFormat:format arguments:varArgsList] ;
   va_end(varArgsList);
   NSString * RKL_GC_VOLATILE functionString = [NSString stringWithUTF8String:function], *fileString = [NSString stringWithUTF8String:file];
   return([NSDictionary dictionaryWithObjectsAndKeys:formatString, @"description", functionString, @"function", fileString, @"file", [NSNumber numberWithInt:line], @"line", NSInternalInconsistencyException, @"exceptionName", NULL]);
@@ -1769,7 +1769,7 @@ static NSDictionary *rkl_makeAssertDictionary(const char *function, const char *
 static NSString *rkl_stringFromClassAndMethod(id object, SEL selector, NSString *format, ...) {
   va_list varArgsList;
   va_start(varArgsList, format);
-  NSString * RKL_GC_VOLATILE formatString = [[[NSString alloc] initWithFormat:format arguments:varArgsList] autorelease];
+  NSString * RKL_GC_VOLATILE formatString = [[NSString alloc] initWithFormat:format arguments:varArgsList] ;
   va_end(varArgsList);
   Class objectsClass = (object == NULL) ? NULL : [object class];
   return([NSString stringWithFormat:@"*** %c[%@ %@]: %@", (object == objectsClass) ? '+' : '-', (objectsClass == NULL) ? @"<NULL>" : NSStringFromClass(objectsClass), (selector == NULL) ? @":NULL:" : NSStringFromSelector(selector), formatString]);
@@ -1885,7 +1885,7 @@ exitNow:
   return(self);
 
 errorExit:
-  if(RKL_EXPECTED(self      != NULL,         1L))                                        {  [self autorelease]; }
+  if(RKL_EXPECTED(self      != NULL,         1L))                                        {  self; }
   if(RKL_EXPECTED(status     > U_ZERO_ERROR, 0L) && RKL_EXPECTED(exception == NULL, 0L)) {  exception = rkl_NSExceptionForRegex(initRegexString, initOptions, NULL, status); } // If we had a problem, prepare an exception to be thrown.
   if(RKL_EXPECTED(status     < U_ZERO_ERROR, 0L) && (initError != NULL))                 { *initError = rkl_makeNSError((RKLUserInfoOptions)RKLUserInfoNone, initRegexString, initOptions, NULL, status, initString, initRange, NULL, NULL, 0L, (RKLRegexEnumerationOptions)RKLRegexEnumerationNoOptions, @"The ICU library returned an unexpected error."); }
   if(RKL_EXPECTED(exception != NULL,         0L))                                        {  rkl_handleDelayedAssert(self, _cmd, exception); }

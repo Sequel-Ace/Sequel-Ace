@@ -170,9 +170,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	if (isTableListFiltered) {
 		previousFilterString = [[NSString alloc] initWithString:[listFilterField stringValue]];
-		if (filteredTables) [filteredTables release];
 		filteredTables = tables;
-		if (filteredTableTypes) [filteredTableTypes release];
 		filteredTableTypes = tableTypes;
 		isTableListFiltered = NO;
 		[[self onMainThread] clearFilter];
@@ -305,7 +303,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListIsSelectable = YES;
 		[[tablesListView onMainThread] selectRowIndexes:[NSIndexSet indexSetWithIndex:itemToReselect] byExtendingSelection:NO];
 		tableListIsSelectable = previousTableListIsSelectable;
-		if (selectedTableName) [selectedTableName release];
 		selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemToReselect]];
 		selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemToReselect] integerValue];
 	} 
@@ -333,9 +330,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[[listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
 		});
 	}
-
-	if (previousSelectedTable) [previousSelectedTable release];
-	if (previousFilterString) [previousFilterString release];
 
 	// Query the structure of all databases in the background
 	if (sender == self)
@@ -936,7 +930,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	SPTableType selectedItemType = (SPTableType)[[selectionDetails objectForKey:@"type"] integerValue];
 
 	// Update the selected table name and type
-	if (selectedTableName) [selectedTableName release];
 	selectedTableName = [[NSString alloc] initWithString:selectedItemName];
 	selectedTableType = selectedItemType;
 
@@ -1401,7 +1394,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 		else {
 			[self deselectAllTables];
-			if (selectedTableName) [selectedTableName release];
 			
 			selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemIndex]];
 			selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemIndex] integerValue];
@@ -1596,7 +1588,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[tables replaceObjectAtIndex:unfilteredIndex withObject:newTableName];
 		}
 		[filteredTables replaceObjectAtIndex:rowIndex withObject:newTableName];
-		if (selectedTableName) [selectedTableName release];
 		selectedTableName = [[NSString alloc] initWithString:newTableName];
 
 		// if the 'table' is a view or a table, ensure data is reloaded
@@ -1978,8 +1969,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	if ([[listFilterField stringValue] length]) {
 		if (isTableListFiltered) {
-			[filteredTables release];
-			[filteredTableTypes release];
 		}
 		filteredTables = [[NSMutableArray alloc] init];
 		filteredTableTypes = [[NSMutableArray alloc] init];
@@ -2038,9 +2027,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	} 
 	else if (isTableListFiltered) {
 		isTableListFiltered = NO;
-		[filteredTables release];
 		filteredTables = tables;
-		[filteredTableTypes release];
 		filteredTableTypes = tableTypes;
 	}
 
@@ -2190,7 +2177,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		} 
 		// Otherwise, display an alert - and if there's tables left, ask whether to proceed
 		else {
-			NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+			NSAlert *alert = [[NSAlert alloc] init] ;
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -2394,7 +2381,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 			// Set the selected table name and type, and then update the filter list and the
 			// selection.
-			if (selectedTableName) [selectedTableName release];
 
 			selectedTableName = [[NSString alloc] initWithString:tableName];
 			selectedTableType = SPTableTypeTable;
@@ -2493,14 +2479,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create View"]];
 		[scanner scanUpToString:@"AS" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
-		[scanner release];
 		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [[copyTableNameField stringValue] backtickQuotedString], scanString]];
 	}
 	else if(tblType == SPTableTypeTable){
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create Table"]];
 		[scanner scanUpToString:@"(" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
-		[scanner release];
 
 		// If there are any InnoDB referencial constraints we need to strip out the names as they must be unique.
 		// MySQL will generate the new names based on the new table name.
@@ -2608,7 +2592,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 
 	// Set the selected table name and type, and use updateFilter to update the filter list and selection
-	if (selectedTableName) [selectedTableName release];
 
 	selectedTableName = [[NSString alloc] initWithString:[copyTableNameField stringValue]];
 	selectedTableType = tblType;

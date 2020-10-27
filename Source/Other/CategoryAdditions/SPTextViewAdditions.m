@@ -534,7 +534,6 @@
 		if(!cmdData || error) {
 			NSLog(@"“%@” file couldn't be read. (readError=%@)", infoPath, error);
 			NSBeep();
-			if (cmdData) [cmdData release];
 			return;
 		}
 	}
@@ -657,7 +656,6 @@
 				[self window],
 				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
 			);
-			if (cmdData) [cmdData release];
 			return;
 		}
 
@@ -782,8 +780,6 @@
 		}
 
 	}
-
-	if (cmdData) [cmdData release];
 }
 
 /**
@@ -813,7 +809,7 @@
 	if(bundleItems && [bundleItems count]) {
 		[menu addItem:[NSMenuItem separatorItem]];
 
-		NSMenu *bundleMenu = [[[NSMenu alloc] init] autorelease];
+		NSMenu *bundleMenu = [[NSMenu alloc] init] ;
 		NSMenuItem *bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundles", @"bundles menu item label") action:nil keyEquivalent:@""];
 		[bundleSubMenuItem setTag:10000000];
 
@@ -824,8 +820,8 @@
 		NSMutableArray *categoryMenus = [NSMutableArray array];
 		if([bundleCategories count]) {
 			for(NSString* title in bundleCategories) {
-				[categorySubMenus addObject:[[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""] autorelease]];
-				[categoryMenus addObject:[[[NSMenu alloc] init] autorelease]];
+				[categorySubMenus addObject:[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""]];
+				[categoryMenus addObject:[[NSMenu alloc] init]];
 				[bundleMenu addItem:[categorySubMenus lastObject]];
 				[bundleMenu setSubmenu:[categoryMenus lastObject] forItem:[categorySubMenus lastObject]];
 			}
@@ -840,7 +836,7 @@
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq] autorelease];
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq] ;
 
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -858,8 +854,6 @@
 				[bundleMenu addItem:mItem];
 			}
 		}
-
-		[bundleSubMenuItem release];
 	}
 
 	return menu;

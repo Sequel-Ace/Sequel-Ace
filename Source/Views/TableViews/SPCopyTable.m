@@ -197,7 +197,6 @@ static const NSInteger kBlobAsImageFile = 4;
 						if (!displayString) displayString = [[NSString alloc] initWithData:cellData encoding:NSISOLatin1StringEncoding];
 						if (displayString) {
 							[result appendFormat:@"%@\t", displayString];
-							[displayString release];
 						}
 					}
 					else if(withBlobHandling == kBlobAsFile && tmpBlobFileDirectory && [tmpBlobFileDirectory length]) {
@@ -211,8 +210,6 @@ static const NSInteger kBlobAsImageFile = 4;
 						if (image) {
 							NSData *d = [[NSData alloc] initWithData:[image TIFFRepresentationUsingCompression:NSTIFFCompressionLZW factor:1]];
 							[d writeToFile:fp atomically:NO];
-							
-							[image release];
 						} else {
 							NSString *noData = @"";
 							[noData writeToFile:fp atomically:NO encoding:NSUTF8StringEncoding error:NULL];
@@ -333,7 +330,6 @@ static const NSInteger kBlobAsImageFile = 4;
 						if (!displayString) displayString = [[NSString alloc] initWithData:cellData encoding:NSISOLatin1StringEncoding];
 						if (displayString) {
 							[result appendFormat:@"\"%@\",", displayString];
-							[displayString release];
 						}
 					}
 					else if(withBlobHandling == kBlobAsFile && tmpBlobFileDirectory && [tmpBlobFileDirectory length]) {
@@ -347,8 +343,6 @@ static const NSInteger kBlobAsImageFile = 4;
 						if (image) {
 							NSData *d = [[NSData alloc] initWithData:[image TIFFRepresentationUsingCompression:NSTIFFCompressionLZW factor:1]];
 							[d writeToFile:fp atomically:NO];
-							
-							[image release];
 						} else {
 							NSString *noData = @"";
 							[noData writeToFile:fp atomically:NO encoding:NSUTF8StringEncoding error:NULL];
@@ -586,7 +580,6 @@ static const NSInteger kBlobAsImageFile = 4;
 						NSBeep();
 						free(columnMappings);
 						free(columnTypes);
-						[rowValues release];
 						return nil;
 				}
 
@@ -596,14 +589,12 @@ static const NSInteger kBlobAsImageFile = 4;
 				NSBeep();
 				free(columnMappings);
 				free(columnTypes);
-				[rowValues release];
 				return nil;
 			}
 		}
 
 		// Add to the string in comma-separated form, and increment the string length
 		[value appendString:[rowValues componentsJoinedByString:@", "]];
-		[rowValues release];
 
 		// Close this VALUES group and set up the next one if appropriate
 		if (rowCounter != penultimateRowIndex) {
@@ -695,7 +686,6 @@ static const NSInteger kBlobAsImageFile = 4;
 					if (displayString) {
 						[result appendString:displayString];
 						[result appendString:@"\t"];
-						[displayString release];
 					}
 				}
 				else if ([cellData isKindOfClass:spmysqlGeometryData]) {
@@ -870,7 +860,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			// reverse pilcrow to match display output width.
 			linebreakRange = [contentString rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch];
 			if (linebreakRange.location != NSNotFound) {
-				NSMutableString *singleLineString = [[[NSMutableString alloc] initWithString:contentString] autorelease];
+				NSMutableString *singleLineString = [[NSMutableString alloc] initWithString:contentString] ;
 				while (linebreakRange.location != NSNotFound) {
 					breakChar = [singleLineString characterAtIndex:linebreakRange.location];
 					switch (breakChar) {
@@ -940,7 +930,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	if(bundleItems && [bundleItems count]) {
 		[menu addItem:[NSMenuItem separatorItem]];
 
-		NSMenu *bundleMenu = [[[NSMenu alloc] init] autorelease];
+		NSMenu *bundleMenu = [[NSMenu alloc] init] ;
 		NSMenuItem *bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundles", @"bundles menu item label") action:nil keyEquivalent:@""];
 		[bundleSubMenuItem setTag:10000000];
 
@@ -951,8 +941,8 @@ static const NSInteger kBlobAsImageFile = 4;
 		NSMutableArray *categoryMenus = [NSMutableArray array];
 		if([bundleCategories count]) {
 			for(NSString* title in bundleCategories) {
-				[categorySubMenus addObject:[[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""] autorelease]];
-				[categoryMenus addObject:[[[NSMenu alloc] init] autorelease]];
+				[categorySubMenus addObject:[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""]];
+				[categoryMenus addObject:[[NSMenu alloc] init]];
 				[bundleMenu addItem:[categorySubMenus lastObject]];
 				[bundleMenu setSubmenu:[categoryMenus lastObject] forItem:[categorySubMenus lastObject]];
 			}
@@ -967,7 +957,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForDataTable:) keyEquivalent:keyEq] autorelease];
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForDataTable:) keyEquivalent:keyEq] ;
 
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -983,8 +973,6 @@ static const NSInteger kBlobAsImageFile = 4;
 				[bundleMenu addItem:mItem];
 			}
 		}
-
-		[bundleSubMenuItem release];
 	}
 
 	return menu;
@@ -1248,7 +1236,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	}
 
 	if ([cellValue isKindOfClass:[NSData class]]) {
-		cellValue = [[[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]] autorelease];
+		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]] ;
 	}
 
 	if (![cellValue isNSNull]
@@ -1299,7 +1287,6 @@ static const NSInteger kBlobAsImageFile = 4;
 		if(!cmdData || error) {
 			NSLog(@"“%@” file couldn't be read. (error=%@)", infoPath, error);
 			NSBeep();
-			if (cmdData) [cmdData release];
 			return;
 		}
 	}
@@ -1395,7 +1382,6 @@ static const NSInteger kBlobAsImageFile = 4;
 				[self window],
 				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
 			);
-			if (cmdData) [cmdData release];
 			return;
 		}
 
@@ -1457,7 +1443,6 @@ static const NSInteger kBlobAsImageFile = 4;
 				[self window],
 				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
 			);
-			if (cmdData) [cmdData release];
 			return;
 		}
 
@@ -1553,8 +1538,6 @@ static const NSInteger kBlobAsImageFile = 4;
 			);
 		}
 	}
-
-	if (cmdData) [cmdData release];
 }
 
 #pragma mark -

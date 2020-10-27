@@ -946,7 +946,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		if([outlineView levelForItem:item] == 3 && [item isKindOfClass:[NSArray class]])
 		{
-			NSTokenFieldCell *b = [[[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)] autorelease];
+			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)] ;
 			[b setEditable:NO];
 			[b setAlignment:NSRightTextAlignment];
 			[b setFont:[NSFont systemFontOfSize:11]];
@@ -1082,8 +1082,8 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 
 	// Drag the array with schema paths
-	NSMutableData *arraydata = [[[NSMutableData alloc] init] autorelease];
-	NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:arraydata] autorelease];
+	NSMutableData *arraydata = [[NSMutableData alloc] init] ;
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:arraydata] ;
 	[archiver encodeObject:draggedItems forKey:@"itemdata"];
 	[archiver finishEncoding];
 	[pboard setData:arraydata forType:SPNavigatorPasteboardDragType];

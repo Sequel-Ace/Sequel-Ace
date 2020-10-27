@@ -109,7 +109,7 @@
 	[newTableDocument setParentWindow:[self window]];
 
 	// Set up a new tab with the connection view as the identifier, add the view, and add it to the tab view
-    NSTabViewItem *newItem = [[[NSTabViewItem alloc] initWithIdentifier:newTableDocument] autorelease];
+    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:newTableDocument] ;
 	
 	[newItem setView:[newTableDocument databaseView]];
     [tabView addTabViewItem:newItem];
@@ -123,7 +123,7 @@
 	// Bind the tab bar's progress display to the document
 	[self _updateProgressIndicatorForItem:newItem];
 	
-	return [newTableDocument autorelease];
+	return newTableDocument;
 }
 
 /**
@@ -864,7 +864,6 @@
 	NSBitmapImageRep *viewRep = [[NSBitmapImageRep alloc] initWithCGImage:windowImage];
 	[viewRep setSize:[[self window] frame].size];
 	[viewImage addRepresentation:viewRep];
-	[viewRep release];
 
 	// Calculate the titlebar+toolbar height
 	CGFloat contentViewOffsetY = [[self window] frame].size.height - [[[self window] contentView] frame].size.height;
@@ -893,7 +892,7 @@
 
 	[viewImage unlockFocus];
 
-	return [viewImage autorelease];
+	return viewImage;
 }
 
 /**
@@ -907,7 +906,7 @@
 	[menu insertItem:[NSMenuItem separatorItem] atIndex:1];
 	[menu addItemWithTitle:NSLocalizedString(@"Open in New Tab", @"open connection in new tab context menu item") action:@selector(openDatabaseInNewTab:) keyEquivalent:@""];
 
-	return [menu autorelease];
+	return menu;
 }
 
 /**

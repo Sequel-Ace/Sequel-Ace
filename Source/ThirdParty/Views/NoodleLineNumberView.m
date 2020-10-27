@@ -114,11 +114,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-
-	if (lineIndices) [lineIndices release];
-	if (textAttributes) [textAttributes release];
-	if (font) [font release];
-	if (textColor) [textColor release];
 	[super dealloc];
 }
 
@@ -128,9 +123,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	if (font != aFont)
 	{
-		[font autorelease];
+		font;
 		font = [aFont retain];
-		if (textAttributes) [textAttributes release];
 		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
 			font, NSFontAttributeName, 
 			[self textColor], NSForegroundColorAttributeName,
@@ -154,9 +148,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	if (textColor != color)
 	{
-		[textColor autorelease];
+		textColor;
 		textColor  = [color retain];
-		if (textAttributes) [textAttributes release];
 		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
 			[self font], NSFontAttributeName, 
 			textColor, NSForegroundColorAttributeName,
