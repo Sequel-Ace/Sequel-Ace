@@ -10,14 +10,9 @@
 
 #import "SPConstants.h"
 
-#ifdef SASafeRelease
-#undef SASafeRelease
-#define SASafeRelease(__v) ([__v release], __v = nil);
-#endif
-#ifndef SASafeReleaseIF
-#define SASafeReleaseIF(__v) ((__v) == nil ?:[__v release], __v = nil);
-#endif
 
+#define SASafeRelease(__v) ([__v release], __v = nil);
+#define SASafeReleaseIF(__v) ((__v) == nil ?:[__v release], __v = nil);
 #define SASafeRelease2(__v) do{ if(__v != nil) [__v release], __v = nil; } while(0)
 
 
