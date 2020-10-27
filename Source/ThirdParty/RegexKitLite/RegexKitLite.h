@@ -4,36 +4,37 @@
 //  Licensed under the terms of the BSD License, as specified below.
 //
 
-//
-//  Copyright (c) 2008-2010, John Engelhart
-// 
-//  All rights reserved.
-// 
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-// 
-//  * Redistributions of source code must retain the above copyright
-//  notice, this list of conditions and the following disclaimer.
-// 
-//  * Redistributions in binary form must reproduce the above copyright
-//  notice, this list of conditions and the following disclaimer in the
-//  documentation and/or other materials provided with the distribution.
-// 
-//  * Neither the name of the Zang Industries nor the names of its
-//  contributors may be used to endorse or promote products derived from
-//  this software without specific prior written permission.
-// 
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-//  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-//  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-//  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-//  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-//  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-//  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-//  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-//  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/*
+ Copyright (c) 2008-2010, John Engelhart
+
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+
+ * Neither the name of the Zang Industries nor the names of its
+ contributors may be used to endorse or promote products derived from
+ this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #ifdef    __OBJC__
 #import <Foundation/NSArray.h>
@@ -52,7 +53,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
 #ifndef   REGEXKITLITE_VERSION_DEFINED
 #define   REGEXKITLITE_VERSION_DEFINED
 
@@ -72,7 +73,7 @@ extern "C" {
 #if !defined(RKL_BLOCKS) && defined(NS_BLOCKS_AVAILABLE) && (NS_BLOCKS_AVAILABLE == 1)
 #define RKL_BLOCKS 1
 #endif
-  
+
 #if       defined(RKL_BLOCKS) && (RKL_BLOCKS == 1)
 #define _RKL_BLOCKS_ENABLED 1
 #endif // defined(RKL_BLOCKS) && (RKL_BLOCKS == 1)
@@ -125,7 +126,7 @@ enum {
   RKLRegexEnumerationFastCapturedStringsXXX                  = 1UL << 11,
 };
 typedef NSUInteger RKLRegexEnumerationOptions;
-  
+
 #endif // RKLREGEXENUMERATIONOPTIONS_DEFINED
 
 #ifndef _REGEXKITLITE_H_
@@ -142,17 +143,17 @@ typedef NSUInteger RKLRegexEnumerationOptions;
 #else  // defined(NS_REQUIRES_NIL_TERMINATION)
 #define RKL_REQUIRES_NIL_TERMINATION
 #endif // defined(NS_REQUIRES_NIL_TERMINATION)
-  
+
 // This requires a few levels of rewriting to get the desired results.
 #define _RKL_CONCAT_2(c,d) c ## d
 #define _RKL_CONCAT(a,b) _RKL_CONCAT_2(a,b)
-  
+
 #ifdef    RKL_PREPEND_TO_METHODS
 #define RKL_METHOD_PREPEND(x) _RKL_CONCAT(RKL_PREPEND_TO_METHODS, x)
 #else  // RKL_PREPEND_TO_METHODS
 #define RKL_METHOD_PREPEND(x) x
 #endif // RKL_PREPEND_TO_METHODS
-  
+
 // If it looks like low memory notifications might be available, add code to register and respond to them.
 // This is (should be) harmless if it turns out that this isn't the case, since the notification that we register for,
 // UIApplicationDidReceiveMemoryWarningNotification, is dynamically looked up via dlsym().
@@ -182,7 +183,7 @@ extern NSString * const RKLICURegexReplacedStringErrorKey;
 extern NSString * const RKLICURegexReplacementStringErrorKey;
 extern NSString * const RKLICURegexSubjectRangeErrorKey;
 extern NSString * const RKLICURegexSubjectStringErrorKey;
-  
+
 @interface NSString (RegexKitLiteAdditions)
 
 + (void)RKL_METHOD_PREPEND(clearStringCache);
@@ -191,27 +192,27 @@ extern NSString * const RKLICURegexSubjectStringErrorKey;
 + (NSInteger)RKL_METHOD_PREPEND(captureCountForRegex):(NSString *)regex RKL_DEPRECATED_ATTRIBUTE;
 + (NSInteger)RKL_METHOD_PREPEND(captureCountForRegex):(NSString *)regex options:(RKLRegexOptions)options error:(NSError **)error RKL_DEPRECATED_ATTRIBUTE;
 
-- (NSArray *)RKL_METHOD_PREPEND(componentsSeparatedByRegex):(NSString *)regex;
-- (NSArray *)RKL_METHOD_PREPEND(componentsSeparatedByRegex):(NSString *)regex range:(NSRange)range;
-- (NSArray *)RKL_METHOD_PREPEND(componentsSeparatedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error;
+- (NSArray *)RKL_METHOD_PREPEND(componentsSeparatedByRegex):(NSString *)regex NS_SWIFT_NAME(componentsSeparated(byRegex:));
+- (NSArray *)RKL_METHOD_PREPEND(componentsSeparatedByRegex):(NSString *)regex range:(NSRange)range NS_SWIFT_NAME(componentsSeparated(byRegex:range:));
+- (NSArray *)RKL_METHOD_PREPEND(componentsSeparatedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error NS_SWIFT_NAME(componentsSeparated(byRegex:options:range:));
 
-- (BOOL)RKL_METHOD_PREPEND(isMatchedByRegex):(NSString *)regex;
-- (BOOL)RKL_METHOD_PREPEND(isMatchedByRegex):(NSString *)regex inRange:(NSRange)range;
-- (BOOL)RKL_METHOD_PREPEND(isMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error;
+- (BOOL)RKL_METHOD_PREPEND(isMatchedByRegex):(NSString *)regex NS_SWIFT_NAME(isMatched(byRegex:));
+- (BOOL)RKL_METHOD_PREPEND(isMatchedByRegex):(NSString *)regex inRange:(NSRange)range NS_SWIFT_NAME(isMatched(byRegex:inRange:));
+- (BOOL)RKL_METHOD_PREPEND(isMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error NS_SWIFT_NAME(isMatched(byRegex:options:inRange:));
 
-- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex;
-- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex capture:(NSInteger)capture;
-- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex inRange:(NSRange)range;
-- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range capture:(NSInteger)capture error:(NSError **)error;
+- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex NS_SWIFT_NAME(range(ofRegex:));
+- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex capture:(NSInteger)capture NS_SWIFT_NAME(range(ofRegex:capture:));
+- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex inRange:(NSRange)range NS_SWIFT_NAME(range(ofRegex:inRange:));
+- (NSRange)RKL_METHOD_PREPEND(rangeOfRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range capture:(NSInteger)capture error:(NSError **)error NS_SWIFT_NAME(range(ofRegex:options:inRange:capture:error:));
 
-- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex;
-- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex capture:(NSInteger)capture;
-- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex inRange:(NSRange)range;
-- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range capture:(NSInteger)capture error:(NSError **)error;
+- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex NS_SWIFT_NAME(matching(regex:));
+- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex capture:(NSInteger)capture NS_SWIFT_NAME(matching(regex:capture:));
+- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex inRange:(NSRange)range NS_SWIFT_NAME(matching(regex:inRange:));
+- (NSString *)RKL_METHOD_PREPEND(stringByMatching):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range capture:(NSInteger)capture error:(NSError **)error NS_SWIFT_NAME(matching(regex:inRange:capture:error:));
 
-- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement;
-- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement range:(NSRange)searchRange;
-- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement options:(RKLRegexOptions)options range:(NSRange)searchRange error:(NSError **)error;
+- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement NS_SWIFT_NAME(replacingOccurrences(ofRegex:with:));
+- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement range:(NSRange)searchRange NS_SWIFT_NAME(replacingOccurrences(ofRegex:with:range:));
+- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement options:(RKLRegexOptions)options range:(NSRange)searchRange error:(NSError **)error NS_SWIFT_NAME(replacingOccurrences(ofRegex:with:options:range:));
 
   //// >= 3.0
 
@@ -223,19 +224,19 @@ extern NSString * const RKLICURegexSubjectStringErrorKey;
 
 - (void)RKL_METHOD_PREPEND(flushCachedRegexData);
 
-- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex;
-- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex capture:(NSInteger)capture;
-- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex range:(NSRange)range;
-- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range capture:(NSInteger)capture error:(NSError **)error;
+- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex NS_SWIFT_NAME(componentsMatched(byRegex:));
+- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex capture:(NSInteger)capture NS_SWIFT_NAME(componentsMatched(byRegex:capture:));
+- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex range:(NSRange)range NS_SWIFT_NAME(componentsMatched(byRegex:range:));
+- (NSArray *)RKL_METHOD_PREPEND(componentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range capture:(NSInteger)capture error:(NSError **)error NS_SWIFT_NAME(componentsMatched(byRegex:range:capture:error:));
 
 
-- (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex;
-- (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex range:(NSRange)range;
-- (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error;
+- (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex NS_SWIFT_NAME(captureComponents(matchedByRegex:));
+- (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex range:(NSRange)range NS_SWIFT_NAME(captureComponents(matchedByRegex:range:));;
+- (NSArray *)RKL_METHOD_PREPEND(captureComponentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error NS_SWIFT_NAME(captureComponents(matchedByRegex:options:range:error:));
 
-- (NSArray *)RKL_METHOD_PREPEND(arrayOfCaptureComponentsMatchedByRegex):(NSString *)regex;
-- (NSArray *)RKL_METHOD_PREPEND(arrayOfCaptureComponentsMatchedByRegex):(NSString *)regex range:(NSRange)range;
-- (NSArray *)RKL_METHOD_PREPEND(arrayOfCaptureComponentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error;
+- (NSArray *)RKL_METHOD_PREPEND(arrayOfCaptureComponentsMatchedByRegex):(NSString *)regex NS_SWIFT_NAME(arrayOfCaptureComponents(matchedByRegex:));
+- (NSArray *)RKL_METHOD_PREPEND(arrayOfCaptureComponentsMatchedByRegex):(NSString *)regex range:(NSRange)range NS_SWIFT_NAME(arrayOfCaptureComponents(matchedByRegex:range:)) NS_SWIFT_NAME(arrayOfCaptureComponents(matchedByRegex:range:));
+- (NSArray *)RKL_METHOD_PREPEND(arrayOfCaptureComponentsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options range:(NSRange)range error:(NSError **)error NS_SWIFT_NAME(arrayOfCaptureComponents(matchedByRegex:options:range:error:)) NS_SWIFT_NAME(arrayOfCaptureComponents(matchedByRegex:options:range:error:));
 
   //// >= 4.0
 
@@ -255,14 +256,14 @@ extern NSString * const RKLICURegexSubjectStringErrorKey;
 
 #ifdef    _RKL_BLOCKS_ENABLED
 
-- (BOOL)RKL_METHOD_PREPEND(enumerateStringsMatchedByRegex):(NSString *)regex usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
-- (BOOL)RKL_METHOD_PREPEND(enumerateStringsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
+- (BOOL)RKL_METHOD_PREPEND(enumerateStringsMatchedByRegex):(NSString *)regex usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(enumerateStrings(matchingRegex:with:));
+- (BOOL)RKL_METHOD_PREPEND(enumerateStringsMatchedByRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(enumerateStrings(matchingRegex:options:inRange:error:enumerationOptions:with:));
 
-- (BOOL)RKL_METHOD_PREPEND(enumerateStringsSeparatedByRegex):(NSString *)regex usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
-- (BOOL)RKL_METHOD_PREPEND(enumerateStringsSeparatedByRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
+- (BOOL)RKL_METHOD_PREPEND(enumerateStringsSeparatedByRegex):(NSString *)regex usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(enumerate(stringsSeparatedByRegex:with:));
+- (BOOL)RKL_METHOD_PREPEND(enumerateStringsSeparatedByRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(void (^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(enumerateStrings(separatedByRegex:options:inRange:error:enumerationOptions:with:));
 
-- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
-- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
+- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(replacingOccurrences(ofRegex:with:));
+- (NSString *)RKL_METHOD_PREPEND(stringByReplacingOccurrencesOfRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(replacingOccurrences(ofRegex:options:inRange:error:enumerationOptions:with:));
 
 #endif // _RKL_BLOCKS_ENABLED
 
@@ -270,16 +271,16 @@ extern NSString * const RKLICURegexSubjectStringErrorKey;
 
 @interface NSMutableString (RegexKitLiteAdditions)
 
-- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement;
-- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement range:(NSRange)searchRange;
-- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement options:(RKLRegexOptions)options range:(NSRange)searchRange error:(NSError **)error;
+- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement NS_SWIFT_NAME(replaceOccurrences(ofRegex:with:));
+- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement range:(NSRange)searchRange NS_SWIFT_NAME(replaceOccurrences(ofRegex:with:range:));
+- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement options:(RKLRegexOptions)options range:(NSRange)searchRange error:(NSError **)error NS_SWIFT_NAME(replaceOccurrences(ofRegex:with:options:range:error:));
 
   //// >= 4.0
 
 #ifdef    _RKL_BLOCKS_ENABLED
 
-- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
-- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block;
+- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(replaceOccurrences(ofRegex:with:));
+- (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex options:(RKLRegexOptions)options inRange:(NSRange)range error:(NSError **)error enumerationOptions:(RKLRegexEnumerationOptions)enumerationOptions usingBlock:(NSString *(^)(NSInteger captureCount, NSString * const capturedStrings[captureCount], const NSRange capturedRanges[captureCount], volatile BOOL * const stop))block NS_SWIFT_NAME(replaceOccurrences(ofRegex:options:inRange:error:enumerationOptions:with:));
 
 #endif // _RKL_BLOCKS_ENABLED
 
