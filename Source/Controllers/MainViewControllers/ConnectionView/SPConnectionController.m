@@ -3485,6 +3485,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return self;
 }
 
+// TODO: this is called once per connection screen - but the timezones don't change right? Should be static/class method?
 - (NSArray<NSMenuItem *> *)generateTimeZoneMenuItems
 {
 	NSArray<NSString *> *timeZoneIdentifiers = [NSTimeZone.knownTimeZoneNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
