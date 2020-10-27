@@ -3512,7 +3512,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[timeZoneMenuItems addObject:NSMenuItem.separatorItem];
 		}
 		NSMenuItem *entry = [[NSMenuItem alloc] initWithTitle:tzIdentifier action:nil keyEquivalent:@""];
-		[timeZoneMenuItems addObject:entry];
+		[timeZoneMenuItems addObject:entry]; // adding to an array retains the object
+		[entry release]; // so we can release here. otherwise we leak.
 	}
 
 	return timeZoneMenuItems;
