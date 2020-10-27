@@ -694,7 +694,7 @@
 	}
 
 	// Clear the last error message stored on the instance
-    if (queryErrorMessage) (void)([queryErrorMessage release]), queryErrorMessage = nil;
+    SPClear(queryErrorMessage);
 
 	// If we have an error message *with a length*, update the instance error message
 	if (theErrorMessage && [theErrorMessage length]) {
@@ -737,7 +737,7 @@
 	}
 
 	// Clear the last SQLSTATE stored on the instance
-    if(querySqlstate) (void)([querySqlstate release]), querySqlstate = nil;
+    SPClear(querySqlstate);
 
 	// If we have a SQLSTATE *with a length*, update the instance SQLSTATE
 	if(theSqlstate && [theSqlstate length]) {
