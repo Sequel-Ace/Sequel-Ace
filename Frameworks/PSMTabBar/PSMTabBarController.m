@@ -12,6 +12,7 @@
 #import "PSMTabStyle.h"
 #import "NSString_AITruncation.h"
 #import "PSMTabDragAssistant.h"
+#import "PSMRolloverButton.h"
 
 #define MAX_OVERFLOW_MENUITEM_TITLE_LENGTH	60
 
@@ -211,7 +212,7 @@
     
     //set up the rect from the add tab button
     _addButtonRect = [_control genericCellRect];
-    _addButtonRect.size = [[_control addTabButton] frame].size;
+    _addButtonRect.size = [_control.addTabButton frame].size;
     if ([_control orientation] == PSMTabBarHorizontalOrientation) {
         _addButtonRect.origin.y = MARGIN_Y;
 		_addButtonRect.origin.x += [[cellWidths valueForKeyPath:@"@sum.floatValue"] floatValue] + MARGIN_X;

@@ -14,7 +14,7 @@
 		171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 171312CD109D23C700FB465F /* SPTableTextFieldCell.m */; };
 		17148565125F5FF500321285 /* SPDatabaseCharacterSets.m in Sources */ = {isa = PBXBuildFile; fileRef = 17148564125F5FF500321285 /* SPDatabaseCharacterSets.m */; };
 		1717F9DB1558114D0065C036 /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11D44DEF118F5887002AA43C /* OCMock.framework */; };
-		1717FA401558313A0065C036 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; };
+		1717FA401558313A0065C036 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		1717FA43155831600065C036 /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
 		17292443107AC41000B21980 /* SPXMLExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17292442107AC41000B21980 /* SPXMLExporter.m */; };
 		172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = 172A65100F7BED7A001E861A /* SPConsoleMessage.m */; };
@@ -127,7 +127,7 @@
 		265446DF24A1616900376B48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC89E0F8FD336002A3258 /* WebKit.framework */; };
 		296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8A70F909194002A3258 /* MGTemplateEngine.m */; };
-		296DC8B70F909194002A3258 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; };
+		296DC8B70F909194002A3258 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		296DC8B80F909194002A3258 /* ICUTemplateMatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AC0F909194002A3258 /* ICUTemplateMatcher.m */; };
 		296DC8B90F909194002A3258 /* MGTemplateStandardMarkers.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AD0F909194002A3258 /* MGTemplateStandardMarkers.m */; };
 		296DC8BA0F909194002A3258 /* NSArray_DeepMutableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AE0F909194002A3258 /* NSArray_DeepMutableCopy.m */; };
@@ -154,7 +154,7 @@
 		50082B421BF7CD3C00746ECC /* ICUTemplateMatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8A90F909194002A3258 /* ICUTemplateMatcher.h */; };
 		50082B431BF7CD3C00746ECC /* NSArray_DeepMutableCopy.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8AF0F909194002A3258 /* NSArray_DeepMutableCopy.h */; };
 		50082B441BF7CD3C00746ECC /* NSDictionary_DeepMutableCopy.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8B20F909194002A3258 /* NSDictionary_DeepMutableCopy.h */; };
-		50082B451BF7D1C300746ECC /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; };
+		50082B451BF7D1C300746ECC /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		50082B461BF7D1CD00746ECC /* RegexKitLite.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8B00F909194002A3258 /* RegexKitLite.h */; };
 		50082B471BF7D1F600746ECC /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
 		500C1F921BFB5F9F0095DC7F /* SPPrivilegesMO.m in Sources */ = {isa = PBXBuildFile; fileRef = 500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */; };
@@ -281,7 +281,7 @@
 		584D88AB1515034200F24774 /* NSNotificationCenterThreadingAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 584D88A71515034200F24774 /* NSNotificationCenterThreadingAdditions.h */; };
 		584D88AC1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D88A81515034200F24774 /* NSNotificationCenterThreadingAdditions.m */; };
 		584D899D15162CBE00F24774 /* SPDataBase64EncodingAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D899C15162CBE00F24774 /* SPDataBase64EncodingAdditions.m */; };
-		586F457B0FDB269E00B428D7 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; };
+		586F457B0FDB269E00B428D7 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		586F457E0FDB280100B428D7 /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
 		5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 5870868310FA3E9C00D58E1C /* SPDataStorage.m */; };
 		5885CF4A116A63B200A85ACB /* SPFileHandle.m in Sources */ = {isa = PBXBuildFile; fileRef = 5885CF49116A63B200A85ACB /* SPFileHandle.m */; };

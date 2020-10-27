@@ -10,6 +10,8 @@
 #import "PSMTabBarCell.h"
 #import "PSMTabStyle.h"
 #import "PSMTabDragWindowController.h"
+#import "PSMOverflowPopUpButton.h"
+#import "PSMRolloverButton.h"
 
 #define PI 3.1417
 
