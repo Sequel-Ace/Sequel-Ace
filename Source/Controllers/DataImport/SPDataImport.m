@@ -56,7 +56,6 @@
 
 - (void)_startBackgroundImportTaskForFilename:(NSString *)filename;
 - (void)_importBackgroundProcess:(NSDictionary *)userInfo;
-- (void)_resetFieldMappingGlobals;
 - (void)_closeAndStopProgressSheet;
 - (NSString *)_getLineEndingForFile:(NSString *)filePath;
 
@@ -75,7 +74,6 @@
 {
 	if ((self = [super init])) {
 		
-		nibObjectsToRelease = [[NSMutableArray alloc] init];
 		geometryFields = [[NSMutableArray alloc] init];
 		geometryFieldsMapIndex = [[NSMutableIndexSet alloc] init];
 		bitFields = [[NSMutableArray alloc] init];
@@ -117,7 +115,6 @@
 	NSArray *importAccessoryTopLevelObjects = nil;
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ImportAccessory" bundle:[NSBundle mainBundle]];
 	[nibLoader instantiateWithOwner:self topLevelObjects:&importAccessoryTopLevelObjects];
-	[nibObjectsToRelease addObjectsFromArray:importAccessoryTopLevelObjects];
 
 	// Set the accessory view's tabview to tabless (left in for easier editing in IB)
 	[importTabView setTabViewType:NSNoTabsNoBorder];
@@ -266,9 +263,8 @@
 	[importFieldNamesSwitch setState:[[prefs objectForKey:SPCSVImportFirstLineIsHeader] boolValue]];
 
 	[openPanel setAccessoryView:importView];
-	//on os x 10.11+ the accessory view will be hidden by default and has to be made visible
-	if([openPanel respondsToSelector:@selector(setAccessoryViewDisclosed:)]) {
-		[openPanel setAccessoryViewDisclosed:YES];
+	if ([openPanel respondsToSelector:@selector(isAccessoryViewDisclosed)]) {
+		openPanel.accessoryViewDisclosed = YES;
 	}
 	[openPanel setDelegate:self];
 	
@@ -434,12 +430,7 @@
 		[singleProgressBar startAnimation:self];
 		
 		// Open the progress sheet
-		[NSApp beginSheet:singleProgressSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-		    modalDelegate:nil
-		   didEndSelector:NULL
-		      contextInfo:NULL];
-		[singleProgressSheet makeKeyWindow];
+		[[tableDocumentInstance parentWindow] beginSheet:singleProgressSheet completionHandler:nil];
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
@@ -841,12 +832,7 @@
 		[singleProgressBar startAnimation:self];
 		
 		// Open the progress sheet
-		[NSApp beginSheet:singleProgressSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-		    modalDelegate:nil
-		   didEndSelector:NULL
-		      contextInfo:NULL];
-		[singleProgressSheet makeKeyWindow];
+		[[tableDocumentInstance parentWindow] beginSheet:singleProgressSheet completionHandler:nil];
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
@@ -910,7 +896,6 @@
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)", @"CSV read error, including detail string from system"), (long)rowsImported, [exception reason]]
 			);
-			[self _resetFieldMappingGlobals];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 				[fileManager removeItemAtPath:filename error:nil];
@@ -957,7 +942,6 @@
 							[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported.", @"CSV encoding read error"), displayEncoding, (long)rowsImported]
 						);
 					});
-					[self _resetFieldMappingGlobals];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -998,7 +982,6 @@
 			{
 				[self _closeAndStopProgressSheet];
 				if (![self buildFieldMappingArrayWithData:parsedRows isPreview:!allDataRead ofSoureFile:filename]) {
-					[self _resetFieldMappingGlobals];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -1010,12 +993,7 @@
 					[singleProgressBar setMaxValue:fileTotalLength];
 					[singleProgressBar setIndeterminate:NO];
 					[singleProgressBar startAnimation:self];
-					[NSApp beginSheet:singleProgressSheet
-					   modalForWindow:[tableDocumentInstance parentWindow]
-					    modalDelegate:nil
-					   didEndSelector:NULL
-					      contextInfo:NULL];
-					[singleProgressSheet makeKeyWindow];
+					[[tableDocumentInstance parentWindow] beginSheet:singleProgressSheet completionHandler:nil];
 				});
 
 				// Set up index sets for use during row enumeration
@@ -1070,7 +1048,6 @@
 			// If not, check the connection if appropriate and then clean up and exit if appropriate.
 			if (![mySQLConnection isConnected] && ([mySQLConnection userTriggeredDisconnect] || ![mySQLConnection checkConnection])) {
 				[self _closeAndStopProgressSheet];
-				[self _resetFieldMappingGlobals];
 				[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 				if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 					[fileManager removeItemAtPath:filename error:nil];
@@ -1219,7 +1196,6 @@
 	}
 
 	// Clean up
-	[self _resetFieldMappingGlobals];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 		[fileManager removeItemAtPath:filename error:nil];
@@ -1318,13 +1294,9 @@
 		[fieldMapperController setImportDataArray:fieldMappingImportArray hasHeader:[importFieldNamesSwitch state] isPreview:fieldMappingImportArrayIsPreview];
 		
 		// Show field mapper sheet and set the focus to it
-		[NSApp beginSheet:[fieldMapperController window]
-		   modalForWindow:[tableDocumentInstance parentWindow]
-		    modalDelegate:self
-		   didEndSelector:@selector(fieldMapperDidEndSheet:returnCode:contextInfo:)
-		      contextInfo:NULL];
-		
-		[[fieldMapperController window] makeKeyWindow];
+		[[tableDocumentInstance parentWindow] beginSheet:[fieldMapperController window] completionHandler:^(NSModalResponse returnCode) {
+			fieldMapperSheetStatus = (returnCode) ? SPFieldMapperCompleted : SPFieldMapperCancelled;
+		}];
 	});
 
 	// Wait for field mapper sheet
@@ -1389,15 +1361,6 @@
 	});
 	success = YES;
 	return success;
-}
-
-/**
- *
- */
-- (void)fieldMapperDidEndSheet:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	[sheet orderOut:self];
-	fieldMapperSheetStatus = (returnCode) ? SPFieldMapperCompleted : SPFieldMapperCancelled;
 }
 
 /**
@@ -1717,17 +1680,7 @@
 	}
 	
 	[errorsView setString:message];
-	[NSApp beginSheet:errorsSheet
-	   modalForWindow:[tableDocumentInstance parentWindow]
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:NULL];
-	[errorsSheet makeKeyWindow];
-}
-
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	[sheet orderOut:self];
+	[[tableDocumentInstance parentWindow] beginSheet:errorsSheet completionHandler:nil];
 }
 
 #pragma mark -
@@ -1762,20 +1715,6 @@
 	// Use the appropriate processing function for the file type
 		 if ([fileType isEqualToString:@"SQL"]) [self importSQLFile:filename];
 	else if ([fileType isEqualToString:@"CSV"]) [self importCSVFile:filename];
-}
-
-/**
- * Release and reset any field mapping global variables.
- */
-- (void)_resetFieldMappingGlobals
-{
-	
-	
-	
-	
-	
-	
-	
 }
 
 /**

@@ -263,12 +263,12 @@
 @property (readwrite) BOOL isProcessing;
 @property (readwrite, copy) NSString *processID;
 
-@property (readonly) SPServerSupport *serverSupport;
-@property (readonly) SPDatabaseStructure *databaseStructureRetrieval;
-@property (readonly) SPDataImport *tableDumpInstance;
-@property (readonly) SPTablesList *tablesListInstance;
-@property (readonly) SPCustomQuery *customQueryInstance;
-@property (readonly) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;
+@property (readonly, strong) SPServerSupport *serverSupport;
+@property (readonly, strong) SPDatabaseStructure *databaseStructureRetrieval;
+@property (readonly, strong) SPDataImport *tableDumpInstance;
+@property (readonly, strong) SPTablesList *tablesListInstance;
+@property (readonly, strong) SPCustomQuery *customQueryInstance;
+@property (readonly, strong) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;
 
 @property (readonly) int64_t instanceId;
 
