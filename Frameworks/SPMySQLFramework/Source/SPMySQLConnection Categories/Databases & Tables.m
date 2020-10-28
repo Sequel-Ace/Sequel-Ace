@@ -78,7 +78,6 @@
 	if (encodingChangeRequired) [self restoreStoredEncoding];
 
 	// Store new database name and return success
-	if (database) [database release];
 	database = [[NSString alloc] initWithString:aDatabase];
 
 	return YES;

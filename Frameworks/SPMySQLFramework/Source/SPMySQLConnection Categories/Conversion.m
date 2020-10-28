@@ -67,16 +67,6 @@
 }
 
 /**
- * Converts an NSString to a null-terminated C string, using the current
- * connection encoding.
- */
-- (const char *)_cStringForString:(NSString *)aString
-{
-	// Use a cached reference to avoid dynamic method overhead
-	return _cStringForStringWithEncoding(aString, stringEncoding, NULL);
-}
-
-/**
  * Converts a C string to an NSString using the current connection encoding.
  * This method *will not* correctly preserve nul characters within c strings; instead
  * the first nul character within the string will be treated as the line ending. This
