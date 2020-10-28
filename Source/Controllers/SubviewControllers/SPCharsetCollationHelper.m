@@ -151,10 +151,10 @@
 			
 			// If an UTF8 entry has been encountered, promote it to the top of the list
 			if (promoteUTF8 && [charsetId hasPrefix:@"utf8"]) {
-				[[charsetButton menu] insertItem:[menuItem autorelease] atIndex:(utf8encounters++)];
+				[[charsetButton menu] insertItem:menuItem atIndex:(utf8encounters++)];
 			}
 			else {
-				[[charsetButton menu] addItem:[menuItem autorelease]];
+				[[charsetButton menu] addItem:menuItem];
 			}
 				
 		}
@@ -171,7 +171,7 @@
 	if(defaultCharset) {
 		NSMenuItem *defaultItem = [[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:defaultCharsetFormatString,defaultCharset] action:NULL keyEquivalent:@""];
 		[defaultItem setRepresentedObject:defaultCharset];
-		[[charsetButton menu] insertItem:[defaultItem autorelease] atIndex:0];
+		[[charsetButton menu] insertItem:defaultItem atIndex:0];
 		if([encodings count] > 0)
 			[[charsetButton menu] insertItem:[NSMenuItem separatorItem] atIndex: 1];
 	}

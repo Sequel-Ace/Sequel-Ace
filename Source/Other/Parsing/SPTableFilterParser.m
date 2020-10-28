@@ -65,7 +65,6 @@
 	[self setFirstBetweenArgument:nil];
 	[self setSecondBetweenArgument:nil];
 	
-	[super dealloc];
 }
 
 - (NSString *)filterString

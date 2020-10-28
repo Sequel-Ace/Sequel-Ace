@@ -550,7 +550,7 @@ fail_cleanup:
 {	
 	NSString *string = [[NSString alloc] initWithData:self encoding:encoding] ;
 	
-	return !string ? [[[NSString alloc] initWithData:self encoding:NSASCIIStringEncoding] autorelease] : string;
+	return !string ? [[NSString alloc] initWithData:self encoding:NSASCIIStringEncoding] : string;
 }
 
 /*

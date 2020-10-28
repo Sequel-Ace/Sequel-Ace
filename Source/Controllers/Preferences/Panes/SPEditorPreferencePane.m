@@ -70,11 +70,11 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		
 		fileManager = [NSFileManager defaultManager];
 
-		themePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil] retain];
+		themePath = [fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
 		
-		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+		editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 		
-		editorColors = [@[
+		editorColors = @[
 			SPCustomQueryEditorTextColor,
 			SPCustomQueryEditorBackgroundColor,
 			SPCustomQueryEditorCaretColor,
@@ -86,9 +86,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			SPCustomQueryEditorVariableColor,
 			SPCustomQueryEditorHighlightQueryColor,
 			SPCustomQueryEditorSelectionColor
-		] retain];
+		];
 		
-		editorNameForColors = [@[
+		editorNameForColors = @[
 			NSLocalizedString(@"Text", @"text label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Background", @"background label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Caret", @"caret label for color table (Prefs > Editor)"),
@@ -100,7 +100,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			NSLocalizedString(@"Variable", @"variable label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Query Background", @"query background label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Selection", @"selection label for color table (Prefs > Editor)")
-		] retain];
+		];
 	}
 	
 	return self;
@@ -216,7 +216,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			
 			
 			
-			editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+			editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 			
 			[editThemeListTable reloadData];
 			
@@ -246,7 +246,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			
 			
 			
-			editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+			editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 			
 			[editThemeListTable reloadData];
 			
@@ -323,7 +323,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	
 	
 	
-	editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+	editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 	
 	[editThemeListTable reloadData];
 	
@@ -594,7 +594,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		
 		// Reload everything needed
 		
-		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+		editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 		
 		[editThemeListTable reloadData];
 		

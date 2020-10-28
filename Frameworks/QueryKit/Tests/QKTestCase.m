@@ -50,7 +50,6 @@
 	if (_identifierQuote) {
         _identifierQuote = nil;
     }
-	[super dealloc];
 }
 
 @end

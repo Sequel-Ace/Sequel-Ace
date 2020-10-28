@@ -16,7 +16,7 @@
 {
 	PSMTabDragWindow *window = [PSMTabDragWindow dragWindowWithImage:image styleMask:styleMask];
 	if ( (self = [super initWithWindow:window]) ) {
-		_view = [[window dragView] retain];
+		_view = [window dragView];
 		_tearOffStyle = tearOffStyle;
 		
 		if (tearOffStyle == PSMTabBarTearOffMiniwindow) {
@@ -34,7 +34,6 @@
 	if (_timer) {
 		[_timer invalidate];
 	}
-	[super dealloc];
 }
 
 - (NSImage *)image

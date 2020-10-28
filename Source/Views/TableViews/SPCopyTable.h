@@ -65,9 +65,9 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 	NSString *tmpBlobFileDirectory;
 }
 
-@property(readwrite,assign) NSString *tmpBlobFileDirectory;
+@property (readwrite, copy) NSString *tmpBlobFileDirectory;
 
-@property(readwrite,assign) NSRange fieldEditorSelectedRange;
+@property (readwrite) NSRange fieldEditorSelectedRange;
 
 /*!
 	@method	 copy:

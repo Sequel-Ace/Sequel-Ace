@@ -70,7 +70,7 @@
 }
 
 @property (readonly) NSMutableArray *relationData;
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 // IB action methods
 - (IBAction)addRelation:(id)sender;

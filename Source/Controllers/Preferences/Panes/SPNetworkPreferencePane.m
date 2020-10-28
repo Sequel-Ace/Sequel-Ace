@@ -70,7 +70,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
-	[super dealloc];
 }
 
 #pragma mark -

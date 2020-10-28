@@ -235,7 +235,6 @@ static CGFloat slow_in_out (CGFloat t)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	[super dealloc];
 }
 
 + (void)setDisplayOptions:(NSDictionary *)aDict
@@ -382,7 +381,7 @@ static CGFloat slow_in_out (CGFloat t)
 	[self setValue:[NSDate date] forKey:@"didOpenAtDate"];
 	mousePositionWhenOpened = NSZeroPoint;
 
-	NSWindow* appKeyWindow = [[NSApp keyWindow] retain];
+	NSWindow* appKeyWindow = [NSApp keyWindow];
 	BOOL didAcceptMouseMovedEvents = [appKeyWindow acceptsMouseMovedEvents];
 	[appKeyWindow setAcceptsMouseMovedEvents:YES];
 	NSEvent* event = nil;

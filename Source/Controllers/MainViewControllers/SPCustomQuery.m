@@ -781,7 +781,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[tempQueries addObject:query];
 
 			// Run the query, timing execution (note this also includes network and overhead)
-			resultStore = [[mySQLConnection resultStoreFromQueryString:query] retain];
+			resultStore = [mySQLConnection resultStoreFromQueryString:query];
 			executionTime += [resultStore queryExecutionTime];
 			totalQueriesRun++;
 
@@ -790,7 +790,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			if (totalQueriesRun == queryCount || [mySQLConnection lastQueryWasCancelled]) {
 
 				// Retrieve and cache the column definitions for the result array
-				cqColumnDefinition = [[resultStore fieldDefinitions] retain];
+				cqColumnDefinition = [resultStore fieldDefinitions];
 
 				if(!reloadingExistingResult) {
 					[[self onMainThread] updateTableView];
@@ -930,8 +930,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 
 		// if(!queriesSeparatedByDelimiter) // TODO: How to combine queries delimited by DELIMITER?
-		usedQuery = [[NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]] retain];
-		lastExecutedQuery = [[tempQueries lastObject] retain];
+		usedQuery = [NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]];
+		lastExecutedQuery = [tempQueries lastObject];
 
 		// Perform empty query if no query is given
 		if ( !queryCount ) {
@@ -1127,7 +1127,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		queries = [[NSArray alloc] initWithArray:[customQueryParser splitStringIntoRangesByCharacter:';']];
 		numberOfQueries = [queries count];
 		if(currentQueryRanges)
-		currentQueryRanges = [[NSArray arrayWithArray:queries] retain];
+		currentQueryRanges = [NSArray arrayWithArray:queries];
 	} else {
 		queries = [[NSArray alloc] initWithArray:currentQueryRanges];
 	}
@@ -1544,7 +1544,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	queryLoadLastRowCount = 0;
 	queryLoadTimerTicksSinceLastUpdate = 0;
 
-	queryLoadTimer = [[NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(queryLoadUpdate:) userInfo:nil repeats:YES] retain];
+	queryLoadTimer = [NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(queryLoadUpdate:) userInfo:nil repeats:YES];
 }
 
 /**
@@ -2983,8 +2983,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[paraStyle setTabStops:@[]];
 		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
-		NSAttributedString *titleString = [[[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
-		                                                                   attributes:attributes] autorelease];
+		NSAttributedString *titleString = [[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
+		                                                                   attributes:attributes];
 		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
 		if ([favorite objectForKey:@"query"]) {
 			[item setToolTip:[NSString stringWithString:[favorite objectForKey:@"query"]]];
@@ -3008,8 +3008,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[paraStyle setTabStops:@[]];
 		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
-		NSAttributedString *titleString = [[[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
-		                                                                   attributes:attributes] autorelease];
+		NSAttributedString *titleString = [[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
+		                                                                   attributes:attributes];
 		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
 		if ([favorite objectForKey:@"query"]) {
 			[item setToolTip:[NSString stringWithString:[favorite objectForKey:@"query"]]];
@@ -3181,7 +3181,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 				[prefs setObject:favorites forKey:SPQueryFavorites];
 			} else {
 				[[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects:
-					[NSArray arrayWithObjects:[queryFavoriteNameTextField stringValue], [[queryToBeAddded mutableCopy] autorelease], nil]
+					[NSArray arrayWithObjects:[queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil]
 						forKeys:@[@"name", @"query"]] forFileURL:[tableDocumentInstance fileURL]];
 			}
 
@@ -3251,7 +3251,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		BOOL isResultFieldEditable = ([contextInfo objectForKey:@"isFieldEditable"]) ? YES : NO;
 
 		if(isResultFieldEditable) {
-			[self saveCellValue:[[data copy] autorelease] forTableColumn:[[customQueryView tableColumns] objectAtIndex:column] row:row];
+			[self saveCellValue:[data copy] forTableColumn:[[customQueryView tableColumns] objectAtIndex:column] row:row];
 		}
 	}
 
@@ -3278,7 +3278,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	if ((self = [super init])) {
 
-		usedQuery = [@"" retain];
+		usedQuery = @"";
 		lastExecutedQuery = nil;
 		fieldIDQueryString = nil;
 		sortField = nil;
@@ -3602,7 +3602,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	[self clearQueryLoadTimer];
 
-	[super dealloc];
 }
 
 @end

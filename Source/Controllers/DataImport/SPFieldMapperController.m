@@ -221,7 +221,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 - (void)setConnection:(SPMySQLConnection *)theConnection
 {
 	mySQLConnection = theConnection;
-	[mySQLConnection retain];
 }
 
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview
@@ -560,7 +559,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					[fieldMappingTableDefaultValues addObject:@"0"];
 				}
 				targetTableHasPrimaryKey = YES;
-				primaryKeyFields = [[tableDetails objectForKey:@"primarykeyfield"] retain];
+				primaryKeyFields = [tableDetails objectForKey:@"primarykeyfield"];
 			} else {
 				if([column objectForKey:@"unique"]) {
 					[type appendFormat:@",%@",@"UNIQUE"];
@@ -979,7 +978,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		NSBeep();
 		return;
 	}
-	NSString *type = [[fieldMappingTableTypes objectAtIndex:row] retain];
+	NSString *type = [fieldMappingTableTypes objectAtIndex:row];
 	[fieldMappingTableTypes removeAllObjects];
 	NSUInteger i;
 	for(i=0; i<[fieldMappingTableColumnNames count]; i++)

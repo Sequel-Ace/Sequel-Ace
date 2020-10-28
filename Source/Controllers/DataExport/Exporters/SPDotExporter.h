@@ -42,8 +42,6 @@
  */
 @interface SPDotExporter : SPExporter 
 {
-	NSObject <SPDotExporterProtocol> *delegate;
-	
 	NSArray *dotExportTables;
 	
 	NSString *dotExportCurrentTable;
@@ -60,42 +58,42 @@
 /**
  * @property delegate Exporter delegate
  */
-@property(readwrite, assign) NSObject <SPDotExporterProtocol> *delegate;
+@property(readwrite, weak) NSObject <SPDotExporterProtocol> *delegate;
 
 /**
  * @property dotExportTables Table information
  */
-@property(readwrite, retain) NSArray *dotExportTables;
+@property(readwrite, strong) NSArray *dotExportTables;
 
 /**
  * @property dotExportCurrentTable Current table
  */
-@property(readwrite, retain) NSString *dotExportCurrentTable;
+@property(readwrite, copy) NSString *dotExportCurrentTable;
 
 /**
  * @property dotForceLowerTableNames dotForceLowerTableNames Force lowercase table names
  */
-@property(readwrite, assign) BOOL dotForceLowerTableNames;
+@property(readwrite) BOOL dotForceLowerTableNames;
 
 /**
  * @property dotTableData Table data
  */
-@property(readwrite, retain) SPTableData *dotTableData;
+@property(readwrite, strong) SPTableData *dotTableData;
 
 /**
  * @property dotDatabaseHost Database host
  */
-@property(readwrite, retain) NSString *dotDatabaseHost;
+@property(readwrite, copy) NSString *dotDatabaseHost;
 
 /**
  * @property dotDatabaseName Database name
  */
-@property(readwrite, retain) NSString *dotDatabaseName;
+@property(readwrite, copy) NSString *dotDatabaseName;
 
 /**
  * @property dotDatabaseVersion Database version
  */
-@property(readwrite, retain) NSString *dotDatabaseVersion;
+@property(readwrite, copy) NSString *dotDatabaseVersion;
 
 - (id)initWithDelegate:(NSObject *)exportDelegate;
 

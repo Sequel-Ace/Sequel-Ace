@@ -32,7 +32,6 @@
 // the regular image
 - (void)setUsualImage:(NSImage *)newImage
 {
-    [newImage retain];
     _usualImage = newImage;
 
 	[self setImage:_usualImage];
@@ -45,7 +44,6 @@
 
 - (void)setRolloverImage:(NSImage *)newImage
 {
-    [newImage retain];
     _rolloverImage = newImage;
 }
 
@@ -177,8 +175,8 @@
 {
     if ((self = [super initWithCoder:decoder])) {
         if ([decoder allowsKeyedCoding]) {
-            _rolloverImage = [[decoder decodeObjectForKey:@"rolloverImage"] retain];
-            _usualImage = [[decoder decodeObjectForKey:@"usualImage"] retain];
+            _rolloverImage = [decoder decodeObjectForKey:@"rolloverImage"];
+            _usualImage = [decoder decodeObjectForKey:@"usualImage"];
             _myTrackingRectTag = [decoder decodeIntegerForKey:@"myTrackingRectTag"];
         }
     }
@@ -194,7 +192,6 @@
 
 	[self removeTrackingRect];
 
-	[super dealloc];
 }
 
 @end

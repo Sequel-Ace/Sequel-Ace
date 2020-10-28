@@ -115,7 +115,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	[super dealloc];
 }
 
 #pragma mark -

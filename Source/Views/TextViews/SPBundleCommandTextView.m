@@ -41,13 +41,12 @@
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth];
 	
-	[super dealloc];
 }
 
 - (void)awakeFromNib
 {
 
-	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	prefs = [NSUserDefaults standardUserDefaults];
 
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
 

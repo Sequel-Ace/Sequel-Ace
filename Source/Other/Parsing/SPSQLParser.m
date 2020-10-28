@@ -634,8 +634,9 @@
 		// Add ranges to the result array if they have a length
 		stringIndex++;
 		queryLength = nextIndex - stringIndex - delimiterLengthMinusOne;
-		if (queryLength > 0)
-			CFArrayAppendValue((CFMutableArrayRef)resultsArray, [NSValue valueWithRange:NSMakeRange(stringIndex, queryLength)]);
+		if (queryLength > 0) {
+			[resultsArray addObject:[NSValue valueWithRange:NSMakeRange(stringIndex, queryLength)]];
+		}
 
 		stringIndex = nextIndex;
 	}
@@ -948,7 +949,7 @@
 - (id) init {
 
 	if ((self = [super init])) {
-		string = [[NSMutableString string] retain];
+		string = [NSMutableString string];
 	}
 	[self initSQLExtensions];
 	return self;
@@ -969,7 +970,7 @@
 }
 - (id) initWithCapacity:(NSUInteger)capacity {
 	if ((self = [super init])) {
-		string = [[NSMutableString stringWithCapacity:capacity] retain];
+		string = [NSMutableString stringWithCapacity:capacity];
 	}
 	[self initSQLExtensions];
 	return self;
@@ -1061,7 +1062,6 @@
 	
 	
 	if (charCacheEnd != -1) free(stringCharCache);
-	[super dealloc];
 }
 
 #pragma mark - Private API

@@ -270,7 +270,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	[alert beginSheetModalForWindow:[dbDocument parentWindow]
 					  modalDelegate:self
 					 didEndSelector:@selector(removeIndexSheetDidEnd:returnCode:contextInfo:)
-						contextInfo:[@{@"Key_name" : keyName} retain]]; // contextInfo is NOT retained by Cocoa!
+						contextInfo:(__bridge void * _Nullable)(@{@"Key_name" : keyName})];
 }
 
 /**
@@ -1028,7 +1028,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	[alert beginSheetModalForWindow:[dbDocument parentWindow]
 	                  modalDelegate:self
 	                 didEndSelector:@selector(removeIndexSheetDidEnd:returnCode:contextInfo:)
-	                    contextInfo:[@{@"Key_name" : keyName, @"ForeignKey": constraintName} retain]]; // contextInfo is NOT retained by Cocoa!
+						contextInfo:(__bridge void * _Nullable)(@{@"Key_name" : keyName, @"ForeignKey": constraintName})];
 }
 
 /**
@@ -1100,7 +1100,6 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
 	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts]; //TODO: update to ...context: variant after 10.6
 
-	[super dealloc];
 }
 
 @end

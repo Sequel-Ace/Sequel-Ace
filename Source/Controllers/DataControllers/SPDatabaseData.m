@@ -410,7 +410,7 @@ copy_return:
 		if (!defaultCharacterSetEncoding) {
 			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_database" : @"character_set";
 			
-			defaultCharacterSetEncoding = [[self _getSingleVariableValue:variable] retain];
+			defaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
 		}
 		
 		return [defaultCharacterSetEncoding copy] ;
@@ -428,7 +428,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!defaultCollation && [serverSupport supportsCharacterSetAndCollationVars]) {
-			defaultCollation = [[self _getSingleVariableValue:@"collation_database"] retain];
+			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
 		}
 			
 		return [defaultCollation copy] ;
@@ -448,7 +448,7 @@ copy_return:
 		if (!serverDefaultCharacterSetEncoding) {
 			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_server" : @"character_set";
 			
-			serverDefaultCharacterSetEncoding = [[self _getSingleVariableValue:variable] retain];
+			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
 		}
 		
 		return [serverDefaultCharacterSetEncoding copy] ;
@@ -466,7 +466,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!serverDefaultCollation) {
-			serverDefaultCollation = [[self _getSingleVariableValue:@"collation_server"] retain];
+			serverDefaultCollation = [self _getSingleVariableValue:@"collation_server"];
 		}
 		
 		return [serverDefaultCollation copy] ;
@@ -497,7 +497,7 @@ copy_return:
 		}
 
 		// Retrieve the corresponding value for the determined key, ensuring return as a string
-		defaultStorageEngine = [[self _getSingleVariableValue:storageEngineKey] retain];
+		defaultStorageEngine = [self _getSingleVariableValue:storageEngineKey];
 	}
 	
 	return defaultStorageEngine;
@@ -595,7 +595,6 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 {
 	[self resetAllData];
 
-	[super dealloc];
 }
 
 @end

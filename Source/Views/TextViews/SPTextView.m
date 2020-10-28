@@ -117,7 +117,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 - (void) awakeFromNib
 {
-	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	prefs = [NSUserDefaults standardUserDefaults];
 	[self setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 
 	// Set self as delegate for the textView's textStorage to enable syntax highlighting,
@@ -343,12 +343,12 @@ retry:
 
 		if(!isDictMode) {
 			// Add predefined keywords
-			NSArray *keywordList = [[NSArray arrayWithArray:[[SPQueryController sharedQueryController] keywordList]] retain];
+			NSArray *keywordList = [NSArray arrayWithArray:[[SPQueryController sharedQueryController] keywordList]];
 			for(id s in keywordList)
 				[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:s, @"display", @"dummy-small", @"image", nil]];
 
 			// Add predefined functions
-			NSArray *functionList = [[NSArray arrayWithArray:[[SPQueryController sharedQueryController] functionList]] retain];
+			NSArray *functionList = [NSArray arrayWithArray:[[SPQueryController sharedQueryController] functionList]];
 			for(id s in functionList)
 				[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:s, @"display", @"func-small", @"image", nil]];
 		}
@@ -1944,9 +1944,6 @@ retry:
 		[self endSnippetSession];
 		snippetWasJustInserted = NO;
 	}
-
-	if(snip)[snip release];
-
 }
 
 /**
@@ -3540,9 +3537,6 @@ retry:
 	[prefs removeObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords];
 
 	if (completionIsOpen) (void)([completionPopup close]), completionIsOpen = NO;
-	
-	
-	[super dealloc];
 }
 
 #pragma mark -

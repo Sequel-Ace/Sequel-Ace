@@ -85,7 +85,7 @@ int _isSPLeaksLog(const struct direct *entry);
 + (id)allocWithZone:(NSZone *)zone
 {    
     @synchronized(self) {
-		return [[self logger] retain];
+		return [self logger];
     }
 	return nil;
 }
@@ -232,7 +232,6 @@ int _isSPLeaksLog(const struct direct *entry);
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Could not open log file for writing; no debug log will be generated!", "") callback:nil];
 		} 
 		else {
-			[logFileHandle retain];
 			[logFileHandle seekToEndOfFile];
 			
 			NSString *bundleName = [fileManager displayNameAtPath:[[NSBundle mainBundle] bundlePath]];

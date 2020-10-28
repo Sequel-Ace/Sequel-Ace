@@ -42,8 +42,6 @@
  */
 @interface SPSQLExporter : SPExporter
 {
-	NSObject <SPSQLExporterProtocol> *delegate;
-	
 	NSArray *sqlExportTables;
 
 	NSString *sqlDatabaseHost;
@@ -68,7 +66,7 @@
 /**
  * @property delegate Exporter delegate
  */
-@property(readwrite, assign) NSObject <SPSQLExporterProtocol> *delegate;
+@property (readwrite, weak) NSObject <SPSQLExporterProtocol> *delegate;
 
 /**
  * @property sqlExportTables Tables

@@ -59,7 +59,6 @@
 		[url stopAccessingSecurityScopedResource];
 	}
 
-	[super dealloc];
 }
 
 - (BOOL)preferencePaneAllowsResizing {

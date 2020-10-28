@@ -62,7 +62,6 @@
 - (void) dealloc {
 	if (_isAnimating) [self stopAnimation:self];
     
-	[super dealloc];
 }
 
 - (void)viewDidMoveToWindow
@@ -218,11 +217,11 @@
             [_animationThread start];
         }
         else {
-            _animationTimer = [[NSTimer timerWithTimeInterval:(NSTimeInterval)0.05
+            _animationTimer = [NSTimer timerWithTimeInterval:(NSTimeInterval)0.05
                                                        target:self
                                                      selector:@selector(updateFrame:)
                                                      userInfo:nil
-                                                      repeats:YES] retain];
+                                                      repeats:YES];
 
             [[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSRunLoopCommonModes];
             [[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSDefaultRunLoopMode];
@@ -263,7 +262,7 @@
 
 - (NSColor *)foreColor
 {
-    return [_foreColor retain] ;
+    return _foreColor;
 }
 
 - (void)setForeColor:(NSColor *)value
@@ -276,7 +275,7 @@
 
 - (NSColor *)backColor
 {
-    return [_backColor retain] ;
+    return _backColor;
 }
 
 - (void)setBackColor:(NSColor *)value
@@ -302,7 +301,7 @@
 
 - (NSShadow *)shadow
 {
-	return [_shadow retain] ;
+	return _shadow;
 }
 
 - (void)setShadow:(NSShadow *)value

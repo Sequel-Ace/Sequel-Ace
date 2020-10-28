@@ -525,10 +525,10 @@
 		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
 
 		if(!error) {
-			cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&error] retain];
+																   error:&error];
 		}
 		
 		if(!cmdData || error) {

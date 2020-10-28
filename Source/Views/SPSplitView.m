@@ -115,7 +115,6 @@
 	}
 	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[super dealloc];
 }
 
 #pragma mark -
@@ -262,7 +261,7 @@
 		animationRetainCycleBypassObject = [[SPSplitViewAnimationRetainCycleBypass alloc] initWithParent:self];
 
 		// Start an animation at 30fps
-		animationTimer = [[NSTimer timerWithTimeInterval:(1.f/30.f) target:animationRetainCycleBypassObject selector:@selector(_animationStep:) userInfo:nil repeats:YES] retain];
+		animationTimer = [NSTimer timerWithTimeInterval:(1.f/30.f) target:animationRetainCycleBypassObject selector:@selector(_animationStep:) userInfo:nil repeats:YES];
 		[[NSRunLoop currentRunLoop] addTimer:animationTimer forMode:NSRunLoopCommonModes];
 	}
 }
@@ -1108,7 +1107,7 @@
 	NSAutoresizingMaskOptions wrappedResizeMask = [wrappedView autoresizingMask];
 
 	// Retain the wrapped view while this view exists
-	wrappedView = [aView retain];
+	wrappedView = aView;
 
 	// Copy over the autoresizing mask from the wrapped view to this view, to keep the same
 	// draw appearance during the resize.

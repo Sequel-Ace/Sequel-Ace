@@ -44,7 +44,7 @@
 
 - (void)setImage:(NSImage *)image
 {
-	_image = [image retain];
+	_image = image;
 }
 
 - (NSImage *)alternateImage
@@ -54,7 +54,7 @@
 
 - (void)setAlternateImage:(NSImage *)image
 {
-	_alternateImage = [image retain];
+	_alternateImage = image;
 }
 
 @end

@@ -54,7 +54,7 @@
 	IBOutlet NSMenuItem          *autoRefreshIntervalMenuItem;
 }
 
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 - (IBAction)copy:(id)sender;
 - (IBAction)closeSheet:(id)sender;

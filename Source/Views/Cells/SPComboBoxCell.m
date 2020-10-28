@@ -62,7 +62,6 @@ static NSString *_CellWillDismissNotification = @"NSComboBoxCellWillDismissNotif
 - (void)dealloc
 {
 	[self setSpDelegate:nil];
-	[super dealloc];
 }
 
 - (NSWindow *)spPopUpWindow

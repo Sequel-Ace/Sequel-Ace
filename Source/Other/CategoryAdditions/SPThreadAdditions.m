@@ -69,7 +69,7 @@
 {
 	if(self = [super init]) {
 		name = [aName copy];
-		object = [aObject retain];
+		object = aObject;
 		selector = aSelector;
 	}
 	return self;
@@ -88,7 +88,6 @@
 {
 	selector = NULL;
 	
-	[super dealloc];
 }
 
 @end

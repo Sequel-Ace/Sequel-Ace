@@ -132,7 +132,6 @@
 {
 	[self setLabelColor:nil];
 	
-	[super dealloc];
 }
 
 @end

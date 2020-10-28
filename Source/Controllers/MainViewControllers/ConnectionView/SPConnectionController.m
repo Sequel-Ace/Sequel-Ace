@@ -478,7 +478,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		accessoryView = sslCACertLocationHelp;
 	}
 	
-	keySelectionPanel = [[NSOpenPanel openPanel] retain]; // retain/release needed on OS X ≤ 10.6 according to Apple doc
+	keySelectionPanel = [NSOpenPanel openPanel]; // retain/release needed on OS X ≤ 10.6 according to Apple doc
 	
 	[keySelectionPanel setCanChooseFiles:YES];
 	[keySelectionPanel setCanChooseDirectories:YES];
@@ -944,8 +944,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Check whether the password exists in the keychain, and if so add it; also record the
 	// keychain details so we can pass around only those details if the password doesn't change
-	connectionKeychainItemName = [[keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]] retain];
-	connectionKeychainItemAccount = [[keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]] retain];
+	connectionKeychainItemName = [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+	connectionKeychainItemAccount = [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
 
 	[self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
 
@@ -959,8 +959,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if ([fav objectForKey:SPFavoriteIDKey]) [self setConnectionKeychainID:[[fav objectForKey:SPFavoriteIDKey] stringValue]];
 
 	// And the same for the SSH password
-	connectionSSHKeychainItemName = [[keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]] retain];
-	connectionSSHKeychainItemAccount = [[keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]] retain];
+	connectionSSHKeychainItemName = [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+	connectionSSHKeychainItemAccount = [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
 
 	[self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
 
@@ -3379,12 +3379,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[connectionSplitView setMinSize:445.f ofSubviewAtIndex:1];
 
 		// Generic folder image for use in the outline view's groups
-		folderImage = [[[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(kGenericFolderIcon)] retain];
+		folderImage = [[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(kGenericFolderIcon)];
 		[folderImage setSize:NSMakeSize(16, 16)];
 
 		// Set up a keychain instance and preferences reference, and create the initial favorites list
 		keychain = [[SPKeychain alloc] init];
-		prefs = [[NSUserDefaults standardUserDefaults] retain];
+		prefs = [NSUserDefaults standardUserDefaults];
 		
 		bookmarks = [[NSMutableArray alloc] init];
 		resolvedBookmarks = [[NSMutableArray alloc] init];
@@ -3412,7 +3412,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		currentFavorite = nil;
 
 		// Create the "Quick Connect" placeholder group
-		quickConnectItem = [[SPTreeNode treeNodeWithRepresentedObject:[SPGroupNode groupNodeWithName:[NSLocalizedString(@"Quick Connect", @"Quick connect item label") uppercaseString]]] retain];
+		quickConnectItem = [SPTreeNode treeNodeWithRepresentedObject:[SPGroupNode groupNodeWithName:[NSLocalizedString(@"Quick Connect", @"Quick connect item label") uppercaseString]]];
 		[quickConnectItem setIsGroup:YES];
 
 		// Create a NSOutlineView cell for the Quick Connect group
@@ -3852,7 +3852,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	[self setConnectionKeychainID:nil];
 
-	[super dealloc];
 }
 
 /**

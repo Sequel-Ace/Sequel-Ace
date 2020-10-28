@@ -68,7 +68,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)setSourceTabBar:(PSMTabBarControl *)tabBar
 {
-    [tabBar retain];
     _sourceTabBar = tabBar;
 }
 
@@ -79,7 +78,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)setDestinationTabBar:(PSMTabBarControl *)tabBar
 {
-    [tabBar retain];
     _destinationTabBar = tabBar;
 }
 
@@ -90,7 +88,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)setDraggedCell:(PSMTabBarCell *)cell
 {
-    [cell retain];
     _draggedCell = cell;
 }
 
@@ -131,7 +128,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)setTargetCell:(PSMTabBarCell *)cell
 {
-    [cell retain];
     _targetCell = cell;
 }
 
@@ -190,7 +186,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	[[NSNotificationCenter defaultCenter] postNotificationName:PSMTabDragDidBeginNotification object:nil];
 	
 	//retain the control in case the drag operation causes the control to be released
-	[control retain];
 
 	//TODO: jcs - fixing deprecated dragImage needs a DraggingItems and DragginSource. Beyond me. 2020-10-22
 	if ([control delegate] && [[control delegate] respondsToSelector:@selector(tabView:shouldDropTabViewItem:inTabBar:)] &&
@@ -199,7 +194,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 		_draggedTab = [[PSMTabDragWindowController alloc] initWithImage:dragImage styleMask:NSBorderlessWindowMask tearOffStyle:_currentTearOffStyle initialAlpha:[control usesSafariStyleDragging]?1:kPSMTabDragWindowAlpha];
 		
 		cellFrame.origin.y -= cellFrame.size.height;
-		[control dragImage:[[[NSImage alloc] initWithSize:NSMakeSize(1, 1)] autorelease] at:cellFrame.origin offset:offset event:event pasteboard:pboard source:control slideBack:NO];
+		[control dragImage:[[NSImage alloc] initWithSize:NSMakeSize(1, 1)] at:cellFrame.origin offset:offset event:event pasteboard:pboard source:control slideBack:NO];
 	} else {
 		[control dragImage:dragImage at:cellFrame.origin offset:offset event:event pasteboard:pboard source:control slideBack:YES];
 	}
@@ -411,7 +406,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 		//temporarily disable the delegate in order to move the tab to a different index
 		id tempDelegate = [tabView delegate];
 		[tabView setDelegate:nil];
-		[item retain];
 		[tabView removeTabViewItem:item];
 		[tabView insertTabViewItem:item atIndex:anIndex];
 		if (reselect) {
@@ -750,7 +744,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)animateDrag:(NSTimer *)timer
 {
-    NSEnumerator *e = [[[_participatingTabBars copy] autorelease] objectEnumerator];
+    NSEnumerator *e = [[_participatingTabBars copy] objectEnumerator];
     PSMTabBarControl *tabBar;
     while ( (tabBar = [e nextObject]) ) {
         [self calculateDragAnimationForTabBar:tabBar];
@@ -971,16 +965,16 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
     //self = [super initWithCoder:aDecoder];
     //if (self) {
         if ([aDecoder allowsKeyedCoding]) {
-            _sourceTabBar = [[aDecoder decodeObjectForKey:@"sourceTabBar"] retain];
-            _destinationTabBar = [[aDecoder decodeObjectForKey:@"destinationTabBar"] retain];
-            _participatingTabBars = [[aDecoder decodeObjectForKey:@"participatingTabBars"] retain];
-            _draggedCell = [[aDecoder decodeObjectForKey:@"draggedCell"] retain];
+            _sourceTabBar = [aDecoder decodeObjectForKey:@"sourceTabBar"];
+            _destinationTabBar = [aDecoder decodeObjectForKey:@"destinationTabBar"];
+            _participatingTabBars = [aDecoder decodeObjectForKey:@"participatingTabBars"];
+            _draggedCell = [aDecoder decodeObjectForKey:@"draggedCell"];
             _draggedCellIndex = [aDecoder decodeIntegerForKey:@"draggedCellIndex"];
             _isDragging = [aDecoder decodeBoolForKey:@"isDragging"];
-            _animationTimer = [[aDecoder decodeObjectForKey:@"animationTimer"] retain];
-            _sineCurveWidths = [[aDecoder decodeObjectForKey:@"sineCurveWidths"] retain];
+            _animationTimer = [aDecoder decodeObjectForKey:@"animationTimer"];
+            _sineCurveWidths = [aDecoder decodeObjectForKey:@"sineCurveWidths"];
             _currentMouseLoc = [aDecoder decodePointForKey:@"currentMouseLoc"];
-            _targetCell = [[aDecoder decodeObjectForKey:@"targetCell"] retain];
+            _targetCell = [aDecoder decodeObjectForKey:@"targetCell"];
         }
     //}
     return self;

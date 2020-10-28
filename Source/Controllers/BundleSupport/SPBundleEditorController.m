@@ -62,7 +62,7 @@
 - (NSUInteger)_arrangedCategoryIndexForScopeIndex:(NSUInteger)scopeIndex andCategory:(NSString*)category;
 - (void)_metaSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 
@@ -105,7 +105,7 @@
 	// Init all needed variables; popup menus (with the chance for localization); and set
 	// defaults
 
-	bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil] retain];
+	bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil];
 
 	touchedBundleArray = [[NSMutableArray alloc] initWithCapacity:1];
 	commandBundleTree = [[NSMutableDictionary alloc] initWithCapacity:1];
@@ -132,17 +132,17 @@
 	withBlobDataTablePopUpMenu = [[NSMenu alloc] initWithTitle:@""];
 	inputNonePopUpMenu = [[NSMenu alloc] initWithTitle:@""];
 
-	inputGeneralScopeArray = [@[SPBundleInputSourceNone] retain];
-	inputInputFieldScopeArray = [@[SPBundleInputSourceNone, SPBundleInputSourceSelectedText, SPBundleInputSourceEntireContent] retain];
-	inputDataTableScopeArray = [@[SPBundleInputSourceNone, SPBundleInputSourceSelectedTableRowsAsTab, SPBundleInputSourceSelectedTableRowsAsCsv, SPBundleInputSourceSelectedTableRowsAsSqlInsert, SPBundleInputSourceTableRowsAsTab, SPBundleInputSourceTableRowsAsCsv, SPBundleInputSourceTableRowsAsSqlInsert] retain];
-	outputInputFieldScopeArray = [@[SPBundleOutputActionNone, SPBundleOutputActionInsertAsText, SPBundleOutputActionInsertAsSnippet, SPBundleOutputActionReplaceSelection, SPBundleOutputActionReplaceContent, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML] retain];
-	outputGeneralScopeArray = [@[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML] retain];
-	outputDataTableScopeArray = [@[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML] retain];
-	inputFallbackInputFieldScopeArray = [@[SPBundleInputSourceNone, SPBundleInputSourceCurrentWord, SPBundleInputSourceCurrentLine, SPBundleInputSourceCurrentQuery, SPBundleInputSourceEntireContent] retain];
-	triggerInputFieldArray = [@[SPBundleTriggerActionNone] retain];
-	triggerDataTableArray = [@[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged, SPBundleTriggerActionTableRowChanged] retain];
-	triggerGeneralArray = [@[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged] retain];
-	withBlobDataTableArray = [@[SPBundleInputSourceBlobHandlingExclude, SPBundleInputSourceBlobHandlingInclude, SPBundleInputSourceBlobHandlingImageFileReference, SPBundleInputSourceBlobHandlingFileReference] retain];
+	inputGeneralScopeArray = @[SPBundleInputSourceNone];
+	inputInputFieldScopeArray = @[SPBundleInputSourceNone, SPBundleInputSourceSelectedText, SPBundleInputSourceEntireContent];
+	inputDataTableScopeArray = @[SPBundleInputSourceNone, SPBundleInputSourceSelectedTableRowsAsTab, SPBundleInputSourceSelectedTableRowsAsCsv, SPBundleInputSourceSelectedTableRowsAsSqlInsert, SPBundleInputSourceTableRowsAsTab, SPBundleInputSourceTableRowsAsCsv, SPBundleInputSourceTableRowsAsSqlInsert];
+	outputInputFieldScopeArray = @[SPBundleOutputActionNone, SPBundleOutputActionInsertAsText, SPBundleOutputActionInsertAsSnippet, SPBundleOutputActionReplaceSelection, SPBundleOutputActionReplaceContent, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML];
+	outputGeneralScopeArray = @[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML];
+	outputDataTableScopeArray = @[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML];
+	inputFallbackInputFieldScopeArray = @[SPBundleInputSourceNone, SPBundleInputSourceCurrentWord, SPBundleInputSourceCurrentLine, SPBundleInputSourceCurrentQuery, SPBundleInputSourceEntireContent];
+	triggerInputFieldArray = @[SPBundleTriggerActionNone];
+	triggerDataTableArray = @[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged, SPBundleTriggerActionTableRowChanged];
+	triggerGeneralArray = @[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged];
+	withBlobDataTableArray = @[SPBundleInputSourceBlobHandlingExclude, SPBundleInputSourceBlobHandlingInclude, SPBundleInputSourceBlobHandlingImageFileReference, SPBundleInputSourceBlobHandlingFileReference];
 	NSArray *inputNoneArray = @[SPBundleInputSourceNone]; //we only need that once to construct the menu
 
 	NSMutableArray *allPopupScopeItems = [NSMutableArray array];
@@ -264,7 +264,7 @@
 
 	[commandBundleTreeController setSortDescriptors:[NSArray arrayWithObjects:sortDescriptor, nil]];
 
-	shellVariableSuggestions = [@[
+	shellVariableSuggestions = @[
 			SPBundleShellVariableAllDatabases,
 			SPBundleShellVariableAllFunctions,
 			SPBundleShellVariableAllProcedures,
@@ -309,7 +309,7 @@
 			SPBundleShellVariableSelectedText,
 			SPBundleShellVariableSelectedTextRange,
 			SPBundleShellVariableUsedQueryForTable
-	] retain];
+	];
 
 	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]) {
 		[deletedDefaultBundles setArray:[[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]];
@@ -404,7 +404,7 @@
 	id currentDict = [self _currentSelectedObject];
 
 	NSInteger selectedTag = [sender tag];
-	NSString *oldScope = [[currentDict objectForKey:SPBundleFileScopeKey] retain];
+	NSString *oldScope = [currentDict objectForKey:SPBundleFileScopeKey];
 
 	switch(selectedTag) {
 		case kGeneralScopeArrayIndex:
@@ -914,7 +914,7 @@
 			return NO;
 		}
 		if(!bundlePath)
-			bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil] retain];
+			bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil];
 		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], SPUserBundleFileExtension];
 	}
 
@@ -949,10 +949,10 @@
 			
 			NSData *pData = [NSData dataWithContentsOfFile:cmdFilePath options:NSUncachedRead error:&error];
 			
-			cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&error] retain];
+																   error:&error];
 			
 			if(!cmdData || error) {
 				NSLog(@"“%@” file couldn't be read. (error=%@)", cmdFilePath, error);
@@ -1252,7 +1252,7 @@
 	// the editing of the bundle name
 	
 	if(![[self _currentSelectedObject] objectForKey:kChildrenKey]) {
-		oldBundleName = [[[self _currentSelectedObject] objectForKey:kBundleNameKey] retain];
+		oldBundleName = [[self _currentSelectedObject] objectForKey:kBundleNameKey];
 		[self _enableBundleDataInput:YES bundleEnabled:![[[self _currentSelectedObject] objectForKey:@"disabled"] boolValue]];
 	} else {
 		[self _enableBundleDataInput:NO bundleEnabled:NO];
@@ -1402,7 +1402,7 @@
 			[commandsOutlineView reloadData];
 
 			
-			oldBundleName = [[[self _currentSelectedObject] objectForKey:kBundleNameKey] retain];
+			oldBundleName = [[self _currentSelectedObject] objectForKey:kBundleNameKey];
 			if(oldBundleName != nil && ![touchedBundleArray containsObject:oldBundleName])
 				[touchedBundleArray addObject:oldBundleName];
 		}
@@ -1502,7 +1502,7 @@
 	NSString *bundleFileName = [bundleDict objectForKey:kBundleNameKey];
 	NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtension];
 
-	draggedFilePath = [[NSString stringWithFormat:@"%@/%@.%@", [NSFileManager temporaryDirectory], bundleFileName, SPUserBundleFileExtension] retain];
+	draggedFilePath = [NSString stringWithFormat:@"%@/%@.%@", [NSFileManager temporaryDirectory], bundleFileName, SPUserBundleFileExtension];
 
 	BOOL isDir;
 
@@ -1656,10 +1656,10 @@
 				NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&readError];
 				
 				if(pData && !error) {
-					cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+					cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																		 options:NSPropertyListImmutable
 																		  format:NULL
-																		   error:&readError] retain];
+																		   error:&readError];
 				}
 				
 				if(!cmdData || readError) {

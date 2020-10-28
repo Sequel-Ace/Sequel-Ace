@@ -254,13 +254,13 @@
 	int64_t instanceId;
 }
 
-@property (nonatomic, assign) NSTableView *dbTablesTableView;
-@property (readwrite, retain) NSURL *sqlFileURL;
-@property (readwrite, assign) NSStringEncoding sqlFileEncoding;
-@property (readwrite, assign) SPWindowController *parentWindowController;
-@property (readwrite, assign) NSTabViewItem *parentTabViewItem;
-@property (readwrite, assign) BOOL isProcessing;
-@property (readwrite, retain) NSString *processID;
+@property (nonatomic, strong) NSTableView *dbTablesTableView;
+@property (readwrite, strong) NSURL *sqlFileURL;
+@property (readwrite) NSStringEncoding sqlFileEncoding;
+@property (readwrite, strong) SPWindowController *parentWindowController;
+@property (readwrite, strong) NSTabViewItem *parentTabViewItem;
+@property (readwrite) BOOL isProcessing;
+@property (readwrite, copy) NSString *processID;
 
 @property (readonly) SPServerSupport *serverSupport;
 @property (readonly) SPDatabaseStructure *databaseStructureRetrieval;

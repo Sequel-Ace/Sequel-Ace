@@ -219,7 +219,6 @@
 	}
     
     [self unregisterDraggedTypes];
-	[super dealloc];
 }
 
 - (void)awakeFromNib

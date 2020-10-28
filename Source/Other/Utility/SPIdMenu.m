@@ -44,7 +44,6 @@
 -(void)dealloc
 {
 	[self setMenuId:nil];
-	[super dealloc];
 }
 
 - (void)encodeWithCoder:(NSCoder *)aCoder

@@ -82,7 +82,6 @@
 - (void)dealloc
 {
 	[_indicator removeFromSuperviewWithoutNeedingDisplay];
-    [super dealloc];
 }
 
 #pragma mark -
@@ -266,7 +265,7 @@
 
 - (void)setCountColor:(NSColor *)color
 {
-	_countColor = [color retain];
+	_countColor = color;
 }
 
 - (BOOL)isPlaceholder
@@ -312,7 +311,6 @@
 
 - (void)setBackgroundColor:(NSColor *)aColor
 {
-	[aColor retain];
 	_backgroundColor = aColor;
 }
 
@@ -486,7 +484,7 @@
             _cellTrackingTag = [aDecoder decodeIntegerForKey:@"cellTrackingTag"];
             _closeButtonOver = [aDecoder decodeBoolForKey:@"closeButtonOver"];
             _closeButtonPressed = [aDecoder decodeBoolForKey:@"closeButtonPressed"];
-            _indicator = [[aDecoder decodeObjectForKey:@"indicator"] retain];
+            _indicator = [aDecoder decodeObjectForKey:@"indicator"];
             _isInOverflowMenu = [aDecoder decodeBoolForKey:@"isInOverflowMenu"];
             _hasCloseButton = [aDecoder decodeBoolForKey:@"hasCloseButton"];
             _isCloseButtonSuppressed = [aDecoder decodeBoolForKey:@"isCloseButtonSuppressed"];

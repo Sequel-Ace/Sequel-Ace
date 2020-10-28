@@ -82,7 +82,6 @@
 {
 	[defaultsController removeObserver:self forKeyPath:@"values.PrintBackground"];
 	
-	[super dealloc];
 }
 
 @end

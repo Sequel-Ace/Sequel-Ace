@@ -95,7 +95,7 @@
 /**
  * @property connection The MySQL connection to use
  */
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 - (IBAction)addIndex:(id)sender;
 - (IBAction)removeIndex:(id)sender;

@@ -213,7 +213,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 		
-		localizedTokenNames = [@{
+		localizedTokenNames = @{
 			SPFileNameHostTokenName:       NSLocalizedString(@"Host", @"export filename host token"),
 			SPFileNameDatabaseTokenName:   NSLocalizedString(@"Database", @"export filename database token"),
 			SPFileNameTableTokenName:      NSLocalizedString(@"Table", @"table"),
@@ -224,7 +224,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			SPFileNameTimeTokenName:       NSLocalizedString(@"Time", @"export filename time token"),
 			SPFileName24HourTimeTokenName: NSLocalizedString(@"24-Hour Time", @"export filename time token"),
 			SPFileNameFavoriteTokenName:   NSLocalizedString(@"Favorite", @"export filename favorite name token")
-		} retain];
+		};
 	}
 	
 	return self;
@@ -549,7 +549,6 @@ set_input:
 
 - (void)_waitUntilQueueIsEmptyAfterCancelling:(id)sender
 {
-	[sender retain];
 	[operationQueue waitUntilAllOperationsAreFinished];
 	[self performSelectorOnMainThread:@selector(_queueIsEmptyAfterCancelling:) withObject:sender waitUntilDone:NO];
 }
@@ -1917,7 +1916,6 @@ set_input:
 	// We don't know where "files" came from, but we know 2 things:
 	// - NSAlert will NOT retain it as contextInfo
 	// - This method continues execution after [alert beginSheet:...], thus even if files was retained before, it could be released before the alert ends
-	[files retain];
 
 	// Get the number of files that already exist as well as couldn't be created because of other reasons
 	NSUInteger filesAlreadyExisting = 0;
@@ -2828,19 +2826,12 @@ set_input:
 		NSUInteger length;
 		BOOL isText = NO;
 		if(IS_STRING(obj)) {
-			length = [obj length];
+			NSString *objString = (NSString *)obj;
+			length = [objString length];
 			isText = YES;
 			
-			// we already know this is an NSString, but anyway, safety first.
-			// hmmm, check for nil?
-			// see tests
-			// obj = (NSString*)obj; is twice as fast as:
-			// obj = [NSString cast:obj]; which is twice as fast as
-			// obj = [NSString stringWithString:obj];
-			obj = [NSString cast:obj]; // this doesn't leak, it uses the same memory address
-			
 			// only attempt tokenization if string contains a { or }
-			if([obj containsString:@"{"] == NO && [obj containsString:@"}"] == NO){
+			if([objString containsString:@"{"] == NO && [objString containsString:@"}"] == NO){
 				SPLog(@"string does not contain token delimiters");
 				return;
 			}
@@ -3905,7 +3896,6 @@ set_input:
 
 	[self setServerSupport:nil];
 	
-	[super dealloc];
 }
 
 @end

@@ -132,7 +132,6 @@
 {
 	[self setServerSupport:nil];
 	
-	[super dealloc];
 }
 
 @end

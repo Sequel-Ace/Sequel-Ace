@@ -251,18 +251,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	_mainNibLoaded = YES;
 	
-	// This one is a bit tricky: The chooseDatabaseButton is only retained
-	// by its superview which is kept in "nibObjectsToRelease". However once
-	// we pass the button to the NSToolbarItem with setView: the toolbar item
-	// will take over the ownership as its new superview.
-	//   That would mean if the toolbar item is removed from the toolbar, it
-	// will be dealloc'd and so will the chooseDatabaseButton, causing havoc.
-	//   The correct thing to do would be to create a new instance for each
-	// call by the toolbar, but right now the other code relies on the
-	// popup being a "singleton".
-	[chooseDatabaseButton retain];
-	[historyControl retain];
-	
 	// Set up the toolbar
 	[self setupToolbar];
 
@@ -323,9 +311,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		[nibObjectsToRelease addObjectsFromArray:progressIndicatorLayerTopLevelObjects];
 	}
-
-	// Retain the icon accessory view to allow it to be added and removed from windows
-	[titleAccessoryView retain];
 
 	// Set up the progress indicator child window and layer - change indicator color and size
 	[taskProgressIndicator setForeColor:[NSColor whiteColor]];
@@ -397,7 +382,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	_isConnected = YES;
-	mySQLConnection = [theConnection retain];
+	mySQLConnection = theConnection;
 	
 	// Now that we have a connection, determine what functionality the database supports.
 	// Note that this must be done before anything else as it's used by nearly all of the main controllers.
@@ -1114,7 +1099,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSMutableArray *dbList = [[NSMutableArray alloc] init];
 	[dbList addObjectsFromArray:[self allSystemDatabaseNames]];
 	[dbList addObjectsFromArray:[self allDatabaseNames]];
-	[gotoDatabaseController setDatabaseList:[dbList autorelease]];
+	[gotoDatabaseController setDatabaseList:dbList];
 	
 	if([gotoDatabaseController runModal]) {
 		[self selectDatabase:[gotoDatabaseController selectedDatabase] item:nil];
@@ -1247,8 +1232,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Schedule appearance of the task window in the near future, using a frame timer.
 		taskFadeInStartDate = [[NSDate alloc] init];
 		queryStartDate = [[NSDate alloc] init];
-		taskDrawTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0 target:self selector:@selector(fadeInTaskProgressWindow:) userInfo:nil repeats:YES] retain];
-		queryExecutionTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(showQueryExecutionTime) userInfo:nil repeats:YES] retain];
+		taskDrawTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0 target:self selector:@selector(fadeInTaskProgressWindow:) userInfo:nil repeats:YES];
+		queryExecutionTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(showQueryExecutionTime) userInfo:nil repeats:YES];
 
 	}
 }
@@ -1683,7 +1668,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 {
 	_supportsEncoding = YES;
 
-	NSString *mysqlEncoding = [[databaseDataInstance getDatabaseDefaultCharacterSet] retain];
+	NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
 
 	
 
@@ -1914,7 +1899,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if (statusValues) {
 			
 		}
-		statusValues = [resultStatuses retain];
+		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
@@ -1978,7 +1963,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		
-		statusValues = [resultStatuses retain];
+		statusValues = resultStatuses;
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
 				
@@ -2042,7 +2027,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		
-		statusValues = [resultStatuses retain];
+		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
@@ -2106,7 +2091,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		
-		statusValues = [resultStatuses retain];
+		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
@@ -2170,7 +2155,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
 		
-		statusValues = [resultStatuses retain];
+		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
@@ -2212,7 +2197,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksum %@", @"checksum %@ message"), what] message:alertMessage callback:nil];
 	} else {
 		
-		statusValues = [resultStatuses retain];
+		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what] message:message accessoryView:statusTableAccessoryView callback:^{
 			if (statusValues) {
@@ -2327,7 +2312,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)initQueryEditorWithString:(NSString *)query
 {
-	queryEditorInitString = [query retain];
+	queryEditorInitString = query;
 }
 
 /**
@@ -4232,7 +4217,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)setFileURL:(NSURL *)theURL
 {
-	[theURL retain];
 	spfFileURL  = theURL;
 	if ([parentWindowController selectedTableDocument] == self) {
 		if (spfFileURL && [spfFileURL isFileURL]) [parentWindow setRepresentedURL:spfFileURL];
@@ -4570,7 +4554,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Store session details - if provided - for later setting once the connection is established
 	if ([stateDetails objectForKey:@"session"]) {
-		spfSession = [[NSDictionary dictionaryWithDictionary:[stateDetails objectForKey:@"session"]] retain];
+		spfSession = [NSDictionary dictionaryWithDictionary:[stateDetails objectForKey:@"session"]];
 	}
 
 	// Restore favourites and history
@@ -4603,10 +4587,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSData *pData = [NSData dataWithContentsOfFile:path options:NSUncachedRead error:&error];
 
 	if(pData && !error) {
-		spf = [[NSPropertyListSerialization propertyListWithData:pData
+		spf = [NSPropertyListSerialization propertyListWithData:pData
 														 options:NSPropertyListImmutable
 														  format:NULL
-														   error:&error] retain];
+														   error:&error];
 	}
 
 	if (!spf || error) {
@@ -7143,7 +7127,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 	}
 	
-	[super dealloc];
 }
 
 @end

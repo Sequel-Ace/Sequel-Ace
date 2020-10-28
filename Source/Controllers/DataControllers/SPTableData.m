@@ -1396,7 +1396,6 @@
 
 	pthread_mutex_destroy(&dataProcessingLock);
 
-	[super dealloc];
 }
 
 #pragma mark -

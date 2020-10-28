@@ -466,7 +466,6 @@ struct SPRawFileHandles {
 	
 	pthread_mutex_destroy(&bufferLock);
 	
-	[super dealloc];
 }
 
 @end

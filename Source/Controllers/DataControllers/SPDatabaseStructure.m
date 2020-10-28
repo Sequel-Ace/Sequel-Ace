@@ -121,7 +121,7 @@
 {
 	// this much is needed to make the accessor atomic and thread-safe
 	pthread_mutex_lock(&connectionCheckLock);
-	SPMySQLConnection *c = [mySQLConnection retain];
+	SPMySQLConnection *c = mySQLConnection;
 	pthread_mutex_unlock(&connectionCheckLock);
 	return c;
 }
@@ -478,7 +478,6 @@
 	pthread_mutex_destroy(&dataLock);
 	pthread_mutex_destroy(&connectionCheckLock);
 
-	[super dealloc];
 }
 
 #pragma mark -
@@ -525,8 +524,6 @@
 		// If a connection is already set, ensure it's idle before releasing it
 		if (mySQLConnection) {
 			[self _cancelAllThreadsAndWait];
-
-			(void)([mySQLConnection autorelease]), mySQLConnection = nil; // note: aConnection could be == mySQLConnection
 		}
 
 		// Create a copy of the supplied connection

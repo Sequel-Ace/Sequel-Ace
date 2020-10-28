@@ -369,7 +369,6 @@
 	// Invalidate all ivars
 	[self _invalidate];
 	
-	[super dealloc];
 }
 
 @end

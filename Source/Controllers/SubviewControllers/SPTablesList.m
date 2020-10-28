@@ -2729,7 +2729,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	[super dealloc];
 }
 
 @end

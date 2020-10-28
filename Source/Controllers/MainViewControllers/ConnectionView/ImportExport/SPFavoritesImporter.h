@@ -32,12 +32,10 @@
 
 @interface SPFavoritesImporter : NSObject 
 {
-	NSObject <SPFavoritesImportProtocol> *delegate;
-		
 	NSString *importPath;
 }
 
-@property (readwrite, assign) NSObject <SPFavoritesImportProtocol> *delegate;
+@property (readwrite, weak) NSObject <SPFavoritesImportProtocol> *delegate;
 
 /**
  * @property importPath The file path to import from

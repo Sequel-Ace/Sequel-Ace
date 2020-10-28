@@ -718,7 +718,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 	[self _removePreferenceObservers];
 
-	[super dealloc];
 }
 
 @end

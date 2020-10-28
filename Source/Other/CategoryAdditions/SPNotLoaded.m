@@ -49,7 +49,7 @@ static SPNotLoaded *notLoaded = nil;
 + (id)allocWithZone:(NSZone *)zone
 {
 	@synchronized(self) {
-		return [[self notLoaded] retain];
+		return [self notLoaded];
 	}
 	
 	return nil;

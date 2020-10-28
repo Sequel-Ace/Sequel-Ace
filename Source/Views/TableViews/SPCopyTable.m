@@ -1278,10 +1278,10 @@ static const NSInteger kBlobAsImageFile = 4;
 		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
 
 		if(pData && !error) {
-			cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&error] retain];
+																   error:&error];
 		}
 		
 		if(!cmdData || error) {
@@ -1545,7 +1545,7 @@ static const NSInteger kBlobAsImageFile = 4;
 - (void)awakeFromNib
 {
 	columnDefinitions = nil;
-	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	prefs = [NSUserDefaults standardUserDefaults];
 
 	if ([NSTableView instancesRespondToSelector:@selector(awakeFromNib)]) {
 		[super awakeFromNib];

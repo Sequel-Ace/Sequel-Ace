@@ -115,7 +115,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	{
 		mutablePrefix = [NSMutableString new];
 		originalFilterString = [NSMutableString new];
-		textualInputCharacters = [[NSMutableCharacterSet alphanumericCharacterSet] retain];
+		textualInputCharacters = [NSMutableCharacterSet alphanumericCharacterSet];
 		caseSensitive = YES;
 		filtered = nil;
 		spaceCounter = 0;
@@ -149,7 +149,6 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[theTableView setDataSource:nil];
 	[theTableView setDelegate:nil];
 
-	[super dealloc];
 }
 
 - (void)close
@@ -242,7 +241,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		commaInsertionMode = NO;
 		triggerMode = tabTriggerMode;
 
-		if (aStaticPrefix) staticPrefix = [aStaticPrefix retain];
+		if (aStaticPrefix) staticPrefix = aStaticPrefix;
 
 		caseSensitive = isCaseSensitive;
 
@@ -255,7 +254,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 
 		timeCounter = 0;
 
-		suggestions = [someSuggestions retain];
+		suggestions = someSuggestions;
 
 		if (dictMode || oneColumnMode) {
 			[[theTableView tableColumnWithIdentifier:@"image"] setWidth:0];
@@ -290,11 +289,11 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			[textualInputCharacters addCharactersInString:someAdditionalWordCharacters];
 		}
 
-		databaseStructureRetrieval = [theDatabaseStructure retain];
+		databaseStructureRetrieval = theDatabaseStructure;
 		isQueryingDatabaseStructure = [databaseStructureRetrieval isQueryingDatabaseStructure];
 
 		if (isQueryingDatabaseStructure) {
-			stateTimer = [[NSTimer scheduledTimerWithTimeInterval:0.07f target:self selector:@selector(updateSyncArrowStatus) userInfo:nil repeats:YES] retain];
+			stateTimer = [NSTimer scheduledTimerWithTimeInterval:0.07f target:self selector:@selector(updateSyncArrowStatus) userInfo:nil repeats:YES];
 		}
 	}
 
@@ -739,7 +738,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	// newHeight is currently the new height for theTableView, but we need to resize the whole window
 	// so here we use the difference in height to find the new height for the window
 	[self setFrame:NSMakeRect(old.x, old.y-newHeight, maxWindowWidth, newHeight) display:YES];
-	filtered = [newFiltered retain];
+	filtered = newFiltered;
 	if(!dictMode) [self checkSpaceForAllowedCharacter];
 	[theTableView reloadData];
 	[theTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:(isQueryingDatabaseStructure)?1:0] byExtendingSelection:NO];

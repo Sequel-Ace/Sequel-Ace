@@ -65,7 +65,7 @@
 	NSDictionary *editedTrigger;
 }
 
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 - (void)loadTriggers;
 - (void)resetInterface;

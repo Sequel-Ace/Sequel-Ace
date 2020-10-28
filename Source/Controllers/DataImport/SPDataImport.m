@@ -307,7 +307,7 @@
 
 		
 
-		lastFilename = [[NSString stringWithString:[[openPanel URL] path]] retain];
+		lastFilename = [NSString stringWithString:[[openPanel URL] path]];
 
 		NSString *importFileName = [NSString stringWithString:lastFilename];
 
@@ -1340,15 +1340,15 @@
 
 	// Get mapping settings and preset some global variables
 	SPMainQSync(^{
-		fieldMapperOperator                 = [[NSArray arrayWithArray:[fieldMapperController fieldMapperOperator]] retain];
-		fieldMappingArray                   = [[NSArray arrayWithArray:[fieldMapperController fieldMappingArray]] retain];
-		selectedTableTarget                 = [[NSString stringWithString:[fieldMapperController selectedTableTarget]] retain];
-		selectedImportMethod                = [[NSString stringWithString:[fieldMapperController selectedImportMethod]] retain];
-		fieldMappingTableColumnNames        = [[NSArray arrayWithArray:[fieldMapperController fieldMappingTableColumnNames]] retain];
-		fieldMappingGlobalValueArray        = [[NSArray arrayWithArray:[fieldMapperController fieldMappingGlobalValueArray]] retain];
-		fieldMappingTableDefaultValues      = [[NSArray arrayWithArray:[fieldMapperController fieldMappingTableDefaultValues]] retain];
-		csvImportHeaderString               = [[NSString stringWithString:[fieldMapperController importHeaderString]] retain];
-		csvImportTailString                 = [[NSString stringWithString:[fieldMapperController onupdateString]] retain];
+		fieldMapperOperator                 = [NSArray arrayWithArray:[fieldMapperController fieldMapperOperator]];
+		fieldMappingArray                   = [NSArray arrayWithArray:[fieldMapperController fieldMappingArray]];
+		selectedTableTarget                 = [NSString stringWithString:[fieldMapperController selectedTableTarget]];
+		selectedImportMethod                = [NSString stringWithString:[fieldMapperController selectedImportMethod]];
+		fieldMappingTableColumnNames        = [NSArray arrayWithArray:[fieldMapperController fieldMappingTableColumnNames]];
+		fieldMappingGlobalValueArray        = [NSArray arrayWithArray:[fieldMapperController fieldMappingGlobalValueArray]];
+		fieldMappingTableDefaultValues      = [NSArray arrayWithArray:[fieldMapperController fieldMappingTableDefaultValues]];
+		csvImportHeaderString               = [NSString stringWithString:[fieldMapperController importHeaderString]];
+		csvImportTailString                 = [NSString stringWithString:[fieldMapperController onupdateString]];
 		importIntoNewTable                  = [fieldMapperController importIntoNewTable];
 		fieldMappingArrayHasGlobalVariables = [fieldMapperController globalValuesInUsage];
 		insertRemainingRowsAfterUpdate      = [fieldMapperController insertRemainingRowsAfterUpdate];
@@ -1677,7 +1677,7 @@
 {
 	NSButtonCell *switchButton = [[NSButtonCell alloc] init];
 	
-	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	prefs = [NSUserDefaults standardUserDefaults];
 	
 	mySQLConnection = theConnection;
 	

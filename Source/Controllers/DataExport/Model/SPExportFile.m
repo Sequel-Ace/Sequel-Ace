@@ -213,7 +213,7 @@
 	}
 	
 	// Retrieve a filehandle for the file, attempting to delete it on failure.
-	exportFileHandle = [[SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]] retain];
+	exportFileHandle = [SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]];
 	
 	if (!exportFileHandle) {
 		[fileManager removeItemAtPath:[self exportFilePath] error:nil];

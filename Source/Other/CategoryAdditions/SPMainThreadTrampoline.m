@@ -81,7 +81,6 @@
 
 	// Retain the arguments and object for the call for safety
 	[theInvocation retainArguments];
-	[trampolineObject retain];
 	[theInvocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:trampolineObject waitUntilDone:YES];
 }
 
@@ -118,7 +117,6 @@
 	if (![trampolineObject respondsToSelector:theSelector]) [self doesNotRecognizeSelector:theSelector];
 
 	// Retain the object while performing calls on it
-	[trampolineObject retain];
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:nil waitUntilDone:YES];
 
 	return nil;
@@ -135,8 +133,6 @@
 	if (![trampolineObject respondsToSelector:theSelector]) [self doesNotRecognizeSelector:theSelector];
 
 	// Retain the trampolined object, and the argument object, while performing calls
-	[trampolineObject retain];
-	[theObject retain];
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:theObject waitUntilDone:YES];
 
 	return nil;

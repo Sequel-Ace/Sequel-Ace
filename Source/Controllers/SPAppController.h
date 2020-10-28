@@ -59,7 +59,7 @@
 	NSString *lastBundleBlobFilesDirectory;
 }
 
-@property (readwrite, retain) NSString *lastBundleBlobFilesDirectory;
+@property (readwrite, strong) NSString *lastBundleBlobFilesDirectory;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
 

@@ -38,15 +38,12 @@
  *
  * HTML exporter class.
  */
-@interface SPHTMLExporter : SPExporter 
-{
-	NSObject <SPHTMLExporterProtocol> *delegate;
-}
+@interface SPHTMLExporter : SPExporter
 
 /**
  * @property delegate Exporter delegate
  */
-@property(readwrite, assign) NSObject <SPHTMLExporterProtocol> *delegate;
+@property(readwrite, weak) NSObject <SPHTMLExporterProtocol> *delegate;
 
 - (id)initWithDelegate:(NSObject *)exportDelegate;
 

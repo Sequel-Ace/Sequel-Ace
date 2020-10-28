@@ -747,7 +747,7 @@ static unsigned short getRandomPort(void);
 	if (keyName) {
 		[sshPasswordText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Enter your password for the SSH key\n\"%@\"", @"SSH key password prompt"), keyName]];
 		[sshPasswordKeychainCheckbox setHidden:NO];
-		currentKeyName = [keyName retain];
+		currentKeyName = keyName;
 	} 
 	else {
 		[sshPasswordText setStringValue:theQuery];
@@ -818,7 +818,6 @@ static unsigned short getRandomPort(void);
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
 
-	[super dealloc];
 }
 
 @end

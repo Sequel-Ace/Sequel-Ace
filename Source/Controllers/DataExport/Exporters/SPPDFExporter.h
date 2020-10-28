@@ -39,14 +39,11 @@
  * PDF exporter class.
  */
 @interface SPPDFExporter : SPExporter 
-{
-	NSObject <SPPDFExporterProtocol> *delegate;
-}
 
 /**
  * @property delegate Exporter delegate
  */
-@property(readwrite, assign) NSObject <SPPDFExporterProtocol> *delegate;
+@property (readwrite, weak) NSObject <SPPDFExporterProtocol> *delegate;
 
 - (id)initWithDelegate:(NSObject *)exportDelegate;
 

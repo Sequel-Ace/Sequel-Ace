@@ -65,7 +65,7 @@
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
 - (void)openUserBundleAtPath:(NSString *)filePath;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 
@@ -492,10 +492,10 @@
 												 error:&error];
 
 		if(pData && !error) {
-			spfs = [[NSPropertyListSerialization propertyListWithData:pData
+			spfs = [NSPropertyListSerialization propertyListWithData:pData
 															  options:NSPropertyListImmutable
 															   format:NULL
-																error:&error] retain];
+																error:&error];
 		}
 
 		if (!spfs || error) {
@@ -660,10 +660,10 @@
 		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
 
 		if(pData && !error) {
-			cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&error] retain];
+																   error:&error];
 		}
 
 		if (!cmdData || error) {
@@ -1097,10 +1097,10 @@
 		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
 
 		if(pData && !error) {
-			cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&error] retain];
+																   error:&error];
 		}
 
 		if(!cmdData || error) {
@@ -1435,7 +1435,7 @@
 {
 	
 	if(urlString)
-		_sessionURL = [[NSURL fileURLWithPath:urlString] retain];
+		_sessionURL = [NSURL fileURLWithPath:urlString];
 }
 
 - (NSDictionary *)spfSessionDocData
@@ -1578,9 +1578,9 @@
 	NSArray *deletedDefaultBundles;
 
 	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey])
-		deletedDefaultBundles = [[[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey] retain];
+		deletedDefaultBundles = [[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey];
 	else
-		deletedDefaultBundles = [@[] retain];
+		deletedDefaultBundles = @[];
 
 	NSMutableString *infoAboutUpdatedDefaultBundles = [NSMutableString string];
 	BOOL doBundleUpdate = ([[NSUserDefaults standardUserDefaults] objectForKey:@"doBundleUpdate"]) ? YES : NO;
@@ -2508,7 +2508,6 @@
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	[super dealloc];
 }
 
 @end

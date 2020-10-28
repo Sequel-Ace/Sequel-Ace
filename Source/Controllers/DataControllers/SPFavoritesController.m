@@ -59,7 +59,7 @@ static SPFavoritesController *sharedFavoritesController = nil;
 + (id)allocWithZone:(NSZone *)zone
 {    
     @synchronized(self) {
-		return [[self sharedFavoritesController] retain]; 
+		return [self sharedFavoritesController]; 
     }
 	
 	return nil;    
@@ -479,7 +479,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	pthread_mutex_destroy(&writeLock);
 	pthread_mutex_destroy(&favoritesLock);
 	
-	[super dealloc];
 }
 
 @end

@@ -76,7 +76,6 @@
 	[self setTypeDefinition:nil];
 	[self setTypeRange:nil];
 	[self setTypeDescription:nil];
-	[super dealloc];
 }
 
 @end
@@ -166,16 +165,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[tableSourceView setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 	[indexesTableView setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 
-	extraFieldSuggestions = [@[
+	extraFieldSuggestions = @[
 			@"None",
 			@"auto_increment",
 			@"on update CURRENT_TIMESTAMP",
 			@"SERIAL DEFAULT VALUE"
-	] retain];
+	];
 
 	// Note that changing the contents or ordering of this array will affect the implementation of 
 	// SPTableFieldValidation. See it's implementation file for more details.
-	typeSuggestions = [@[
+	typeSuggestions = @[
 		SPMySQLTinyIntType,
 		SPMySQLSmallIntType,
 		SPMySQLMediumIntType,
@@ -223,7 +222,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		SPMySQLMultiPointType,
 		SPMySQLMultiLineStringType,
 		SPMySQLMultiPolygonType,
-		SPMySQLGeometryCollectionType] retain];
+		SPMySQLGeometryCollectionType];
 
 	[fieldValidation setFieldTypes:typeSuggestions];
 	
@@ -1470,7 +1469,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 					NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:[item title] attributes:defaultAttrs];
 
-					[item setAttributedTitle:[itemString autorelease]];
+					[item setAttributedTitle:itemString];
 				}
 			}
 		}
@@ -1666,7 +1665,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[newDefaultValues setObject:[theField objectForKey:@"default"] forKey:[theField objectForKey:@"name"]];
 	}
 
-	defaultValues = [[NSDictionary dictionaryWithDictionary:newDefaultValues] retain];
+	defaultValues = [NSDictionary dictionaryWithDictionary:newDefaultValues];
 
 	// Enable the edit table button
 	[editTableButton setEnabled:enableInteraction];
@@ -1736,7 +1735,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					// If this matches the table's collation, draw in gray
 					if (columnUsesTableDefaultEncoding && [collationName isEqualToString:tableCollation]) {
 						NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:[item title] attributes:menuAttrs];
-						[item setAttributedTitle:[itemString autorelease]];
+						[item setAttributedTitle:itemString];
 					}
 				}
 
@@ -2305,7 +2304,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		{
 			NSDictionary *titleAttr = @{NSFontAttributeName: [NSFont boldSystemFontOfSize:[NSFont systemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
 			NSAttributedString *title = [[NSAttributedString alloc] initWithString:[help typeDefinition] attributes:titleAttr];
-			[as appendAttributedString:[title autorelease]];
+			[as appendAttributedString:title];
 			[[as mutableString] appendString:@"\n"];
 		}
 
@@ -2313,7 +2312,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		if ([[help typeRange] length]) {
 			NSDictionary *rangeAttr = @{NSFontAttributeName: [NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
 			NSAttributedString *range = [[NSAttributedString alloc] initWithString:[help typeRange] attributes:rangeAttr];
-			[as appendAttributedString:[range autorelease]];
+			[as appendAttributedString:range];
 			[[as mutableString] appendString:@"\n"];
 		}
 
@@ -2323,12 +2322,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		{
 			NSDictionary *descAttr = @{NSFontAttributeName: [NSFont systemFontOfSize:[NSFont systemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
 			NSAttributedString *desc = [[NSAttributedString alloc] initWithString:[help typeDescription] attributes:descAttr];
-			[as appendAttributedString:[desc autorelease]];
+			[as appendAttributedString:desc];
 		}
 
 		[as addAttribute:NSParagraphStyleAttributeName value:[NSParagraphStyle defaultParagraphStyle] range:NSMakeRange(0, [as length])];
 
-		[[structureHelpText textStorage] setAttributedString:[as autorelease]];
+		[[structureHelpText textStorage] setAttributedString:as];
 
 		NSRect rect = [as boundingRectWithSize:NSMakeSize([structureHelpText frame].size.width-2, CGFLOAT_MAX) options:NSStringDrawingUsesFontLeading|NSStringDrawingUsesLineFragmentOrigin];
 
@@ -2447,7 +2446,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	[super dealloc];
 }
 
 + (SPFieldTypeHelp *)helpForFieldType:(NSString *)typeName
@@ -2460,7 +2458,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *intRangeTpl = NSLocalizedString(@"Signed: %@ to %@\nUnsigned: %@ to %@",@"range of integer types");
 		// NSString *INTR(NSNumber *sMin, NSNumber *sMax, NSNumber *uMin, NSNumber *uMax): return formatted string for integer types (signed min/max, unsigned min/max)
 #define INTR(sMin,sMax,uMin,uMax) [NSString stringWithFormat:intRangeTpl,FN(sMin),FN(sMax),FN(uMin),FN(uMax)]
-		list = [@[
+		list = @[
 			MakeFieldTypeHelp(
 				SPMySQLTinyIntType,
 				@"TINYINT[(M)] [UNSIGNED] [ZEROFILL]",
@@ -2734,7 +2732,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				@"",
 				NSLocalizedString(@"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.",@"description of geometrycollection")
 			),
-		] retain];
+		];
 #undef FN
 #undef INTR
 	});
@@ -2775,9 +2773,9 @@ void _BuildMenuWithPills(NSMenu *menu, struct _cmpMap *map, size_t mapEntries)
 
 				NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
 
-				[attachment setAttachmentCell:[cell autorelease]];
+				[attachment setAttachmentCell:cell];
 
-				NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:[attachment autorelease]];
+				NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
 
 				[[itemStr mutableString] appendString:@" "];
 				[itemStr appendAttributedString:attachmentString];
@@ -2792,6 +2790,6 @@ void _BuildMenuWithPills(NSMenu *menu, struct _cmpMap *map, size_t mapEntries)
 			[item setToolTip:[tooltipParts componentsJoinedByString:@" "]];
 		}
 
-		[item setAttributedTitle:[itemStr autorelease]];
+		[item setAttributedTitle:itemStr];
 	}
 }

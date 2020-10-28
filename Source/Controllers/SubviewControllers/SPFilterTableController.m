@@ -91,7 +91,6 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 {
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	[super dealloc];
 }
 
 - (void)showFilterTableWindow
@@ -221,7 +220,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableNegateCheckbox setState:(filterTableNegate) ? NSOnState : NSOffState];
 	[filterTableLiveSearchCheckbox setState:NSOffState];
 
-	filterTableDefaultOperator = [[[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]] retain];
+	filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]];
 }
 
 - (IBAction)filterTable:(id)sender
@@ -342,7 +341,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	if([contextInfo isEqualToString:SPTableFilterSetDefaultOperator]) {
 		if(returnCode) {
 			NSString *newOperator = [filterTableSetDefaultOperatorValue stringValue];
-			filterTableDefaultOperator = [[[self class] escapeFilterTableDefaultOperator:newOperator] retain];
+			filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:newOperator];
 			[prefs setObject:newOperator forKey:SPFilterTableDefaultOperator];
 
 			if(![newOperator isMatchedByRegex:@"(?i)like\\s+['\"]%@%['\"]\\s*"]) {
@@ -625,7 +624,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 		if (string && [string length]) {
 
-			lastEditedFilterTableValue = [[NSString stringWithString:string] retain];
+			lastEditedFilterTableValue = [NSString stringWithString:string];
 		}
 
 		[self updateFilterTableClause:string];

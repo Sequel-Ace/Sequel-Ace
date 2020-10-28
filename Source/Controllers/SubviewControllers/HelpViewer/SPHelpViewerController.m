@@ -89,7 +89,6 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 	if (@available(macOS 10.14, *)) {
 		[[self window] removeObserver:self forKeyPath:@"effectiveAppearance" context:HelpViewerControllerKVOContext];
 	}
-	[super dealloc];
 }
 
 - (void)windowDidLoad

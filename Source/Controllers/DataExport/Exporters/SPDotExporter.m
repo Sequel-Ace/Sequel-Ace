@@ -220,7 +220,6 @@
 {
 	delegate = nil;
 	
-	[super dealloc];
 }
 
 @end

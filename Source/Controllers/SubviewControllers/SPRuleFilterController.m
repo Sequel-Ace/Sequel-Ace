@@ -1055,7 +1055,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[filterRuleEditor unbind:@"rows"];
 	}];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[super dealloc];
 }
 
 /**

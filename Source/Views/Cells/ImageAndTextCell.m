@@ -48,7 +48,6 @@
 
 - (void)dealloc {
 	image = nil;
-	[super dealloc];
 }
 
 - copyWithZone:(NSZone *)zone
@@ -63,7 +62,7 @@
 {
 	if (anImage != image)
 	{
-		image = [anImage retain];
+		image = anImage;
 	}
 }
 

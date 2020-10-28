@@ -74,7 +74,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 + (id)allocWithZone:(NSZone *)zone
 {    
 	@synchronized(self) {
-		return [[self sharedNavigatorController] retain];
+		return [self sharedNavigatorController];
 	}
 	return nil;
 }
@@ -105,7 +105,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	[super dealloc];
 }
 /**
  * The following base protocol methods are implemented to ensure the singleton status of this class.
@@ -129,13 +128,13 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:YES];
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:NO];
 
-	connectionIcon = [[NSImage imageNamed:@"network-small"] retain];
-	databaseIcon = [[NSImage imageNamed:@"database-small"] retain];
-	tableIcon = [[NSImage imageNamed:@"table-small-square"] retain];
-	viewIcon = [[NSImage imageNamed:@"table-view-small-square"] retain];
-	procedureIcon = [[NSImage imageNamed:@"proc-small"] retain];
-	functionIcon = [[NSImage imageNamed:@"func-small"] retain];
-	fieldIcon = [[NSImage imageNamed:@"field-small-square"] retain];
+	connectionIcon = [NSImage imageNamed:@"network-small"];
+	databaseIcon = [NSImage imageNamed:@"database-small"];
+	tableIcon = [NSImage imageNamed:@"table-small-square"];
+	viewIcon = [NSImage imageNamed:@"table-view-small-square"];
+	procedureIcon = [NSImage imageNamed:@"proc-small"];
+	functionIcon = [NSImage imageNamed:@"func-small"];
+	fieldIcon = [NSImage imageNamed:@"field-small-square"];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateNavigator:) name:@"SPDBStructureWasUpdated" object:nil];
 

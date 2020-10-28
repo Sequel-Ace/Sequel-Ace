@@ -252,14 +252,14 @@
 /**
  * @property connection Database connection
  */
-@property(readwrite, assign) SPMySQLConnection *connection;
-@property(readwrite, assign) SPServerSupport *serverSupport;
+@property(readwrite, strong) SPMySQLConnection *connection;
+@property(readwrite, strong) SPServerSupport *serverSupport;
 
-@property (readwrite, retain) NSData *appScopedBookmark;
-@property (readwrite, retain) NSDate *startTime;
-@property (readwrite, retain) NSURL *userChosenDirectory;
-@property (readwrite, retain) NSOpenPanel *changeExportOutputPathPanel;
-@property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (readwrite, strong) NSData *appScopedBookmark;
+@property (readwrite, strong) NSDate *startTime;
+@property (readwrite, strong) NSURL *userChosenDirectory;
+@property (readwrite, strong) NSOpenPanel *changeExportOutputPathPanel;
+@property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
 
 - (void)exportTables:(NSArray *)table asFormat:(SPExportType)format usingSource:(SPExportSource)source;
 - (void)openExportErrorsSheetWithString:(NSString *)errors;

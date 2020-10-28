@@ -55,9 +55,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 };
 
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
-{
-	id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
-	
+{	
 	SPDatabaseDocument *dbDocument;
 	SPSSHTunnel *sshTunnel;
 	SPMySQLConnection *mySQLConnection;
@@ -198,44 +196,44 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	SPFavoritesSortItem currentSortItem;
 }
 
-@property (readwrite, assign) id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
-@property (readwrite, assign) NSInteger type;
-@property (readwrite, retain) NSString *name;
-@property (readwrite, retain) NSString *host;
-@property (readwrite, retain) NSString *user;
-@property (readwrite, retain) NSString *password;
-@property (readwrite, retain) NSString *database;
-@property (readwrite, retain) NSString *socket;
-@property (readwrite, retain) NSString *port;
-@property (readwrite, assign) SPConnectionTimeZoneMode timeZoneMode;
-@property (readwrite, retain) NSString *timeZoneIdentifier;
-@property (readwrite, assign) NSInteger allowDataLocalInfile;
-@property (readwrite, assign) NSInteger useSSL;
-@property (readwrite, assign) NSInteger colorIndex;
-@property (readwrite, assign) NSInteger sslKeyFileLocationEnabled;
-@property (readwrite, retain) NSString *sslKeyFileLocation;
-@property (readwrite, assign) NSInteger sslCertificateFileLocationEnabled;
-@property (readwrite, retain) NSString *sslCertificateFileLocation;
-@property (readwrite, assign) NSInteger sslCACertFileLocationEnabled;
-@property (readwrite, retain) NSString *sslCACertFileLocation;
-@property (readwrite, retain) NSString *sshHost;
-@property (readwrite, retain) NSString *sshUser;
-@property (readwrite, retain) NSString *sshPassword;
-@property (readwrite, assign) NSInteger sshKeyLocationEnabled;
-@property (readwrite, retain) NSString *sshKeyLocation;
-@property (readwrite, retain) NSString *sshPort;
-@property (readwrite, retain) NSString *socketHelpWindowUUID;
-@property (readwrite, copy, nonatomic) NSString *connectionKeychainID;
-@property (readwrite, retain) NSString *connectionKeychainItemName;
-@property (readwrite, retain) NSString *connectionKeychainItemAccount;
-@property (readwrite, retain) NSString *connectionSSHKeychainItemName;
-@property (readwrite, retain) NSString *connectionSSHKeychainItemAccount;
-@property (readwrite, assign) BOOL useCompression;
-@property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
-@property (readwrite, retain) NSMutableArray<NSURL *> *resolvedBookmarks;
+@property (readwrite, weak) id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
+@property (readwrite) NSInteger type;
+@property (readwrite, copy) NSString *name;
+@property (readwrite, copy) NSString *host;
+@property (readwrite, copy) NSString *user;
+@property (readwrite, copy) NSString *password;
+@property (readwrite, copy) NSString *database;
+@property (readwrite, copy) NSString *socket;
+@property (readwrite, copy) NSString *port;
+@property (readwrite) SPConnectionTimeZoneMode timeZoneMode;
+@property (readwrite, copy) NSString *timeZoneIdentifier;
+@property (readwrite) NSInteger allowDataLocalInfile;
+@property (readwrite) NSInteger useSSL;
+@property (readwrite) NSInteger colorIndex;
+@property (readwrite) NSInteger sslKeyFileLocationEnabled;
+@property (readwrite, copy) NSString *sslKeyFileLocation;
+@property (readwrite) NSInteger sslCertificateFileLocationEnabled;
+@property (readwrite, copy) NSString *sslCertificateFileLocation;
+@property (readwrite) NSInteger sslCACertFileLocationEnabled;
+@property (readwrite, copy) NSString *sslCACertFileLocation;
+@property (readwrite, copy) NSString *sshHost;
+@property (readwrite, copy) NSString *sshUser;
+@property (readwrite, copy) NSString *sshPassword;
+@property (readwrite) NSInteger sshKeyLocationEnabled;
+@property (readwrite, copy) NSString *sshKeyLocation;
+@property (readwrite, copy) NSString *sshPort;
+@property (readwrite, copy) NSString *socketHelpWindowUUID;
+@property (readwrite, copy) NSString *connectionKeychainID;
+@property (readwrite, copy) NSString *connectionKeychainItemName;
+@property (readwrite, copy) NSString *connectionKeychainItemAccount;
+@property (readwrite, copy) NSString *connectionSSHKeychainItemName;
+@property (readwrite, copy) NSString *connectionSSHKeychainItemAccount;
+@property (readwrite) BOOL useCompression;
+@property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (readwrite, strong) NSMutableArray<NSURL *> *resolvedBookmarks;
 
-@property (readonly, assign) BOOL isConnecting;
-@property (readonly, assign) BOOL isEditingConnection;
+@property (readonly) BOOL isConnecting;
+@property (readonly) BOOL isEditingConnection;
 
 - (NSString *)keychainPassword;
 - (NSString *)keychainPasswordForSSH;

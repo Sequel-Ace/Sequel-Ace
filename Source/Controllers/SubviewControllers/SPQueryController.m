@@ -1096,7 +1096,6 @@ static SPQueryController *sharedQueryController = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
 	pthread_mutex_destroy(&consoleLock);
-	[super dealloc];
 }
 
 @end

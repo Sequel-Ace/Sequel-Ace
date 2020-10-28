@@ -293,7 +293,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[alert beginSheetModalForWindow:[self window]
 					  modalDelegate:self
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:[userInfo retain]]; //keep in mind contextInfo is a void * and not an id => no memory management here
+						contextInfo:(__bridge void * _Nullable)(userInfo)];
 }
 
 /**
@@ -328,7 +328,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[alert beginSheetModalForWindow:[self window]
 					  modalDelegate:self
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:[userInfo retain]]; //keep in mind contextInfo is a void * and not an id => no memory management here
+						contextInfo:(__bridge void * _Nullable)(userInfo)];
 }
 
 /**
@@ -560,7 +560,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (void)_startAutoRefreshTimer
 {		
-	autoRefreshTimer = [[NSTimer scheduledTimerWithTimeInterval:[prefs doubleForKey:SPProcessListAutoRrefreshInterval] target:self selector:@selector(_fireAutoRefresh:) userInfo:nil repeats:YES] retain];
+	autoRefreshTimer = [NSTimer scheduledTimerWithTimeInterval:[prefs doubleForKey:SPProcessListAutoRrefreshInterval] target:self selector:@selector(_fireAutoRefresh:) userInfo:nil repeats:YES];
 }
 
 /**
@@ -870,7 +870,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 
 	[self _removePreferenceObservers];
 
-	[super dealloc];
 }
 
 @end

@@ -804,10 +804,10 @@
 			NSData *pData = [NSData dataWithContentsOfFile:filename options:NSUncachedRead error:&readError];
 
 			if(pData && !readError) {
-				spf = [[NSPropertyListSerialization propertyListWithData:pData
+				spf = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&readError] retain];
+																   error:&readError];
 			}
 			
 			if(!spf || readError) {

@@ -394,7 +394,6 @@
 {
 	[self _removePreferenceObservers];
 
-	[super dealloc];
 }
 
 @end

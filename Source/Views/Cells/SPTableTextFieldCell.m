@@ -56,7 +56,6 @@
 - (void) dealloc
 {
 	noteButton = nil;
-	[super dealloc];
 }
 
 - copyWithZone:(NSZone *)zone

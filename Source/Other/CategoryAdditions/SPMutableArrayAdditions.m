@@ -41,7 +41,7 @@
 	{
 		NSUInteger j = ((count - i) - 1);
 		
-		id obj = [NSArrayObjectAtIndex(self, i) retain];
+		id obj = NSArrayObjectAtIndex(self, i);
 		
 		[self replaceObjectAtIndex:i withObject:NSArrayObjectAtIndex(self, j)];
 		[self replaceObjectAtIndex:j withObject:obj];

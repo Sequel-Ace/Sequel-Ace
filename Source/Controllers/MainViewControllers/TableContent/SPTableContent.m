@@ -4580,7 +4580,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[self clearTableLoadTimer];
 	
 	pthread_mutex_destroy(&tableValuesLock);
-	[super dealloc];
 }
 
 @end

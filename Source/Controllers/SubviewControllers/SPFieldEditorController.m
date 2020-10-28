@@ -104,7 +104,7 @@ typedef enum {
 		allowUndo = NO;
 		selectionChanged = NO;
 
-		tmpDirPath = [NSTemporaryDirectory() retain];
+		tmpDirPath = NSTemporaryDirectory();
 		tmpFileName = nil;
 
 		NSMenu *menu = [editSheetQuickLookButton menu];
@@ -160,7 +160,7 @@ typedef enum {
 			}
 		}
 
-		qlTypes = [@{SPQuickLookTypes : qlTypesItems} retain];
+		qlTypes = @{SPQuickLookTypes : qlTypesItems};
 
 		fieldType = @"";
 		fieldEncoding = @"";
@@ -178,7 +178,6 @@ typedef enum {
 
 	[self setEditedFieldInfo:nil];
 
-	[super dealloc];
 }
 
 #pragma mark -
@@ -207,7 +206,7 @@ typedef enum {
 	usedSheet = nil;
 
 	_isEditable = isEditable;
-	contextInfo = [theContextInfo retain];
+	contextInfo = theContextInfo;
 	callerInstance = sender;
 
 	_isGeometry = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
@@ -238,7 +237,7 @@ typedef enum {
 
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
 
-		sheetEditData = [(NSString*)data retain];
+		sheetEditData = (NSString*)data;
 
 		[bitSheetNULLButton setEnabled:_allowNULL];
 
@@ -326,7 +325,7 @@ typedef enum {
 		
 		BOOL isBinary = ([[fieldType uppercaseString] isEqualToString:@"BINARY"] || [[fieldType uppercaseString] isEqualToString:@"VARBINARY"]);
 
-		sheetEditData = [data retain];
+		sheetEditData = data;
 
 		// Hide all views in editSheet
 		[hexTextView setHidden:YES];
@@ -401,7 +400,7 @@ typedef enum {
 
 			image = [v thumbnailImage];
 
-			stringValue = [[sheetEditData wktString] retain];
+			stringValue = [sheetEditData wktString];
 
 			[hexTextView setString:@""];
 			[hexTextView setHidden:YES];
@@ -418,11 +417,11 @@ typedef enum {
 				if(_isJSON) {
 					NSString *formatted = [SPJSONFormatter stringByFormattingString:sheetEditData];
 					if(formatted) {
-						stringValue = [formatted retain];
+						stringValue = formatted;
 						break;
 					}
 				}
-				stringValue = [sheetEditData retain];
+				stringValue = sheetEditData;
 			} while(0);
 
 			[hexTextView setString:@""];
@@ -1052,7 +1051,7 @@ typedef enum {
 		}
 
 		NSString *nullString = [prefs objectForKey:SPNullValue];
-		sheetEditData = [[NSString stringWithString:nullString] retain];
+		sheetEditData = [NSString stringWithString:nullString];
 		[bitSheetIntegerTextField setStringValue:nullString];
 		[bitSheetHexTextField setStringValue:nullString];
 		[bitSheetOctalTextField setStringValue:nullString];
@@ -1082,7 +1081,7 @@ typedef enum {
 	}
 
 	// set edit data to text
-	sheetEditData = [[NSString stringWithString:bitString] retain];
+	sheetEditData = [NSString stringWithString:bitString];
 
 }
 
@@ -1360,7 +1359,7 @@ typedef enum {
 		}
 
 		// set edit data to text
-		sheetEditData = [[NSString stringWithString:[editTextView string]] retain];
+		sheetEditData = [NSString stringWithString:[editTextView string]];
 	}
 }
 

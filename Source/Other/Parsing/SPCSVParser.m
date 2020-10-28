@@ -489,15 +489,15 @@
 
 	// Set up the default field and line separators, together with quote
 	// and escape strings
-	fieldEndString = [[NSString alloc] initWithString:@","];
-	lineEndString = [[NSString alloc] initWithString:@"\n"];
-	fieldQuoteString = [[NSString alloc] initWithString:@"\""];
-	escapeString = [[NSString alloc] initWithString:@"\\"];
+	fieldEndString = @",";
+	lineEndString = @"\n";
+	fieldQuoteString = @"\"";
+	escapeString = @"\\";
 	escapeStringIsFieldQuoteString = NO;
-	escapedFieldEndString = [[NSString alloc] initWithString:@"\\,"];
-	escapedLineEndString = [[NSString alloc] initWithString:@"\\\n"];
-	escapedFieldQuoteString = [[NSString alloc] initWithString:@"\\\""];
-	escapedEscapeString = [[NSString alloc] initWithString:@"\\\\"];
+	escapedFieldEndString = @"\\,";
+	escapedLineEndString = @"\\\n";
+	escapedFieldQuoteString = @"\\\"";
+	escapedEscapeString = @"\\\\";
 	useStrictEscapeMatching = NO;
 	fieldEndLength = [fieldEndString length];
 	lineEndLength = [lineEndString length];
@@ -573,7 +573,7 @@
 		[charactersToSkip appendString:@"\t"];
 
 	if ([charactersToSkip length])
-		skipCharacterSet = [[NSCharacterSet characterSetWithCharactersInString:charactersToSkip] retain];
+		skipCharacterSet = [NSCharacterSet characterSetWithCharactersInString:charactersToSkip];
 }
 
 /**
@@ -647,7 +647,6 @@
 	
 	
 	
-	[super dealloc];
 }
 
 @end

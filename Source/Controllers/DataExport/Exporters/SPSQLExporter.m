@@ -301,7 +301,7 @@
 				NSDictionary *tableDetails = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 
 				if ([tableDetails objectForKey:@"Create View"]) {
-					[viewSyntaxes setValue:[[[[tableDetails objectForKey:@"Create View"] copy] autorelease] createViewSyntaxPrettifier] forKey:tableName];
+					[viewSyntaxes setValue:[[[tableDetails objectForKey:@"Create View"] copy] createViewSyntaxPrettifier] forKey:tableName];
 					createTableSyntax = [self _createViewPlaceholderSyntaxForView:tableName];
 					tableType = SPTableTypeView;
 				}
@@ -405,7 +405,7 @@
 
 			if (rowCount) {
 				// Set up a result set in streaming mode
-				SPMySQLStreamingResult *streamingResult = [[connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName backtickQuotedString]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])] retain];
+				SPMySQLStreamingResult *streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName backtickQuotedString]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])];
 
 				// Inform the delegate that we are about to start writing data for the current table
 				[delegate performSelectorOnMainThread:@selector(sqlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
