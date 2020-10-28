@@ -107,18 +107,9 @@
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
+		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1AAF1DC32548485B0037AFDB /* SPReleaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AAF1DBF2548485B0037AFDB /* SPReleaseTests.m */; };
-		1AB0689D24A355B600E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
-		1AB0689E24A355B600E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
-		1AB0689F24A355B600E2AAC2 /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */; };
-		1AB068A024A355B600E2AAC2 /* client-cert-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689224A355B500E2AAC2 /* client-cert-cr.pem */; };
-		1AB068A124A355B600E2AAC2 /* client-cert-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689324A355B500E2AAC2 /* client-cert-bad-start.pem */; };
-		1AB068A224A355B600E2AAC2 /* client-key-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689524A355B500E2AAC2 /* client-key-bad-end.pem */; };
-		1AB068A324A355B600E2AAC2 /* client-key-cr.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689624A355B500E2AAC2 /* client-key-cr.pem */; };
-		1AB068A424A355B600E2AAC2 /* client-key-bad-start.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689724A355B500E2AAC2 /* client-key-bad-start.pem */; };
-		1AB068A524A355B600E2AAC2 /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689824A355B500E2AAC2 /* client-key-lf.pem */; };
-		1AB068A624A355B600E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
 		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
 		1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
 		1AB068AA24A355CC00E2AAC2 /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */; };
@@ -2933,13 +2924,11 @@
 				17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */,
 				17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */,
 				17E6420A0EF020CB001BC333 /* DBView.xib in Resources */,
-				1AB068A524A355B600E2AAC2 /* client-key-lf.pem in Resources */,
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
 				1761FD480EF03A6F00331368 /* MainMenu.xib in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
-				1AB068A224A355B600E2AAC2 /* client-key-bad-end.pem in Resources */,
 				58186D210F4CB38900851FE9 /* ConnectionErrorDialog.xib in Resources */,
 				B5E92F190F75B2D100012500 /* ExportDialog.xib in Resources */,
 				B57747D20F7A891A003B34F9 /* Preferences.xib in Resources */,
@@ -2994,7 +2983,6 @@
 				B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */,
 				8831EFBA2240154A00D10172 /* button_rightTemplate.pdf in Resources */,
 				17DD52B7115071D0007D8950 /* SPPrintTemplate.html in Resources */,
-				1AB0689F24A355B600E2AAC2 /* client-cert-lf.pem in Resources */,
 				17F90E2C1210B34900274C98 /* Credits.rtf in Resources */,
 				17DD52C3115074B3007D8950 /* InfoPlist.strings in Resources */,
 				1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */,
@@ -3014,11 +3002,8 @@
 				BC09D7E012A786FB0030DB64 /* cancel-highlighted.png in Resources */,
 				BC09D7E112A786FB0030DB64 /* cancel-hovered-highlighted.png in Resources */,
 				BC09D7E212A786FB0030DB64 /* cancel-hovered.png in Resources */,
-				1AB068A124A355B600E2AAC2 /* client-cert-bad-start.pem in Resources */,
-				1AB068A024A355B600E2AAC2 /* client-cert-cr.pem in Resources */,
 				BC09D7E312A786FB0030DB64 /* cancel.png in Resources */,
 				58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */,
-				1AB0689D24A355B600E2AAC2 /* client-cert-crlf.pem in Resources */,
 				58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */,
 				5843DA6C161FA35600EAA6D1 /* key-icon-alternate.png in Resources */,
 				583A278E23F06F1000FBE97B /* Colors.xcassets in Resources */,
@@ -3043,7 +3028,6 @@
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
 				C9C994491678B3E6001F5DA8 /* table-small-square.png in Resources */,
 				C9C9944A1678B3E6001F5DA8 /* table-small-square@2x.png in Resources */,
-				1AB068A624A355B600E2AAC2 /* client-key-crlf.pem in Resources */,
 				964908C8249A77D00052FC4A /* ssh_config in Resources */,
 				8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */,
 				C9C9944D1678BCFA001F5DA8 /* table-small.png in Resources */,
@@ -3060,7 +3044,6 @@
 				BAE25E0120B32BDA00DD9A40 /* HelpViewer.xib in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
-				1AB068A324A355B600E2AAC2 /* client-key-cr.pem in Resources */,
 				582E944A168374C1003459FD /* field-small-square.png in Resources */,
 				582E944C16837986003459FD /* hideconsole.png in Resources */,
 				582E945016837AA9003459FD /* network-small.png in Resources */,
@@ -3074,7 +3057,6 @@
 				582E948F168383F0003459FD /* table-view-small-square.png in Resources */,
 				582E9490168383F0003459FD /* table-view-small.png in Resources */,
 				582E94A816839AD5003459FD /* toolbar-preferences-autoupdate.png in Resources */,
-				1AB068A424A355B600E2AAC2 /* client-key-bad-start.pem in Resources */,
 				582E94AA16839AEF003459FD /* toolbar-preferences-general.png in Resources */,
 				582E94AE16839C4A003459FD /* toolbar-preferences-notifications.png in Resources */,
 				582E94C716839D83003459FD /* toolbar-preferences-tables.png in Resources */,
@@ -3158,6 +3140,7 @@
 				1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */,
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
+				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,

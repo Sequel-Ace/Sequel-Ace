@@ -130,3 +130,9 @@
 #define NSAppearanceNameDarkAqua @"NSAppearanceNameDarkAqua"
 
 #endif
+
+@protocol AllowSplitViewResizing <NSObject>
+
+- (BOOL)allowSplitViewResizing;
+
+@end

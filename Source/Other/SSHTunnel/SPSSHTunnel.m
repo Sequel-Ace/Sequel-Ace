@@ -40,7 +40,7 @@
 #import <netinet/in.h>
 #import <CommonCrypto/CommonDigest.h>
 
-static unsigned short getRandomPort();
+static unsigned short getRandomPort(void);
 
 @interface SPSSHTunnel ()
 
@@ -142,7 +142,7 @@ static unsigned short getRandomPort();
 	if (sshPasswordDialog) SPClear(sshPasswordDialog);
 
 	parentWindow = theWindow;
-	if (![NSBundle loadNibNamed:@"SSHQuestionDialog" owner:self]) {
+	if (![NSBundle.mainBundle loadNibNamed:@"SSHQuestionDialog" owner:self topLevelObjects:nil]) {
 		NSLog(@"SSH query dialog could not be loaded; SSH tunnels will not function correctly.");
 		parentWindow = nil;
 	}

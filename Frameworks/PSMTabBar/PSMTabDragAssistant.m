@@ -205,7 +205,8 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	
 	//retain the control in case the drag operation causes the control to be released
 	[control retain];
-	
+
+	//TODO: jcs - fixing deprecated dragImage needs a DraggingItems and DragginSource. Beyond me. 2020-10-22
 	if ([control delegate] && [[control delegate] respondsToSelector:@selector(tabView:shouldDropTabViewItem:inTabBar:)] &&
 			[[control delegate] tabView:[control tabView] shouldDropTabViewItem:[[self draggedCell] representedObject] inTabBar:nil]) {
 		_currentTearOffStyle = [control tearOffStyle];

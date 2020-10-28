@@ -62,9 +62,9 @@ typedef struct {
 	// and keepalive times against the keepalive interval.
 	// Compare against interval-1 to allow default keepalive intervals to repeat
 	// at the correct intervals (eg no timer interval delay).
-	uint64_t currentTime = mach_absolute_time();
-	if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < keepAliveInterval - 1
-		|| _elapsedSecondsSinceAbsoluteTime(lastKeepAliveTime) < keepAliveInterval - 1)
+	uint64_t currentTime = _monotonicTime();
+	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < keepAliveInterval - 1
+		|| _timeIntervalSinceMonotonicTime(lastKeepAliveTime) < keepAliveInterval - 1)
 	{
 		return;
 	}
@@ -102,7 +102,7 @@ typedef struct {
 
 			// If the connection has been used within the last fifteen minutes,
 			// attempt a single reconnection in the background
-			if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 60 * 15) {
+			if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
 				[self _reconnectAfterBackgroundConnectionLoss];
 			}
 			// Otherwise set the state to connection lost for automatic reconnect on
@@ -184,12 +184,12 @@ end_cleanup:
 	pthread_create(&keepAlivePingThread_t, &attr, (void *)&_backgroundPingTask, &pingDetails);
 
 	// Record the ping start time
-	pingStartTime_t = mach_absolute_time();
+	pingStartTime_t = _monotonicTime();
 
 	// Loop until the ping completes
 	do {
 		usleep((useconds_t)loopDelay);
-		pingElapsedTime = _elapsedSecondsSinceAbsoluteTime(pingStartTime_t);
+		pingElapsedTime = _timeIntervalSinceMonotonicTime(pingStartTime_t);
 
 		// If the ping timeout has been exceeded, or the ping thread has been
 		// cancelled, force a timeout; double-check that the thread is still active.
@@ -311,10 +311,10 @@ void _pingThreadCleanup(void *pingDetails)
 		}
 
 		// Wait inside a time limit of ten seconds for it to exit
-		uint64_t threadCancelStartTime_t = mach_absolute_time();
+		uint64_t threadCancelStartTime_t = _monotonicTime();
 		do {
 			usleep(100000);
-			if (_elapsedSecondsSinceAbsoluteTime(threadCancelStartTime_t) > 10) return NO;
+			if (_timeIntervalSinceMonotonicTime(threadCancelStartTime_t) > 10) return NO;
 		} while (keepAliveThread);
 	
 	}

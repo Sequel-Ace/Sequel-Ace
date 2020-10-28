@@ -73,16 +73,6 @@ static NSString *SPConnectionViewNibName   = @"ConnectionView";
 const static NSInteger SPUseServerTimeZoneTag = -1;
 const static NSInteger SPUseSystemTimeZoneTag = -2;
 
-/**
- * This is a utility function to validate SSL key/certificate files
- * @param fileData   The contents of the file
- * @param first      Buffer with Data that has to occur on a line
- * @param first_len  Length of first
- * @param second     Buffer with Data that has to occur on a line after first
- * @param second_len Length of second
- * @return True if file contains two lines matching first and second and second comes after first
- */
-static BOOL FindLinesInFile(NSData *fileData,const void *first,size_t first_len,const void *second,size_t second_len);
 
 @interface SPConnectionController ()
 
@@ -1232,9 +1222,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSMutableDictionary *favorite = [NSMutableDictionary dictionaryWithDictionary:[self selectedFavorite]];
 		
 		NSNumber *favoriteID = [self _createNewFavoriteID];
-		
-		NSInteger duplicatedFavoriteType = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
-		
+				
 		// Update the unique ID
 		[favorite setObject:favoriteID forKey:SPFavoriteIDKey];
 		
@@ -2788,11 +2776,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSMutableArray *tooltipParts = [NSMutableArray arrayWithCapacity:2];
 
 		if (favCount || !groupCount) {
-			[tooltipParts addObject:[NSString stringWithFormat:((favCount == 1) ? NSLocalizedString(@"%d favorite", @"favorite singular label (%d == 1)") : NSLocalizedString(@"%d favorites", @"favorites plural label (%d != 1)")), favCount]];
+			[tooltipParts addObject:[NSString stringWithFormat:((favCount == 1) ? NSLocalizedString(@"%lu favorite", @"favorite singular label (%d == 1)") : NSLocalizedString(@"%lu favorites", @"favorites plural label (%d != 1)")), (unsigned long)favCount]];
 		}
 
 		if (groupCount) {
-			[tooltipParts addObject:[NSString stringWithFormat:((groupCount == 1) ? NSLocalizedString(@"%d group", @"favorite group singular label (%d == 1)") : NSLocalizedString(@"%d groups", @"favorite groups plural label (%d != 1)")), groupCount]];
+			[tooltipParts addObject:[NSString stringWithFormat:((groupCount == 1) ? NSLocalizedString(@"%lu group", @"favorite group singular label (%d == 1)") : NSLocalizedString(@"%lu groups", @"favorite groups plural label (%d != 1)")), (unsigned long)groupCount]];
 		}
 
 		toolTip = [NSString stringWithFormat:@"%@ - %@", [[node representedObject] nodeName], [tooltipParts componentsJoinedByString:@", "]];
@@ -3942,27 +3930,3 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 @end
 
-#pragma mark -
-
-BOOL FindLinesInFile(NSData *fileData,const void *first,size_t first_len,const void *second,size_t second_len)
-{
-	__block BOOL firstMatch = NO;
-	__block BOOL secondMatch = NO;
-	[fileData enumerateLinesBreakingAt:SPLineTerminatorAny withBlock:^(NSRange line, BOOL *stop) {
-		if(!firstMatch) {
-			if(line.length != first_len) return;
-			if(memcmp(first, ([fileData bytes]+line.location), first_len) == 0) {
-				firstMatch = YES;
-			}
-		}
-		else {
-			if(line.length != second_len) return;
-			if(memcmp(second, ([fileData bytes]+line.location), second_len) == 0) {
-				secondMatch = YES;
-				*stop = YES;
-			}
-		}
-	}];
-	
-	return (firstMatch && secondMatch);
-}

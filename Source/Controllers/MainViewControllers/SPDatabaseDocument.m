@@ -2804,7 +2804,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Load accessory nib each time.
 		// Note that the top-level objects aren't released automatically, but are released when the panel ends.
-		if (![NSBundle loadNibNamed:@"SaveSPFAccessory" owner:self]) {
+		if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
 			NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
 			return;
 		}
@@ -2857,7 +2857,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Load accessory nib each time.
 		// Note that the top-level objects aren't released automatically, but are released when the panel ends.
-		if (![NSBundle loadNibNamed:@"SaveSPFAccessory" owner:self]) {
+		if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
 			NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
 			return;
 		}

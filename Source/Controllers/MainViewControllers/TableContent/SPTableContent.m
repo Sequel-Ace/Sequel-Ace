@@ -2524,6 +2524,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// I believe these class matches are not ever met at present.
 			if ([rowObject isKindOfClass:[NSCalendarDate class]]) {
+				SPLog(@"object was NSCalendarDate");
 				fieldValue = [mySQLConnection escapeAndQuoteString:[rowObject description]];
 			} else if ([rowObject isKindOfClass:[NSNumber class]]) {
 				fieldValue = [rowObject stringValue];
@@ -3096,6 +3097,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		NSString *newObject = nil;
 		if ( [anObject isKindOfClass:[NSCalendarDate class]] ) {
+			SPLog(@"object was NSCalendarDate");
 			newObject = [mySQLConnection escapeAndQuoteString:[anObject description]];
 		} else if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];
@@ -4495,8 +4497,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[NSArrayObjectAtIndex([tableContentView tableColumns], column) identifier] integerValue]];
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
-		NSPoint pos = [[tableDocumentInstance parentWindow] convertBaseToScreen:[tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil]];
-
+		
+		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
+		NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(tblContentViewPoint.x, tblContentViewPoint.y, 0,0)];
+		NSPoint pos = NSMakePoint(screenRect.origin.x, screenRect.origin.y);
+		
 		pos.y -= 20;
 
 		switch (numberOfPossibleUpdateRows)

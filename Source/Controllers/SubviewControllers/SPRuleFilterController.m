@@ -254,7 +254,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
               tryingToPreserveOldCriteria:(NSArray *)oldCriteria
                             displayValues:(NSArray *)oldDisplayValues;
 - (void)_ensureValidOperatorCache:(ColumnNode *)col;
-static BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle);
 - (IBAction)addFilter:(id)sender;
 - (void)_updateButtonStates;
 - (void)_doChangeToRuleEditorData:(void (^)(void))duringBlock;
@@ -924,21 +923,6 @@ static BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle);
 	[displayValues release];
 }
 
-BOOL _arrayContainsInViewHierarchy(NSArray *haystack, id needle)
-{
-	//first, try it the easy way
-	if([haystack indexOfObjectIdenticalTo:needle] != NSNotFound) return YES;
-
-	// otherwise, if needle is a view, check if it appears as a desencdant of some other view in haystack
-	Class NSViewClass = [NSView class];
-	if([needle isKindOfClass:NSViewClass]) {
-		for(id obj in haystack) {
-			if([obj isKindOfClass:NSViewClass] && [needle isDescendantOf:obj]) return YES;
-		}
-	}
-
-	return NO;
-}
 
 /**
  * This method recursively fills up the passed-in criteria and displayValues arrays with objects in the way the
