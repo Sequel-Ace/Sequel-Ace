@@ -33,7 +33,7 @@
 
 @interface SPFavoritesOutlineView ()
 
-@property (nonatomic,readwrite,assign) id itemForDoubleAction; //make setter private
+@property (nonatomic,readwrite,strong) id itemForDoubleAction; //make setter private
 
 @end
 
