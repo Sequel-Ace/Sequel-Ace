@@ -205,4 +205,8 @@
 
 + (NSString *)findSocketPath;
 
+#pragma mark -
+#pragma mark Timezone
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier;
+
 @end
