@@ -115,7 +115,7 @@
 
 	// Free up any memory and return
 	free(escBuffer);
-	return [escapedString autorelease];
+	return escapedString;
 }
 
 /**
@@ -168,7 +168,7 @@
 
 	// Free up any memory and return
 	free(hexBuffer);
-	return [hexString autorelease];
+	return hexString;
 }
 
 #pragma mark -
@@ -429,7 +429,7 @@
 	// Store the result time on the response object
 	[theResult _setQueryExecutionTime:queryExecutionTime];
 
-	return [theResult autorelease];
+	return theResult;
 }
 
 #pragma mark -
@@ -693,9 +693,6 @@
 		theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 	}
 
-	// Clear the last error message stored on the instance
-    SPClear(queryErrorMessage);
-
 	// If we have an error message *with a length*, update the instance error message
 	if (theErrorMessage && [theErrorMessage length]) {
 		queryErrorMessage = [[NSString alloc] initWithString:theErrorMessage];
@@ -735,9 +732,6 @@
 		// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 		theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 	}
-
-	// Clear the last SQLSTATE stored on the instance
-    SPClear(querySqlstate);
 
 	// If we have a SQLSTATE *with a length*, update the instance SQLSTATE
 	if(theSqlstate && [theSqlstate length]) {

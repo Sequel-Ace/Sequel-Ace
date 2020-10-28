@@ -191,7 +191,6 @@
         alert.informativeText = errorMessage;
         [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
         [alert runModal];
-        [alert release];
 	}
 	return NO;
 }

@@ -101,8 +101,6 @@
 		[parentConnection _unlockConnection];
 		[NSException raise:NSInternalInconsistencyException format:@"Parent connection remains locked after SPMySQLStreamingResult use"];
 	}
-
-	[super dealloc];
 }
 
 #pragma mark -
@@ -223,7 +221,7 @@
  * the instance default, as specified in setDefaultRowReturnType: or defaulting to
  * NSDictionary.  Full streaming mode - return one row at a time.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	// If all rows have been retrieved, return 0 to stop iteration.
 	if (dataDownloaded) return 0;
@@ -234,7 +232,7 @@
 	}
 
 	// In full streaming mode return one row at a time.  Retrieve the row.
-	id theRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+	id __autoreleasing theRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
 
 	// If nil was returned the end of the result resource has been reached
 	if (!theRow) return 0;
@@ -243,7 +241,7 @@
 	stackbuf[0] = theRow;
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+    state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }
