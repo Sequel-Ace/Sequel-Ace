@@ -78,7 +78,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 @interface ContentPaginationViewController : NSViewController
 {
-	id __unsafe_unretained target;
 	SEL action;
 
 	NSNumber *page;
@@ -92,7 +91,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)makeInputFirstResponder;
 - (BOOL)isFirstResponderInside;
 
-@property (unsafe_unretained, nonatomic) id target;
+@property (weak, nonatomic) id target;
 @property (assign, nonatomic) SEL action;
 
 // IB Bindings

@@ -28,6 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+@import AppKit;
+
 @class PSMTabBarControl;
 @class SPDatabaseDocument;
 
@@ -45,6 +47,7 @@
 }
 
 @property (readonly, strong) IBOutlet PSMTabBarControl *tabBar;
+@property (readonly, strong) SPDatabaseDocument *selectedTableDocument;
 
 // Database connection management
 - (IBAction)addNewConnection:(id)sender;

@@ -60,7 +60,7 @@
 - (void)_closeAndStopProgressSheet;
 - (NSString *)_getLineEndingForFile:(NSString *)filePath;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 

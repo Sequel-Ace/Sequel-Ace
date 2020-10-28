@@ -33,7 +33,6 @@
 
 @interface SPSQLParser ()
 
-- (unichar) _charAtIndex:(NSInteger)index;
 - (void) _clearCharCache;
 
 @end
@@ -575,15 +574,12 @@
 	NSUInteger nextIndex = 0;
 	NSInteger queryLength;
 
-	IMP firstOccOfChar = [self methodForSelector:@selector(firstOccurrenceOfCharacter:afterIndex:skippingBrackets:ignoringQuotedStrings:)];
-	IMP subString = [string methodForSelector:@selector(substringWithRange:)];
-
 	// Walk through the string finding the character to split by, and add all strings to the array.
 	while (1) {
-		nextIndex = (NSUInteger)(*firstOccOfChar)(self, @selector(firstOccurrenceOfCharacter:afterIndex:skippingBrackets:ignoringQuotedStrings:), character, stringIndex, skipBrackets, ignoreQuotedStrings);
+		nextIndex = [self firstOccurrenceOfCharacter:character afterIndex:stringIndex skippingBrackets:skipBrackets ignoringQuotedStrings:ignoreQuotedStrings];
 		while (lastMatchIsDelimiter && nextIndex != NSNotFound) {
 			stringIndex = nextIndex;
-			nextIndex = (NSUInteger)(*firstOccOfChar)(self, @selector(firstOccurrenceOfCharacter:afterIndex:skippingBrackets:ignoringQuotedStrings:), character, stringIndex, skipBrackets, ignoreQuotedStrings);
+			nextIndex = [self firstOccurrenceOfCharacter:character afterIndex:stringIndex skippingBrackets:skipBrackets ignoringQuotedStrings:ignoreQuotedStrings];
 		}
 		if (nextIndex == NSNotFound)
 			break;
@@ -591,8 +587,9 @@
 		// Add queries to the result array if they have a length
 		stringIndex++;
 		queryLength = nextIndex - stringIndex - delimiterLengthMinusOne;
-		if (queryLength > 0)
-			CFArrayAppendValue((CFMutableArrayRef)resultsArray, (__bridge const void *)((NSString *)(*subString)(string, @selector(substringWithRange:), NSMakeRange(stringIndex, queryLength))));
+		if (queryLength > 0) {
+			[resultsArray addObject:[string substringWithRange:NSMakeRange(stringIndex, queryLength)]];
+		}
 
 		stringIndex = nextIndex;
 	}
@@ -619,14 +616,12 @@
 	NSUInteger nextIndex = 0;
 	NSInteger queryLength;
 
-	IMP firstOccOfChar = [self methodForSelector:@selector(firstOccurrenceOfCharacter:afterIndex:skippingBrackets:ignoringQuotedStrings:)];
-
 	// Walk through the string finding the character to split by, and add all ranges to the array.
 	while (1) {
-		nextIndex = (NSUInteger)(*firstOccOfChar)(self, @selector(firstOccurrenceOfCharacter:afterIndex:skippingBrackets:ignoringQuotedStrings:), character, stringIndex, NO, YES);
+		nextIndex = [self firstOccurrenceOfCharacter:character afterIndex:stringIndex skippingBrackets:NO ignoringQuotedStrings:YES];
 		while (lastMatchIsDelimiter && nextIndex != NSNotFound) {
 			stringIndex = nextIndex;
-			nextIndex = (NSUInteger)(*firstOccOfChar)(self, @selector(firstOccurrenceOfCharacter:afterIndex:skippingBrackets:ignoringQuotedStrings:), character, stringIndex, NO, YES);
+			nextIndex = [self firstOccurrenceOfCharacter:character afterIndex:stringIndex skippingBrackets:NO ignoringQuotedStrings:YES];
 		}
 		if (nextIndex == NSNotFound)
 			break;
@@ -693,23 +688,17 @@
 	NSInteger bracketingLevel = 0;
 	lastMatchIsDelimiter = NO;
 
-	// Cache frequently used selectors, avoiding dynamic binding overhead
-	IMP charAtIndex = [self methodForSelector:@selector(_charAtIndex:)];
-	SEL charAtIndexSEL = @selector(_charAtIndex:);
-	IMP endIndex = [self methodForSelector:@selector(endIndexOfStringQuotedByCharacter:startingAtIndex:)];
-	IMP substringWithRange = [self methodForSelector:@selector(substringWithRange:)];
-
 	// Sanity check inputs
 	if (startIndex < -1) startIndex = -1;
 
 	// Walk along the string, processing characters
 	for (currentStringIndex = startIndex + 1; currentStringIndex < stringLength; currentStringIndex++) {
-		currentCharacter = (unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex);
+		currentCharacter = [self _charAtIndex:currentStringIndex];
 
 		// Check for the ending character, and if it has been found and quoting/brackets is valid, return.
 		// If delimiter support is active and a delimiter is set, check for the delimiter
 		if (supportDelimiters && delimiter) {
-			if (currentStringIndex >= delimiterLengthMinusOne && [delimiter isEqualToString:(NSString *)(*substringWithRange)(self, @selector(substringWithRange:), NSMakeRange(currentStringIndex - delimiterLengthMinusOne, delimiterLengthMinusOne + 1))]) {
+			if (currentStringIndex >= delimiterLengthMinusOne && [delimiter isEqualToString:[self substringWithRange:NSMakeRange(currentStringIndex - delimiterLengthMinusOne, delimiterLengthMinusOne + 1)]]) {
 				if (!skipBrackets || bracketingLevel <= 0) {
 					parsedToPosition = currentStringIndex;
 					return currentStringIndex;
@@ -730,7 +719,7 @@
 			case CHAR_DQUOTE:
 			case CHAR_BTICK:
 				if (!ignoreQuotedStrings) break;
-				quotedStringEndIndex = (NSUInteger)(*endIndex)(self, @selector(endIndexOfStringQuotedByCharacter:startingAtIndex:), currentCharacter, currentStringIndex+1);
+				quotedStringEndIndex = [self endIndexOfStringQuotedByCharacter:currentCharacter startingAtIndex:currentStringIndex+1];
 				if (quotedStringEndIndex == NSNotFound) {
 					parsedToPosition = stringLength - 1;
 					return NSNotFound;
@@ -751,8 +740,8 @@
 			case '-':
 				if (ignoreCommentStrings) break;
 				if (stringLength < currentStringIndex + 2) break;
-				if ((unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+1) != '-') break;
-				if (![[NSCharacterSet whitespaceCharacterSet] characterIsMember:(unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+2)]) break;
+				if ([self _charAtIndex:currentStringIndex+1] != '-') break;
+				if (![[NSCharacterSet whitespaceCharacterSet] characterIsMember:[self _charAtIndex:currentStringIndex+2]]) break;
 				currentStringIndex = [self endIndexOfCommentOfType:SPDoubleDashComment startingAtIndex:currentStringIndex];
 				break;
 
@@ -765,7 +754,7 @@
 			case '/':
 				if (ignoreCommentStrings) break;
 				if (stringLength < currentStringIndex + 1) break;
-				if ((unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+1) != '*') break;
+				if ([self _charAtIndex:currentStringIndex+1] != '*') break;
 				currentStringIndex = [self endIndexOfCommentOfType:SPCStyleComment startingAtIndex:currentStringIndex];
 				break;
 
@@ -783,15 +772,15 @@
 				// and that the "d" is the start of a word
 				if (supportDelimiters && stringLength >= currentStringIndex + 11
 					&& (currentStringIndex == 0
-						|| [[NSCharacterSet whitespaceAndNewlineCharacterSet] characterIsMember:(unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex-1)]))
+						|| [[NSCharacterSet whitespaceAndNewlineCharacterSet] characterIsMember:[self _charAtIndex:currentStringIndex-1]]))
 				{
-					switch((unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+1)) {
+					switch([self _charAtIndex:currentStringIndex+1]) {
 						case 'e':
 						case 'E':
-						switch((unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+2)) {
+						switch([self _charAtIndex:currentStringIndex+2]) {
 							case 'l':
 							case 'L':
-							switch((unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+3)) {
+							switch([self _charAtIndex:currentStringIndex+3]) {
 								case 'i':
 								case 'I':
 									if([self isMatchedByRegex:@"^(delimiter[ \\t]+(\\S+))(?=\\s|\\Z)" 
@@ -839,21 +828,17 @@
  */
 - (NSUInteger) endIndexOfStringQuotedByCharacter:(unichar)quoteCharacter startingAtIndex:(NSInteger)startIndex
 {
-	// Cache the charAtIndex selector, avoiding dynamic binding overhead
-	IMP charAtIndex = [self methodForSelector:@selector(_charAtIndex:)];
-	SEL charAtIndexSEL = @selector(_charAtIndex:);
-
 	NSInteger stringLength = [string length];
 
 	// Walk the string looking for the string end
 	for (NSInteger currentStringIndex = startIndex; currentStringIndex < stringLength; currentStringIndex++) {
-		unichar currentCharacter = (unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex);
+		unichar currentCharacter = [self _charAtIndex:currentStringIndex];
 
 		// If the string end is a backtick and one has been encountered, treat it as end of string
 		if (quoteCharacter == CHAR_BTICK && currentCharacter == CHAR_BTICK) {
 		
 			// ...as long as the next character isn't also a backtick, in which case it's being quoted.  Skip both.
-			if ((currentStringIndex + 1) < stringLength && (unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+1) == CHAR_BTICK) {
+			if ((currentStringIndex + 1) < stringLength && [self _charAtIndex:currentStringIndex+1] == CHAR_BTICK) {
 				currentStringIndex++;
 				continue;
 			}
@@ -872,7 +857,7 @@
 			if(!noBackslashEscapes) {
 				NSUInteger i = 1;
 				NSUInteger quotedStringLength = currentStringIndex - 1;
-				while ((quotedStringLength - i) > 0 && (unichar) (long) (*charAtIndex)(self, charAtIndexSEL, currentStringIndex - i) == CHAR_BS) {
+				while ((quotedStringLength - i) > 0 && [self _charAtIndex:currentStringIndex-i] == CHAR_BS) {
 					characterIsEscaped = !characterIsEscaped;
 					i++;
 				}
@@ -881,7 +866,7 @@
 			// If an even number have been found, it may be the end of the string - as long as the subsequent character
 			// isn't also the same character, in which case it's another form of escaping.
 			if (!characterIsEscaped) {
-				if ((currentStringIndex + 1) < stringLength && (unichar)(long)(*charAtIndex)(self, charAtIndexSEL, currentStringIndex+1) == quoteCharacter) {
+				if ((currentStringIndex + 1) < stringLength && [self _charAtIndex:currentStringIndex+1] == quoteCharacter) {
 					currentStringIndex++;
 					continue;
 				}
@@ -903,10 +888,6 @@
 	NSInteger stringLength = [string length];
 	unichar currentCharacter;
 
-	// Cache the charAtIndex selector, avoiding dynamic binding overhead
-	IMP charAtIndex = [self methodForSelector:@selector(_charAtIndex:)];
-	SEL charAtIndexSEL = @selector(_charAtIndex:);
-
 	switch (commentType) {
 	
 		// For comments of type "--[\s]", start the comment processing two characters in to match the start syntax,
@@ -918,7 +899,7 @@
 		case SPHashComment:
 			anIndex++;
 			for ( ; anIndex < stringLength; anIndex++ ) {
-				currentCharacter = (unichar)(long)(*charAtIndex)(self, charAtIndexSEL, anIndex);
+				currentCharacter = [self _charAtIndex:anIndex];
 				if (currentCharacter == CHAR_CR) containsCRs = YES;
 				if (currentCharacter == CHAR_CR || currentCharacter == CHAR_LF) {
 					return anIndex-1;
@@ -931,8 +912,8 @@
 		case SPCStyleComment:
 			anIndex = anIndex+2;
 			for ( ; anIndex < stringLength; anIndex++ ) {
-				if ((unichar)(long)(*charAtIndex)(self, charAtIndexSEL, anIndex) == '*') {
-					if ((stringLength > anIndex + 1) && (unichar)(long)(*charAtIndex)(self, charAtIndexSEL, anIndex+1) == '/') {
+				if ([self _charAtIndex:anIndex] == '*') {
+					if ((stringLength > anIndex + 1) && [self _charAtIndex:anIndex+1] == '/') {
 						return (anIndex+1);
 					}
 				}
@@ -1037,7 +1018,6 @@
 }
 - (NSUInteger)replaceOccurrencesOfString:(NSString *)target withString:(NSString *)replacement options:(NSUInteger)options range:(NSRange)searchRange {
 	return [string replaceOccurrencesOfString:target withString:replacement options:options range:searchRange];
-	[self _clearCharCache];
 }
 - (void) setString:(NSString *)aString {
 	[string setString:aString];
@@ -1071,7 +1051,7 @@
  * Does no bounds checking on the underlying string, and so is kept
  * separate from characterAtIndex:.
  */
-- (unichar) _charAtIndex:(NSInteger)anIndex
+- (unichar)_charAtIndex:(NSInteger)anIndex
 {
 
 	// If the current cache doesn't include the current character, update it.

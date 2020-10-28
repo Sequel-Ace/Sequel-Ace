@@ -56,6 +56,7 @@
 #import "SPDatabaseContentViewDelegate.h"
 #import "SPConnectionControllerDelegateProtocol.h"
 #import "SPThreadAdditions.h"
+#import "SPConstants.h"
 
 #import <WebKit/WebKit.h>
 #import <SPMySQL/SPMySQLConnectionDelegate.h>

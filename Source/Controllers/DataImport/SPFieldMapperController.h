@@ -145,7 +145,7 @@
 	BOOL addGlobalSheetIsOpen;
 }
 
-@property(retain) NSString* sourcePath;
+@property (copy) NSString* sourcePath;
 
 - (id)initWithDelegate:(id)managerDelegate;
 

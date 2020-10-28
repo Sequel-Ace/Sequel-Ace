@@ -407,39 +407,6 @@
 }
 
 /**
- * Override the default performSelector:, again either using NSObject defaults
- * or performing the selector on the selected table document.
- */
-- (id)performSelector:(SEL)theSelector
-{
-	if ([super respondsToSelector:theSelector]) {
-		return [super performSelector:theSelector];
-	}
-
-	if (![selectedTableDocument respondsToSelector:theSelector]) {
-		[self doesNotRecognizeSelector:theSelector];
-	}
-	
-	return [selectedTableDocument performSelector:theSelector];
-}
-
-/**
- * Override the default performSelector:withObject: - see performSelector:
- */
-- (id)performSelector:(SEL)theSelector withObject:(id)theObject
-{
-	if ([super respondsToSelector:theSelector]) {
-		return [super performSelector:theSelector withObject:theObject];
-	}
-
-	if (![selectedTableDocument respondsToSelector:theSelector]) {
-		[self doesNotRecognizeSelector:theSelector];
-	}
-	
-	return [selectedTableDocument performSelector:theSelector withObject:theObject];
-}
-
-/**
  * When receiving an update for a bound value - an observed value on the
  * document - ask the tab bar control to redraw as appropriate.
  */

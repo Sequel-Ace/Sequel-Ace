@@ -203,7 +203,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 #pragma mark -
 #pragma mark - PopUp Button
 
-- (IBAction)updateSSHConfig:(id)sender
+- (IBAction)updateSSHConfig:(NSPopUpButton *)sender
 {
 	for (NSMenuItem *item in [sshConfigChooser itemArray]) {
 		[item setState:NSOffState];

@@ -119,7 +119,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 	spTooltipCounter++;
 	
-	SPTooltip* tip = [SPTooltip new]; // Automatically released on close
+	SPTooltip* tip = [[SPTooltip alloc] init]; // Automatically released on close
 	[tip initMeWithOptions:displayOptions];
 	[tip setFrameTopLeftPoint:point];
 
@@ -219,7 +219,6 @@ static CGFloat slow_in_out (CGFloat t)
 	    [webView setDrawsBackground:NO];
 
 	[self setContentView:webView];
-	
 }
 
 - (id)init;

@@ -103,13 +103,6 @@
 	BOOL mouseInside = NSPointInRect(localPoint, trackRect);
 	
     _myTrackingRectTag = [self addTrackingRect:trackRect owner:self userData:nil assumeInside:mouseInside];
-
-	if (mouseInside) {
-		[self mouseEntered:nil];
-	}
-	else {
-		[self mouseExited:nil];
-	}
 }
 
 - (void)removeTrackingRect
@@ -119,23 +112,6 @@
 	}
 
 	_myTrackingRectTag = -1;
-}
-
-// override for rollover effect
-- (void)mouseEntered:(nullable NSEvent *)event
-{
-    // set rollover image
-    [self setImage:_rolloverImage];
-
-	[super mouseEntered:event];
-}
-
-- (void)mouseExited:(nullable NSEvent *)event
-{
-    // restore usual image
-	[self setImage:_usualImage];
-
-	[super mouseExited:event];
 }
 
 - (void)resetCursorRects
