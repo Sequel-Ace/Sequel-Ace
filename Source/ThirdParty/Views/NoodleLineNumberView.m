@@ -87,19 +87,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		[self updateGutterThicknessConstants];
 		currentRuleThickness = 0.0f;
 		dragSelectionStartLine = NSNotFound;
-
-		// Cache loop methods for speed
-		lineNumberForCharacterIndexSel = @selector(lineNumberForCharacterIndex:);
-		lineNumberForCharacterIndexIMP = [self methodForSelector:lineNumberForCharacterIndexSel];
-		lineRangeForRangeSel = @selector(lineRangeForRange:);
-		addObjectSel = @selector(addObject:);
-		numberWithUnsignedIntegerSel = @selector(numberWithUnsignedInteger:);
-		numberWithUnsignedIntegerIMP = [NSNumber methodForSelector:numberWithUnsignedIntegerSel];
-		rangeOfLineSel = @selector(getLineStart:end:contentsEnd:forRange:);
-
 		currentNumberOfLines = 1;
 		numberClass = [NSNumber class];
-
 	}
 
 	return self;
@@ -233,7 +222,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		// It doesn't show up in the glyphs so would not be accounted for.
 		range.length++;
 
-		for (line = (NSUInteger)(*lineNumberForCharacterIndexIMP)(self, lineNumberForCharacterIndexSel, range.location); line < count; line++)
+		for (line = [self lineNumberForCharacterIndex:range.location]; line < count; line++)
 		{
 
 			rects = [layoutManager rectArrayForCharacterRange:NSMakeRange([NSArrayObjectAtIndex(lines, line) unsignedIntegerValue], 0)
@@ -330,7 +319,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 						  [self textColor], NSForegroundColorAttributeName,
 						  nil];
 
-		for (line = (NSUInteger)(*lineNumberForCharacterIndexIMP)(self, lineNumberForCharacterIndexSel, range.location); line < count; line++)
+		for (line = [self lineNumberForCharacterIndex:range.location]; line < count; line++)
 		{
 			lineIndex = [NSArrayObjectAtIndex(lines, line) unsignedIntegerValue];
 
@@ -518,22 +507,19 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		lineIndices = [[NSMutableArray alloc] initWithCapacity:currentNumberOfLines];
 
 		anIndex = 0;
-
-		// Cache loop methods for speed
-		IMP rangeOfLineIMP = [textString methodForSelector:rangeOfLineSel];
-		addObjectIMP = [lineIndices methodForSelector:addObjectSel];
 		
 		do
 		{
-			(void)(*addObjectIMP)(lineIndices, addObjectSel, (*numberWithUnsignedIntegerIMP)(numberClass, numberWithUnsignedIntegerSel, anIndex));
-			(*rangeOfLineIMP)(textString, rangeOfLineSel, NULL, &anIndex, NULL, NSMakeRange(anIndex, 0));
+			[lineIndices addObject:@(anIndex)];
+			[textString getLineStart:nil end:&anIndex contentsEnd:nil forRange:NSMakeRange(anIndex, 0)];
 		}
 		while (anIndex < stringLength);
 
 		// Check if text ends with a new line.
-		(*rangeOfLineIMP)(textString, rangeOfLineSel, NULL, &lineEnd, &contentEnd, NSMakeRange([[lineIndices lastObject] unsignedIntValue], 0));
-		if (contentEnd < lineEnd)
-			(void)(*addObjectIMP)(lineIndices, addObjectSel, (*numberWithUnsignedIntegerIMP)(numberClass, numberWithUnsignedIntegerSel, anIndex));
+		[textString getLineStart:nil end:&lineEnd contentsEnd:&contentEnd forRange:NSMakeRange([[lineIndices lastObject] unsignedIntValue], 0)];
+		if (contentEnd < lineEnd) {
+			[lineIndices addObject:@(anIndex)];
+		}
 
 		NSUInteger lineCount = [lineIndices count];
 		if(lineCount < 100)

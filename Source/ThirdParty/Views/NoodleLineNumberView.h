@@ -53,14 +53,6 @@
 	// Add support for selection by clicking/dragging
 	NSUInteger      dragSelectionStartLine;
 
-	SEL lineNumberForCharacterIndexSel;
-	IMP lineNumberForCharacterIndexIMP;
-	SEL lineRangeForRangeSel;
-	SEL numberWithUnsignedIntegerSel;
-	IMP numberWithUnsignedIntegerIMP;
-	SEL addObjectSel;
-	IMP addObjectIMP;
-	SEL rangeOfLineSel;
 	Class numberClass;
 
 	NSLayoutManager  *layoutManager;
