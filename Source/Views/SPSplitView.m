@@ -236,7 +236,7 @@
 	// Otherwise, start an animation.
 	} else {
         if (animationTimer) {
-            [animationTimer invalidate]
+			[animationTimer invalidate];
         }
 		animationStartTime = [NSDate monotonicTime];
 
