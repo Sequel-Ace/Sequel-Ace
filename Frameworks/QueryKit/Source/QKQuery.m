@@ -585,19 +585,4 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 	return [self query];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-    if (_table) (void)(_table), _table = nil;
-    if (_database) (void)(_database), _database = nil;
-    if (_query) (void)(_query), _query = nil;
-    if (_parameters) (void)(_parameters), _parameters = nil;
-    if (_fields) (void)(_fields), _fields = nil;
-    if (_updateParameters) (void)(_updateParameters), _updateParameters = nil;
-    if (_groupByFields) (void)(_groupByFields), _groupByFields = nil;
-    if (_orderByFields) (void)(_orderByFields), _orderByFields = nil;
-    [super dealloc];
-}
-
 @end

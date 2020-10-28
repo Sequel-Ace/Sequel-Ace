@@ -67,13 +67,4 @@
 	return [NSString stringWithFormat:@"%1$@%2$@%1$@ %3$@", [self useQuotedIdentifier] ? _identiferQuote : EMPTY_STRING, field, _orderByDescending ? @"DESC" : @"ASC"];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-    if (_orderByField) (void)([_orderByField release]), _orderByField = nil;
-	
-	[super dealloc];
-}
-
 @end
