@@ -41,32 +41,15 @@
  * when the system time changes or synchs, but should never be used for absolute time
  * as it is based on the elapsed time since the system booted.
  */
-+ (double)monotonicTimeInterval
++ (uint64_t)monotonicTime
 {
-	
-	uint64_t elapsedNano;
-    static mach_timebase_info_data_t sTimebaseInfo;
-	uint64_t elapsedTime_t = mach_absolute_time();
+    return clock_gettime_nsec_np(CLOCK_MONOTONIC);
+}
 
-	// see: https://developer.apple.com/library/archive/qa/qa1398/_index.html
-	// Convert to nanoseconds.
-
-    // If this is the first time we've run, get the timebase.
-    // We can use denom == 0 to indicate that sTimebaseInfo is
-    // uninitialised because it makes no sense to have a zero
-    // denominator is a fraction.
-
-    if ( sTimebaseInfo.denom == 0 ) {
-        (void) mach_timebase_info(&sTimebaseInfo);
-    }
-	
-    // Do the maths. We hope that the multiplication doesn't
-    // overflow; the price you pay for working in fixed point.
-
-    elapsedNano = elapsedTime_t * sTimebaseInfo.numer / sTimebaseInfo.denom;
-
-    return (double)(elapsedNano * 1e-9);
-	
++ (NSTimeInterval)timeIntervalSinceMonotonicTime:(uint64_t)comparisonTime
+{
+	uint64_t timeElapsed = [self monotonicTime] - comparisonTime;
+	return (NSTimeInterval)(timeElapsed * 1e-9);
 }
 
 /**

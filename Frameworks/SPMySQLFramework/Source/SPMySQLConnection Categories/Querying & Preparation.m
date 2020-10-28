@@ -297,10 +297,10 @@
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query
-		uint64_t queryStartTime = mach_absolute_time();
+		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
-		queryExecutionTime = _elapsedSecondsSinceAbsoluteTime(queryStartTime);
-		lastConnectionUsedTime = mach_absolute_time();
+		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
+		lastConnectionUsedTime = _monotonicTime();
 		
 		// "An integer greater than zero indicates the number of rows affected or retrieved.
 		//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.

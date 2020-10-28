@@ -116,7 +116,7 @@
 
 	// Get the process list
 	MYSQL_RES *mysqlResult = mysql_list_processes(mySQLConnection);
-	lastConnectionUsedTime = mach_absolute_time();
+	lastConnectionUsedTime = _monotonicTime();
 
 	// Convert to SPMySQLResult
 	SPMySQLResult *theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:stringEncoding];
