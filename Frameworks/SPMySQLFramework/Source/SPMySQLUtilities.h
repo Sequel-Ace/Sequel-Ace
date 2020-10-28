@@ -39,16 +39,15 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 
-/**
- * Define a project function to make it easier to use mach_absolute_time()
- * to track monotonically increasing time.
- */
-static double _elapsedSecondsSinceAbsoluteTime(uint64_t comparisonTime)
+static uint64_t _monotonicTime()
 {
-	uint64_t elapsedTime_t = mach_absolute_time() - comparisonTime;
-	Nanoseconds elapsedTime = AbsoluteToNanoseconds(*(AbsoluteTime *)&(elapsedTime_t));
+    return clock_gettime_nsec_np(CLOCK_MONOTONIC);
+}
 
-	return (((double)UnsignedWideToUInt64(elapsedTime)) * 1e-9);
+static double _timeIntervalSinceMonotonicTime(uint64_t comparisonTime)
+{
+    uint64_t timeElapsed = _monotonicTime() - comparisonTime;
+    return (double)(timeElapsed * 1e-9);
 }
 
 #pragma clang diagnostic pop
