@@ -231,7 +231,7 @@
 	}
 
 	// In full streaming mode return one row at a time.  Retrieve the row.
-	id theRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+	id __autoreleasing theRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
 
 	// If nil was returned the end of the result resource has been reached
 	if (!theRow) return 0;

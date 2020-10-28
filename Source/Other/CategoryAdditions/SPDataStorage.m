@@ -243,7 +243,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
  */
 - (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
-	NSMutableArray *targetRow = nil;
+	NSMutableArray __autoreleasing *targetRow = nil;
 	size_t srcObject;
 	
 	SPNotLoaded *notLoaded = [SPNotLoaded notLoaded];

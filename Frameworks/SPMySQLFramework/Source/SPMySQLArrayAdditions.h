@@ -35,34 +35,4 @@
  * using NSMutableArray methods appears to be the fastest way of adding
  * items to a CF/NSMutableArray.
  */
-static inline void SPMySQLMutableArrayInsertObject(NSMutableArray *self, id anObject, NSUInteger anIndex)
-{
-	/* A note on CFArrayInsertValueAtIndex():
-	 *
-	 * This function here does look similar to the CF function, however that is not neccesarily the
-	 * case from a performance standpoint.
-	 *
-	 * CFArrayInsertValueAtIndex() is mostly a wrapper around either
-	 * - _CFArrayReplaceValues(obj, …) *or*
-	 * - objc_msgSend(obj, @selector(insertObject:atIndex:), …)
-	 *
-	 * The first case would be fast, but it will only be used if the object is a native CFArrayRef, not
-	 * a toll-free bridged object. In our case however, we always pass in some object of the NSMutableArray cluster,
-	 * so we would always end up in the slowest path (uncached objc method invocation).
-	 *
-	 * Determing the performance of the objc method is more difficult, because there are multiple implementations
-	 * of NSMutableArray and the "real" -[NSMutableArray insertObject:atIndex:] (located in CoreFoundation.framework)
-	 * is only an abstract stub that will raise an exception if called.
-	 *
-	 * NSCFArray's (for CFArrays bridged to objc) implementation will wind up in _CFArrayReplaceValues().
-	 * __NSArrayM's (for +[NSMutableArray array]) implementation is completely independent from the aforementioned ones.
-	 */
-	typedef id (*SPMySQLMutableArrayInsertObjectPtr)(NSMutableArray*, SEL, id, NSUInteger);
-	static SPMySQLMutableArrayInsertObjectPtr cachedMethodPointer;
-	static SEL cachedSelector;
 
-	if (!cachedSelector) cachedSelector = @selector(insertObject:atIndex:);
-	if (!cachedMethodPointer) cachedMethodPointer = (SPMySQLMutableArrayInsertObjectPtr)[self methodForSelector:cachedSelector];
-
-	cachedMethodPointer(self, cachedSelector, anObject, anIndex);
-}

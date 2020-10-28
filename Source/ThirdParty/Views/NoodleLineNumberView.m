@@ -77,9 +77,9 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		[self setAlternateTextColor:[NSColor whiteColor]];
 		lineIndices = nil;
 		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-			[self font], NSFontAttributeName, 
-			[self textColor], NSForegroundColorAttributeName,
-			nil];
+						  [self font], NSFontAttributeName,
+						  [self textColor], NSForegroundColorAttributeName,
+						  nil];
 
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
@@ -114,6 +114,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
+
+	[super dealloc];
 }
 
 #pragma mark -
@@ -122,12 +124,11 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	if (font != aFont)
 	{
-		font;
 		font = aFont;
 		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-			font, NSFontAttributeName, 
-			[self textColor], NSForegroundColorAttributeName,
-			nil];
+						  font, NSFontAttributeName,
+						  [self textColor], NSForegroundColorAttributeName,
+						  nil];
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
 		maxHeightOfGlyph = s.height;
@@ -147,12 +148,11 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	if (textColor != color)
 	{
-		textColor;
-		textColor  = color;
+		textColor = color;
 		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-			[self font], NSFontAttributeName, 
-			textColor, NSForegroundColorAttributeName,
-			nil];
+						  [self font], NSFontAttributeName,
+						  textColor, NSForegroundColorAttributeName,
+						  nil];
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
 		maxHeightOfGlyph = s.height;
@@ -282,10 +282,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 - (void)drawHashMarksAndLabelsInRect:(NSRect)aRect
 {
-
-	NSRect bounds;
-
-	bounds = [self bounds];
+	[super drawHashMarksAndLabelsInRect:aRect];
+	NSRect bounds = [self bounds];
 
 	// if (backgroundColor != nil)
 	// {
@@ -324,9 +322,14 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		range.length++;
 
 		CGFloat boundsRULERMargin2 = NSWidth(bounds) - RULER_MARGIN2;
-		CGFloat boundsWidthRULER   = NSWidth(bounds) - RULER_MARGIN;
-		CGFloat yinsetMinY         = yinset - NSMinY(visibleRect);
+		CGFloat boundsWidthRULER = NSWidth(bounds) - RULER_MARGIN;
+		CGFloat yinsetMinY = yinset - NSMinY(visibleRect);
 		CGFloat rectHeight;
+
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+						  [self font], NSFontAttributeName,
+						  [self textColor], NSForegroundColorAttributeName,
+						  nil];
 
 		for (line = (NSUInteger)(*lineNumberForCharacterIndexIMP)(self, lineNumberForCharacterIndexSel, range.location); line < count; line++)
 		{
@@ -354,11 +357,10 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 					rectHeight = NSHeight(rects[0]);
 					// Draw string flush right, centered vertically within the line
-					[labelText drawInRect:
-					NSMakeRect(boundsWidthRULER - (maxWidthOfGlyph * numOfDigits),
-						yinsetMinY + NSMinY(rects[0]) + ((NSInteger)(rectHeight - maxHeightOfGlyph) >> 1),
-						boundsRULERMargin2, rectHeight)
-						withAttributes:textAttributes];
+					[labelText drawInRect:NSMakeRect(boundsWidthRULER - (maxWidthOfGlyph * numOfDigits),
+													 yinsetMinY + NSMinY(rects[0]) + ((NSInteger)(rectHeight - maxHeightOfGlyph) >> 1),
+													 boundsRULERMargin2, rectHeight)
+						   withAttributes:textAttributes];
 				}
 			}
 

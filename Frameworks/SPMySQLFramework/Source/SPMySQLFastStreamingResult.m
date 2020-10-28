@@ -206,7 +206,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-			SPMySQLMutableArrayInsertObject(theReturnData, cellData, i);
+            [theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}
@@ -295,7 +295,7 @@ typedef struct st_spmysqlstreamingrowdata {
 - (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	// To avoid lock issues, return one row at a time.
-	id nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+	id __autoreleasing nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
 
 	// If no row was available, return 0 to stop iteration.
 	if (!nextRow) return 0;

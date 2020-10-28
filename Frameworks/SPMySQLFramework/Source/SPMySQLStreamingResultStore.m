@@ -343,7 +343,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 		[NSException raise:NSRangeException format:@"Requested storage index (row %llu, col %llu) beyond bounds (%llu, %llu)", (unsigned long long)rowIndex, (unsigned long long)columnIndex, (unsigned long long)numberOfRows, (unsigned long long)numberOfFields];
 	}
 
-	id cellData = nil;
+	id __autoreleasing cellData = nil;
 	char *rawCellDataStart;
 	SPMySQLStreamingResultStoreRowData *rowData = dataStorage[rowIndex];
 
@@ -499,7 +499,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
  */
 - (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
-	NSMutableArray *theRow = SPMySQLResultStoreGetRow(self, state->state);
+	NSMutableArray __autoreleasing *theRow = SPMySQLResultStoreGetRow(self, state->state);
 
 	// If no row was available, return 0 to stop iteration.
 	if (!theRow) return 0;

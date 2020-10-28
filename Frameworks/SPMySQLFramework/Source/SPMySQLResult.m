@@ -243,7 +243,7 @@ static id NSNullPointer;
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-			SPMySQLMutableArrayInsertObject(theReturnData, cellData, i);
+            [theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}
@@ -283,7 +283,8 @@ static id NSNullPointer;
 	// Loop through the rows and add them to the result stack
 	NSUInteger i;
 	for (i = 0; i < itemsToReturn; i++) {
-		stackbuf[i] = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+        id __autoreleasing result = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+        stackbuf[i] = result;
 	}
 
 	state->state += itemsToReturn;
