@@ -30,7 +30,6 @@
 
 #import "SPMySQLFastStreamingResult.h"
 #import "SPMySQL Private APIs.h"
-#import "SPMySQLArrayAdditions.h"
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -206,7 +205,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-			SPMySQLMutableArrayInsertObject(theReturnData, cellData, i);
+            [(NSMutableArray *)theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}

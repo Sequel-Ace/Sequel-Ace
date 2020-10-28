@@ -30,7 +30,6 @@
 
 #import "SPMySQLResult.h"
 #import "SPMySQL Private APIs.h"
-#import "SPMySQLArrayAdditions.h"
 #include <stdlib.h>
 
 static id NSNullPointer;
@@ -243,7 +242,7 @@ static id NSNullPointer;
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-			SPMySQLMutableArrayInsertObject(theReturnData, cellData, i);
+            [(NSMutableArray *)theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}
