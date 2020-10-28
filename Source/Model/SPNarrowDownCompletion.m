@@ -146,17 +146,8 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		[stateTimer invalidate];
 		
 	}
-	
-	
-	
 	[theTableView setDataSource:nil];
 	[theTableView setDelegate:nil];
-	
-	
-	
-	
-	
-	
 
 	[super dealloc];
 }

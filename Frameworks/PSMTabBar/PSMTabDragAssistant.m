@@ -58,11 +58,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
     return self;
 }
 
-- (void)dealloc
-{
-    [super dealloc];
-}
-
 #pragma mark -
 #pragma mark Accessors
 

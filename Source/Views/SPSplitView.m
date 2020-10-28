@@ -1177,13 +1177,6 @@
 	
 }
 
-- (void)dealloc
-{
-	
-
-	[super dealloc];
-}
-
 @end
 
 #pragma mark -

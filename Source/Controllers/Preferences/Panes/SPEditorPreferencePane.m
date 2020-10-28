@@ -1026,18 +1026,4 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	return YES;
 }
 
-#pragma mark -
-
-/**
- * Dealloc.
- */
-- (void)dealloc {
-	
-	;
-	
-	
-	
-	[super dealloc];
-}
-
 @end

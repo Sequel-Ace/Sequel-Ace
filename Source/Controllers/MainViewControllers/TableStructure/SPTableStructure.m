@@ -2447,17 +2447,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	
-	
-	
-	
-	
-
-	
-
-	
-	
-
 	[super dealloc];
 }
 

@@ -1814,20 +1814,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)dealloc
 {	
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    
-    
-    
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	[super dealloc];
 }
 
 @end

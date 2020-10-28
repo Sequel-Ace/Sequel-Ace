@@ -60,7 +60,6 @@
 
 - (void)dealloc
 {
-	
 	[self setCurrentField:nil];
 	[self setArgument:nil];
 	[self setFirstBetweenArgument:nil];

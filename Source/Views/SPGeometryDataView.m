@@ -274,14 +274,6 @@
 
 }
 
-/**
- * dealloc
- */
-- (void)dealloc
-{
-	[super dealloc];
-}
-
 #pragma mark -
 #pragma mark Private API
 

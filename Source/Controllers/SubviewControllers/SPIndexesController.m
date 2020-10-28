@@ -1097,15 +1097,6 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 - (void)dealloc
 {
-	
-	
-	
-
-	
-	
-
-	
-
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
 	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts]; //TODO: update to ...context: variant after 10.6
 

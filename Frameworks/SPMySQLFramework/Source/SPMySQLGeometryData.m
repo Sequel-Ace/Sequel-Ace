@@ -786,7 +786,7 @@ typedef struct st_point_2d_
  */
 - (void)dealloc
 {
-	if (geoBuffer && bufferLength) free(geoBuffer);
+    if (geoBuffer && bufferLength) free(geoBuffer);
 }
 
 @end

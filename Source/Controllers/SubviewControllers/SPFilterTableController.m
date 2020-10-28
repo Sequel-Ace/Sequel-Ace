@@ -89,12 +89,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 - (void)dealloc
 {
-	//TODO this should be changed to the variant with …context: after 10.6 support is removed!
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	
-	
-	
 	[super dealloc];
 }
 

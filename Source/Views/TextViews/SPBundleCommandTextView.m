@@ -41,7 +41,6 @@
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth];
 	
-	
 	[super dealloc];
 }
 

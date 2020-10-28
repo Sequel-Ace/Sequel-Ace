@@ -274,9 +274,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	// Destroy the linked list lock
 	pthread_mutex_destroy(&dataLock);
-
-	// Call dealloc on super to clean up everything else, and to throw an exception if
-	// the parent connection hasn't been cleaned up correctly.
 }
 
 #pragma mark - Result set information

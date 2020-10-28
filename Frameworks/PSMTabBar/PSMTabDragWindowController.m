@@ -34,9 +34,6 @@
 	if (_timer) {
 		[_timer invalidate];
 	}
-	
-	if (_animation) {
-	}
 	[super dealloc];
 }
 

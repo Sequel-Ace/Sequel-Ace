@@ -86,7 +86,6 @@
 
 - (void)dealloc
 {
-	
 	selector = NULL;
 	
 	[super dealloc];

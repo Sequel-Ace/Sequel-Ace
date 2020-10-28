@@ -3846,29 +3846,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
 
-	
-	
-
-	
-	
-	
-
-	
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
 
-	
-	
-	
-
 	[self setConnectionKeychainID:nil];
-	
-	
-	
-	
-
-	
 
 	[super dealloc];
 }

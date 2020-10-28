@@ -169,13 +169,4 @@
 	return [dialog selectedItemIndex];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
-
 @end

@@ -443,17 +443,6 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 	return YES;
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-    
-	
-	
-
-	[super dealloc];
-}
-
 @end
 
 #pragma mark -

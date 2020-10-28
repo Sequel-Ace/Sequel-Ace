@@ -44,11 +44,6 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [super dealloc];
-}
-
 /*!
     @method     addButtonRect
     @abstract   Returns the position for the add tab button.

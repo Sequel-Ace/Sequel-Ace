@@ -205,13 +205,4 @@ static NSString *SPDatabaseImage = @"database-small";
 	[self updateDefaultFavoritePopup];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
-
 @end

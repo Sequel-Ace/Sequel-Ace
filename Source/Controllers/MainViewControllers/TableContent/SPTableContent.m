@@ -4577,26 +4577,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:tableContentView];
 
-	
-
 	[self clearTableLoadTimer];
 	
 	pthread_mutex_destroy(&tableValuesLock);
-	
-	
-	
-	
-
-	
-	
-	
-	
-	
-	
-	
-
-	
-
+	[super dealloc];
 }
 
 @end

@@ -58,10 +58,7 @@
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
-	
-	
-	
-	
+
 	[super dealloc];
 }
 

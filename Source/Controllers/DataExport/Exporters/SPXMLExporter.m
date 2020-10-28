@@ -326,15 +326,4 @@
 	[delegate performSelectorOnMainThread:@selector(xmlExportProcessComplete:) withObject:self waitUntilDone:NO];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	
-	
-	[super dealloc];
-}
-
 @end

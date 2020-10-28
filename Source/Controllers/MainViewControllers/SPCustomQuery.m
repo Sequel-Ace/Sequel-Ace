@@ -3655,10 +3655,4 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if(doRun) updateHandler(&p);
 }
 
-- (void)dealloc
-{
-	updateHandler = nil;
-	[super dealloc];
-}
-
 @end

@@ -594,16 +594,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 - (void)dealloc
 {
 	[self resetAllData];
-	
-	
-	@synchronized(charsetCollationLock) {
-		
-		
-		
-		
-	}
-	
-	
+
 	[super dealloc];
 }
 

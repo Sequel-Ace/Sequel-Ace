@@ -3899,7 +3899,6 @@ set_input:
 #pragma mark Memory Management
 - (void)dealloc
 {
-	
 	// relinquish access to userChosenDirectory
 	[userChosenDirectory stopAccessingSecurityScopedResource];
 	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];

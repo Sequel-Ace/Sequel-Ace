@@ -1055,11 +1055,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[filterRuleEditor unbind:@"rows"];
 	}];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	// WARNING: THIS MUST COME AFTER -unbind:! See the class comment on ModelContainer for the reasoning
-	
-	
-	
-	
+	[super dealloc];
 }
 
 /**

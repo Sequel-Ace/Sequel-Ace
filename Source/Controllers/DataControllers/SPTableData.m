@@ -1390,20 +1390,8 @@
 
 #pragma mark -
 
-/**
- * Dealloc the class
- */
 - (void)dealloc
 {
-	
-	
-	
-	
-	
-
-	
-	
-	
 	[self setConnection:nil];
 
 	pthread_mutex_destroy(&dataProcessingLock);

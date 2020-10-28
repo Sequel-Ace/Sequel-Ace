@@ -388,21 +388,4 @@
 	[delegate performSelectorOnMainThread:@selector(csvExportProcessComplete:) withObject:self waitUntilDone:NO];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	[super dealloc];
-}
-
 @end

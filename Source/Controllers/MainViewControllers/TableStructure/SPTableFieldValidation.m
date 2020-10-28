@@ -131,14 +131,4 @@
 	return [[type stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
 }
 
-#pragma mark -
-#pragma mark Other
-
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
-
 @end

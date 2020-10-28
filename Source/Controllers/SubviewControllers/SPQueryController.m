@@ -1095,22 +1095,8 @@ static SPQueryController *sharedQueryController = nil;
 	messagesVisibleSet = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	
-
-	
-	
-	
-
-	
-	
-	
-
-	
-	
-	
-	
 	pthread_mutex_destroy(&consoleLock);
-
+	[super dealloc];
 }
 
 @end

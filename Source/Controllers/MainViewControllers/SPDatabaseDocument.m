@@ -7127,21 +7127,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	
-	// see -(void)awakeFromNib for the reasoning behind this.
-	
-	
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 	[taskProgressWindow close];
 	
@@ -7149,14 +7134,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
 	[connectionController setDelegate:nil];
-	
-	
-	
-	
-	
-	
-	
-	
+
 	if (taskDrawTimer) {
 		[taskDrawTimer invalidate];
 	}
@@ -7164,21 +7142,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[queryExecutionTimer invalidate];
 		
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	[super dealloc];
 }

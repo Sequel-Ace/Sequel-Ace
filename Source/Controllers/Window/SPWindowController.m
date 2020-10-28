@@ -939,8 +939,6 @@
 	
 	// Tear down the animations on the tab bar to stop redraws
 	[tabBar destroyAnimations];
-	
-	
 
 	[super dealloc];
 }

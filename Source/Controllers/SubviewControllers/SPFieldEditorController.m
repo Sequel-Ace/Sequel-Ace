@@ -176,20 +176,8 @@ typedef enum {
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	// On Mac OSX 10.6 QuickLook runs non-modal thus order out the panel
-	// if still visible
-	if ([[QLPreviewPanel sharedPreviewPanel] isVisible]) {
-		[[QLPreviewPanel sharedPreviewPanel] orderOut:nil];
-	}
-
 	[self setEditedFieldInfo:nil];
-	
-	
-	
-	
-	
-	
-	
+
 	[super dealloc];
 }
 

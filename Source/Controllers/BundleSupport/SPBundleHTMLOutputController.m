@@ -165,12 +165,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	return YES;
 }
 
-- (void)dealloc
-{
-	
-	[super dealloc];
-}
-
 - (void)keyDown:(NSEvent *)theEvent
 {
 	NSEventModifierFlags allFlags = (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand);

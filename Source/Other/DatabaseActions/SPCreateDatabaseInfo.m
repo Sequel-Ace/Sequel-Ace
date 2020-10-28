@@ -36,14 +36,5 @@
 @synthesize defaultEncoding;
 @synthesize defaultCollation;
 
-- (void)dealloc
-{
-	
-	
-	
-
-	[super dealloc];
-}
-
 @end
 

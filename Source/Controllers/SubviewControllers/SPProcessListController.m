@@ -870,10 +870,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 
 	[self _removePreferenceObservers];
 
-	
-	
-	
-	
 	[super dealloc];
 }
 

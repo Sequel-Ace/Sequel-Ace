@@ -316,19 +316,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	subStringColor = [NSColor grayColor];
 }
 
-/**
- * Dealloc.
- */
-- (void)dealloc 
-{
-	
-	
-	
-	
-
-	[super dealloc];
-}
-
 #pragma mark - Private API
 
 /**

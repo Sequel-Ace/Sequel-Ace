@@ -474,15 +474,10 @@
 	
 	[self _destroy:nil];
 	
-	
 	pthread_mutex_destroy(&threadManagementLock);
 	pthread_mutex_destroy(&dataLock);
 	pthread_mutex_destroy(&connectionCheckLock);
-	
-	
-	
-	
-	
+
 	[super dealloc];
 }
 

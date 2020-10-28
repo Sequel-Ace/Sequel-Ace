@@ -597,7 +597,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
     if (_updateParameters) (void)(_updateParameters), _updateParameters = nil;
     if (_groupByFields) (void)(_groupByFields), _groupByFields = nil;
     if (_orderByFields) (void)(_orderByFields), _orderByFields = nil;
-	
+    [super dealloc];
 }
 
 @end

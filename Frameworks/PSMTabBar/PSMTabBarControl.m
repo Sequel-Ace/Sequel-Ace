@@ -219,7 +219,7 @@
 	}
     
     [self unregisterDraggedTypes];
-	
+	[super dealloc];
 }
 
 - (void)awakeFromNib
@@ -992,12 +992,15 @@
 {
 	// Stop any animations that may be running
 
-	[_animationTimer invalidate]; _animationTimer = nil;
+	[_animationTimer invalidate];
+	_animationTimer = nil;
 	
-	[_showHideAnimationTimer invalidate]; _showHideAnimationTimer = nil;
+	[_showHideAnimationTimer invalidate];
+	_showHideAnimationTimer = nil;
 
 	// Also unwind the spring, if it's wound.
-	[_springTimer invalidate]; _springTimer = nil;
+	[_springTimer invalidate];
+	_springTimer = nil;
 }
 
 #pragma mark -

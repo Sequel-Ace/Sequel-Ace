@@ -334,19 +334,4 @@
 			 ];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	
-	
-	
-	
-	
-	
-	[super dealloc];
-}
-
 @end

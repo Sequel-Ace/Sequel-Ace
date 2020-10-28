@@ -745,8 +745,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	
-	
 	[super dealloc];
 }
 

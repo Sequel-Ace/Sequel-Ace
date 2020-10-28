@@ -940,13 +940,4 @@
 	[favoriteQueryTextView setString:@""];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
-
 @end

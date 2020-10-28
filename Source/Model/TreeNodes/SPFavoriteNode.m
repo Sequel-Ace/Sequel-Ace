@@ -108,13 +108,4 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 	return [[self nodeFavorite] objectForKey:SPFavoriteNameKey];
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	[super dealloc];
-}
-
 @end

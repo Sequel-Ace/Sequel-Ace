@@ -1552,12 +1552,4 @@ static const NSInteger kBlobAsImageFile = 4;
 	}
 }
 
-- (void)dealloc
-{
-	
-	
-
-	[super dealloc];
-}
-
 @end

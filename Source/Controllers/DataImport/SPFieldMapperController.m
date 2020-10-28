@@ -215,26 +215,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[self validateImportButton];
 }
 
-- (void)dealloc
-{
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	[super dealloc];
-}
-
 #pragma mark -
 #pragma mark Setter methods
 

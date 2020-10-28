@@ -1836,25 +1836,4 @@
 	return lineEnding;
 }
 
-#pragma mark -
-
-- (void)dealloc
-{	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	[super dealloc];
-}
-
 @end

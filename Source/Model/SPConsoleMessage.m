@@ -61,16 +61,4 @@
 	return self;
 }
 
-#pragma mark -
-
-- (void)dealloc
-{
-	
-	
-	
-	
-	
-	[super dealloc];
-}
-
 @end

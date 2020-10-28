@@ -811,28 +811,13 @@ static unsigned short getRandomPort(void);
 	[self disconnect];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	
-	
-	
-	
-	
 	[tunnelConnection invalidate];
 	
 	[self setLastError:nil];
 	
-	
-	
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
-	
-	
-	
-	
-	
 
-	// As this object is not a NSWindowController, use manual top-level nib item management
-	
-	
-	
 	[super dealloc];
 }
 

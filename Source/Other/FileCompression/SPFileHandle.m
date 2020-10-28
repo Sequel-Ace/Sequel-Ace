@@ -460,12 +460,9 @@ struct SPRawFileHandles {
 - (void)dealloc
 {
 	[self closeFile];
-	
-	
-	
+
 	free(wrappedFile);
 	free(wrappedFilePath);
-	
 	
 	pthread_mutex_destroy(&bufferLock);
 	

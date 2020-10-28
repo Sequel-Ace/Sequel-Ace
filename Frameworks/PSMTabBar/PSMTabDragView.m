@@ -17,11 +17,6 @@
     return self;
 }
 
-- (void)dealloc
-{
-	[super dealloc];
-}
-
 - (void)drawRect:(NSRect)rect {
 	//1.0 fade means show the primary image
 	//0.0 fade means show the secondary image

@@ -476,9 +476,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
 
 - (void)dealloc
 {
-	
-	
-	
 	pthread_mutex_destroy(&writeLock);
 	pthread_mutex_destroy(&favoritesLock);
 	

@@ -288,10 +288,6 @@
 
 	mySQLConnection = nil;
 
-	
-	
-	
-
 	[super dealloc];
 }
 

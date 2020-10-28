@@ -48,14 +48,6 @@
     return self;
 }
 
-- (void)dealloc
-{
-    
-    
-
-    [super dealloc];
-}
-
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 {
     [self drawWithFrame:cellFrame inView:controlView characterIndex:NSNotFound];
