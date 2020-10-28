@@ -81,12 +81,16 @@ typedef struct st_point_2d_
 	return self;
 }
 
+- (nonnull id)copyWithZone:(nullable NSZone *)zone {
+    return [self copy];
+}
+
 /**
  * Return an autorelease SPMySQLGeometryData object
  */
 + (instancetype)dataWithBytes:(const void *)geoData length:(NSUInteger)length
 {
-	return [[SPMySQLGeometryData alloc] initWithBytes:geoData length:length] ;
+	return [[SPMySQLGeometryData alloc] initWithBytes:geoData length:length];
 }
 
 /**
@@ -781,12 +785,11 @@ typedef struct st_point_2d_
 	return nil;
 }
 
-/**
- * dealloc
- */
 - (void)dealloc
 {
-    if (geoBuffer && bufferLength) free(geoBuffer);
+    if (geoBuffer && bufferLength) {
+        free(geoBuffer);
+    }
 }
 
 @end

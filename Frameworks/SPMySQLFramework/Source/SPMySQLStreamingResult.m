@@ -31,6 +31,7 @@
 #import "SPMySQLStreamingResult.h"
 #import "SPMySQL Private APIs.h"
 
+
 /**
  * This type of streaming result allows each row to be accessed on-demand; this can
  * be dangerous as it means a SELECT will tie up the server for longer, as for MyISAM
@@ -240,7 +241,7 @@
 	stackbuf[0] = theRow;
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = &state->extra[0];
+    state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }

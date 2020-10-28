@@ -109,7 +109,9 @@
  */
 - (void)_forwardPing
 {
-	[timerTarget performSelector:timerSelector];
+    if ([timerTarget respondsToSelector:timerSelector]) {
+        [timerTarget performSelector:timerSelector];
+    }
 }
 
 @end

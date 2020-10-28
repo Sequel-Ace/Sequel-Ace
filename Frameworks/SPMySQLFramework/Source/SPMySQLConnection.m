@@ -35,6 +35,12 @@
 #include <SystemConfiguration/SCNetworkReachability.h>
 #import "SPMySQLUtilities.h"
 
+@interface SPMySQLConnection ()
+
+@property (readwrite, copy) NSString *timeZoneIdentifier;
+
+@end
+
 // Thread flag constant
 static pthread_key_t mySQLThreadInitFlagKey;
 static void *mySQLThreadFlag;
@@ -127,7 +133,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 		port = 3306;
 
-		timeZoneIdentifier = @"";
+		_timeZoneIdentifier = @"";
 
 		// Default to socket connections if no other details have been provided
 		useSocket = YES;
@@ -151,7 +157,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 		keepAliveLastPingBlocked = NO;
 
 		// Set up default encoding variables
-		encoding = [[NSString alloc] initWithString:@"utf8"];
+        encoding = @"utf8";
 		stringEncoding = NSUTF8StringEncoding;
 		encodingUsesLatin1Transport = NO;
 		encodingToRestore = nil;
@@ -521,9 +527,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 	mysqlConnectionThreadId = mySQLConnection->thread_id;
 	lastConnectionUsedTime = initialConnectTime;
 
-	// Copy the server version string to the instance variable
-    
-
 	// the mysql_get_server_info() function
 	//   * returns the version name that is part of the initial connection handshake.
 	//   * Unless the connection failed, it will always return a non-null buffer containing at least a '\0'.
@@ -611,7 +614,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	const char *theSocket = NULL;
 
 	if (host) theHost = [host UTF8String]; //mysql calls getaddrinfo on the hostname. Apples code uses -UTF8String in that situation.
-	if (username) theUsername = [username cStringUsingEncoding:connectEncodingNS]; //during connect this is in MYSQL_SET_CHARSET_NAME encoding
+    if (username) theUsername = [username cStringUsingEncoding:connectEncodingNS]; //during connect this is in MYSQL_SET_CHARSET_NAME encoding
 
 	// If a password was supplied, use it; otherwise ask the delegate if appropriate.
 	//
@@ -624,9 +627,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// MAY choose to do a charset conversion as appropriate before handing it to whatever backend is used.
 	// Since we don't know which auth plugin server and client will agree upon, we'll do as the manual says...
 	if (password) {
-        thePassword = [password cStringUsingEncoding:connectEncodingNS];
+		thePassword = [password cStringUsingEncoding:connectEncodingNS];
 	} else if ([delegate respondsToSelector:@selector(keychainPasswordForConnection:)]) {
-		thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
+        thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
 	}
 
 	// If set to use a socket and a socket was supplied, use it; otherwise, search for a socket to use
@@ -874,12 +877,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectSucceeded = YES;
 			if (databaseToRestore) {
 				[self selectDatabase:databaseToRestore];
-                
 			}
 			if (encodingToRestore) {
 				[self setEncoding:encodingToRestore];
 				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
-                
 			}
 		}
 			// If the connection failed and the connection is permitted to retry,
@@ -1014,9 +1015,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		mysql_close(mySQLConnection);
 	}
 	mySQLConnection = NULL;
-    
 	serverVersionNumber = 0;
-    
 	state = SPMySQLDisconnected;
 	[self _unlockConnection];
 
@@ -1143,4 +1142,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 	mysql_thread_end();
 }
 
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
+    if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
+        return;
+    }
+
+    self.timeZoneIdentifier = nil;
+    if (!timeZoneIdentifier || [timeZoneIdentifier isEqualToString:@""]) {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
+    } else {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
+        self.timeZoneIdentifier = timeZoneIdentifier;
+    }
+}
 @end

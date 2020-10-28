@@ -2331,10 +2331,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		switch (timeZoneMode) {
 			case SPConnectionTimeZoneModeUseSystemTZ:
-				[mySQLConnection setTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
+				[mySQLConnection updateTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
 				break;
 			case SPConnectionTimeZoneModeUseFixedTZ:
-				[mySQLConnection setTimeZoneIdentifier:timeZoneIdentifier];
+				[mySQLConnection updateTimeZoneIdentifier:timeZoneIdentifier];
 				break;
 			default:
 				break;

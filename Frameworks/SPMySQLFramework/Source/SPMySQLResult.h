@@ -28,6 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+
 typedef enum {
 	SPMySQLResultFieldAsUnhandled    = 0,
 	SPMySQLResultFieldAsString       = 1,
@@ -47,7 +48,7 @@ typedef enum {
 	// Number of fields in the result set, and the field names and information
 	NSUInteger numberOfFields;
 	struct MYSQL_FIELD *fieldDefinitions;
-	NSArray<NSString *> *fieldNames;
+    NSArray<NSString *> *fieldNames;
 	
 	// Number of rows in the result set and an internal data position counter
 	unsigned long long numberOfRows;

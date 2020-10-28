@@ -45,9 +45,6 @@
 	NSUInteger port;
 	BOOL useSocket;
 	NSString *socketPath;
-
-	// Time Zone
-	NSString *timeZoneIdentifier;
     
     //Special connection settings
     BOOL allowDataLocalInfile;
@@ -141,21 +138,21 @@
 #pragma mark -
 #pragma mark Synthesized properties
 
-@property (readwrite, retain) NSString *host;
-@property (readwrite, retain) NSString *username;
-@property (readwrite, retain) NSString *password;
-@property (readwrite, assign) NSUInteger port;
-@property (readwrite, assign) BOOL useSocket;
-@property (readwrite, retain) NSString *socketPath;
+@property (readwrite, copy) NSString *host;
+@property (readwrite, copy) NSString *username;
+@property (readwrite, copy) NSString *password;
+@property (readwrite) NSUInteger port;
+@property (readwrite) BOOL useSocket;
+@property (readwrite, copy) NSString *socketPath;
 
-@property (readwrite, retain) NSString *timeZoneIdentifier;
+@property (readonly, copy) NSString *timeZoneIdentifier;
 
-@property (readwrite, assign) BOOL allowDataLocalInfile;
+@property (readwrite) BOOL allowDataLocalInfile;
 
-@property (readwrite, assign) BOOL useSSL;
-@property (readwrite, retain) NSString *sslKeyFilePath;
-@property (readwrite, retain) NSString *sslCertificatePath;
-@property (readwrite, retain) NSString *sslCACertificatePath;
+@property (readwrite) BOOL useSSL;
+@property (readwrite, copy) NSString *sslKeyFilePath;
+@property (readwrite, copy) NSString *sslCertificatePath;
+@property (readwrite, copy) NSString *sslCACertificatePath;
 
 /**
  * List of supported ciphers for SSL/TLS connections.
@@ -207,5 +204,9 @@
 #pragma mark Connection utility
 
 + (NSString *)findSocketPath;
+
+#pragma mark -
+#pragma mark Timezone
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier;
 
 @end

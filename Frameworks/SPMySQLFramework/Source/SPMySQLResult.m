@@ -30,7 +30,6 @@
 
 #import "SPMySQLResult.h"
 #import "SPMySQL Private APIs.h"
-#import "SPMySQLArrayAdditions.h"
 #include <stdlib.h>
 
 static id NSNullPointer;
@@ -243,7 +242,7 @@ static id NSNullPointer;
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-            [theReturnData insertObject:cellData atIndex:i];
+            [(NSMutableArray *)theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}
@@ -289,7 +288,7 @@ static id NSNullPointer;
 
 	state->state += itemsToReturn;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = &state->extra[0];
+    state->mutationsPtr = &state->extra[0];
 
 	return itemsToReturn;
 }
@@ -308,7 +307,7 @@ static id NSNullPointer;
  */
 - (id)_stringWithBytes:(const void *)bytes length:(NSUInteger)length
 {
-    NSString *str = [[NSString alloc] initWithBytes:bytes length:length encoding:stringEncoding] ;
+    NSString *str = [[NSString alloc] initWithBytes:bytes length:length encoding:stringEncoding];
     
     return (str == nil) ? @"" : str;
 }

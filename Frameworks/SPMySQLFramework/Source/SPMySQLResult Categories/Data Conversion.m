@@ -28,6 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+
 #import "Data Conversion.h"
 
 #ifdef SPMYSQL_FOR_UNIT_TESTING
@@ -408,11 +409,11 @@ PRIVATE NSString * _convertStringData(const void *dataBytes, NSUInteger dataLeng
 	}
 
 	// Get a string using the calculated details
-	NSMutableString *previewString = [[NSMutableString alloc] initWithBytes:dataBytes length:byteLength encoding:aStringEncoding] ;
+	NSMutableString *previewString = [[NSMutableString alloc] initWithBytes:dataBytes length:byteLength encoding:aStringEncoding];
 
 	// If that failed, fall back to using NSString methods to produce a preview
 	if (!previewString) {
-		previewString = [[NSMutableString alloc] initWithBytes:dataBytes length:dataLength encoding:aStringEncoding] ;
+		previewString = [[NSMutableString alloc] initWithBytes:dataBytes length:dataLength encoding:aStringEncoding];
 		if ([previewString length] > previewLength) {
 			[previewString deleteCharactersInRange:NSMakeRange(previewLength, [previewString length] - previewLength)];
 		}

@@ -691,9 +691,6 @@
 		theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 	}
 
-	// Clear the last error message stored on the instance
-    
-
 	// If we have an error message *with a length*, update the instance error message
 	if (theErrorMessage && [theErrorMessage length]) {
 		queryErrorMessage = [[NSString alloc] initWithString:theErrorMessage];
@@ -733,9 +730,6 @@
 		// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 		theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 	}
-
-	// Clear the last SQLSTATE stored on the instance
-    
 
 	// If we have a SQLSTATE *with a length*, update the instance SQLSTATE
 	if(theSqlstate && [theSqlstate length]) {
