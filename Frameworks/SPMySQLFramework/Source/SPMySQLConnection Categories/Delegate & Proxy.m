@@ -68,7 +68,7 @@
  */
 - (void)setProxy:(NSObject <SPMySQLConnectionProxy> *)aProxy
 {
-	proxy = [aProxy retain];
+	proxy = aProxy;
 	previousProxyState = [aProxy state];
 
 	[proxy setConnectionStateChangeSelector:@selector(_proxyStateChange:) delegate:self];

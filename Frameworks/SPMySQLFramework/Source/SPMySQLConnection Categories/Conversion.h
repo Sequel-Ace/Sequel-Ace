@@ -36,26 +36,9 @@
 + (const char *)_cStringForString:(NSString *)aString usingEncoding:(NSStringEncoding)anEncoding returningLengthAs:(NSUInteger *)cStringLengthPointer;
 + (NSString *)_stringForCString:(const char *)cString usingEncoding:(NSStringEncoding)encoding;
 
-- (const char *)_cStringForString:(NSString *)aString;
 - (NSString *)_stringForCString:(const char *)cString;
 
 @end
-
-/**
- * Set up a static function to allow fast calling with cached selectors
- */
-static inline const char* _cStringForStringWithEncoding(NSString* aString, NSStringEncoding anEncoding, NSUInteger *cStringLengthPointer) 
-{
-	static Class cachedClass;
-	static IMP cachedMethodPointer;
-	static SEL cachedSelector;
-
-	if (!cachedClass) cachedClass = [SPMySQLConnection class];
-	if (!cachedSelector) cachedSelector = @selector(_cStringForString:usingEncoding:returningLengthAs:);
-	if (!cachedMethodPointer) cachedMethodPointer = [SPMySQLConnection methodForSelector:cachedSelector];
-
-	return (__bridge const char *)(*cachedMethodPointer)(cachedClass, cachedSelector, aString, anEncoding, cStringLengthPointer);
-}
 
 /**
  * Converts a C string (NUL-terminated) to an NSString using the supplied encoding.

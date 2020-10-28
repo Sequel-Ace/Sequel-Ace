@@ -288,7 +288,7 @@ static id NSNullPointer;
 
 	state->state += itemsToReturn;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+	state->mutationsPtr = &state->extra[0];
 
 	return itemsToReturn;
 }

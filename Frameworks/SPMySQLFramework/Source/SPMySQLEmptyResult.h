@@ -31,9 +31,8 @@
 @interface SPMySQLEmptyResult : SPMySQLResult {
 
 	id delegate;
-
 }
 
-@property (readwrite, assign) id delegate;
+@property (readwrite, retain) id delegate;
 
 @end

@@ -611,7 +611,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	const char *theSocket = NULL;
 
 	if (host) theHost = [host UTF8String]; //mysql calls getaddrinfo on the hostname. Apples code uses -UTF8String in that situation.
-	if (username) theUsername = _cStringForStringWithEncoding(username, connectEncodingNS, NULL); //during connect this is in MYSQL_SET_CHARSET_NAME encoding
+	if (username) theUsername = [username cStringUsingEncoding:connectEncodingNS]; //during connect this is in MYSQL_SET_CHARSET_NAME encoding
 
 	// If a password was supplied, use it; otherwise ask the delegate if appropriate.
 	//
@@ -624,9 +624,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// MAY choose to do a charset conversion as appropriate before handing it to whatever backend is used.
 	// Since we don't know which auth plugin server and client will agree upon, we'll do as the manual says...
 	if (password) {
-		thePassword = _cStringForStringWithEncoding(password, connectEncodingNS, NULL);
+        thePassword = [password cStringUsingEncoding:connectEncodingNS];
 	} else if ([delegate respondsToSelector:@selector(keychainPasswordForConnection:)]) {
-		thePassword = _cStringForStringWithEncoding([delegate keychainPasswordForConnection:self], connectEncodingNS, NULL);
+		thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
 	}
 
 	// If set to use a socket and a socket was supplied, use it; otherwise, search for a socket to use
@@ -1077,7 +1077,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Update instance variables
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];
-	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[self _cStringForString:encoding]];
+	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[encoding cStringUsingEncoding:stringEncoding]];
 	encodingUsesLatin1Transport = NO;
 
 	// Check the interactive timeout - if it's below five minutes, increase it to ten

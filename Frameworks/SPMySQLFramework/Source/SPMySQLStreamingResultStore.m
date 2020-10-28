@@ -509,7 +509,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (__bridge unsigned long *)self;
+	state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }

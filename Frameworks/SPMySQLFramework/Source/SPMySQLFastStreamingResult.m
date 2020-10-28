@@ -305,7 +305,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+	state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }

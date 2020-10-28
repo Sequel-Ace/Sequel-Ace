@@ -171,7 +171,7 @@ end_cleanup:
 		.mySQLConnection = mySQLConnection,
 		.keepAliveLastPingSuccessPointer = &keepAliveLastPingSuccess,
 		.keepAlivePingThreadActivePointer = &keepAlivePingThreadActive,
-		.parentId = self
+        .parentId = (__bridge void *)(self)
 	};
 
 	// Create a pthread for the ping
