@@ -557,9 +557,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		@"ECDHE-ECDSA-AES128-SHA",
 		@"ECDHE-RSA-AES256-SHA",
 		@"ECDHE-ECDSA-AES256-SHA",
-		@"DHE-DSS-AES128-SHA",
 		@"DHE-RSA-AES128-SHA",
-		@"DHE-DSS-AES256-SHA",
 		@"DHE-RSA-AES256-SHA",
 		@"DH-DSS-AES128-SHA",
 		@"ECDH-ECDSA-AES128-SHA",
@@ -578,6 +576,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		@"AES256-SHA256",
 		@"AES128-SHA",
 		SPSSLCipherListMarkerItem, //marker. disabled items below here
+		@"DHE-DSS-AES128-SHA",
+		@"DHE-DSS-AES256-SHA",
 	];
 }
 
