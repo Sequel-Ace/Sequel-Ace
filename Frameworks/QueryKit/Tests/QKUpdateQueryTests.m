@@ -42,7 +42,7 @@
 	[self addTestForDatabase:QKDatabaseMySQL withIdentifierQuote:QKMySQLIdentifierQuote toTestSuite:testSuite];
 	[self addTestForDatabase:QKDatabasePostgreSQL withIdentifierQuote:QKPostgreSQLIdentifierQuote toTestSuite:testSuite];
 	
-    return [testSuite autorelease];
+    return testSuite;
 }
 
 + (void)addTestForDatabase:(QKQueryDatabase)database withIdentifierQuote:(NSString *)quote toTestSuite:(XCTestSuite *)testSuite
@@ -53,7 +53,6 @@
 		
 		[testSuite addTest:test];
 		
-        [test release];
     }
 }
 

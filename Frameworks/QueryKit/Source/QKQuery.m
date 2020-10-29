@@ -55,6 +55,12 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 - (BOOL)_addString:(NSString *)string toArray:(NSMutableArray *)array;
 
+@property (readwrite, nonatomic, copy) NSString *identifierQuote;
+@property (readwrite, nonatomic, copy) NSMutableString *query;
+
+@property (readwrite, nonatomic,strong) NSMutableArray *groupByFields;
+@property (readwrite, nonatomic,strong) NSMutableArray *orderByFields;
+
 @end
 
 @implementation QKQuery
@@ -81,7 +87,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 + (QKQuery *)queryTable:(NSString *)table database:(NSString *)database
 {
-	return [[[QKQuery alloc] initWithTable:table database:database] autorelease];
+	return [[QKQuery alloc] initWithTable:table database:database];
 }
 
 + (QKQuery *)selectQueryFromTable:(NSString *)table
@@ -91,7 +97,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 + (QKQuery *)selectQueryFromTable:(NSString *)table database:(NSString *)database
 {
-	QKQuery *query = [[[QKQuery alloc] initWithTable:table database:database] autorelease];
+	QKQuery *query = [[QKQuery alloc] initWithTable:table database:database];
 	
 	[query setQueryType:QKSelectQuery];
 	
@@ -165,7 +171,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 	
 	_identifierQuote = EMPTY_STRING;
 	
-    if (_query) (void)([_query release]), _query = [[NSMutableString alloc] init];
+    if (_query) (void)(_query), _query = [[NSMutableString alloc] init];
 }
 
 #pragma mark -
@@ -410,7 +416,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 		return fields;
 	}
 	
-	for (NSString *field in _fields)
+	for (__strong NSString *field in _fields)
 	{		
 		field = [field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 		
@@ -583,22 +589,6 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 - (NSString *)description
 {
 	return [self query];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-    if (_table) (void)([_table release]), _table = nil;
-    if (_database) (void)([_database release]), _database = nil;
-    if (_query) (void)([_query release]), _query = nil;
-    if (_parameters) (void)([_parameters release]), _parameters = nil;
-    if (_fields) (void)([_fields release]), _fields = nil;
-    if (_updateParameters) (void)([_updateParameters release]), _updateParameters = nil;
-    if (_groupByFields) (void)([_groupByFields release]), _groupByFields = nil;
-    if (_orderByFields) (void)([_orderByFields release]), _orderByFields = nil;
-	
-	[super dealloc];
 }
 
 @end

@@ -31,17 +31,4 @@
 
 @implementation QKQueryGenericParameter
 
-@synthesize field = _field;
-@synthesize value = _value;
-
-#pragma mark -
-
-- (void)dealloc
-{
-    if (_field) (void)([_field release]), _field = nil;
-    if (_value) (void)([_value release]), _value = nil;
-	
-	[super dealloc];
-}
-
 @end
