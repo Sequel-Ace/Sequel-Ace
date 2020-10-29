@@ -52,6 +52,7 @@
 		XCTestCase *test = [[NSClassFromString(@"QKUpdateQueryTests") alloc] initWithInvocation:invocation database:database identifierQuote:quote];
 		
 		[testSuite addTest:test];
+		
     }
 }
 

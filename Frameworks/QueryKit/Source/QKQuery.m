@@ -55,6 +55,12 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 - (BOOL)_addString:(NSString *)string toArray:(NSMutableArray *)array;
 
+@property (readwrite, nonatomic, copy) NSString *identifierQuote;
+@property (readwrite, nonatomic, copy) NSMutableString *query;
+
+@property (readwrite, nonatomic,strong) NSMutableArray *groupByFields;
+@property (readwrite, nonatomic,strong) NSMutableArray *orderByFields;
+
 @end
 
 @implementation QKQuery
@@ -81,7 +87,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 + (QKQuery *)queryTable:(NSString *)table database:(NSString *)database
 {
-	return [[QKQuery alloc] initWithTable:table database:database] ;
+	return [[QKQuery alloc] initWithTable:table database:database];
 }
 
 + (QKQuery *)selectQueryFromTable:(NSString *)table
@@ -91,7 +97,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 
 + (QKQuery *)selectQueryFromTable:(NSString *)table database:(NSString *)database
 {
-	QKQuery *query = [[QKQuery alloc] initWithTable:table database:database] ;
+	QKQuery *query = [[QKQuery alloc] initWithTable:table database:database];
 	
 	[query setQueryType:QKSelectQuery];
 	
