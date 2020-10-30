@@ -3691,6 +3691,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Register drag types for the favorites outline view
 	[favoritesOutlineView registerForDraggedTypes:@[SPFavoritesPasteboardDragType]];
 	[favoritesOutlineView setDraggingSourceOperationMask:NSDragOperationMove forLocal:YES];
+
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	[favoritesOutlineView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+
+	[favoritesOutlineView setFont:tableFont];
+	for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
+		[[col dataCell] setFont:tableFont];
+	}
 }
 
 /**

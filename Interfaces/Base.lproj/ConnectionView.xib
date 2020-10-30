@@ -191,13 +191,13 @@
                                                 <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                 <tableColumns>
-                                                    <tableColumn width="197" minWidth="40" maxWidth="1000" id="4915">
+                                                    <tableColumn width="168" minWidth="40" maxWidth="1000" id="4915">
                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Favorites">
                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
                                                         </tableHeaderCell>
                                                         <textFieldCell key="dataCell" controlSize="small" lineBreakMode="truncatingTail" selectable="YES" editable="YES" allowsUndo="NO" alignment="left" title="Text Cell" id="4918" customClass="SPFavoriteTextFieldCell">
-                                                            <font key="font" metaFont="controlContent" size="11"/>
+                                                            <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                                         </textFieldCell>
@@ -215,7 +215,7 @@
                                         <nil key="backgroundColor"/>
                                     </clipView>
                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="4912">
-                                        <rect key="frame" x="1" y="525" width="228" height="15"/>
+                                        <rect key="frame" x="0.0" y="720" width="200" height="16"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                     <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="4911">
@@ -1698,11 +1698,11 @@ DQ
                                         </subviews>
                                     </clipView>
                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="5590">
-                                        <rect key="frame" x="0.0" y="466" width="663" height="15"/>
+                                        <rect key="frame" x="0.0" y="711" width="681" height="16"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                     <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="5589">
-                                        <rect key="frame" x="663" y="0.0" width="16" height="580"/>
+                                        <rect key="frame" x="712" y="0.0" width="16" height="517"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                 </scrollView>
@@ -1734,7 +1734,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" HUD="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="439" y="291" width="580" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1200"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
             <value key="minSize" type="size" width="100" height="100"/>
             <view key="contentView" id="5432">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>

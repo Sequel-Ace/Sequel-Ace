@@ -44,8 +44,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 @synthesize justGainedFocus;
 @synthesize itemForDoubleAction = _itemForDoubleAction;
 
-- (void)awakeFromNib
-{
+- (void)awakeFromNib {
 	
 }
 
