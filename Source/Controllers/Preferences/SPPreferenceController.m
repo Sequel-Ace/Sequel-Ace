@@ -131,9 +131,9 @@
 	switch (fontChangeTarget)
 	{
 		case SPPrefFontChangeTargetTable:
-			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]]];
+			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
 			
-			[prefs setObject:[NSArchiver archivedDataWithRootObject:font] forKey:SPGlobalResultTableFont];
+			[prefs setObject:[NSArchiver archivedDataWithRootObject:font] forKey:SPGlobalResultFont];
 			
 			[tablesPreferencePane updateDisplayedTableFontName];
 			break;

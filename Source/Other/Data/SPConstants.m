@@ -101,7 +101,7 @@ NSString *SPNewFieldsAllowNulls                  = @"NewFieldsAllowNulls";
 NSString *SPLimitResults                         = @"LimitResults";
 NSString *SPLimitResultsValue                    = @"LimitResultsValue";
 NSString *SPNullValue                            = @"NullValue";
-NSString *SPGlobalResultTableFont                = @"GlobalResultTableFont";
+NSString *SPGlobalResultFont                	 = @"GlobalResultTableFont";
 NSString *SPFilterTableDefaultOperator           = @"FilterTableDefaultOperator";
 NSString *SPFilterTableDefaultOperatorLastItems  = @"FilterTableDefaultOperatorLastItems";
 

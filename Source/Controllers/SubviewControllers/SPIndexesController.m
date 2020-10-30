@@ -113,7 +113,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// Set the index tables view's vertical gridlines if required
 	[indexesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 	[indexesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 	[indexedColumnsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
@@ -131,7 +131,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	}
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:nil];
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
 }
 
 #pragma mark -
@@ -655,7 +655,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 			[indexesTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
 		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+		else if ([keyPath isEqualToString:SPGlobalResultFont]) {
 			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
 			[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -1102,7 +1102,7 @@ no_or_multiple_matches:
 	if (indexedFields) SPClear(indexedFields);
 
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 
 	[super dealloc];
 }

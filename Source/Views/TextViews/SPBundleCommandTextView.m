@@ -366,7 +366,7 @@
 		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
-		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 		[self setFont:tvFont];
 		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
 	}

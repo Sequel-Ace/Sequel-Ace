@@ -104,7 +104,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	// Set the double-click action in blank areas of the table to create new rows
 	[triggersTableView setEmptyDoubleClickAction:@selector(addTrigger:)];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 	[triggersTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	[addTriggerPanel setInitialFirstResponder:triggerNameTextField];
@@ -446,7 +446,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
         [triggersTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Table font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
 		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
 		[triggersTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -636,7 +636,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)_addPreferenceObservers
 {
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:NULL];
 
 	// Register observers for when the DisplayTableViewVerticalGridlines preference changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -647,7 +647,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

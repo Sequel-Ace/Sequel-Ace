@@ -87,9 +87,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	// Set the double-click action in blank areas of the table to create new rows
 	[relationsTableView setEmptyDoubleClickAction:@selector(addRelation:)];
 
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:nil];
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 	[relationsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [relationsTableView tableColumns])
@@ -510,7 +510,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
         [relationsTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Table font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
 		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
 		[relationsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -681,7 +681,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 
 	SPClear(relationData);
 	SPClear(takenConstraintNames);

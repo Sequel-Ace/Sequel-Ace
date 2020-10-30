@@ -1753,7 +1753,7 @@ cleanup:
 	[switchButton setControlSize:NSControlSizeSmall];
 	[switchButton release];
 
-	[errorsView setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]]];
+	[errorsView setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
 }
 
 /**

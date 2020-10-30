@@ -65,7 +65,7 @@
 	// Set the process table view's vertical gridlines if required
 	[variablesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 	[variablesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [variablesTableView tableColumns])
@@ -212,7 +212,7 @@
         [variablesTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Table font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
 		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
 		[variablesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -372,7 +372,7 @@
  */
 - (void)_addPreferenceObservers
 {
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:NULL];
 
 	// Register to obeserve table view vertical grid line pref changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -383,7 +383,7 @@
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

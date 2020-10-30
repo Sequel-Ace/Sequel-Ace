@@ -227,7 +227,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
 	// Add observer to change view sizes with filter rule editor
@@ -497,7 +497,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSString *nullValue = [prefs objectForKey:SPNullValue];
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
@@ -3676,7 +3676,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
 		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+		else if ([keyPath isEqualToString:SPGlobalResultFont]) {
 			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
 			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -4599,7 +4599,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	if(_mainNibLoaded) {
 		//TODO this should be changed to the variant with …context: after 10.6 support is removed!
-		[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+		[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	}

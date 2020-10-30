@@ -1692,7 +1692,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	[aCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]]];
+	[aCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
 }
 
 - (void)tableView:(NSTableView*)aTableView didClickTableColumn:(NSTableColumn *)aTableColumn

@@ -126,8 +126,8 @@
 
 	NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
 
-	if (![prefs objectForKey:SPGlobalResultTableFont]) {
-		[preferenceDefaults setObject:[NSArchiver archivedDataWithRootObject:[NSFont systemFontOfSize:11]] forKey:SPGlobalResultTableFont];
+	if (![prefs objectForKey:SPGlobalResultFont]) {
+		[preferenceDefaults setObject:[NSArchiver archivedDataWithRootObject:[NSFont systemFontOfSize:11]] forKey:SPGlobalResultFont];
 	}
 
 	// Register application defaults

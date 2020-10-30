@@ -43,7 +43,7 @@
 {	
 	[(SPPreferenceController *)[[[self view] window] delegate] setFontChangeTarget:SPPrefFontChangeTargetTable];
 	
-	[[NSFontPanel sharedFontPanel] setPanelFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]] isMultiple:NO];
+	[[NSFontPanel sharedFontPanel] setPanelFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]] isMultiple:NO];
 	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
 }
 
@@ -55,7 +55,7 @@
  */
 - (void)updateDisplayedTableFontName
 {	
-	[globalResultTableFontName setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]]];
+	[globalResultTableFontName setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
 }
 
 #pragma mark -

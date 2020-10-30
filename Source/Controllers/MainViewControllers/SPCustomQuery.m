@@ -1766,7 +1766,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	// Update font size on the table
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
 	[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// If there are no table columns to add, return
@@ -3157,7 +3157,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [customQueryView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Result Table Font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
 		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 		[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[customQueryView setFont:tableFont];
@@ -3566,7 +3566,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	                                             name:SPUserClosedHelpViewerNotification
 	                                           object:[tableDocumentInstance helpViewerClient]];
 
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
 	self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
 	self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
@@ -3637,7 +3637,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 
