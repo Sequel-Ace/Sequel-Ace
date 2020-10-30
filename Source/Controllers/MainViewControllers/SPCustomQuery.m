@@ -2525,10 +2525,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[SPTooltip showWithObject:[aCell stringValue]
 			atLocation:pos
 				ofType:@"text"
-		displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
-					[[aCell font] familyName], @"fontname",
-					[NSString stringWithFormat:@"%f",[[aCell font] pointSize]], @"fontsize",
-					nil]];
+		displayOptions:nil];
 
 	return nil;
 }

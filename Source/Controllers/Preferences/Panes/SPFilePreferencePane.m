@@ -200,6 +200,9 @@
 	if([SPHiddenKeyFileVisibilityKey isEqualTo:keyPath]) {
 		[self updateHiddenFiles];
 	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
 }
 
 - (void)updateHiddenFiles

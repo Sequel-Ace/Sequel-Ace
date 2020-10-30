@@ -104,16 +104,14 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	// Set the double-click action in blank areas of the table to create new rows
 	[triggersTableView setEmptyDoubleClickAction:@selector(addTrigger:)];
 
-	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	[triggersTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	[addTriggerPanel setInitialFirstResponder:triggerNameTextField];
 	
 	for (NSTableColumn *column in [triggersTableView tableColumns])
 	{
-		[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[column dataCell] setFont:tableFont];
 	}
 
 	[self _addPreferenceObservers];
@@ -447,18 +445,16 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [triggersTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
-	// Use monospaced fonts preference changed
-	else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
+		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
-		BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-		CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-		for (NSTableColumn *column in [triggersTableView tableColumns])
-		{
-			[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		}
-
+		[triggersTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[triggersTableView setFont:tableFont];
 		[triggersTableView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 
@@ -640,8 +636,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)_addPreferenceObservers
 {
-	// Register as an observer for the when the UseMonospacedFonts preference changes
-	[prefs addObserver:self forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
 
 	// Register observers for when the DisplayTableViewVerticalGridlines preference changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -652,7 +647,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

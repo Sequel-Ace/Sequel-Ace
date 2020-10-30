@@ -366,7 +366,7 @@
 		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
-		tvFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:12];
+		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
 		[self setFont:tvFont];
 		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
 	}
@@ -820,6 +820,9 @@
 {
 	if([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 

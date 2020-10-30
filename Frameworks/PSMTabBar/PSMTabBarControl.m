@@ -772,7 +772,9 @@
                 [self _bindPropertiesForCell:cell andTabViewItem:object];
 			}
         }
-    }
+    } else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
 }
 
 #pragma mark -

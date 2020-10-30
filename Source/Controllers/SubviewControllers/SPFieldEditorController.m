@@ -250,8 +250,6 @@ typedef enum {
 	if ([fieldEncoding length])
 		[label appendString:fieldEncoding];
 
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
 
 		sheetEditData = [(NSString*)data retain];
@@ -302,20 +300,14 @@ typedef enum {
 		// Based on user preferences, either use:
 		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
 		// 2. The font used for the tablew view (GlobalResultTableFont, per the "MySQL Content Font" preference option);
-		// 3. The Sequel-Ace default monospaced font (UseMonospacedFonts, per the "Use monospaced fonts" preference option).
 		if ([prefs objectForKey:SPFieldEditorSheetFont]) {
 			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
 		} else if ([prefs objectForKey:SPGlobalResultTableFont]) {
 			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
-		} else if ([prefs boolForKey:SPUseMonospacedFonts]) {
-			textEditorFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize];
 		}
-
 		[editTextView setFont:textEditorFont];
 
 		[editTextView setContinuousSpellCheckingEnabled:[prefs boolForKey:SPBlobTextEditorSpellCheckingEnabled]];
-
-		[hexTextView setFont:[NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize]];
 
 		[editSheetFieldName setStringValue:[NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"Field", @"Field"), label]];
 

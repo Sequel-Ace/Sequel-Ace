@@ -63,7 +63,6 @@
 
 #import "Sequel_Ace-Swift.h"
 
-
 /**
  * This is the unique KVO context of code that resides in THIS class.
  * Do not try to give it to other classes, ESPECIALLY NOT child classes!
@@ -228,8 +227,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont             options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex            options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
 	// Add observer to change view sizes with filter rule editor
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -4434,9 +4433,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[SPTooltip showWithObject:[aCell stringValue]
 		               atLocation:pos
 		                   ofType:@"text"
-		           displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:[[aCell font] familyName], @"fontname",
-		                                                                     [NSString stringWithFormat:@"%f", [[aCell font] pointSize]], @"fontsize",
-		                                                                     nil]];
+		           displayOptions:nil];
 
 		return nil;
 	}
