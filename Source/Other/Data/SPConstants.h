@@ -230,7 +230,7 @@ typedef enum
 
 typedef enum
 {
-	SPPrefFontChangeTargetTable  = 1,
+	SPPrefFontChangeTargetGeneral = 1,
 	SPPrefFontChangeTargetEditor = 2
 } SPPreferenceFontChangeTarget;
 

@@ -123,19 +123,17 @@
  * pane controllers (NSViewController subclasses) don't seem to be in the responder chain so we need to catch
  * it here.
  */
-- (void)changeFont:(id)sender
+- (void)changeDefaultFont:(id)sender
 {		
 	NSFont *font;
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 	
 	switch (fontChangeTarget)
 	{
-		case SPPrefFontChangeTargetTable:
+		case SPPrefFontChangeTargetGeneral:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
-			
+
 			[prefs setObject:[NSArchiver archivedDataWithRootObject:font] forKey:SPGlobalResultFont];
-			
-			[tablesPreferencePane updateDisplayedTableFontName];
 			break;
 		case SPPrefFontChangeTargetEditor:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];

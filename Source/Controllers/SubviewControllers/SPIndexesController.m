@@ -654,17 +654,17 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
 			[indexesTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
-		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+	}
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
+		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 
-			[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-			[indexedColumnsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-			[indexesTableView setFont:tableFont];
-			[indexedColumnsTableView setFont:tableFont];
-			[indexesTableView reloadData];
-			[self _reloadIndexedColumnsTableData];
-		}
+		[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexedColumnsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexesTableView setFont:tableFont];
+		[indexedColumnsTableView setFont:tableFont];
+		[indexesTableView reloadData];
+		[self _reloadIndexedColumnsTableData];
 	}
 	else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
