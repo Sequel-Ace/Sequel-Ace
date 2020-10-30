@@ -68,7 +68,7 @@
  */
 - (void)setProxy:(NSObject <SPMySQLConnectionProxy> *)aProxy
 {
-	proxy = [aProxy retain];
+	proxy = aProxy;
 	previousProxyState = [aProxy state];
 
 	[proxy setConnectionStateChangeSelector:@selector(_proxyStateChange:) delegate:self];
@@ -110,14 +110,14 @@
 
 		// Trigger a reconnect depending on connection usage recently.  If the connection has
 		// actively been used in the last couple of minutes, trigger a full reconnection attempt.
-		if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 60 * 2) {
-			reconnectionThread = [[[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES] autorelease];
+		if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 2) {
+			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES];
 			[reconnectionThread setName:@"SPMySQL reconnection thread (full)"];
 			[reconnectionThread start];
 
 		// If used within the last fifteen minutes, trigger a background/single reconnection attempt
-		} else if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 60 * 15) {
-			reconnectionThread = [[[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil] autorelease];
+		} else if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
+			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil];
 			[reconnectionThread setName:@"SPMySQL reconnection thread (limited)"];
 			[reconnectionThread start];
 

@@ -115,7 +115,7 @@
 
 	// Free up any memory and return
 	free(escBuffer);
-	return [escapedString autorelease];
+	return escapedString;
 }
 
 /**
@@ -168,7 +168,7 @@
 
 	// Free up any memory and return
 	free(hexBuffer);
-	return [hexString autorelease];
+	return hexString;
 }
 
 #pragma mark -
@@ -299,10 +299,10 @@
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query
-		uint64_t queryStartTime = mach_absolute_time();
+		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
-		queryExecutionTime = _elapsedSecondsSinceAbsoluteTime(queryStartTime);
-		lastConnectionUsedTime = mach_absolute_time();
+		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
+		lastConnectionUsedTime = _monotonicTime();
 		
 		// "An integer greater than zero indicates the number of rows affected or retrieved.
 		//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
@@ -429,7 +429,7 @@
 	// Store the result time on the response object
 	[theResult _setQueryExecutionTime:queryExecutionTime];
 
-	return [theResult autorelease];
+	return theResult;
 }
 
 #pragma mark -
@@ -693,9 +693,6 @@
 		theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 	}
 
-	// Clear the last error message stored on the instance
-	if (queryErrorMessage) [queryErrorMessage release], queryErrorMessage = nil;
-
 	// If we have an error message *with a length*, update the instance error message
 	if (theErrorMessage && [theErrorMessage length]) {
 		queryErrorMessage = [[NSString alloc] initWithString:theErrorMessage];
@@ -735,9 +732,6 @@
 		// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 		theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 	}
-
-	// Clear the last SQLSTATE stored on the instance
-	if(querySqlstate) [querySqlstate release], querySqlstate = nil;
 
 	// If we have a SQLSTATE *with a length*, update the instance SQLSTATE
 	if(theSqlstate && [theSqlstate length]) {

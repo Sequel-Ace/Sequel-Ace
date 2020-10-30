@@ -54,6 +54,8 @@
 
 @implementation SPWindowController
 
+@synthesize tabBar;
+
 #pragma mark -
 #pragma mark Initialisation
 
@@ -483,7 +485,7 @@
 {
 	PSMTabBarCell *theCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:theItem]];
 	
-	[[theCell indicator] setControlSize:NSSmallControlSize];
+	[[theCell indicator] setControlSize:NSControlSizeSmall];
 	
 	SPDatabaseDocument *theDocument = [theItem identifier];
 	
@@ -943,7 +945,7 @@
 	[tabBar destroyAnimations];
 	
 	SPClear(managedDatabaseConnections);
-	
+
 	[super dealloc];
 }
 

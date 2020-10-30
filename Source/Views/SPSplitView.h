@@ -32,7 +32,7 @@
 
 @interface SPSplitView : NSSplitView <NSSplitViewDelegate>
 {
-	id<NSSplitViewDelegate> delegate;
+	id<NSSplitViewDelegate, AllowSplitViewResizing> delegate;
 
 	IBOutlet NSButton *collapseToggleButton;
 	IBOutlet NSView *additionalDragHandleView;
@@ -40,7 +40,7 @@
 	NSUInteger collapsibleSubviewIndex;
 	BOOL collapsibleSubviewCollapsed;
 
-	double animationStartTime;
+	uint64_t animationStartTime;
 	double animationDuration;
 	NSTimer *animationTimer;
 	SPSplitViewAnimationRetainCycleBypass *animationRetainCycleBypassObject;

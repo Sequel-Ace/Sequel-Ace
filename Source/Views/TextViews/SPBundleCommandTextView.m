@@ -97,7 +97,7 @@
 																	  inTextContainer: [self textContainer]
 																			rectCount: &rectCount ];
 			[[NSColor colorWithCalibratedRed:0.95f green:0.95f blue:0.95f alpha:1.0f] setFill];
-			NSRectFillListUsingOperation(queryRects, rectCount, NSCompositeSourceOver);
+			NSRectFillListUsingOperation(queryRects, rectCount, NSCompositingOperationSourceOver);
 		}
 	}
 

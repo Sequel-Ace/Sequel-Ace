@@ -43,6 +43,8 @@
 	NSImage *darkImage;
 }
 
+@property (readwrite, retain) NSColor *systemColorOfName;
+
 - (instancetype)init NS_UNAVAILABLE;
 
 @end

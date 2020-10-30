@@ -28,6 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import "SPObjectAdditions.h"
 #import "SPStringAdditions.h"
 #import "RegexKitLite.h"
 
@@ -46,6 +47,57 @@
 static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 @implementation SPStringAdditionsTests
+
+
+- (void)testPerformance_StringWithString {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+		
+		id obj = @"JIMMY";
+
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				obj = [NSString stringWithString:obj];
+			}
+		}
+	}];
+}
+
+// this cast method is twice as fast as stringWithString above
+- (void)testPerformance_cast {
+	
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+		
+		id obj = @"JIMMY";
+
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				obj = [NSString cast:obj];
+			}
+		}
+	}];
+}
+
+// this "unsafe" cast method is twice as fast as cast above
+- (void)testPerformance_cast2 {
+	
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+		
+		id obj = @"JIMMY";
+
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				obj = (NSString*)obj;
+			}
+		}
+	}];
+}
 
 /**
  * stringByRemovingCharactersInSet test case.
