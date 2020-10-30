@@ -550,7 +550,7 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 		if([filesize unsignedLongValue] > kMaxSQLFileSize) {
 			NSString *truncatedSqlText = [[NSString alloc] initWithString:[sqlText substringToIndex:kMaxSQLFileSize-1]];
 			sqlText = [[NSString alloc] initWithString:truncatedSqlText];
-			truncatedString = [[NSString alloc] initWithString:@"\n ✂ ..."];
+			truncatedString = @"\n ✂ ...";
 		}
 		
 		NSString *tokenColor;

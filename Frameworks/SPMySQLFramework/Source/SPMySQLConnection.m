@@ -462,6 +462,20 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	return nil;
 }
 
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
+    if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
+        return;
+    }
+
+    self.timeZoneIdentifier = nil;
+    if (!timeZoneIdentifier || [timeZoneIdentifier isEqualToString:@""]) {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
+    } else {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
+        self.timeZoneIdentifier = timeZoneIdentifier;
+    }
+}
+
 @end
 
 #pragma mark -
@@ -1140,19 +1154,5 @@ asm(".desc ___crashreporter_info__, 0x10");
 + (void)_removeThreadVariables:(NSNotification *)aNotification
 {
 	mysql_thread_end();
-}
-
-- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
-    if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
-        return;
-    }
-
-    self.timeZoneIdentifier = nil;
-    if (!timeZoneIdentifier || [timeZoneIdentifier isEqualToString:@""]) {
-        [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
-    } else {
-        [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
-        self.timeZoneIdentifier = timeZoneIdentifier;
-    }
 }
 @end

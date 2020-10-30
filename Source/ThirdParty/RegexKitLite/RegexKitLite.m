@@ -1882,13 +1882,18 @@ exitNow:
   rkl_dtrace_addLookupFlag(lookupResultFlags, RKLSetTextLookupFlag);
   rkl_dtrace_utf16ConversionCacheWithEventID(thisDTraceEventID, lookupResultFlags, initString, cachedRegex.setToRange.location, cachedRegex.setToRange.length, cachedRegex.setToLength);
 
-  return(self);
+  return self;
 
 errorExit:
-  if(RKL_EXPECTED(self      != NULL,         1L))                                        {  self; }
-  if(RKL_EXPECTED(status     > U_ZERO_ERROR, 0L) && RKL_EXPECTED(exception == NULL, 0L)) {  exception = rkl_NSExceptionForRegex(initRegexString, initOptions, NULL, status); } // If we had a problem, prepare an exception to be thrown.
-  if(RKL_EXPECTED(status     < U_ZERO_ERROR, 0L) && (initError != NULL))                 { *initError = rkl_makeNSError((RKLUserInfoOptions)RKLUserInfoNone, initRegexString, initOptions, NULL, status, initString, initRange, NULL, NULL, 0L, (RKLRegexEnumerationOptions)RKLRegexEnumerationNoOptions, @"The ICU library returned an unexpected error."); }
-  if(RKL_EXPECTED(exception != NULL,         0L))                                        {  rkl_handleDelayedAssert(self, _cmd, exception); }
+  if (RKL_EXPECTED(status > U_ZERO_ERROR, 0L) && RKL_EXPECTED(exception == NULL, 0L)) {
+	  exception = rkl_NSExceptionForRegex(initRegexString, initOptions, NULL, status); // If we had a problem, prepare an exception to be thrown.
+  }
+  if (RKL_EXPECTED(status < U_ZERO_ERROR, 0L) && (initError != NULL)) {
+	  *initError = rkl_makeNSError((RKLUserInfoOptions)RKLUserInfoNone, initRegexString, initOptions, NULL, status, initString, initRange, NULL, NULL, 0L, (RKLRegexEnumerationOptions)RKLRegexEnumerationNoOptions, @"The ICU library returned an unexpected error.");
+  }
+  if (RKL_EXPECTED(exception != NULL, 0L)) {
+	  rkl_handleDelayedAssert(self, _cmd, exception);
+  }
 
   return(NULL);
 }
