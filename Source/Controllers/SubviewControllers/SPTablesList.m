@@ -109,8 +109,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		prefs = [NSUserDefaults standardUserDefaults];
 
 		[tables addObject:NSLocalizedString(@"TABLES", @"header for table list")];
-		
-		smallSystemFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
 	}
@@ -134,6 +132,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	
 	// Disable tab edit behaviour in the tables list
 	[tablesListView setTabEditingDisabled:YES];
+
+	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
 	
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -150,6 +150,34 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
+
+	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	[tablesListView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+
+	for (NSTableColumn *column in [tablesListView tableColumns]) {
+		[[column dataCell] setFont:tableFont];
+	}
+}
+
+#pragma mark -
+#pragma mark KVO methods
+
+/**
+ * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
+ */
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+	// Table font preference changed
+	if ([keyPath isEqualToString:SPGlobalResultFont]) {
+		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+
+		[tablesListView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[tablesListView setFont:tableFont];
+		[tablesListView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
 }
 
 #pragma mark -
@@ -2749,6 +2777,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
 	
 	SPClear(tables);
 	SPClear(tableTypes);

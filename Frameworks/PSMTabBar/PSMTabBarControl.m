@@ -1021,10 +1021,6 @@
 	
 	[_showHideAnimationTimer invalidate];
 	[_showHideAnimationTimer release]; _showHideAnimationTimer = nil;
-
-	// Also unwind the spring, if it's wound.
-	[_springTimer invalidate];
-	[_springTimer release]; _springTimer = nil;
 }
 
 #pragma mark -
@@ -1529,7 +1525,6 @@
 
 - (NSDragOperation)draggingUpdated:(id <NSDraggingInfo>)sender
 {
-	PSMTabBarCell *cell = [self cellForPoint:[self convertPoint:[sender draggingLocation] fromView:nil] cellFrame:nil];
 	
     if ([[[sender draggingPasteboard] types] indexOfObject:@"PSMTabBarControlItemPBType"] != NSNotFound) {
         
@@ -1540,49 +1535,17 @@
 		
         [[PSMTabDragAssistant sharedDragAssistant] draggingUpdatedInTabBar:self atPoint:[self convertPoint:[sender draggingLocation] fromView:nil]];
         return NSDragOperationMove;
-    } else if (cell) {
+    }
+
+	PSMTabBarCell *cell = [self cellForPoint:[self convertPoint:[sender draggingLocation] fromView:nil] cellFrame:nil];
+	if (cell) {
 		//something that was accepted by the delegate was dragged on
 
-		//Test for the space bar (the skip-the-delay key).
-		enum { virtualKeycodeForSpace = 49 }; //Source: IM:Tx (Fig. C-2)
-		union {
-			KeyMap keymap;
-			char bits[16];
-		} keymap;
-		GetKeys(keymap.keymap);
-		if ((GetCurrentEventKeyModifiers() == 0) && bit_test(keymap.bits, virtualKeycodeForSpace)) {
-			//The user pressed the space bar. This skips the delay; the user wants to pop the spring on this tab *now*.
-
-			//For some reason, it crashes if I call -fire here. I don't know why. It doesn't crash if I simply set the fire date to now.
-			[_springTimer setFireDate:[NSDate date]];
-		} else {
-			//Wind the spring for a spring-loaded drop.
-			//The delay time comes from Finder's defaults, which specifies it in milliseconds.
-			//If the delegate can't handle our spring-loaded drop, we'll abort it when the timer fires. See fireSpring:. This is simpler than constantly (checking for spring-loaded awareness and tearing down/rebuilding the timer) at every delegate change.
-
-			//If the user has dragged to a different tab, reset the timer.
-			if (_tabViewItemWithSpring != [cell representedObject]) {
-				[_springTimer invalidate];
-				[_springTimer release]; _springTimer = nil;
-				_tabViewItemWithSpring = [cell representedObject];
-			}
-			if (!_springTimer) {
-				//Finder's default delay time, as of Tiger, is 668 ms. If the user has never changed it, there's no setting in its defaults, so we default to that amount.
-				NSNumber *delayNumber = [(NSNumber *)CFPreferencesCopyAppValue((CFStringRef)@"SpringingDelayMilliseconds", (CFStringRef)@"com.apple.finder") autorelease];
-				NSTimeInterval delaySeconds = delayNumber ? [delayNumber doubleValue] / 1000.0 : 0.668;
-				_springTimer = [[NSTimer scheduledTimerWithTimeInterval:delaySeconds
-																 target:self
-															   selector:@selector(fireSpring:)
-															   userInfo:sender
-																repeats:NO] retain];
-			}
-
-			// Notify the delegate to respond to drag events if supported.  This allows custom
-			// behaviour when dragging certain drag types onto the tab - for example changing the
-			// view appropriately.
-			if ([self delegate] && [[self delegate] respondsToSelector:@selector(draggingEvent:enteredTabBar:tabView:)]) {
-				[[self delegate] draggingEvent:sender enteredTabBar:self tabView:[cell representedObject]];
-			}
+		// Notify the delegate to respond to drag events if supported.  This allows custom
+		// behaviour when dragging certain drag types onto the tab - for example changing the
+		// view appropriately.
+		if ([self delegate] && [[self delegate] respondsToSelector:@selector(draggingEvent:enteredTabBar:tabView:)]) {
+			[[self delegate] draggingEvent:sender enteredTabBar:self tabView:[cell representedObject]];
 		}
 		return NSDragOperationCopy;
 	}
@@ -1592,8 +1555,6 @@
 
 - (void)draggingExited:(id <NSDraggingInfo>)sender
 {
-	[_springTimer invalidate];
-	[_springTimer release]; _springTimer = nil;
 
     [[PSMTabDragAssistant sharedDragAssistant] draggingExitedTabBar:self];
 }
@@ -1626,22 +1587,6 @@
 - (void)concludeDragOperation:(id <NSDraggingInfo>)sender
 {
 
-}
-
-#pragma mark -
-#pragma mark Spring-loading
-
-- (void)fireSpring:(NSTimer *)timer
-{
-	NSAssert1(timer == _springTimer, @"Spring fired by unrecognized timer %@", timer);
-
-	id <NSDraggingInfo> sender = [timer userInfo];
-	PSMTabBarCell *cell = [self cellForPoint:[self convertPoint:[sender draggingLocation] fromView:nil] cellFrame:nil];
-	[tabView selectTabViewItem:[cell representedObject]];
-
-	_tabViewItemWithSpring = nil;
-	[_springTimer invalidate];
-	[_springTimer release]; _springTimer = nil;
 }
 
 #pragma mark -
