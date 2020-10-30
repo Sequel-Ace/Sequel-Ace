@@ -6875,9 +6875,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			// Table source view
 			if (view == SPTableViewStructure) {
 
-				NSDictionary *tableSource = [tableSourceInstance tableSourceForPrinting];
+				NSDictionary *tableSource = [self->tableSourceInstance tableSourceForPrinting];
 
-				NSInteger tableType = [tablesListInstance tableType];
+				NSInteger tableType = [self->tablesListInstance tableType];
 
 				switch (tableType) {
 					case SPTableTypeTable:
@@ -6909,7 +6909,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				// Table content view
 			else if (view == SPTableViewContent) {
 
-				NSArray *data = [tableContentInstance currentDataResultWithNULLs:NO hideBLOBs:YES];
+				NSArray *data = [self->tableContentInstance currentDataResultWithNULLs:NO hideBLOBs:YES];
 
 				heading = NSLocalizedString(@"Table Content", @"table content print heading");
 
@@ -6919,12 +6919,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				];
 
 				[printData setObject:rows forKey:@"rows"];
-				[connection setValue:[tableContentInstance usedQuery] forKey:@"query"];
+				[connection setValue:[self->tableContentInstance usedQuery] forKey:@"query"];
 			}
 				// Custom query view
 			else if (view == SPTableViewCustomQuery) {
 
-				NSArray *data = [customQueryInstance currentResult];
+				NSArray *data = [self->customQueryInstance currentResult];
 
 				heading = NSLocalizedString(@"Query Result", @"query result print heading");
 
@@ -6934,12 +6934,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				];
 
 				[printData setObject:rows forKey:@"rows"];
-				[connection setValue:[customQueryInstance usedQuery] forKey:@"query"];
+				[connection setValue:[self->customQueryInstance usedQuery] forKey:@"query"];
 			}
 				// Table relations view
 			else if (view == SPTableViewRelations) {
 
-				NSArray *data = [tableRelationsInstance relationDataForPrinting];
+				NSArray *data = [self->tableRelationsInstance relationDataForPrinting];
 
 				heading = NSLocalizedString(@"Table Relations", @"toolbar item label for switching to the Table Relations tab");
 
@@ -6953,7 +6953,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				// Table triggers view
 			else if (view == SPTableViewTriggers) {
 
-				NSArray *data = [tableTriggersInstance triggerDataForPrinting];
+				NSArray *data = [self->tableTriggersInstance triggerDataForPrinting];
 
 				heading = NSLocalizedString(@"Table Triggers", @"toolbar item label for switching to the Table Triggers tab");
 
