@@ -159,9 +159,7 @@ int _isSPLeaksLog(const struct direct *entry);
 					printf("Unable to remove Sequel Ace leaks log '%s'\n", files[i]->d_name);
 				}
 			}
-			
-//			free(&files);
-			
+						
 			if (hdir) {
 				snprintf(fpath2, sizeof(fpath2), "%s/Desktop", pw->pw_dir);
 				
