@@ -56,7 +56,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 - (BOOL)_addString:(NSString *)string toArray:(NSMutableArray *)array;
 
 @property (readwrite, nonatomic, copy) NSString *identifierQuote;
-@property (readwrite, nonatomic, copy) NSMutableString *query;
+@property (readwrite, nonatomic, strong) NSMutableString *query;
 
 @property (readwrite, nonatomic,strong) NSMutableArray *groupByFields;
 @property (readwrite, nonatomic,strong) NSMutableArray *orderByFields;

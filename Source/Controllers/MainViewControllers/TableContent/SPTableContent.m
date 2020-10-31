@@ -4373,14 +4373,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			theValue = SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]);
 		}
 
-		if (theValue == nil) return nil;
+		if (theValue == nil) return @"";
 
 		if ([theValue isKindOfClass:[NSData class]]) {
 			image = [[NSImage alloc] initWithData:theValue] ;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				return nil;
+				return @"";
 			}
 		}
 		else if ([theValue isKindOfClass:[SPMySQLGeometryData class]]) {
@@ -4389,7 +4389,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				return nil;
+				return @"";
 			}
 		}
 
@@ -4402,10 +4402,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		                                                                     [NSString stringWithFormat:@"%f", [[aCell font] pointSize]], @"fontsize",
 		                                                                     nil]];
 
-		return nil;
+		return @"";
 	}
 
-	return nil;
+	return @"";
 }
 
 #pragma mark -

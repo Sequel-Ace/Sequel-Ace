@@ -160,7 +160,7 @@ int _isSPLeaksLog(const struct direct *entry);
 				}
 			}
 			
-			free(&files);
+//			free(&files);
 			
 			if (hdir) {
 				snprintf(fpath2, sizeof(fpath2), "%s/Desktop", pw->pw_dir);
