@@ -2050,7 +2050,7 @@ set_input:
 
 	[self _hideExportProgress];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(files)];
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:CFBridgingRetain(files)];
 }
 
 /**
@@ -2058,7 +2058,8 @@ set_input:
  */
 - (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-	NSArray *files = (__bridge NSArray *)contextInfo;
+	
+	NSArray *files = (NSArray *)CFBridgingRelease(contextInfo); // TODO: check if this leaks, it shouldn't
 
 	// Ignore the files that exist and remove the associated exporters
 	if (returnCode == SPExportErrorSkipErrorFiles) {
