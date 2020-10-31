@@ -319,7 +319,7 @@
                                                                                     <rect key="frame" x="21" y="291" width="392" height="330"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5188">
-                                                                                            <rect key="frame" x="-2" y="108" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="100" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="d4z-Xh-ffk"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="eeX-N0-yOc"/>
@@ -331,7 +331,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the MySQL server.  The default MySQL port is 3306" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5187">
-                                                                                            <rect key="frame" x="115" y="106" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="98" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="RiS-ma-pak"/>
                                                                                             </constraints>
@@ -351,7 +351,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5184">
-                                                                                            <rect key="frame" x="-2" y="140" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="132" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="KSL-Jn-5nB"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="W2W-Os-whn"/>
@@ -363,7 +363,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Optionally enter a database to select after successfully connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5183">
-                                                                                            <rect key="frame" x="115" y="138" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="130" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="9vM-1D-LVw"/>
                                                                                             </constraints>
@@ -383,7 +383,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5180">
-                                                                                            <rect key="frame" x="-2" y="172" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="164" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="KqJ-sM-WMg"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="ned-mL-Hk9"/>
@@ -395,7 +395,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5179" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="115" y="170" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="162" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="vk5-ev-4fA"/>
                                                                                             </constraints>
@@ -414,7 +414,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5176">
-                                                                                            <rect key="frame" x="-2" y="204" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="196" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="3Ln-Lk-k3k"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="DsB-SV-d9b"/>
@@ -426,7 +426,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the MySQL username to connect with" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5175">
-                                                                                            <rect key="frame" x="115" y="202" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="194" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="sc0-ey-S1A"/>
                                                                                             </constraints>
@@ -446,7 +446,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5377">
-                                                                                            <rect key="frame" x="-2" y="300" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="292" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="XUt-Jz-ewb"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="x8y-1r-pQT"/>
@@ -458,7 +458,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5376">
-                                                                                            <rect key="frame" x="115" y="298" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="290" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="2MK-P2-ON1"/>
                                                                                             </constraints>
@@ -478,7 +478,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5173">
-                                                                                            <rect key="frame" x="-2" y="236" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="228" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="fOR-NF-ubV"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="rX7-jz-uoy"/>
@@ -490,7 +490,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the hostname of the MySQL server you want to connect to.  Enter 127.0.0.1 to connect to a server on this computer" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5171">
-                                                                                            <rect key="frame" x="115" y="234" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="226" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="Ck0-ZQ-IL4"/>
                                                                                             </constraints>
@@ -510,7 +510,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="5894" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="115" y="266" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="258" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="hOh-xH-q78"/>
                                                                                             </constraints>
@@ -519,7 +519,7 @@
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Qjy-56-fjI">
-                                                                                            <rect key="frame" x="-2" y="76" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="68" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="Ght-cD-AXK"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="RVt-S4-FOe"/>
@@ -531,7 +531,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JYc-99-MtL">
-                                                                                            <rect key="frame" x="113" y="71" width="262" height="26"/>
+                                                                                            <rect key="frame" x="113" y="63" width="262" height="26"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="7Sn-Vs-rUN"/>
                                                                                             </constraints>
@@ -545,9 +545,9 @@
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="oIH-sM-vBJ">
-                                                                                            <rect key="frame" x="113" y="40" width="261" height="26"/>
+                                                                                            <rect key="frame" x="113" y="36" width="261" height="22"/>
                                                                                             <constraints>
-                                                                                                <constraint firstAttribute="height" constant="22" id="0bv-v4-WgV"/>
+                                                                                                <constraint firstAttribute="height" constant="18" id="0bv-v4-WgV"/>
                                                                                             </constraints>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Ot7-jd-TIL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -566,9 +566,9 @@
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="5593">
-                                                                                            <rect key="frame" x="113" y="8" width="261" height="26"/>
+                                                                                            <rect key="frame" x="113" y="8" width="261" height="22"/>
                                                                                             <constraints>
-                                                                                                <constraint firstAttribute="height" constant="22" id="TCU-ak-i7B"/>
+                                                                                                <constraint firstAttribute="height" constant="18" id="TCU-ak-i7B"/>
                                                                                             </constraints>
                                                                                             <buttonCell key="cell" type="check" title="Connect using SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5594">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -855,7 +855,7 @@
                                                                                     <rect key="frame" x="21" y="321" width="392" height="300"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5386">
-                                                                                            <rect key="frame" x="-2" y="268" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="260" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="I3b-pF-qdW"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="tOJ-DM-uXu"/>
@@ -867,7 +867,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5385">
-                                                                                            <rect key="frame" x="115" y="266" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="258" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="5NN-he-Kef"/>
                                                                                             </constraints>
@@ -887,7 +887,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5219">
-                                                                                            <rect key="frame" x="-2" y="108" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="100" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="7Vn-yT-egj"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="ynu-di-huT"/>
@@ -899,7 +899,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the path to the socket file to use when connecting to MySQL.  Leave this field blank to use the default socket location" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5218">
-                                                                                            <rect key="frame" x="115" y="106" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="98" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="SKX-oV-p4y"/>
                                                                                             </constraints>
@@ -919,7 +919,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5217">
-                                                                                            <rect key="frame" x="-2" y="140" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="132" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="Qg6-Wi-rRT"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="faC-pa-NwC"/>
@@ -931,7 +931,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Optionally enter a database to select after successfully connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5216">
-                                                                                            <rect key="frame" x="115" y="138" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="130" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="zPB-jg-2ZB"/>
                                                                                             </constraints>
@@ -951,7 +951,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5215">
-                                                                                            <rect key="frame" x="-2" y="172" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="164" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="993-3y-Xup"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="z5I-rg-0tE"/>
@@ -963,7 +963,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5214" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="115" y="170" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="162" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="rT9-UD-ORE"/>
                                                                                             </constraints>
@@ -982,7 +982,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5213">
-                                                                                            <rect key="frame" x="-2" y="204" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="196" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="8Cq-7D-g2O"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="xCt-32-Zmw"/>
@@ -994,7 +994,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the MySQL username to connect with" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5212">
-                                                                                            <rect key="frame" x="115" y="202" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="194" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="SwH-na-Lte"/>
                                                                                             </constraints>
@@ -1014,7 +1014,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="5896" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="115" y="234" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="226" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="QyX-Bw-7qn"/>
                                                                                             </constraints>
@@ -1023,7 +1023,7 @@
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zQi-oD-96m">
-                                                                                            <rect key="frame" x="-2" y="76" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="68" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="kWT-ZE-3mF"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="mhv-Hr-E0Y"/>
@@ -1035,7 +1035,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jLB-fx-dGx">
-                                                                                            <rect key="frame" x="113" y="71" width="262" height="26"/>
+                                                                                            <rect key="frame" x="113" y="63" width="262" height="26"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="bXY-2l-rr8"/>
                                                                                             </constraints>
@@ -1049,9 +1049,9 @@
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="UTU-OQ-h6m">
-                                                                                            <rect key="frame" x="113" y="40" width="261" height="26"/>
+                                                                                            <rect key="frame" x="113" y="36" width="261" height="22"/>
                                                                                             <constraints>
-                                                                                                <constraint firstAttribute="height" constant="22" id="tG0-Gc-2Nv"/>
+                                                                                                <constraint firstAttribute="height" constant="18" id="tG0-Gc-2Nv"/>
                                                                                             </constraints>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="6E5-jx-aGT">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1070,9 +1070,9 @@
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="5720">
-                                                                                            <rect key="frame" x="113" y="8" width="261" height="26"/>
+                                                                                            <rect key="frame" x="113" y="8" width="261" height="22"/>
                                                                                             <constraints>
-                                                                                                <constraint firstAttribute="height" constant="22" id="E4s-ec-0q6"/>
+                                                                                                <constraint firstAttribute="height" constant="18" id="E4s-ec-0q6"/>
                                                                                             </constraints>
                                                                                             <buttonCell key="cell" type="check" title="Connect using SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5721">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1354,7 +1354,7 @@
                                                                                     <rect key="frame" x="21" y="195" width="392" height="426"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5523">
-                                                                                            <rect key="frame" x="115" y="106" width="227" height="22"/>
+                                                                                            <rect key="frame" x="115" y="98" width="227" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="kPx-za-dDn"/>
                                                                                             </constraints>
@@ -1382,7 +1382,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5525">
-                                                                                            <rect key="frame" x="-2" y="108" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="100" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="6ws-bL-mDC"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="Xkp-mn-vfC"/>
@@ -1405,7 +1405,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5404">
-                                                                                            <rect key="frame" x="-2" y="428" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="420" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="HHv-H8-Ryw"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="rhh-OH-AM2"/>
@@ -1417,7 +1417,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5403">
-                                                                                            <rect key="frame" x="115" y="426" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="418" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="lto-ug-2oZ"/>
                                                                                             </constraints>
@@ -1437,7 +1437,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5291">
-                                                                                            <rect key="frame" x="-2" y="76" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="68" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="Hp1-Mn-n7u"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="xVZ-D1-B2a"/>
@@ -1449,7 +1449,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the SSH server.  The default SSH port is 22" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5290">
-                                                                                            <rect key="frame" x="115" y="74" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="66" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="3Mv-e4-fYZ"/>
                                                                                             </constraints>
@@ -1469,7 +1469,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5289">
-                                                                                            <rect key="frame" x="-2" y="108" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="100" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="980-PF-0Tk"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="i0E-qr-xTb"/>
@@ -1491,7 +1491,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the SSH server." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5288" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="115" y="106" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="98" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="V3E-kf-Dtn"/>
                                                                                             </constraints>
@@ -1511,7 +1511,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5287">
-                                                                                            <rect key="frame" x="-2" y="140" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="132" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="1hs-Ox-UqO"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="ign-EP-bMG"/>
@@ -1523,7 +1523,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the SSH username to connect with" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5286">
-                                                                                            <rect key="frame" x="115" y="138" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="130" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="J9d-0i-z1G"/>
                                                                                             </constraints>
@@ -1542,7 +1542,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5285">
-                                                                                            <rect key="frame" x="-2" y="172" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="164" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="TxU-pc-3xw"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="wR6-J1-1gv"/>
@@ -1554,7 +1554,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the hostname of the SSH server to tunnel via when connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5284">
-                                                                                            <rect key="frame" x="115" y="170" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="162" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="BYh-pu-Uts"/>
                                                                                             </constraints>
@@ -1573,7 +1573,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5273">
-                                                                                            <rect key="frame" x="-2" y="236" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="228" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="TDY-Ks-nBN"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="reh-tp-NAz"/>
@@ -1585,7 +1585,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the MySQL server.  The default MySQL port is 3306" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5272">
-                                                                                            <rect key="frame" x="115" y="234" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="226" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="UjG-wn-1cu"/>
                                                                                             </constraints>
@@ -1605,7 +1605,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5271">
-                                                                                            <rect key="frame" x="-2" y="268" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="260" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="dFt-mr-616"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="jq8-d6-5H6"/>
@@ -1617,7 +1617,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Optionally enter a database to select after successfully connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5270">
-                                                                                            <rect key="frame" x="115" y="266" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="258" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="4aH-G0-F6p"/>
                                                                                             </constraints>
@@ -1637,7 +1637,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5269">
-                                                                                            <rect key="frame" x="-2" y="300" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="292" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="MEU-Z5-NqM"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="NcP-3k-Ije"/>
@@ -1649,7 +1649,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the MySQL server" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5268" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="115" y="298" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="290" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="Pif-kT-uxF"/>
                                                                                             </constraints>
@@ -1668,7 +1668,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5267">
-                                                                                            <rect key="frame" x="-2" y="332" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="324" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="6hm-sD-5jC"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="HkG-si-ws2"/>
@@ -1680,7 +1680,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the MySQL username to connect with" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5266">
-                                                                                            <rect key="frame" x="115" y="330" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="322" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="pN4-0z-qGV"/>
                                                                                             </constraints>
@@ -1700,7 +1700,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5265">
-                                                                                            <rect key="frame" x="-2" y="364" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="356" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="18" id="7QD-a0-kpR"/>
                                                                                                 <constraint firstAttribute="width" constant="110" id="KPH-l3-3bD"/>
@@ -1712,7 +1712,7 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5264">
-                                                                                            <rect key="frame" x="115" y="362" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="354" width="257" height="22"/>
                                                                                             <string key="toolTip">Enter the hostname of the MySQL server you want to connect to.  Enter 127.0.0.1 to connect to a server running on the machine you are tunnelling to</string>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="pJm-Xy-go6"/>
@@ -1732,7 +1732,7 @@
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="5898" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="115" y="394" width="257" height="22"/>
+                                                                                            <rect key="frame" x="115" y="386" width="257" height="22"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="Cnl-vo-vde"/>
                                                                                             </constraints>
@@ -1741,9 +1741,9 @@
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="FtV-HG-DIU">
-                                                                                            <rect key="frame" x="113" y="8" width="261" height="26"/>
+                                                                                            <rect key="frame" x="113" y="8" width="261" height="22"/>
                                                                                             <constraints>
-                                                                                                <constraint firstAttribute="height" constant="22" id="lvZ-Et-spU"/>
+                                                                                                <constraint firstAttribute="height" constant="18" id="lvZ-Et-spU"/>
                                                                                             </constraints>
                                                                                             <buttonCell key="cell" type="check" title="Connect using SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="w3N-9r-DzN">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1762,7 +1762,7 @@
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pI7-sy-bsp">
-                                                                                            <rect key="frame" x="-2" y="204" width="114" height="18"/>
+                                                                                            <rect key="frame" x="-2" y="196" width="114" height="18"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="width" constant="110" id="9xE-md-thB"/>
                                                                                                 <constraint firstAttribute="height" constant="18" id="Ioa-Kn-KgM"/>
@@ -1774,9 +1774,9 @@
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="5DJ-XN-oYd">
-                                                                                            <rect key="frame" x="113" y="40" width="261" height="26"/>
+                                                                                            <rect key="frame" x="113" y="36" width="261" height="22"/>
                                                                                             <constraints>
-                                                                                                <constraint firstAttribute="height" constant="22" id="HqR-fb-rCY"/>
+                                                                                                <constraint firstAttribute="height" constant="18" id="HqR-fb-rCY"/>
                                                                                             </constraints>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="FJo-A3-GTr">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1795,7 +1795,7 @@
                                                                                             </connections>
                                                                                         </button>
                                                                                         <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XXN-zL-2iW">
-                                                                                            <rect key="frame" x="113" y="199" width="262" height="26"/>
+                                                                                            <rect key="frame" x="113" y="191" width="262" height="26"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="X35-56-VAW"/>
                                                                                             </constraints>
@@ -1809,7 +1809,7 @@
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button toolTip="Click to choose the SSH key file to use with this connection.  Standard locations like ~/.ssh are NOT checked automatically." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5492">
-                                                                                            <rect key="frame" x="342" y="105" width="30" height="24"/>
+                                                                                            <rect key="frame" x="342" y="97" width="30" height="24"/>
                                                                                             <constraints>
                                                                                                 <constraint firstAttribute="height" constant="22" id="AmE-70-mMG"/>
                                                                                                 <constraint firstAttribute="width" constant="30" id="LEl-2s-j7f"/>
@@ -2155,9 +2155,11 @@ DQ
                                                             <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5862" userLabel="Edit Connection Buttons Box">
                                                                 <rect key="frame" x="0.0" y="2" width="460" height="37"/>
                                                                 <subviews>
-                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5863">
-                                                                        <rect key="frame" x="311" y="3" width="146" height="28"/>
-                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
+                                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5863">
+                                                                        <rect key="frame" x="305" y="3" width="150" height="28"/>
+                                                                        <constraints>
+                                                                            <constraint firstAttribute="height" constant="19" id="CAT-DU-AJW"/>
+                                                                        </constraints>
                                                                         <buttonCell key="cell" type="push" title="Test connection" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5864">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="controlContent" size="11"/>
@@ -2166,9 +2168,11 @@ DQ
                                                                             <action selector="initiateConnection:" target="-2" id="5881"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5865">
-                                                                        <rect key="frame" x="3" y="3" width="157" height="28"/>
-                                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5865">
+                                                                        <rect key="frame" x="5" y="3" width="150" height="28"/>
+                                                                        <constraints>
+                                                                            <constraint firstAttribute="height" constant="19" id="H2A-jX-hwa"/>
+                                                                        </constraints>
                                                                         <buttonCell key="cell" type="push" title="Add to Favorites" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5866">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="controlContent" size="11"/>
@@ -2179,9 +2183,11 @@ DQ
                                                                             <action selector="addFavoriteUsingCurrentDetails:" target="-2" id="5871"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5869">
-                                                                        <rect key="frame" x="159" y="3" width="139" height="28"/>
-                                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5869">
+                                                                        <rect key="frame" x="155" y="3" width="150" height="28"/>
+                                                                        <constraints>
+                                                                            <constraint firstAttribute="height" constant="19" id="e9X-Er-YZq"/>
+                                                                        </constraints>
                                                                         <buttonCell key="cell" type="push" title="Save changes" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5870">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="controlContent" size="11"/>
@@ -2194,7 +2200,16 @@ DQ
                                                                     </button>
                                                                 </subviews>
                                                                 <constraints>
+                                                                    <constraint firstItem="5869" firstAttribute="width" secondItem="5865" secondAttribute="width" id="7j2-MW-zg0"/>
+                                                                    <constraint firstItem="5863" firstAttribute="centerY" secondItem="5862" secondAttribute="centerY" id="8Nd-YB-IcC"/>
+                                                                    <constraint firstItem="5863" firstAttribute="leading" secondItem="5869" secondAttribute="trailing" constant="10" id="CbJ-PA-GH3"/>
                                                                     <constraint firstAttribute="height" constant="37" id="Dyt-2t-5k2"/>
+                                                                    <constraint firstAttribute="trailing" secondItem="5863" secondAttribute="trailing" constant="10" id="FbO-Fe-dh3"/>
+                                                                    <constraint firstItem="5869" firstAttribute="leading" secondItem="5865" secondAttribute="trailing" constant="10" id="M0x-Db-PgS"/>
+                                                                    <constraint firstItem="5865" firstAttribute="leading" secondItem="5862" secondAttribute="leading" constant="10" id="eUD-Bd-th4"/>
+                                                                    <constraint firstItem="5863" firstAttribute="width" secondItem="5865" secondAttribute="width" id="l0N-Mq-GR6"/>
+                                                                    <constraint firstItem="5869" firstAttribute="centerY" secondItem="5862" secondAttribute="centerY" id="nSU-mT-FWT"/>
+                                                                    <constraint firstItem="5865" firstAttribute="centerY" secondItem="5862" secondAttribute="centerY" id="uEV-6L-I21"/>
                                                                 </constraints>
                                                             </customView>
                                                         </subviews>

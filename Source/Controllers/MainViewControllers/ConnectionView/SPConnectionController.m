@@ -815,7 +815,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	for (NSLayoutConstraint *constraint in connectionResizeContainer.constraints) {
 		if ([constraint.identifier isEqualToString: @"connectionViewHeight"]) {
 			constraint.constant = frameRect.size.height;
-			NSLog(@"DID IT");
 		}
 	}
 
