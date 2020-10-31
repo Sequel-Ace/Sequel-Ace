@@ -693,6 +693,10 @@
 		theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 	}
 
+    // VERY IMPORTANT to set to nil here
+    // DO NOT remove
+    queryErrorMessage = nil;
+    
 	// If we have an error message *with a length*, update the instance error message
 	if (theErrorMessage && [theErrorMessage length]) {
 		queryErrorMessage = [[NSString alloc] initWithString:theErrorMessage];
