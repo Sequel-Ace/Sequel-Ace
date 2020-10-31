@@ -187,7 +187,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		relationsLoaded = NO;
 
 		selectedDatabase = nil;
-		selectedDatabaseEncoding = [[NSString alloc] initWithString:@"latin1"];
+		selectedDatabaseEncoding = @"latin1";
 		mySQLConnection = nil;
 		mySQLVersion = nil;
 		allDatabases = nil;
@@ -1676,7 +1676,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ( !mysqlEncoding ) {
 		NSLog(@"Error: no character encoding found for db, mysql version is %@", [self mySQLVersion]);
 		
-		selectedDatabaseEncoding = [[NSString alloc] initWithString:@"latin1"];
+		selectedDatabaseEncoding = @"latin1";
 		
 		_supportsEncoding = NO;
 	} 

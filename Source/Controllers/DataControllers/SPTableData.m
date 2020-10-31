@@ -803,7 +803,7 @@
 	} else if ([tableDocumentInstance databaseEncoding]) {
 		encodingString = [[NSString alloc] initWithString:[tableDocumentInstance databaseEncoding]];
 	} else {
-		encodingString = [[NSString alloc] initWithString:@"latin1"];
+		encodingString = @"latin1";
 	}
 
 	// this will be 'Table' or 'View'
