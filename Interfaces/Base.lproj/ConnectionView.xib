@@ -184,7 +184,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="200" height="736"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
-                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="4913" customClass="SPFavoritesOutlineView">
+                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" selectionHighlightStyle="sourceList" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="4913" customClass="SPFavoritesOutlineView">
                                                 <rect key="frame" x="0.0" y="0.0" width="200" height="736"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -196,7 +196,7 @@
                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
                                                         </tableHeaderCell>
-                                                        <textFieldCell key="dataCell" controlSize="small" lineBreakMode="truncatingTail" selectable="YES" editable="YES" allowsUndo="NO" alignment="left" title="Text Cell" id="4918" customClass="SPFavoriteTextFieldCell">
+                                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" allowsUndo="NO" alignment="left" title="Text Cell" id="4918" customClass="SPFavoriteTextFieldCell">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
@@ -1734,7 +1734,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" HUD="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="439" y="291" width="580" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1175"/>
             <value key="minSize" type="size" width="100" height="100"/>
             <view key="contentView" id="5432">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
