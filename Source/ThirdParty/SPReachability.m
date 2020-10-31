@@ -46,7 +46,7 @@
     SCNetworkReachabilityRef ref = SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, (const struct sockaddr*)hostAddress);
     if (ref) 
     {
-        id reachability = [[self alloc] initWithReachabilityRef:ref];
+        id reachability = [[self alloc] initWithReachabilityRef:ref]; // do not release
         
         return reachability;
     }

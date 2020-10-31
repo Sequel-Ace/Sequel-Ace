@@ -257,7 +257,7 @@
 		}
 
 		// Create an object to avoid NSTimer retain cycles
-		animationRetainCycleBypassObject = [[SPSplitViewAnimationRetainCycleBypass alloc] initWithParent:self];
+		animationRetainCycleBypassObject = [[SPSplitViewAnimationRetainCycleBypass alloc] initWithParent:self]; // TODO: leaks
 
 		// Start an animation at 30fps
 		animationTimer = [NSTimer timerWithTimeInterval:(1.f/30.f) target:animationRetainCycleBypassObject selector:@selector(_animationStep:) userInfo:nil repeats:YES];
@@ -824,12 +824,13 @@
 	float viewLength, sizeDifference, totalGive, changedLength;
 	float totalCurrentSize = 0;
 	float resizeProportionTotal = 1.f;
+	// TODO: jcs - all these callocs leak
 	float *originalSizes = calloc(subviewCount, sizeof(float));
 	float *minSizes = calloc(subviewCount, sizeof(float));
 	float *maxSizes = calloc(subviewCount, sizeof(float));
 	BOOL *sizesCalculated;
 	float *resizeProportions;
-	NSMutableArray *outputSizes = [NSMutableArray arrayWithCapacity:subviewCount];
+	NSMutableArray *outputSizes = [NSMutableArray arrayWithCapacity:subviewCount]; // TODO: this leaks
 
 	[self _ensureDefaultSubviewSizesToIndex:(subviewCount + 1)];
 
