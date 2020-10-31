@@ -38,5 +38,7 @@
 @interface NSMutableArray (SPMutableArrayAdditions)
 
 - (void)reverse;
+- (nullable id)SPsafeObjectAtIndex:(NSUInteger)idx;
+- (void)SPsafeAddObject:(nullable id)obj;
 
 @end

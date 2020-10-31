@@ -48,4 +48,15 @@
 	}
 }
 
+- (id)SPsafeObjectAtIndex:(NSUInteger)idx{
+	return idx < self.count ? [self objectAtIndex:idx] : nil;
+}
+
+- (void)SPsafeAddObject:(id)obj{
+	if (obj != nil) {
+		[self addObject:obj];
+	}
+}
+
+
 @end
