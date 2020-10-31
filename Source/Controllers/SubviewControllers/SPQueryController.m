@@ -515,8 +515,6 @@ static SPQueryController *sharedQueryController = nil;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases
 {
 	NSMutableString *consoleString = [NSMutableString string];
-
-	NSArray *messageCopy = [messagesVisibleSet copy];
 	
 	for (SPConsoleMessage *message in messagesVisibleSet)
 	{
@@ -779,7 +777,6 @@ static SPQueryController *sharedQueryController = nil;
 				[historyContainer setObject:arr forKey:[new absoluteString]];
 			}
 			else {
-				NSMutableArray *arr = [[NSMutableArray alloc] init];
 				[historyContainer setObject:[NSMutableArray array] forKey:[new absoluteString]];
 			}
 		}

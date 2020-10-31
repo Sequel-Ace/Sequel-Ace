@@ -2194,10 +2194,6 @@
 		[killTask waitUntilExit];
 	}
 
-	for (id c in bundleHTMLOutputController)
-	{
-	}
-
 	// If required, make sure we save any changes made to the connection outline view's state
 	if (shouldSaveFavorites) {
 		[[SPFavoritesController sharedFavoritesController] saveFavoritesSynchronously];
