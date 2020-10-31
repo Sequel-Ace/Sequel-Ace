@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (id)safeObjectForKey:(id)key;
 - (void)safeSetObject:(id)obj forKey:(id)key;
-- (void)safeRremoveObjectForKey:(nullable id)key;
+- (void)safeRemoveObjectForKey:(nullable id)key;
 
 @end
 

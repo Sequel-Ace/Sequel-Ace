@@ -25,7 +25,7 @@
 	return object;
 }
 
-- (void)safeRremoveObjectForKey:(nullable id)key{
+- (void)safeRemoveObjectForKey:(nullable id)key{
 	id object = [self objectForKey:key];
 	if (object != [NSNull null]) {
 		[self removeObjectForKey:key];
