@@ -790,26 +790,33 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Use a magic number which needs to be added to the form when calculating resizes -
 	// including the height of the button areas below.
-	NSInteger additionalFormHeight = 92;
+	NSInteger additionalFormHeight = 90;
+	NSInteger additionalFormHeightSSL = 40;
 
 	frameRect = [connectionResizeContainer frame];
 
 	switch (theType) {
 		case SPTCPIPConnection:
 			targetResizeRect = [standardConnectionFormContainer frame];
-			if ([self useSSL]) additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+			if ([self useSSL]) additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height + additionalFormHeightSSL;
 			break;
 		case SPSocketConnection:
 			targetResizeRect = [socketConnectionFormContainer frame];
-			if ([self useSSL]) additionalFormHeight += [socketConnectionSSLDetailsContainer frame].size.height;
+			if ([self useSSL]) additionalFormHeight += [socketConnectionSSLDetailsContainer frame].size.height + additionalFormHeightSSL;
 			break;
 		case SPSSHTunnelConnection:
 			targetResizeRect = [sshConnectionFormContainer frame];
-			if ([self useSSL]) additionalFormHeight += [sshConnectionSSLDetailsContainer frame].size.height;
+			if ([self useSSL]) additionalFormHeight += [sshConnectionSSLDetailsContainer frame].size.height + additionalFormHeightSSL;
 			break;
 	}
 
 	frameRect.size.height = targetResizeRect.size.height + additionalFormHeight;
+
+	for (NSLayoutConstraint *constraint in connectionResizeContainer.constraints) {
+		if ([constraint.identifier isEqualToString: @"connectionViewHeight"]) {
+			constraint.constant = frameRect.size.height;
+		}
+	}
 
 	if (animate && initComplete) {
 		[[connectionResizeContainer animator] setFrame:frameRect];
