@@ -286,13 +286,13 @@
 #endif
 
 		// Delete all stored data for the database to be updated, leaving the structure key
-		[queriedStructure SPsafeRremoveObjectForKey:db_id];
+		[queriedStructure safeRremoveObjectForKey:db_id];
 		NSPredicate *predicate = [NSPredicate predicateWithFormat:@"NOT SELF BEGINSWITH %@", [NSString stringWithFormat:@"%@%@", db_id, SPUniqueSchemaDelimiter]];
 		[queriedStructureKeys filterUsingPredicate:predicate];
 
 		// Set up the database as an empty mutable dictionary ready for tables, and store a reference
 		[queriedStructure setObject:[NSMutableDictionary dictionary] forKey:db_id];
-		[queriedStructure SPsafeSetObject:[NSMutableDictionary dictionary] forKey:db_id];
+		[queriedStructure safeSetObject:[NSMutableDictionary dictionary] forKey:db_id];
 		NSMutableDictionary *databaseStructure = [queriedStructure objectForKey:db_id];
 		structureWasUpdated = YES;
 

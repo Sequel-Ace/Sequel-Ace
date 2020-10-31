@@ -11,13 +11,13 @@
 @implementation NSMutableDictionary (SPNSMutableDictionaryAdditions)
 
 
-- (void)SPsafeSetObject:(id)obj forKey:(id)key {
+- (void)safeSetObject:(id)obj forKey:(id)key {
 	if (obj != nil & key != nil) {
 		[self setObject:obj forKey:key];
 	}
 }
 
-- (id)SPsafeObjectForKey:(id)key {
+- (id)safeObjectForKey:(id)key {
 	id object = [self objectForKey:key];
 	if (object == [NSNull null]) {
 		return nil;
@@ -25,7 +25,7 @@
 	return object;
 }
 
-- (void)SPsafeRremoveObjectForKey:(nullable id)key{
+- (void)safeRremoveObjectForKey:(nullable id)key{
 	id object = [self objectForKey:key];
 	if (object != [NSNull null]) {
 		[self removeObjectForKey:key];

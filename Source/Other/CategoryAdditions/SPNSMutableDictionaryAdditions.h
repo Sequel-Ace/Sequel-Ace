@@ -13,9 +13,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NSMutableDictionary (SPNSMutableDictionaryAdditions)
 
 
-- (id)SPsafeObjectForKey:(id)key;
-- (void)SPsafeSetObject:(id)obj forKey:(id)key;
-- (void)SPsafeRremoveObjectForKey:(nullable id)key;
+- (id)safeObjectForKey:(id)key;
+- (void)safeSetObject:(id)obj forKey:(id)key;
+- (void)safeRremoveObjectForKey:(nullable id)key;
 
 @end
 
