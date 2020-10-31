@@ -888,7 +888,7 @@
 			}
 
 			// If uncollapsing, restore the original view and remove the helper
-			if (!collapsibleSubviewCollapsed) {
+			if ([eachSubview isKindOfClass:[SPSplitViewHelperView class]] && !collapsibleSubviewCollapsed) {
 				[(SPSplitViewHelperView *)eachSubview restoreOriginalView];
 			}
 		}
