@@ -182,9 +182,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	tableListIsSelectable = previousTableListIsSelectable;
 	SPMainQSync(^{
 		//this has to be executed en-block on the main queue, otherwise the table view might have a chance to access released memory before we tell it to throw away everything.
-		[tables removeAllObjects];
-		[tableTypes removeAllObjects];
-		[tablesListView reloadData];
+		[self->tables removeAllObjects];
+		[self->tableTypes removeAllObjects];
+		[self->tablesListView reloadData];
 	});
 
 	if ([tableDocumentInstance database]) {
@@ -327,7 +327,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tableDocumentInstance database]) {
 		SPMainQSync(^{
 			// -cell is a UI call according to Xcode 9.2 (and -setPlaceholderString: is too, obviously)
-			[[listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
+			[[self->listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
 		});
 	}
 

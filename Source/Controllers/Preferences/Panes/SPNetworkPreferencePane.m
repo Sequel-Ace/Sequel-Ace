@@ -175,11 +175,11 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			   context:NULL];
 
 	[_currentFilePanel beginSheetModalForWindow:[[NSApplication sharedApplication] keyWindow] completionHandler:^(NSInteger result) {
-		if(result == NSFileHandlingPanelOKButton) [sshClientPath setStringValue:[[_currentFilePanel URL] path]];
+		if(result == NSFileHandlingPanelOKButton) [self->sshClientPath setStringValue:[[self->_currentFilePanel URL] path]];
 		
-		[prefs removeObserver:self forKeyPath:SPHiddenKeyFileVisibilityKey];
+		[self->prefs removeObserver:self forKeyPath:SPHiddenKeyFileVisibilityKey];
 		
-		_currentFilePanel = nil;
+		self->_currentFilePanel = nil;
 	}];
 }
 
@@ -190,11 +190,11 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 	[NSAlert createAccessoryAlertWithTitle:NSLocalizedString(@"Unsupported configuration!",@"Preferences : Network : Custom SSH client : warning dialog title") message:NSLocalizedString(@"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.",@"Preferences : Network : Custom SSH client : warning dialog message") accessoryView:sshClientPickerView primaryButtonTitle:NSLocalizedString(@"OK",@"Preferences : Network : Custom SSH client : warning dialog : accept button") primaryButtonHandler:^{
 		//store new value to user defaults
-		NSString *newPath = [sshClientPath stringValue];
+		NSString *newPath = [self->sshClientPath stringValue];
 		if (![newPath length]) {
-			[prefs removeObjectForKey:SPSSHClientPath];
+			[self->prefs removeObjectForKey:SPSSHClientPath];
 		} else {
-			[prefs setObject:newPath forKey:SPSSHClientPath];
+			[self->prefs setObject:newPath forKey:SPSSHClientPath];
 		}
 	} cancelButtonHandler:nil];
 
@@ -321,9 +321,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		// since ssh configs are able to consist of multiple files, bookmarks
 		// for every selected file should be created in order to access them
 		// read-only.
-		[_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 			// check if the file is out of the sandbox
-			if ([_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
+			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
 				NSLog(@"got access to: %@", url.absoluteString);
 				
 				BOOL __block beenHereBefore = NO;
@@ -351,8 +351,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 					// save the bookmark to the preferences in order to access
 					// them later in the SPConnectionController
 					if (tmpAppScopedBookmark && !error) {
-						[bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
-						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
+						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
 				}
 			}
@@ -361,9 +361,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			if (idxURL == 0) {
 				// save the preferences
 				if (![[url path] length]) {
-					[prefs removeObjectForKey:SPSSHConfigFile];
+					[self->prefs removeObjectForKey:SPSSHConfigFile];
 				} else {
-					[prefs setObject:[url path] forKey:SPSSHConfigFile];
+					[self->prefs setObject:[url path] forKey:SPSSHConfigFile];
 				}
 			}
 		}];
@@ -372,7 +372,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		// from the file picker
 		[self updateSSHConfigPopUp];
 		
-		_currentFilePanel = nil;
+		self->_currentFilePanel = nil;
 	}];
 }
 

@@ -732,7 +732,7 @@
 		id aBundle = [self _currentSelectedObject];
 		
 		NSString *bundleFileName = [aBundle objectForKey:kBundleNameKey];
-		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtension];
+		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleFileName, SPUserBundleFileExtension];
 		NSAssert(possibleExisitingBundleFilePath != nil, @"source bundle path must be non-nil!");
 		
 		NSString *savePath = [[panel URL] path];
@@ -743,9 +743,9 @@
 		NSError *err = nil;
 		
 		// Copy possible existing bundle with content
-		if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
+		if([self->fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
 			//FIXME This will fail if savePath exists, but the user already consented overwriting in the save panel. We should use trashItemAtURL:... once we are 10.8+
-			if(![fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:savePath error:&err]) {
+			if(![self->fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:savePath error:&err]) {
 				//if we have an NSError that will provide the nicest error message.
 				if(err) {
 					[[NSAlert alertWithError:err] runModal];

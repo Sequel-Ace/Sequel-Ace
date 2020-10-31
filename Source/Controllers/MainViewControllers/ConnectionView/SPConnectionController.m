@@ -493,7 +493,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[keySelectionPanel setDelegate:self];
 	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
-		NSString *selectedFilePath=[[keySelectionPanel URL] path];
+		NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
 																		   
 		//delay the release so it won't happen while this block is still executing.
 		// jamesstout notes
@@ -507,9 +507,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		NSError *err=nil;
 		
-		if([keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
+		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
 		
-			NSLog(@"got access to: %@", keySelectionPanel.URL.absoluteString);
+			NSLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
 			
 			// a bit of duplicated code here,
 			// same code is in the export controler
@@ -519,8 +519,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			// have we been here before?
 			[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
 				
-				if(dict[keySelectionPanel.URL.absoluteString] != nil){
-					NSLog(@"beenHereBefore: %@", dict[keySelectionPanel.URL.absoluteString]);
+				if(dict[self->keySelectionPanel.URL.absoluteString] != nil){
+					NSLog(@"beenHereBefore: %@", dict[self->keySelectionPanel.URL.absoluteString]);
 					beenHereBefore = YES;
 					*stop = YES;
 				}
@@ -530,21 +530,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 				// create a bookmark
 				NSError *error = nil;
 				// this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-				NSData *tmpAppScopedBookmark = [keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+				NSData *tmpAppScopedBookmark = [self->keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
 																							   | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
 															   includingResourceValuesForKeys:nil
 																				relativeToURL:nil
 																						error:&error];
 				// save to prefs
 				if(tmpAppScopedBookmark && !error) {
-					[bookmarks addObject:@{keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
-					[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
+					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 				}
 			}
 			
 		}
 		// SSH key file selection
-		if (sender == sshSSHKeyButton) {
+		if (sender == self->sshSSHKeyButton) {
 			if (returnCode == NSModalResponseCancel) {
 				[self setSshKeyLocationEnabled:NSOffState];
 				[self setSshKeyLocation:nil];
@@ -554,14 +554,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setSshKeyLocation:selectedFilePath];
 		}
 		// SSL key file selection
-		else if (sender == standardSSLKeyFileButton || sender == socketSSLKeyFileButton || sender == sslOverSSHKeyFileButton) {
+		else if (sender == self->standardSSLKeyFileButton || sender == self->socketSSLKeyFileButton || sender == self->sslOverSSHKeyFileButton) {
 			if (returnCode == NSModalResponseCancel) {
 				[self setSslKeyFileLocationEnabled:NSOffState];
 				[self setSslKeyFileLocation:nil];
 				return;
 			}
 			
-			if( [self validateKeyFile:keySelectionPanel.URL error:&err] == NO ){
+			if( [self validateKeyFile:self->keySelectionPanel.URL error:&err] == NO ){
 				NSLog(@"Problem with key file - %@ : %@",[err localizedDescription], [err localizedRecoverySuggestion]);
 				[self showValidationAlertForError:err];
 				return; // don't copy the bad key
@@ -570,14 +570,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setSslKeyFileLocation:selectedFilePath];
 		}
 		// SSL certificate file selection
-		else if (sender == standardSSLCertificateButton || sender == socketSSLCertificateButton || sender == sslOverSSHCertificateButton) {
+		else if (sender == self->standardSSLCertificateButton || sender == self->socketSSLCertificateButton || sender == self->sslOverSSHCertificateButton) {
 			if (returnCode == NSModalResponseCancel) {
 				[self setSslCertificateFileLocationEnabled:NSOffState];
 				[self setSslCertificateFileLocation:nil];
 				return;
 			}
 			
-			if( [self validateCertFile:keySelectionPanel.URL error:&err] == NO ){
+			if( [self validateCertFile:self->keySelectionPanel.URL error:&err] == NO ){
 				NSLog(@"Problem with cert file - %@ : %@",[err localizedDescription], [err localizedRecoverySuggestion]);
 				[self showValidationAlertForError:err];
 				return; // don't copy the bad cert
@@ -586,7 +586,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setSslCertificateFileLocation:selectedFilePath];
 		}
 		// SSL CA certificate file selection
-		else if (sender == standardSSLCACertButton || sender == socketSSLCACertButton || sender == sslOverSSHCACertButton) {
+		else if (sender == self->standardSSLCACertButton || sender == self->socketSSLCACertButton || sender == self->sslOverSSHCACertButton) {
 			if (returnCode == NSModalResponseCancel) {
 				[self setSslCACertFileLocationEnabled:NSOffState];
 				[self setSslCACertFileLocation:nil];
@@ -2079,8 +2079,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// This works fine when not using layers, but then there is another issue with the progress indicator (#2903)
 	SPMainLoopAsync(^{
 		[NSAnimationContext beginGrouping];
-		[[editButtonsView animator] setFrameOrigin:NSMakePoint([editButtonsView frame].origin.x, [editButtonsView frame].origin.y + 30)];
-		[[editButtonsView animator] setAlphaValue:1.0f];
+		[[self->editButtonsView animator] setFrameOrigin:NSMakePoint([self->editButtonsView frame].origin.x, [self->editButtonsView frame].origin.y + 30)];
+		[[self->editButtonsView animator] setAlphaValue:1.0f];
 		[NSAnimationContext endGrouping];
 	});
 

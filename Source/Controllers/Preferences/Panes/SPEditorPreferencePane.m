@@ -170,7 +170,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	{
 		if (returnCode == NSModalResponseOK) {
 			if ([self _loadColorSchemeFromFile:[[[panel URLs] objectAtIndex:0] path] ]) {
-				[prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
+				[self->prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 
 				[self updateDisplayColorThemeName];
 			}

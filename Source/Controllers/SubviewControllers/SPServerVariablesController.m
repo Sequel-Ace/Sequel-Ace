@@ -134,10 +134,10 @@
     [panel setNameFieldStringValue:@"ServerVariables"];
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            if ([variablesFiltered count] > 0) {
+            if ([self->variablesFiltered count] > 0) {
                 NSMutableString *variablesString = [NSMutableString stringWithFormat:@"# MySQL server variables for %@\n\n", [[SPAppDelegate frontDocument] host]];
                 
-                for (NSDictionary *variable in variablesFiltered)
+                for (NSDictionary *variable in self->variablesFiltered)
                 {
                     [variablesString appendFormat:@"%@ = %@\n", [variable objectForKey:@"Variable_name"], [variable objectForKey:@"Value"]];
                 }

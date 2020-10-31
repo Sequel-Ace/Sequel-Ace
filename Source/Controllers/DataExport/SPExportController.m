@@ -607,28 +607,28 @@ set_input:
     [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-			NSString *path = [[changeExportOutputPathPanel directoryURL] path];
+			NSString *path = [[self->changeExportOutputPathPanel directoryURL] path];
 			if(!path) {
 				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[changeExportOutputPathPanel directoryURL],[[changeExportOutputPathPanel directoryURL] isFileURL]]
+											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[self->changeExportOutputPathPanel directoryURL],[[self->changeExportOutputPathPanel directoryURL] isFileURL]]
 											 userInfo:nil];
 			}
 			
-			[exportPathField setStringValue:path];
+			[self->exportPathField setStringValue:path];
 			
 			// the code always seems to go into this block as the
 			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
-			if([changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
+			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
 				
-				NSLog(@"got access to: %@", changeExportOutputPathPanel.URL.absoluteString);
+				NSLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
 				
 				BOOL __block beenHereBefore = NO;
 				
 				// have we been here before?
 				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
 					
-					if(dict[changeExportOutputPathPanel.URL.absoluteString] != nil){
-						NSLog(@"beenHereBefore: %@", dict[changeExportOutputPathPanel.URL.absoluteString]);
+					if(dict[self->changeExportOutputPathPanel.URL.absoluteString] != nil){
+						NSLog(@"beenHereBefore: %@", dict[self->changeExportOutputPathPanel.URL.absoluteString]);
 						beenHereBefore = YES;
 						*stop = YES;
 					}
@@ -637,14 +637,14 @@ set_input:
 				if(beenHereBefore == NO){
 					// create a bookmark
 					NSError *error = nil;
-					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
+					NSData *tmpAppScopedBookmark = [self->changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
 																			 includingResourceValuesForKeys:nil
 																							  relativeToURL:nil
 																									  error:&error];
 					// save to prefs
 					if(tmpAppScopedBookmark && !error) {
-						[bookmarks addObject:@{changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
-						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+						[self->bookmarks addObject:@{self->changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
+						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
 				}
 			}

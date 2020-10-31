@@ -236,10 +236,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
     [panel setNameFieldStringValue:@"ServerProcesses"];
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            if ([processesFiltered count] > 0) {
+            if ([self->processesFiltered count] > 0) {
                 NSMutableString *processesString = [NSMutableString stringWithFormat:@"# MySQL server processes for %@\n\n", [[SPAppDelegate frontDocument] host]];
                 
-                for (NSDictionary *process in processesFiltered)
+                for (NSDictionary *process in self->processesFiltered)
                 {
                     NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@",
                                            [process objectForKey:@"Id"],

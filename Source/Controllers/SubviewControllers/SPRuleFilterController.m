@@ -331,7 +331,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[addFilterButton setFrame:addFilterRect];
 
 	[self _doChangeToRuleEditorData:^{
-		[filterRuleEditor bind:@"rows" toObject:_modelContainer withKeyPath:@"model" options:nil];
+		[self->filterRuleEditor bind:@"rows" toObject:self->_modelContainer withKeyPath:@"model" options:nil];
 	}];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -370,9 +370,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
 	[self _doChangeToRuleEditorData:^{
 		// we have to access the model in the same way the rule editor does for it to realize the changes
-		[[_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
+		[[self->_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
 
-		[columns removeAllObjects];
+		[self->columns removeAllObjects];
 
 		//without a table there is nothing to filter
 		if(dataColumns) {
@@ -388,12 +388,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				ColumnNode *node = [[ColumnNode alloc] init];
 				[node setName:[colDef objectForKey:@"name"]];
 				[node setTypegrouping:[colDef objectForKey:@"typegrouping"]];
-				[columns addObject:node];
+				[self->columns addObject:node];
 			}
 		}
 
 		// make the rule editor reload the criteria
-		[filterRuleEditor reloadCriteria];
+		[self->filterRuleEditor reloadCriteria];
 	}];
 
 	// disable UI if no criteria exist (enable otherwise)
@@ -635,12 +635,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			// so we want the delegate method to have finished first, just to be safe
 			SPMainLoopAsync(^{
 				// if we are about to remove the only row in existance, treat it as a reset instead
-				if([[_modelContainer model] count] == 1) {
+				if([[self->_modelContainer model] count] == 1) {
 					[self resetFilter:nil];
 				}
 				else {
 					[self _doChangeToRuleEditorData:^{
-						[filterRuleEditor removeRowAtIndex:row];
+						[self->filterRuleEditor removeRowAtIndex:row];
 					}];
 					[self filterTable:nil]; // trigger a new filtering for convenience. I don't know if that is always the preferred approach...
 				}
@@ -901,7 +901,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 		//and update the row to its new state
 		[self _doChangeToRuleEditorData:^{
-			[filterRuleEditor setCriteria:criteria andDisplayValues:displayValues forRowAtIndex:row];
+			[self->filterRuleEditor setCriteria:criteria andDisplayValues:displayValues forRowAtIndex:row];
 		}];
 
 		// make the next possible object after the opnode the new next responder (since the previous one is gone now)
@@ -981,7 +981,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (IBAction)resetFilter:(id)sender
 {
 	[self _doChangeToRuleEditorData:^{
-		[[_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
+		[[self->_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
 	}];
 	if(target && action) [target performSelector:action withObject:nil];
 }
@@ -1052,7 +1052,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)dealloc
 {
 	[self _doChangeToRuleEditorData:^{
-		[filterRuleEditor unbind:@"rows"];
+		[self->filterRuleEditor unbind:@"rows"];
 	}];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 }
@@ -1256,7 +1256,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	opNodeCacheVersion++;
 	[self _doChangeToRuleEditorData:^{
 		//tell the rule editor to reload its criteria
-		[filterRuleEditor reloadCriteria];
+		[self->filterRuleEditor reloadCriteria];
 	}];
 }
 
@@ -1280,7 +1280,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if(![columns count]) return;
 
 	[self _doChangeToRuleEditorData:^{
-		[filterRuleEditor insertRowAtIndex:0 withType:NSRuleEditorRowTypeSimple asSubrowOfRow:-1 animate:NO];
+		[self->filterRuleEditor insertRowAtIndex:0 withType:NSRuleEditorRowTypeSimple asSubrowOfRow:-1 animate:NO];
 	}];
 	
 	[self focusFirstInputField];
@@ -1439,7 +1439,7 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 
 	[self _doChangeToRuleEditorData:^{
 		// we have to access the model in the same way the rule editor does for it to realize the changes
-		NSMutableArray *proxy = [_modelContainer mutableArrayValueForKey:@"model"];
+		NSMutableArray *proxy = [self->_modelContainer mutableArrayValueForKey:@"model"];
 		[proxy setArray:newModel];
 	}];
 
