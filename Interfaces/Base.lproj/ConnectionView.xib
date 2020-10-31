@@ -75,17 +75,23 @@
                     <rect key="frame" x="0.0" y="0.0" width="882" height="759"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                     <subviews>
-                        <view fixedFrame="YES" id="5742">
+                        <view id="5742">
                             <rect key="frame" x="0.0" y="0.0" width="200" height="759"/>
                             <autoresizingMask key="autoresizingMask" heightSizable="YES"/>
                             <subviews>
-                                <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Eax-vh-nTp" customClass="SPButtonBar">
-                                    <rect key="frame" x="0.0" y="0.0" width="200" height="23"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="Eax-vh-nTp" customClass="SPButtonBar">
+                                    <rect key="frame" x="0.0" y="0.0" width="200" height="25"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="25" id="IXX-Hl-jed"/>
+                                    </constraints>
                                 </customView>
-                                <popUpButton fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5824">
-                                    <rect key="frame" x="2" y="0.0" width="34" height="23"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <popUpButton translatesAutoresizingMaskIntoConstraints="NO" id="5824">
+                                    <rect key="frame" x="4" y="1" width="34" height="23"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="23" id="54G-Ad-kMV"/>
+                                        <constraint firstAttribute="height" constant="23" id="Neo-B4-Jva"/>
+                                        <constraint firstAttribute="width" constant="34" id="iqY-zz-Cjv"/>
+                                    </constraints>
                                     <popUpButtonCell key="cell" type="smallSquare" bezelStyle="smallSquare" imagePosition="only" alignment="center" alternateImage="button_actionTemplate" lineBreakMode="truncatingTail" state="on" inset="2" pullsDown="YES" arrowPosition="noArrow" selectedItem="5833" id="5825">
                                         <behavior key="behavior" lightByContents="YES"/>
                                         <font key="font" metaFont="menu"/>
@@ -172,26 +178,28 @@
                                         </menu>
                                     </popUpButtonCell>
                                 </popUpButton>
-                                <imageView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5858">
-                                    <rect key="frame" x="175" y="0.0" width="25" height="23"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                <imageView translatesAutoresizingMaskIntoConstraints="NO" id="5858">
+                                    <rect key="frame" x="185" y="3" width="10" height="20"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="10" id="0Wu-IQ-i6G"/>
+                                        <constraint firstAttribute="height" constant="20" id="sUe-N6-F6l"/>
+                                    </constraints>
                                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" image="button_bar_handleTemplate" id="5859"/>
                                 </imageView>
-                                <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4910">
-                                    <rect key="frame" x="0.0" y="23" width="200" height="736"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4910">
+                                    <rect key="frame" x="0.0" y="25" width="200" height="734"/>
                                     <clipView key="contentView" drawsBackground="NO" id="cjP-S4-7Nz">
-                                        <rect key="frame" x="0.0" y="0.0" width="200" height="736"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="200" height="734"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
-                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" selectionHighlightStyle="sourceList" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="4913" customClass="SPFavoritesOutlineView">
-                                                <rect key="frame" x="0.0" y="0.0" width="200" height="736"/>
+                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="4913" customClass="SPFavoritesOutlineView">
+                                                <rect key="frame" x="0.0" y="0.0" width="200" height="734"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <size key="intercellSpacing" width="3" height="2"/>
                                                 <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                 <tableColumns>
-                                                    <tableColumn width="168" minWidth="40" maxWidth="1000" id="4915">
+                                                    <tableColumn width="197" minWidth="40" maxWidth="1000" id="4915">
                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Favorites">
                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
@@ -215,28 +223,21 @@
                                         <nil key="backgroundColor"/>
                                     </clipView>
                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="4912">
-                                        <rect key="frame" x="0.0" y="720" width="200" height="16"/>
+                                        <rect key="frame" x="0.0" y="718" width="118" height="16"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                     <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="4911">
-                                        <rect key="frame" x="229" y="1" width="15" height="524"/>
+                                        <rect key="frame" x="102" y="0.0" width="16" height="0.0"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                 </scrollView>
-                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5853">
-                                    <rect key="frame" x="69" y="0.0" width="34" height="23"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_addTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_addTemplate" inset="2" id="5854">
-                                        <behavior key="behavior" lightByContents="YES"/>
-                                        <font key="font" metaFont="system"/>
-                                    </buttonCell>
-                                    <connections>
-                                        <action selector="addFavorite:" target="-2" id="5857"/>
-                                    </connections>
-                                </button>
-                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5851">
-                                    <rect key="frame" x="35" y="0.0" width="34" height="23"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <button translatesAutoresizingMaskIntoConstraints="NO" id="5851">
+                                    <rect key="frame" x="40" y="1" width="34" height="23"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="23" id="TrG-MN-2oj"/>
+                                        <constraint firstAttribute="height" constant="23" id="m6t-da-KOg"/>
+                                        <constraint firstAttribute="width" constant="34" id="o5e-cH-xCM"/>
+                                    </constraints>
                                     <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_add_folderTemplate" imagePosition="only" alignment="center" alternateImage="button_add_folderTemplate" inset="2" id="5852">
                                         <behavior key="behavior" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -245,7 +246,45 @@
                                         <action selector="addGroup:" target="-2" id="5856"/>
                                     </connections>
                                 </button>
+                                <button translatesAutoresizingMaskIntoConstraints="NO" id="5853">
+                                    <rect key="frame" x="76" y="1" width="34" height="23"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="23" id="INu-5J-MrL"/>
+                                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="34" id="Xmq-1o-2Y0"/>
+                                        <constraint firstAttribute="height" constant="23" id="tEb-JP-FWw"/>
+                                        <constraint firstAttribute="width" constant="34" id="zc5-tR-Ptk"/>
+                                    </constraints>
+                                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_addTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_addTemplate" inset="2" id="5854">
+                                        <behavior key="behavior" lightByContents="YES"/>
+                                        <font key="font" metaFont="system"/>
+                                    </buttonCell>
+                                    <connections>
+                                        <action selector="addFavorite:" target="-2" id="5857"/>
+                                    </connections>
+                                </button>
                             </subviews>
+                            <constraints>
+                                <constraint firstAttribute="trailing" secondItem="Eax-vh-nTp" secondAttribute="trailing" id="1J9-DC-4r4"/>
+                                <constraint firstItem="5858" firstAttribute="centerY" secondItem="5824" secondAttribute="centerY" id="2sc-6U-le3"/>
+                                <constraint firstItem="5851" firstAttribute="centerY" secondItem="Eax-vh-nTp" secondAttribute="centerY" id="2uG-mU-0TP"/>
+                                <constraint firstItem="4910" firstAttribute="leading" secondItem="5742" secondAttribute="leading" id="6Ul-ZU-W8L"/>
+                                <constraint firstItem="5824" firstAttribute="centerY" secondItem="Eax-vh-nTp" secondAttribute="centerY" id="8Pi-tS-KbC"/>
+                                <constraint firstItem="5858" firstAttribute="centerY" secondItem="Eax-vh-nTp" secondAttribute="centerY" id="9my-MI-oOZ"/>
+                                <constraint firstItem="4910" firstAttribute="top" secondItem="5742" secondAttribute="top" id="CMx-bQ-7xJ"/>
+                                <constraint firstItem="Eax-vh-nTp" firstAttribute="leading" secondItem="5742" secondAttribute="leading" id="EWB-gQ-24Y"/>
+                                <constraint firstItem="5853" firstAttribute="centerY" secondItem="Eax-vh-nTp" secondAttribute="centerY" id="Jki-hL-yPC"/>
+                                <constraint firstItem="Eax-vh-nTp" firstAttribute="top" secondItem="4910" secondAttribute="bottom" id="Jsc-yz-1AL"/>
+                                <constraint firstAttribute="trailing" secondItem="4910" secondAttribute="trailing" id="S8h-7v-Sr4"/>
+                                <constraint firstItem="5858" firstAttribute="centerY" secondItem="5851" secondAttribute="centerY" id="UuJ-SS-oYc"/>
+                                <constraint firstAttribute="bottom" secondItem="Eax-vh-nTp" secondAttribute="bottom" id="Vhg-T0-RjT"/>
+                                <constraint firstAttribute="trailing" secondItem="5858" secondAttribute="trailing" constant="5" id="dOM-Zo-bMb"/>
+                                <constraint firstItem="5824" firstAttribute="leading" secondItem="5742" secondAttribute="leading" constant="4" id="dee-vl-W9G"/>
+                                <constraint firstItem="5851" firstAttribute="leading" secondItem="5824" secondAttribute="trailing" constant="2" id="iRa-I5-IZ4"/>
+                                <constraint firstItem="5853" firstAttribute="centerY" secondItem="5858" secondAttribute="centerY" id="jQb-Nj-fo0"/>
+                                <constraint firstItem="5858" firstAttribute="centerY" secondItem="Eax-vh-nTp" secondAttribute="centerY" id="qJs-zl-jhG"/>
+                                <constraint firstItem="5853" firstAttribute="leading" secondItem="5851" secondAttribute="trailing" constant="2" id="r0I-Oo-ZTd"/>
+                                <constraint firstItem="Eax-vh-nTp" firstAttribute="top" secondItem="4910" secondAttribute="bottom" id="rXw-tx-D5H"/>
+                            </constraints>
                         </view>
                         <view fixedFrame="YES" id="5743">
                             <rect key="frame" x="201" y="0.0" width="681" height="759"/>
@@ -1702,7 +1741,7 @@ DQ
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                     <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="5589">
-                                        <rect key="frame" x="712" y="0.0" width="16" height="517"/>
+                                        <rect key="frame" x="665" y="0.0" width="16" height="0.0"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                 </scrollView>
@@ -1734,7 +1773,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" HUD="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="439" y="291" width="580" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1175"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1669"/>
             <value key="minSize" type="size" width="100" height="100"/>
             <view key="contentView" id="5432">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
