@@ -24,6 +24,51 @@
 	// Put teardown code here. This method is called after the invocation of each test method in the class.
 }
 
+
+- (void)testPerformance_get_main_window_on_main {
+
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+				
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				// exec on bg thread
+				dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+					
+					// test dispatch_sync
+					dispatch_sync(dispatch_get_main_queue(), ^{
+					 [[NSApp onMainThread] mainWindow];
+					});
+				});
+			}
+		}
+	}];
+}
+
+- (void)testPerformance_get_main_window_SPMainQSync {
+
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+				
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				// exec on bg thread
+				dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+					
+					// test dispatch_sync
+					SPMainQSync(^{
+						[[NSApp onMainThread] mainWindow];
+					});
+				});
+			}
+		}
+	}];
+}
+
+
+
 - (void)testPerformance_dispatch_sync {
 	
 	// this is on main thread
