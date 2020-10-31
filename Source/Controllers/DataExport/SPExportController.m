@@ -1490,7 +1490,7 @@ set_input:
 					if (!singleFileHandleSet) {
 						[singleExportFile setExportFileNeedsCSVHeader:YES];
 
-						[exportFiles SPsafeAddObject:singleExportFile];
+						[exportFiles safeAddObject:singleExportFile];
 
 						singleFileHandleSet = YES;
 					}
@@ -1504,11 +1504,11 @@ set_input:
 		else {
 			csvExporter = [self initializeCSVExporterForTable:nil orDataArray:dataArray];
 
-			[exportFiles SPsafeAddObject:singleExportFile];
+			[exportFiles safeAddObject:singleExportFile];
 
 			[csvExporter setExportOutputFile:singleExportFile];
 
-			[exporters SPsafeAddObject:csvExporter];
+			[exporters safeAddObject:csvExporter];
 		}
 	}
 	// SQL export
@@ -1587,7 +1587,7 @@ set_input:
 					if (!singleFileHandleSet) {
 						[singleExportFile setExportFileNeedsXMLHeader:YES];
 
-						[exportFiles SPsafeAddObject:singleExportFile];
+						[exportFiles safeAddObject:singleExportFile];
 
 						singleFileHandleSet = YES;
 					}
@@ -1603,11 +1603,11 @@ set_input:
 
 			[singleExportFile setExportFileNeedsXMLHeader:YES];
 
-			[exportFiles SPsafeAddObject:singleExportFile];
+			[exportFiles safeAddObject:singleExportFile];
 
 			[xmlExporter setExportOutputFile:singleExportFile];
 
-			[exporters SPsafeAddObject:xmlExporter];
+			[exporters safeAddObject:xmlExporter];
 		}
 	}
 	// Dot export

@@ -39,6 +39,6 @@
 
 - (void)reverse;
 - (nullable id)safeObjectAtIndex:(NSUInteger)idx;
-- (void)SPsafeAddObject:(nullable id)obj;
+- (void)safeAddObject:(nullable id)obj;
 
 @end
