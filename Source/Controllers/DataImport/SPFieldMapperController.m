@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 // Constants
 static NSString *SPTableViewImportValueColumnID = @"import_value";
 static NSString *SPTableViewTypeColumnID        = @"type";
@@ -1692,7 +1694,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	[aCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
+	[aCell setFont:[NSUserDefaults getFont]];
 }
 
 - (void)tableView:(NSTableView*)aTableView didClickTableColumn:(NSTableColumn *)aTableColumn

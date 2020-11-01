@@ -35,6 +35,8 @@
 #import "SPFavoriteNode.h"
 #import "SPGroupNode.h"
 
+#import "Sequel_Ace-Swift.h"
+
 static NSString *SPDatabaseImage = @"database-small";
 
 @interface SPGeneralPreferencePane ()
@@ -82,8 +84,9 @@ static NSString *SPDatabaseImage = @"database-small";
 
 	[[NSFontManager sharedFontManager] setAction:@selector(changeDefaultFont:)];
 
-	[[NSFontPanel sharedFontPanel] setPanelFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]] isMultiple:NO];
-	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
+	NSFontPanel *panel = [[NSFontManager sharedFontManager] fontPanel:YES];
+	[panel setPanelFont:[NSUserDefaults getFont] isMultiple:NO];
+	[panel makeKeyAndOrderFront:self];
 }
 
 - (void)changeDefaultFont:(id)sender {
@@ -98,7 +101,7 @@ static NSString *SPDatabaseImage = @"database-small";
  * Updates the displayed font according to the user's preferences.
  */
 - (void)updateDisplayedFontName {
-	[globalResultFontName setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
+	[globalResultFontName setFont:[NSUserDefaults getFont]];
 }
 
 /**

@@ -39,6 +39,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 static NSString *SPRemoveRelation = @"SPRemoveRelation";
 
 static NSString *SPRelationNameKey       = @"name";
@@ -89,7 +91,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[relationsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [relationsTableView tableColumns])
@@ -511,7 +513,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	// Table font preference changed
 	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		NSFont *tableFont = [NSUserDefaults getFont];
 
 		[relationsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[relationsTableView setFont:tableFont];

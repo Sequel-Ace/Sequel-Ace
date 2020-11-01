@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 typedef enum {
 	TextSegment = 0,
 	ImageSegment,
@@ -303,7 +305,7 @@ typedef enum {
 		if ([prefs objectForKey:SPFieldEditorSheetFont]) {
 			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
 		} else if ([prefs objectForKey:SPGlobalResultFont]) {
-			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+			textEditorFont = [NSUserDefaults getFont];
 		}
 		[editTextView setFont:textEditorFont];
 

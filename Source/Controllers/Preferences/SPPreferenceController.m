@@ -33,6 +33,8 @@
 #import "SPEditorPreferencePane.h"
 #import "SPGeneralPreferencePane.h"
 
+#import "Sequel_Ace-Swift.h"
+
 @interface SPPreferenceController () <NSWindowDelegate>
 
 - (void)_setupToolbar;
@@ -124,16 +126,15 @@
  * it here.
  */
 - (void)changeDefaultFont:(id)sender
-{		
+{
 	NSFont *font;
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 	
 	switch (fontChangeTarget)
 	{
 		case SPPrefFontChangeTargetGeneral:
-			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]]];
-
-			[prefs setObject:[NSArchiver archivedDataWithRootObject:font] forKey:SPGlobalResultFont];
+			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUserDefaults getFont]];
+			[NSUserDefaults saveFont:font];
 			break;
 		case SPPrefFontChangeTargetEditor:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];

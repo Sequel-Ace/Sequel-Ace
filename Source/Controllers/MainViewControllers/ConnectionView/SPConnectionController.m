@@ -59,6 +59,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 // Constants
 static NSString *SPRemoveNode              = @"RemoveNode";
 static NSString *SPExportFavoritesFilename = @"SequelProFavorites.plist";
@@ -3699,7 +3701,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[favoritesOutlineView registerForDraggedTypes:@[SPFavoritesPasteboardDragType]];
 	[favoritesOutlineView setDraggingSourceOperationMask:NSDragOperationMove forLocal:YES];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[favoritesOutlineView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	[favoritesOutlineView setFont:tableFont];

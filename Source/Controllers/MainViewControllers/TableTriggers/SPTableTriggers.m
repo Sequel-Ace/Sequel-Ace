@@ -38,6 +38,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 // Constants
 static const NSString *SPTriggerName       = @"TriggerName";
 static const NSString *SPTriggerEvent      = @"TriggerEvent";
@@ -104,7 +106,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	// Set the double-click action in blank areas of the table to create new rows
 	[triggersTableView setEmptyDoubleClickAction:@selector(addTrigger:)];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[triggersTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	[addTriggerPanel setInitialFirstResponder:triggerNameTextField];
@@ -447,8 +449,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	}
 	// Table font preference changed
 	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
-
+		NSFont *tableFont = [NSUserDefaults getFont];
 		[triggersTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[triggersTableView setFont:tableFont];
 		[triggersTableView reloadData];

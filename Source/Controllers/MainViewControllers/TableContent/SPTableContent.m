@@ -497,7 +497,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSString *nullValue = [prefs objectForKey:SPNullValue];
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
@@ -3677,7 +3677,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 		// Table font preference changed
 		else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+			NSFont *tableFont = [NSUserDefaults getFont];
 
 			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];

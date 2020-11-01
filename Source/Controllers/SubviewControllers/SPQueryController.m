@@ -35,6 +35,8 @@
 
 #import "pthread.h"
 
+#import "Sequel_Ace-Swift.h"
+
 NSString *SPQueryConsoleWindowAutoSaveName = @"QueryConsole";
 NSString *SPTableViewDateColumnID          = @"messageDate";
 NSString *SPTableViewConnectionColumnID    = @"messageConnection";
@@ -351,7 +353,7 @@ static SPQueryController *sharedQueryController = nil;
 	}
 	// Table font preference changed
 	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		NSFont *tableFont = [NSUserDefaults getFont];
 
 		[consoleTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[consoleTableView setFont:tableFont];
@@ -631,7 +633,7 @@ static SPQueryController *sharedQueryController = nil;
 	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
 
 	// Set the strutcture and index view's font
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[consoleTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [consoleTableView tableColumns])

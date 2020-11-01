@@ -1766,7 +1766,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	// Update font size on the table
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// If there are no table columns to add, return
@@ -3158,7 +3158,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	// Result Table Font preference changed
 	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		NSFont *tableFont = [NSUserDefaults getFont];
 		[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[customQueryView setFont:tableFont];
 		[customQueryView reloadData];

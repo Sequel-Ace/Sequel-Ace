@@ -37,6 +37,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "Sequel_Ace-Swift.h"
+
 // Constants
 static NSString *SPKillProcessQueryMode        = @"SPKillProcessQueryMode";
 static NSString *SPKillProcessConnectionMode   = @"SPKillProcessConnectionMode";
@@ -100,7 +102,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// Set the process table view's vertical gridlines if required
 	[processListTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[processListTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [processListTableView tableColumns])
@@ -475,7 +477,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	}
 	// Table font preference changed
 	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		NSFont *tableFont = [NSUserDefaults getFont];
 
 		[processListTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[processListTableView setFont:tableFont];

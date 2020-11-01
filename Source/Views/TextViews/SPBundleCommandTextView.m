@@ -34,6 +34,8 @@
 #import "NoodleLineNumberView.h"
 #import "RegexKitLite.h"
 
+#import "Sequel_Ace-Swift.h"
+
 @implementation SPBundleCommandTextView
 
 - (void)dealloc
@@ -366,7 +368,7 @@
 		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
-		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultFont]];
+		tvFont = [NSUserDefaults getFont];
 		[self setFont:tvFont];
 		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
 	}
