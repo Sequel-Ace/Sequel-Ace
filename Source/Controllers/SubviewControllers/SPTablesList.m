@@ -307,7 +307,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemToReselect] integerValue];
 	} 
 	else {
-		
+		if (selectedTableName) selectedTableName = nil;
 		selectedTableType = SPTableTypeNone;
 	}
 
@@ -331,6 +331,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		});
 	}
 
+	if (previousSelectedTable) previousSelectedTable = nil;
+	if (previousFilterString) previousFilterString = nil;
+	
 	// Query the structure of all databases in the background
 	if (sender == self)
 		// Invoked by SP
@@ -813,7 +816,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 		// Update the selected table name and type
 		
-
+		if (selectedTableName) selectedTableName = nil;
+		
 		// Set gear menu items Remove/Duplicate table/view according to the table types
 		// if at least one item is selected
 		if ([indexes count]) {
@@ -1684,7 +1688,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[tableInfoInstance tableChanged:nil];
 		}
 		
-		
+		if (selectedTableName) selectedTableName = nil;
 		
 		selectedTableType = SPTableTypeNone;
 		
@@ -1964,7 +1968,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] > 1) {
 		[self deselectAllTables];
 
-		
+		if (selectedTableName) selectedTableName = nil;
 	}
 
 	if ([[listFilterField stringValue] length]) {
