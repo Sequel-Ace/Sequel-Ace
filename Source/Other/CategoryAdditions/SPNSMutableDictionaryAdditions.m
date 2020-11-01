@@ -19,15 +19,15 @@
 
 - (id)safeObjectForKey:(id)key {
 	id object = [self objectForKey:key];
-	if (object == [NSNull null]) {
+	if (object != nil && object == [NSNull null]) {
 		return nil;
 	}
 	return object;
 }
 
 - (void)safeRemoveObjectForKey:(nullable id)key{
-	id object = [self objectForKey:key];
-	if (object != [NSNull null]) {
+	id object = [self safeObjectForKey:key];
+	if (object != nil && object != [NSNull null]) {
 		[self removeObjectForKey:key];
 	}
 }
