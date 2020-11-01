@@ -695,6 +695,11 @@
 	if (theErrorMessage && [theErrorMessage length]) {
 		queryErrorMessage = [[NSString alloc] initWithString:theErrorMessage];
 	}
+    else {
+        // VERY IMPORTANT to set to nil here
+        // DO NOT remove
+        queryErrorMessage = nil;
+    }
 }
 
 /**
