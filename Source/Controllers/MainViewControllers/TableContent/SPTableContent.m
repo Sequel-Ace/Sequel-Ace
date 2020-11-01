@@ -227,7 +227,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
 	// Add observer to change view sizes with filter rule editor
@@ -3676,7 +3676,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
 		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultFont]) {
+		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 			NSFont *tableFont = [NSUserDefaults getFont];
 
 			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -4599,7 +4599,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	if(_mainNibLoaded) {
 		//TODO this should be changed to the variant with …context: after 10.6 support is removed!
-		[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
+		[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	}

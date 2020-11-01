@@ -133,7 +133,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	}
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 }
 
 #pragma mark -
@@ -658,7 +658,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		}
 	}
 	// Table font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 
 		[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -1104,7 +1104,7 @@ no_or_multiple_matches:
 	if (indexedFields) SPClear(indexedFields);
 
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
-	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
 	[super dealloc];
 }

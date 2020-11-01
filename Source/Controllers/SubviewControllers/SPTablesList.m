@@ -133,7 +133,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Disable tab edit behaviour in the tables list
 	[tablesListView setTabEditingDisabled:YES];
 
-	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 	
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -168,7 +168,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
 	// Table font preference changed
-	if ([keyPath isEqualToString:SPGlobalResultFont]) {
+	if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 		[tablesListView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[tablesListView setFont:tableFont];
@@ -2781,7 +2781,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	
 	SPClear(tables);
 	SPClear(tableTypes);

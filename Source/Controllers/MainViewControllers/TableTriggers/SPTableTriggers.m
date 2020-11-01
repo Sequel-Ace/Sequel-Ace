@@ -448,7 +448,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
         [triggersTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Table font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 		[triggersTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[triggersTableView setFont:tableFont];
@@ -637,7 +637,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)_addPreferenceObservers
 {
-	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
 
 	// Register observers for when the DisplayTableViewVerticalGridlines preference changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -648,7 +648,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

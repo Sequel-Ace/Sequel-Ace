@@ -476,7 +476,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
         [processListTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Table font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultFont]) {
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 
 		[processListTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -784,7 +784,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_addPreferenceObservers
 {
 	// Register as an observer for font changes
-	[prefs addObserver:self forKeyPath:SPGlobalResultFont options:NSKeyValueObservingOptionNew context:nil];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 
 	// Register to obeserve table view vertical grid line pref changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -795,7 +795,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPGlobalResultFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

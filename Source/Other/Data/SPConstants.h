@@ -315,7 +315,7 @@ extern NSString *SPNewFieldsAllowNulls;
 extern NSString *SPLimitResults;
 extern NSString *SPLimitResultsValue;
 extern NSString *SPNullValue;
-extern NSString *SPGlobalResultFont;
+extern NSString *SPGlobalFontSettings;
 extern NSString *SPFilterTableDefaultOperator;
 extern NSString *SPFilterTableDefaultOperatorLastItems;
 
