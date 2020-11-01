@@ -48,4 +48,15 @@
 	}
 }
 
+- (id)safeObjectAtIndex:(NSUInteger)idx{
+	return idx < self.count ? [self objectAtIndex:idx] : nil;
+}
+
+- (void)safeAddObject:(id)obj{
+	if (obj != nil) {
+		[self addObject:obj];
+	}
+}
+
+
 @end

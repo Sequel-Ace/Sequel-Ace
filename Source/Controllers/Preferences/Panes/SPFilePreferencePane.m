@@ -239,9 +239,9 @@
 		// since ssh configs are able to consist of multiple files, bookmarks
 		// for every selected file should be created in order to access them
 		// read-only.
-		[_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 			// check if the file is out of the sandbox
-			if ([_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
+			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
 				NSLog(@"got access to: %@", url.absoluteString);
 				
 				BOOL __block beenHereBefore = NO;
@@ -269,8 +269,8 @@
 					// save the bookmark to the preferences in order to access
 					// them later in the SPConnectionController
 					if (tmpAppScopedBookmark && !error) {
-						[bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
-						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
+						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
 				}
 			}
@@ -278,7 +278,7 @@
 		
 		[self loadBookmarks];
 		
-		_currentFilePanel = nil;
+		self->_currentFilePanel = nil;
 	}];
 }
 

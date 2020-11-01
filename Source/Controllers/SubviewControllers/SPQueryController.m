@@ -232,9 +232,9 @@ static SPQueryController *sharedQueryController = nil;
 
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            [[self _getConsoleStringWithTimeStamps:[includeTimeStampsButton state]
-                                       connections:[includeConnectionButton state]
-										 databases:[includeDatabaseButton state]] writeToFile:[[panel URL] path] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+            [[self _getConsoleStringWithTimeStamps:[self->includeTimeStampsButton state]
+                                       connections:[self->includeConnectionButton state]
+										 databases:[self->includeDatabaseButton state]] writeToFile:[[panel URL] path] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
         }
     }];
 }
@@ -515,8 +515,6 @@ static SPQueryController *sharedQueryController = nil;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases
 {
 	NSMutableString *consoleString = [NSMutableString string];
-
-	NSArray *messageCopy = [messagesVisibleSet copy];
 	
 	for (SPConsoleMessage *message in messagesVisibleSet)
 	{
@@ -578,7 +576,7 @@ static SPQueryController *sharedQueryController = nil;
 
 	// Reload the table and scroll to the new message if it's visible (for speed)
 	dispatch_async(dispatch_get_main_queue(), ^{
-		if (allowConsoleUpdate && [[self window] isVisible]) {
+		if (self->allowConsoleUpdate && [[self window] isVisible]) {
 			[self performSelectorOnMainThread:@selector(updateEntries) withObject:nil waitUntilDone:NO];
 		}
 	});
@@ -779,7 +777,6 @@ static SPQueryController *sharedQueryController = nil;
 				[historyContainer setObject:arr forKey:[new absoluteString]];
 			}
 			else {
-				NSMutableArray *arr = [[NSMutableArray alloc] init];
 				[historyContainer setObject:[NSMutableArray array] forKey:[new absoluteString]];
 			}
 		}

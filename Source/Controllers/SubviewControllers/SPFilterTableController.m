@@ -611,7 +611,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 - (NSString *)tableView:(NSTableView *)tableView toolTipForCell:(id)aCell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row mouseLocation:(NSPoint)mouseLocation
 {
-	return nil;
+	return @"";
 }
 
 #pragma mark - Control delegate methods

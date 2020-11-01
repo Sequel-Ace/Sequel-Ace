@@ -168,7 +168,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		showFilterRuleEditor = [prefs boolForKey:SPRuleFilterEditorLastVisibilityChoice];
 
-		usedQuery = [[NSString alloc] initWithString:@""];
+		usedQuery = @"";
 
 		tableLoadTimer = nil;
 
@@ -313,8 +313,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (!NSEqualRects(selectionViewportToRestore, NSZeroRect)) {
 		SPMainQSync(^{
 			// Scroll the viewport to the saved location
-			selectionViewportToRestore.size = [tableContentView visibleRect].size;
-			[tableContentView scrollRectToVisible:selectionViewportToRestore];
+			self->selectionViewportToRestore.size = [self->tableContentView visibleRect].size;
+			[self->tableContentView scrollRectToVisible:self->selectionViewportToRestore];
 		});
 	}
 
@@ -937,13 +937,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableValues awaitDataDownloaded];
 
 	SPMainQSync(^{
-		tableRowsCount = [tableValues count];
+		self->tableRowsCount = [self->tableValues count];
 		
 		// If the final column autoresize wasn't performed, perform it
-		if (tableLoadLastRowCount < 200) [self autosizeColumns];
+		if (self->tableLoadLastRowCount < 200) [self autosizeColumns];
 
 		// Ensure the table is aware of changes
-		[tableContentView noteNumberOfRowsChanged]; // UI method!
+		[self->tableContentView noteNumberOfRowsChanged]; // UI method!
 
 		// Reset the progress indicator
 		[dataLoadingIndicator setIndeterminate:YES]; // UI method!
@@ -1365,22 +1365,22 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		SPMainQSync(^{
-			if (sortCol) {
+			if (self->sortCol) {
 				// Set the highlight and indicatorImage
-				[tableContentView setHighlightedTableColumn:tableColumn];
+				[self->tableContentView setHighlightedTableColumn:tableColumn];
 
-				if (isDesc) {
-					[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:tableColumn];
+				if (self->isDesc) {
+					[self->tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:tableColumn];
 				}
 				else {
-					[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:tableColumn];
+					[self->tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:tableColumn];
 				}
 			}
 			else {
 				// If no sort order deselect column header and
 				// remove indicator image
-				[tableContentView setHighlightedTableColumn:nil];
-				[tableContentView setIndicatorImage:nil inTableColumn:tableColumn];
+				[self->tableContentView setHighlightedTableColumn:nil];
+				[self->tableContentView setIndicatorImage:nil inTableColumn:tableColumn];
 			}
 		});
 
@@ -2265,25 +2265,25 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	@autoreleasepool {
 		SPMainQSync(^{
-			NSUInteger dataColumnIndex = [[[[tableContentView tableColumns] objectAtIndex:[theArrowCell getClickedColumn]] identifier] integerValue];
+			NSUInteger dataColumnIndex = [[[[self->tableContentView tableColumns] objectAtIndex:[theArrowCell getClickedColumn]] identifier] integerValue];
 			BOOL tableFilterRequired = NO;
 
 			// Ensure the clicked cell has foreign key details available
-			NSDictionary *columnDefinition = [dataColumns objectAtIndex:dataColumnIndex];
+			NSDictionary *columnDefinition = [self->dataColumns objectAtIndex:dataColumnIndex];
 			NSDictionary *refDictionary = [columnDefinition objectForKey:@"foreignkeyreference"];
 			if (!refDictionary) {
 				return;
 			}
 
 			// Save existing scroll position and details and mark that state is being modified
-			[spHistoryControllerInstance updateHistoryEntries];
-			[spHistoryControllerInstance setModifyingState:YES];
+			[self->spHistoryControllerInstance updateHistoryEntries];
+			[self->spHistoryControllerInstance setModifyingState:YES];
 
-			id targetFilterValue = [tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
+			id targetFilterValue = [self->tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
 			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
 			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
-			if(navigateAsHex) targetFilterValue = [mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -2297,12 +2297,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
 			NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
 
-			if (![databaseToJumpTo isEqualToString:[tableDocumentInstance database]]) {
+			if (![databaseToJumpTo isEqualToString:[self->tableDocumentInstance database]]) {
 				// fk points to a table in another database; switch database, and select the target table
-				[[tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
-			} else if (![tableToJumpTo isEqualToString:selectedTable]) {
+				[[self->tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
+			} else if (![tableToJumpTo isEqualToString:self->selectedTable]) {
 				// fk points to another table in the same database: switch to the target table
-				if (![tablesListInstance selectItemWithName:tableToJumpTo]) {
+				if (![self->tablesListInstance selectItemWithName:tableToJumpTo]) {
 					NSBeep();
 					[self setFiltersToRestore:nil];
 					[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
@@ -2313,8 +2313,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			
 			if (tableFilterRequired) {
-				[ruleFilterController restoreSerializedFilters:filterSettings];
-				activeFilter = SPTableContentFilterSourceRuleFilter;
+				[self->ruleFilterController restoreSerializedFilters:filterSettings];
+				self->activeFilter = SPTableContentFilterSourceRuleFilter;
 			} else {
 				[self setFiltersToRestore:filterSettings];
 				[self setActiveFilterToRestore:SPTableContentFilterSourceRuleFilter];
@@ -2322,10 +2322,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[self setRuleEditorVisible:YES animate:YES];
 
 			// End modifying state
-			[spHistoryControllerInstance setModifyingState:NO];
+			[self->spHistoryControllerInstance setModifyingState:NO];
 
 			// End the task
-			[tableDocumentInstance endTask];
+			[self->tableDocumentInstance endTask];
 
 			if (tableFilterRequired) {
 				// If the same table is the target, trigger a filter task on the main thread
@@ -2333,7 +2333,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			} else {
 				// Will prevent table-load from overwriting the filtersToRestore we set above
 				// See [SPHistoryController restoreViewStates]
-				[spHistoryControllerInstance setNavigatingFK:YES];
+				[self->spHistoryControllerInstance setNavigatingFK:YES];
 			}
 		});
 	}
@@ -2620,8 +2620,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 							 cancelButtonHandler:^{
 				SPLog(@"Cancel pressed");
-				isEditingRow = NO;
-				currentlyEditingRow = -1;
+				self->isEditingRow = NO;
+				self->currentlyEditingRow = -1;
 				// reload
 				[self loadTableValues];
 				returnCode = YES;
@@ -4373,14 +4373,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			theValue = SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]);
 		}
 
-		if (theValue == nil) return nil;
+		if (theValue == nil) return @"";
 
 		if ([theValue isKindOfClass:[NSData class]]) {
 			image = [[NSImage alloc] initWithData:theValue] ;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				return nil;
+				return @"";
 			}
 		}
 		else if ([theValue isKindOfClass:[SPMySQLGeometryData class]]) {
@@ -4389,7 +4389,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				return nil;
+				return @"";
 			}
 		}
 
@@ -4402,10 +4402,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		                                                                     [NSString stringWithFormat:@"%f", [[aCell font] pointSize]], @"fontsize",
 		                                                                     nil]];
 
-		return nil;
+		return @"";
 	}
 
-	return nil;
+	return @"";
 }
 
 #pragma mark -

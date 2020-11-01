@@ -508,12 +508,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if (returnCode == NSModalResponseOK) {
 			NSError *error = nil;
             
-			[prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
-			[prefs synchronize];
+			[self->prefs setInteger:[[self->encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
+			[self->prefs synchronize];
             
 			[[self buildHistoryString] writeToURL:[panel URL]
                                        atomically:YES
-                                         encoding:[[encodingPopUp selectedItem] tag]
+                                         encoding:[[self->encodingPopUp selectedItem] tag]
                                             error:&error];
             
 			if (error) [[NSAlert alertWithError:error] runModal];
@@ -760,8 +760,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		SPQueryProgressUpdateDecoupling *progressUpdater = [[SPQueryProgressUpdateDecoupling alloc] initWithBlock:^(QueryProgress *qp) {
 			NSString *taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %ld of %lu...", @"Running multiple queries string"), (long)(qp->query+1), (unsigned long)(qp->total)];
-			[tableDocumentInstance setTaskDescription:taskString];
-			[errorText setString:taskString];
+			[self->tableDocumentInstance setTaskDescription:taskString];
+			[self->errorText setString:taskString];
 		}];
 
 		// Perform the supplied queries in series
@@ -1078,8 +1078,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	pthread_mutex_lock(&resultDataLock);
 	// Remove all items from the table
 	SPMainQSync(^{
-		[resultData removeAllRows];
-		[customQueryView noteNumberOfRowsChanged];
+		[self->resultData removeAllRows];
+		[self->customQueryView noteNumberOfRowsChanged];
 	});
 
 	// Add the new store

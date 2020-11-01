@@ -607,28 +607,28 @@ set_input:
     [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-			NSString *path = [[changeExportOutputPathPanel directoryURL] path];
+			NSString *path = [[self->changeExportOutputPathPanel directoryURL] path];
 			if(!path) {
 				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[changeExportOutputPathPanel directoryURL],[[changeExportOutputPathPanel directoryURL] isFileURL]]
+											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[self->changeExportOutputPathPanel directoryURL],[[self->changeExportOutputPathPanel directoryURL] isFileURL]]
 											 userInfo:nil];
 			}
 			
-			[exportPathField setStringValue:path];
+			[self->exportPathField setStringValue:path];
 			
 			// the code always seems to go into this block as the
 			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
-			if([changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
+			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
 				
-				NSLog(@"got access to: %@", changeExportOutputPathPanel.URL.absoluteString);
+				NSLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
 				
 				BOOL __block beenHereBefore = NO;
 				
 				// have we been here before?
 				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
 					
-					if(dict[changeExportOutputPathPanel.URL.absoluteString] != nil){
-						NSLog(@"beenHereBefore: %@", dict[changeExportOutputPathPanel.URL.absoluteString]);
+					if(dict[self->changeExportOutputPathPanel.URL.absoluteString] != nil){
+						NSLog(@"beenHereBefore: %@", dict[self->changeExportOutputPathPanel.URL.absoluteString]);
 						beenHereBefore = YES;
 						*stop = YES;
 					}
@@ -637,14 +637,14 @@ set_input:
 				if(beenHereBefore == NO){
 					// create a bookmark
 					NSError *error = nil;
-					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
+					NSData *tmpAppScopedBookmark = [self->changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
 																			 includingResourceValuesForKeys:nil
 																							  relativeToURL:nil
 																									  error:&error];
 					// save to prefs
 					if(tmpAppScopedBookmark && !error) {
-						[bookmarks addObject:@{changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
-						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+						[self->bookmarks addObject:@{self->changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
+						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
 				}
 			}
@@ -1490,7 +1490,7 @@ set_input:
 					if (!singleFileHandleSet) {
 						[singleExportFile setExportFileNeedsCSVHeader:YES];
 
-						[exportFiles addObject:singleExportFile];
+						[exportFiles safeAddObject:singleExportFile];
 
 						singleFileHandleSet = YES;
 					}
@@ -1504,11 +1504,11 @@ set_input:
 		else {
 			csvExporter = [self initializeCSVExporterForTable:nil orDataArray:dataArray];
 
-			[exportFiles addObject:singleExportFile];
+			[exportFiles safeAddObject:singleExportFile];
 
 			[csvExporter setExportOutputFile:singleExportFile];
 
-			[exporters addObject:csvExporter];
+			[exporters safeAddObject:csvExporter];
 		}
 	}
 	// SQL export
@@ -1587,7 +1587,7 @@ set_input:
 					if (!singleFileHandleSet) {
 						[singleExportFile setExportFileNeedsXMLHeader:YES];
 
-						[exportFiles addObject:singleExportFile];
+						[exportFiles safeAddObject:singleExportFile];
 
 						singleFileHandleSet = YES;
 					}
@@ -1603,11 +1603,11 @@ set_input:
 
 			[singleExportFile setExportFileNeedsXMLHeader:YES];
 
-			[exportFiles addObject:singleExportFile];
+			[exportFiles safeAddObject:singleExportFile];
 
 			[xmlExporter setExportOutputFile:singleExportFile];
 
-			[exporters addObject:xmlExporter];
+			[exporters safeAddObject:xmlExporter];
 		}
 	}
 	// Dot export
@@ -2050,7 +2050,7 @@ set_input:
 
 	[self _hideExportProgress];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(files)];
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:CFBridgingRetain(files)];
 }
 
 /**
@@ -2058,7 +2058,8 @@ set_input:
  */
 - (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-	NSArray *files = (__bridge NSArray *)contextInfo;
+	
+	NSArray *files = (NSArray *)CFBridgingRelease(contextInfo); // TODO: check if this leaks, it shouldn't
 
 	// Ignore the files that exist and remove the associated exporters
 	if (returnCode == SPExportErrorSkipErrorFiles) {

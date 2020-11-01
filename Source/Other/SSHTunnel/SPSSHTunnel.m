@@ -441,7 +441,7 @@ static unsigned short getRandomPort(void);
 		                                         selector:@selector(standardErrorHandler:)
 		                                             name:NSFileHandleDataAvailableNotification
 		                                           object:[standardError fileHandleForReading]];
-		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify];
+		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 
 		{
 			static BOOL hasCheckedTTY = NO;
@@ -492,7 +492,7 @@ static unsigned short getRandomPort(void);
 			[task launch]; //throws for invalid paths, missing +x permission
 
 			// Listen for output
-			[task waitUntilExit];
+			[task waitUntilExit]; // TODO: this leaks
 		}
 		@catch (NSException *e) {
 			connectionState = SPMySQLProxyLaunchFailed;
@@ -611,7 +611,7 @@ static unsigned short getRandomPort(void);
 	}
 
 	if (connectionState != SPMySQLProxyIdle) {
-		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify];
+		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
 }
 

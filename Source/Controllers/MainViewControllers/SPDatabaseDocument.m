@@ -187,7 +187,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		relationsLoaded = NO;
 
 		selectedDatabase = nil;
-		selectedDatabaseEncoding = [[NSString alloc] initWithString:@"latin1"];
+		selectedDatabaseEncoding = @"latin1";
 		mySQLConnection = nil;
 		mySQLVersion = nil;
 		allDatabases = nil;
@@ -1057,15 +1057,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		SPMainQSync(^{
 			// TODO: there have been crash reports because dbName == nil at this point. When could that happen?
 			if([dbName unboxNull]) {
-				if(![dbName isEqualToString:selectedDatabase]) {
+				if(![dbName isEqualToString:self->selectedDatabase]) {
 					
-					selectedDatabase = [[NSString alloc] initWithString:dbName];
-					[chooseDatabaseButton selectItemWithTitle:selectedDatabase];
+					self->selectedDatabase = [[NSString alloc] initWithString:dbName];
+					[self->chooseDatabaseButton selectItemWithTitle:self->selectedDatabase];
 					[self updateWindowTitle:self];
 				}
 			} else {
 				
-				[chooseDatabaseButton selectItemAtIndex:0];
+				[self->chooseDatabaseButton selectItemAtIndex:0];
 				[self updateWindowTitle:self];
 			}
 		});
@@ -1676,7 +1676,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ( !mysqlEncoding ) {
 		NSLog(@"Error: no character encoding found for db, mysql version is %@", [self mySQLVersion]);
 		
-		selectedDatabaseEncoding = [[NSString alloc] initWithString:@"latin1"];
+		selectedDatabaseEncoding = @"latin1";
 		
 		_supportsEncoding = NO;
 	} 
@@ -1902,7 +1902,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
-			if (statusValues) {
+			if (self->statusValues) {
 				
 			}
 		}];
@@ -1965,7 +1965,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 		statusValues = resultStatuses;
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
-			if (statusValues) {
+			if (self->statusValues) {
 				
 			}
 		}];
@@ -2030,7 +2030,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
-			if (statusValues) {
+			if (self->statusValues) {
 				
 			}
 		}];
@@ -2094,7 +2094,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
-			if (statusValues) {
+			if (self->statusValues) {
 				
 			}
 		}];
@@ -2158,7 +2158,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
-			if (statusValues) {
+			if (self->statusValues) {
 				
 			}
 		}];
@@ -2200,7 +2200,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what] message:message accessoryView:statusTableAccessoryView callback:^{
-			if (statusValues) {
+			if (self->statusValues) {
 				
 			}
 		}];
@@ -2223,7 +2223,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[panel setNameFieldStringValue:[NSString stringWithFormat:@"CreateSyntax-%@", [self table]]];
 	[panel beginSheetModalForWindow:createTableSyntaxWindow completionHandler:^(NSInteger returnCode) {
 		if (returnCode == NSModalResponseOK) {
-			NSString *createSyntax = [createTableSyntaxTextView string];
+			NSString *createSyntax = [self->createTableSyntaxTextView string];
 
 			if ([createSyntax length] > 0) {
 				NSString *output = [NSString stringWithFormat:@"-- %@ '%@'\n\n%@\n", NSLocalizedString(@"Create syntax for", @"create syntax for table comment"), [self table], createSyntax];
@@ -4789,7 +4789,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// update UI on main thread
 		SPMainQSync(^{
 			// Select view
-			NSString *view = [spfSession objectForKey:@"view"];
+			NSString *view = [self->spfSession objectForKey:@"view"];
 
 			     if ([view isEqualToString:@"SP_VIEW_STRUCTURE"])   [self viewStructure:self];
 			else if ([view isEqualToString:@"SP_VIEW_CONTENT"])     [self viewContent:self];
@@ -5922,17 +5922,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 			// If a the table has changed, update the selection
 			if (![targetItemName isEqualToString:[self table]] && targetItemName) {
-				focusOnFilter = ![tablesListInstance selectItemWithName:targetItemName];
+				focusOnFilter = ![self->tablesListInstance selectItemWithName:targetItemName];
 			}
 
 			// Ensure the window focus is on the table list or the filter as appropriate
-			[tablesListInstance setTableListSelectability:YES];
+			[self->tablesListInstance setTableListSelectability:YES];
 			if (focusOnFilter) {
-				[tablesListInstance makeTableListFilterHaveFocus];
+				[self->tablesListInstance makeTableListFilterHaveFocus];
 			} else {
-				[tablesListInstance makeTableListHaveFocus];
+				[self->tablesListInstance makeTableListHaveFocus];
 			}
-			[tablesListInstance setTableListSelectability:NO];
+			[self->tablesListInstance setTableListSelectability:NO];
 		});
 
 		[self endTask];

@@ -879,9 +879,9 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 		SPMainQSync(^{
 			// Reset indexed fields to default
-			[indexedFields removeAllObjects];
-			[indexedFields addObject:[[fields objectAtIndex:0] mutableCopy]];
-			[indexedColumnsTableView reloadData];
+			[self->indexedFields removeAllObjects];
+			[self->indexedFields addObject:[[self->fields objectAtIndex:0] mutableCopy]];
+			[self->indexedColumnsTableView reloadData];
 		});
 
 		[dbDocument endTask];

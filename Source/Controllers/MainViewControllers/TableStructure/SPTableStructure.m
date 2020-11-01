@@ -459,17 +459,17 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Delete field '%@'?", @"delete field message"), field] message:alertMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 
-		[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
+		[self->tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
 
 		NSNumber *removeKey = [NSNumber numberWithBool:hasForeignKey];
 
 		if ([NSThread isMainThread]) {
-			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", tableDocumentInstance)
+			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", self->tableDocumentInstance)
 									   target:self
 									 selector:@selector(_removeFieldAndForeignKey:)
 									   object:removeKey];
 
-			[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
+			[self->tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
 													callbackObject:self
 												  callbackFunction:NULL];
 		} else {
@@ -805,7 +805,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
 				[self cancelRowEditing];
-				[tableSourceView reloadData];
+				[self->tableSourceView reloadData];
 			}];
 
 		} else {
@@ -814,7 +814,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
 				[self cancelRowEditing];
-				[tableSourceView reloadData];
+				[self->tableSourceView reloadData];
 			}];
 		}
 
@@ -1309,10 +1309,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// Remove the foreign key before the field if required
 			if ([removeForeignKey boolValue]) {
 				NSString *relationName = @"";
-				NSString *field = [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"];
+				NSString *field = [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"];
 
 				// Get the foreign key name
-				for (NSDictionary *constraint in [tableDataInstance getConstraints])
+				for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
 				{
 					for (NSString *column in [constraint objectForKey:@"columns"])
 					{
@@ -1323,46 +1323,46 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
+				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
 
 				// Check for errors, but only if the query wasn't cancelled
-				if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
+				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
 					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [mySQLConnection lastErrorMessage]] forKey:@"message"];
+					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 					[[self onMainThread] showErrorSheetWith:errorDictionary];
 				}
 			}
 
 			// Remove field
-			[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[selectedTable backtickQuotedString], [[[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString]]];
+			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
+																	[self->selectedTable backtickQuotedString], [[[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
-			if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
+			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
 				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
-																	  [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"],
-																	  [mySQLConnection lastErrorMessage]] forKey:@"message"];
+																	  [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
+																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 
 				[[self onMainThread] showErrorSheetWith:errorDictionary];
 			}
 			else {
-				[tableDataInstance resetAllData];
+				[self->tableDataInstance resetAllData];
 
 				// Refresh relevant views
-				[tableDocumentInstance setStatusRequiresReload:YES];
-				[tableDocumentInstance setContentRequiresReload:YES];
-				[tableDocumentInstance setRelationsRequiresReload:YES];
+				[self->tableDocumentInstance setStatusRequiresReload:YES];
+				[self->tableDocumentInstance setContentRequiresReload:YES];
+				[self->tableDocumentInstance setRelationsRequiresReload:YES];
 
-				[self loadTable:selectedTable];
+				[self loadTable:self->selectedTable];
 			}
 
-			[tableDocumentInstance endTask];
+			[self->tableDocumentInstance endTask];
 
 			// Preserve focus on table for keyboard navigation
-			[[tableDocumentInstance parentWindow] makeFirstResponder:tableSourceView];
+			[[self->tableDocumentInstance parentWindow] makeFirstResponder:self->tableSourceView];
 		}
 	});
 }
@@ -1445,27 +1445,27 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSArray *encodings  = [databaseDataInstance getDatabaseCharacterSetEncodings];
 
 	SPMainQSync(^{
-		[encodingPopupCell removeAllItems];
+		[self->encodingPopupCell removeAllItems];
 
 		if ([encodings count]) {
 
-			[encodingPopupCell addItemWithTitle:@"dummy"];
+			[self->encodingPopupCell addItemWithTitle:@"dummy"];
 			//copy the default attributes and add gray color
-			NSMutableDictionary *defaultAttrs = [NSMutableDictionary dictionaryWithDictionary:[[encodingPopupCell attributedTitle] attributesAtIndex:0 effectiveRange:NULL]];
+			NSMutableDictionary *defaultAttrs = [NSMutableDictionary dictionaryWithDictionary:[[self->encodingPopupCell attributedTitle] attributesAtIndex:0 effectiveRange:NULL]];
 			[defaultAttrs setObject:[NSColor lightGrayColor] forKey:NSForegroundColorAttributeName];
-			[[encodingPopupCell lastItem] setTitle:@""];
+			[[self->encodingPopupCell lastItem] setTitle:@""];
 
 			for (NSDictionary *encoding in encodings)
 			{
 				NSString *encodingName = [encoding objectForKey:@"CHARACTER_SET_NAME"];
 				NSString *title = (![encoding objectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], encodingName];
 
-				[encodingPopupCell addItemWithTitle:title];
-				NSMenuItem *item = [encodingPopupCell lastItem];
+				[self->encodingPopupCell addItemWithTitle:title];
+				NSMenuItem *item = [self->encodingPopupCell lastItem];
 
 				[item setRepresentedObject:encodingName];
 
-				if ([encodingName isEqualToString:[tableDataInstance tableEncoding]]) {
+				if ([encodingName isEqualToString:[self->tableDataInstance tableEncoding]]) {
 
 					NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:[item title] attributes:defaultAttrs];
 
@@ -1474,7 +1474,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 		else {
-			[encodingPopupCell addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
+			[self->encodingPopupCell addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 		}
 	});
 

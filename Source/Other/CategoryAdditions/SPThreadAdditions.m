@@ -81,7 +81,7 @@
 	
 	void (*msgsend)(id, SEL, id) = (void (*)(id, SEL, id)) objc_msgSend; //hint for the compiler
 	
-	msgsend(object,selector,argument);
+	msgsend(object,selector,argument); // TODO: this leaks
 }
 
 - (void)dealloc

@@ -182,9 +182,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	tableListIsSelectable = previousTableListIsSelectable;
 	SPMainQSync(^{
 		//this has to be executed en-block on the main queue, otherwise the table view might have a chance to access released memory before we tell it to throw away everything.
-		[tables removeAllObjects];
-		[tableTypes removeAllObjects];
-		[tablesListView reloadData];
+		[self->tables removeAllObjects];
+		[self->tableTypes removeAllObjects];
+		[self->tablesListView reloadData];
 	});
 
 	if ([tableDocumentInstance database]) {
@@ -307,7 +307,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemToReselect] integerValue];
 	} 
 	else {
-		
+		if (selectedTableName) selectedTableName = nil;
 		selectedTableType = SPTableTypeNone;
 	}
 
@@ -327,10 +327,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tableDocumentInstance database]) {
 		SPMainQSync(^{
 			// -cell is a UI call according to Xcode 9.2 (and -setPlaceholderString: is too, obviously)
-			[[listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
+			[[self->listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
 		});
 	}
 
+	if (previousSelectedTable) previousSelectedTable = nil;
+	if (previousFilterString) previousFilterString = nil;
+	
 	// Query the structure of all databases in the background
 	if (sender == self)
 		// Invoked by SP
@@ -813,7 +816,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 		// Update the selected table name and type
 		
-
+		if (selectedTableName) selectedTableName = nil;
+		
 		// Set gear menu items Remove/Duplicate table/view according to the table types
 		// if at least one item is selected
 		if ([indexes count]) {
@@ -1684,7 +1688,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[tableInfoInstance tableChanged:nil];
 		}
 		
-		
+		if (selectedTableName) selectedTableName = nil;
 		
 		selectedTableType = SPTableTypeNone;
 		
@@ -1964,7 +1968,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] > 1) {
 		[self deselectAllTables];
 
-		
+		if (selectedTableName) selectedTableName = nil;
 	}
 
 	if ([[listFilterField stringValue] length]) {
