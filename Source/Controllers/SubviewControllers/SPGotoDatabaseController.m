@@ -61,9 +61,9 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 	NSArray *matches;
 	BOOL isCustomItem;
 }
-@property(nonatomic,retain) NSString *string;
-@property(nonatomic,retain) NSArray *matches;
-@property(nonatomic,assign) BOOL isCustomItem;
+@property (nonatomic, copy) NSString *string;
+@property (nonatomic, strong) NSArray *matches;
+@property (nonatomic, assign) BOOL isCustomItem;
 
 + (SPGotoFilteredItem *)item;
 @end

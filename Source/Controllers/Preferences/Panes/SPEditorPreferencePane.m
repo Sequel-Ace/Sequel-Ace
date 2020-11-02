@@ -53,7 +53,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 

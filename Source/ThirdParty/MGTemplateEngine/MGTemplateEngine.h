@@ -45,17 +45,17 @@
 
 @interface MGTemplateEngine : NSObject
 
-@property(atomic,retain) NSString *markerStartDelimiter;
-@property(atomic,retain) NSString *markerEndDelimiter;
-@property(atomic,retain) NSString *expressionStartDelimiter;
-@property(atomic,retain) NSString *expressionEndDelimiter;
-@property(atomic,retain) NSString *filterDelimiter;
-@property(atomic,retain) NSString *literalStartMarker;
-@property(atomic,retain) NSString *literalEndMarker;
-@property(atomic,readonly) NSRange remainingRange;
-@property(atomic,weak) id <MGTemplateEngineDelegate> delegate;	// weak ref
-@property(atomic,retain) id <MGTemplateEngineMatcher> matcher;
-@property(atomic,readonly) NSString *templateContents;
+@property (nonatomic, copy) NSString *markerStartDelimiter;
+@property (nonatomic, copy) NSString *markerEndDelimiter;
+@property (nonatomic, copy) NSString *expressionStartDelimiter;
+@property (nonatomic, copy) NSString *expressionEndDelimiter;
+@property (nonatomic, copy) NSString *filterDelimiter;
+@property (nonatomic, copy) NSString *literalStartMarker;
+@property (nonatomic, copy) NSString *literalEndMarker;
+@property (nonatomic, readonly) NSRange remainingRange;
+@property (nonatomic, weak) id <MGTemplateEngineDelegate> delegate;	// weak ref
+@property (nonatomic, weak) id <MGTemplateEngineMatcher> matcher;
+@property (nonatomic, copy, readonly) NSString *templateContents;
 
 // Creation.
 + (NSString *)engineVersion;

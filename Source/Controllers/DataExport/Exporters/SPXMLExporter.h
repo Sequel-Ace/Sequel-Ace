@@ -60,17 +60,17 @@
 /**
  * @property xmlDataArray Data array
  */
-@property (readwrite, retain) NSArray *xmlDataArray;
+@property (readwrite, strong) NSArray *xmlDataArray;
 
 /**
  * @property xmlTableName Table name
  */
-@property (readwrite, retain) NSString *xmlTableName;
+@property (readwrite, copy) NSString *xmlTableName;
 
 /**
  * @property xmlNULLString XML NULL string
  */
-@property (readwrite, retain) NSString *xmlNULLString;
+@property (readwrite, copy) NSString *xmlNULLString;
 
 /**
  * @property xmlOutputIncludeStructure Include table structure

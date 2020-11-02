@@ -39,10 +39,10 @@
 }
 
 @property (readwrite, assign) BOOL isError;
-@property (readwrite, retain) NSDate *messageDate;
-@property (readwrite, retain) NSString *message;
-@property (readwrite, retain) NSString *messageDatabase;
-@property (readwrite, retain) NSString *messageConnection;
+@property (readwrite, strong) NSDate *messageDate;
+@property (readwrite, copy) NSString *message;
+@property (readwrite, copy) NSString *messageDatabase;
+@property (readwrite, copy) NSString *messageConnection;
 
 + (SPConsoleMessage *)consoleMessageWithMessage:(NSString *)consoleMessage
 										   date:(NSDate *)date

@@ -44,7 +44,7 @@
 /**
  * @property orderByField
  */
-@property(readwrite, retain) NSString *orderByField;
+@property(readwrite, copy) NSString *orderByField;
 
 /**
  * @property orderByDescending

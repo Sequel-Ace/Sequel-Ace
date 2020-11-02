@@ -55,7 +55,7 @@
 /**
  * @property exportFilePath
  */
-@property (readwrite, retain) NSString *exportFilePath;
+@property (readwrite, copy) NSString *exportFilePath;
 
 /**
  * @property exportFileHandle

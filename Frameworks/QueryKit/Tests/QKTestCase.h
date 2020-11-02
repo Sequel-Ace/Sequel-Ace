@@ -39,9 +39,9 @@
 	QKQueryDatabase _database;
 }
 
-@property (readwrite, retain) QKQuery *query;
+@property (readwrite, strong) QKQuery *query;
 
-@property (readwrite, retain) NSString *identifierQuote;
+@property (readwrite, copy) NSString *identifierQuote;
 
 @property (readwrite, assign) QKQueryDatabase database;
 

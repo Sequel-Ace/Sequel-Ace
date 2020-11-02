@@ -90,7 +90,7 @@
 /**
  * @property table The table currently being viewed
  */
-@property (readwrite, retain) NSString *table;
+@property (readwrite, copy) NSString *table;
 
 /**
  * @property connection The MySQL connection to use

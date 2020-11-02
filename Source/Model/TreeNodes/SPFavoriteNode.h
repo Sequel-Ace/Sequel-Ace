@@ -45,7 +45,7 @@
 /**
  * @property nodeFavorite The actual favorite dictionary
  */
-@property (readwrite, retain) NSMutableDictionary *nodeFavorite;
+@property (readwrite, strong) NSMutableDictionary *nodeFavorite;
 
 - (id)initWithDictionary:(NSMutableDictionary *)dictionary;
 

@@ -71,32 +71,32 @@
 /**
  * @property sqlExportTables Tables
  */
-@property(readwrite, retain) NSArray *sqlExportTables;
+@property(readwrite, strong) NSArray *sqlExportTables;
 
 /**
  * @property sqlDatabaseHost Database host
  */
-@property(readwrite, retain) NSString *sqlDatabaseHost;
+@property(readwrite, copy) NSString *sqlDatabaseHost;
 
 /**
  * @property sqlDatabaseName Database name
  */
-@property(readwrite, retain) NSString *sqlDatabaseName;
+@property(readwrite, copy) NSString *sqlDatabaseName;
 
 /**
  * @property sqlDatabaseVersion Database version
  */
-@property(readwrite, retain) NSString *sqlDatabaseVersion;
+@property(readwrite, copy) NSString *sqlDatabaseVersion;
 
 /**
  * @property sqlExportCurrentTable Current table
  */
-@property(readwrite, retain) NSString *sqlExportCurrentTable;
+@property(readwrite, copy) NSString *sqlExportCurrentTable;
 
 /**
  * @property sqlExportErrors Export errors
  */
-@property(readwrite, retain) NSString *sqlExportErrors;
+@property(readwrite, copy) NSString *sqlExportErrors;
 
 /**
  * @property sqlOutputIncludeUTF8BOM Include UTF-8 BOM

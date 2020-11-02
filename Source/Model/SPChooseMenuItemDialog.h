@@ -38,7 +38,7 @@
 	SPChooseMenuItemDialogTextView *dummyTextView;
 }
 
-@property(readwrite, retain) NSMenu* contextMenu;
+@property(readwrite, strong) NSMenu *contextMenu;
 @property(readwrite, assign) NSInteger selectedItemIndex;
 @property(readwrite, assign) BOOL waitForChoice;
 

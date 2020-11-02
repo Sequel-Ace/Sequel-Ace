@@ -40,7 +40,7 @@
 /**
  * @property importPath The file path to import from
  */
-@property (readwrite, retain) NSString *importPath;
+@property (readwrite, copy) NSString *importPath;
 
 - (void)importFavoritesFromFileAtPath:(NSString *)path;
 
