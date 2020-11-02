@@ -352,6 +352,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[countText setStringValue:@""];
 
 	// Reset sort column
+	if (sortCol) sortCol = nil;
 	
 	isDesc = NO;
 
@@ -411,7 +412,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
 
 	// Reset table key store for use in argumentForRow:
-	
+	if (keys) keys = nil;
 
 	// Check the supplied table name.  If it matches the old one, a reload is being performed;
 	// reload the data in-place to maintain table state if possible.
@@ -603,7 +604,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Otherwise, clear sorting
 	} else {
 		if (sortCol) {
-			
+			sortCol = nil;
 		}
 		isDesc = NO;
 	}
@@ -1345,7 +1346,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// this is the same as saying (isDesc && !invert) || (!isDesc && invert)
 			if (isDesc != invert) {
-				
+				if (sortCol) sortCol = nil;
 			}
 			else {
 				isDesc = !isDesc;
