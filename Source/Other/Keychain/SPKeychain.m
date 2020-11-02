@@ -247,40 +247,7 @@
 		return SecItemCopyMatching((CFDictionaryRef)query, (CFTypeRef *)&result) == errSecSuccess;
 	}
 
-	//Version for 10.6
-
-	SecKeychainItemRef item;
-	SecKeychainSearchRef search = NULL;
-	NSInteger numberOfItemsFound = 0;
-	SecKeychainAttributeList list;
-	SecKeychainAttribute attributes[2];
-	
-	// Check supplied variables and replaces nils with empty strings
-	if (!name) name = @"";
-	if (!account) account = @"";
-	
-	attributes[0].tag    = kSecAccountItemAttr;
-	attributes[0].data   = (void *)[account UTF8String];			// Account name
-	attributes[0].length = (UInt32)strlen([account UTF8String]);	// Length of account name (bytes)
-	
-	attributes[1].tag    = kSecServiceItemAttr;
-	attributes[1].data   = (void *)[name UTF8String];			// Service name
-	attributes[1].length = (UInt32)strlen([name UTF8String]);	// Length of service name (bytes)
-
-	list.count = 2;
-	list.attr  = attributes;
-
-	if (SecKeychainSearchCreateFromAttributes(NULL, kSecGenericPasswordItemClass, &list, &search) == noErr) {
-		while (SecKeychainSearchCopyNext(search, &item) == noErr)
-		{
-			CFRelease(item);
-			numberOfItemsFound++;
-		}
-	}
-
-	if (search) CFRelease(search);
-
-	return (numberOfItemsFound > 0);
+	return NO;
 }
 
 /**

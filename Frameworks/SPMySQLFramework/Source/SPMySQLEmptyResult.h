@@ -28,12 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@interface SPMySQLEmptyResult : SPMySQLResult {
+@interface SPMySQLEmptyResult : SPMySQLResult
 
-	id delegate;
-
-}
-
-@property (readwrite, assign) id delegate;
+@property (readwrite, weak) id delegate;
 
 @end

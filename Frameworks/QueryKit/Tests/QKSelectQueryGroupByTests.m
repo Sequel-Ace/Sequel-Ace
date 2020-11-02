@@ -42,7 +42,7 @@
 	[self addTestForDatabase:QKDatabaseMySQL withIdentifierQuote:QKMySQLIdentifierQuote toTestSuite:testSuite];
 	[self addTestForDatabase:QKDatabasePostgreSQL withIdentifierQuote:QKPostgreSQLIdentifierQuote toTestSuite:testSuite];
 	
-    return [testSuite autorelease];
+    return testSuite;
 }
 
 + (void)addTestForDatabase:(QKQueryDatabase)database withIdentifierQuote:(NSString *)quote toTestSuite:(XCTestSuite *)testSuite
@@ -52,8 +52,6 @@
 		XCTestCase *test = [[QKSelectQueryGroupByTests alloc] initWithInvocation:invocation database:database identifierQuote:quote];
 		
 		[testSuite addTest:test];
-		
-        [test release];
     }
 }
 

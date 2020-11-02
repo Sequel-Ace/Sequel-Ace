@@ -559,7 +559,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[button setToolTip:NSLocalizedString(@"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.", @"force table deltion button text tooltip")];
 	[button setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 	
-	[[button cell] setControlSize:NSSmallControlSize];
+	[[button cell] setControlSize:NSControlSizeSmall];
 	
 	[alert setShowsSuppressionButton:YES];
 

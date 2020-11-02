@@ -124,7 +124,7 @@
 #pragma mark -
 #pragma mark Delegate management
 
-- (void)setDelegate:(id<NSSplitViewDelegate>)aDelegate
+- (void)setDelegate:(id<NSSplitViewDelegate, AllowSplitViewResizing>)aDelegate
 {
 	delegate = aDelegate;
 }
@@ -241,7 +241,7 @@
 	} else {
 		if (animationTimer) (void)([animationTimer invalidate]), SPClear(animationTimer);
 		if (animationRetainCycleBypassObject) SPClear(animationRetainCycleBypassObject);
-		animationStartTime = [NSDate monotonicTimeInterval];
+		animationStartTime = [NSDate monotonicTime];
 
 		// Determine the animation length, in seconds, starting with a quarter of a second
 		animationDuration = 0.25f;
@@ -749,7 +749,7 @@
 	viewMaximumSizes = [[NSMutableArray alloc] initWithCapacity:l];
 	[self _ensureDefaultSubviewSizesToIndex:l-1];
 
-	delegate = [super delegate];
+	delegate = (id<NSSplitViewDelegate, AllowSplitViewResizing>)[super delegate];
 	
 	[super setDelegate:self];
 }
@@ -877,8 +877,7 @@
 		}
 
 		// The collapsible subview is collapsing or uncollapsing.  Prepare to update the sizes...
-		double currentTime = [NSDate monotonicTimeInterval];
-		float animationProgress = (float)((currentTime - animationStartTime) / animationDuration);
+		float animationProgress = (float)([NSDate timeIntervalSinceMonotonicTime:animationStartTime] / animationDuration);
 		if (animationProgress > 1) animationProgress = 1;
 
 		// If the animation has reached the end, ensure completion tasks are run

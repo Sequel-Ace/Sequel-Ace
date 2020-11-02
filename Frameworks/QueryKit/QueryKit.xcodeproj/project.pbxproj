@@ -438,6 +438,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_STATIC_ANALYZER_MODE = deep;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -481,7 +482,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_VERSION = A;
@@ -526,7 +526,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -551,7 +550,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -576,7 +574,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -598,7 +595,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -647,7 +643,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_VERSION = A;
@@ -692,6 +687,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_STATIC_ANALYZER_MODE = deep;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -738,6 +734,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_STATIC_ANALYZER_MODE = deep;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -781,6 +778,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_STATIC_ANALYZER_MODE = deep;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -823,7 +821,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_VERSION = A;
@@ -868,7 +865,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;

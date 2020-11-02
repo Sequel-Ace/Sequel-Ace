@@ -558,7 +558,7 @@ typedef enum {
 			if([[jsonTextView string] isEqualToString:@""]) {
 				NSError *error;
 				NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
-				id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:nil error:&error];
+				id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
 				
 				if([NSJSONSerialization isValidJSONObject:jsonObject]){
 					NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];

@@ -49,7 +49,6 @@
 #import <SPMySQL/Max Packet Size.h>
 #import <SPMySQL/Querying & Preparation.h>
 #import <SPMySQL/Encoding.h>
-#import <SPMySQL/TimeZone.h>
 #import <SPMySQL/Server Info.h>
 
 // MySQL result set, streaming subclasses of same, and associated categories

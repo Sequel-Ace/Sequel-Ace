@@ -41,6 +41,8 @@ static void init(SPButtonBar *obj);
 
 @implementation SPButtonBar
 
+@synthesize systemColorOfName;
+
 + (void)initialize
 {
 	
@@ -78,6 +80,7 @@ void init(SPButtonBar *obj)
 {
 	SPClear(lightImage);
 	SPClear(darkImage);
+	SPClear(systemColorOfName);
 	[super dealloc];
 }
 

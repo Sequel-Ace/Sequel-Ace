@@ -51,7 +51,6 @@
 		586A99FC14F02E21007F82BF /* SPMySQLStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 586A99FA14F02E21007F82BF /* SPMySQLStreamingResult.m */; };
 		586AA16714F30C5F007F82BF /* Convenience Methods.h in Headers */ = {isa = PBXBuildFile; fileRef = 586AA16514F30C5F007F82BF /* Convenience Methods.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		586AA16814F30C5F007F82BF /* Convenience Methods.m in Sources */ = {isa = PBXBuildFile; fileRef = 586AA16614F30C5F007F82BF /* Convenience Methods.m */; };
-		586AA81414F6C648007F82BF /* SPMySQLArrayAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 586AA81214F6C648007F82BF /* SPMySQLArrayAdditions.h */; };
 		5884127714CC63830078027F /* SPMySQL.h in Headers */ = {isa = PBXBuildFile; fileRef = 5884127614CC63830078027F /* SPMySQL.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		588412A814CC7A4D0078027F /* Locking.h in Headers */ = {isa = PBXBuildFile; fileRef = 588412A614CC7A4D0078027F /* Locking.h */; };
 		5884142714CCF5190078027F /* Conversion.h in Headers */ = {isa = PBXBuildFile; fileRef = 5884142514CCF5190078027F /* Conversion.h */; };
@@ -81,8 +80,6 @@
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
-		96A150E8253B99B2006E3F4D /* libssl.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		96A150E9253B99B7006E3F4D /* libcrypto.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		BECAB35424EDD163004FD17E /* TimeZone.h in Headers */ = {isa = PBXBuildFile; fileRef = BECAB35224EDD163004FD17E /* TimeZone.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BECAB35524EDD163004FD17E /* TimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BECAB35324EDD163004FD17E /* TimeZone.m */; };
 /* End PBXBuildFile section */
@@ -167,7 +164,6 @@
 		586A99FA14F02E21007F82BF /* SPMySQLStreamingResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLStreamingResult.m; path = Source/SPMySQLStreamingResult.m; sourceTree = "<group>"; };
 		586AA16514F30C5F007F82BF /* Convenience Methods.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "Convenience Methods.h"; path = "Source/SPMySQLResult Categories/Convenience Methods.h"; sourceTree = "<group>"; };
 		586AA16614F30C5F007F82BF /* Convenience Methods.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "Convenience Methods.m"; path = "Source/SPMySQLResult Categories/Convenience Methods.m"; sourceTree = "<group>"; };
-		586AA81214F6C648007F82BF /* SPMySQLArrayAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLArrayAdditions.h; path = Source/SPMySQLArrayAdditions.h; sourceTree = "<group>"; };
 		5884127614CC63830078027F /* SPMySQL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQL.h; path = Source/SPMySQL.h; sourceTree = "<group>"; };
 		588412A614CC7A4D0078027F /* Locking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Locking.h; path = "Source/SPMySQLConnection Categories/Locking.h"; sourceTree = "<group>"; };
 		588412A714CC7A4D0078027F /* Locking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Locking.m; path = "Source/SPMySQLConnection Categories/Locking.m"; sourceTree = "<group>"; };
@@ -197,8 +193,6 @@
 		58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLEmptyResult.m; path = Source/SPMySQLEmptyResult.m; sourceTree = "<group>"; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* SPMySQL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SPMySQL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		BECAB35224EDD163004FD17E /* TimeZone.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TimeZone.h; sourceTree = "<group>"; };
-		BECAB35324EDD163004FD17E /* TimeZone.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TimeZone.m; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
@@ -409,8 +403,6 @@
 				584294F914CB8002000F8438 /* Encoding.m */,
 				584294FC14CB8002000F8438 /* Server Info.h */,
 				584294FD14CB8002000F8438 /* Server Info.m */,
-				BECAB35224EDD163004FD17E /* TimeZone.h */,
-				BECAB35324EDD163004FD17E /* TimeZone.m */,
 				58C00AA714E4869C00AC489A /* Max Packet Size.h */,
 				58C00AA814E4869C00AC489A /* Max Packet Size.m */,
 				5884142414CCF4E60078027F /* Private */,
@@ -446,7 +438,6 @@
 			children = (
 				58C009D314E31D3800AC489A /* SPMySQLStringAdditions.h */,
 				58C009D414E31D3800AC489A /* SPMySQLStringAdditions.m */,
-				586AA81214F6C648007F82BF /* SPMySQLArrayAdditions.h */,
 			);
 			name = "Category Additions";
 			sourceTree = "<group>";
@@ -490,7 +481,6 @@
 				584292A414C34B36000F8438 /* mysql_time.h in Headers */,
 				584292A514C34B36000F8438 /* mysql_version.h in Headers */,
 				584292A614C34B36000F8438 /* typelib.h in Headers */,
-				BECAB35424EDD163004FD17E /* TimeZone.h in Headers */,
 				5884127714CC63830078027F /* SPMySQL.h in Headers */,
 				588412A814CC7A4D0078027F /* Locking.h in Headers */,
 				5884142714CCF5190078027F /* Conversion.h in Headers */,
@@ -509,7 +499,6 @@
 				58C00CA514E845D800AC489A /* SPMySQL Private APIs.h in Headers */,
 				586A99FB14F02E21007F82BF /* SPMySQLStreamingResult.h in Headers */,
 				586AA16714F30C5F007F82BF /* Convenience Methods.h in Headers */,
-				586AA81414F6C648007F82BF /* SPMySQLArrayAdditions.h in Headers */,
 				584D812E15057ECD00F24774 /* SPMySQLKeepAliveTimer.h in Headers */,
 				584D82551509775000F24774 /* Copying.h in Headers */,
 				269BA7E7249FC988005E4896 /* client_plugin.h in Headers */,
@@ -567,7 +556,7 @@
 		0867D690FE84028FC02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1200;
+				LastUpgradeCheck = 1210;
 				TargetAttributes = {
 					507FF1D41BC0D7D300104523 = {
 						CreatedOnToolsVersion = 6.2;
@@ -622,7 +611,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		26F0BF1324A0053E00A43B20 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			files = (
 			);
 			inputFileListPaths = (
@@ -639,7 +628,7 @@
 		};
 		26F0BF1424A0069300A43B20 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			files = (
 			);
 			inputFileListPaths = (
@@ -670,7 +659,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BECAB35524EDD163004FD17E /* TimeZone.m in Sources */,
 				58428E0114BA5FAE000F8438 /* SPMySQLConnection.m in Sources */,
 				584294F114CB8002000F8438 /* Ping & KeepAlive.m in Sources */,
 				584294FB14CB8002000F8438 /* Encoding.m in Sources */,
@@ -799,6 +787,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -849,6 +838,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -899,13 +889,12 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
@@ -918,10 +907,8 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = "SPMySQL Unit Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql-unittests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -935,10 +922,8 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
@@ -950,10 +935,8 @@
 					"$(inherited)",
 				);
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = "SPMySQL Unit Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql-unittests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -967,10 +950,8 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
@@ -982,10 +963,8 @@
 					"$(inherited)",
 				);
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = "SPMySQL Unit Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql-unittests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -996,6 +975,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -1090,13 +1070,12 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
@@ -1109,10 +1088,8 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = "SPMySQL Unit Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql-unittests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1123,6 +1100,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -1208,6 +1186,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -1295,10 +1274,8 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
@@ -1310,10 +1287,8 @@
 					"$(inherited)",
 				);
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = "SPMySQL Unit Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql-unittests";
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -33,7 +33,6 @@
 
 @interface SPWindowController : NSWindowController <NSWindowDelegate>
 {
-	IBOutlet PSMTabBarControl *tabBar;
 	IBOutlet NSTabView *tabView;
 
 	NSClipView *titleBarLineHidingView;
@@ -45,7 +44,7 @@
 	SPDatabaseDocument *selectedTableDocument;
 }
 
-@property (readonly) PSMTabBarControl *tabBar;
+@property (readonly, retain) IBOutlet PSMTabBarControl *tabBar;
 
 // Database connection management
 - (IBAction)addNewConnection:(id)sender;
