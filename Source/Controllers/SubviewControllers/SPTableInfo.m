@@ -134,9 +134,13 @@
  */
 - (void)tableChanged:(NSNotification *)notification
 {
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
+	static NSNumberFormatter *numberFormatter = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		numberFormatter = [[NSNumberFormatter alloc] init];
+		[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+	});
+	
 	[info removeAllObjects];
 
 	if (![tableListInstance tableName]) {

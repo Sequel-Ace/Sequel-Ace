@@ -711,24 +711,32 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
 			// Create date formatter
-			NSDateFormatter *dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
-
-			[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
-
-			[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
-			[dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
-
+			// Create date formatter - once
+			static NSDateFormatter *dateFormatter = nil;
+			static dispatch_once_t onceToken;
+			dispatch_once(&onceToken, ^{
+				dateFormatter = [[NSDateFormatter alloc] init];
+				[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
+				[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
+				[dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
+			});
+			
 			value = [dateFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
+			// 2020-06-30 14:14:11 is one example
 		}
 		// Format numbers
 		else if ([key isEqualToString:SPMySQLRowsField] ||
 				 [key isEqualToString:SPMySQLAverageRowLengthField] ||
 				 [key isEqualToString:SPMySQLAutoIncrementField]) {
 
-			NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-
-			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
+			
+			static NSNumberFormatter *numberFormatter = nil;
+			static dispatch_once_t onceToken;
+			dispatch_once(&onceToken, ^{
+				numberFormatter = [[NSNumberFormatter alloc] init];
+				[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+			});
+			
 			value = [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:[value longLongValue]]];
 
 			// Prefix number of rows with '~' if it is not an accurate count

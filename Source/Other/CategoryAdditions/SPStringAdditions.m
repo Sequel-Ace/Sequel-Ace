@@ -43,9 +43,12 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 {
 	double size = byteSize;
 	
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-	
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+	static NSNumberFormatter *numberFormatter = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		numberFormatter = [[NSNumberFormatter alloc] init];
+		[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+	});
 	
 	if (size < 1023) {
 		[numberFormatter setFormat:@"#,##0 B"];
@@ -89,9 +92,12 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
  */ 
 + (NSString *)stringForTimeInterval:(double)timeInterval
 {
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+	static NSNumberFormatter *numberFormatter = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		numberFormatter = [[NSNumberFormatter alloc] init];
+		[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+	});
 
 	// For time periods of less than one millisecond, display a localised "< 0.1 ms"
 	if (timeInterval < 0.0001) {

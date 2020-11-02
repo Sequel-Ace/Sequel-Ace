@@ -1008,9 +1008,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	NSString *rowString;
 	NSMutableString *countString = [NSMutableString string];
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
+	
+	static NSNumberFormatter *numberFormatter = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		numberFormatter = [[NSNumberFormatter alloc] init];
+		[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+	});
+	
 	// Set up a couple of common strings
 	NSString *tableCountString = [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:tableRowsCount]];
 	NSString *maxRowsString = [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:maxNumRows]];

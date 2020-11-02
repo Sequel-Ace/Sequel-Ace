@@ -49,6 +49,32 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 @implementation SPStringAdditionsTests
 
 
+- (void)testPerformance_stringForByteSizeStatic {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 10000;
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				[NSString stringForByteSize:i];
+			}
+		}
+	}];
+}
+
+//- (void)testPerformance_stringForByteSize{
+//	// this is on main thread
+//	[self measureBlock:^{
+//		// Put the code you want to measure the time of here.
+//		int const iterations = 10000;
+//		for (int i = 0; i < iterations; i++) {
+//			@autoreleasepool {
+//				[NSString stringForByteSize2:i];
+//			}
+//		}
+//	}];
+//}
+
 - (void)testPerformance_StringWithString {
 	// this is on main thread
 	[self measureBlock:^{

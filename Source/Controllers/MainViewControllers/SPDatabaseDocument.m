@@ -1268,9 +1268,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	double timeSinceQueryStarted = [[NSDate date] timeIntervalSinceDate:queryStartDate];
 
-	NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
-	formatter.allowedUnits = NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
-	formatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorPad;
+	static NSDateComponentsFormatter *formatter = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		formatter = [[NSDateComponentsFormatter alloc] init];
+		formatter.allowedUnits = NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
+		formatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorPad;
+	});
+	
 	NSString *queryRunningTime = [formatter stringFromTimeInterval:timeSinceQueryStarted];
 	
 	NSShadow *textShadow = [[NSShadow alloc] init];
