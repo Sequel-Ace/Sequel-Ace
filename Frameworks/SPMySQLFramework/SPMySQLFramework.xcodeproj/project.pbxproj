@@ -80,8 +80,6 @@
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
-		BECAB35424EDD163004FD17E /* TimeZone.h in Headers */ = {isa = PBXBuildFile; fileRef = BECAB35224EDD163004FD17E /* TimeZone.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		BECAB35524EDD163004FD17E /* TimeZone.m in Sources */ = {isa = PBXBuildFile; fileRef = BECAB35324EDD163004FD17E /* TimeZone.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
