@@ -317,15 +317,15 @@
 	[status removeAllObjects];
 
 	if (triggers != nil) {
-		
+		triggers = nil;
 	}
 
 	if (tableEncoding != nil) {
-		
+		tableEncoding = nil;
 	}
 
 	if (tableCreateSyntax != nil) {
-		
+		tableCreateSyntax = nil;
 	}
 }
 
