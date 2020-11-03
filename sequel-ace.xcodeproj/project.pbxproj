@@ -111,8 +111,6 @@
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
-		1A9D837E25513FCB0024B563 /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
-		1A9D838625513FDD0024B563 /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1AAF1DC32548485B0037AFDB /* SPReleaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AAF1DBF2548485B0037AFDB /* SPReleaseTests.m */; };
 		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
@@ -126,6 +124,8 @@
 		1AB068B024A355CC00E2AAC2 /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689824A355B500E2AAC2 /* client-key-lf.pem */; };
 		1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
+		1AB925922551550200063446 /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
+		1AB9259A2551551100063446 /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
 		1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
@@ -3063,6 +3063,7 @@
 				1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */,
 				507FF1621BBF0D5000104523 /* SPTableCopyTest.m in Sources */,
 				50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */,
+				1AB925922551550200063446 /* NumberFormatterExtention.swift in Sources */,
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				50EA92641AB23EAD008D3C4F /* SPDatabaseCopy.m in Sources */,
@@ -3089,6 +3090,7 @@
 				5080229B1BF7C0FE0052A9B2 /* MGTemplateEngine.m in Sources */,
 				5080229C1BF7C0FE0052A9B2 /* MGTemplateStandardMarkers.m in Sources */,
 				5080229D1BF7C0FE0052A9B2 /* MGTemplateStandardFilters.m in Sources */,
+				1AB9259A2551551100063446 /* NumberFormatterExtention.swift in Sources */,
 				507FF2A21BCD27AE00104523 /* SPOSInfo.m in Sources */,
 				507FF2A11BCD27A700104523 /* SPFunctions.m in Sources */,
 				50D3C3541A7715E600B5429C /* SPParserUtils.c in Sources */,
