@@ -84,7 +84,7 @@
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -1268,10 +1268,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	double timeSinceQueryStarted = [[NSDate date] timeIntervalSinceDate:queryStartDate];
 
-	NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
-	formatter.allowedUnits = NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
-	formatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorPad;
-	NSString *queryRunningTime = [formatter stringFromTimeInterval:timeSinceQueryStarted];
+	NSString *queryRunningTime = [NSDateComponentsFormatter.hourMinSecFormatter stringFromTimeInterval:timeSinceQueryStarted];
 	
 	NSShadow *textShadow = [[NSShadow alloc] init];
 	[textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
@@ -6869,11 +6866,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		if (resultRows > rowLimit) {
 
-			NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-
-			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
-			NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print.", @"continue to print informative message"), [self table], [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:resultRows]]];
+			NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print.", @"continue to print informative message"), [self table], [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:resultRows]]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Continue to print?", @"continue to print message") message:message primaryButtonTitle:NSLocalizedString(@"Print", @"print button") primaryButtonHandler:^{
 				[self startPrintDocumentOperation];
 			} cancelButtonHandler:nil];

@@ -32,6 +32,7 @@
 #import "SPConsoleMessage.h"
 #import "SPCustomQuery.h"
 #import "SPAppController.h"
+#import "sequel-ace-Swift.h"
 
 #import "pthread.h"
 
@@ -620,12 +621,9 @@ static SPQueryController *sharedQueryController = nil;
 	[loggingDisabledTextField setStringValue:([prefs boolForKey:SPConsoleEnableLogging]) ? @"" : NSLocalizedString(@"Query logging is currently disabled", @"query logging disabled label")];
 
 	// Setup data formatter
-	dateFormatter = [[NSDateFormatter alloc] init];
-
-	[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
+	dateFormatter = NSDateFormatter.mediumStyleFormatter;
 
 	[dateFormatter setDateStyle:NSDateFormatterNoStyle];
-	[dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
 
 	// Set the process table view's vertical gridlines if required
 	[consoleTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
