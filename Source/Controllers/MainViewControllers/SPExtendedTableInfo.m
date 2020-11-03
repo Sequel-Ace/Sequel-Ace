@@ -38,6 +38,7 @@
 #import "SPAlertSheets.h"
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -223,9 +224,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 {
 	[tableRowAutoIncrement setEditable:NO];
 	
-	NSNumberFormatter *fmt = [[[NSNumberFormatter alloc] init] autorelease];
-	[fmt setNumberStyle:NSNumberFormatterDecimalStyle];
-	NSNumber *value = [fmt numberFromString:[tableRowAutoIncrement stringValue]];
+	NSNumber *value = [NSNumberFormatter.decimalStyleFormatter numberFromString:[tableRowAutoIncrement stringValue]];
 	
 	[tableSourceInstance setAutoIncrementTo:value];
 }
@@ -710,18 +709,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
-			// Create date formatter
-			// Create date formatter - once
-			static NSDateFormatter *dateFormatter = nil;
-			static dispatch_once_t onceToken;
-			dispatch_once(&onceToken, ^{
-				dateFormatter = [[NSDateFormatter alloc] init];
-				[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
-				[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
-				[dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
-			});
-			
-			value = [dateFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
+
+			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
 			// 2020-06-30 14:14:11 is one example
 		}
 		// Format numbers
@@ -729,15 +718,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLAverageRowLengthField] ||
 				 [key isEqualToString:SPMySQLAutoIncrementField]) {
 
-			
-			static NSNumberFormatter *numberFormatter = nil;
-			static dispatch_once_t onceToken;
-			dispatch_once(&onceToken, ^{
-				numberFormatter = [[NSNumberFormatter alloc] init];
-				[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-			});
-			
-			value = [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:[value longLongValue]]];
+			value = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[value longLongValue]]];
 
 			// Prefix number of rows with '~' if it is not an accurate count
 			if ([key isEqualToString:SPMySQLRowsField] && ![[infoDict objectForKey:@"RowsCountAccurate"] boolValue]) {

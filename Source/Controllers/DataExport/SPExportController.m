@@ -50,6 +50,7 @@
 #import "SPDotExporterProtocol.h"
 #import "SPPDFExporterProtocol.h"
 #import "SPHTMLExporterProtocol.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -2391,8 +2392,7 @@ set_input:
 {
 	NSMutableString *string = [NSMutableString string];
 
-	NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-	[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
+	NSDateFormatter *dateFormatter = NSDateFormatter.mediumStyleFormatter;
 
 	// Walk through the token field, appending token replacements or strings
 	NSArray *representedFilenameParts = [exportCustomFilenameTokenField objectValue];
@@ -2466,7 +2466,7 @@ set_input:
 								options:NSLiteralSearch
 								  range:NSMakeRange(0, [string length])];
 
-	[dateFormatter release];
+	[dateFormatter release]; // ???
 
 	// Don't allow empty strings - if an empty string resulted, revert to the default string
 	if (![string length]) [string setString:[self generateDefaultExportFilename]];
