@@ -32,6 +32,4 @@
 
 + (uint64_t)monotonicTime;
 + (NSTimeInterval)timeIntervalSinceMonotonicTime:(uint64_t)comparisonTime;
--(NSString *)formattedDateWithFormat:(NSString *)format timeZone:(NSTimeZone *)timeZone locale:(NSLocale *)locale;
-
 @end

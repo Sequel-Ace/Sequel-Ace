@@ -2324,7 +2324,11 @@ set_input:
 			filename = @"query_result";
 			break;
 		case SPTableExport:
-			filename = [NSString stringWithFormat:@"%@_%@", [tableDocumentInstance database], [[NSDate date] formattedDateWithFormat:@"yyyy-MM-dd" timeZone:nil locale:nil]];
+			filename = [NSString stringWithFormat:@"%@_%@",
+						[tableDocumentInstance database],
+						[[NSDate date] stringWithFormat:@"yyyy-MM-dd"
+												 locale:[NSLocale autoupdatingCurrentLocale]
+											   timeZone:[NSTimeZone localTimeZone]]];
 			
 			;
 			break;
@@ -2420,16 +2424,13 @@ set_input:
 
 			}
 			else if ([tokenContent isEqualToString:SPFileNameYearTokenName]) {
-				[string appendString: [[NSDate date] formattedDateWithFormat:@"yyyy" timeZone:nil locale:nil]];
-
+				[string appendString:[[NSDate date] stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameMonthTokenName]) {
-				[string appendString:[[NSDate date] formattedDateWithFormat:@"MM" timeZone:nil locale:nil]];
-
+				[string appendString:[[NSDate date] stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameDayTokenName]) {
-				[string appendString:[[NSDate date] formattedDateWithFormat:@"dd" timeZone:nil locale:nil]];
-
+				[string appendString:[[NSDate date] stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameTimeTokenName]) {
 				[dateFormatter setDateStyle:NSDateFormatterNoStyle];
@@ -2437,7 +2438,7 @@ set_input:
 				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileName24HourTimeTokenName]) {
-				[string appendString:[[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:nil]];
+				[string appendString:[[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameFavoriteTokenName]) {
 				[string appendStringOrNil:[tableDocumentInstance name]];
