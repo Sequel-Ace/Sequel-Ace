@@ -227,10 +227,8 @@
 	progressCancelled = NO;
 	
 	NSString *importFileName = [NSString stringWithFormat:@"%@%@",
-									SPImportClipboardTempFileNamePrefix,
-									[[NSDate date] formattedDateWithFormat:@"HHmmss"
-																  timeZone:nil
-																	locale:[NSLocale autoupdatingCurrentLocale]]];
+								SPImportClipboardTempFileNamePrefix,
+								[[NSDate date] formatWithFormat:@"HHmmss" locale:[NSLocale autoupdatingCurrentLocale]]];
 		
 	// Write clipboard content to temp file using the connection encoding
 	NSStringEncoding encoding;

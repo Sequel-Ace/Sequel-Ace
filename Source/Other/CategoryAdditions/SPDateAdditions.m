@@ -61,6 +61,7 @@
  *
  *  @return NSString representing the formatted date string
  */
+#ifdef DEBUG
 -(NSString *)formattedDateWithFormat:(NSString *)format timeZone:(NSTimeZone *)timeZone locale:(NSLocale *)locale{
     static NSDateFormatter *formatter = nil;
     static dispatch_once_t onceToken;
@@ -73,6 +74,6 @@
     [formatter setLocale:locale];
     return [formatter stringFromDate:self];
 }
-
+#endif
 
 @end
