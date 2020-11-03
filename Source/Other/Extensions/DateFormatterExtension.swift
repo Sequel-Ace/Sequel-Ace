@@ -13,9 +13,8 @@ extension DateFormatter {
 	@objc public static var mediumStyleFormatter: DateFormatter = {
 			
 		let formatter = DateFormatter()
-		formatter.formatterBehavior = Behavior.behavior10_4
-		formatter.dateStyle = Style.medium
-		formatter.timeStyle = Style.medium
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .medium
 		return formatter
 	}()
 		

@@ -2466,8 +2466,6 @@ set_input:
 								options:NSLiteralSearch
 								  range:NSMakeRange(0, [string length])];
 
-	[dateFormatter release]; // ???
-
 	// Don't allow empty strings - if an empty string resulted, revert to the default string
 	if (![string length]) [string setString:[self generateDefaultExportFilename]];
 

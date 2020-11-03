@@ -14,7 +14,7 @@ extension DateComponentsFormatter {
 			
 		let formatter = DateComponentsFormatter()
 		formatter.allowedUnits = [.hour, .minute, .second]
-		formatter.zeroFormattingBehavior = ZeroFormattingBehavior.pad
+		formatter.zeroFormattingBehavior = .pad
 		return formatter
 	}()
 		

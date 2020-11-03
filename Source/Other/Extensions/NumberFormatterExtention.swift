@@ -13,7 +13,7 @@ extension NumberFormatter {
 	@objc public static var decimalStyleFormatter: NumberFormatter = {
 			
 		let formatter = NumberFormatter()
-		formatter.numberStyle = Style.decimal
+		formatter.numberStyle = .decimal
 		return formatter
 	}()
 }
