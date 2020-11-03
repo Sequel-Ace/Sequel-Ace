@@ -102,12 +102,18 @@
 		17F90E2C1210B34900274C98 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17F90E2B1210B34900274C98 /* Credits.rtf */; };
 		17F90E481210B42700274C98 /* SPExportFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F90E471210B42700274C98 /* SPExportFile.m */; };
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
+		1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
+		1A1EE9582551249C0056FECD /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
+		1A1EE9AC255132E90056FECD /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2711CE2539D9B10066ED58 /* SPReachability.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */ = {isa = PBXBuildFile; fileRef = 1A2711E72539E2BB0066ED58 /* local-connection.html */; };
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
+		1A9D837E25513FCB0024B563 /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
+		1A9D838625513FDD0024B563 /* NumberFormatterExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */; };
+		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1AAF1DC32548485B0037AFDB /* SPReleaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AAF1DBF2548485B0037AFDB /* SPReleaseTests.m */; };
 		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
 		1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
@@ -780,12 +786,16 @@
 		17F90E471210B42700274C98 /* SPExportFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPExportFile.m; sourceTree = "<group>"; };
 		17FDB04A1280778B00DBBBC2 /* SPFontPreviewTextField.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFontPreviewTextField.h; sourceTree = "<group>"; };
 		17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFontPreviewTextField.m; sourceTree = "<group>"; };
+		1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatterExtension.swift; sourceTree = "<group>"; };
+		1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatterExtention.swift; sourceTree = "<group>"; };
+		1A1EE986255131560056FECD /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		1A2711CD2539D9B10066ED58 /* SPReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPReachability.h; sourceTree = "<group>"; };
 		1A2711CE2539D9B10066ED58 /* SPReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReachability.m; sourceTree = "<group>"; };
 		1A2711E72539E2BB0066ED58 /* local-connection.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "local-connection.html"; sourceTree = "<group>"; };
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
+		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
 		1AAF1DBF2548485B0037AFDB /* SPReleaseTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReleaseTests.m; sourceTree = "<group>"; };
 		1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-crlf.pem"; sourceTree = "<group>"; };
 		1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-end.pem"; sourceTree = "<group>"; };
@@ -2289,6 +2299,7 @@
 			children = (
 				38C613721C8977E600B3B6EF /* libz.tbd */,
 				1058C7A6FEA54F5311CA2CBB /* Linked Frameworks */,
+				1A1EE986255131560056FECD /* Quartz.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2335,6 +2346,9 @@
 			children = (
 				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
 				51C8597B24C8A31400A8C7C4 /* StringExtension.swift */,
+				1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */,
+				1A1EE9572551249C0056FECD /* NumberFormatterExtention.swift */,
+				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3083,6 +3097,7 @@
 				BC0E1486120AAB5600E52E25 /* SPDataAdditions.m in Sources */,
 				584754D3120A05910057631F /* GeneratePreviewForURL.m in Sources */,
 				584754D4120A05910057631F /* GenerateThumbnailForURL.m in Sources */,
+				1A1EE9AC255132E90056FECD /* StringExtension.swift in Sources */,
 				584754D5120A05910057631F /* main.c in Sources */,
 				584D88AC1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
 			);
@@ -3152,6 +3167,7 @@
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,
 				1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */,
+				1A1EE9582551249C0056FECD /* NumberFormatterExtention.swift in Sources */,
 				58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */,
 				58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
@@ -3249,6 +3265,7 @@
 				17148565125F5FF500321285 /* SPDatabaseCharacterSets.m in Sources */,
 				17D38F701279E23A00672B13 /* SPTableFieldValidation.m in Sources */,
 				17D390C8127B65AF00672B13 /* SPGeneralPreferencePane.m in Sources */,
+				1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */,
 				17D390CB127B6BF800672B13 /* SPPreferencesUpgrade.m in Sources */,
 				51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */,
 				1785E9F7127D8C7500F468C8 /* SPPreferencePane.m in Sources */,
@@ -3280,6 +3297,7 @@
 				1798F1881550175B004B0AB8 /* SPFavoritesImporter.m in Sources */,
 				1798F1951550181B004B0AB8 /* SPGroupNode.m in Sources */,
 				1798F19815501838004B0AB8 /* SPMutableArrayAdditions.m in Sources */,
+				1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */,
 				1798F19B1550185B004B0AB8 /* SPTreeNode.m in Sources */,
 				1798F19E15501892004B0AB8 /* SPFlippedView.m in Sources */,
 				17D5B49E1553059F00EF3BB3 /* SPViewCopy.m in Sources */,
