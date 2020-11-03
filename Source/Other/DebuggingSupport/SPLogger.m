@@ -36,7 +36,7 @@
 #import <sys/dir.h>
 #import <sys/types.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static SPLogger *logger = nil;
 

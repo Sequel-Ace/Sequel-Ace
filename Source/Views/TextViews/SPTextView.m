@@ -48,7 +48,7 @@
 #import "SPSyntaxParser.h"
 #import "SPHelpViewerClient.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 

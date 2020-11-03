@@ -35,7 +35,7 @@
 #import "SPCategoryAdditions.h"
 #import "SPFunctions.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 // Constants
 static NSString *SPSaveColorScheme          = @"SaveColorScheme";

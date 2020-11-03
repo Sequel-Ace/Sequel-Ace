@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPNetworkPreferencePane.h"
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";

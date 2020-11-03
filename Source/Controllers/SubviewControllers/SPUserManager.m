@@ -41,7 +41,7 @@
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static NSString * const SPTableViewNameColumnID = @"NameColumn";
 
