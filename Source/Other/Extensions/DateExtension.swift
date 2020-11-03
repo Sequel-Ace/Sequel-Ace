@@ -10,7 +10,7 @@ import Foundation
 
 extension Date {
 	
-	public func string(_ format: String, locale: Locale = .current, timeZone: TimeZone = .current) -> String {
+	public func string(format: String, locale: Locale = .current, timeZone: TimeZone = .current) -> String {
 		let formatter = DateFormatter.mediumStyleFormatter
 		
 		formatter.dateFormat = format
@@ -24,7 +24,7 @@ extension Date {
 @objc extension NSDate {
 		
 	public func string(format: NSString, locale: NSLocale, timeZone: NSTimeZone) -> String {
-		return (self as Date).string(format as String, locale: locale as Locale, timeZone: timeZone as TimeZone)
+		return (self as Date).string(format: format as String, locale: locale as Locale, timeZone: timeZone as TimeZone)
 	}
 }
 
