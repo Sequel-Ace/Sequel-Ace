@@ -56,7 +56,7 @@
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
 				// exec on bg thread
-				NSString __unused *tmp = [[NSDate date] formatWithFormat:@"HHmmss"
+				NSString __unused *tmp = [[NSDate date] stringWithFormat:@"HHmmss"
 														 locale:[NSLocale autoupdatingCurrentLocale]
 													   timeZone:[NSTimeZone localTimeZone]];
 			}
@@ -64,63 +64,11 @@
 
 	}];
 }
-// 0.2s - main usage in code 24x (!!??) faster than obj c
-- (void)testPerformanceFormatWithFormatNoLocaleOrTZ {
-	// This is an example of a performance test case.
-	[self measureBlock:^{
-		// Put the code you want to measure the time of here.
 
-		int const iterations = 100000;
+// locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]
 
-		for (int i = 0; i < iterations; i++) {
-			@autoreleasepool {
-				// exec on bg thread
-				NSString __unused *tmp = [[NSDate date] formatWithFormat:@"HHmmss"];
-			}
-		}
-
-	}];
-}
-
-// 0.48s
-- (void)testPerformanceFormattedDateWithFormat {
-	// This is an example of a performance test case.
-	[self measureBlock:^{
-		// Put the code you want to measure the time of here.
-
-		int const iterations = 100000;
-
-		for (int i = 0; i < iterations; i++) {
-			@autoreleasepool {
-				// exec on bg thread
-				NSString __unused *tmp = [[NSDate date] formattedDateWithFormat:@"HHmmss"
-																	   timeZone:[NSTimeZone localTimeZone]
-																	  locale:[NSLocale autoupdatingCurrentLocale]];
-			}
-		}
-
-	}];
-}
-// 4.8s?! main usage in code
-- (void)testPerformanceFormattedDateWithFormatNoLocaleOrTZ {
-	// This is an example of a performance test case.
-	[self measureBlock:^{
-		// Put the code you want to measure the time of here.
-
-		int const iterations = 100000;
-
-		for (int i = 0; i < iterations; i++) {
-			@autoreleasepool {
-				// exec on bg thread
-				NSString __unused *tmp = [[NSDate date] formattedDateWithFormat:@"HHmmss"
-																	   timeZone:nil
-																	  locale:nil];
-			}
-		}
-
-	}];
-}
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 // 0.5s
 - (void)testPerformanceDescriptionWithCalendarFormat {
 	// This is an example of a performance test case.

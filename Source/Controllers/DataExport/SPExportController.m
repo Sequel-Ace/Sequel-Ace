@@ -2324,7 +2324,11 @@ set_input:
 			filename = @"query_result";
 			break;
 		case SPTableExport:
-			filename = [NSString stringWithFormat:@"%@_%@", [tableDocumentInstance database], [[NSDate date] formatWithFormat:@"yyyy-MM-dd"]];
+			filename = [NSString stringWithFormat:@"%@_%@",
+						[tableDocumentInstance database],
+						[[NSDate date] stringWithFormat:@"yyyy-MM-dd"
+												 locale:[NSLocale autoupdatingCurrentLocale]
+											   timeZone:[NSTimeZone localTimeZone]]];
 			
 			;
 			break;
@@ -2420,13 +2424,13 @@ set_input:
 
 			}
 			else if ([tokenContent isEqualToString:SPFileNameYearTokenName]) {
-				[string appendString:[[NSDate date] formatWithFormat:@"yyyy"]];
+				[string appendString:[[NSDate date] stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameMonthTokenName]) {
-				[string appendString:[[NSDate date] formatWithFormat:@"MM"]];
+				[string appendString:[[NSDate date] stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameDayTokenName]) {
-				[string appendString:[[NSDate date] formatWithFormat:@"dd"]];
+				[string appendString:[[NSDate date] stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameTimeTokenName]) {
 				[dateFormatter setDateStyle:NSDateFormatterNoStyle];
@@ -2434,7 +2438,7 @@ set_input:
 				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileName24HourTimeTokenName]) {
-				[string appendString:[[NSDate date] formatWithFormat:@"HH:mm:ss"]];
+				[string appendString:[[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameFavoriteTokenName]) {
 				[string appendStringOrNil:[tableDocumentInstance name]];

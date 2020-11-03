@@ -228,7 +228,7 @@
 		NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInteger:pid], @"pid",
 							  (contextInfo)?: @{}, @"contextInfo",
 							  @"bashcommand", @"type",
-							  [[NSDate date] formatWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale]], @"starttime",
+							  [[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]], @"starttime",
 							  nil];
 		[caller registerActivity:dict];
 	}
