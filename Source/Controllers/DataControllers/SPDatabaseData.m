@@ -91,11 +91,15 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 	
 	@synchronized(charsetCollationLock) {
 		
-		
-		
-		
-		
-		
+		// need to set these to nil
+		// otherwise leftover values are used
+		// in future queries
+		characterSetEncoding = nil;
+		defaultCollationForCharacterSet = nil;
+		defaultCharacterSetEncoding = nil;
+		defaultCollation = nil;
+		serverDefaultCharacterSetEncoding = nil;
+		serverDefaultCollation = nil;
 		
 		[collations removeAllObjects];
 		[characterSetEncodings removeAllObjects];
