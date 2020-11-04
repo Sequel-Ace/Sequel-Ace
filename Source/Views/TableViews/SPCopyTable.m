@@ -51,7 +51,7 @@
 #import "pthread.h"
 #include <stdlib.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 NSInteger SPEditMenuCopy               = 2001;
 NSInteger SPEditMenuCopyWithColumns    = 2002;

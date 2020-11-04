@@ -32,6 +32,8 @@
 #import "SPStringAdditions.h"
 #import "RegexKitLite.h"
 
+#import "sequel-ace-Swift.h"
+
 #import <XCTest/XCTest.h>
 
 @interface SPStringAdditionsTests : XCTestCase
@@ -47,6 +49,74 @@
 static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 @implementation SPStringAdditionsTests
+
+// non static - 0.5s
+- (void)testPerformance_stringForByteSize {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 10000;
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				[NSString stringForByteSize:i];
+			}
+		}
+	}];
+}
+// obj c static - 0.241s
+- (void)testPerformance_stringForByteSizeObjCStatic {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 10000;
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				[NSString stringForByteSize:i];
+			}
+		}
+	}];
+}
+
+//// swift static - 0.24s
+//- (void)testPerformance_stringForByteSizeStatic {
+//	// this is on main thread
+//	[self measureBlock:^{
+//		// Put the code you want to measure the time of here.
+//		int const iterations = 10000;
+//		for (int i = 0; i < iterations; i++) {
+//			@autoreleasepool {
+//				[NSString stringForByteSize2:i];
+//			}
+//		}
+//	}];
+//}
+//
+//// swift static NumberLiterals - 0.239s
+//- (void)testPerformance_stringForByteSizeSwiftStaticNumberLiterals {
+//	// this is on main thread
+//	[self measureBlock:^{
+//		// Put the code you want to measure the time of here.
+//		int const iterations = 10000;
+//		for (int i = 0; i < iterations; i++) {
+//			@autoreleasepool {
+//				[NSString stringForByteSize2:i];
+//			}
+//		}
+//	}];
+//}
+
+//- (void)testPerformance_stringForByteSize{
+//	// this is on main thread
+//	[self measureBlock:^{
+//		// Put the code you want to measure the time of here.
+//		int const iterations = 10000;
+//		for (int i = 0; i < iterations; i++) {
+//			@autoreleasepool {
+//				[NSString stringForByteSize2:i];
+//			}
+//		}
+//	}];
+//}
 
 - (void)testPerformance_StringWithString {
 	// this is on main thread
@@ -96,6 +166,16 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 			}
 		}
 	}];
+}
+
+- (void)testnumberLiterals{
+	int const iterations = 1000000;
+	
+	for (int i = -100; i < iterations; i++) {
+		@autoreleasepool {
+			XCTAssertEqualObjects(@(i), [NSNumber numberWithDouble:i]);
+		}
+	}
 }
 
 /**

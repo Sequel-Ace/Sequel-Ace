@@ -32,6 +32,8 @@
 #import "RegexKitLite.h"
 #include <stdlib.h>
 
+#import "sequel-ace-Swift.h"
+
 static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 
 @implementation NSString (SPStringAdditions)
@@ -42,46 +44,42 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 + (NSString *)stringForByteSize:(long long)byteSize
 {
 	double size = byteSize;
-	
-	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
-	
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-	
-	if (size < 1023) {
-		[numberFormatter setFormat:@"#,##0 B"];
 		
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:size]];
+	if (size < 1023) {
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0 B"];
+		
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(size)];
 	}
 	
 	size = (size / 1024);
 	
 	if (size < 1023) {
-		[numberFormatter setFormat:@"#,##0.0 KiB"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.0 KiB"];
 		
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:size]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(size)];
 	}
 	
 	size = (size / 1024);
 	
 	if (size < 1023) {
-		[numberFormatter setFormat:@"#,##0.0 MiB"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.0 MiB"];
 		
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:size]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(size)];
 	}
 	
 	size = (size / 1024);
 	
 	if (size < 1023) {
-		[numberFormatter setFormat:@"#,##0.0 GiB"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.0 GiB"];
 		
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:size]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(size)];
 	}
 
 	size = (size / 1024);
 	
-	[numberFormatter setFormat:@"#,##0.0 TiB"];
+	[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.0 TiB"];
 	
-	return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:size]];
+	return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(size)];
 }
 
 /**
@@ -89,60 +87,57 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
  */ 
 + (NSString *)stringForTimeInterval:(double)timeInterval
 {
-	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
-
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
 	// For time periods of less than one millisecond, display a localised "< 0.1 ms"
 	if (timeInterval < 0.0001) {
-		[numberFormatter setFormat:@"< #,##0.0 ms"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"< #,##0.0 ms"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:0.1]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@0.1];
 	}
 
 	if (timeInterval < 0.1) {
 		timeInterval = (timeInterval * 1000);
-		[numberFormatter setFormat:@"#,##0.0 ms"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.0 ms"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 	}
 	if (timeInterval < 1) {
 		timeInterval = (timeInterval * 1000);
-		[numberFormatter setFormat:@"#,##0 ms"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0 ms"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 	}
 	
 	if (timeInterval < 10) {
-		[numberFormatter setFormat:@"#,##0.00 s"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.00 s"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 	}
 
 	if (timeInterval < 100) {
-		[numberFormatter setFormat:@"#,##0.0 s"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0.0 s"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 	}
 
 	if (timeInterval < 300) {
-		[numberFormatter setFormat:@"#,##0 s"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0 s"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 	}
 
 	if (timeInterval < 3600) {
 		timeInterval = (timeInterval / 60);
-		[numberFormatter setFormat:@"#,##0 min"];
+		[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0 min"];
 
-		return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+		return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 	}
 
 	timeInterval = (timeInterval / 3600);
 	
-	[numberFormatter setFormat:@"#,##0 hours"];
+	[NSNumberFormatter.decimalStyleFormatter setFormat:@"#,##0 hours"];
 
-	return [numberFormatter stringFromNumber:[NSNumber numberWithDouble:timeInterval]];
+	return [NSNumberFormatter.decimalStyleFormatter stringFromNumber:@(timeInterval)];
 }
 
 /**

@@ -53,7 +53,7 @@
 #import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 @interface SPAppController ()
 

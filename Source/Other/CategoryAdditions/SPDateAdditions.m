@@ -52,26 +52,4 @@
 	return (NSTimeInterval)(timeElapsed * 1e-9);
 }
 
-/**
- *  Convenience method that returns a formatted string representing the receiver's date formatted to a given date format, time zone and locale
- *
- *  @param format   NSString - String representing the desired date format
- *  @param timeZone NSTimeZone - Desired time zone
- *  @param locale   NSLocale - Desired locale
- *
- *  @return NSString representing the formatted date string
- */
--(NSString *)formattedDateWithFormat:(NSString *)format timeZone:(NSTimeZone *)timeZone locale:(NSLocale *)locale{
-    static NSDateFormatter *formatter = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        formatter = [[NSDateFormatter alloc] init];
-    });
-
-    [formatter setDateFormat:format];
-    [formatter setTimeZone:timeZone];
-    [formatter setLocale:locale];
-    return [formatter stringFromDate:self];
-}
-
 @end

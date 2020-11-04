@@ -48,7 +48,7 @@
 
 #import <SPMySQL/SPMySQL.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 
@@ -223,10 +223,8 @@
 	progressCancelled = NO;
 	
 	NSString *importFileName = [NSString stringWithFormat:@"%@%@",
-									SPImportClipboardTempFileNamePrefix,
-									[[NSDate date] formattedDateWithFormat:@"HHmmss"
-																  timeZone:nil
-																	locale:[NSLocale autoupdatingCurrentLocale]]];
+								SPImportClipboardTempFileNamePrefix,
+								[[NSDate date] stringWithFormat:@"HHmmss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 		
 	// Write clipboard content to temp file using the connection encoding
 	NSStringEncoding encoding;

@@ -32,6 +32,7 @@
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 #import "SPWindowController.h"
+#import "sequel-ace-Swift.h"
 
 // Defined to suppress warnings
 @interface NSObject (SPBundleMethods)
@@ -228,7 +229,7 @@
 		NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInteger:pid], @"pid",
 							  (contextInfo)?: @{}, @"contextInfo",
 							  @"bashcommand", @"type",
-							  [[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:[NSLocale autoupdatingCurrentLocale]], @"starttime",
+							  [[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]], @"starttime",
 							  nil];
 		[caller registerActivity:dict];
 	}

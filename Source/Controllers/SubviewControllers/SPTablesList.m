@@ -54,7 +54,7 @@
 #import "SPCharsetCollationHelper.h"
 #import "SPConstants.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 

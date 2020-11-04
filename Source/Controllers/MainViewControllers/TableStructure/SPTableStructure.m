@@ -50,7 +50,7 @@
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 

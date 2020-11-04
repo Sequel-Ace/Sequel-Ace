@@ -49,7 +49,7 @@
 #import "SPHelpViewerClient.h"
 #import "SPTableData.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 

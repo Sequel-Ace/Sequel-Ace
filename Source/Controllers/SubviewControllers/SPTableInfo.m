@@ -36,6 +36,7 @@
 #import "SPActivityTextFieldCell.h"
 #import "SPTableTextFieldCell.h"
 #import "SPAppController.h"
+#import "sequel-ace-Swift.h"
 
 @interface SPTableInfo ()
 
@@ -134,9 +135,7 @@
  */
 - (void)tableChanged:(NSNotification *)notification
 {
-	NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
+	
 	[info removeAllObjects];
 
 	if (![tableListInstance tableName]) {
@@ -189,7 +188,7 @@
 			// Check for 'Rows' == NULL - information_schema database doesn't report row count for it's tables
 			if (![[tableStatus objectForKey:@"Rows"] isNSNull]) {
 				[info addObject:[NSString stringWithFormat:[[tableStatus objectForKey:@"RowsCountAccurate"] boolValue] ? NSLocalizedString(@"rows: %@", @"Table Info Section : number of rows (exact value)") : NSLocalizedString(@"rows: ~%@", @"Table Info Section : number of rows (estimated value)"),
-					[numberFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Rows"] longLongValue]]]]];
+					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Rows"] longLongValue]]]]];
 			}
 			
 			// Check for 'Data_Length' == NULL (see PR #2606)
@@ -211,7 +210,7 @@
 			
 			if (![[tableStatus objectForKey:@"Auto_increment"] isNSNull]) {
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"auto_increment: %@", @"Table Info Section : current value of auto_increment"),
-					[numberFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Auto_increment"] longLongValue]]]]];
+					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Auto_increment"] longLongValue]]]]];
 			}
 
 		}
@@ -468,9 +467,7 @@
 
 - (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate
 {
-	NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init] ;
-
-	[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
+	NSDateFormatter *dateFormatter = NSDateFormatter.mediumStyleFormatter;
 
 	[dateFormatter setDateStyle:NSDateFormatterShortStyle];
 	[dateFormatter setTimeStyle:NSDateFormatterNoStyle];
