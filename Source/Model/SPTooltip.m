@@ -30,19 +30,19 @@
 
 //	Usage:
 //	#import "SPTooltip.h"
-//	
-//	[SPTooltip showWithObject:@"<h1>Hello</h1>I am a <b>tooltip</b>" ofType:@"html" 
+//
+//	[SPTooltip showWithObject:@"<h1>Hello</h1>I am a <b>tooltip</b>" ofType:@"html"
 //			displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
-//			SPDefaultMonospacedFontName, @"fontname", 
-//			@"#EEEEEE", @"backgroundcolor", 
-//			@"20", @"fontsize", 
+//			SPDefaultMonospacedFontName, @"fontname",
+//			@"#EEEEEE", @"backgroundcolor",
+//			@"20", @"fontsize",
 //			@"transparent", @"transparent", nil]];
-//	
-//	[SPTooltip  showWithObject:(id)content 
-//					atLocation:(NSPoint)point 
-//						ofType:(NSString *)type 
+//
+//	[SPTooltip  showWithObject:(id)content
+//					atLocation:(NSPoint)point
+//						ofType:(NSString *)type
 //				displayOptions:(NSDictionary *)displayOptions]
-//	
+//
 //			content: a NSString with the actual content; a NSImage object AND type:"image"
 //			  point: n NSPoint where the tooltip should be shown
 //			         if not given it will be shown under the current caret position or
@@ -53,7 +53,7 @@
 //	                 if no displayOptions are passed or if a key doesn't exist the following default
 //	                 are taken:
 //	                       "Lucida Grande", "10", "#F9FBC5", NO
-//	
+//
 //	See more possible syntaxa in SPTooltip to init a tooltip
 
 #import "SPTooltip.h"
@@ -85,43 +85,73 @@ static CGFloat slow_in_out (CGFloat t)
 
 @implementation SPTooltip
 
+
++ (instancetype)sharedInstance {
+	static id sharedInstance = nil;
+
+	static dispatch_once_t SPTooltipOnceToken;
+
+	dispatch_once(&SPTooltipOnceToken, ^{
+		sharedInstance = [[[self class] alloc] init];
+	});
+
+	return sharedInstance;
+}
+
+- (instancetype)init {
+	if((self = [super initWithContentRect:NSMakeRect(1,1,1,1)
+					styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO]))
+	{
+		
+		// some setup?
+		
+	}
+	return self;
+}
+
 // ==================
 // = Setup/teardown =
 // ==================
 
+//static SPTooltip *tip;
+
 + (void)showWithObject:(id)content atLocation:(NSPoint)point
 {
-	[self showWithObject:content atLocation:point ofType:@"text" displayOptions:@{}];
+	[self.sharedInstance showWithObject:content atLocation:point ofType:@"text" displayOptions:@{}];
 }
 
 + (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type
 {
-	[self showWithObject:content atLocation:point ofType:type displayOptions:nil];
+	[self.sharedInstance showWithObject:content atLocation:point ofType:type displayOptions:nil];
 }
 
 + (void)showWithObject:(id)content
 {
-	[self showWithObject:content atLocation:[self caretPosition] ofType:@"text" displayOptions:nil];
+	[self.sharedInstance showWithObject:content atLocation:[self caretPosition] ofType:@"text" displayOptions:nil];
 }
 
 + (void)showWithObject:(id)content ofType:(NSString *)type
 {
-	[self showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:nil];
+	[self.sharedInstance showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:nil];
 }
 
 + (void)showWithObject:(id)content ofType:(NSString *)type displayOptions:(NSDictionary *)options
 {
-	[self showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:options];
+	[self.sharedInstance showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:options];
 }
 
-+ (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions
++ (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions{
+	
+	[self.sharedInstance showWithObject:content atLocation:point ofType:type displayOptions:displayOptions];
+}
+
+- (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions
 {
 
 	spTooltipCounter++;
 	
-	SPTooltip* tip = [[SPTooltip alloc] init]; // Automatically released on close
-	[tip initMeWithOptions:displayOptions];
-	[tip setFrameTopLeftPoint:point];
+	[self initMeWithOptions:displayOptions];
+	[self setFrameTopLeftPoint:point];
 
 	if([type isEqualToString:@"text"]) {
 		NSString* html = nil;
@@ -130,8 +160,8 @@ static CGFloat slow_in_out (CGFloat t)
 		{
 			[text replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, [text length])];
 			[text replaceOccurrencesOfString:@"<" withString:@"&lt;" options:0 range:NSMakeRange(0, [text length])];
-			[text insertString:[NSString stringWithFormat:@"<pre style=\"font-family:'%@';\">", 
-				([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande"] 
+			[text insertString:[NSString stringWithFormat:@"<pre style=\"font-family:'%@';\">",
+				([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande"]
 				atIndex:0];
 			[text appendString:@"</pre>"];
 			html = text;
@@ -140,17 +170,17 @@ static CGFloat slow_in_out (CGFloat t)
 		{
 			html = @"Error";
 		}
-		[tip setContent:html withOptions:displayOptions];
+		[self setContent:html withOptions:displayOptions];
 	}
 	else if([type isEqualToString:@"html"]) {
-		[tip setContent:(NSString*)content withOptions:displayOptions];
+		[self setContent:(NSString*)content withOptions:displayOptions];
 	}
 	else if([type isEqualToString:@"image"]) {
-		[tip setBackgroundColor:[NSColor clearColor]];
-		[tip setOpaque:NO];
-		[tip setLevel:NSNormalWindowLevel];
-		[tip setExcludedFromWindowsMenu:YES];
-		[tip setAlphaValue:1];
+		[self setBackgroundColor:[NSColor clearColor]];
+		[self setOpaque:NO];
+		[self setLevel:NSNormalWindowLevel];
+		[self setExcludedFromWindowsMenu:YES];
+		[self setAlphaValue:1];
 
 		NSSize s = [(NSImage *)content size];
 		
@@ -173,15 +203,15 @@ static CGFloat slow_in_out (CGFloat t)
 		NSImageView *backgroundImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0,0,w, h)];
 		[backgroundImageView setImage:(NSImage *)content];
 		[backgroundImageView setFrameSize:NSMakeSize(w, h)];
-		[tip setContentView:backgroundImageView];
-		[tip setContentSize:NSMakeSize(w,h)];
-		[tip setFrameTopLeftPoint:point];
-		[tip sizeToContent];
-		[tip orderFront:self];
-		[tip performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+		[self setContentView:backgroundImageView];
+		[self setContentSize:NSMakeSize(w,h)];
+		[self setFrameTopLeftPoint:point];
+		[self sizeToContent];
+		[self orderFront:self];
+		[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
 	}
 	else {
-		[tip setContent:(NSString*)content withOptions:displayOptions];
+		[self setContent:(NSString*)content withOptions:displayOptions];
 		NSBeep();
 		NSLog(@"SPTooltip: Type '%@' is not supported. Please use 'text' or 'html'. Tooltip is displayed as type 'html'", type);
 	}
@@ -190,7 +220,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 - (void)initMeWithOptions:(NSDictionary *)displayOptions
 {
-	[self setReleasedWhenClosed:YES];
+	[self setReleasedWhenClosed:NO]; // important that this is NO, otherwise self is released
 	[self setAlphaValue:0.97f];
 	[self setOpaque:NO];
 	[self setBackgroundColor:[NSColor clearColor]];
@@ -216,22 +246,14 @@ static CGFloat slow_in_out (CGFloat t)
 	[webView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	[webView setFrameLoadDelegate:self];
 	if ([webView respondsToSelector:@selector(setDrawsBackground:)])
-	    [webView setDrawsBackground:NO];
+		[webView setDrawsBackground:NO];
 
 	[self setContentView:webView];
 }
 
-- (id)init;
-{
-	if((self = [self initWithContentRect:NSMakeRect(1,1,1,1) 
-					styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO]))
-	{
-	}
-	return self;
-}
-
 - (void)dealloc
 {
+	SPLog(@"dealloc called");
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
 }
@@ -322,7 +344,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 		NSInteger height  = [[[webView windowScriptObject] evaluateWebScript:@"document.body.offsetHeight + document.body.offsetTop;"] integerValue];
 		NSInteger width   = [[[webView windowScriptObject] evaluateWebScript:@"document.body.offsetWidth + document.body.offsetLeft;"] integerValue];
-	
+			
 		[webView setFrameSize:NSMakeSize(width, height)];
 
 		frame = [self frameRectForContentRect:[webView frame]];
@@ -416,6 +438,10 @@ static CGFloat slow_in_out (CGFloat t)
 // =============
 - (void)orderOut:(id)sender
 {
+	// must set this to nil here
+	// otherwise subsequent tootips do not display
+	self.contentView = nil;
+	
 	if(![self isVisible] || animationTimer)
 		return;
 
@@ -454,3 +480,4 @@ static CGFloat slow_in_out (CGFloat t)
 }
 
 @end
+
