@@ -223,14 +223,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (IBAction)tableRowAutoIncrementWasEdited:(id)sender
 {
 	[tableRowAutoIncrement setEditable:NO];
-	
-<<<<<<< HEAD
-	NSNumberFormatter *fmt = [[NSNumberFormatter alloc] init] ;
-	[fmt setNumberStyle:NSNumberFormatterDecimalStyle];
-	NSNumber *value = [fmt numberFromString:[tableRowAutoIncrement stringValue]];
-=======
+
 	NSNumber *value = [NSNumberFormatter.decimalStyleFormatter numberFromString:[tableRowAutoIncrement stringValue]];
->>>>>>> main
 	
 	[tableSourceInstance setAutoIncrementTo:value];
 }
@@ -713,12 +707,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
-<<<<<<< HEAD
-			// Create date formatter
-			NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init] ;
-=======
->>>>>>> main
-
 			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
 			// 2020-06-30 14:14:11 is one example
 		}
@@ -727,15 +715,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLAverageRowLengthField] ||
 				 [key isEqualToString:SPMySQLAutoIncrementField]) {
 
-<<<<<<< HEAD
-			NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init] ;
-
-			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
-			value = [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:[value longLongValue]]];
-=======
 			value = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[value longLongValue]]];
->>>>>>> main
 
 			// Prefix number of rows with '~' if it is not an accurate count
 			if ([key isEqualToString:SPMySQLRowsField] && ![[infoDict objectForKey:@"RowsCountAccurate"] boolValue]) {
