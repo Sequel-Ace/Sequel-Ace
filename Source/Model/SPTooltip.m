@@ -85,9 +85,8 @@ static CGFloat slow_in_out (CGFloat t)
 
 @implementation SPTooltip
 
-
 + (instancetype)sharedInstance {
-	static id sharedInstance = nil;
+	static SPTooltip *sharedInstance = nil;
 
 	static dispatch_once_t SPTooltipOnceToken;
 
@@ -112,8 +111,6 @@ static CGFloat slow_in_out (CGFloat t)
 // ==================
 // = Setup/teardown =
 // ==================
-
-//static SPTooltip *tip;
 
 + (void)showWithObject:(id)content atLocation:(NSPoint)point
 {
