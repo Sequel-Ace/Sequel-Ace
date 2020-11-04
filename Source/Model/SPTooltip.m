@@ -81,9 +81,14 @@ static CGFloat slow_in_out (CGFloat t)
 + (void)setDisplayOptions:(NSDictionary *)aDict;
 - (void)initMeWithOptions:(NSDictionary *)displayOptions;
 
+@property (nonatomic, assign) BOOL gotHeight;
+@property (nonatomic, assign) BOOL gotWidth;
+
 @end
 
 @implementation SPTooltip
+
+@synthesize gotHeight, gotWidth;
 
 + (instancetype)sharedInstance {
 	static SPTooltip *sharedInstance = nil;
@@ -147,6 +152,9 @@ static CGFloat slow_in_out (CGFloat t)
 
 	spTooltipCounter++;
 	
+	self.gotWidth = NO;
+	self.gotHeight = NO;
+	
 	[self initMeWithOptions:displayOptions];
 	[self setFrameTopLeftPoint:point];
 
@@ -155,10 +163,12 @@ static CGFloat slow_in_out (CGFloat t)
 		NSMutableString* text = [(NSString*)content mutableCopy] ;
 		if(text)
 		{
+			int fontSize = ([displayOptions objectForKey:@"fontsize"]) ? [[displayOptions objectForKey:@"fontsize"] intValue] : 10;
+			if(fontSize < 5) fontSize = 5;
 			[text replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, [text length])];
 			[text replaceOccurrencesOfString:@"<" withString:@"&lt;" options:0 range:NSMakeRange(0, [text length])];
-			[text insertString:[NSString stringWithFormat:@"<pre style=\"font-family:'%@';\">",
-				([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande"]
+			[text insertString:[NSString stringWithFormat:@"<pre style=\"font-family:'%@'; font-size: %dpx\">",
+				([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande", fontSize]
 				atIndex:0];
 			[text appendString:@"</pre>"];
 			html = text;
@@ -226,26 +236,35 @@ static CGFloat slow_in_out (CGFloat t)
 	[self setHidesOnDeactivate:YES];
 	[self setIgnoresMouseEvents:YES];
 
-	webPreferences = [[WebPreferences alloc] initWithIdentifier:@"SequelPro Tooltip"];
-	[webPreferences setJavaScriptEnabled:YES];
-
-	NSString *fontName = ([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande";
-	int fontSize = ([displayOptions objectForKey:@"fontsize"]) ? [[displayOptions objectForKey:@"fontsize"] intValue] : 10;
-	if(fontSize < 5) fontSize = 5;
+	WKPreferences *prefs = [WKPreferences new];
+	prefs.javaScriptEnabled = YES;
 	
-	NSFont* font = [NSFont fontWithName:fontName size:fontSize];
-	[webPreferences setStandardFontFamily:[font familyName]];
-	[webPreferences setDefaultFontSize:fontSize];
-	[webPreferences setDefaultFixedFontSize:fontSize];
+	/* Create a configuration for our preferences */
+	WKWebViewConfiguration *conf = [WKWebViewConfiguration new];
+	conf.preferences = prefs;
+	conf.applicationNameForUserAgent = @"SequelPro Tooltip";
+	
+	wkWebView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:conf];
+	
+	[wkWebView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	wkWebView.navigationDelegate = self;
+	
+	[self setContentView:wkWebView];
+}
 
-	webView = [[WebView alloc] initWithFrame:NSZeroRect];
-	[webView setPreferencesIdentifier:@"SequelPro Tooltip"];
-	[webView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-	[webView setFrameLoadDelegate:self];
-	if ([webView respondsToSelector:@selector(setDrawsBackground:)])
-		[webView setDrawsBackground:NO];
-
-	[self setContentView:webView];
+- (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation {
+	SPLog(@"didFinishNavigation FINISHING LOAD");
+	
+	[self sizeToContent];
+	[self orderFront:self];
+	[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+	
+}
+- (void)webView:(WKWebView *)webView didFailNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	SPLog(@"didFailNavigation. error is: %@", error);
+}
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	SPLog(@"didFailProvisionalNavigation. error is: %@", error);
 }
 
 - (void)dealloc
@@ -319,7 +338,7 @@ static CGFloat slow_in_out (CGFloat t)
 	BOOL isTransparent = ([displayOptions objectForKey:@"transparent"]) ? YES : NO;
 
 	fullContent = [NSString stringWithFormat:fullContent, isTransparent ? @"transparent" : bgColor, content];
-	[[webView mainFrame] loadHTMLString:fullContent baseURL:nil];
+	[wkWebView loadHTMLString:fullContent baseURL:nil];
 
 }
 
@@ -335,16 +354,44 @@ static CGFloat slow_in_out (CGFloat t)
 	NSRect screenFrame = [NSScreen rectOfScreenAtPoint:pos];
 
 	// is contentView a webView calculate actual rendered size via JavaScript
-	if([[[[self contentView] class] description] isEqualToString:@"WebView"]) {
+	if([[[[self contentView] class] description] isEqualToString:@"WKWebView"]) {
 		// The webview is set to a large initial size and then sized down to fit the content
 		[self setContentSize:NSMakeSize(screenFrame.size.width - screenFrame.size.width / 3.0f , screenFrame.size.height)];
 
-		NSInteger height  = [[[webView windowScriptObject] evaluateWebScript:@"document.body.offsetHeight + document.body.offsetTop;"] integerValue];
-		NSInteger width   = [[[webView windowScriptObject] evaluateWebScript:@"document.body.offsetWidth + document.body.offsetLeft;"] integerValue];
+		NSInteger __block height = 21;
+		NSInteger __block width = 400;
+		
+		[self->wkWebView evaluateJavaScript:@"document.body.offsetHeight + document.body.offsetTop;" completionHandler:^(id _Nullable height2, NSError * _Nullable error) {
+			SPLog(@"height2: %@", height2);
+			if (error) SPLog(@"error: %@", error.localizedDescription);
 			
-		[webView setFrameSize:NSMakeSize(width, height)];
+			height = [height2 integerValue];
+			self->gotHeight = YES;
+			
+		}];
+		
+		[self->wkWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
+			SPLog(@"width2: %@", width2);
+			if (error) SPLog(@"error: %@", error.localizedDescription);
+			
+			width = [width2 integerValue];
+			self->gotWidth = YES;
+		}];
+		
+		// wait until we have both height and width
+		if (gotHeight == NO || gotWidth == NO) {
 
-		frame = [self frameRectForContentRect:[webView frame]];
+			[NSThread detachNewThreadSelector:@selector(runInBackground:) toTarget:self withObject:nil];
+
+			while (gotHeight == NO || gotWidth == NO) {
+				SPLog(@"waiting");
+				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+			}
+		}
+			
+		[wkWebView setFrameSize:NSMakeSize(width, height)];
+
+		frame = [self frameRectForContentRect:[wkWebView frame]];
 	} else {
 		frame = [self frame];
 	}
@@ -360,15 +407,21 @@ static CGFloat slow_in_out (CGFloat t)
 	pos.y = MIN(MAX(NSMinY(screenFrame)+NSHeight(frame), pos.y), NSMaxY(screenFrame));
 
 	[self setFrameTopLeftPoint:pos];
-	
+		
 }
 
-- (void)webView:(WebView*)sender didFinishLoadForFrame:(WebFrame*)frame;
-{
-	[self sizeToContent];
-	[self orderFront:self];
-	[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+- (void)runInBackground:(id)arg {
+	@autoreleasepool {
+		[self performSelectorOnMainThread:@selector(wakeUpMainThreadRunloop:) withObject:nil waitUntilDone:NO];
+	}
 }
+
+- (void)wakeUpMainThreadRunloop:(id)arg {
+	// This method is executed on main thread!
+	// It doesn't need to do anything actually, just having it run will
+	// make sure the main thread stops running the runloop
+}
+
 
 // ==================
 // = Event handling =
