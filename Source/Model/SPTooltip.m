@@ -81,9 +81,14 @@ static CGFloat slow_in_out (CGFloat t)
 + (void)setDisplayOptions:(NSDictionary *)aDict;
 - (void)initMeWithOptions:(NSDictionary *)displayOptions;
 
+@property (nonatomic, assign) BOOL gotHeight;
+@property (nonatomic, assign) BOOL gotWidth;
+
 @end
 
 @implementation SPTooltip
+
+@synthesize gotHeight, gotWidth;
 
 + (instancetype)sharedInstance {
 	static SPTooltip *sharedInstance = nil;
@@ -147,8 +152,8 @@ static CGFloat slow_in_out (CGFloat t)
 
 	spTooltipCounter++;
 	
-	gotWidth = NO;
-	gotHeight = NO;
+	self.gotWidth = NO;
+	self.gotHeight = NO;
 	
 	[self initMeWithOptions:displayOptions];
 	[self setFrameTopLeftPoint:point];

@@ -45,9 +45,6 @@
 	
 	NSString* 		SPTooltipPreferencesIdentifier;
 	
-	BOOL 			gotHeight;
-	BOOL 			gotWidth;
-
 }
 
 @property (nonatomic, class, readonly, strong) SPTooltip *sharedInstance;
