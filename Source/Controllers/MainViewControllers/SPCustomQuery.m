@@ -2438,7 +2438,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Suppress tooltip if another toolip is already visible, mainly displayed by a Bundle command
 	// TODO has to be improved
 	for(id win in [NSApp orderedWindows]) {
-		if([[[[win contentView] class] description] isEqualToString:@"WebView"]) {
+		if([[[[win contentView] class] description] isEqualToString:@"WKWebView"]) {
 			return nil;
 		}
 	}

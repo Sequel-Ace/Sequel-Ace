@@ -4345,7 +4345,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// TODO has to be improved
 		for (id win in [NSApp orderedWindows])
 		{
-			if ([[[[win contentView] class] description] isEqualToString:@"WebView"]) return nil;
+			if ([[[[win contentView] class] description] isEqualToString:@"WKWebView"]) return nil;
 		}
 
 		NSImage *image;
