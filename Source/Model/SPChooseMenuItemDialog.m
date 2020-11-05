@@ -78,7 +78,7 @@
 
 - (void)initDialog
 {
-	[self setReleasedWhenClosed:YES];
+	[self setReleasedWhenClosed:NO];
 	[self setLevel:NSNormalWindowLevel];
 	[self setHidesOnDeactivate:YES];
 	[self setHasShadow:YES];

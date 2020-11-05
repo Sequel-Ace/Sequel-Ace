@@ -327,7 +327,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 
 - (void)setupInterface
 {
-	[self setReleasedWhenClosed:YES];
+	[self setReleasedWhenClosed:NO];
 	[self setLevel:NSNormalWindowLevel];
 	[self setHidesOnDeactivate:YES];
 	[self setHasShadow:YES];
