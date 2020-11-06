@@ -121,6 +121,10 @@ typedef NS_ENUM(NSInteger, SPTableViewType)
 	SPTableViewInvalid     = NSNotFound
 };
 
+@interface NSString (TableViewTypeEnumParser)
+- (SPTableViewType)tableViewTypeEnumFromString;
+@end
+
 // SSH tunnel password modes
 typedef enum
 {

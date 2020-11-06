@@ -30,6 +30,31 @@
 
 #import "SPConstants.h"
 
+
+@implementation NSString (TableViewTypeEnumParser)
+
+- (SPTableViewType)tableViewTypeEnumFromString{
+	
+	static NSDictionary<NSString*,NSNumber*> *tableViewType = nil;
+	
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		tableViewType = [@{
+			@"source"		: @(SPTableViewStructure),
+			@"content"		: @(SPTableViewContent),
+			@"customQuery"	: @(SPTableViewCustomQuery),
+			@"status"		: @(SPTableViewStatus),
+			@"relations"	: @(SPTableViewRelations),
+			@"triggers"		: @(SPTableViewTriggers),
+			@"SPTableViewInvalid": @(NSNotFound)
+		} copy]; // TODO: won't need this copy under ARC
+	});
+	
+	return tableViewType[self].integerValue;
+}
+
+@end
+
 // Narrow down completion max rows
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
 const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
