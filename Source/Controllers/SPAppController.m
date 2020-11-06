@@ -2287,7 +2287,7 @@
  */
 - (BOOL)application:(NSApplication *)sender delegateHandlesKey:(NSString *)key
 {
-	NSLog(@"Not yet implemented: %@", key);
+	SPLog(@"Not yet implemented: %@", key);
 
 	return NO;
 }
