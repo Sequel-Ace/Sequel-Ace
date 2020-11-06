@@ -2678,23 +2678,35 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	SPTableViewType theView = NSNotFound;
 
 	// -selectedTabViewItem is a UI method according to Xcode 9.2!
-	// jamesstout note - this is called a LOT. 
+	// jamesstout note - this is called a LOT.
+	// using tableViewTypeEnumFromString is 5-7x faster than if/else isEqualToString:
 	NSString *viewName = [[[tableTabView onMainThread] selectedTabViewItem] identifier];
-
-	if ([viewName isEqualToString:@"source"]) {
-		theView = SPTableViewStructure;
-	} else if ([viewName isEqualToString:@"content"]) {
-		theView = SPTableViewContent;
-	} else if ([viewName isEqualToString:@"customQuery"]) {
-		theView = SPTableViewCustomQuery;
-	} else if ([viewName isEqualToString:@"status"]) {
-		theView = SPTableViewStatus;
-	} else if ([viewName isEqualToString:@"relations"]) {
-		theView = SPTableViewRelations;
-	} else if ([viewName isEqualToString:@"triggers"]) {
-		theView = SPTableViewTriggers;
+	
+	SPTableViewType enumValue = [viewName tableViewTypeEnumFromString];
+	
+	switch (enumValue) {
+		case SPTableViewStructure:
+			theView = SPTableViewStructure;
+			break;
+		case SPTableViewContent:
+			theView = SPTableViewContent;
+			break;
+		case SPTableViewCustomQuery:
+			theView = SPTableViewCustomQuery;
+			break;
+		case SPTableViewStatus:
+			theView = SPTableViewStatus;
+			break;
+		case SPTableViewRelations:
+			theView = SPTableViewRelations;
+			break;
+		case SPTableViewTriggers:
+			theView = SPTableViewTriggers;
+			break;
+		default:
+			theView = SPTableViewInvalid;
 	}
-
+		
 	return theView;
 }
 
@@ -2731,7 +2743,16 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			NSBeep();
 		}
 	}
-
+	
+	// this doesn't get shown yet, need to figure out how to stop app from closing
+	if([[self->customQueryTextView.textStorage string] length] > 0){
+		
+		NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
+		menuItem.tag = SPMainMenuFileSaveQuery;
+		
+		[self saveConnectionSheet:menuItem];
+	}
+	
 	[tablesListInstance selectionShouldChangeInTableView:nil];
 
 	// Note that this call does not need to be removed in release builds as leaks analysis output is only
@@ -4096,6 +4117,27 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		} else {
 			return NO;
 		}
+	}
+	
+	if([[self->customQueryTextView.textStorage string] length] > 0){
+		
+		NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Would you like to save this query?", @"message of panel asking for confirmation for save query")];
+		
+		// show warning
+		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Save query?", @"Save query?")]
+									 message:infoText
+						  primaryButtonTitle:NSLocalizedString(@"Save", @"Save")
+						primaryButtonHandler:^{
+			SPLog(@"Save pressed");
+			
+			NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
+			menuItem.tag = SPMainMenuFileSaveQuery;
+			// call the save panel
+			[self saveConnectionSheet:menuItem];
+		}
+						 cancelButtonHandler:^{
+			SPLog(@"Cancel pressed");
+		}];
 	}
 
 	// Terminate all running BASH commands
