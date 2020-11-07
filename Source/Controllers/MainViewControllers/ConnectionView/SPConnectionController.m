@@ -3409,7 +3409,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[databaseConnectionSuperview addSubview:connectionView];
 
 		// Set up the splitview
-		[connectionSplitView setMinSize:80.f ofSubviewAtIndex:0];
+		[connectionSplitView setMinSize:150.f ofSubviewAtIndex:0];
 		[connectionSplitView setMinSize:445.f ofSubviewAtIndex:1];
 
 		// Generic folder image for use in the outline view's groups
