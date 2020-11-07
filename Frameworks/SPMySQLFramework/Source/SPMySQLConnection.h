@@ -141,6 +141,7 @@
 @property (readwrite, copy) NSString *host;
 @property (readwrite, copy) NSString *username;
 @property (readwrite, copy) NSString *password;
+@property (readwrite, copy) NSString *database;
 @property (readwrite) NSUInteger port;
 @property (readwrite) BOOL useSocket;
 @property (readwrite, copy) NSString *socketPath;

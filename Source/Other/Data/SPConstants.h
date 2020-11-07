@@ -676,6 +676,9 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 	SPErrorWrongContentVersion = 110003,
 };
 
+#define user_defaults_get_bool(key)         [[NSUserDefaults standardUserDefaults] boolForKey:key]
+#define user_defaults_get_bool_ud(key, ud)  [ud boolForKey:key]
+
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
 
 // Provides a standard method for our "[x release], x = nil;" convention.
