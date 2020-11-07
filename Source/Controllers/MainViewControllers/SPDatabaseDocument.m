@@ -284,20 +284,22 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[self _addPreferenceObservers];
 
 	// Register for notifications
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(willPerformQuery:)
-	                                             name:@"SMySQLQueryWillBePerformed"
-	                                           object:self];
-
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(hasPerformedQuery:)
-	                                             name:@"SMySQLQueryHasBeenPerformed"
-	                                           object:self];
-
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(applicationWillTerminate:)
-	                                             name:@"NSApplicationWillTerminateNotification"
-	                                           object:nil];
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	
+	[nc addObserver:self
+		   selector:@selector(willPerformQuery:)
+			   name:@"SMySQLQueryWillBePerformed"
+			 object:self];
+	
+	[nc addObserver:self
+		   selector:@selector(hasPerformedQuery:)
+			   name:@"SMySQLQueryHasBeenPerformed"
+			 object:self];
+	
+	[nc addObserver:self
+		   selector:@selector(applicationWillTerminate:)
+			   name:@"NSApplicationWillTerminateNotification"
+			 object:nil];
 
 	// Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
 	selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
@@ -4126,17 +4128,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 		// show warning
 		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Save query?", @"Save query?")]
-									 message:infoText
+													message:infoText
 												suppression:YES
-						  primaryButtonTitle:NSLocalizedString(@"Save", @"Save")
-						primaryButtonHandler:^{
+										 primaryButtonTitle:NSLocalizedString(@"Save", @"Save")
+									   primaryButtonHandler:^{
 			SPLog(@"Save pressed");
 			NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
 			menuItem.tag = SPMainMenuFileSaveQuery;
 			// call the save panel
 			[self saveConnectionSheet:menuItem];
 		}
-						 cancelButtonHandler:^{
+										cancelButtonHandler:^{
 			SPLog(@"Cancel pressed");
 		}];
 	}
