@@ -4124,6 +4124,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)parentTabDidClose
 {
+	// if tab closed and there is text in the query view, safe to history
+	
+	NSString *queryString = [self->customQueryTextView.textStorage string];
+	
+	if([queryString length] > 0){
+		[[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
+	}
+	
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
