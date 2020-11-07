@@ -115,6 +115,7 @@
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
+		1AA650C42556AEE20025395B /* SPSharedConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AA650C32556AEE20025395B /* SPSharedConstants.m */; };
 		1AAF1DC32548485B0037AFDB /* SPReleaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AAF1DBF2548485B0037AFDB /* SPReleaseTests.m */; };
 		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
 		1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
@@ -798,6 +799,8 @@
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
+		1AA650C22556AEE20025395B /* SPSharedConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSharedConstants.h; sourceTree = "<group>"; };
+		1AA650C32556AEE20025395B /* SPSharedConstants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPSharedConstants.m; sourceTree = "<group>"; };
 		1AAF1DBF2548485B0037AFDB /* SPReleaseTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReleaseTests.m; sourceTree = "<group>"; };
 		1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-crlf.pem"; sourceTree = "<group>"; };
 		1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-end.pem"; sourceTree = "<group>"; };
@@ -1428,6 +1431,8 @@
 		173284E51088FEC20062E892 /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				1AA650C22556AEE20025395B /* SPSharedConstants.h */,
+				1AA650C32556AEE20025395B /* SPSharedConstants.m */,
 				173284E81088FEDE0062E892 /* SPConstants.h */,
 				173284E91088FEDE0062E892 /* SPConstants.m */,
 			);
@@ -3207,6 +3212,7 @@
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
+				1AA650C42556AEE20025395B /* SPSharedConstants.m in Sources */,
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
