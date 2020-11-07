@@ -61,7 +61,7 @@
 #import <SPMySQL/SPMySQL.h>
 #include <stdlib.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 /**
  * This is the unique KVO context of code that resides in THIS class.
@@ -1003,16 +1003,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
+// TODO: this is called A LOT, optimize
 - (void)updateCountText
 {
 	NSString *rowString;
 	NSMutableString *countString = [NSMutableString string];
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
+	
 	// Set up a couple of common strings
-	NSString *tableCountString = [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:tableRowsCount]];
-	NSString *maxRowsString = [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:maxNumRows]];
+	NSString *tableCountString = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:tableRowsCount]];
+	NSString *maxRowsString = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:maxNumRows]];
 
 	// If the result is partial due to an error or query cancellation, show a very basic count
 	if (isInterruptedLoad) {
@@ -1031,7 +1030,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If a limit is active, display a string suggesting a limit is active
 	} else if (!isFiltered && isLimited) {
 		NSUInteger limitStart = (contentPage-1)*[prefs integerForKey:SPLimitResultsValue] + 1;
-		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ of %@%@ from table", @"text showing how many rows are in the limited result"),  [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]], maxNumRowsIsEstimate?@"~":@"", maxRowsString];
+		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ of %@%@ from table", @"text showing how many rows are in the limited result"),  [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]], maxNumRowsIsEstimate?@"~":@"", maxRowsString];
 
 	// If just a filter is active, show a count and an indication a filter is active
 	} else if (isFiltered && !isLimited) {
@@ -1043,7 +1042,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If both a filter and limit is active, display full string
 	} else {
 		NSUInteger limitStart = (contentPage-1)*[prefs integerForKey:SPLimitResultsValue] + 1;
-		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ from filtered matches", @"text showing how many rows are in the limited filter match"), [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]]];
+		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ from filtered matches", @"text showing how many rows are in the limited filter match"), [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]]];
 	}
 
 	// If rows are selected, append selection count
@@ -1054,7 +1053,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			rowString = [NSString stringWithString:NSLocalizedString(@"row", @"singular word for row")];
 		else
 			rowString = [NSString stringWithString:NSLocalizedString(@"rows", @"plural word for rows")];
-		[countString appendFormat:NSLocalizedString(@"%@ %@ selected", @"text showing how many rows are selected"), [numberFormatter stringFromNumber:[NSNumber numberWithInteger:selectedRows]], rowString];
+		[countString appendFormat:NSLocalizedString(@"%@ %@ selected", @"text showing how many rows are selected"), [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithInteger:selectedRows]], rowString];
 	}
 
 	[countText setStringValue:countString];

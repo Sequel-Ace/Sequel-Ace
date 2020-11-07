@@ -41,7 +41,7 @@
 
 #import <SPMySQL/SPMySQL.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 typedef enum {
 	TextSegment = 0,

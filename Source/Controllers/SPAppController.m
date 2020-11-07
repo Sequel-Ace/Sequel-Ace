@@ -52,7 +52,7 @@
 #import "SPOSInfo.h"
 #import <PSMTabBar/PSMTabBarControl.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 @interface SPAppController ()
 
@@ -2291,7 +2291,7 @@
  */
 - (BOOL)application:(NSApplication *)sender delegateHandlesKey:(NSString *)key
 {
-	NSLog(@"Not yet implemented: %@", key);
+	SPLog(@"Not yet implemented: %@", key);
 
 	return NO;
 }

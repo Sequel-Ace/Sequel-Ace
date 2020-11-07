@@ -62,7 +62,7 @@
 #import "SPBracketHighlighter.h"
 
 #include <libkern/OSAtomic.h>
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 typedef struct {
 	NSUInteger query;

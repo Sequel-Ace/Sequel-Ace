@@ -35,7 +35,7 @@
 #import "SPFavoriteNode.h"
 #import "SPGroupNode.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static NSString *SPDatabaseImage = @"database-small";
 

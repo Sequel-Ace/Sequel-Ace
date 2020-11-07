@@ -37,7 +37,7 @@
 
 #import <SPMySQL/SPMySQL.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 // Constants
 static NSString *SPKillProcessQueryMode        = @"SPKillProcessQueryMode";

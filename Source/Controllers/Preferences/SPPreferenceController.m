@@ -33,7 +33,7 @@
 #import "SPEditorPreferencePane.h"
 #import "SPGeneralPreferencePane.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 @interface SPPreferenceController () <NSWindowDelegate>
 

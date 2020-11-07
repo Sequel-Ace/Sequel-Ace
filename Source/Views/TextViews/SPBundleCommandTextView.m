@@ -34,7 +34,7 @@
 #import "NoodleLineNumberView.h"
 #import "RegexKitLite.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 @implementation SPBundleCommandTextView
 
