@@ -1923,7 +1923,6 @@ cleanup:
 	if (selectedTableTarget)           SPClear(selectedTableTarget);
 	
 	SPClear(nibObjectsToRelease);
-	SPClear(fileManager);
 	
 	[super dealloc];
 }

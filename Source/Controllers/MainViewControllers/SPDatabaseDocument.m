@@ -83,6 +83,7 @@
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
+#import "SPSharedConstants.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -4119,17 +4120,17 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		}
 	}
 	
-	if([[self->customQueryTextView.textStorage string] length] > 0){
+	if([[self->customQueryTextView.textStorage string] length] > 0 && [prefs boolForKey:SPQuerySaveAlertSuppression] == NO){
 		
 		NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Would you like to save this query?", @"message of panel asking for confirmation for save query")];
 		
 		// show warning
-		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Save query?", @"Save query?")]
+		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Save query?", @"Save query?")]
 									 message:infoText
+												suppression:YES
 						  primaryButtonTitle:NSLocalizedString(@"Save", @"Save")
 						primaryButtonHandler:^{
 			SPLog(@"Save pressed");
-			
 			NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
 			menuItem.tag = SPMainMenuFileSaveQuery;
 			// call the save panel
@@ -4139,6 +4140,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			SPLog(@"Cancel pressed");
 		}];
 	}
+
 
 	// Terminate all running BASH commands
 	for(NSDictionary* cmd in [self runningActivities]) {

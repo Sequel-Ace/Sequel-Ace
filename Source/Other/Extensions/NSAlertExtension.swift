@@ -35,6 +35,42 @@ import AppKit
 		}
 	}
 
+	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message, and showsSuppressionButton
+	/// - Parameters:
+	///   - title: String for title of the alert
+	///   - message: String for informative message
+	///   - suppression: Bool for showsSuppressionButton
+	///   - primaryButtonTitle: String for main confirm button
+	///   - primaryButtonHandler: Optional block that's invoked when user hits primary button or Enter
+	///   - cancelButtonHandler: Optional block that's invoked when user hits cancel button or Escape
+	/// - Returns: Nothing
+	static func createDefaultAlertWithSuppression(title: String,
+												  message: String,
+												  suppression: Bool,
+												  primaryButtonTitle: String,
+												  primaryButtonHandler: (() -> ())? = nil,
+												  cancelButtonHandler: (() -> ())? = nil) {
+		let alert = NSAlert()
+		alert.messageText = title
+		alert.informativeText = message
+		alert.showsSuppressionButton = suppression
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		alert.addButton(withTitle: primaryButtonTitle)
+		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+		
+		if alert.runModal() == .alertFirstButtonReturn {
+			primaryButtonHandler?()
+		} else {
+			cancelButtonHandler?()
+		}
+		
+		// if they check the box, set the bool
+		if let suppressionButton = alert.suppressionButton,
+		   suppressionButton.state == .on {
+			UserDefaults.standard.set(true, forKey: SPQuerySaveAlertSuppression)
+		}
+	}
+	
 	/// Creates an alert with primary colored OK button that triggers callback
 	/// - Parameters:
 	///   - title: String for title of the alert
