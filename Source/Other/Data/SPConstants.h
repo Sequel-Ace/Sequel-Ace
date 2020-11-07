@@ -35,6 +35,7 @@
  * type checking when used and cannot be tested for equality.
  */
 
+
 // View modes
 typedef enum {
 	SPStructureViewMode	  = 1,
@@ -121,6 +122,9 @@ typedef NS_ENUM(NSInteger, SPTableViewType)
 	SPTableViewInvalid     = NSNotFound
 };
 
+@interface NSString (TableViewTypeEnumParser)
+- (SPTableViewType)tableViewTypeEnumFromString;
+@end
 // SSH tunnel password modes
 typedef enum
 {
