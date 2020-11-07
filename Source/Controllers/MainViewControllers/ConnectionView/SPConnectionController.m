@@ -775,7 +775,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	[connectionSplitView setDelegate:nil];
-	[connectionSplitView setPosition:[[[databaseConnectionView subviews] objectAtIndex:0] frame].size.width ofDividerAtIndex:0];
+	[connectionSplitView setPosition:[[[databaseConnectionView subviews] firstObject] frame].size.width ofDividerAtIndex:0];
 	[connectionSplitView setDelegate:self];
 }
 
