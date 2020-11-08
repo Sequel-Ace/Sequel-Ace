@@ -59,9 +59,6 @@
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
 const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
 
-// Default monospaced font name
-NSString *SPDefaultMonospacedFontName            = @"Monaco";
-
 // System database names
 NSString *SPMySQLDatabase                        = @"mysql";
 NSString *SPMySQLInformationSchemaDatabase       = @"information_schema";
@@ -113,7 +110,6 @@ NSString *SPAutoConnectToDefault                 = @"AutoConnectToDefault";
 NSString *SPDefaultViewMode                      = @"DefaultViewMode";
 NSString *SPLastViewMode                         = @"LastViewMode";
 NSString *SPDefaultEncoding                      = @"DefaultEncodingTag";
-NSString *SPUseMonospacedFonts                   = @"UseMonospacedFonts";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
 NSString *SPCustomQueryMaxHistoryItems           = @"CustomQueryMaxHistoryItems";
@@ -130,7 +126,7 @@ NSString *SPNewFieldsAllowNulls                  = @"NewFieldsAllowNulls";
 NSString *SPLimitResults                         = @"LimitResults";
 NSString *SPLimitResultsValue                    = @"LimitResultsValue";
 NSString *SPNullValue                            = @"NullValue";
-NSString *SPGlobalResultTableFont                = @"GlobalResultTableFont";
+NSString *SPGlobalFontSettings					 = @"fontSettings";
 NSString *SPFilterTableDefaultOperator           = @"FilterTableDefaultOperator";
 NSString *SPFilterTableDefaultOperatorLastItems  = @"FilterTableDefaultOperatorLastItems";
 
@@ -204,7 +200,6 @@ NSString *SPAlwaysShowWindowTabBar               = @"WindowAlwaysShowTabBar";
 NSString *SPResetAutoIncrementAfterDeletionOfAllRows = @"ResetAutoIncrementAfterDeletionOfAllRows";
 NSString *SPFavoriteColorList                    = @"FavoriteColorList";
 NSString *SPDisplayBinaryDataAsHex               = @"DisplayBinaryDataAsHex";
-NSString *SPMonospacedFontSize                   = @"MonospacedFontSize";
 NSString *SPRuleFilterEditorLastVisibilityChoice = @"RuleFilterEditorLastVisibilityChoice";
 
 // Hidden Prefs

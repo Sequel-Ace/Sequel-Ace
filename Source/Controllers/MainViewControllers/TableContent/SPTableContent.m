@@ -63,7 +63,6 @@
 
 #import "sequel-ace-Swift.h"
 
-
 /**
  * This is the unique KVO context of code that resides in THIS class.
  * Do not try to give it to other classes, ESPECIALLY NOT child classes!
@@ -228,8 +227,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont             options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex            options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
 	// Add observer to change view sizes with filter rule editor
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -498,7 +497,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSString *nullValue = [prefs objectForKey:SPNullValue];
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
@@ -3676,8 +3675,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
 		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
-			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+			NSFont *tableFont = [NSUserDefaults getFont];
 
 			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
@@ -4433,9 +4432,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[SPTooltip showWithObject:[aCell stringValue]
 		               atLocation:pos
 		                   ofType:@"text"
-		           displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:[[aCell font] familyName], @"fontname",
-		                                                                     [NSString stringWithFormat:@"%f", [[aCell font] pointSize]], @"fontsize",
-		                                                                     nil]];
+		           displayOptions:nil];
 
 		return nil;
 	}
@@ -4601,7 +4598,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	if(_mainNibLoaded) {
 		//TODO this should be changed to the variant with …context: after 10.6 support is removed!
-		[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+		[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	}

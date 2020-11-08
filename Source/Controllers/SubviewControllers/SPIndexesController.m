@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static const NSString *SPNewIndexIndexName      = @"IndexName";
 static const NSString *SPNewIndexIndexType      = @"IndexType";
@@ -113,26 +115,25 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// Set the index tables view's vertical gridlines if required
 	[indexesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[indexesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[indexedColumnsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Set the double-click action in blank areas of the table to create new rows
 	[indexesTableView setEmptyDoubleClickAction:@selector(addIndex:)];
 
 	for (NSTableColumn *indexColumn in [indexesTableView tableColumns])
 	{
-		[[indexColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[indexColumn dataCell] setFont:tableFont];
 	}
 
 	for (NSTableColumn *fieldColumn in [indexedColumnsTableView tableColumns])
 	{
-		[[fieldColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[fieldColumn dataCell] setFont:tableFont];
 	}
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
-	[prefs addObserver:self forKeyPath:SPUseMonospacedFonts                options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 }
 
 #pragma mark -
@@ -655,26 +656,17 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
 			[indexesTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
-		// Use monospaced fonts preference changed
-		else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
+	}
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 
-			BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-			CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-			for (NSTableColumn *indexColumn in [indexesTableView tableColumns])
-			{
-				[[indexColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-			}
-
-			for (NSTableColumn *indexColumn in [indexedColumnsTableView tableColumns])
-			{
-				[[indexColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-			}
-
-			[indexesTableView reloadData];
-
-			[self _reloadIndexedColumnsTableData];
-		}
+		[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexedColumnsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexesTableView setFont:tableFont];
+		[indexedColumnsTableView setFont:tableFont];
+		[indexesTableView reloadData];
+		[self _reloadIndexedColumnsTableData];
 	}
 	else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
@@ -1112,7 +1104,7 @@ no_or_multiple_matches:
 	if (indexedFields) SPClear(indexedFields);
 
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
-	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts]; //TODO: update to ...context: variant after 10.6
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
 	[super dealloc];
 }

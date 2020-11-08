@@ -125,13 +125,16 @@
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 
 	NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
-
-	if (![prefs objectForKey:SPGlobalResultTableFont]) {
-		[preferenceDefaults setObject:[NSArchiver archivedDataWithRootObject:[NSFont systemFontOfSize:11]] forKey:SPGlobalResultTableFont];
-	}
-
 	// Register application defaults
 	[prefs registerDefaults:preferenceDefaults];
+
+	if ([prefs objectForKey:@"GlobalResultTableFont"]) {
+		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"GlobalResultTableFont"]];
+		if (tableFont) {
+			[NSUserDefaults saveFont:tableFont];
+		}
+		[prefs removeObjectForKey:@"GlobalResultTableFont"];
+	}
 
 	// Upgrade prefs before any other parts of the app pick up on the values
 	SPApplyRevisionChanges();
@@ -203,6 +206,7 @@
 			}
 		}
 	}
+
 
 	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 

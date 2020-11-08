@@ -1763,9 +1763,7 @@ cleanup:
 	[switchButton setControlSize:NSControlSizeSmall];
 	[switchButton release];
 
-	CGFloat monospacedFontSize = [[NSUserDefaults standardUserDefaults] floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-	[errorsView setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	[errorsView setFont:[NSUserDefaults getFont]];
 }
 
 /**

@@ -234,7 +234,7 @@ typedef enum
 
 typedef enum
 {
-	SPPrefFontChangeTargetTable  = 1,
+	SPPrefFontChangeTargetGeneral = 1,
 	SPPrefFontChangeTargetEditor = 2
 } SPPreferenceFontChangeTarget;
 
@@ -251,8 +251,6 @@ typedef enum
 // Narrow down completion max rows
 extern const NSUInteger SPNarrowDownCompletionMaxRows;
 extern const NSUInteger SPMaxQueryLengthForWarning;
-// Default monospaced font name
-extern NSString *SPDefaultMonospacedFontName;
 
 // System database names
 extern NSString *SPMySQLDatabase;
@@ -305,7 +303,6 @@ extern NSString *SPAutoConnectToDefault;
 extern NSString *SPDefaultViewMode;
 extern NSString *SPLastViewMode;
 extern NSString *SPDefaultEncoding;
-extern NSString *SPUseMonospacedFonts;
 extern NSString *SPDisplayTableViewVerticalGridlines;
 extern NSString *SPDisplayCommentsInTablesList;
 extern NSString *SPCustomQueryMaxHistoryItems;
@@ -322,7 +319,7 @@ extern NSString *SPNewFieldsAllowNulls;
 extern NSString *SPLimitResults;
 extern NSString *SPLimitResultsValue;
 extern NSString *SPNullValue;
-extern NSString *SPGlobalResultTableFont;
+extern NSString *SPGlobalFontSettings;
 extern NSString *SPFilterTableDefaultOperator;
 extern NSString *SPFilterTableDefaultOperatorLastItems;
 
@@ -396,7 +393,6 @@ extern NSString *SPAlwaysShowWindowTabBar;
 extern NSString *SPResetAutoIncrementAfterDeletionOfAllRows;
 extern NSString *SPFavoriteColorList;
 extern NSString *SPDisplayBinaryDataAsHex;
-extern NSString *SPMonospacedFontSize;
 extern NSString *SPRuleFilterEditorLastVisibilityChoice;
 
 // Hidden Prefs
