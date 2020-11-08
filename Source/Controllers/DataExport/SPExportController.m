@@ -50,6 +50,7 @@
 #import "SPDotExporterProtocol.h"
 #import "SPPDFExporterProtocol.h"
 #import "SPHTMLExporterProtocol.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -1069,7 +1070,7 @@ set_input:
 						  NSLocalizedString(@"Continue", @"continue button"), 
 						  NSLocalizedString(@"Cancel", @"cancel button"), nil, [tableDocumentInstance parentWindow], self, 
 						  @selector(tableListChangedAlertDidEnd:returnCode:contextInfo:), NULL,
-						  [NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %d additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), diff]);
+						  [NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), (unsigned long)diff]);
 	}
 	else {
 		[self initializeExportUsingSelectedOptions];
@@ -2323,7 +2324,11 @@ set_input:
 			filename = @"query_result";
 			break;
 		case SPTableExport:
-			filename = [NSString stringWithFormat:@"%@_%@", [tableDocumentInstance database], [[NSDate date] formattedDateWithFormat:@"yyyy-MM-dd" timeZone:nil locale:nil]];
+			filename = [NSString stringWithFormat:@"%@_%@",
+						[tableDocumentInstance database],
+						[[NSDate date] stringWithFormat:@"yyyy-MM-dd"
+												 locale:[NSLocale autoupdatingCurrentLocale]
+											   timeZone:[NSTimeZone localTimeZone]]];
 			
 			;
 			break;
@@ -2391,8 +2396,7 @@ set_input:
 {
 	NSMutableString *string = [NSMutableString string];
 
-	NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-	[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
+	NSDateFormatter *dateFormatter = NSDateFormatter.mediumStyleFormatter;
 
 	// Walk through the token field, appending token replacements or strings
 	NSArray *representedFilenameParts = [exportCustomFilenameTokenField objectValue];
@@ -2420,16 +2424,13 @@ set_input:
 
 			}
 			else if ([tokenContent isEqualToString:SPFileNameYearTokenName]) {
-				[string appendString: [[NSDate date] formattedDateWithFormat:@"yyyy" timeZone:nil locale:nil]];
-
+				[string appendString:[[NSDate date] stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameMonthTokenName]) {
-				[string appendString:[[NSDate date] formattedDateWithFormat:@"MM" timeZone:nil locale:nil]];
-
+				[string appendString:[[NSDate date] stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameDayTokenName]) {
-				[string appendString:[[NSDate date] formattedDateWithFormat:@"dd" timeZone:nil locale:nil]];
-
+				[string appendString:[[NSDate date] stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameTimeTokenName]) {
 				[dateFormatter setDateStyle:NSDateFormatterNoStyle];
@@ -2437,7 +2438,7 @@ set_input:
 				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileName24HourTimeTokenName]) {
-				[string appendString:[[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:nil]];
+				[string appendString:[[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameFavoriteTokenName]) {
 				[string appendStringOrNil:[tableDocumentInstance name]];
@@ -2465,8 +2466,6 @@ set_input:
 							 withString:@"-"
 								options:NSLiteralSearch
 								  range:NSMakeRange(0, [string length])];
-
-	[dateFormatter release];
 
 	// Don't allow empty strings - if an empty string resulted, revert to the default string
 	if (![string length]) [string setString:[self generateDefaultExportFilename]];
@@ -2819,7 +2818,7 @@ set_input:
 				break; //we've hit an unterminated token
 			}
 			NSString *tokenString = [remainder substringToIndex:closeCurl.location+1];
-			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:tokenString];
+			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:[tokenString lowercaseString]];
 			if(tokenObject) {
 				[processedTokens addObject:tokenObject];
 			}
@@ -2851,11 +2850,28 @@ set_input:
 
 	NSUInteger start = 0;
 	for(id obj in [exportCustomFilenameTokenField objectValue]) {
+		
+		SPLog(@"obj = %@", obj);
+		
 		NSUInteger length;
 		BOOL isText = NO;
 		if(IS_STRING(obj)) {
 			length = [obj length];
 			isText = YES;
+			
+			// we already know this is an NSString, but anyway, safety first.
+			// hmmm, check for nil?
+			// see tests
+			// obj = (NSString*)obj; is twice as fast as:
+			// obj = [NSString cast:obj]; which is twice as fast as
+			// obj = [NSString stringWithString:obj];
+			obj = [NSString cast:obj]; // this doesn't leak, it uses the same memory address
+			
+			// only attempt tokenization if string contains a { or }
+			if([obj containsString:@"{"] == NO && [obj containsString:@"}"] == NO){
+				SPLog(@"string does not contain token delimiters");
+				return;
+			}
 		}
 		else if(IS_TOKEN(obj)) {
 			length = 1; // tokens are seen as one char by the textview

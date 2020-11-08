@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static NSString *SPTableViewImportValueColumnID = @"import_value";
 static NSString *SPTableViewTypeColumnID        = @"type";
@@ -1692,9 +1694,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-	[aCell setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	[aCell setFont:[NSUserDefaults getFont]];
 }
 
 - (void)tableView:(NSTableView*)aTableView didClickTableColumn:(NSTableColumn *)aTableColumn
@@ -2052,6 +2052,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	row = [fieldMapperTableView editedRow];
 	column = [fieldMapperTableView editedColumn];
 
+	// TODO: jcs - using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
 	BOOL isCellComplex = ([[fieldMapperTableView preparedCellAtColumn:column row:row] isKindOfClass:[NSComboBoxCell class]]) ? YES : NO;
 
 	// Trap tab key

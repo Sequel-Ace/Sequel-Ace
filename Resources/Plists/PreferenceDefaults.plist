@@ -195,8 +195,6 @@
 	<integer>1</integer>
 	<key>UseKeepAlive</key>
 	<true/>
-	<key>UseMonospacedFonts</key>
-	<false/>
 	<key>WebKitDeveloperExtras</key>
 	<true/>
 	<key>DisplayBinaryDataAsHex</key>

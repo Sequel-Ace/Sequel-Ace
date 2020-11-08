@@ -48,7 +48,7 @@
 #import "SPSyntaxParser.h"
 #import "SPHelpViewerClient.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -301,6 +301,8 @@ retry:
 		[self setTabStops];
 	} else if ([keyPath isEqualToString:SPCustomQueryAutoUppercaseKeywords]) {
 		[self setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
+	} else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 

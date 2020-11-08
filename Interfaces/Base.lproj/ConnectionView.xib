@@ -184,7 +184,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="200" height="736"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
-                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="4913" customClass="SPFavoritesOutlineView">
+                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" selectionHighlightStyle="sourceList" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="4913" customClass="SPFavoritesOutlineView">
                                                 <rect key="frame" x="0.0" y="0.0" width="200" height="736"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -196,8 +196,8 @@
                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
                                                         </tableHeaderCell>
-                                                        <textFieldCell key="dataCell" controlSize="small" lineBreakMode="truncatingTail" selectable="YES" editable="YES" allowsUndo="NO" alignment="left" title="Text Cell" id="4918" customClass="SPFavoriteTextFieldCell">
-                                                            <font key="font" metaFont="controlContent" size="11"/>
+                                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" allowsUndo="NO" alignment="left" title="Text Cell" id="4918" customClass="SPFavoriteTextFieldCell">
+                                                            <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                                         </textFieldCell>
@@ -215,7 +215,7 @@
                                         <nil key="backgroundColor"/>
                                     </clipView>
                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="4912">
-                                        <rect key="frame" x="1" y="525" width="228" height="15"/>
+                                        <rect key="frame" x="0.0" y="720" width="200" height="16"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                     <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="4911">
@@ -1698,11 +1698,11 @@ DQ
                                         </subviews>
                                     </clipView>
                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="5590">
-                                        <rect key="frame" x="0.0" y="466" width="663" height="15"/>
+                                        <rect key="frame" x="0.0" y="711" width="681" height="16"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                     <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="5589">
-                                        <rect key="frame" x="663" y="0.0" width="16" height="580"/>
+                                        <rect key="frame" x="712" y="0.0" width="16" height="517"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                     </scroller>
                                 </scrollView>
@@ -1744,7 +1744,7 @@ DQ
                         <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Qd-RL-aJ4">
                             <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
-                            <autoresizingMask key="autoresizingMask"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textView editable="NO" drawsBackground="NO" importsGraphics="NO" verticallyResizable="NO" id="5434" customClass="SPAutosizingTextView" customModule="Sequel_Ace" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>

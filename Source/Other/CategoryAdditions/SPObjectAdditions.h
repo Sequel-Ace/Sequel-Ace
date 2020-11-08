@@ -31,6 +31,11 @@
 @interface  NSObject (SPObjectAdditions)
 
 /**
+ * "Safe" casting using `instancetype`.
+ */
++ (instancetype)cast:(id)object;
+
+/**
  * Detect whether an object is a NSNull instance.
  */
 - (BOOL)isNSNull;

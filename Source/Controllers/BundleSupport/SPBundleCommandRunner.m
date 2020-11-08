@@ -31,6 +31,7 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
+#import "sequel-ace-Swift.h"
 
 // Defined to suppress warnings
 @interface NSObject (SPBundleMethods)
@@ -227,7 +228,7 @@
 		NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInteger:pid], @"pid",
 							  (contextInfo)?: @{}, @"contextInfo",
 							  @"bashcommand", @"type",
-							  [[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:[NSLocale autoupdatingCurrentLocale]], @"starttime",
+							  [[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]], @"starttime",
 							  nil];
 		[caller registerActivity:dict];
 	}
@@ -235,13 +236,13 @@
 	// Listen to ⌘. to terminate
 	while(1) {
 		if(![bashTask isRunning] || [bashTask processIdentifier] == 0) break;
-		NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
 											untilDate:[NSDate distantPast]
 											   inMode:NSDefaultRunLoopMode
 											  dequeue:YES];
 		usleep(1000);
 		if(!event) continue;
-		if ([event type] == NSKeyDown) {
+		if ([event type] == NSEventTypeKeyDown) {
 			unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 			if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 				[bashTask terminate];

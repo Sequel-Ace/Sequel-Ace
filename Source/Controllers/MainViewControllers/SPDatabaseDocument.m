@@ -84,7 +84,7 @@
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -283,20 +283,22 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[self _addPreferenceObservers];
 
 	// Register for notifications
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(willPerformQuery:)
-	                                             name:@"SMySQLQueryWillBePerformed"
-	                                           object:self];
-
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(hasPerformedQuery:)
-	                                             name:@"SMySQLQueryHasBeenPerformed"
-	                                           object:self];
-
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(applicationWillTerminate:)
-	                                             name:@"NSApplicationWillTerminateNotification"
-	                                           object:nil];
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	
+	[nc addObserver:self
+		   selector:@selector(willPerformQuery:)
+			   name:@"SMySQLQueryWillBePerformed"
+			 object:self];
+	
+	[nc addObserver:self
+		   selector:@selector(hasPerformedQuery:)
+			   name:@"SMySQLQueryHasBeenPerformed"
+			 object:self];
+	
+	[nc addObserver:self
+		   selector:@selector(applicationWillTerminate:)
+			   name:@"NSApplicationWillTerminateNotification"
+			 object:nil];
 
 	// Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
 	selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
@@ -1268,10 +1270,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	double timeSinceQueryStarted = [[NSDate date] timeIntervalSinceDate:queryStartDate];
 
-	NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
-	formatter.allowedUnits = NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
-	formatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorPad;
-	NSString *queryRunningTime = [formatter stringFromTimeInterval:timeSinceQueryStarted];
+	NSString *queryRunningTime = [NSDateComponentsFormatter.hourMinSecFormatter stringFromTimeInterval:timeSinceQueryStarted];
 	
 	NSShadow *textShadow = [[NSShadow alloc] init];
 	[textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
@@ -2681,23 +2680,35 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	SPTableViewType theView = NSNotFound;
 
 	// -selectedTabViewItem is a UI method according to Xcode 9.2!
-	// jamesstout note - this is called a LOT. 
+	// jamesstout note - this is called a LOT.
+	// using tableViewTypeEnumFromString is 5-7x faster than if/else isEqualToString:
 	NSString *viewName = [[[tableTabView onMainThread] selectedTabViewItem] identifier];
-
-	if ([viewName isEqualToString:@"source"]) {
-		theView = SPTableViewStructure;
-	} else if ([viewName isEqualToString:@"content"]) {
-		theView = SPTableViewContent;
-	} else if ([viewName isEqualToString:@"customQuery"]) {
-		theView = SPTableViewCustomQuery;
-	} else if ([viewName isEqualToString:@"status"]) {
-		theView = SPTableViewStatus;
-	} else if ([viewName isEqualToString:@"relations"]) {
-		theView = SPTableViewRelations;
-	} else if ([viewName isEqualToString:@"triggers"]) {
-		theView = SPTableViewTriggers;
+	
+	SPTableViewType enumValue = [viewName tableViewTypeEnumFromString];
+	
+	switch (enumValue) {
+		case SPTableViewStructure:
+			theView = SPTableViewStructure;
+			break;
+		case SPTableViewContent:
+			theView = SPTableViewContent;
+			break;
+		case SPTableViewCustomQuery:
+			theView = SPTableViewCustomQuery;
+			break;
+		case SPTableViewStatus:
+			theView = SPTableViewStatus;
+			break;
+		case SPTableViewRelations:
+			theView = SPTableViewRelations;
+			break;
+		case SPTableViewTriggers:
+			theView = SPTableViewTriggers;
+			break;
+		default:
+			theView = SPTableViewInvalid;
 	}
-
+		
 	return theView;
 }
 
@@ -2804,7 +2815,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Load accessory nib each time.
 		// Note that the top-level objects aren't released automatically, but are released when the panel ends.
-		if (![NSBundle loadNibNamed:@"SaveSPFAccessory" owner:self]) {
+		if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
 			NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
 			return;
 		}
@@ -2857,7 +2868,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// Load accessory nib each time.
 		// Note that the top-level objects aren't released automatically, but are released when the panel ends.
-		if (![NSBundle loadNibNamed:@"SaveSPFAccessory" owner:self]) {
+		if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
 			NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
 			return;
 		}
@@ -4127,6 +4138,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)parentTabDidClose
 {
+	// if tab closed and there is text in the query view, safe to history
+	NSString *queryString = [self->customQueryTextView.textStorage string];
+	
+	if([queryString length] > 0){
+		[[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
+	}
+		
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
@@ -4689,7 +4707,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
 
 				// Break the run loop if editSheet was closed
-				if ([NSApp runModalSession:session] != NSRunContinuesResponse || ![inputTextWindow isVisible]) break;
+				if ([NSApp runModalSession:session] != NSModalResponseContinue || ![inputTextWindow isVisible]) break;
 
 				// Execute code on DefaultRunLoop
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
@@ -6075,10 +6093,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[prefs addObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 
-	// Register observers for the when the UseMonospacedFonts preference changes
-	[prefs addObserver:tableSourceInstance forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
-	[prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
-
 	// Register observers for when the logging preference changes
 	[prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPConsoleEnableLogging options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -6094,13 +6108,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[prefs removeObserver:self forKeyPath:SPConsoleEnableLogging];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	[prefs removeObserver:tableSourceInstance forKeyPath:SPUseMonospacedFonts];
-
 	[prefs removeObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 	[prefs removeObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 	[prefs removeObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	[prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPUseMonospacedFonts];
 	[prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPConsoleEnableLogging];
 	[prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
@@ -6869,11 +6880,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		if (resultRows > rowLimit) {
 
-			NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-
-			[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
-			NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print.", @"continue to print informative message"), [self table], [numberFormatter stringFromNumber:[NSNumber numberWithLongLong:resultRows]]];
+			NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print.", @"continue to print informative message"), [self table], [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:resultRows]]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Continue to print?", @"continue to print message") message:message primaryButtonTitle:NSLocalizedString(@"Print", @"print button") primaryButtonHandler:^{
 				[self startPrintDocumentOperation];
 			} cancelButtonHandler:nil];
@@ -7057,7 +7064,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[engine setObject:connection forKey:@"c"];
 
-		[printData setObject:([prefs boolForKey:SPUseMonospacedFonts]) ? SPDefaultMonospacedFontName : @"Lucida Grande" forKey:@"font"];
+		[printData setObject:@"Lucida Grande" forKey:@"font"];
 		[printData setObject:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? @"1px solid #CCCCCC" : @"none" forKey:@"gridlines"];
 
 		NSString *HTMLString = [engine processTemplateInFileAtPath:[[NSBundle mainBundle] pathForResource:SPHTMLPrintTemplate ofType:@"html"] withVariables:printData];

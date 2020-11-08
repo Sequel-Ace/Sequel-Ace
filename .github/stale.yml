@@ -13,6 +13,8 @@ exemptLabels:
   - "good first issue"
   - "help wanted"
   - "Planned Release"
+  - "Fixed & Pending Release"
+  - "work in progress"
 
 # Label to use when marking as stale
 staleLabel: stale

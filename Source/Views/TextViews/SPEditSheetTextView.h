@@ -36,5 +36,5 @@
 - (NSUInteger)characterIndexOfPoint:(NSPoint)aPoint;
 - (void)insertFileContentOfFile:(NSString *)aPath;
 - (void)saveChangedFontInUserDefaults;
-
+- (void)dragAlertSheetDidEnd:(NSAlert *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 @end

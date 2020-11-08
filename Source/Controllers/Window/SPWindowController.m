@@ -54,6 +54,8 @@
 
 @implementation SPWindowController
 
+@synthesize tabBar;
+
 #pragma mark -
 #pragma mark Initialisation
 
@@ -61,7 +63,9 @@
 {
 	[self _switchOutSelectedTableDocument:nil];
 	
-	[[self window] setCollectionBehavior:[[self window] collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+	NSWindow *window = [self window];
+	
+	[window setCollectionBehavior:[window collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
 
 	// Disable automatic cascading - this occurs before the size is set, so let the app
 	// controller apply cascading after frame autosaving.
@@ -73,18 +77,20 @@
 	[self _setUpTabBar];
 
 	// Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
-	closeWindowMenuItem = [[[[NSApp mainMenu] itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
-	closeTabMenuItem = [[[[NSApp mainMenu] itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
+	NSMenu *mainMenu = [NSApp mainMenu];
+	closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
+	closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
 
 	// Register for drag start and stop notifications - used to show/hide tab bars
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(tabDragStarted:) name:PSMTabDragDidBeginNotification object:nil];
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(tabDragStopped:) name:PSMTabDragDidEndNotification object:nil];
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	[nc addObserver:self selector:@selector(tabDragStarted:) name:PSMTabDragDidBeginNotification object:nil];
+	[nc addObserver:self selector:@selector(tabDragStopped:) name:PSMTabDragDidEndNotification object:nil];
 
 	// Because we are a document-based app we automatically adopt window restoration on 10.7+.
 	// However that causes a race condition with our own window setup code.
 	// Remove this when we actually support restoration.
-	if([[self window] respondsToSelector:@selector(setRestorable:)])
-		[[self window] setRestorable:NO];
+	if([window respondsToSelector:@selector(setRestorable:)])
+		[window setRestorable:NO];
 }
 
 #pragma mark -
@@ -483,7 +489,7 @@
 {
 	PSMTabBarCell *theCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:theItem]];
 	
-	[[theCell indicator] setControlSize:NSSmallControlSize];
+	[[theCell indicator] setControlSize:NSControlSizeSmall];
 	
 	SPDatabaseDocument *theDocument = [theItem identifier];
 	
@@ -943,7 +949,7 @@
 	[tabBar destroyAnimations];
 	
 	SPClear(managedDatabaseConnections);
-	
+
 	[super dealloc];
 }
 

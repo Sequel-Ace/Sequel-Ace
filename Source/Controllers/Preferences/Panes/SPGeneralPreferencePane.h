@@ -41,11 +41,14 @@
 {	
 	NSImage *folderImage;
 	
+	IBOutlet NSTextField *globalResultFontName;
 	IBOutlet NSPopUpButton *defaultFavoritePopup;
 }
 
 - (IBAction)updateDefaultFavorite:(id)sender;
+- (IBAction)showGlobalResultFontPanel:(id)sender;
 
 - (void)updateDefaultFavoritePopup;
+- (void)updateDisplayedFontName;
 
 @end

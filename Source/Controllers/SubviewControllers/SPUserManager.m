@@ -41,7 +41,7 @@
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static NSString * const SPTableViewNameColumnID = @"NameColumn";
 
@@ -69,7 +69,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)_setSchemaPrivValues:(NSArray *)objects enabled:(BOOL)enabled;
 - (void)_initializeAvailablePrivs;
 - (BOOL)_renameUserFrom:(NSString *)originalUser host:(NSString *)originalHost to:(NSString *)newUser host:(NSString *)newHost;
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void*)context;
 - (void)contextWillSave:(NSNotification *)notice;
 - (void)_selectFirstChildOfParentNode;
 

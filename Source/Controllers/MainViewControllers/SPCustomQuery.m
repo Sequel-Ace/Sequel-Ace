@@ -62,7 +62,7 @@
 #import "SPBracketHighlighter.h"
 
 #include <libkern/OSAtomic.h>
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 typedef struct {
 	NSUInteger query;
@@ -1766,7 +1766,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	// Update font size on the table
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// If there are no table columns to add, return
@@ -2081,6 +2081,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		NSString *newObject = nil;
 		if ( [anObject isKindOfClass:[NSCalendarDate class]] ) {
+			SPLog(@"object was NSCalendarDate");
 			newObject = [mySQLConnection escapeAndQuoteString:[anObject description]];
 		} else if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];
@@ -2524,10 +2525,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[SPTooltip showWithObject:[aCell stringValue]
 			atLocation:pos
 				ofType:@"text"
-		displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
-					[[aCell font] familyName], @"fontname",
-					[NSString stringWithFormat:@"%f",[[aCell font] pointSize]], @"fontsize",
-					nil]];
+		displayOptions:nil];
 
 	return nil;
 }
@@ -3159,8 +3157,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [customQueryView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Result Table Font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 		[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[customQueryView setFont:tableFont];
 		[customQueryView reloadData];
@@ -3410,7 +3408,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:column];
 	NSInteger numberOfPossibleUpdateRows = [NSArrayObjectAtIndex(editStatus, 0) integerValue];
-	NSPoint pos = [[tableDocumentInstance parentWindow] convertBaseToScreen:[customQueryView convertPoint:[customQueryView frameOfCellAtColumn:column row:row].origin toView:nil]];
+	
+	NSPoint customQueryViewPoint = [customQueryView convertPoint:[customQueryView frameOfCellAtColumn:column row:row].origin toView:nil];
+	NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(customQueryViewPoint.x, customQueryViewPoint.y, 0,0)];
+	NSPoint pos = NSMakePoint(screenRect.origin.x, screenRect.origin.y);
+		
 	pos.y -= 20;
 	switch(numberOfPossibleUpdateRows) {
 		case -1:
@@ -3564,7 +3566,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	                                             name:SPUserClosedHelpViewerNotification
 	                                           object:[tableDocumentInstance helpViewerClient]];
 
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
 	self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
 	self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
@@ -3635,7 +3637,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 
@@ -3709,7 +3711,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 - (void)dealloc
 {
-	SPClear(updateHandler);
+	[updateHandler release];
+	updateHandler = nil;
 	[super dealloc];
 }
 

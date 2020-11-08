@@ -348,8 +348,8 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[scrollView setAutohidesScrollers:YES];
 	[scrollView setHasVerticalScroller:YES];
 	[scrollView setHasHorizontalScroller:NO];
-	[[scrollView verticalScroller] setControlSize:NSSmallControlSize];
-	[[scrollView horizontalScroller] setControlSize:NSSmallControlSize];
+	[[scrollView verticalScroller] setControlSize:NSControlSizeSmall];
+	[[scrollView horizontalScroller] setControlSize:NSControlSizeSmall];
 
 	theTableView = [[NSTableView alloc] initWithFrame:NSZeroRect];
 	[theTableView setFocusRingType:NSFocusRingTypeNone];

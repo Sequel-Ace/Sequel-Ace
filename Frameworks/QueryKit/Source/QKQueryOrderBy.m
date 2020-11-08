@@ -38,7 +38,7 @@
 
 + (QKQueryOrderBy *)orderByField:(NSString *)field descending:(BOOL)descending
 {
-	return [[[QKQueryOrderBy alloc] initWithField:field descending:descending] autorelease];
+	return [[QKQueryOrderBy alloc] initWithField:field descending:descending];
 }
 
 - (id)init
@@ -65,15 +65,6 @@
 	NSString *field = [_orderByField stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 		
 	return [NSString stringWithFormat:@"%1$@%2$@%1$@ %3$@", [self useQuotedIdentifier] ? _identiferQuote : EMPTY_STRING, field, _orderByDescending ? @"DESC" : @"ASC"];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-    if (_orderByField) (void)([_orderByField release]), _orderByField = nil;
-	
-	[super dealloc];
 }
 
 @end
