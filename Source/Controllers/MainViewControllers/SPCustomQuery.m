@@ -2224,9 +2224,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // this is the same as saying (isDesc && !invert) || (!isDesc && invert)
-        if (isDesc != invert) {
-			
-		} else {
+        if (isDesc == invert) {
 			isDesc = !isDesc;
 		}
 	} else {

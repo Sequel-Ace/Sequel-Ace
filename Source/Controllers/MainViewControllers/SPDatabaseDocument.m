@@ -4813,9 +4813,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[self updateWindowTitle:self];
 		});
 
-		// dealloc spfSession data
-		
-
 		// End the task
 		[self endTask];
 	}

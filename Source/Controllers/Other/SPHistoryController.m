@@ -74,7 +74,6 @@
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-
 }
 
 #pragma mark -
