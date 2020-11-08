@@ -1783,24 +1783,4 @@
 	return lineEnding;
 }
 
-#pragma mark -
-
-- (void)dealloc
-{	
-	if (fieldMappingImportArray)       SPClear(fieldMappingImportArray);
-	if (geometryFields)                SPClear(geometryFields);
-	if (geometryFieldsMapIndex)        SPClear(geometryFieldsMapIndex);
-	if (bitFields)                     SPClear(bitFields);
-	if (nullableNumericFields)         SPClear(nullableNumericFields);
-	if (bitFieldsMapIndex)             SPClear(bitFieldsMapIndex);
-	if (nullableNumericFieldsMapIndex) SPClear(nullableNumericFieldsMapIndex);
-	if (lastFilename)                  SPClear(lastFilename);
-	if (prefs)                         SPClear(prefs);
-	if (selectedTableTarget)           SPClear(selectedTableTarget);
-	
-	SPClear(nibObjectsToRelease);
-	
-	[super dealloc];
-}
-
 @end
