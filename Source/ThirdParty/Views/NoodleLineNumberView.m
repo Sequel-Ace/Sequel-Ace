@@ -56,7 +56,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 @interface NoodleLineNumberView ()
 
 - (NSArray *)lineIndices;
-- (void)invalidateLineIndices;
 - (void)calculateLines;
 - (void)updateGutterThicknessConstants;
 - (void)setRuleThicknessNumber:(NSNumber *)aNum;
@@ -172,7 +171,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		clientView     = (NSTextView*)[self clientView];
 
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange:) name:NSTextStorageDidProcessEditingNotification object:[clientView textStorage]];
-		[self invalidateLineIndices];
 	}
 
 }
@@ -183,11 +181,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 
 	if(!clientView) return;
-
-	// Invalidate the line indices only if text view was changed in length but not if the font was changed.
-	// They will be recalculated and recached on demand.
-	if([[clientView textStorage] editedMask] != 1)
-		[self invalidateLineIndices];
 
 	[self setNeedsDisplayInRect:[self bounds]];
 
@@ -475,13 +468,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		[self calculateLines];
 
 	return lineIndices;
-
-}
-
-- (void)invalidateLineIndices
-{
-
-	
 
 }
 

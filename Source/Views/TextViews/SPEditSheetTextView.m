@@ -36,10 +36,7 @@
 
 - (id)init
 {
-	if((self = [super init]))
-	{
-	}
-	return self;
+	return [super init];
 }
 
 - (IBAction)undo:(id)sender

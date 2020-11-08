@@ -515,8 +515,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)windowWillClose:(NSNotification *)notification
 {	
 	// If the filtered array is allocated and it's not a reference to the processes array get rid of it
-	if ((processesFiltered) && (processesFiltered != processes)) {
-		
+	if (processesFiltered && processesFiltered != processes) {
+		processesFiltered = nil;
 	}
 	
 	// Kill the auto refresh timer if running
@@ -731,8 +731,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	// If the filtered array is allocated and its not a reference to the processes array,
 	// relase it to prevent memory leaks upon the next allocation.
-	if ((processesFiltered) && (processesFiltered != processes)) {
-		
+	if (processesFiltered && processesFiltered != processes) {
+		processesFiltered = nil;
 	}
 	
 	processesFiltered = [[NSMutableArray alloc] init];

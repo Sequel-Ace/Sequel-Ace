@@ -85,9 +85,7 @@
 	x_min*=zoom_factor;
 	y_min*=zoom_factor;
 
-	if ( (self = [super initWithFrame:NSMakeRect(0,0,width+margin_offset*2,height+margin_offset*2)]) )
-	{
-	}
+	self = [super initWithFrame:NSMakeRect(0,0,width+margin_offset*2,height+margin_offset*2)];
 
 	lineColor         = [NSColor blackColor];
 	borderLineColor   = [NSColor grayColor];

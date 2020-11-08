@@ -571,8 +571,8 @@
  */
 - (void)windowDidBecomeMain:(NSNotification *)notification
 {
-
 }
+
 - (void)windowDidResignMain:(NSNotification *)notification
 {
 }

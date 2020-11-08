@@ -356,7 +356,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (IBAction)importFavoritesByReplacing:(id)sender
 {
-
 }
 
 /**

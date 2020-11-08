@@ -1558,7 +1558,6 @@
 
 - (void)concludeDragOperation:(id <NSDraggingInfo>)sender
 {
-
 }
 
 #pragma mark -

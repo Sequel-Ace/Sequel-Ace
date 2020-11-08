@@ -215,7 +215,6 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50EAB5B81A8FBB08008F627A /* SPOSInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EAB5B71A8FBB08008F627A /* SPOSInfo.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
-		5147FAC225498D9C00B384AB /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147FAC125498D9C00B384AB /* SPWindowController.swift */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
@@ -898,7 +897,6 @@
 		50EAB5B61A8FBB08008F627A /* SPOSInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPOSInfo.h; sourceTree = "<group>"; };
 		50EAB5B71A8FBB08008F627A /* SPOSInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPOSInfo.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
-		5147FAC125498D9C00B384AB /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -1698,7 +1696,6 @@
 			children = (
 				58A8A78F11A036C000B95749 /* SPWindowController.h */,
 				58A8A79011A036C000B95749 /* SPWindowController.m */,
-				5147FAC125498D9C00B384AB /* SPWindowController.swift */,
 			);
 			path = Window;
 			sourceTree = "<group>";
@@ -3175,7 +3172,6 @@
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
-				5147FAC225498D9C00B384AB /* SPWindowController.swift in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,

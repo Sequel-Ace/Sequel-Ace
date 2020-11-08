@@ -48,8 +48,7 @@
 @implementation SPHelpViewerClient
 
 + (void)initialize
-{
-	
+{	
 }
 
 - (instancetype)init

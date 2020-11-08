@@ -114,8 +114,8 @@
 	[[self window] orderOut:self];
 	
 	// If the filtered array is allocated and it's not a reference to the processes array get rid of it
-	if ((variablesFiltered) && (variablesFiltered != variables)) {
-		
+	if (variablesFiltered && variablesFiltered != variables) {
+		variablesFiltered = nil;
 	}		
 }
 
@@ -288,8 +288,8 @@
 	
 	// If the filtered array is allocated and its not a reference to the variables array
 	// relase it to prevent memory leaks upon the next allocation.
-	if ((variablesFiltered) && (variablesFiltered != variables)) {
-		
+	if (variablesFiltered && variablesFiltered != variables) {
+		variablesFiltered = nil;
 	}
 	
 	variablesFiltered = [[NSMutableArray alloc] init];

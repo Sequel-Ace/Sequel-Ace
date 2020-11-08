@@ -333,20 +333,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[socketPasswordField undoManager] removeAllActionsWithTarget:socketPasswordField];
 			[[sshPasswordField undoManager] removeAllActionsWithTarget:sshPasswordField];
 		}
-		else {
-			
-			
-		}
 	}
 	
 	if (connectionSSHKeychainItemName && !isTestingConnection) {
 		if ([[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount] isEqualToString:[self sshPassword]]) {
 			[self setSshPassword:[[NSString string] stringByPaddingToLength:[[self sshPassword] length] withString:@"sp" startingAtIndex:0]];
 			[[sshSSHPasswordField undoManager] removeAllActionsWithTarget:sshSSHPasswordField];
-		} 
-		else {
-			
-			
 		}
 	}
 
@@ -496,17 +488,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
 		NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
-																		   
-		//delay the release so it won't happen while this block is still executing.
-		// jamesstout notes
-		// replacing dispatch_get_current_queue with:
-		// currentQueue = The operation queue that started the operation
-		// underlyingQueue = The dispatch queue used to execute operations
-		// just so happens that in this case it's the main queue anyway
-		dispatch_async(NSOperationQueue.currentQueue.underlyingQueue, ^{
-			
-		});
-		
 		NSError *err=nil;
 		
 		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){

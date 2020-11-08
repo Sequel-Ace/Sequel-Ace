@@ -71,7 +71,6 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 
 + (void)initialize
 {
-	
 }
 
 - (instancetype)init

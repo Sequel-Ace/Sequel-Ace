@@ -676,10 +676,6 @@ typedef enum {
 
 		[editSheetProgressBar startAnimation:self];
 
-		// free old data
-		if ( sheetEditData != nil ) {
-		}
-
 		// load new data/images
 		sheetEditData = [[NSData alloc] initWithContentsOfURL:[panel URL]];
 
@@ -1041,9 +1037,6 @@ typedef enum {
 	NSUInteger maxBit = (NSUInteger)((maxTextLength > 64) ? 64 : maxTextLength);
 
 	if([bitSheetNULLButton state] == NSOnState) {
-		if ( sheetEditData != nil ) {
-		}
-
 		NSString *nullString = [prefs objectForKey:SPNullValue];
 		sheetEditData = [NSString stringWithString:nullString];
 		[bitSheetIntegerTextField setStringValue:nullString];
@@ -1070,9 +1063,6 @@ typedef enum {
 	[bitSheetIntegerTextField setStringValue:[[NSNumber numberWithUnsignedLongLong:intValue] stringValue]];
 	[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%lX", (unsigned long)intValue]];
 	[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", (unsigned long long)intValue]];
-	// free old data
-	if ( sheetEditData != nil ) {
-	}
 
 	// set edit data to text
 	sheetEditData = [NSString stringWithString:bitString];
@@ -1347,11 +1337,7 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
-
-		// free old data
-		if ( sheetEditData != nil ) {
-		}
-
+		
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
 	}

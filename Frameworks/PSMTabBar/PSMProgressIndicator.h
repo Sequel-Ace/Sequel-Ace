@@ -10,7 +10,6 @@
 #import "PSMTabBarControl.h"
 
 @interface PSMProgressIndicator : NSProgressIndicator {
-
 }
 
 @end

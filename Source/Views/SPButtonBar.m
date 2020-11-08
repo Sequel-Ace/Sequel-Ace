@@ -45,7 +45,6 @@ static void init(SPButtonBar *obj);
 
 + (void)initialize
 {
-	
 }
 
 - (instancetype)init

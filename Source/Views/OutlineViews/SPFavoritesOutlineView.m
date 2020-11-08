@@ -43,7 +43,6 @@
 @synthesize itemForDoubleAction = _itemForDoubleAction;
 
 - (void)awakeFromNib {
-	
 }
 
 - (BOOL)acceptsFirstResponder

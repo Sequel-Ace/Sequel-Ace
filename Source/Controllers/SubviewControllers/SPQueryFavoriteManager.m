@@ -359,8 +359,7 @@
 }
 
 - (IBAction)importFavoritesByReplacing:(id)sender
-{
-	
+{	
 }
 
 /**

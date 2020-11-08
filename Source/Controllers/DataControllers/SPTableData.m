@@ -384,8 +384,6 @@
 		[columnNames addObject:[NSString stringWithString:[columnData objectForKey:@"name"]]];
 	}
 
-	if (tableEncoding != nil) {
-	}
 	tableEncoding = [[NSString alloc] initWithString:[tableData objectForKey:@"encoding"]];
 	[primaryKeyColumns addObjectsFromArray:[tableData objectForKey:@"primarykeyfield"]];
 
@@ -424,8 +422,6 @@
 		[columnNames addObject:[NSString stringWithString:[columnData objectForKey:@"name"]]];
 	}
 
-	if (tableEncoding != nil) {
-	}
 	tableEncoding = [[NSString alloc] initWithString:[viewData objectForKey:@"encoding"]];
 
 	pthread_mutex_unlock(&dataProcessingLock);
@@ -495,8 +491,6 @@
 	// Only continue if syntaxResult is not nil. This accommodates causes where the above query caused the
 	// connection reconnect dialog to appear and the user chose to close the connection.
 	if (!syntaxResult) return nil;
-
-	
 	
 	// A NULL value indicates that the user does not have permission to view the syntax
 	if ([[syntaxResult objectAtIndex:1] isNSNull]) {

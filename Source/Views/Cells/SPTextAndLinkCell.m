@@ -69,8 +69,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (void) dealloc
 {
-	
-
 }
 
 /**

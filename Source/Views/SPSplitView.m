@@ -74,7 +74,6 @@
 @implementation SPSplitView
 
 + (void)initialize {
-	
 }
 
 #pragma mark -
@@ -854,10 +853,6 @@
 		if (animationProgress == 1) {
 			if (animationTimer) {
 				[animationTimer invalidate];
-				
-			}
-			if (animationRetainCycleBypassObject) {
-				
 			}
 
 			// If uncollapsing, restore the original view and remove the helper

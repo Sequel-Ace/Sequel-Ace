@@ -1946,8 +1946,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					if(![defaultFieldTypesForComboBox containsObject:anObject])
 						[defaultFieldTypesForComboBox insertObject:anObject atIndex:0];
 				}
-			} else {
-
 			}
 		}
 

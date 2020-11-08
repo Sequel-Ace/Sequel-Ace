@@ -154,7 +154,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 
 + (void)initialize {
-	
 }
 
 - (id)init
@@ -1895,14 +1894,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Check %@", @"CHECK one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) {
-			
-		}
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -1965,7 +1961,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2030,7 +2026,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2094,7 +2090,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2158,7 +2154,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2200,7 +2196,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what] message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2355,9 +2351,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		return;
 	}
 	
-	[userManagerInstance beginSheetModalForWindow:parentWindow completionHandler:^(){
-		
-	}];
+	[userManagerInstance beginSheetModalForWindow:parentWindow completionHandler:^(){ }];
 }
 
 /**

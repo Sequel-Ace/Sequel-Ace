@@ -601,9 +601,6 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 				[sqlHTML appendFormat:@"<font color=%@>%@</font>", tokenColor, [[sqlText substringWithRange:tokenRange] HTMLEscapeString]];
 			
 			if (QLPreviewRequestIsCancelled(preview)) {
-				if (sqlHTML) {
-					
-				}
 				if (truncatedString) {
 					sqlHTML = nil;
 				}

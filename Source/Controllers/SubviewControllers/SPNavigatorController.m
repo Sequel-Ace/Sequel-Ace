@@ -573,8 +573,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 }
 
 - (IBAction)outlineViewAction:(id)sender
-{
-	
+{	
 }
 
 - (IBAction)filterTree:(id)sender
