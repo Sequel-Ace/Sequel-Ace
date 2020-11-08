@@ -44,19 +44,15 @@
 		[self setObjectValue:@""];
 		return;
 	}
-
-	// Take the supplied font and apply all its traits except for a standardised
-	// font size to the text field
-	NSFont *displayFont = [[NSFontManager sharedFontManager] convertFont:theFont toSize:11.0f];
 	
-	[super setFont:displayFont];
+	[super setFont:theFont];
 
 	// Set up a paragraph style for display, setting bounds and display settings
 	NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new] ;
 	
 	[paragraphStyle setAlignment:NSNaturalTextAlignment];
 	[paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];
-	[paragraphStyle setMaximumLineHeight:NSHeight([self bounds]) + [displayFont descender]];
+	[paragraphStyle setMaximumLineHeight:NSHeight([self bounds]) + [theFont descender]];
 
 	// Set up the text to display - the font display name and the point size.
 	NSMutableAttributedString *displayString = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@, %.1f pt", [theFont displayName], [theFont pointSize]]];

@@ -29,10 +29,13 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPGeneralPreferencePane.h"
+#import "SPPreferenceController.h"
 #import "SPFavoritesController.h"
 #import "SPTreeNode.h"
 #import "SPFavoriteNode.h"
 #import "SPGroupNode.h"
+
+#import "sequel-ace-Swift.h"
 
 static NSString *SPDatabaseImage = @"database-small";
 
@@ -76,8 +79,30 @@ static NSString *SPDatabaseImage = @"database-small";
 	[prefs setInteger:[sender tag] forKey:SPDefaultFavorite];
 }
 
+- (IBAction)showGlobalResultFontPanel:(id)sender {
+	[(SPPreferenceController *)[[[self view] window] delegate] setFontChangeTarget:SPPrefFontChangeTargetGeneral];
+
+	[[NSFontManager sharedFontManager] setAction:@selector(changeDefaultFont:)];
+
+	NSFontPanel *panel = [[NSFontManager sharedFontManager] fontPanel:YES];
+	[panel setPanelFont:[NSUserDefaults getFont] isMultiple:NO];
+	[panel makeKeyAndOrderFront:self];
+}
+
+- (void)changeDefaultFont:(id)sender {
+	[(SPPreferenceController *)[[[self view] window] delegate] changeDefaultFont:nil];
+	[self updateDisplayedFontName];
+}
+
 #pragma mark -
 #pragma mark Public API
+
+/**
+ * Updates the displayed font according to the user's preferences.
+ */
+- (void)updateDisplayedFontName {
+	[globalResultFontName setFont:[NSUserDefaults getFont]];
+}
 
 /**
  * (Re)builds the default favorite popup button.
@@ -202,6 +227,7 @@ static NSString *SPDatabaseImage = @"database-small";
 
 - (void)preferencePaneWillBeShown
 {
+	[self updateDisplayedFontName];
 	[self updateDefaultFavoritePopup];
 }
 

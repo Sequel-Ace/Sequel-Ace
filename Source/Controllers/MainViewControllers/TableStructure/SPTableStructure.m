@@ -158,12 +158,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Set the double-click action in blank areas of the table to create new rows
 	[tableSourceView setEmptyDoubleClickAction:@selector(addField:)];
 
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-	NSInteger monospacedFontSize = [prefs integerForKey:SPMonospacedFontSize] > 0 ? [prefs integerForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 
-	// Set the strutcture and index view's font
-	[tableSourceView setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-	[indexesTableView setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[tableSourceView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[indexesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	extraFieldSuggestions = @[
 			@"None",
@@ -241,8 +240,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// menu items are identified by their tag number which represents the initial column index
 	for (NSMenuItem *item in [viewColumnsMenu itemArray]) [item setState:NSOnState]; // Set all items to NSOnState
 
-	for (NSTableColumn *col in [tableSourceView tableColumns]) 
-	{
+	for (NSTableColumn *col in [tableSourceView tableColumns]) {
 		if ([col isHidden]) {
 			if ([[col identifier] isEqualToString:@"Key"])
 				[[viewColumnsMenu itemWithTag:7] setState:NSOffState];
@@ -253,9 +251,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			else if ([[col identifier] isEqualToString:@"comment"])
 				[[viewColumnsMenu itemWithTag:12] setState:NSOffState];
 		}
+		[[col dataCell] setFont:tableFont];
 	}
 
 	[tableSourceView reloadData];
+
+	for (NSTableColumn *col in [indexesTableView tableColumns]) {
+		[[col dataCell] setFont:tableFont];
+	}
 }
 
 #pragma mark -
@@ -1101,17 +1104,18 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [tableSourceView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
-	// Use monospaced fonts preference changed
-	else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
-
-		BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-		CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-		[tableSourceView setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		[indexesTableView setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
+		[tableSourceView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[tableSourceView setFont:tableFont];
+		[indexesTableView setFont:tableFont];
 		[tableSourceView reloadData];
 		[indexesTableView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 
@@ -2444,6 +2448,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)dealloc
 {
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
 }

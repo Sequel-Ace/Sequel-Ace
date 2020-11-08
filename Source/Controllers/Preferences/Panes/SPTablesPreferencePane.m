@@ -34,31 +34,6 @@
 @implementation SPTablesPreferencePane
 
 #pragma mark -
-#pragma mark IB action methods
-
-/**
- * Opens the font panel for selecting the global result table font.
- */
-- (IBAction)showGlobalResultTableFontPanel:(id)sender
-{	
-	[(SPPreferenceController *)[[[self view] window] delegate] setFontChangeTarget:SPPrefFontChangeTargetTable];
-	
-	[[NSFontPanel sharedFontPanel] setPanelFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]] isMultiple:NO];
-	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
-}
-
-#pragma mark -
-#pragma mark Public API
-
-/**
- * Updates the displayed font according to the user's preferences.
- */
-- (void)updateDisplayedTableFontName
-{	
-	[globalResultTableFontName setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]]];
-}
-
-#pragma mark -
 #pragma mark Preference pane protocol methods
 
 - (NSView *)preferencePaneView
@@ -93,7 +68,6 @@
 
 - (void)preferencePaneWillBeShown
 {
-	[self updateDisplayedTableFontName];
 }
 
 @end

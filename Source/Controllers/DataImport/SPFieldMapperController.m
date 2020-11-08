@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static NSString *SPTableViewImportValueColumnID = @"import_value";
 static NSString *SPTableViewTypeColumnID        = @"type";
@@ -1662,9 +1664,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-	[aCell setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	[aCell setFont:[NSUserDefaults getFont]];
 }
 
 - (void)tableView:(NSTableView*)aTableView didClickTableColumn:(NSTableColumn *)aTableColumn

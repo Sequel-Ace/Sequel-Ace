@@ -121,8 +121,6 @@
 	BOOL isTableListFiltered;
 	BOOL tableListIsSelectable;
 	BOOL tableListContainsViews;
-
-	NSFont *smallSystemFont;
 	
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }

@@ -64,6 +64,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 @synthesize host;
 @synthesize username;
 @synthesize password;
+@synthesize database;
 @synthesize port;
 @synthesize useSocket;
 @synthesize socketPath;

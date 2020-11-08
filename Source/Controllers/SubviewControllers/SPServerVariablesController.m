@@ -34,6 +34,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 @interface SPServerVariablesController ()
 
 - (void)_getDatabaseServerVariables;
@@ -65,13 +67,12 @@
 	// Set the process table view's vertical gridlines if required
 	[variablesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[variablesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [variablesTableView tableColumns])
 	{
-		[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[column dataCell] setFont:tableFont];
 	}
 	
 	[self _addPreferenceObservers];
@@ -211,18 +212,16 @@
 	if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [variablesTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
-	// Use monospaced fonts preference changed
-	else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
-		
-		BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-		CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 
-		for (NSTableColumn *column in [variablesTableView tableColumns])
-		{
-			[[column dataCell] setFont:(useMonospacedFont) ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		}
-		
+		[variablesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[variablesTableView setFont:tableFont];
 		[variablesTableView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 
@@ -372,8 +371,7 @@
  */
 - (void)_addPreferenceObservers
 {
-	// Register as an observer for the when the UseMonospacedFonts preference changes
-	[prefs addObserver:self forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
 
 	// Register to obeserve table view vertical grid line pref changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -384,7 +382,7 @@
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

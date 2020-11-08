@@ -69,7 +69,6 @@ enum {
 	PSMTabBarController		*_controller;
 	
 	// Spring-loading.
-	NSTimer					*_springTimer;
 	NSTabViewItem			*_tabViewItemWithSpring;
 	
 	// drawing style

@@ -38,7 +38,6 @@
 	if ((self = [super init])) {
 		drawsDividerUnderCell = NO;
 	}
-	
 	return self;
 }
 
@@ -48,7 +47,6 @@
 
 	cell->drawsDividerUnderCell = drawsDividerUnderCell;
 	cell->labelColor = [labelColor copyWithZone:zone];
-    
 	return cell;
 }
 

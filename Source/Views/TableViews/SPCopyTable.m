@@ -803,7 +803,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	double rowStep;
 	unichar breakChar;
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 
 	NSUInteger columnIndex = (NSUInteger)[[columnDefinition objectForKey:@"datacolumnindex"] integerValue];
 	NSDictionary *stringAttributes = @{NSFontAttributeName : tableFont};

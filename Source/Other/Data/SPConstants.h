@@ -35,6 +35,7 @@
  * type checking when used and cannot be tested for equality.
  */
 
+
 // View modes
 typedef enum {
 	SPStructureViewMode	  = 1,
@@ -121,6 +122,9 @@ typedef NS_ENUM(NSInteger, SPTableViewType)
 	SPTableViewInvalid     = NSNotFound
 };
 
+@interface NSString (TableViewTypeEnumParser)
+- (SPTableViewType)tableViewTypeEnumFromString;
+@end
 // SSH tunnel password modes
 typedef enum
 {
@@ -230,7 +234,7 @@ typedef enum
 
 typedef enum
 {
-	SPPrefFontChangeTargetTable  = 1,
+	SPPrefFontChangeTargetGeneral = 1,
 	SPPrefFontChangeTargetEditor = 2
 } SPPreferenceFontChangeTarget;
 
@@ -247,8 +251,6 @@ typedef enum
 // Narrow down completion max rows
 extern const NSUInteger SPNarrowDownCompletionMaxRows;
 extern const NSUInteger SPMaxQueryLengthForWarning;
-// Default monospaced font name
-extern NSString *SPDefaultMonospacedFontName;
 
 // System database names
 extern NSString *SPMySQLDatabase;
@@ -301,7 +303,6 @@ extern NSString *SPAutoConnectToDefault;
 extern NSString *SPDefaultViewMode;
 extern NSString *SPLastViewMode;
 extern NSString *SPDefaultEncoding;
-extern NSString *SPUseMonospacedFonts;
 extern NSString *SPDisplayTableViewVerticalGridlines;
 extern NSString *SPDisplayCommentsInTablesList;
 extern NSString *SPCustomQueryMaxHistoryItems;
@@ -318,7 +319,7 @@ extern NSString *SPNewFieldsAllowNulls;
 extern NSString *SPLimitResults;
 extern NSString *SPLimitResultsValue;
 extern NSString *SPNullValue;
-extern NSString *SPGlobalResultTableFont;
+extern NSString *SPGlobalFontSettings;
 extern NSString *SPFilterTableDefaultOperator;
 extern NSString *SPFilterTableDefaultOperatorLastItems;
 
@@ -392,7 +393,6 @@ extern NSString *SPAlwaysShowWindowTabBar;
 extern NSString *SPResetAutoIncrementAfterDeletionOfAllRows;
 extern NSString *SPFavoriteColorList;
 extern NSString *SPDisplayBinaryDataAsHex;
-extern NSString *SPMonospacedFontSize;
 extern NSString *SPRuleFilterEditorLastVisibilityChoice;
 
 // Hidden Prefs
@@ -671,6 +671,9 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 	/** Some data has a version that we don't know how to handle (can be used with e.g. SPF files, which have explicit version numbers) */
 	SPErrorWrongContentVersion = 110003,
 };
+
+#define user_defaults_get_bool(key)         [[NSUserDefaults standardUserDefaults] boolForKey:key]
+#define user_defaults_get_bool_ud(key, ud)  [ud boolForKey:key]
 
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
 

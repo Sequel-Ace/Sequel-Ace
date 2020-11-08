@@ -679,47 +679,19 @@
 #pragma mark -
 #pragma mark Delegate method forwarding
 
-- (CGFloat)splitView:(NSSplitView *)splitView constrainSplitPosition:(CGFloat)proposedPosition ofSubviewAt:(NSInteger)dividerIndex
-{
-	if ([delegate respondsToSelector:@selector(splitView:constrainSplitPosition:ofSubviewAt:)]) {
-		return [delegate splitView:splitView constrainSplitPosition:proposedPosition ofSubviewAt:dividerIndex];
-	}
-
+- (CGFloat)splitView:(NSSplitView *)splitView constrainSplitPosition:(CGFloat)proposedPosition ofSubviewAt:(NSInteger)dividerIndex {
 	return proposedPosition;
 }
 
-- (NSRect)splitView:(NSSplitView *)splitView effectiveRect:(NSRect)proposedEffectiveRect forDrawnRect:(NSRect)drawnRect ofDividerAtIndex:(NSInteger)dividerIndex
-{
+- (NSRect)splitView:(NSSplitView *)splitView effectiveRect:(NSRect)proposedEffectiveRect forDrawnRect:(NSRect)drawnRect ofDividerAtIndex:(NSInteger)dividerIndex {
 	if ([delegate respondsToSelector:@selector(splitView:effectiveRect:forDrawnRect:ofDividerAtIndex:)]) {
 		return [delegate splitView:splitView effectiveRect:proposedEffectiveRect forDrawnRect:drawnRect ofDividerAtIndex:dividerIndex];
 	}
-
 	return proposedEffectiveRect;
 }
 
-- (BOOL)splitView:(NSSplitView *)splitView shouldAdjustSizeOfSubview:(NSView *)view
-{
-	if ([delegate respondsToSelector:@selector(splitView:shouldAdjustSizeOfSubview:)]) {
-		return [(id)delegate splitView:splitView shouldAdjustSizeOfSubview:view];
-	}
-
+- (BOOL)splitView:(NSSplitView *)splitView shouldAdjustSizeOfSubview:(NSView *)view {
 	return YES;
-}
-
-- (void)splitView:(NSSplitView *)splitView resizeSubviewsWithOldSize:(NSSize)oldSize
-{
-	if ([delegate respondsToSelector:@selector(splitView:resizeSubviewsWithOldSize:)]) {
-		return [delegate splitView:splitView resizeSubviewsWithOldSize:oldSize];
-	}
-
-	return [self adjustSubviews];
-}
-
-- (void)splitViewWillResizeSubviews:(NSNotification *)notification
-{
-	if ([delegate respondsToSelector:@selector(splitViewWillResizeSubviews:)]) {
-		[delegate splitViewWillResizeSubviews:notification];
-	}
 }
 
 #pragma mark -
