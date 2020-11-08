@@ -2966,7 +2966,6 @@
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
 				B58DA73C0FF8BBA500FDDACD /* PrintAccessory.xib in Resources */,
 				1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */,
-				1AB0689E24A355B600E2AAC2 /* client-cert-bad-end.pem in Resources */,
 				B58DA73A0FF8BB9E00FDDACD /* SSHQuestionDialog.xib in Resources */,
 				B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */,
 				8831EFB0224013AF00D10172 /* button_refreshTemplate.pdf in Resources */,
