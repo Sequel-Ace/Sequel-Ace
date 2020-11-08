@@ -615,7 +615,7 @@
 							                                           alternateButton:NSLocalizedString(@"Cancel Import", @"sql import : charset error alert : cancel button")
 							                                               otherButton:nil
 							                                 informativeTextWithFormat:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
-							[charsetErrorAlert setAlertStyle:NSWarningAlertStyle];
+							[charsetErrorAlert setAlertStyle:NSAlertStyleWarning];
 							charsetErrorSheetReturnCode = [charsetErrorAlert runModal];
 						});
 
@@ -642,7 +642,7 @@
 						                                       alternateButton:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")
 						                                           otherButton:NSLocalizedString(@"Stop", @"stop button")
 						                             informativeTextWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]];
-						[sqlErrorAlert setAlertStyle:NSWarningAlertStyle];
+						[sqlErrorAlert setAlertStyle:NSAlertStyleWarning];
 						sqlImportErrorSheetReturnCode = [sqlErrorAlert runModal];
 					});
 

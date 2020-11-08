@@ -28,76 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-/**
- * This file contains declarations for backward compatibility to
- * older XCode versions / SDKs.
- *
- * The current minimum required SDK is 10.8!
- */
-
 #ifndef SPCompatibility
 #define SPCompatibility
-
-#pragma mark - 10.11 El Capitan
-
-#ifndef __MAC_10_11
-#define __MAC_10_11 101100
-#endif
-
-#if !__has_feature(objc_kindof)
-#define __kindof
-#endif
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED < __MAC_10_11
-
-// formal protocol since 10.11, NSObject category before
-@protocol WebFrameLoadDelegate <NSObject>
-@end
-
-// formal protocol since 10.11, NSObject category before
-@protocol WebPolicyDelegate <NSObject>
-@end
-
-// formal protocol since 10.11, NSObject category before
-@protocol WebUIDelegate <NSObject>
-@end
-
-@interface NSOpenPanel (ElCapitan)
-
-@property (getter=isAccessoryViewDisclosed) BOOL accessoryViewDisclosed;
-
-@end
-
-#endif
-
-#pragma mark - 10.12 Sierra
-
-#ifndef __MAC_10_12
-#define __MAC_10_12 101200
-#endif
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED < __MAC_10_12
-
-//those enums got renamed in 10.12, probably for consistency
-#define NSAlertStyleInformational NSInformationalAlertStyle
-#define NSAlertStyleWarning       NSWarningAlertStyle
-#define NSAlertStyleCritical      NSCriticalAlertStyle
-
-#define NSEventModifierFlagShift                      NSShiftKeyMask
-#define NSEventModifierFlagControl                    NSControlKeyMask
-#define NSEventModifierFlagOption                     NSAlternateKeyMask
-#define NSEventModifierFlagCommand                    NSCommandKeyMask
-#define NSEventModifierFlagNumericPad                 NSNumericPadKeyMask
-#define NSEventModifierFlagFunction                   NSFunctionKeyMask
-#define NSEventModifierFlagDeviceIndependentFlagsMask NSDeviceIndependentModifierFlagsMask
-
-@interface NSWindow (Sierra)
-+ (void)setAllowsAutomaticWindowTabbing:(BOOL)arg;
-@end
-
-#endif
-
-#endif
 
 #pragma mark - 10.13 High Sierra
 
@@ -136,3 +68,5 @@
 - (BOOL)allowSplitViewResizing;
 
 @end
+
+#endif

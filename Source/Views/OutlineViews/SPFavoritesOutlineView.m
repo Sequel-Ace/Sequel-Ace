@@ -108,7 +108,7 @@
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
-	if([theEvent type] == NSLeftMouseDown && [theEvent clickCount] == 2) {
+	if([theEvent type] == NSEventTypeLeftMouseDown && [theEvent clickCount] == 2) {
 		// The tricky thing is that [self clickedRow] is set from [NSTableView mouseDown], so right now it's not populated.
 		// We can't use [self selectedRow] either, as clicking on empty space does not update the selection.
 		NSPoint clickAt = [theEvent locationInWindow];

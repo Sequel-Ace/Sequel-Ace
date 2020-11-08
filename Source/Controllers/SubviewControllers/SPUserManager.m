@@ -493,7 +493,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
     NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
 	
     if (coordinator != nil) {
-        managedObjectContext = [[NSManagedObjectContext alloc] init];
+        managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
         [managedObjectContext setPersistentStoreCoordinator:coordinator];
     }
 	
@@ -772,7 +772,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		alert.informativeText = NSLocalizedString(@"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue", @"unsaved changes informative message");
 		[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
 		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-		[alert setAlertStyle:NSWarningAlertStyle];
+		[alert setAlertStyle:NSAlertStyleWarning];
 
 		// "Continue" is our first button, "Cancel" is our second button. We could also implement setKeyEquivalent but this is easier for now
 		NSModalResponse response = [alert runModal];

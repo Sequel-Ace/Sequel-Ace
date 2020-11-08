@@ -285,7 +285,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
 	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
@@ -320,7 +320,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
 	// row or has disappeared (= -1) by the time the didEndSelector is invoked,

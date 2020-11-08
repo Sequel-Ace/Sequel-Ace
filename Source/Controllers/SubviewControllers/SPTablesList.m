@@ -505,7 +505,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	NSAlert *alert = [NSAlert alertWithMessageText:@"" defaultButton:NSLocalizedString(@"Delete", @"delete button") alternateButton:NSLocalizedString(@"Cancel", @"cancel button") otherButton:nil informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -671,7 +671,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 									   otherButton:nil
 						 informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -1889,7 +1889,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"),
 									query, [mySQLConnection lastErrorMessage]];
 
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"truncateTableError"];
 			return NO;
 		}
@@ -2232,7 +2232,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
 			[alert setInformativeText:[NSString stringWithFormat:userMessage, [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]]];
-			[alert setAlertStyle:NSWarningAlertStyle];
+			[alert setAlertStyle:NSAlertStyleWarning];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:nil contextInfo:nil];
@@ -2288,7 +2288,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				nil,
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]],
-				NSCriticalAlertStyle
+				NSAlertStyleCritical
 			);
 			
 			*stop = YES;

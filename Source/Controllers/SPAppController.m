@@ -434,7 +434,7 @@
 
 				[alert setHelpAnchor:filePath];
 				[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-				[alert setAlertStyle:NSWarningAlertStyle];
+				[alert setAlertStyle:NSAlertStyleWarning];
 
 				NSUInteger returnCode = [alert runModal];
 
@@ -2018,7 +2018,7 @@
 {
 
 	NSEvent *event = [NSApp currentEvent];
-	BOOL checkForKeyEquivalents = ([event type] == NSKeyDown) ? YES : NO;
+	BOOL checkForKeyEquivalents = ([event type] == NSEventTypeKeyDown) ? YES : NO;
 
 	id firstResponder = [[NSApp keyWindow] firstResponder];
 

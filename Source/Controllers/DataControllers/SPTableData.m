@@ -576,7 +576,7 @@
 					nil,
 					nil,
 					[NSString stringWithFormat:NSLocalizedString(@"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.", @"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item."), fieldsParser],
-					NSCriticalAlertStyle
+					NSAlertStyleCritical
 				);
 				continue;
 			}

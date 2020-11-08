@@ -263,7 +263,7 @@
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected query favorites? This action cannot be undone.", @"remove all selected query favorites informative message")];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -286,7 +286,7 @@
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all of your saved query favorites? This action cannot be undone.", @"remove all query favorites informative message")];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -816,7 +816,7 @@
 												   otherButton:nil
 									 informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [readError localizedDescription]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				return;
 			}
@@ -916,7 +916,7 @@
 												   otherButton:nil
 									 informativeTextWithFormat:@"%@", [error localizedDescription]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				return;
 			}

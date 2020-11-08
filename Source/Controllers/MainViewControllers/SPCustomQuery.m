@@ -164,7 +164,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if ([tableDocumentInstance isWorking]) return;
 
 	// Fixes bug in key equivalents.
-	if ([[NSApp currentEvent] type] == NSKeyUp) {
+	if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) {
 		return;
 	}
 
@@ -548,7 +548,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 									   otherButton:nil
 						 informativeTextWithFormat:@"%@", infoString];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -870,7 +870,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 							                                 defaultButton:NSLocalizedString(@"Run All", @"run all button")
 							                               alternateButton:NSLocalizedString(@"Continue", @"continue button")
 							                                   otherButton:NSLocalizedString(@"Stop", @"stop button")
-							                                    alertStyle:NSWarningAlertStyle
+							                                    alertStyle:NSAlertStyleWarning
 							                                     docWindow:[tableDocumentInstance parentWindow]
 							                                 modalDelegate:self
 							                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
@@ -1763,7 +1763,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"integer"]
 			|| [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"float"])
 		{
-			[dataCell setAlignment:NSRightTextAlignment];
+			[dataCell setAlignment:NSTextAlignmentRight];
 		}
 
 		// Set field type for validations
@@ -3440,9 +3440,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			// Send moveDown/Up to the popup menu
 			NSEvent *arrowEvent;
 			if(command == @selector(moveDown:))
-				arrowEvent = [NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
+				arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
 			else
-				arrowEvent = [NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
+				arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
 			[NSApp postEvent:arrowEvent atStart:NO];
 			return YES;
 

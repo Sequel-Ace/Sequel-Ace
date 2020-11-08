@@ -1189,7 +1189,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Record whether the filter is being triggered by using delete/backspace in the filter field, which
 	// can trigger the effect of clicking the "clear filter" button in the field.
 	// (Keycode 51 is backspace, 117 is delete.)
-	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
+	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSEventTypeKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
 
 	BOOL resetPaging = NO; // if filtering was triggered by pressing the "Filter" button, reset to page 1
 	
@@ -2657,7 +2657,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Edit row selected - reselect the row, and start editing.
 	if ( returnCode == NSAlertDefaultReturn ) {
 		[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
+		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 
 	} 
 	else {

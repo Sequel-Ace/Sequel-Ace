@@ -570,7 +570,7 @@
 			alert.informativeText = NSLocalizedString(@"Error while duplicating Bundle content.", @"Bundle Editor : Copy-Command-Error : Copying failed error message");
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Copy-Command-Error : OK button")]; // first button is OK
 					
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert runModal];
 
 			return;
@@ -683,7 +683,7 @@
 	[alert addButtonWithTitle:NSLocalizedString(@"Remove", @"Bundle Editor : Remove-Bundle: remove button")]; // first button is delete
 	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Bundle Editor : Remove-Bundle: cancel button")]; // second is cancel
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -760,7 +760,7 @@
 			NSAlert *alert = [[NSAlert alloc] init];
 			[alert setMessageText:NSLocalizedString(@"Error while saving the Bundle.", @"Bundle Editor : Save-Bundle-Error : error dialog title")];
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Save-Bundle-Error : OK button")];
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert runModal]; //blocks
 		}
 	}];
@@ -884,7 +884,7 @@
 				alert.messageText = [NSString stringWithFormat:NSLocalizedString(@"Error while saving “%@”.", @"Bundle Editor : Save-and-Close-Error : error dialog title"), [item objectForKey:kBundleNameKey]];
 				alert.informativeText = @"";
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Save-and-Close-Error : OK button")]; // first button is OK
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				break;
 			}
@@ -1017,7 +1017,7 @@
 						alert.informativeText = [NSString stringWithFormat:@"%@", [error localizedDescription]];
 						[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Trash-Bundle(s)-Error : OK button")]; // first button is OK
 						
-						[alert setAlertStyle:NSCriticalAlertStyle];
+						[alert setAlertStyle:NSAlertStyleCritical];
 						[alert runModal];
 						deletionSuccessfully = NO;
 						break;

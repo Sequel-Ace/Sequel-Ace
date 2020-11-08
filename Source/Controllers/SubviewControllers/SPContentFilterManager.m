@@ -291,7 +291,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected content filters? This action cannot be undone.", @"remove all selected content filters informative message")];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -825,7 +825,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 													   otherButton:nil
 										 informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [error localizedDescription]];
 					
-					[alert setAlertStyle:NSCriticalAlertStyle];
+					[alert setAlertStyle:NSAlertStyleCritical];
 					[alert runModal];
 					return;
 				}
@@ -913,7 +913,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				                                   otherButton:nil
 				                     informativeTextWithFormat:@"%@", [error localizedDescription]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				return;
 			}

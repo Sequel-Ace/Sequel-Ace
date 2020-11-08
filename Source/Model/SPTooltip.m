@@ -102,7 +102,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 - (instancetype)init {
 	if((self = [super initWithContentRect:NSMakeRect(1,1,1,1)
-					styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO]))
+					styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO]))
 	{
 		
 		// some setup?
@@ -279,7 +279,7 @@ static CGFloat slow_in_out (CGFloat t)
 	id fr = [[NSApp keyWindow] firstResponder];
 
 	//If first responder is a textview return the caret position
-	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSLeftTextAlignment) || [[[fr class] description] isEqualToString:@"SPTextView"]) {
+	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSTextAlignmentLeft) || [[[fr class] description] isEqualToString:@"SPTextView"]) {
 		NSRange range = NSMakeRange([fr selectedRange].location,1);
 		NSRange glyphRange = [[fr layoutManager] glyphRangeForCharacterRange:range actualCharacterRange:NULL];
 		NSRect boundingRect = [[fr layoutManager] boundingRectForGlyphRange:glyphRange inTextContainer:[fr textContainer]];
@@ -448,13 +448,13 @@ static CGFloat slow_in_out (CGFloat t)
 	[appKeyWindow setAcceptsMouseMovedEvents:YES];
 	NSEvent* event = nil;
 	NSInteger eventType;
-	while((event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:[NSDate distantFuture] inMode:NSDefaultRunLoopMode dequeue:YES]))
+	while((event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantFuture] inMode:NSDefaultRunLoopMode dequeue:YES]))
 	{
 		eventType = [event type];
-		if(eventType == NSKeyDown || eventType == NSLeftMouseDown || eventType == NSRightMouseDown || eventType == NSOtherMouseDown || eventType == NSScrollWheel)
+		if(eventType == NSEventTypeKeyDown || eventType == NSEventTypeLeftMouseDown || eventType == NSEventTypeRightMouseDown || eventType == NSEventTypeOtherMouseDown || eventType == NSEventTypeScrollWheel)
 			break;
 
-		if(eventType == NSMouseMoved && [self shouldCloseForMousePosition:[NSEvent mouseLocation]])
+		if(eventType == NSEventTypeMouseMoved && [self shouldCloseForMousePosition:[NSEvent mouseLocation]])
 			break;
 
 		if(appKeyWindow != [NSApp keyWindow] || ![NSApp isActive])

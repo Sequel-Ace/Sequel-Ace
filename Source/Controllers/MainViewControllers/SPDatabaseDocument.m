@@ -320,7 +320,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[progressIndicatorShadow setShadowBlurRadius:1.0f];
 	[progressIndicatorShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
 	[taskProgressIndicator setShadow:progressIndicatorShadow];
-	taskProgressWindow = [[NSWindow alloc] initWithContentRect:[taskProgressLayer bounds] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
+	taskProgressWindow = [[NSWindow alloc] initWithContentRect:[taskProgressLayer bounds] styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO];
 	[taskProgressWindow setReleasedWhenClosed:NO];
 	[taskProgressWindow setOpaque:NO];
 	[taskProgressWindow setBackgroundColor:[NSColor clearColor]];
@@ -3145,7 +3145,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
 				                               alternateButton:NSLocalizedString(@"Ignore", @"ignore button")
 				                                   otherButton:nil
-				                                    alertStyle:NSCriticalAlertStyle
+				                                    alertStyle:NSAlertStyleCritical
 				                                     docWindow:parentWindow
 				                                 modalDelegate:self
 				                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
@@ -4884,7 +4884,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	while (_isWorkingLevel || !_isConnected) {
 		if(_workingTimeout) break;
 		// Do not block self
-		NSEvent *event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
 		                                    untilDate:[NSDate distantPast]
 		                                       inMode:NSDefaultRunLoopMode
 		                                      dequeue:YES];
@@ -5074,7 +5074,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			for(NSString* item in items) {
 
 				NSEvent* event = [NSApp currentEvent];
-				if ([event type] == NSKeyDown) {
+				if ([event type] == NSEventTypeKeyDown) {
 					unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 					if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 						userTerminated = YES;
@@ -5268,7 +5268,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 							for( j = 0 ; j < [theRow count]; j++ ) {
 
 								NSEvent* event = [NSApp currentEvent];
-								if ([event type] == NSKeyDown) {
+								if ([event type] == NSEventTypeKeyDown) {
 									unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 									if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 										userTerminated = YES;
@@ -5306,7 +5306,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 							for( j = 0 ; j < [theRow count]; j++ ) {
 
 								NSEvent* event = [NSApp currentEvent];
-								if ([event type] == NSKeyDown) {
+								if ([event type] == NSEventTypeKeyDown) {
 									unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 									if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 										userTerminated = YES;

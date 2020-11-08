@@ -946,7 +946,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		{
 			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)];
 			[b setEditable:NO];
-			[b setAlignment:NSRightTextAlignment];
+			[b setAlignment:NSTextAlignmentRight];
 			[b setFont:[NSFont systemFontOfSize:11]];
 			[b setWraps:NO];
 			return b;

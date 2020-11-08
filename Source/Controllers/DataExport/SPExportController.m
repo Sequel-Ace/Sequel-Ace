@@ -434,7 +434,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			NSLog(@"sender title: %@, sender tag: %ld", [(NSButton*)sender title], (long)[sender tag]);
 			
 			NSAlert *alert = [[NSAlert alloc] init];
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert setMessageText:NSLocalizedString(@"No directory selected.", @"No directory selected.")];
 			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
 			
@@ -1962,7 +1962,7 @@ set_input:
 	}
 
 	NSAlert *alert = [[NSAlert alloc] init];
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	// If files failed because they already existed, show a OS-like dialog.
 	if (filesAlreadyExisting) {
@@ -2716,7 +2716,7 @@ set_input:
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_tokenizeCustomFilenameTokenField) object:nil];
 		// do not queue a call if the key causing this change was the return key.
 		// This is to prevent a loop with _tokenizeCustomFilenameTokenField.
-		if([[NSApp currentEvent] type] != NSKeyDown || [[NSApp currentEvent] keyCode] != 0x24) {
+		if([[NSApp currentEvent] type] != NSEventTypeKeyDown || [[NSApp currentEvent] keyCode] != 0x24) {
 			[self performSelector:@selector(_tokenizeCustomFilenameTokenField) withObject:nil afterDelay:0.5];
 		}
 	}
@@ -2853,7 +2853,7 @@ set_input:
 	}
 
 	// All conditions met - synthesize the return key to trigger tokenization.
-	NSEvent *tokenizingEvent = [NSEvent keyEventWithType:NSKeyDown
+	NSEvent *tokenizingEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown
 												location:NSMakePoint(0,0)
 										   modifierFlags:0
 											   timestamp:0
@@ -3020,7 +3020,7 @@ set_input:
 		}
 
 		NSAlert *alert = [NSAlert alertWithError:err];
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 		[alert runModal];
 	}];
 }
@@ -3054,7 +3054,7 @@ set_input:
 		}
 
 		NSAlert *alert = [NSAlert alertWithError:err];
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 		[alert runModal];
 	}];
 }

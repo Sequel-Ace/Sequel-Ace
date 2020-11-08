@@ -751,7 +751,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		                                 defaultButton:NSLocalizedString(@"Proceed", @"proceed button")
 		                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
 		                                   otherButton:nil
-		                                    alertStyle:NSWarningAlertStyle
+		                                    alertStyle:NSAlertStyleWarning
 		                                     docWindow:[[self view] window]
 		                                 modalDelegate:self
 		                                didEndSelector:@selector(checkForUnsavedThemeDidEndSheet:returnCode:contextInfo:)

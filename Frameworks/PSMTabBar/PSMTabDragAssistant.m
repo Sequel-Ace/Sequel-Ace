@@ -191,7 +191,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	if ([control delegate] && [[control delegate] respondsToSelector:@selector(tabView:shouldDropTabViewItem:inTabBar:)] &&
 			[[control delegate] tabView:[control tabView] shouldDropTabViewItem:[[self draggedCell] representedObject] inTabBar:nil]) {
 		_currentTearOffStyle = [control tearOffStyle];
-		_draggedTab = [[PSMTabDragWindowController alloc] initWithImage:dragImage styleMask:NSBorderlessWindowMask tearOffStyle:_currentTearOffStyle initialAlpha:[control usesSafariStyleDragging]?1:kPSMTabDragWindowAlpha];
+		_draggedTab = [[PSMTabDragWindowController alloc] initWithImage:dragImage styleMask:NSWindowStyleMaskBorderless tearOffStyle:_currentTearOffStyle initialAlpha:[control usesSafariStyleDragging]?1:kPSMTabDragWindowAlpha];
 		
 		cellFrame.origin.y -= cellFrame.size.height;
 		[control dragImage:[[NSImage alloc] initWithSize:NSMakeSize(1, 1)] at:cellFrame.origin offset:offset event:event pasteboard:pboard source:control slideBack:NO];
@@ -642,7 +642,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	NSImage *viewImage = nil;
 	
 	if (outMask) {
-		*outMask = NSBorderlessWindowMask;
+		*outMask = NSWindowStyleMaskBorderless;
 	}
 	
 	if ([control delegate] && [[control delegate] respondsToSelector:@selector(tabView:imageForTabViewItem:offset:styleMask:)]) {
@@ -677,7 +677,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 		[viewImage unlockFocus];
 	}
 	
-	if (outMask && (*outMask | NSBorderlessWindowMask)) {
+	if (outMask && (*outMask | NSWindowStyleMaskBorderless)) {
 		_dragWindowOffset.height += 22;
 	}
 	

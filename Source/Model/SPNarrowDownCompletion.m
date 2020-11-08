@@ -79,7 +79,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	};
 
 	unichar keyCode = 0;
-	if([anEvent type] == NSKeyDown && [[anEvent characters] length] == 1) {
+	if([anEvent type] == NSEventTypeKeyDown && [[anEvent characters] length] == 1) {
 		keyCode = [[anEvent characters] characterAtIndex:0];
 	}
 
@@ -111,7 +111,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 {
 	maxWindowWidth = 450;
 
-	if((self = [super initWithContentRect:NSMakeRect(0,0,maxWindowWidth,0) styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES]))
+	if((self = [super initWithContentRect:NSMakeRect(0,0,maxWindowWidth,0) styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:YES]))
 	{
 		mutablePrefix = [NSMutableString new];
 		originalFilterString = [NSMutableString new];
@@ -498,7 +498,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			NSPopUpButtonCell *b = [NSPopUpButtonCell new];
 			[b setPullsDown:NO];
 			[b setAltersStateOfSelectedItem:NO];
-			[b setControlSize:NSMiniControlSize];
+			[b setControlSize:NSControlSizeMini];
 			{
 				NSMenu *m = [[NSMenu alloc] init];
 				NSMenuItem *aMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Type Declaration:", @"type declaration header") action:NULL keyEquivalent:@""];
@@ -518,7 +518,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		if(!(isQueryingDatabaseStructure && rowIndex == 0) && !dictMode) {
 			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] init];
 			[b setEditable:NO];
-			[b setAlignment:NSRightTextAlignment];
+			[b setAlignment:NSTextAlignmentRight];
 			[b setFont:[NSFont systemFontOfSize:11]];
 			return b;
 		}
@@ -532,7 +532,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			NSPopUpButtonCell *b = [NSPopUpButtonCell new];
 			[b setPullsDown:NO];
 			[b setAltersStateOfSelectedItem:NO];
-			[b setControlSize:NSMiniControlSize];
+			[b setControlSize:NSControlSizeMini];
 			{
 				NSMenu *m = [[NSMenu alloc] init];
 				for(id p in [[[[[filtered objectAtIndex:rowIndex] objectForKey:@"path"] componentsSeparatedByString:SPUniqueSchemaDelimiter] reverseObjectEnumerator] allObjects]) {
@@ -787,7 +787,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 
 	closeMe = NO;
 	while(!closeMe) {
-		NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
 		                                    untilDate:[NSDate distantFuture]
 		                                       inMode:NSDefaultRunLoopMode
 		                                      dequeue:YES];
@@ -801,7 +801,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		if([theTableView SP_NarrowDownCompletion_canHandleEvent:event]) {
 			// skip the rest
 		}
-		else if(t == NSKeyDown) {
+		else if(t == NSEventTypeKeyDown) {
 			NSEventModifierFlags flags = [event modifierFlags];
 			unichar key                = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 
@@ -898,7 +898,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 				break;
 			}
 		}
-		else if(t == NSRightMouseDown || t == NSLeftMouseDown) {
+		else if(t == NSEventTypeRightMouseDown || t == NSEventTypeLeftMouseDown) {
 			if(([event clickCount] == 2)) {
 				[self completeAndInsertSnippet];
 			}

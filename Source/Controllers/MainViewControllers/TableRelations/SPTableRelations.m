@@ -317,7 +317,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 										   otherButton:nil 
 							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected relations? This action cannot be undone.", @"delete selected relation informative message")];
 
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 
 		NSArray *buttons = [alert buttons];
 

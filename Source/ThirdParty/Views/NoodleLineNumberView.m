@@ -126,7 +126,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 - (NSFont *)font
 {
 	if (font == nil)
-		return [NSFont labelFontOfSize:[NSFont systemFontSizeForControlSize:NSMiniControlSize]];
+		return [NSFont labelFontOfSize:[NSFont systemFontSizeForControlSize:NSControlSizeMini]];
 
 	return font;
 }

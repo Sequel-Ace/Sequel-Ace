@@ -625,7 +625,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	NSEvent *event = [NSApp currentEvent];
 	if(
 		( commandSelector == @selector(deleteBackward:) || commandSelector == @selector(deleteForward:) ) &&
-		[event type] == NSKeyDown &&
+		[event type] == NSEventTypeKeyDown &&
 		([event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == NSEventModifierFlagShift
 	) {
 		NSInteger row = [filterRuleEditor rowForDisplayValue:control];
@@ -831,7 +831,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
 	// if the action was caused by pressing return or enter, trigger filtering
 	NSEvent *event = [NSApp currentEvent];
-	if(event && [event type] == NSKeyDown && ([event keyCode] == 36 || [event keyCode] == 76)) {
+	if(event && [event type] == NSEventTypeKeyDown && ([event keyCode] == 36 || [event keyCode] == 76)) {
 		[self filterTable:nil];
 	}
 }

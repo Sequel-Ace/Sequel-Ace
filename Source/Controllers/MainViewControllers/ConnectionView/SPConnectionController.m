@@ -1177,7 +1177,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 			[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 			
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			
 			[alert beginSheetModalForWindow:[dbDocument parentWindow]
 			                  modalDelegate:self
@@ -2542,7 +2542,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
 	if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) {
 		[errorDetailText setFont:[NSFont userFontOfSize:12]];
-		[errorDetailText setAlignment:NSLeftTextAlignment];
+		[errorDetailText setAlignment:NSTextAlignmentLeft];
 		[errorDetailWindow makeKeyAndOrderFront:self];
 	}
 
@@ -2784,7 +2784,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (BOOL)outlineView:(NSOutlineView *)outlineView shouldEditTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
 	NSEvent *event = [NSApp currentEvent];
-	BOOL shiftTabbedIn = ([event type] == NSKeyDown && [[event characters] length] && [[event characters] characterAtIndex:0] == NSBackTabCharacter);
+	BOOL shiftTabbedIn = ([event type] == NSEventTypeKeyDown && [[event characters] length] && [[event characters] characterAtIndex:0] == NSBackTabCharacter);
 
 	if (shiftTabbedIn && [(SPFavoritesOutlineView *)outlineView justGainedFocus]) {
 		return NO;

@@ -243,7 +243,7 @@
 		animationDuration = 0.25f;
 
 		// Make it a slow animation if appropriate
-		if ([[NSApp currentEvent] type] == NSLeftMouseUp && [[NSApp currentEvent] modifierFlags] & NSEventModifierFlagShift) {
+		if ([[NSApp currentEvent] type] == NSEventTypeLeftMouseUp && [[NSApp currentEvent] modifierFlags] & NSEventModifierFlagShift) {
 			animationDuration *= 10;
 		}
 

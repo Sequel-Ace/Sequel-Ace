@@ -646,7 +646,7 @@
 						[NSString stringForByteSize:[filesize longLongValue]]]];
 					[alert setHelpAnchor:filepath];
 					[alert setMessageText:NSLocalizedString(@"Warning", @"warning")];
-					[alert setAlertStyle:NSWarningAlertStyle];
+					[alert setAlertStyle:NSAlertStyleWarning];
 					[alert beginSheetModalForWindow:[self window] 
 						modalDelegate:self 
 						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 

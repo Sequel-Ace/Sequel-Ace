@@ -259,7 +259,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the index '%@'? This action cannot be undone.", @"delete index informative message"), keyName];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -1008,7 +1008,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.", @"table structure : indexes : delete index : error 1553 : description"), constraintName, keyName];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	

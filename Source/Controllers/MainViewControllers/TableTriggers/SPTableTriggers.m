@@ -320,7 +320,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 										   otherButton:nil
 							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected triggers? This action cannot be undone.", @"delete selected trigger informative message")];
 
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 
 		NSArray *buttons = [alert buttons];
 

@@ -421,7 +421,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 												   otherButton:nil
 									 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
 				return;
 			} else {
@@ -472,7 +472,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 											   otherButton:nil
 								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]];
 
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
 			return;
 		}
@@ -1815,7 +1815,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			} else {
 				NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]];
 				[b setEditable:NO];
-				[b setAlignment:NSLeftTextAlignment];
+				[b setAlignment:NSTextAlignmentLeft];
 				[b setWraps:NO];
 				[b setFont:[NSFont systemFontOfSize:9]];
 				[b setDelegate:self];

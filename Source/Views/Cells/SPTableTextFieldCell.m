@@ -43,7 +43,7 @@
 		noteButton = [[NSCell alloc] init];
 		[noteButton setTitle:@""];
 		[noteButton setBordered:NO];
-		[noteButton setAlignment:NSRightTextAlignment];
+		[noteButton setAlignment:NSTextAlignmentRight];
 		[noteButton setSelectable:FALSE];
 		[noteButton setEditable:FALSE];
 	}

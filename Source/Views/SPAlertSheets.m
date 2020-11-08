@@ -99,7 +99,7 @@
 	}
 
 	// Set alert  style
-	[alert setAlertStyle:alertStyle ? alertStyle : NSWarningAlertStyle];
+	[alert setAlertStyle:alertStyle ? alertStyle : NSAlertStyleWarning];
 
 	// Set the informative message if supplied
 	if (infoText) [alert setInformativeText:infoText];
@@ -137,14 +137,14 @@
 @end
 
 /**
- * Shorthand for SPOnewayAlertSheetWithStyle() with defaultButton=nil and alertStyle=NSWarningAlertStyle
+ * Shorthand for SPOnewayAlertSheetWithStyle() with defaultButton=nil and alertStyle=NSAlertStyleWarning
  */
 void SPOnewayAlertSheet(
 	NSString *title,
 	NSWindow *docWindow,
 	NSString *msg)
 {
-	SPOnewayAlertSheetWithStyle(title, nil, docWindow, msg, NSWarningAlertStyle);
+	SPOnewayAlertSheetWithStyle(title, nil, docWindow, msg, NSAlertStyleWarning);
 }
 
 /**
@@ -175,7 +175,7 @@ void SPOnewayAlertSheetWithStyle(
 		// Set the informative message if supplied
 		if (msg) [alert setInformativeText:msg];
 
-		// Set style (Defaults to NSWarningAlertStyle)
+		// Set style (Defaults to NSAlertStyleWarning)
 		[alert setAlertStyle:alertStyle];
 		
 		// Run the alert
