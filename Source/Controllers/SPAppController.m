@@ -195,6 +195,16 @@
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
+	
+	[FIRApp configure]; // default options read from Google service plist
+	
+#ifdef DEBUG
+	// default is FIRLoggerLevelNotice, and for App Store apps
+	// cannot be set higher than FIRLoggerLevelNotice
+	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
+#endif
+	
+	
 	NSDictionary *spfDict = nil;
 	NSArray *args = [[NSProcessInfo processInfo] arguments];
 	if (args.count == 5) {
