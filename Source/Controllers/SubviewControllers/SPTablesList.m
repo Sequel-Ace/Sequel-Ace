@@ -2213,7 +2213,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		} 
 		// Otherwise, display an alert - and if there's tables left, ask whether to proceed
 		else {
-			NSAlert *alert = [[NSAlert alloc] init] ;
+			NSAlert *alert = [[NSAlert alloc] init];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];

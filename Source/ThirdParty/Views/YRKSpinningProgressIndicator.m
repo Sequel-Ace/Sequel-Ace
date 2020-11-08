@@ -143,7 +143,7 @@
 		[path stroke];
 		path = [[NSBezierPath alloc] init];
 		[path appendBezierPathWithArcWithCenter:circleCenter radius:circleRadius startAngle:90 endAngle:90-(360*(float)(_currentValue/_maxValue)) clockwise:YES];
-		[path lineToPoint:circleCenter] ;
+		[path lineToPoint:circleCenter];
 		[path fill];
 	}
 

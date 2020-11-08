@@ -860,7 +860,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			// reverse pilcrow to match display output width.
 			linebreakRange = [contentString rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch];
 			if (linebreakRange.location != NSNotFound) {
-				NSMutableString *singleLineString = [[NSMutableString alloc] initWithString:contentString] ;
+				NSMutableString *singleLineString = [[NSMutableString alloc] initWithString:contentString];
 				while (linebreakRange.location != NSNotFound) {
 					breakChar = [singleLineString characterAtIndex:linebreakRange.location];
 					switch (breakChar) {
@@ -930,7 +930,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	if(bundleItems && [bundleItems count]) {
 		[menu addItem:[NSMenuItem separatorItem]];
 
-		NSMenu *bundleMenu = [[NSMenu alloc] init] ;
+		NSMenu *bundleMenu = [[NSMenu alloc] init];
 		NSMenuItem *bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundles", @"bundles menu item label") action:nil keyEquivalent:@""];
 		[bundleSubMenuItem setTag:10000000];
 
@@ -957,7 +957,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForDataTable:) keyEquivalent:keyEq] ;
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForDataTable:) keyEquivalent:keyEq];
 
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -1236,7 +1236,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	}
 
 	if ([cellValue isKindOfClass:[NSData class]]) {
-		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]] ;
+		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]];
 	}
 
 	if (![cellValue isNSNull]

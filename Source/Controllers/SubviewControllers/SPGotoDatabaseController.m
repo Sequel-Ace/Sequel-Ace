@@ -74,7 +74,7 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 @synthesize matches;
 @synthesize isCustomItem;
 
-+ (SPGotoFilteredItem *)item { return [[SPGotoFilteredItem alloc] init] ; }
++ (SPGotoFilteredItem *)item { return [[SPGotoFilteredItem alloc] init]; }
 @end
 
 #pragma mark -
@@ -361,10 +361,10 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 		attrString = cellValue;
 	}
 	else if([cellValue isKindOfClass:[NSAttributedString class]]) {
-		attrString = [[NSMutableAttributedString alloc] initWithAttributedString:cellValue] ;
+		attrString = [[NSMutableAttributedString alloc] initWithAttributedString:cellValue];
 	}
 	else if([cellValue isKindOfClass:[NSString class]]) {
-		attrString = [[NSMutableAttributedString alloc] initWithString:cellValue] ;
+		attrString = [[NSMutableAttributedString alloc] initWithString:cellValue];
 	}
 	else {
 		SPLog(@"Unknown object for cellValue (type=%@)",[cellValue className]);

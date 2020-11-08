@@ -101,7 +101,7 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 		[colorList addObject:color];
 	}
 	
-	return [colorList copy] ;
+	return [colorList copy];
 }
 
 @end

@@ -384,7 +384,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
  */
 - (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
 {
-	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy] ;
+	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy];
 
 	if (webViewMenuItems) {
 		// Remove all needless default menu items

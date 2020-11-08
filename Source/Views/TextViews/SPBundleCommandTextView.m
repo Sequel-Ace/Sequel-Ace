@@ -392,7 +392,7 @@
 	// Soft wrapped lines are indented slightly
 	[paragraphStyle setHeadIndent:4.0f];
 
-	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1] ;
+	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1];
 	[textAttributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
 
 	NSRange range = NSMakeRange(0, [[self textStorage] length]);

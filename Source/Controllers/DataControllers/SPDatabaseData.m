@@ -241,7 +241,7 @@ copy_return:
 				}
 			}
 		}
-		return [defaultCollationForCharacterSet copy] ; // -copy accepts nil, -stringWithString: does not
+		return [defaultCollationForCharacterSet copy]; // -copy accepts nil, -stringWithString: does not
 	}
 }
 
@@ -417,7 +417,7 @@ copy_return:
 			defaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
 		}
 		
-		return [defaultCharacterSetEncoding copy] ;
+		return [defaultCharacterSetEncoding copy];
 	}
 }
 
@@ -435,7 +435,7 @@ copy_return:
 			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
 		}
 			
-		return [defaultCollation copy] ;
+		return [defaultCollation copy];
 	}
 }
 
@@ -455,7 +455,7 @@ copy_return:
 			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
 		}
 		
-		return [serverDefaultCharacterSetEncoding copy] ;
+		return [serverDefaultCharacterSetEncoding copy];
 	}
 }
 
@@ -473,7 +473,7 @@ copy_return:
 			serverDefaultCollation = [self _getSingleVariableValue:@"collation_server"];
 		}
 		
-		return [serverDefaultCollation copy] ;
+		return [serverDefaultCollation copy];
 	}
 }
 

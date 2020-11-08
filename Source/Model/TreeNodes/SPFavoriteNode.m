@@ -61,7 +61,7 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 
 + (SPFavoriteNode *)favoriteNodeWithDictionary:(NSMutableDictionary *)dictionary
 {
-	return [[self alloc] initWithDictionary:dictionary] ;
+	return [[self alloc] initWithDictionary:dictionary];
 }
 
 #pragma mark -

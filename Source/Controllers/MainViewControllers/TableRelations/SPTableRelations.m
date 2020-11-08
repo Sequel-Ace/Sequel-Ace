@@ -189,7 +189,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		// Retrieve the last connection error message.
 		NSString *errorText = [connection lastErrorMessage];
 		
-		NSAlert *alert = [[NSAlert alloc] init] ;
+		NSAlert *alert = [[NSAlert alloc] init];
 		
 		[alert setMessageText:NSLocalizedString(@"Error creating relation", @"error creating relation message")];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -387,7 +387,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	//dim the database name if it matches the current database
 	if([[tableColumn identifier] isEqualToString:SPRelationFKDatabaseKey] && [[tableDocumentInstance database] isEqual:data]) {
 		NSDictionary *textAttributes = @{NSForegroundColorAttributeName: [NSColor lightGrayColor]};
-		data = [[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes] ;
+		data = [[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes];
 	}
 	return data;
 }

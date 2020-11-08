@@ -526,7 +526,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Set up the data cell depending on the column type
 		id dataCell;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[NSComboBoxCell alloc] initTextCell:@""] ;
+			dataCell = [[NSComboBoxCell alloc] initTextCell:@""];
 			[dataCell setButtonBordered:NO];
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
@@ -539,12 +539,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Add a foreign key arrow if applicable
 		} else if ([columnDefinition objectForKey:@"foreignkeyreference"]) {
-			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 			[dataCell setTarget:self action:@selector(clickLinkArrow:)];
 
 		// Otherwise instantiate a text-only cell
 		} else {
-			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 		}
 
 		// Set the column to right-aligned for numeric data types
@@ -2412,7 +2412,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			else {
 				// Set the insertId for fields with auto_increment
-				for ( i = 0; i < [dataColumns count] ; i++ ) {
+				for ( i = 0; i < [dataColumns count]; i++ ) {
 					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
 						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
 					}
@@ -2792,7 +2792,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	NSMutableString *argument = [NSMutableString string];
 	// Walk through the keys list constructing the argument list
-	for (NSUInteger i = 0 ; i < [keys count] ; i++ ) {
+	for (NSUInteger i = 0 ; i < [keys count]; i++ ) {
 		if ( i )
 			[argument appendString:@" AND "];
 
@@ -3955,7 +3955,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	for (NSString *cmdPath in triggeredCommands)
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -4362,7 +4362,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			pthread_mutex_lock(&tableValuesLock);
 
 			if (row < (NSInteger)tableRowsCount && [[tableColumn identifier] integerValue] < (NSInteger)[tableValues columnCount]) {
-				theValue = [SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy] ;
+				theValue = [SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy];
 			}
 
 			pthread_mutex_unlock(&tableValuesLock);
@@ -4376,7 +4376,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if (theValue == nil) return @"";
 
 		if ([theValue isKindOfClass:[NSData class]]) {
-			image = [[NSImage alloc] initWithData:theValue] ;
+			image = [[NSImage alloc] initWithData:theValue];
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];

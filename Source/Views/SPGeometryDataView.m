@@ -255,7 +255,7 @@
 	[bitmap setSize:imgSize];
 	[self cacheDisplayInRect:myBounds toBitmapImageRep:bitmap];
 
-	NSImage* image = [[NSImage alloc]initWithSize:imgSize] ;
+	NSImage* image = [[NSImage alloc]initWithSize:imgSize];
 	[image addRepresentation:bitmap];
 	return image;
 

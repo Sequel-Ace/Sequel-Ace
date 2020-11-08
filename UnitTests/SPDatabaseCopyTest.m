@@ -49,12 +49,12 @@
 
 - (SPDatabaseCopy *)getDatabaseCopyFixture 
 {
-    return [[SPDatabaseCopy alloc] init] ;
+    return [[SPDatabaseCopy alloc] init];
 }
 
 - (SPTableCopy *)getTableCopyFixture 
 {
-    return [[SPTableCopy alloc] init] ;
+    return [[SPTableCopy alloc] init];
 }
 
 - (id)getMockConnection 

@@ -1309,7 +1309,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[savePanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
 		if (returnCode == NSModalResponseOK) {
-			SPFavoritesExporter *exporter = [[SPFavoritesExporter alloc] init] ;
+			SPFavoritesExporter *exporter = [[SPFavoritesExporter alloc] init];
 
 			[exporter setDelegate:self];
 

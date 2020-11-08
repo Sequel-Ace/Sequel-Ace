@@ -534,7 +534,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		return tableInfo;
 	}
 
-	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding] ;
+	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding];
 
 	[tableInfo setObject:HTMLString forKey:@"createSyntax"];
 

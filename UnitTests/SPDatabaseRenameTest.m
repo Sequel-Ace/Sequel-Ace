@@ -48,12 +48,12 @@
 
 - (SPDatabaseRename *)getDatabaseRenameFixture 
 {
-    return [[SPDatabaseRename alloc] init] ;	
+    return [[SPDatabaseRename alloc] init];	
 }
 
 - (SPTableCopy *)getTableCopyFixture 
 {
-    return [[SPTableCopy alloc] init] ;
+    return [[SPTableCopy alloc] init];
 }
 
 - (id)getMockConnection 

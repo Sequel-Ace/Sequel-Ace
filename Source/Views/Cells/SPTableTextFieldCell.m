@@ -84,7 +84,7 @@
 	if (maxWidth < stringWidth) {
 		for (i = 0; i <= [string length]; i++) {
 			if (([[string attributedSubstringFromRange:NSMakeRange(0, i)] size].width >= maxWidth) && (i >= 3)) {
-				string = [[NSMutableAttributedString alloc] initWithString:[[[string attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[string attributesAtIndex:0 effectiveRange:NULL]] ;
+				string = [[NSMutableAttributedString alloc] initWithString:[[[string attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[string attributesAtIndex:0 effectiveRange:NULL]];
 				break;
 			}
 		}

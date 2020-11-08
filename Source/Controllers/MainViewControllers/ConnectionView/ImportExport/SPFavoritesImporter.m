@@ -72,7 +72,7 @@ static NSString *SPOldPreferenceFileFavoritesKey = @"favorites";
 		NSFileManager *fileManager = [NSFileManager defaultManager];
 
 		if ([fileManager fileExistsAtPath:[self importPath]]) {
-			importData = [[NSDictionary alloc] initWithContentsOfFile:[self importPath]] ;
+			importData = [[NSDictionary alloc] initWithContentsOfFile:[self importPath]];
 
 			NSArray *favorites = [importData valueForKey:SPFavoritesDataRootKey];
 

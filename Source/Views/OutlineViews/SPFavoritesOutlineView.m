@@ -162,7 +162,7 @@
 		[clipPath appendBezierPathWithOvalInRect:dotRect];
 		[clipPath addClip];
 
-		NSGradient *dotGradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceRed:0.44f green:0.72f blue:0.92f alpha:1.f] endingColor:[NSColor colorWithDeviceRed:0.21f green:0.53f blue:0.82f alpha:1.f]] ;
+		NSGradient *dotGradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceRed:0.44f green:0.72f blue:0.92f alpha:1.f] endingColor:[NSColor colorWithDeviceRed:0.21f green:0.53f blue:0.82f alpha:1.f]];
 		[dotGradient drawInRect:dotRect angle:90.f];
 
 		[NSGraphicsContext restoreGraphicsState];

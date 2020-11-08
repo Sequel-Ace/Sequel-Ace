@@ -741,7 +741,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}
 
-	return [[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes] ;
+	return [[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes];
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard

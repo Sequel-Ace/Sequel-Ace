@@ -1760,7 +1760,7 @@ static NSException *rkl_NSExceptionForRegex(NSString *regexString, RKLRegexOptio
 static NSDictionary *rkl_makeAssertDictionary(const char *function, const char *file, int line, NSString *format, ...) {
   va_list varArgsList;
   va_start(varArgsList, format);
-  NSString * RKL_GC_VOLATILE formatString   = [[NSString alloc] initWithFormat:format arguments:varArgsList] ;
+  NSString * RKL_GC_VOLATILE formatString   = [[NSString alloc] initWithFormat:format arguments:varArgsList];
   va_end(varArgsList);
   NSString * RKL_GC_VOLATILE functionString = [NSString stringWithUTF8String:function], *fileString = [NSString stringWithUTF8String:file];
   return([NSDictionary dictionaryWithObjectsAndKeys:formatString, @"description", functionString, @"function", fileString, @"file", [NSNumber numberWithInt:line], @"line", NSInternalInconsistencyException, @"exceptionName", NULL]);
@@ -1769,7 +1769,7 @@ static NSDictionary *rkl_makeAssertDictionary(const char *function, const char *
 static NSString *rkl_stringFromClassAndMethod(id object, SEL selector, NSString *format, ...) {
   va_list varArgsList;
   va_start(varArgsList, format);
-  NSString * RKL_GC_VOLATILE formatString = [[NSString alloc] initWithFormat:format arguments:varArgsList] ;
+  NSString * RKL_GC_VOLATILE formatString = [[NSString alloc] initWithFormat:format arguments:varArgsList];
   va_end(varArgsList);
   Class objectsClass = (object == NULL) ? NULL : [object class];
   return([NSString stringWithFormat:@"*** %c[%@ %@]: %@", (object == objectsClass) ? '+' : '-', (objectsClass == NULL) ? @"<NULL>" : NSStringFromClass(objectsClass), (selector == NULL) ? @":NULL:" : NSStringFromSelector(selector), formatString]);

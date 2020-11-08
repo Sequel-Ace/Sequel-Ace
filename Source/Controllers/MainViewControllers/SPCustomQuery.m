@@ -1746,7 +1746,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 		[theCol setResizingMask:NSTableColumnUserResizingMask];
 		[theCol setEditable:YES];
-		SPTextAndLinkCell *dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+		SPTextAndLinkCell *dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 		[dataCell setEditable:YES];
 		[dataCell setFont:tableFont];
 
@@ -2457,7 +2457,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (isWorking) {
 		pthread_mutex_lock(&resultDataLock);
 		if (SPIntS2U(row) < [resultData count] && (NSUInteger)[[aTableColumn identifier] integerValue] < [resultData columnCount]) {
-			theValue = [SPDataStorageObjectAtRowAndColumn(resultData, row, [[aTableColumn identifier] integerValue]) copy] ;
+			theValue = [SPDataStorageObjectAtRowAndColumn(resultData, row, [[aTableColumn identifier] integerValue]) copy];
 		}
 		pthread_mutex_unlock(&resultDataLock);
 
@@ -2470,7 +2470,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// Get the original data for trying to display the blob data as an image
 	if ([theValue isKindOfClass:[NSData class]]) {
-		image = [[NSImage alloc] initWithData:theValue] ;
+		image = [[NSImage alloc] initWithData:theValue];
 		if(image) {
 			[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
 			return nil;
@@ -2610,7 +2610,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
 
@@ -2976,7 +2976,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	for (NSDictionary *favorite in [[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]) {
 		if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
-		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init] ;
+		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
 		[paraStyle setTabStops:@[]];
 		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
@@ -3001,7 +3001,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	for (NSDictionary *favorite in [prefs objectForKey:SPQueryFavorites]) {
 		if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
-		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init] ;
+		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
 		[paraStyle setTabStops:@[]];
 		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};

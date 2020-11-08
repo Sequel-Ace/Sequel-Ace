@@ -43,7 +43,7 @@
  */
 + (SPConsoleMessage *)consoleMessageWithMessage:(NSString *)message date:(NSDate *)date connection:(NSString *)connection database:(NSString *)database
 {
-	return [[SPConsoleMessage alloc] initWithMessage:message date:date connection:connection database:database] ;
+	return [[SPConsoleMessage alloc] initWithMessage:message date:date connection:connection database:database];
 }
 
 /**

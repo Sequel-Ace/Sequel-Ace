@@ -809,7 +809,7 @@
 	if(bundleItems && [bundleItems count]) {
 		[menu addItem:[NSMenuItem separatorItem]];
 
-		NSMenu *bundleMenu = [[NSMenu alloc] init] ;
+		NSMenu *bundleMenu = [[NSMenu alloc] init];
 		NSMenuItem *bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundles", @"bundles menu item label") action:nil keyEquivalent:@""];
 		[bundleSubMenuItem setTag:10000000];
 
@@ -836,7 +836,7 @@
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq] ;
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq];
 
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];

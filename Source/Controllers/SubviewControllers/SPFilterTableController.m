@@ -167,7 +167,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			NSTableColumn *filterCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 			[[filterCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
 			[filterCol setEditable:YES];
-			SPTextAndLinkCell *filterDataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+			SPTextAndLinkCell *filterDataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 			[filterDataCell setEditable:YES];
 			[filterDataCell setLineBreakMode:NSLineBreakByTruncatingTail]; // add ellipsis for long values (default is to simply hide words)
 			[filterCol setDataCell:filterDataCell];
@@ -576,7 +576,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	if (filterTableIsSwapped) {
 		// First column shows the field names
 		if (columnIndex == 0) {
-			return [[NSTableHeaderCell alloc] initTextCell:[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:@"name"]] ;
+			return [[NSTableHeaderCell alloc] initTextCell:[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:@"name"]];
 		}
 
 		return NSArrayObjectAtIndex([[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:SPTableContentFilterKey], columnIndex - 1);
@@ -687,7 +687,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 {
 	if (!op) return @"";
 
-	NSMutableString *newOp = [[NSMutableString alloc] initWithCapacity:[op length]] ;
+	NSMutableString *newOp = [[NSMutableString alloc] initWithCapacity:[op length]];
 
 	[newOp setString:op];
 	[newOp replaceOccurrencesOfRegex:@"%" withString:@"%%"];

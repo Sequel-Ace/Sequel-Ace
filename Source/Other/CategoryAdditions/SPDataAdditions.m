@@ -548,7 +548,7 @@ fail_cleanup:
  */
 - (NSString *)stringRepresentationUsingEncoding:(NSStringEncoding)encoding
 {	
-	NSString *string = [[NSString alloc] initWithData:self encoding:encoding] ;
+	NSString *string = [[NSString alloc] initWithData:self encoding:encoding];
 	
 	return !string ? [[NSString alloc] initWithData:self encoding:NSASCIIStringEncoding] : string;
 }

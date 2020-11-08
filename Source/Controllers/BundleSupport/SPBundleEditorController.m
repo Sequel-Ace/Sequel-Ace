@@ -1932,7 +1932,7 @@
 		return;
 	}
 
-	NSMutableString *metaString = [[NSMutableString alloc] init] ;
+	NSMutableString *metaString = [[NSMutableString alloc] init];
 	if ([currentDict objectForKey:@"author"]) {
 		[metaString appendFormat:@"(%@) ", [currentDict objectForKey:@"author"]];
 	} else if ([currentDict objectForKey:@"contact"]) {

@@ -41,7 +41,7 @@
 {
 
 	// Return an autoreleased trampoline object
-	return [[SPMainThreadTrampoline alloc] initWithObject:self] ;
+	return [[SPMainThreadTrampoline alloc] initWithObject:self];
 }
 
 /**

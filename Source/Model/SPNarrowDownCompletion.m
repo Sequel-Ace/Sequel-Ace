@@ -333,7 +333,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[self setHasShadow:YES];
 	[self setAlphaValue:0.9f];
 
-	NSScrollView* scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect] ;
+	NSScrollView* scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
 	[scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	[scrollView setAutohidesScrollers:YES];
 	[scrollView setHasVerticalScroller:YES];
@@ -347,7 +347,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[theTableView setHeaderView:nil];
 
 	{
-		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"image"] ;
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"image"];
 		[column setDataCell:[NSImageCell new]];
 		[theTableView addTableColumn:column];
 		[column setMinWidth:0];
@@ -355,7 +355,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	{
-		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"name"] ;
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"name"];
 		[column setEditable:NO];
 		[[column dataCell] setFont:[NSFont systemFontOfSize:12]];
 		[theTableView addTableColumn:column];
@@ -363,14 +363,14 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	{
-		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"type"] ;
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"type"];
 		[column setEditable:NO];
 		[theTableView addTableColumn:column];
 		[column setWidth:139];
 	}
 
 	{
-		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"list"] ;
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"list"];
 		[column setEditable:NO];
 		[theTableView addTableColumn:column];
 		[column setMinWidth:0];
@@ -378,7 +378,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	{
-		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"path"] ;
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"path"];
 		[column setEditable:NO];
 		[theTableView addTableColumn:column];
 		[column setWidth:95];
@@ -501,7 +501,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 			[b setControlSize:NSMiniControlSize];
 			{
 				NSMenu *m = [[NSMenu alloc] init];
-				NSMenuItem *aMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Type Declaration:", @"type declaration header") action:NULL keyEquivalent:@""] ;
+				NSMenuItem *aMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Type Declaration:", @"type declaration header") action:NULL keyEquivalent:@""];
 				[aMenuItem setEnabled:NO];
 				[m addItem:aMenuItem];
 				[m addItemWithTitle:[[filtered objectAtIndex:rowIndex] objectForKey:@"list"] action:NULL keyEquivalent:@""];

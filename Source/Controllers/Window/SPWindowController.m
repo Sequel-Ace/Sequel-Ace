@@ -113,7 +113,7 @@
 	[newTableDocument setParentWindow:[self window]];
 
 	// Set up a new tab with the connection view as the identifier, add the view, and add it to the tab view
-    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:newTableDocument] ;
+    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:newTableDocument];
 	
 	[newItem setView:[newTableDocument databaseView]];
     [tabView addTabViewItem:newItem];

@@ -3248,8 +3248,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Convert the content selection to encoded data
 		if ([[spfData objectForKey:@"session"] objectForKey:@"contentSelection"]) {
 			NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[spfData objectForKey:@"session"]];
-			NSMutableData *dataToEncode = [[NSMutableData alloc] init] ;
-			NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode] ;
+			NSMutableData *dataToEncode = [[NSMutableData alloc] init];
+			NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode];
 			[archiver encodeObject:[sessionInfo objectForKey:@"contentSelection"] forKey:@"data"];
 			[archiver finishEncoding];
 			[sessionInfo setObject:dataToEncode forKey:@"contentSelection"];
@@ -3259,8 +3259,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[spfStructure setObject:spfData forKey:@"data"];
 	}
 	else {
-		NSMutableData *dataToEncrypt = [[NSMutableData alloc] init] ;
-		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt] ;
+		NSMutableData *dataToEncrypt = [[NSMutableData alloc] init];
+		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt];
 		[archiver encodeObject:spfData forKey:@"data"];
 		[archiver finishEncoding];
 		[spfStructure setObject:[dataToEncrypt dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
@@ -3690,7 +3690,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];
 	if (!imagePath) return;
 
-	NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath] ;
+	NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath];
 	[titleImageView setImage:image];
 }
 
@@ -3724,7 +3724,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if ((controllerClass = NSClassFromString(@"NSTitlebarAccessoryViewController"))) { // OS X 10.11 and later
 			[titleAccessoryView setFrame:NSMakeRect(0, 0, titleAccessoryView.frame.size.width, 120)]; // make it really tall, so that it's on the top right of the title/toolbar area, instead of the bottom right (AppKit will not prevent it from going behind the toolbar)
 			
-			NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init] ;
+			NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init];
 			accessoryViewController.view = titleAccessoryView;
 			accessoryViewController.layoutAttribute = NSLayoutAttributeRight;
 			[parentWindow addTitlebarAccessoryViewController:accessoryViewController];
@@ -3792,7 +3792,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar
 {
-	NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] ;
+	NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 
 	if ([itemIdentifier isEqualToString:SPMainToolbarDatabaseSelection]) {
 		[toolbarItem setLabel:NSLocalizedString(@"Select Database", @"toolbar item for selecting a db")];
@@ -4247,7 +4247,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSURL *)fileURL
 {
-	return [spfFileURL copy] ;
+	return [spfFileURL copy];
 }
 
 /**
@@ -4684,7 +4684,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// If a content selection data key exists in the session, decode it
 		if ([[[data objectForKey:@"session"] objectForKey:@"contentSelection"] isKindOfClass:[NSData class]]) {
 			NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[data objectForKey:@"session"]];
-			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]] ;
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]];
 			[sessionInfo setObject:[unarchiver decodeObjectForKey:@"data"] forKey:@"contentSelection"];
 			[unarchiver finishDecoding];
 			[data setObject:sessionInfo forKey:@"session"];
@@ -4692,9 +4692,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	else if ([[spf objectForKey:@"data"] isKindOfClass:[NSData class]]) {
 		NSData *decryptdata = nil;
-		decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]] ;
+		decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]];
 		if (decryptdata != nil && [decryptdata length]) {
-			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata] ;
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata];
 			data = [NSMutableDictionary dictionaryWithDictionary:(NSDictionary *)[unarchiver decodeObjectForKey:@"data"]];
 			[unarchiver finishDecoding];
 		}
@@ -5271,10 +5271,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 					NSArray *theRow;
 					NSMutableString *result = [NSMutableString string];
 					if(writeAsCsv) {
-						for ( i = 0 ; i < [theResult numberOfRows] ; i++ ) {
+						for ( i = 0 ; i < [theResult numberOfRows]; i++ ) {
 							[result setString:@""];
 							theRow = [theResult getRowAsArray];
-							for( j = 0 ; j < [theRow count] ; j++ ) {
+							for( j = 0 ; j < [theRow count]; j++ ) {
 
 								NSEvent* event = [NSApp currentEvent];
 								if ([event type] == NSKeyDown) {
@@ -5309,10 +5309,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 						}
 					}
 					else {
-						for ( i = 0 ; i < [theResult numberOfRows] ; i++ ) {
+						for ( i = 0 ; i < [theResult numberOfRows]; i++ ) {
 							[result setString:@""];
 							theRow = [theResult getRowAsArray];
-							for( j = 0 ; j < [theRow count] ; j++ ) {
+							for( j = 0 ; j < [theRow count]; j++ ) {
 
 								NSEvent* event = [NSApp currentEvent];
 								if ([event type] == NSKeyDown) {
@@ -5970,7 +5970,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	for (NSString* cmdPath in triggeredCommands) 
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 		
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -6553,7 +6553,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		for(NSString* cmdPath in triggeredCommands)
 		{
 			NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-			NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+			NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 			[aMenuItem setTag:0];
 			[aMenuItem setToolTip:[data objectAtIndex:0]];
 

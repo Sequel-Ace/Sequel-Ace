@@ -1361,7 +1361,7 @@ retry:
 								selector:@selector(doAutoCompletion) 
 								object:nil];
 
-	NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:0] ;
+	NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:0];
 
 	NSString *connectionID;
 	if(tableDocumentInstance)
@@ -1625,7 +1625,7 @@ retry:
 							return;
 						} else {
 							NSArray *list = [[snip substringWithRange:NSMakeRange(1*offset,[snip length]-(2*offset))] componentsSeparatedByString:@"¦"];
-							NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:[list count]] ;
+							NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:[list count]];
 							for(id w in list)
 								[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:w, @"display", @"dummy-small", @"image", nil]];
 
@@ -2841,7 +2841,7 @@ retry:
 	// Soft wrapped lines are indented slightly
 	[paragraphStyle setHeadIndent:4.0f];
 
-	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1] ;
+	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1];
 	[textAttributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
 
 	NSRange range = NSMakeRange(0, [[self textStorage] length]);
@@ -3046,7 +3046,7 @@ retry:
 	if(customQueryInstance && bundleItems && [bundleItems count]) {
 		[menu addItem:[NSMenuItem separatorItem]];
 
-		NSMenu *bundleMenu = [[NSMenu alloc] init] ;
+		NSMenu *bundleMenu = [[NSMenu alloc] init];
 		NSMenuItem *bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundles", @"bundles menu item label") action:nil keyEquivalent:@""];
 		[bundleSubMenuItem setTag:10000000];
 
@@ -3073,7 +3073,7 @@ retry:
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq] ;
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(executeBundleItemForInputField:) keyEquivalent:keyEq];
 
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -3364,7 +3364,7 @@ retry:
 		NSUInteger characterIndex = [self characterIndexOfPoint:draggingLocation];
 		[self setSelectedRange:NSMakeRange(characterIndex,0)];
 
-		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[pboard dataForType:SPNavigatorPasteboardDragType]] ;
+		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[pboard dataForType:SPNavigatorPasteboardDragType]];
 		NSArray *draggedItems = [[NSArray alloc] initWithArray:(NSArray *)[unarchiver decodeObjectForKey:@"itemdata"]];
 		[unarchiver finishDecoding];
 

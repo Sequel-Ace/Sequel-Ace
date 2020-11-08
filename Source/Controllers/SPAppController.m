@@ -1975,7 +1975,7 @@
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(bundleCommandDispatcher:) keyEquivalent:keyEq] ;
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(bundleCommandDispatcher:) keyEquivalent:keyEq];
 			bundleOtherThanGeneralFound = YES;
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -2044,7 +2044,7 @@
 
 		// Sort if more than one found
 		if([assignedKeyEquivalents count] > 1) {
-			NSSortDescriptor *aSortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"title" ascending:YES selector:@selector(caseInsensitiveCompare:)] ;
+			NSSortDescriptor *aSortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"title" ascending:YES selector:@selector(caseInsensitiveCompare:)];
 			NSArray *sorted = [assignedKeyEquivalents sortedArrayUsingDescriptors:@[aSortDescriptor]];
 			[assignedKeyEquivalents setArray:sorted];
 		}
@@ -2059,7 +2059,7 @@
 			if(idx > -1) {
 				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
 				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 					[aMenuItem setTag:0];
 					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
 					[(SPTextView *)firstResponder executeBundleItemForInputField:aMenuItem];
@@ -2078,7 +2078,7 @@
 			if(idx > -1) {
 				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
 				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 					[aMenuItem setTag:0];
 					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
 					[(SPCopyTable *)firstResponder executeBundleItemForDataTable:aMenuItem];
@@ -2097,7 +2097,7 @@
 			if(idx > -1) {
 				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
 				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 					[aMenuItem setTag:0];
 					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
 					[self executeBundleItemForApp:aMenuItem];

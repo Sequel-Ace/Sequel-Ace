@@ -671,8 +671,8 @@
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[NSMutableData alloc] init] ;
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] ;
+	NSMutableData *indexdata = [[NSMutableData alloc] init];
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata];
 	[archiver encodeObject:rows forKey:@"indexdata"];
 	[archiver finishEncoding];
 	[pboard setData:indexdata forType:SPFavoritesPasteboardDragType];
@@ -708,7 +708,7 @@
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]] ;
+	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]];
 	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
 	[unarchiver finishDecoding];
 

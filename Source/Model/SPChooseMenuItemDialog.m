@@ -100,7 +100,7 @@
 	[dialog initDialog];
 	
 	NSInteger cnt = 0;
-	NSMenu *theMenu = [[NSMenu alloc] init] ;
+	NSMenu *theMenu = [[NSMenu alloc] init];
 	
 	for (id item in theList) 
 	{

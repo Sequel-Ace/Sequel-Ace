@@ -288,7 +288,7 @@
 
 		if(status == 9 || userTerminated) return @"";
 		if(theError != NULL) {
-			NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] ;
+			NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
 			[errMessage replaceOccurrencesOfString:[NSString stringWithFormat:@"%@: ", scriptFilePath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
 			*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 													code:status
@@ -313,7 +313,7 @@
 			} else {
 				if(theError != NULL) {
 					if(status == 9 || userTerminated) return @"";
-					NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] ;
+					NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
 					[errMessage replaceOccurrencesOfString:[SPBundleTaskScriptCommandFilePath stringByExpandingTildeInPath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
 					*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 															code:status

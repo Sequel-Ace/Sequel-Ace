@@ -72,7 +72,7 @@
 
 	// If there's no linebreaks, return a non-mutable string
 	if (linebreakRange.location == NSNotFound) {
-		return [[NSAttributedString alloc] initWithString:baseString attributes:attributes] ;
+		return [[NSAttributedString alloc] initWithString:baseString attributes:attributes];
 	}
 
 	NSMutableAttributedString *mutableString;
@@ -80,7 +80,7 @@
 	unichar c;
 
 	// Otherwise, prepare a mutable attributed string to alter, and walk along the string.
-	mutableString = [[NSMutableAttributedString alloc] initWithString:baseString attributes:attributes] ;
+	mutableString = [[NSMutableAttributedString alloc] initWithString:baseString attributes:attributes];
 	for (i = linebreakRange.location, j = i; i < stringLength; i++, j++) {
 		c = [baseString characterAtIndex:i];
 		switch (c) {

@@ -101,7 +101,7 @@
 		return;
 	}
 
-	sqlTableDataInstance = [[SPTableData alloc] init] ;
+	sqlTableDataInstance = [[SPTableData alloc] init];
 	[sqlTableDataInstance setConnection:connection];
 
 	// Inform the delegate that the export process is about to begin
@@ -306,7 +306,7 @@
 					tableType = SPTableTypeView;
 				}
 				else {
-					createTableSyntax = [[tableDetails objectForKey:@"Create Table"] copy] ;
+					createTableSyntax = [[tableDetails objectForKey:@"Create Table"] copy];
 					tableType = SPTableTypeTable;
 				}
 			}
@@ -330,7 +330,7 @@
 
 			if ([createTableSyntax isKindOfClass:[NSData class]]) {
 #warning This doesn't make sense. If the NSData really contains a string it would be in utf8, utf8mb4 or a mysql pre-4.1 legacy charset, but not in the export output charset. This whole if() is likely a side effect of the BINARY flag confusion (#2700)
-				createTableSyntax = [[NSString alloc] initWithData:createTableSyntax encoding:[self exportOutputEncoding]] ;
+				createTableSyntax = [[NSString alloc] initWithData:createTableSyntax encoding:[self exportOutputEncoding]];
 			}
 			
 			// If necessary strip out the AUTO_INCREMENT from the table structure definition

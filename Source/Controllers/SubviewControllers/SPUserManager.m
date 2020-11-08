@@ -134,7 +134,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[splitView setMinSize:620.f ofSubviewAtIndex:1];
 
 	NSTableColumn *tableColumn = [outlineView tableColumnWithIdentifier:SPTableViewNameColumnID];
-	ImageAndTextCell *imageAndTextCell = [[ImageAndTextCell alloc] init] ;
+	ImageAndTextCell *imageAndTextCell = [[ImageAndTextCell alloc] init];
 	
 	[imageAndTextCell setEditable:NO];
 	[tableColumn setDataCell:imageAndTextCell];
@@ -808,7 +808,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 	// After the reset, ensure all original password and user values are up-to-date.
 	NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"SPUser" inManagedObjectContext:[self managedObjectContext]];
-	NSFetchRequest *request = [[NSFetchRequest alloc] init] ;
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 	
 	[request setEntity:entityDescription];
 	
@@ -1307,7 +1307,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	NSManagedObjectContext *moc = [self managedObjectContext];
 	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"user == %@ AND parent == nil", username];
 	NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"SPUser" inManagedObjectContext:moc];
-	NSFetchRequest *request = [[NSFetchRequest alloc] init] ;
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 	
 	[request setEntity:entityDescription];
 	[request setPredicate:predicate];
@@ -1327,7 +1327,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	NSManagedObjectContext *moc = [self managedObjectContext];
 	NSPredicate *predicate;
 	NSEntityDescription *privEntity = [NSEntityDescription entityForName:@"Privileges" inManagedObjectContext:moc];
-	NSFetchRequest *request = [[NSFetchRequest alloc] init] ;
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 
 	// Construct the predicate depending on whether a user and schema were supplied;
 	// blank schemas indicate a default priv value (as per %)

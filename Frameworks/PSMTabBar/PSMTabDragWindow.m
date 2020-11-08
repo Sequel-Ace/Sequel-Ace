@@ -13,7 +13,7 @@
 
 + (PSMTabDragWindow *)dragWindowWithImage:(NSImage *)image styleMask:(NSUInteger)styleMask
 {
-	return [[PSMTabDragWindow alloc] initWithImage:image styleMask:styleMask] ;
+	return [[PSMTabDragWindow alloc] initWithImage:image styleMask:styleMask];
 }
 
 - (id)initWithImage:(NSImage *)image styleMask:(NSUInteger)styleMask
@@ -21,7 +21,7 @@
 	NSSize size = [image size];
 	
 	if ( (self = [super initWithContentRect:NSMakeRect(0, 0, size.width, size.height) styleMask:styleMask backing:NSBackingStoreBuffered defer:NO]) ) {
-		_dragView = [[PSMTabDragView alloc] initWithFrame:NSMakeRect(0, 0, size.width, size.height)] ;
+		_dragView = [[PSMTabDragView alloc] initWithFrame:NSMakeRect(0, 0, size.width, size.height)];
 		[self setContentView:_dragView];
 		[self setLevel:NSStatusWindowLevel];
 		[self setIgnoresMouseEvents:YES];

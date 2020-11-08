@@ -25,7 +25,7 @@
 		returnString = [[self substringToIndex:length-1] stringByAppendingString:[NSString ellipsis]];
 	} else {
 		//We don't need to truncate, so don't append an ellipsis
-		returnString = [self copy] ;
+		returnString = [self copy];
 	}
 	
 	return returnString;

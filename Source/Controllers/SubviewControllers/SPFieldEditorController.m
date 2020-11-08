@@ -367,7 +367,7 @@ typedef enum {
 		NSImage *image = nil;
 
 		if ([sheetEditData isKindOfClass:[NSData class]]) {
-			image = [[NSImage alloc] initWithData:sheetEditData] ;
+			image = [[NSImage alloc] initWithData:sheetEditData];
 
 			// Set hex view to "" - load on demand only
 			[hexTextView setString:@""];
@@ -390,7 +390,7 @@ typedef enum {
 			[editSheetSegmentControl setSelectedSegment:HexSegment];
 		}
 		else if ([sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
-			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f] ;
+			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 
 			image = [v thumbnailImage];
 
@@ -751,7 +751,7 @@ typedef enum {
 
 			} else if (editImage != nil){
 
-				SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f] ;
+				SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 				NSData *pdf = [v pdfData];
 				if(pdf)
 					[pdf writeToURL:fileURL atomically:YES];
@@ -974,7 +974,7 @@ typedef enum {
 
 	NSImage *image = nil;
 
-	image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]] ;
+	image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]];
 	if (image) {
 
 		[editImage setImage:image];

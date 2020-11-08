@@ -158,7 +158,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 	if([type isEqualToString:@"text"]) {
 		NSString* html = nil;
-		NSMutableString* text = [(NSString*)content mutableCopy] ;
+		NSMutableString* text = [(NSString*)content mutableCopy];
 		if(text)
 		{
 			int fontSize = ([displayOptions objectForKey:@"fontsize"]) ? [[displayOptions objectForKey:@"fontsize"] intValue] : 10;

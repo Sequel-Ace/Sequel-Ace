@@ -45,7 +45,7 @@ static NSString *SPTreeNodeIsGroupKey = @"SPTreeNodeIsGroup";
 
 + (id)treeNodeWithRepresentedObject:(id)object
 {
-	return [[SPTreeNode alloc] initWithRepresentedObject:object] ;
+	return [[SPTreeNode alloc] initWithRepresentedObject:object];
 }
 
 - (id)initWithRepresentedObject:(id)object

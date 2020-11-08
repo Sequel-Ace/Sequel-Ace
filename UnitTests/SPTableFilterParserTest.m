@@ -25,7 +25,7 @@
 - (void)testFilterString {
 	//simple zero argument case
 	{
-		SPTableFilterParser *p = [[SPTableFilterParser alloc] initWithFilterClause:@" constant $BINARY string" numberOfArguments:0] ;
+		SPTableFilterParser *p = [[SPTableFilterParser alloc] initWithFilterClause:@" constant $BINARY string" numberOfArguments:0];
 		[p setCurrentField:@"FLD"];
 		
 		// binary matches as "$BINARY ", eating the one additional whitespace
@@ -33,7 +33,7 @@
 	}
 	//simple one argument case with binary
 	{
-		SPTableFilterParser *p = [[SPTableFilterParser alloc] initWithFilterClause:@"= FOO($BINARY ${})" numberOfArguments:1] ;
+		SPTableFilterParser *p = [[SPTableFilterParser alloc] initWithFilterClause:@"= FOO($BINARY ${})" numberOfArguments:1];
 		[p setCurrentField:@"FLD2"];
 		[p setCaseSensitive:YES];
 		[p setArgument:@"arg1"];
@@ -42,7 +42,7 @@
 	}
 	//simple two argument case with explicit current field
 	{
-		SPTableFilterParser *p = [[SPTableFilterParser alloc] initWithFilterClause:@"MIN($CURRENT_FIELD,${}) = ${}" numberOfArguments:2] ;
+		SPTableFilterParser *p = [[SPTableFilterParser alloc] initWithFilterClause:@"MIN($CURRENT_FIELD,${}) = ${}" numberOfArguments:2];
 		[p setCurrentField:@"FLD3"];
 		[p setSuppressLeadingTablePlaceholder:YES];
 		[p setFirstBetweenArgument:@"LA"];

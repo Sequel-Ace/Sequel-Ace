@@ -473,7 +473,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	else if(rowType == NSRuleEditorRowTypeSimple) {
 		// this is the enable checkbox
 		if(!criterion) {
-			return [[EnableNode alloc] init] ;
+			return [[EnableNode alloc] init];
 		}
 		RuleNodeType type = [(RuleNode *) criterion type];
 		// this is the column field

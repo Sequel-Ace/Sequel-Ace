@@ -196,7 +196,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	for (NSDictionary *field in fields)
 	{
 		if (![indexedFieldNames containsObject:[field objectForKey:@"name"]]) {
-			initialField = [field mutableCopy] ;
+			initialField = [field mutableCopy];
 			break;
 		}
 	}
@@ -719,7 +719,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// SPATIAL index types are only available using the MyISAM engine
 	if (isMyISAMTable) {
 		if ([[dbDocument serverSupport] supportsSpatialExtensions]) {
-			NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init] ;
+			NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init];
 			
 			[spatialMenuItem setTitle:NSLocalizedString(@"SPATIAL", @"spatial index menu item title")];
 			[spatialMenuItem setTag:SPSpatialMenuTag];
@@ -730,7 +730,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	// FULLTEXT only works with MyISAM and (InnoDB since 5.6.4)
 	if (isMyISAMTable || (isInnoDBTable && [[dbDocument serverSupport] supportsFulltextOnInnoDB])) {
-		NSMenuItem *fullTextMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *fullTextMenuItem = [[NSMenuItem alloc] init];
 		
 		[fullTextMenuItem setTitle:NSLocalizedString(@"FULLTEXT", @"full text index menu item title")];
 		[fullTextMenuItem setTag:SPFullTextMenuTag];

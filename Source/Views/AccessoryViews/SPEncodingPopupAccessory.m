@@ -35,7 +35,7 @@
 
 + (NSView *)encodingAccessory:(NSUInteger)encoding includeDefaultEntry:(BOOL)includeDefaultItem encodingPopUp:(NSPopUpButton  * __strong *)popup 
 {
-	SPEncodingPopupAccessory *owner = [[SPEncodingPopupAccessory alloc] init] ;
+	SPEncodingPopupAccessory *owner = [[SPEncodingPopupAccessory alloc] init];
 	
 	// Rather than caching, load the accessory view everytime, as it might appear in multiple panels simultaneously.
 	if (![NSBundle.mainBundle loadNibNamed:@"EncodingPopupView" owner:owner topLevelObjects:nil])  {

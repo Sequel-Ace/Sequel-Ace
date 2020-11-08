@@ -49,7 +49,7 @@ int main(int argc, const char *argv[])
 		}
 
 		if (argc > 1) {
-			argument = [[NSString alloc] initWithCString:argv[1] encoding:NSUTF8StringEncoding] ;
+			argument = [[NSString alloc] initWithCString:argv[1] encoding:NSUTF8StringEncoding];
 		}
 
 		// Check if we're being asked a question and respond if so

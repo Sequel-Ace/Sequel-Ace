@@ -312,14 +312,14 @@
 {
     NSString *contents = [NSString stringWithFormat:@"%lu", (unsigned long)[cell count]];
 
-    return [[NSMutableAttributedString alloc] initWithString:contents attributes:_objectCountStringAttributes] ;
+    return [[NSMutableAttributedString alloc] initWithString:contents attributes:_objectCountStringAttributes];
 }
 
 - (NSAttributedString *)attributedStringValueForTabCell:(PSMTabBarCell *)cell
 {
     NSMutableAttributedString *attrStr;
     NSString *contents = [cell stringValue];
-    attrStr = [[NSMutableAttributedString alloc] initWithString:contents] ;
+    attrStr = [[NSMutableAttributedString alloc] initWithString:contents];
     NSRange range = NSMakeRange(0, [contents length]);
     
     // Add font attribute
@@ -328,7 +328,7 @@
     
     // Add shadow attribute
     NSShadow* textShadow;
-    textShadow = [[NSShadow alloc] init] ;
+    textShadow = [[NSShadow alloc] init];
     CGFloat shadowAlpha;
     if (([cell state] == NSOnState) || [cell isHighlighted]) {
         shadowAlpha = 0.8f;
@@ -374,7 +374,7 @@
         labelRect.origin.y += 4.0f;
         NSMutableAttributedString *attrStr;
         NSString *contents = @"PSMTabBarControl";
-        attrStr = [[NSMutableAttributedString alloc] initWithString:contents] ;
+        attrStr = [[NSMutableAttributedString alloc] initWithString:contents];
 		NSRange range = NSMakeRange(0, [contents length]);
         [attrStr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0f] range:range];
         NSMutableParagraphStyle *centeredParagraphStyle = nil;

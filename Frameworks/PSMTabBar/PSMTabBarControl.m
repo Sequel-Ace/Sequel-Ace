@@ -322,7 +322,6 @@
 - (void)setStyle:(id <PSMTabStyle>)newStyle
 {
     if (style != newStyle) {
-        style;
         style = newStyle;
         
         // restyle add tab button

@@ -196,7 +196,7 @@ struct SPRawFileHandles {
 	if (file == NULL) return nil;
 
 	// Return an autoreleased file handle
-	return [[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode] ;
+	return [[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode];
 }
 
 #pragma mark -

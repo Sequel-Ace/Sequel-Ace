@@ -81,7 +81,7 @@
 	returnCode = &initialReturnCode;
 
 	// Set up an NSAlert with the supplied details
-	NSAlert *alert = [[NSAlert alloc] init] ;
+	NSAlert *alert = [[NSAlert alloc] init];
 	[alert setMessageText:title];
 
 	aButton = [alert addButtonWithTitle:defaultButton];
@@ -166,7 +166,7 @@ void SPOnewayAlertSheetWithStyle(
 	
 	dispatch_async(dispatch_get_main_queue(), ^{
 		// Set up an NSAlert with the supplied details
-		NSAlert *alert = [[NSAlert alloc] init] ;
+		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:title];
 		
 		NSButton *aButton = [alert addButtonWithTitle:defaultText];
@@ -210,7 +210,7 @@ void SPBeginAlertSheet(
 {
 	SPMainQSync(^{
 		// Set up an NSAlert with the supplied details
-		NSAlert *alert = [[NSAlert alloc] init] ;
+		NSAlert *alert = [[NSAlert alloc] init];
 
 		[alert setMessageText:title];
 

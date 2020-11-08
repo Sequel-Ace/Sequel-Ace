@@ -416,7 +416,7 @@
 	tabDrawFrame.origin.x -= cellFrame.origin.x;
 
 	// Draw the tab into a new image
-	NSImage *image = [[NSImage alloc] initWithSize:cellFrame.size] ;
+	NSImage *image = [[NSImage alloc] initWithSize:cellFrame.size];
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED < 1060
 	[image setFlipped:YES];

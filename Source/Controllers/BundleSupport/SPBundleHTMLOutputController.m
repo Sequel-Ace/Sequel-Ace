@@ -347,7 +347,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 - (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
 {
-	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy] ;
+	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy];
 
 	[webViewMenuItems addObject:[NSMenuItem separatorItem]];
 

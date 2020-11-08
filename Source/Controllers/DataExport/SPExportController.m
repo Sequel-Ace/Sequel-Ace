@@ -596,7 +596,7 @@ set_input:
  */
 - (IBAction)changeExportOutputPath:(id)sender
 {	
-	self.changeExportOutputPathPanel = [NSOpenPanel openPanel] ; 	// need to retain, so we can relinquish access via stopAccessingSecurityScopedResource
+	self.changeExportOutputPathPanel = [NSOpenPanel openPanel]; 	// need to retain, so we can relinquish access via stopAccessingSecurityScopedResource
 																	// I'm not sure though, haven't written non-ARC code for years.
 	
 	changeExportOutputPathPanel.delegate = self;
