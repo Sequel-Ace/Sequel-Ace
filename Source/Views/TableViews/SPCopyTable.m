@@ -51,7 +51,7 @@
 #import "pthread.h"
 #include <stdlib.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 NSInteger SPEditMenuCopy               = 2001;
 NSInteger SPEditMenuCopyWithColumns    = 2002;
@@ -813,7 +813,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	double rowStep;
 	unichar breakChar;
 
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 
 	NSUInteger columnIndex = (NSUInteger)[[columnDefinition objectForKey:@"datacolumnindex"] integerValue];
 	NSDictionary *stringAttributes = @{NSFontAttributeName : tableFont};

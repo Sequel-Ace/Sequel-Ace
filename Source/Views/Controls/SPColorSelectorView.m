@@ -121,6 +121,9 @@ enum trackingAreaIDs
 
 		[self setSelectedTag:[num integerValue]];
 	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
 }
 
 // -------------------------------------------------------------------------------

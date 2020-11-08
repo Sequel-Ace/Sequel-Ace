@@ -32,8 +32,11 @@
 #import "SPConsoleMessage.h"
 #import "SPCustomQuery.h"
 #import "SPAppController.h"
+#import "sequel-ace-Swift.h"
 
 #import "pthread.h"
+
+#import "sequel-ace-Swift.h"
 
 NSString *SPQueryConsoleWindowAutoSaveName = @"QueryConsole";
 NSString *SPTableViewDateColumnID          = @"messageDate";
@@ -349,18 +352,16 @@ static SPQueryController *sharedQueryController = nil;
 	else if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [consoleTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
-	// Use monospaced fonts preference changed
-	else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 
-		BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-		CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-		for (NSTableColumn *column in [consoleTableView tableColumns])
-		{
-			[[column dataCell] setFont:(useMonospacedFont) ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		}
-
+		[consoleTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[consoleTableView setFont:tableFont];
 		[consoleTableView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 
@@ -620,23 +621,22 @@ static SPQueryController *sharedQueryController = nil;
 	[loggingDisabledTextField setStringValue:([prefs boolForKey:SPConsoleEnableLogging]) ? @"" : NSLocalizedString(@"Query logging is currently disabled", @"query logging disabled label")];
 
 	// Setup data formatter
-	dateFormatter = [[NSDateFormatter alloc] init];
-
-	[dateFormatter setFormatterBehavior:NSDateFormatterBehavior10_4];
+	dateFormatter = NSDateFormatter.mediumStyleFormatter;
 
 	[dateFormatter setDateStyle:NSDateFormatterNoStyle];
-	[dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
 
 	// Set the process table view's vertical gridlines if required
 	[consoleTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+
 	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[consoleTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [consoleTableView tableColumns])
 	{
-		[[column dataCell] setFont:(useMonospacedFont) ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[column dataCell] setFont:tableFont];
 	}
 
 	//allow drag-out copying of selected rows
@@ -1113,6 +1113,7 @@ static SPQueryController *sharedQueryController = nil;
 
 - (void)dealloc
 {
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	messagesVisibleSet = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 

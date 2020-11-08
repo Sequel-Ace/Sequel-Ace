@@ -45,10 +45,12 @@
 #import "SPEncodingPopupAccessory.h"
 #import "SPThreadAdditions.h"
 #import "SPFunctions.h"
+#import "SPQueryController.h"
+#import "SPConstants.h"
 
 #import <SPMySQL/SPMySQL.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 
@@ -227,10 +229,8 @@
 	progressCancelled = NO;
 	
 	NSString *importFileName = [NSString stringWithFormat:@"%@%@",
-									SPImportClipboardTempFileNamePrefix,
-									[[NSDate date] formattedDateWithFormat:@"HHmmss"
-																  timeZone:nil
-																	locale:[NSLocale autoupdatingCurrentLocale]]];
+								SPImportClipboardTempFileNamePrefix,
+								[[NSDate date] stringWithFormat:@"HHmmss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 		
 	// Write clipboard content to temp file using the connection encoding
 	NSStringEncoding encoding;
@@ -1176,6 +1176,10 @@
 							[errors appendFormat:
 								NSLocalizedString(@"[ERROR in row %ld] %@\n", @"error text when reading of csv file gave errors"),
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
+							
+							if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
+								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+							}
 						}
 
 						if ( insertRemainingRowsAfterUpdate && ![mySQLConnection rowsAffectedByLastQuery]) {
@@ -1214,6 +1218,9 @@
 				// If an error occurred, run the queries individually to get exact line errors
 				if (!importMethodIsUpdate && [mySQLConnection queryErrored]) {
 					[[tableDocumentInstance onMainThread] showConsole:nil];
+					if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
+						[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+					}
 					for (i = 0; i < csvRowsThisQuery; i++) {
 						if (progressCancelled) break;
 						query = [[NSMutableString alloc] initWithString:insertBaseString];
@@ -1230,6 +1237,9 @@
 							[errors appendFormat:
 								NSLocalizedString(@"[ERROR in row %ld] %@\n", @"error text when reading of csv file gave errors"),
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
+							if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
+								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+							}
 						}
 #warning duplicate code (see above)
 						rowsImported++;
@@ -1753,9 +1763,7 @@ cleanup:
 	[switchButton setControlSize:NSControlSizeSmall];
 	[switchButton release];
 
-	CGFloat monospacedFontSize = [[NSUserDefaults standardUserDefaults] floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-	[errorsView setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	[errorsView setFont:[NSUserDefaults getFont]];
 }
 
 /**
@@ -1925,7 +1933,6 @@ cleanup:
 	if (selectedTableTarget)           SPClear(selectedTableTarget);
 	
 	SPClear(nibObjectsToRelease);
-	SPClear(fileManager);
 	
 	[super dealloc];
 }

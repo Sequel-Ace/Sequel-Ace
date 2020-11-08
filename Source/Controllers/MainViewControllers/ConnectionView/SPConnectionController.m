@@ -59,6 +59,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static NSString *SPRemoveNode              = @"RemoveNode";
 static NSString *SPExportFavoritesFilename = @"SequelProFavorites.plist";
@@ -773,7 +775,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	[connectionSplitView setDelegate:nil];
-	[connectionSplitView setPosition:[[[databaseConnectionView subviews] objectAtIndex:0] frame].size.width ofDividerAtIndex:0];
+	[connectionSplitView setPosition:[[[databaseConnectionView subviews] firstObject] frame].size.width ofDividerAtIndex:0];
 	[connectionSplitView setDelegate:self];
 }
 
@@ -2344,10 +2346,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		switch (timeZoneMode) {
 			case SPConnectionTimeZoneModeUseSystemTZ:
-				[mySQLConnection setTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
+				[mySQLConnection updateTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
 				break;
 			case SPConnectionTimeZoneModeUseFixedTZ:
-				[mySQLConnection setTimeZoneIdentifier:timeZoneIdentifier];
+				[mySQLConnection updateTimeZoneIdentifier:timeZoneIdentifier];
 				break;
 			default:
 				break;
@@ -3407,7 +3409,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[databaseConnectionSuperview addSubview:connectionView];
 
 		// Set up the splitview
-		[connectionSplitView setMinSize:80.f ofSubviewAtIndex:0];
+		[connectionSplitView setMinSize:150.f ofSubviewAtIndex:0];
 		[connectionSplitView setMinSize:445.f ofSubviewAtIndex:1];
 
 		// Generic folder image for use in the outline view's groups
@@ -3691,6 +3693,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Register drag types for the favorites outline view
 	[favoritesOutlineView registerForDraggedTypes:@[SPFavoritesPasteboardDragType]];
 	[favoritesOutlineView setDraggingSourceOperationMask:NSDragOperationMove forLocal:YES];
+
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[favoritesOutlineView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+
+	[favoritesOutlineView setFont:tableFont];
+	for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
+		[[col dataCell] setFont:tableFont];
+	}
 }
 
 /**

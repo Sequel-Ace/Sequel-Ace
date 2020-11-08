@@ -54,7 +54,7 @@
 #import "SPCharsetCollationHelper.h"
 #import "SPConstants.h"
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -109,8 +109,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		prefs = [NSUserDefaults standardUserDefaults];
 
 		[tables addObject:NSLocalizedString(@"TABLES", @"header for table list")];
-		
-		smallSystemFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
 	}
@@ -134,6 +132,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	
 	// Disable tab edit behaviour in the tables list
 	[tablesListView setTabEditingDisabled:YES];
+
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 	
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -150,6 +150,33 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
+
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[tablesListView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+
+	for (NSTableColumn *column in [tablesListView tableColumns]) {
+		[[column dataCell] setFont:tableFont];
+	}
+}
+
+#pragma mark -
+#pragma mark KVO methods
+
+/**
+ * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
+ */
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+	// Table font preference changed
+	if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
+		[tablesListView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[tablesListView setFont:tableFont];
+		[tablesListView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
 }
 
 #pragma mark -
@@ -1844,7 +1871,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	return (row == 0) ? 25 : 20;
+	if (row == 0) {
+		return 25;
+	} else {
+		NSFont *tableFont = [NSUserDefaults getFont];
+		return 2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+	}
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
@@ -2749,6 +2781,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	
 	SPClear(tables);
 	SPClear(tableTypes);

@@ -38,15 +38,12 @@
  *
  * QueryKit query parameter class. 
  */
-@interface QKQueryParameter : QKQueryGenericParameter 
-{	
-	QKQueryOperator _operator;
-}
+@interface QKQueryParameter : QKQueryGenericParameter
 
 /**
  * @property operator The operator component of the parameter.
  */
-@property(readwrite, assign) QKQueryOperator operator;
+@property (readwrite, assign) QKQueryOperator operator;
 
 + (QKQueryParameter *)queryParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
 
