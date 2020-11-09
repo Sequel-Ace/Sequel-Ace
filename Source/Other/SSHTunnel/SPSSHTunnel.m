@@ -52,7 +52,7 @@ static unsigned short getRandomPort(void);
 
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
-
+@synthesize sshQuestionText, sshQuestionDialog, sshPasswordText, sshPasswordDialog, sshPasswordField;
 /*
  * Initialise with the supplied connection details.  Host, login and port should all be provided.
  * The password can either be set later via setPassword:, which stores the password locally and is
@@ -838,6 +838,10 @@ static unsigned short getRandomPort(void);
 	// As this object is not a NSWindowController, use manual top-level nib item management
 	SPClear(sshQuestionDialog);
 	SPClear(sshPasswordDialog);
+	
+	SPClear(sshQuestionText);
+	SPClear(sshPasswordText);
+	SPClear(sshPasswordField);
 	
 	[super dealloc];
 }
