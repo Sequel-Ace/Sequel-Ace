@@ -2877,7 +2877,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[self filterQueryFavorites:nil];
 	}
 	else if ([notification object] == queryHistorySearchField) {
-		[self filterQueryHistory:nil];
+		// if the query is empty, send nil to repopulate the menu
+		[self filterQueryHistory:(queryHistorySearchField.stringValue.length > 0) ? @"" : nil];
 	}
 }
 
@@ -3379,9 +3380,19 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	
 	NSMenu *menu = [queryHistoryButton menu];
 	
+	NSString *stringValue = [queryHistorySearchField stringValue];
+		
 	for (NSInteger i = 7; i < [menu numberOfItems]; i++)
 	{
-		[[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", [queryHistorySearchField stringValue]]])];
+		// this populates the menu with all matches
+		if(sender == nil){
+			[[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", stringValue]])];
+		}
+		else{
+			// this searches, without the regex
+			[[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] localizedCaseInsensitiveContainsString:stringValue])];
+			
+		}
 	}
 }
 
