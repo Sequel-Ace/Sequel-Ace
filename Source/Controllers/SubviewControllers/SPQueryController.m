@@ -33,7 +33,7 @@
 #import "SPCustomQuery.h"
 #import "SPAppController.h"
 #import "sequel-ace-Swift.h"
-
+#import "SPFunctions.h"
 #import "pthread.h"
 
 #import "sequel-ace-Swift.h"
@@ -72,26 +72,20 @@ static SPQueryController *sharedQueryController = nil;
  */
 + (SPQueryController *)sharedQueryController
 {
-	@synchronized(self) {
-		if (sharedQueryController == nil) {
-			sharedQueryController = [[super allocWithZone:NULL] init];
-		}
+	static dispatch_once_t onceToken;
+	
+	if (sharedQueryController == nil) {
+		dispatch_once_on_main_thread(&onceToken, ^{
+			sharedQueryController = [[SPQueryController alloc] init];
+		});
 	}
 
 	return sharedQueryController;
 }
 
-+ (id)allocWithZone:(NSZone *)zone
+- (instancetype)init
 {
-	@synchronized(self) {
-		return [self sharedQueryController];
-	}
-	
-	return nil;
-}
-
-- (id)init
-{
+		
 	if ((self = [super initWithWindowNibName:@"Console"])) {
 		messagesFullSet		= [[NSMutableArray alloc] init];
 		messagesFilteredSet	= [[NSMutableArray alloc] init];
@@ -126,9 +120,12 @@ static SPQueryController *sharedQueryController = nil;
 		if (error) {
 			NSLog(@"Error loading completion tokens data: %@", [error localizedDescription]); 
 		}
+	
+		return self;
 	}
-
-	return self;
+	else{
+		return nil;;
+	}
 }
 
 /**
