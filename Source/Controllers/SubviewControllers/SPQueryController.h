@@ -75,6 +75,7 @@ extern NSString *SPTableViewDatabaseColumnID;
 @property (readwrite, strong) NSFont *consoleFont;
 
 + (SPQueryController *)sharedQueryController;
+- (instancetype)init NS_UNAVAILABLE;
 
 /**
  * Calls -sqlStringForForRowIndexes: with the current selection and 

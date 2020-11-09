@@ -52,6 +52,21 @@ void SPMainLoopAsync(void (^block)(void))
 	CFRunLoopPerformBlock(CFRunLoopGetMain(), NSDefaultRunLoopMode, block);
 }
 
+void dispatch_once_on_main_thread(dispatch_once_t *predicate,
+								  dispatch_block_t block) {
+	
+	if ([NSThread isMainThread]) {
+		dispatch_once(predicate, block);
+	}
+	else {
+		if (DISPATCH_EXPECT(*predicate == 0L, NO)) {
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				dispatch_once(predicate, block);
+			});
+		}
+	}
+}
+
 int SPBetterRandomBytes(uint8_t *buf, size_t count)
 {
 	return SecRandomCopyBytes(kSecRandomDefault, count, buf);
