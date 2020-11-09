@@ -33,7 +33,7 @@
 #import "SPCustomQuery.h"
 #import "SPAppController.h"
 #import "sequel-ace-Swift.h"
-
+#import "SPFunctions.h"
 #import "pthread.h"
 
 #import "sequel-ace-Swift.h"
@@ -74,7 +74,14 @@ static SPQueryController *sharedQueryController = nil;
 {
 	@synchronized(self) {
 		if (sharedQueryController == nil) {
-			sharedQueryController = [[super allocWithZone:NULL] init];
+			if (![NSThread isMainThread]){
+				SPMainQSync(^{
+					sharedQueryController = [[super allocWithZone:NULL] init];
+				});
+			}
+			else{
+				sharedQueryController = [[super allocWithZone:NULL] init];
+			}
 		}
 	}
 
