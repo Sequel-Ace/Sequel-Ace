@@ -37,13 +37,6 @@
 #import "ICUTemplateMatcher.h"
 #import "SPOSInfo.h"
 
-//Hmmm. 5.5 dev search no longer exists
-// 5.5. redirects to 8.0
-// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
-// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
-// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
-// 5.5. redirects to 8.0
-
 typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	MySQLVer56 = 11,
 	MySQLVer57 = 12,
@@ -106,12 +99,10 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 {
 	
 	
-	//Hmmm. 5.5 dev search no longer exists
-	// 5.5. redirects to 8.0
+	//Hmmm. 5.5 dev search no longer exists - 5.5. redirects to 8.0
 	// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
-	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECTx
+	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
 	// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
-	// 5.5. redirects to 8.0
 	
 	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
 	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
