@@ -65,9 +65,14 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 {
 	@synchronized(self) {
 		if (sharedNavigatorController == nil) {
-			SPMainQSync(^{ // JCS: alloc on main as it calls initWithWindowNibName
+			if (![NSThread isMainThread]){
+				SPMainQSync(^{ // JCS: alloc on main as it calls initWithWindowNibName
+					sharedNavigatorController = [[super allocWithZone:NULL] init];
+				});
+			}
+			else{
 				sharedNavigatorController = [[super allocWithZone:NULL] init];
-			});
+			}
 		}
 	}
 
