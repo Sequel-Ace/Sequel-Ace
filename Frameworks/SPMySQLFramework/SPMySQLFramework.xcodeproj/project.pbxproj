@@ -568,7 +568,6 @@
 						CreatedOnToolsVersion = 6.2;
 					};
 					8DC2EF4F0486A6940098B216 = {
-						DevelopmentTeam = NKQ4HJ66PX;
 						ProvisioningStyle = Automatic;
 					};
 				};

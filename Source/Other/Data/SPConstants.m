@@ -268,7 +268,7 @@ NSString *SPContentFiltersHaveBeenUpdatedNotification = @"ContentFiltersHaveBeen
 NSString *SPCopyContentOnTableCopy                    = @"CopyContentOnTableCopy";
 
 // URLs
-NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/refman/%@/%@/%@.html";
+NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@";
 NSString *SPDevURL                               = @"https://github.com/Sequel-Ace/Sequel-Ace";
 NSString *SPDocsSocketConnection 				 = @"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection";
 // Toolbar constants
