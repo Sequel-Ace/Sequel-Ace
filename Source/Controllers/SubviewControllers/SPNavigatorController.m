@@ -40,6 +40,7 @@
 #import "SPAppController.h"
 #import "SPDatabaseStructure.h"
 #import "SPThreadAdditions.h"
+#import "SPFunctions.h"
 
 #import <objc/message.h>
 #import <SPMySQL/SPMySQL.h>
@@ -64,7 +65,9 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 {
 	@synchronized(self) {
 		if (sharedNavigatorController == nil) {
-			sharedNavigatorController = [[super allocWithZone:NULL] init];
+			SPMainQSync(^{ // JCS: alloc on main as it calls initWithWindowNibName
+				sharedNavigatorController = [[super allocWithZone:NULL] init];
+			});
 		}
 	}
 
