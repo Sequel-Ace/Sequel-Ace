@@ -37,6 +37,19 @@
 #import "ICUTemplateMatcher.h"
 #import "SPOSInfo.h"
 
+//Hmmm. 5.5 dev search no longer exists
+// 5.5. redirects to 8.0
+// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
+// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
+// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
+// 5.5. redirects to 8.0
+
+typedef NS_ENUM(NSInteger, HelpVersionNumber) {
+	MySQLVer56 = 11,
+	MySQLVer57 = 12,
+	MySQLVer80 = 201,
+};
+
 @interface SPHelpViewerClient () <SPHelpViewerDataSource>
 
 + (NSString *)linkToHelpTopic:(NSString *)aTopic;
@@ -91,23 +104,37 @@
 
 - (void)openOnlineHelpForTopic:(NSString *)searchString
 {
-	NSString *version = nil;
+	
+	
+	//Hmmm. 5.5 dev search no longer exists
+	// 5.5. redirects to 8.0
+	// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
+	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECTx
+	// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
+	// 5.5. redirects to 8.0
+	
+	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
+	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
 
-	if (![mySQLConnection serverVersionIsGreaterThanOrEqualTo:4 minorVersion:1 releaseVersion:0])
-	{
-		version = @"4.1";
+	// default to 8.0
+	HelpVersionNumber version = MySQLVer80;
+	
+	if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
+		version = MySQLVer80;
 	}
-	else {
-		version = [NSString stringWithFormat:@"%u.%u",(unsigned int)[mySQLConnection serverMajorVersion], (unsigned int)[mySQLConnection serverMinorVersion]];
+	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:7 releaseVersion:0]) {
+		version = MySQLVer57;
 	}
+	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:6 releaseVersion:0]) {
+		version = MySQLVer56;
+	}
+	
+	SPLog(@"ver = %li", (long)version);
+		
+	NSString *url = [[NSString stringWithFormat: SPMySQLSearchURL, version, searchString] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
 
-	NSString *url = [[NSString stringWithFormat:
-		SPMySQLSearchURL,
-		version,
-		NSLocalizedString(@"en", @"MySQL search language code - eg in http://search.mysql.com/search?q=select&site=refman-50&lr=lang_en"),
-		searchString]
-		stringByAddingPercentEscapesUsingEncoding:NSASCIIStringEncoding];
-
+	SPLog("search URL: %@",url);
+	
 	if ([url length]) {
 		[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:url]];
 	}
