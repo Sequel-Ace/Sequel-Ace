@@ -145,7 +145,7 @@
 /**
  * Updates the dict containing the structure of all available databases (mainly for completion/navigator)
  * executed on the helper connection.
- * Should always be executed on a background thread.
+ * Should always be executed on a background thread. // JCS: but it calls delegate getDbStructure which eventually calls initWithWindowNibName .. which needs to be on main
  */
 - (void)queryDbStructureWithUserInfo:(NSDictionary *)userInfo
 {

@@ -54,7 +54,7 @@
 @property (nonatomic, copy) NSString *literalEndMarker;
 @property (nonatomic, readonly) NSRange remainingRange;
 @property (nonatomic, weak) id <MGTemplateEngineDelegate> delegate;	// weak ref
-@property (nonatomic, weak) id <MGTemplateEngineMatcher> matcher;
+@property (nonatomic, strong) id <MGTemplateEngineMatcher> matcher;
 @property (nonatomic, copy, readonly) NSString *templateContents;
 
 // Creation.
