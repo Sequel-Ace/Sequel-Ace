@@ -61,8 +61,7 @@
 #import <SPMySQL/SPMySQL.h>
 #include <stdlib.h>
 
-#import "Sequel_Ace-Swift.h"
-
+#import "sequel-ace-Swift.h"
 
 /**
  * This is the unique KVO context of code that resides in THIS class.
@@ -228,8 +227,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont             options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex            options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
 	// Add observer to change view sizes with filter rule editor
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -498,7 +497,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSString *nullValue = [prefs objectForKey:SPNullValue];
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
@@ -1004,16 +1003,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
+// TODO: this is called A LOT, optimize
 - (void)updateCountText
 {
 	NSString *rowString;
 	NSMutableString *countString = [NSMutableString string];
-	NSNumberFormatter *numberFormatter = [[[NSNumberFormatter alloc] init] autorelease];
-	[numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-
+	
 	// Set up a couple of common strings
-	NSString *tableCountString = [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:tableRowsCount]];
-	NSString *maxRowsString = [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:maxNumRows]];
+	NSString *tableCountString = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:tableRowsCount]];
+	NSString *maxRowsString = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:maxNumRows]];
 
 	// If the result is partial due to an error or query cancellation, show a very basic count
 	if (isInterruptedLoad) {
@@ -1032,7 +1030,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If a limit is active, display a string suggesting a limit is active
 	} else if (!isFiltered && isLimited) {
 		NSUInteger limitStart = (contentPage-1)*[prefs integerForKey:SPLimitResultsValue] + 1;
-		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ of %@%@ from table", @"text showing how many rows are in the limited result"),  [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]], maxNumRowsIsEstimate?@"~":@"", maxRowsString];
+		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ of %@%@ from table", @"text showing how many rows are in the limited result"),  [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]], maxNumRowsIsEstimate?@"~":@"", maxRowsString];
 
 	// If just a filter is active, show a count and an indication a filter is active
 	} else if (isFiltered && !isLimited) {
@@ -1044,7 +1042,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If both a filter and limit is active, display full string
 	} else {
 		NSUInteger limitStart = (contentPage-1)*[prefs integerForKey:SPLimitResultsValue] + 1;
-		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ from filtered matches", @"text showing how many rows are in the limited filter match"), [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [numberFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]]];
+		[countString appendFormat:NSLocalizedString(@"Rows %@ - %@ from filtered matches", @"text showing how many rows are in the limited filter match"), [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:limitStart]], [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithUnsignedInteger:(limitStart+tableRowsCount-1)]]];
 	}
 
 	// If rows are selected, append selection count
@@ -1055,7 +1053,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			rowString = [NSString stringWithString:NSLocalizedString(@"row", @"singular word for row")];
 		else
 			rowString = [NSString stringWithString:NSLocalizedString(@"rows", @"plural word for rows")];
-		[countString appendFormat:NSLocalizedString(@"%@ %@ selected", @"text showing how many rows are selected"), [numberFormatter stringFromNumber:[NSNumber numberWithInteger:selectedRows]], rowString];
+		[countString appendFormat:NSLocalizedString(@"%@ %@ selected", @"text showing how many rows are selected"), [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithInteger:selectedRows]], rowString];
 	}
 
 	[countText setStringValue:countString];
@@ -3677,8 +3675,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
 		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
-			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+			NSFont *tableFont = [NSUserDefaults getFont];
 
 			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
@@ -4434,9 +4432,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[SPTooltip showWithObject:[aCell stringValue]
 		               atLocation:pos
 		                   ofType:@"text"
-		           displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:[[aCell font] familyName], @"fontname",
-		                                                                     [NSString stringWithFormat:@"%f", [[aCell font] pointSize]], @"fontsize",
-		                                                                     nil]];
+		           displayOptions:nil];
 
 		return nil;
 	}
@@ -4602,7 +4598,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	if(_mainNibLoaded) {
 		//TODO this should be changed to the variant with …context: after 10.6 support is removed!
-		[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+		[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	}

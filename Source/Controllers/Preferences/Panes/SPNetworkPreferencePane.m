@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPNetworkPreferencePane.h"
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
@@ -157,6 +157,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 {
 	if([SPHiddenKeyFileVisibilityKey isEqualTo:keyPath]) {
 		[self updateHiddenFiles];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 

@@ -36,7 +36,7 @@
 #import <sys/dir.h>
 #import <sys/types.h>
 
-#import "Sequel_Ace-Swift.h"
+#import "sequel-ace-Swift.h"
 
 static SPLogger *logger = nil;
 
@@ -121,7 +121,12 @@ int _isSPLeaksLog(const struct direct *entry);
 	// synchronised to allow use across multiple executables or their frameworks.
 	[logFileHandle synchronizeFile];
 	[logFileHandle seekToEndOfFile];
-	[logFileHandle writeData:[[NSString stringWithFormat:@"%@ %@\n", [[NSDate date] formattedDateWithFormat:@"HH:mm:ss" timeZone:nil locale:[NSLocale autoupdatingCurrentLocale]], logString] dataUsingEncoding:NSUTF8StringEncoding]];
+	[logFileHandle writeData:[[NSString stringWithFormat:@"%@ %@\n",
+							   [[NSDate date] stringWithFormat:@"HH:mm:ss"
+														locale:[NSLocale autoupdatingCurrentLocale]
+													  timeZone:[NSTimeZone localTimeZone]],
+							   logString] dataUsingEncoding:NSUTF8StringEncoding]];
+	
 	[logFileHandle synchronizeFile];
 
 	[logString release];
