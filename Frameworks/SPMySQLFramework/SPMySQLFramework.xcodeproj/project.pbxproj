@@ -22,6 +22,8 @@
 		51E2FE64255B303600B96A16 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 5884133B14CCEC6B0078027F /* libz.dylib */; };
 		51E2FE6D255B308400B96A16 /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; };
 		51E2FE6E255B309200B96A16 /* libmysqlclient.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5842929D14C34B36000F8438 /* libmysqlclient.a */; };
+		51E2FE8F255B324900B96A16 /* libssl.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		51E2FE90255B324900B96A16 /* libcrypto.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		580A331E14D75CF7000D6933 /* SPMySQLGeometryData.h in Headers */ = {isa = PBXBuildFile; fileRef = 580A331C14D75CF7000D6933 /* SPMySQLGeometryData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		580A331F14D75CF7000D6933 /* SPMySQLGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = 580A331D14D75CF7000D6933 /* SPMySQLGeometryData.m */; };
 		583C734A17A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 583C734917A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -102,6 +104,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
+				51E2FE8F255B324900B96A16 /* libssl.1.1.dylib in CopyFiles */,
+				51E2FE90255B324900B96A16 /* libcrypto.1.1.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
