@@ -18,6 +18,10 @@
 		507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1811BC0C64100104523 /* DataConversion_Tests.m */; };
 		507FF23B1BC0E8CA00104523 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* SPMySQL.framework */; };
 		507FF23D1BC157B500104523 /* SPMySQLStringAdditions_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */; };
+		51E2FE5F255B2FF100B96A16 /* libssl.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; };
+		51E2FE64255B303600B96A16 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 5884133B14CCEC6B0078027F /* libz.dylib */; };
+		51E2FE6D255B308400B96A16 /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; };
+		51E2FE6E255B309200B96A16 /* libmysqlclient.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5842929D14C34B36000F8438 /* libmysqlclient.a */; };
 		580A331E14D75CF7000D6933 /* SPMySQLGeometryData.h in Headers */ = {isa = PBXBuildFile; fileRef = 580A331C14D75CF7000D6933 /* SPMySQLGeometryData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		580A331F14D75CF7000D6933 /* SPMySQLGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = 580A331D14D75CF7000D6933 /* SPMySQLGeometryData.m */; };
 		583C734A17A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 583C734917A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -32,7 +36,6 @@
 		584292A414C34B36000F8438 /* mysql_time.h in Headers */ = {isa = PBXBuildFile; fileRef = 5842929914C34B36000F8438 /* mysql_time.h */; };
 		584292A514C34B36000F8438 /* mysql_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 5842929A14C34B36000F8438 /* mysql_version.h */; };
 		584292A614C34B36000F8438 /* typelib.h in Headers */ = {isa = PBXBuildFile; fileRef = 5842929B14C34B36000F8438 /* typelib.h */; };
-		584292A714C34B36000F8438 /* libmysqlclient.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5842929D14C34B36000F8438 /* libmysqlclient.a */; };
 		584294E414CB8002000F8438 /* SPMySQLConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 584294E314CB8002000F8438 /* SPMySQLConstants.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		584294F014CB8002000F8438 /* Ping & KeepAlive.h in Headers */ = {isa = PBXBuildFile; fileRef = 584294EE14CB8002000F8438 /* Ping & KeepAlive.h */; };
 		584294F114CB8002000F8438 /* Ping & KeepAlive.m in Sources */ = {isa = PBXBuildFile; fileRef = 584294EF14CB8002000F8438 /* Ping & KeepAlive.m */; };
@@ -99,8 +102,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				96A150E9253B99B7006E3F4D /* libcrypto.1.1.dylib in CopyFiles */,
-				96A150E8253B99B2006E3F4D /* libssl.1.1.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -208,8 +209,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */,
-				584292A714C34B36000F8438 /* libmysqlclient.a in Frameworks */,
+				51E2FE6E255B309200B96A16 /* libmysqlclient.a in Frameworks */,
 				58C00ADA14E4959A00AC489A /* SystemConfiguration.framework in Frameworks */,
+				51E2FE5F255B2FF100B96A16 /* libssl.1.1.dylib in Frameworks */,
+				51E2FE64255B303600B96A16 /* libz.dylib in Frameworks */,
+				51E2FE6D255B308400B96A16 /* libcrypto.1.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -560,6 +564,7 @@
 						CreatedOnToolsVersion = 6.2;
 					};
 					8DC2EF4F0486A6940098B216 = {
+						DevelopmentTeam = NKQ4HJ66PX;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -638,7 +643,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Make it so the SPMySQL executable can fin the dylibs it was compiled with\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\"\ninstall_name_tool -change libcrypto.1.1.dylib @loader_path/libcrypto.1.1.dylib SPMySQL\ninstall_name_tool -change libssl.1.1.dylib @loader_path/libssl.1.1.dylib SPMySQL\n";
+			shellScript = "# Make it so the SPMySQL executable can find the dylibs it was compiled with\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\"\ninstall_name_tool -change libcrypto.1.1.dylib @loader_path/libcrypto.1.1.dylib SPMySQL\ninstall_name_tool -change libssl.1.1.dylib @loader_path/libssl.1.1.dylib SPMySQL\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -727,12 +732,10 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
+					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = (
-					"-lc++",
-					"-lz",
-				);
+				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -764,13 +767,9 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
-					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = (
-					"-lc++",
-					"-lz",
-				);
+				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -891,7 +890,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
@@ -924,7 +922,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -952,7 +949,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1038,13 +1034,9 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
-					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = (
-					"-lc++",
-					"-lz",
-				);
+				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1123,13 +1115,9 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
-					"$(PROJECT_DIR)/MySQL\\ Client\\ Libraries/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				OTHER_LDFLAGS = (
-					"-lc++",
-					"-lz",
-				);
+				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1151,7 +1139,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1174,7 +1161,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1DEB91AE08733DA50010E9CD /* Debug */,
-				507FF2371BC0E0A800104523 /* Unit Testing */,
 				1DEB91AF08733DA50010E9CD /* Release */,
 				586AA55314F5D599007F82BF /* Distribution */,
 				96BC47D72500ACD0003C8105 /* Beta */,
@@ -1186,7 +1172,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1DEB91B208733DA50010E9CD /* Debug */,
-				507FF2361BC0E0A800104523 /* Unit Testing */,
 				1DEB91B308733DA50010E9CD /* Release */,
 				586AA55214F5D599007F82BF /* Distribution */,
 				96BC47D62500ACD0003C8105 /* Beta */,
@@ -1198,7 +1183,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				507FF1DF1BC0D7D300104523 /* Debug */,
-				507FF2381BC0E0A800104523 /* Unit Testing */,
 				507FF1E11BC0D7D300104523 /* Release */,
 				507FF1E21BC0D7D300104523 /* Distribution */,
 				96BC47D82500ACD0003C8105 /* Beta */,
