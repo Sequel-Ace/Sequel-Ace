@@ -61,7 +61,7 @@
 	NSString *filterType;
 }
 
-- (id)initWithDatabaseDocument:(SPDatabaseDocument *)document forFilterType:(NSString *)compareType;
+- (instancetype)initWithDatabaseDocument:(SPDatabaseDocument *)document forFilterType:(NSString *)compareType;
 
 // Accessors
 - (NSMutableArray *)contentFilterForFileURL:(NSURL *)fileURL;

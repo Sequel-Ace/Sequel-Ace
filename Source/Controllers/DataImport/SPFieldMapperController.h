@@ -145,9 +145,9 @@
 	BOOL addGlobalSheetIsOpen;
 }
 
-@property(retain) NSString* sourcePath;
+@property (copy) NSString* sourcePath;
 
-- (id)initWithDelegate:(id)managerDelegate;
+- (instancetype)initWithDelegate:(id)managerDelegate;
 
 - (void)setConnection:(SPMySQLConnection *)theConnection;
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview;

@@ -62,8 +62,6 @@
 	
 	BOOL success = [dbActionTableCopy copyTables:tables from:[sourceDatabase databaseName] to:targetDatabaseName withContent:copyWithContent];
 	
-	[dbActionTableCopy release];
-	
 	return success;
 }
 

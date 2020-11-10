@@ -30,9 +30,7 @@
 
 #import "SPJSONFormatter.h"
 
-
 static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
-
 
 @implementation SPJSONFormatter
 
@@ -49,7 +47,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 	SPJSONToken prevTokenType = JSON_TOK_EOF;
 	SPJSONTokenInfo curToken;
 	if(SPJSONTokenizerGetNextToken(&stateInfo,&curToken) == -1) {
-		[formatted release];
 		return nil;
 	}
 	
@@ -58,7 +55,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 	do {
 		//we need to know the next token to do meaningful formatting
 		if(SPJSONTokenizerGetNextToken(&stateInfo,&nextToken) == -1) {
-			[formatted release];
 			return nil;
 		}
 		
@@ -122,17 +118,14 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 				curTokenString = [[NSString alloc] initWithBytesNoCopy:(void *)(&stateInfo.str[curToken.pos]) length:curToken.len encoding:NSUTF8StringEncoding freeWhenDone:NO];
 				//for everything except strings get rid of surrounding whitespace
 				if(curToken.tok != JSON_TOK_STRINGDATA) {
-					NSString *newTokenString = [[curTokenString stringByTrimmingCharactersInSet:wsNlCharset] retain];
-					[curTokenString release];
+					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
 					curTokenString = newTokenString;
 				}
 				freeMe = curTokenString;
 		}
 		
 		[formatted appendString:curTokenString];
-		
-		if(freeMe) [freeMe release];
-		
+
 		//if the current token is a "[", "{" or "," and the next token is not a "]" or "}" add a line break afterwards
 		if(
 		   curToken.tok == JSON_TOK_COMMA ||
@@ -150,7 +143,7 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 		curToken = nextToken;
 	} while(curToken.tok != JSON_TOK_EOF); //SPJSONTokenizerGetNextToken() will always return JSON_TOK_EOF once it has reached that state
 	
-	return [formatted autorelease];
+	return formatted;
 }
 
 + (NSString *)stringByUnformattingString:(NSString *)input
@@ -164,7 +157,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 	do {
 		SPJSONTokenInfo curToken;
 		if(SPJSONTokenizerGetNextToken(&stateInfo,&curToken) == -1) {
-			[unformatted release];
 			return nil;
 		}
 		
@@ -208,8 +200,7 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 				curTokenString = [[NSString alloc] initWithBytesNoCopy:(void *)(&stateInfo.str[curToken.pos]) length:curToken.len encoding:NSUTF8StringEncoding freeWhenDone:NO];
 				//for everything except strings get rid of surrounding whitespace
 				if(curToken.tok != JSON_TOK_STRINGDATA) {
-					NSString *newTokenString = [[curTokenString stringByTrimmingCharactersInSet:wsNlCharset] retain];
-					[curTokenString release];
+					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
 					curTokenString = newTokenString;
 				}
 				freeMe = curTokenString;
@@ -217,13 +208,10 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 		
 		[unformatted appendString:curTokenString];
 		
-		if(freeMe) [freeMe release];
-		
 	} while(1);
 	
-	return [unformatted autorelease];
+	return unformatted;
 }
-
 
 @end
 

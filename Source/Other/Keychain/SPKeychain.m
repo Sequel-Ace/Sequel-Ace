@@ -38,7 +38,7 @@
 
 @implementation SPKeychain
 
-- (id)init
+- (instancetype)init
 {
 	if (!(self = [super init])) {
 		return nil;
@@ -47,8 +47,6 @@
 	NSString *cleartext = [NSProcessInfo processInfo].environment[@"LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN"];
 	if (cleartext != nil) {
 		NSLog(@"LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN is set. Disabling keychain access. See Issue #2437");
-		
-		[self release];
 		return nil;
 	}
 	
@@ -91,7 +89,7 @@
 		if ((SecTrustedApplicationCreateFromPath(NULL, &sequelProRef) == noErr) &&
 			(SecTrustedApplicationCreateFromPath([helperPath UTF8String], &sequelProHelperRef) == noErr)) {
 
-			NSArray *trustedApps = [NSArray arrayWithObjects:(id)sequelProRef, (id)sequelProHelperRef, nil];
+			NSArray *trustedApps = [NSArray arrayWithObjects:(__bridge id)sequelProRef, (__bridge id)sequelProHelperRef, nil];
 
 			status = SecAccessCreate((CFStringRef)name, (CFArrayRef)trustedApps, &passwordAccessRef);
 

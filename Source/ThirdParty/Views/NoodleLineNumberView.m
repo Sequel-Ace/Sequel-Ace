@@ -56,7 +56,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 @interface NoodleLineNumberView ()
 
 - (NSArray *)lineIndices;
-- (void)invalidateLineIndices;
 - (void)calculateLines;
 - (void)updateGutterThicknessConstants;
 - (void)setRuleThicknessNumber:(NSNumber *)aNum;
@@ -68,7 +67,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 @synthesize alternateTextColor;
 @synthesize backgroundColor;
 
-- (id)initWithScrollView:(NSScrollView *)aScrollView
+- (instancetype)initWithScrollView:(NSScrollView *)aScrollView
 {
 
 	if ((self = [super initWithScrollView:aScrollView orientation:NSVerticalRuler]) != nil)
@@ -76,10 +75,10 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		[self setClientView:[aScrollView documentView]];
 		[self setAlternateTextColor:[NSColor whiteColor]];
 		lineIndices = nil;
-		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
-			[self font], NSFontAttributeName, 
-			[self textColor], NSForegroundColorAttributeName,
-			nil] retain];
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+						  [self font], NSFontAttributeName,
+						  [self textColor], NSForegroundColorAttributeName,
+						  nil];
 
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
@@ -87,19 +86,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		[self updateGutterThicknessConstants];
 		currentRuleThickness = 0.0f;
 		dragSelectionStartLine = NSNotFound;
-
-		// Cache loop methods for speed
-		lineNumberForCharacterIndexSel = @selector(lineNumberForCharacterIndex:);
-		lineNumberForCharacterIndexIMP = [self methodForSelector:lineNumberForCharacterIndexSel];
-		lineRangeForRangeSel = @selector(lineRangeForRange:);
-		addObjectSel = @selector(addObject:);
-		numberWithUnsignedIntegerSel = @selector(numberWithUnsignedInteger:);
-		numberWithUnsignedIntegerIMP = [NSNumber methodForSelector:numberWithUnsignedIntegerSel];
-		rangeOfLineSel = @selector(getLineStart:end:contentsEnd:forRange:);
-
 		currentNumberOfLines = 1;
 		numberClass = [NSNumber class];
-
 	}
 
 	return self;
@@ -115,11 +103,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	if (lineIndices) [lineIndices release];
-	if (textAttributes) [textAttributes release];
-	if (font) [font release];
-	if (textColor) [textColor release];
-	[super dealloc];
 }
 
 #pragma mark -
@@ -128,13 +111,11 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	if (font != aFont)
 	{
-		[font autorelease];
-		font = [aFont retain];
-		if (textAttributes) [textAttributes release];
-		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
-			font, NSFontAttributeName, 
-			[self textColor], NSForegroundColorAttributeName,
-			nil] retain];
+		font = aFont;
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+						  font, NSFontAttributeName,
+						  [self textColor], NSForegroundColorAttributeName,
+						  nil];
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
 		maxHeightOfGlyph = s.height;
@@ -145,7 +126,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 - (NSFont *)font
 {
 	if (font == nil)
-		return [NSFont labelFontOfSize:[NSFont systemFontSizeForControlSize:NSMiniControlSize]];
+		return [NSFont labelFontOfSize:[NSFont systemFontSizeForControlSize:NSControlSizeMini]];
 
 	return font;
 }
@@ -154,13 +135,11 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 	if (textColor != color)
 	{
-		[textColor autorelease];
-		textColor  = [color retain];
-		if (textAttributes) [textAttributes release];
-		textAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:
-			[self font], NSFontAttributeName, 
-			textColor, NSForegroundColorAttributeName,
-			nil] retain];
+		textColor = color;
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+						  [self font], NSFontAttributeName,
+						  textColor, NSForegroundColorAttributeName,
+						  nil];
 		NSSize s = [@"8" sizeWithAttributes:textAttributes];
 		maxWidthOfGlyph = s.width;
 		maxHeightOfGlyph = s.height;
@@ -192,7 +171,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		clientView     = (NSTextView*)[self clientView];
 
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange:) name:NSTextStorageDidProcessEditingNotification object:[clientView textStorage]];
-		[self invalidateLineIndices];
 	}
 
 }
@@ -203,11 +181,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 
 	if(!clientView) return;
-
-	// Invalidate the line indices only if text view was changed in length but not if the font was changed.
-	// They will be recalculated and recached on demand.
-	if([[clientView textStorage] editedMask] != 1)
-		[self invalidateLineIndices];
 
 	[self setNeedsDisplayInRect:[self bounds]];
 
@@ -242,7 +215,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		// It doesn't show up in the glyphs so would not be accounted for.
 		range.length++;
 
-		for (line = (NSUInteger)(*lineNumberForCharacterIndexIMP)(self, lineNumberForCharacterIndexSel, range.location); line < count; line++)
+		for (line = [self lineNumberForCharacterIndex:range.location]; line < count; line++)
 		{
 
 			rects = [layoutManager rectArrayForCharacterRange:NSMakeRange([NSArrayObjectAtIndex(lines, line) unsignedIntegerValue], 0)
@@ -290,10 +263,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 - (void)drawHashMarksAndLabelsInRect:(NSRect)aRect
 {
-
-	NSRect bounds;
-
-	bounds = [self bounds];
+	[super drawHashMarksAndLabelsInRect:aRect];
+	NSRect bounds = [self bounds];
 
 	// if (backgroundColor != nil)
 	// {
@@ -332,11 +303,16 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		range.length++;
 
 		CGFloat boundsRULERMargin2 = NSWidth(bounds) - RULER_MARGIN2;
-		CGFloat boundsWidthRULER   = NSWidth(bounds) - RULER_MARGIN;
-		CGFloat yinsetMinY         = yinset - NSMinY(visibleRect);
+		CGFloat boundsWidthRULER = NSWidth(bounds) - RULER_MARGIN;
+		CGFloat yinsetMinY = yinset - NSMinY(visibleRect);
 		CGFloat rectHeight;
 
-		for (line = (NSUInteger)(*lineNumberForCharacterIndexIMP)(self, lineNumberForCharacterIndexSel, range.location); line < count; line++)
+		textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+						  [self font], NSFontAttributeName,
+						  [self textColor], NSForegroundColorAttributeName,
+						  nil];
+
+		for (line = [self lineNumberForCharacterIndex:range.location]; line < count; line++)
 		{
 			lineIndex = [NSArrayObjectAtIndex(lines, line) unsignedIntegerValue];
 
@@ -362,11 +338,10 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 					rectHeight = NSHeight(rects[0]);
 					// Draw string flush right, centered vertically within the line
-					[labelText drawInRect:
-					NSMakeRect(boundsWidthRULER - (maxWidthOfGlyph * numOfDigits),
-						yinsetMinY + NSMinY(rects[0]) + ((NSInteger)(rectHeight - maxHeightOfGlyph) >> 1),
-						boundsRULERMargin2, rectHeight)
-						withAttributes:textAttributes];
+					[labelText drawInRect:NSMakeRect(boundsWidthRULER - (maxWidthOfGlyph * numOfDigits),
+													 yinsetMinY + NSMinY(rects[0]) + ((NSInteger)(rectHeight - maxHeightOfGlyph) >> 1),
+													 boundsRULERMargin2, rectHeight)
+						   withAttributes:textAttributes];
 				}
 			}
 
@@ -441,23 +416,23 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 #pragma mark -
 
-- (id)initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
 	if ((self = [super initWithCoder:decoder]) != nil)
 	{
 		if ([decoder allowsKeyedCoding])
 		{
-			font = [[decoder decodeObjectForKey:NOODLE_FONT_CODING_KEY] retain];
-			textColor = [[decoder decodeObjectForKey:NOODLE_TEXT_COLOR_CODING_KEY] retain];
-			alternateTextColor = [[decoder decodeObjectForKey:NOODLE_ALT_TEXT_COLOR_CODING_KEY] retain];
-			backgroundColor = [[decoder decodeObjectForKey:NOODLE_BACKGROUND_COLOR_CODING_KEY] retain];
+			font = [decoder decodeObjectForKey:NOODLE_FONT_CODING_KEY];
+			textColor = [decoder decodeObjectForKey:NOODLE_TEXT_COLOR_CODING_KEY];
+			alternateTextColor = [decoder decodeObjectForKey:NOODLE_ALT_TEXT_COLOR_CODING_KEY];
+			backgroundColor = [decoder decodeObjectForKey:NOODLE_BACKGROUND_COLOR_CODING_KEY];
 		}
 		else
 		{
-			font = [[decoder decodeObject] retain];
-			textColor = [[decoder decodeObject] retain];
-			alternateTextColor = [[decoder decodeObject] retain];
-			backgroundColor = [[decoder decodeObject] retain];
+			font = [decoder decodeObject];
+			textColor = [decoder decodeObject];
+			alternateTextColor = [decoder decodeObject];
+			backgroundColor = [decoder decodeObject];
 		}
 	}
 	return self;
@@ -496,13 +471,6 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 }
 
-- (void)invalidateLineIndices
-{
-
-	if (lineIndices) SPClear(lineIndices);
-
-}
-
 - (void)calculateLines
 {
 
@@ -525,22 +493,19 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		lineIndices = [[NSMutableArray alloc] initWithCapacity:currentNumberOfLines];
 
 		anIndex = 0;
-
-		// Cache loop methods for speed
-		IMP rangeOfLineIMP = [textString methodForSelector:rangeOfLineSel];
-		addObjectIMP = [lineIndices methodForSelector:addObjectSel];
 		
 		do
 		{
-			(void)(*addObjectIMP)(lineIndices, addObjectSel, (*numberWithUnsignedIntegerIMP)(numberClass, numberWithUnsignedIntegerSel, anIndex));
-			(*rangeOfLineIMP)(textString, rangeOfLineSel, NULL, &anIndex, NULL, NSMakeRange(anIndex, 0));
+			[lineIndices addObject:@(anIndex)];
+			[textString getLineStart:nil end:&anIndex contentsEnd:nil forRange:NSMakeRange(anIndex, 0)];
 		}
 		while (anIndex < stringLength);
 
 		// Check if text ends with a new line.
-		(*rangeOfLineIMP)(textString, rangeOfLineSel, NULL, &lineEnd, &contentEnd, NSMakeRange([[lineIndices lastObject] unsignedIntValue], 0));
-		if (contentEnd < lineEnd)
-			(void)(*addObjectIMP)(lineIndices, addObjectSel, (*numberWithUnsignedIntegerIMP)(numberClass, numberWithUnsignedIntegerSel, anIndex));
+		[textString getLineStart:nil end:&lineEnd contentsEnd:&contentEnd forRange:NSMakeRange([[lineIndices lastObject] unsignedIntValue], 0)];
+		if (contentEnd < lineEnd) {
+			[lineIndices addObject:@(anIndex)];
+		}
 
 		NSUInteger lineCount = [lineIndices count];
 		if(lineCount < 100)

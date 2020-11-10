@@ -53,7 +53,6 @@ OSStatus GenerateThumbnailForURL(void *thisInterface, QLThumbnailRequestRef thum
 		NSData *thumbnailData = [NSData dataWithContentsOfFile:@"appIcon.icns"];
 		if ( thumbnailData == nil || [thumbnailData length] == 0 ) {
 			// Nothing Found. Don't care.
-			[pool release];
 			return noErr;
 		}
 

@@ -89,13 +89,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 - (void)dealloc
 {
-	//TODO this should be changed to the variant with …context: after 10.6 support is removed!
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	SPClear(filterTableData);
-	SPClear(lastEditedFilterTableValue);
-	SPClear(filterTableDefaultOperator);
-	[super dealloc];
 }
 
 - (void)showFilterTableWindow
@@ -172,7 +167,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			NSTableColumn *filterCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 			[[filterCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
 			[filterCol setEditable:YES];
-			SPTextAndLinkCell *filterDataCell = [[[SPTextAndLinkCell alloc] initTextCell:@""] autorelease];
+			SPTextAndLinkCell *filterDataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 			[filterDataCell setEditable:YES];
 			[filterDataCell setLineBreakMode:NSLineBreakByTruncatingTail]; // add ellipsis for long values (default is to simply hide words)
 			[filterCol setDataCell:filterDataCell];
@@ -181,7 +176,6 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			[filterCol setWidth:headerInitialWidth];
 			totalWidth += headerInitialWidth;
 			[filterTableView addTableColumn:filterCol];
-			[filterCol release];
 
 			[filterTableData setObject:[NSMutableDictionary dictionaryWithObjectsAndKeys:
 				[columnDefinition objectForKey:@"name"], @"name",
@@ -226,7 +220,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableNegateCheckbox setState:(filterTableNegate) ? NSOnState : NSOffState];
 	[filterTableLiveSearchCheckbox setState:NSOffState];
 
-	filterTableDefaultOperator = [[[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]] retain];
+	filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]];
 }
 
 - (IBAction)filterTable:(id)sender
@@ -334,7 +328,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	   modalForWindow:[self window]
 	    modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:SPTableFilterSetDefaultOperator];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPTableFilterSetDefaultOperator)];
 }
 
 /**
@@ -346,9 +340,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 	if([contextInfo isEqualToString:SPTableFilterSetDefaultOperator]) {
 		if(returnCode) {
-			if(filterTableDefaultOperator) [filterTableDefaultOperator release];
 			NSString *newOperator = [filterTableSetDefaultOperatorValue stringValue];
-			filterTableDefaultOperator = [[[self class] escapeFilterTableDefaultOperator:newOperator] retain];
+			filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:newOperator];
 			[prefs setObject:newOperator forKey:SPFilterTableDefaultOperator];
 
 			if(![newOperator isMatchedByRegex:@"(?i)like\\s+['\"]%@%['\"]\\s*"]) {
@@ -583,7 +576,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	if (filterTableIsSwapped) {
 		// First column shows the field names
 		if (columnIndex == 0) {
-			return [[[NSTableHeaderCell alloc] initTextCell:[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:@"name"]] autorelease];
+			return [[NSTableHeaderCell alloc] initTextCell:[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:@"name"]];
 		}
 
 		return NSArrayObjectAtIndex([[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:SPTableContentFilterKey], columnIndex - 1);
@@ -618,7 +611,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 - (NSString *)tableView:(NSTableView *)tableView toolTipForCell:(id)aCell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row mouseLocation:(NSPoint)mouseLocation
 {
-	return nil;
+	return @"";
 }
 
 #pragma mark - Control delegate methods
@@ -630,9 +623,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 		NSString *string = [[[[notification userInfo] objectForKey:@"NSFieldEditor"] textStorage] string];
 
 		if (string && [string length]) {
-			if (lastEditedFilterTableValue) [lastEditedFilterTableValue release];
 
-			lastEditedFilterTableValue = [[NSString stringWithString:string] retain];
+			lastEditedFilterTableValue = [NSString stringWithString:string];
 		}
 
 		[self updateFilterTableClause:string];
@@ -695,7 +687,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 {
 	if (!op) return @"";
 
-	NSMutableString *newOp = [[[NSMutableString alloc] initWithCapacity:[op length]] autorelease];
+	NSMutableString *newOp = [[NSMutableString alloc] initWithCapacity:[op length]];
 
 	[newOp setString:op];
 	[newOp replaceOccurrencesOfRegex:@"%" withString:@"%%"];

@@ -62,13 +62,13 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 @implementation SPBundleHTMLOutputController
 
 @synthesize docTitle;
-@synthesize initHTMLSourceString;
+@synthesize initialHTMLSourceString;
 @synthesize windowUUID;
 @synthesize docUUID;
 @synthesize suppressExceptionAlerting;
 @synthesize restoreFrame, origFrame, windowType;
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"BundleHTMLOutput"])) {
 		[webView setContinuousSpellCheckingEnabled:NO];
@@ -112,7 +112,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 		}
 	}
 	
-	[self setInitHTMLSourceString:content];
+	[self setInitialHTMLSourceString:content];
 	[[webView mainFrame] loadHTMLString:content baseURL:nil];
 }
 
@@ -165,12 +165,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	return YES;
 }
 
-- (void)dealloc
-{
-	if(webPreferences) SPClear(webPreferences);
-	[super dealloc];
-}
-
 - (void)keyDown:(NSEvent *)theEvent
 {
 	NSEventModifierFlags allFlags = (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand);
@@ -198,7 +192,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 			if([webView canGoBack])
 				[webView goBack:nil];
 			else
-				[[webView mainFrame] loadHTMLString:[self initHTMLSourceString] baseURL:nil];
+				[[webView mainFrame] loadHTMLString:[self initialHTMLSourceString] baseURL:nil];
 			return;
 		}
 		if([theEvent keyCode] == 124) // goForward
@@ -284,7 +278,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[printPanel addAccessoryController:printAccessory];
 
 	[[NSPageLayout pageLayout] addAccessoryController:printAccessory];
-	[printAccessory release];
 
 	[op runOperationModalForWindow:[self window]
 		delegate:self
@@ -342,21 +335,19 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 	[webView close];
 
-	[self setInitHTMLSourceString:@""];
+	[self setInitialHTMLSourceString:@""];
 
 	windowUUID = @"";
 	docUUID = @"";
 
 	[SPAppDelegate removeHTMLOutputController:self];
-
-	[self release];
 }
 
 #pragma mark -
 
 - (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
 {
-	NSMutableArray *webViewMenuItems = [[defaultMenuItems mutableCopy] autorelease];
+	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy];
 
 	[webViewMenuItems addObject:[NSMenuItem separatorItem]];
 
@@ -365,17 +356,14 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[anItem setEnabled:YES];
 	[anItem setTarget:self];
 	[webViewMenuItems addObject:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Save Page As…", @"save page as menu item title") action:@selector(saveDocument) keyEquivalent:@""];
 	[anItem setEnabled:YES];
 	[anItem setTarget:self];
 	[webViewMenuItems addObject:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Print Page…", @"print page menu item title") action:@selector(printDocument:) keyEquivalent:@""];
 	[anItem setEnabled:YES];
 	[anItem setTarget:self];
 	[webViewMenuItems addObject:anItem];
-	[anItem release];
 
 	return webViewMenuItems;
 }
@@ -425,7 +413,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 			[listener use];
 			break;
 			case WebNavigationTypeReload:
-			[[aWebView mainFrame] loadHTMLString:[self initHTMLSourceString] baseURL:nil];
+			[[aWebView mainFrame] loadHTMLString:[self initialHTMLSourceString] baseURL:nil];
 			break;
 			default:
 			[listener use];
@@ -474,7 +462,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[alert setInformativeText:(message)?:@""];
 	[alert setMessageText:@"JavaScript"];
 	[alert runModal];
-	[alert release];
 }
 
 - (BOOL)webView:(WebView *)sender runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame
@@ -486,8 +473,6 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[alert setMessageText:@"JavaScript"];
 
 	NSUInteger returnCode = [alert runModal];
-
-	[alert release];
 
 	if(returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) return YES;
 	return NO;

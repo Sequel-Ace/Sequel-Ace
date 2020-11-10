@@ -33,7 +33,7 @@
 
 @interface SPFavoritesOutlineView ()
 
-@property (nonatomic,readwrite,assign) id itemForDoubleAction; //make setter private
+@property (nonatomic,readwrite,strong) id itemForDoubleAction; //make setter private
 
 @end
 
@@ -43,7 +43,6 @@
 @synthesize itemForDoubleAction = _itemForDoubleAction;
 
 - (void)awakeFromNib {
-	
 }
 
 - (BOOL)acceptsFirstResponder
@@ -109,7 +108,7 @@
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
-	if([theEvent type] == NSLeftMouseDown && [theEvent clickCount] == 2) {
+	if([theEvent type] == NSEventTypeLeftMouseDown && [theEvent clickCount] == 2) {
 		// The tricky thing is that [self clickedRow] is set from [NSTableView mouseDown], so right now it's not populated.
 		// We can't use [self selectedRow] either, as clicking on empty space does not update the selection.
 		NSPoint clickAt = [theEvent locationInWindow];
@@ -162,7 +161,7 @@
 		[clipPath appendBezierPathWithOvalInRect:dotRect];
 		[clipPath addClip];
 
-		NSGradient *dotGradient = [[[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceRed:0.44f green:0.72f blue:0.92f alpha:1.f] endingColor:[NSColor colorWithDeviceRed:0.21f green:0.53f blue:0.82f alpha:1.f]] autorelease];
+		NSGradient *dotGradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceRed:0.44f green:0.72f blue:0.92f alpha:1.f] endingColor:[NSColor colorWithDeviceRed:0.21f green:0.53f blue:0.82f alpha:1.f]];
 		[dotGradient drawInRect:dotRect angle:90.f];
 
 		[NSGraphicsContext restoreGraphicsState];

@@ -59,7 +59,7 @@ static unsigned short getRandomPort(void);
  * therefore not recommended, or via setPasswordKeychainName:, which will use the keychain on-demand
  * and is therefore preferred.
  */
-- (id)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost
+- (instancetype)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost
 {
 	if (!theHost || !targetPort || !targetHost) return nil;
 
@@ -138,8 +138,8 @@ static unsigned short getRandomPort(void);
 {
 
 	// As this object is not a NSWindowController, use manual top-level nib item management
-	if (sshQuestionDialog) SPClear(sshQuestionDialog);
-	if (sshPasswordDialog) SPClear(sshPasswordDialog);
+	
+	
 
 	parentWindow = theWindow;
 	if (![NSBundle.mainBundle loadNibNamed:@"SSHQuestionDialog" owner:self topLevelObjects:nil]) {
@@ -167,8 +167,6 @@ static unsigned short getRandomPort(void);
 {
 	NSString *expandedPath = [thePath stringByExpandingTildeInPath];
 	if (![[NSFileManager defaultManager] fileExistsAtPath:expandedPath]) return NO;
-
-	if (identityFilePath) [identityFilePath release];
 	identityFilePath = [[NSString alloc] initWithString:expandedPath];
 	return YES;
 }
@@ -179,7 +177,7 @@ static unsigned short getRandomPort(void);
  */
 - (BOOL)setPasswordKeychainName:(NSString *)theName account:(NSString *)theAccount
 {
-	if (password) SPClear(password);
+	
 
 	passwordInKeychain = YES;
 	keychainName = [[NSString alloc] initWithString:theName];
@@ -219,7 +217,6 @@ static unsigned short getRandomPort(void);
 - (void)setLastError:(NSString *)msg
 {
 	@synchronized(lastErrorLock) {
-		if (lastError) [lastError release];
 		lastError = msg? [[NSString alloc] initWithString:msg] : nil;
 	}
 }
@@ -444,7 +441,7 @@ static unsigned short getRandomPort(void);
 		                                         selector:@selector(standardErrorHandler:)
 		                                             name:NSFileHandleDataAvailableNotification
 		                                           object:[standardError fileHandleForReading]];
-		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify];
+		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 
 		{
 			static BOOL hasCheckedTTY = NO;
@@ -495,7 +492,7 @@ static unsigned short getRandomPort(void);
 			[task launch]; //throws for invalid paths, missing +x permission
 
 			// Listen for output
-			[task waitUntilExit];
+			[task waitUntilExit]; // TODO: this leaks
 		}
 		@catch (NSException *e) {
 			connectionState = SPMySQLProxyLaunchFailed;
@@ -506,8 +503,8 @@ static unsigned short getRandomPort(void);
 		}
 
 		// On tunnel close, clean up, ready for re-use if the delegate reconnects.
-		SPClear(task);
-		SPClear(standardError);
+		
+		
 		[[NSNotificationCenter defaultCenter] removeObserver:self
 		                                                name:NSFileHandleDataAvailableNotification
 		                                              object:nil];
@@ -523,8 +520,8 @@ static unsigned short getRandomPort(void);
 		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
 		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
 
-		SPClear(taskEnvironment);
-		SPClear(taskArguments);
+		
+		
 	}
 }
 
@@ -614,10 +611,8 @@ static unsigned short getRandomPort(void);
 	}
 
 	if (connectionState != SPMySQLProxyIdle) {
-		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify];
+		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
-
-	[notificationText release];
 }
 
 /*
@@ -731,7 +726,7 @@ static unsigned short getRandomPort(void);
 	NSString *thePassword = nil;
 	if (requestedPassphrase) {
 		thePassword = [NSString stringWithString:requestedPassphrase];
-		SPClear(requestedPassphrase);
+		
 	}
 
 	// Unlock the lock again
@@ -752,7 +747,7 @@ static unsigned short getRandomPort(void);
 	if (keyName) {
 		[sshPasswordText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Enter your password for the SSH key\n\"%@\"", @"SSH key password prompt"), keyName]];
 		[sshPasswordKeychainCheckbox setHidden:NO];
-		currentKeyName = [keyName retain];
+		currentKeyName = keyName;
 	} 
 	else {
 		[sshPasswordText setStringValue:theQuery];
@@ -798,8 +793,7 @@ static unsigned short getRandomPort(void);
 		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSOnState) {
 			SPKeychain *keychain = [[SPKeychain alloc] init];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
-			[keychain release];
-			SPClear(currentKeyName);
+			
 		}
 	}
 	
@@ -816,30 +810,14 @@ static unsigned short getRandomPort(void);
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self disconnect];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	SPClear(sshHost);
-	SPClear(sshLogin);
-	SPClear(remoteHost);
-	SPClear(tunnelConnectionName);
-	SPClear(tunnelConnectionVerifyHash);
+	
 	[tunnelConnection invalidate];
-	SPClear(tunnelConnection);
+	
 	[self setLastError:nil];
-	SPClear(lastErrorLock);
-	SPClear(debugMessages);
-	SPClear(debugMessagesLock);
+	
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
-	SPClear(answerAvailableLock);
-	SPClear(password);
-	SPClear(keychainName);
-	SPClear(keychainAccount);
-	SPClear(identityFilePath);
 
-	// As this object is not a NSWindowController, use manual top-level nib item management
-	SPClear(sshQuestionDialog);
-	SPClear(sshPasswordDialog);
-	
-	[super dealloc];
 }
 
 @end

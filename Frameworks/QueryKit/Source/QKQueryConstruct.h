@@ -43,7 +43,7 @@
 /**
  * @property identifierQuote The quoute character to use for identifiers.
  */
-@property(readwrite, retain) NSString *identifierQuote;
+@property(readwrite, strong) NSString *identifierQuote;
 
 /**
  * @property useQuotedIdentifier Indicates whether or not identifiers should be quoted.

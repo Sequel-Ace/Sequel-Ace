@@ -42,14 +42,13 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	return NSMakeRect(inRect.origin.x + inRect.size.width - 15, inRect.origin.y - 1, 12, inRect.size.height);
 }
 
-
 #pragma mark -
 #pragma mark Setup and teardown
 
 /**
  * Initialise
  */
-- (id) initWithCoder:(NSCoder *)coder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
 	self = [super initWithCoder:coder];
 	if (self) {
@@ -63,16 +62,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		lastLinkRow = NSNotFound;
 	}
 	return self;
-}
-
-/**
- * Deallocate
- */
-- (void) dealloc
-{
-	if (linkButton) SPClear(linkButton);
-
-	[super dealloc];
 }
 
 /**
@@ -94,7 +83,6 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	copy->linkAction = linkAction;
 	return copy;
 }
-
 
 #pragma mark -
 #pragma mark Enabling link functionality
@@ -216,7 +204,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		return [super trackMouse:theEvent inRect:cellFrame ofView:controlView untilMouseUp:untilMouseUp];
 
 	// Ignore events other than mouse down.
-	if ([theEvent type] != NSLeftMouseDown) return YES;
+	if ([theEvent type] != NSEventTypeLeftMouseDown) return YES;
 
 	// Continue tracking the mouse while it's down, updating the state as it enters and leaves the cell,
 	// until it is released; if still within the cell, follow the link.
@@ -249,12 +237,12 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		}
 
 		// Keep tracking the mouse outside the button, until the mouse button is released or it reenters the button
-		theEvent = [[controlView window] nextEventMatchingMask: NSLeftMouseUpMask | NSLeftMouseDraggedMask];
+		theEvent = [[controlView window] nextEventMatchingMask: NSEventTypeLeftMouseUp | NSEventMaskLeftMouseDragged];
 		p = [controlView convertPoint:[theEvent locationInWindow] fromView:nil];
 		mouseInButton = NSMouseInRect(p, linkRect, [controlView isFlipped]);
 
 		// If the event is a mouse release, break the loop.
-		if ([theEvent type] == NSLeftMouseUp) break;
+		if ([theEvent type] == NSEventTypeLeftMouseUp) break;
 	}
 
 	return YES;

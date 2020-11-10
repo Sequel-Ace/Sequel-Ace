@@ -81,8 +81,6 @@ typedef enum {
 
 	SPMySQLConnection *mySQLConnection;
 
-	NSMutableArray *nibObjectsToRelease;
-
 	// Field Mapper Controller
 	NSArray *fieldMappingImportArray;
 	BOOL fieldMappingImportArrayIsPreview;

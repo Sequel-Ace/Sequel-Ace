@@ -50,7 +50,6 @@ static NSString *SPGlobalPrivilegesTabIdentifier = @"Global Privileges";
 static NSString *SPResourcesTabIdentifier = @"Resources";
 static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
-
 @interface SPUserManager ()
 
 - (void)_initializeTree:(NSArray *)items;
@@ -92,7 +91,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"UserManagerView"])) {
 		
@@ -104,7 +103,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		
 		// key is:   The name of the actual column in the mysql.users / mysql.db table
 		// value is: The "Privilege" value from "SHOW PRIVILEGES" with " " replaced by "_" and "_priv" appended
-		privColumnToGrantMap = [@{
+		privColumnToGrantMap = @{
 			@"Grant_priv":               @"Grant_option_priv",
 			@"Show_db_priv":             @"Show_databases_priv",
 			@"Create_tmp_table_priv":    @"Create_temporary_tables_priv",
@@ -112,7 +111,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			@"Repl_client_priv":         @"Replication_client_priv",
 			@"Truncate_versioning_priv": @"Delete_versioning_rows_priv", // MariaDB only, 10.3.4 only
 			@"Delete_history_priv":      @"Delete_versioning_rows_priv", // MariaDB only, since 10.3.5
-		} retain];
+		};
 	
 		schemas = [[NSMutableArray alloc] init];
 		availablePrivs = [[NSMutableArray alloc] init];
@@ -135,7 +134,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[splitView setMinSize:620.f ofSubviewAtIndex:1];
 
 	NSTableColumn *tableColumn = [outlineView tableColumnWithIdentifier:SPTableViewNameColumnID];
-	ImageAndTextCell *imageAndTextCell = [[[ImageAndTextCell alloc] init] autorelease];
+	ImageAndTextCell *imageAndTextCell = [[ImageAndTextCell alloc] init];
 	
 	[imageAndTextCell setEditable:NO];
 	[tableColumn setDataCell:imageAndTextCell];
@@ -263,7 +262,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	{
 		NSDictionary *item = [items objectAtIndex:i];
 		NSString *username = [item objectForKey:@"User"];
-		NSArray *parentResults = [[self _fetchUserWithUserName:username] retain];
+		NSArray *parentResults = [self _fetchUserWithUserName:username];
 		SPUserMO *parent;
 		SPUserMO *child;
 		
@@ -320,8 +319,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		if (error != nil) {
 			[NSApp presentError:error];
 		}
-		
-		[parentResults release];
 	}
 	
 	// Reload data of the outline view with the changes.
@@ -370,7 +367,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (void)_initializeChild:(NSManagedObject *)child withItem:(NSDictionary *)item
 {
-	for (NSString *key in item)
+	for (__strong NSString *key in item)
 	{
 		// In order to keep the priviledges a little more dynamic, just
 		// go through the keys that have the _priv suffix.  If a priviledge is
@@ -427,7 +424,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		SPPrivilegesMO *dbPriv = [NSEntityDescription insertNewObjectForEntityForName:@"Privileges" inManagedObjectContext:[self managedObjectContext]];
 		
-		for (NSString *key in rowDict)
+		for (__strong NSString *key in rowDict)
 		{
 			if ([key hasSuffix:@"_priv"]) {
 				
@@ -459,7 +456,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (NSManagedObjectModel *)managedObjectModel 
 {	
 	if (!managedObjectModel) {
-		managedObjectModel = [[NSManagedObjectModel mergedModelFromBundles:nil] retain];
+		managedObjectModel = [NSManagedObjectModel mergedModelFromBundles:nil];
 	}
     return managedObjectModel;
 }
@@ -496,7 +493,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
     NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
 	
     if (coordinator != nil) {
-        managedObjectContext = [[NSManagedObjectContext alloc] init];
+        managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
         [managedObjectContext setPersistentStoreCoordinator:coordinator];
     }
 	
@@ -510,13 +507,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 - (void)beginSheetModalForWindow:(NSWindow *)docWindow completionHandler:(void (^)(void))callback
 {
-	//copy block from stack to heap, otherwise it wouldn't live long enough to be invoked later.
-	void *heapCallback = callback? Block_copy(callback) : NULL;
-
 	[docWindow beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
-		//directly invoking callback would risk that we are dealloc'd while still in this run loop iteration.
-		dispatch_async(dispatch_get_main_queue(), heapCallback);
-		Block_release(heapCallback);
+		callback();
 	}];
 }
 
@@ -573,12 +565,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		[self.window beginSheet:errorsSheet completionHandler:nil];
 		
-		SPClear(errorsString);
+		
 		
 		return;
 	}
 	
-	SPClear(errorsString);
+	
 
 	// Otherwise, close the sheet
 	[NSApp endSheet:[self window] returnCode:0];
@@ -780,7 +772,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		alert.informativeText = NSLocalizedString(@"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue", @"unsaved changes informative message");
 		[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
 		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-		[alert setAlertStyle:NSWarningAlertStyle];
+		[alert setAlertStyle:NSAlertStyleWarning];
 
 		// "Continue" is our first button, "Cancel" is our second button. We could also implement setKeyEquivalent but this is easier for now
 		NSModalResponse response = [alert runModal];
@@ -816,7 +808,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 	// After the reset, ensure all original password and user values are up-to-date.
 	NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"SPUser" inManagedObjectContext:[self managedObjectContext]];
-	NSFetchRequest *request = [[[NSFetchRequest alloc] init] autorelease];
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 	
 	[request setEntity:entityDescription];
 	
@@ -871,7 +863,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)_clearData
 {
 	[managedObjectContext reset];
-	SPClear(managedObjectContext);
+	
 }
 
 /**
@@ -1315,7 +1307,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	NSManagedObjectContext *moc = [self managedObjectContext];
 	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"user == %@ AND parent == nil", username];
 	NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"SPUser" inManagedObjectContext:moc];
-	NSFetchRequest *request = [[[NSFetchRequest alloc] init] autorelease];
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 	
 	[request setEntity:entityDescription];
 	[request setPredicate:predicate];
@@ -1335,7 +1327,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	NSManagedObjectContext *moc = [self managedObjectContext];
 	NSPredicate *predicate;
 	NSEntityDescription *privEntity = [NSEntityDescription entityForName:@"Privileges" inManagedObjectContext:moc];
-	NSFetchRequest *request = [[[NSFetchRequest alloc] init] autorelease];
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 
 	// Construct the predicate depending on whether a user and schema were supplied;
 	// blank schemas indicate a default priv value (as per %)
@@ -1405,7 +1397,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[connection queryString:grantStatement];
 	return [self _checkAndDisplayMySqlError];
 }
-
 
 /**
  * Revoke the supplied privileges from the specified user and host
@@ -1702,11 +1693,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	if ([cell isKindOfClass:[ImageAndTextCell class]])
 	{
 		// Determines which Image to display depending on parent or child object
-		NSImage *image = [[NSImage imageNamed:[(SPUserMO *)[item  representedObject] parent] ? NSImageNameNetwork : NSImageNameUser] retain];
+		NSImage *image = [NSImage imageNamed:[(SPUserMO *)[item  representedObject] parent] ? NSImageNameNetwork : NSImageNameUser];
 
 		[image setSize:(NSSize){16, 16}];
 		[(ImageAndTextCell *)cell setImage:image];
-		[image release];
 	}
 }
 
@@ -1824,21 +1814,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)dealloc
 {	
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    SPClear(managedObjectContext);
-    SPClear(persistentStoreCoordinator);
-    SPClear(managedObjectModel);
-	SPClear(privColumnToGrantMap);
-	SPClear(connection);
-	SPClear(privsSupportedByServer);
-	SPClear(schemas);
-	SPClear(availablePrivs);
-	SPClear(grantedSchemaPrivs);
-	SPClear(treeSortDescriptor);
-	SPClear(treeSortDescriptors);
-	SPClear(serverSupport);
-	
-	[super dealloc];
 }
 
 @end

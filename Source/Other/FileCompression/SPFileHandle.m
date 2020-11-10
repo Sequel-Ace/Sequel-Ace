@@ -64,7 +64,7 @@ struct SPRawFileHandles {
  * theFile is a FILE when compression is disabled, a gzFile when gzip compression is enabled
  * or a BZFILE when bzip2 compression is enabled.
  */
-- (id)initWithFile:(FILE *)theFile fromPath:(const char *)path mode:(int)mode
+- (instancetype)initWithFile:(FILE *)theFile fromPath:(const char *)path mode:(int)mode
 {
 	if ((self = [super init])) {
 		dataWritten = NO;
@@ -196,7 +196,7 @@ struct SPRawFileHandles {
 	if (file == NULL) return nil;
 
 	// Return an autoreleased file handle
-	return [[[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode] autorelease];
+	return [[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode];
 }
 
 #pragma mark -
@@ -419,8 +419,6 @@ struct SPRawFileHandles {
 			}
 
 			pthread_mutex_unlock(&bufferLock);
-
-			[dataToBeWritten release];
 		}
 	}
 }
@@ -462,16 +460,12 @@ struct SPRawFileHandles {
 - (void)dealloc
 {
 	[self closeFile];
-	
-	if (processingThread) SPClear(processingThread);
-	
+
 	free(wrappedFile);
 	free(wrappedFilePath);
-	SPClear(buffer);
 	
 	pthread_mutex_destroy(&bufferLock);
 	
-	[super dealloc];
 }
 
 @end

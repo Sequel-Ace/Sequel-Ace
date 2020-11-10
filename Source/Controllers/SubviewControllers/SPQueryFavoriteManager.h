@@ -53,7 +53,7 @@
 	BOOL isTableCellEditing;
 }
 
-- (id)initWithDelegate:(id)managerDelegate;
+- (instancetype)initWithDelegate:(id)managerDelegate;
 
 // Accessors
 - (NSMutableArray *)queryFavoritesForFileURL:(NSURL *)fileURL;

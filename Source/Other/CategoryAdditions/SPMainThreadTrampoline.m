@@ -41,7 +41,7 @@
 {
 
 	// Return an autoreleased trampoline object
-	return [[[SPMainThreadTrampoline alloc] initWithObject:self] autorelease];
+	return [[SPMainThreadTrampoline alloc] initWithObject:self];
 }
 
 /**
@@ -60,7 +60,7 @@
  * The master initiliasation - the category implementation calls this
  * with the requested object.
  */
-- (id)initWithObject:(id)theObject
+- (instancetype)initWithObject:(id)theObject
 {
 	if ((self = [super init])) {
 		trampolineObject = theObject;
@@ -81,9 +81,7 @@
 
 	// Retain the arguments and object for the call for safety
 	[theInvocation retainArguments];
-	[trampolineObject retain];
 	[theInvocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:trampolineObject waitUntilDone:YES];
-	[trampolineObject release];
 }
 
 /**
@@ -119,9 +117,7 @@
 	if (![trampolineObject respondsToSelector:theSelector]) [self doesNotRecognizeSelector:theSelector];
 
 	// Retain the object while performing calls on it
-	[trampolineObject retain];
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:nil waitUntilDone:YES];
-	[trampolineObject release];
 
 	return nil;
 }
@@ -137,11 +133,7 @@
 	if (![trampolineObject respondsToSelector:theSelector]) [self doesNotRecognizeSelector:theSelector];
 
 	// Retain the trampolined object, and the argument object, while performing calls
-	[trampolineObject retain];
-	[theObject retain];
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:theObject waitUntilDone:YES];
-	[theObject release];
-	[trampolineObject release];
 
 	return nil;
 }

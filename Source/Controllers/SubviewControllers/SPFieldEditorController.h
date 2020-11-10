@@ -186,32 +186,32 @@
 	NSDictionary *editedFieldInfo;
 }
 
-@property(readwrite, retain) NSDictionary *editedFieldInfo;
+@property(readwrite, strong) NSDictionary *editedFieldInfo;
 
 //don't blame me for nonatomic,assign. That's how the previous setters worked :)
 
 /**
  * The maximum text length of the underlying table field for input validation.
  */
-@property(nonatomic,assign) unsigned long long textMaxLength;
+@property(nonatomic) unsigned long long textMaxLength;
 
 /**
  * The field type of the underlying table field for input validation.
  * The field type will be used for dispatching which sheet will be shown.
  * If type == BIT the bitSheet will be used otherwise the editSheet.
  */
-@property(nonatomic,assign) NSString *fieldType;
+@property(nonatomic, copy) NSString *fieldType;
 
 /**
  * The field encoding of the underlying table field for displaying it to the user.
  */
-@property(nonatomic,assign) NSString *fieldEncoding;
+@property(nonatomic, copy) NSString *fieldEncoding;
 
 /**
  * Whether underlying table field allows NULL for several validations.
  * If allowNULL is YES NULL value is allowed for the underlying table field.
  */
-@property(nonatomic,assign) BOOL allowNULL;
+@property(nonatomic) BOOL allowNULL;
 
 - (IBAction)closeEditSheet:(id)sender;
 - (IBAction)openEditSheet:(id)sender;

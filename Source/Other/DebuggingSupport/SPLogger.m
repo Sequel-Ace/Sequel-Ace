@@ -85,12 +85,12 @@ int _isSPLeaksLog(const struct direct *entry);
 + (id)allocWithZone:(NSZone *)zone
 {    
     @synchronized(self) {
-		return [[self logger] retain];
+		return [self logger];
     }
 	return nil;
 }
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		initializedSuccessfully = YES;
@@ -128,8 +128,6 @@ int _isSPLeaksLog(const struct direct *entry);
 							   logString] dataUsingEncoding:NSUTF8StringEncoding]];
 	
 	[logFileHandle synchronizeFile];
-
-	[logString release];
 }
 
 - (void)dumpLeaks
@@ -166,9 +164,7 @@ int _isSPLeaksLog(const struct direct *entry);
 					printf("Unable to remove Sequel Ace leaks log '%s'\n", files[i]->d_name);
 				}
 			}
-			
-			free(&files);
-			
+						
 			if (hdir) {
 				snprintf(fpath2, sizeof(fpath2), "%s/Desktop", pw->pw_dir);
 				
@@ -239,7 +235,6 @@ int _isSPLeaksLog(const struct direct *entry);
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Could not open log file for writing; no debug log will be generated!", "") callback:nil];
 		} 
 		else {
-			[logFileHandle retain];
 			[logFileHandle seekToEndOfFile];
 			
 			NSString *bundleName = [fileManager displayNameAtPath:[[NSBundle mainBundle] bundlePath]];

@@ -41,12 +41,12 @@
 	return [[QKQueryOrderBy alloc] initWithField:field descending:descending];
 }
 
-- (id)init
+- (instancetype)init
 {
 	return [self initWithField:nil descending:NO];
 }
 
-- (id)initWithField:(NSString *)field descending:(BOOL)descending
+- (instancetype)initWithField:(NSString *)field descending:(BOOL)descending
 {
 	if ((self = [super init])) {
 		[self setOrderByField:field];

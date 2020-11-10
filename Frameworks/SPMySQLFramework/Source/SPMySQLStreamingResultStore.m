@@ -83,7 +83,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 	free(aRow);
 }
 
-
 #pragma mark - Setup and teardown
 
 /**
@@ -275,9 +274,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	// Destroy the linked list lock
 	pthread_mutex_destroy(&dataLock);
-
-	// Call dealloc on super to clean up everything else, and to throw an exception if
-	// the parent connection hasn't been cleaned up correctly.
 }
 
 #pragma mark - Result set information
@@ -344,7 +340,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 		[NSException raise:NSRangeException format:@"Requested storage index (row %llu, col %llu) beyond bounds (%llu, %llu)", (unsigned long long)rowIndex, (unsigned long long)columnIndex, (unsigned long long)numberOfRows, (unsigned long long)numberOfFields];
 	}
 
-	id cellData = nil;
+	id __autoreleasing cellData = nil;
 	char *rawCellDataStart;
 	SPMySQLStreamingResultStoreRowData *rowData = dataStorage[rowIndex];
 

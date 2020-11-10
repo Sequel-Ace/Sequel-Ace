@@ -226,7 +226,6 @@ enum {
 
 @end
 
-
 @interface NSObject (TabBarControlDelegateMethods)
 
 //Standard NSTabView methods

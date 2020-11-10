@@ -71,7 +71,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"DatabaseProcessList"])) {
 		
@@ -110,7 +110,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		[[column dataCell] setFont:tableFont];
 
 		// Add a formatter for linebreak display
-		[[column dataCell] setFormatter:[[SPDataCellFormatter new] autorelease]];
+		[[column dataCell] setFormatter:[SPDataCellFormatter new]];
 	
 		// Also, if available restore the table's column widths
 		NSNumber *columnWidth = [[prefs objectForKey:SPProcessListTableColumnWidths] objectForKey:[[column headerCell] stringValue]];
@@ -237,10 +237,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
     [panel setNameFieldStringValue:@"ServerProcesses"];
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            if ([processesFiltered count] > 0) {
+            if ([self->processesFiltered count] > 0) {
                 NSMutableString *processesString = [NSMutableString stringWithFormat:@"# MySQL server processes for %@\n\n", [[SPAppDelegate frontDocument] host]];
                 
-                for (NSDictionary *process in processesFiltered)
+                for (NSDictionary *process in self->processesFiltered)
                 {
                     NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@",
                                            [process objectForKey:@"Id"],
@@ -285,7 +285,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
 	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
@@ -294,7 +294,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[alert beginSheetModalForWindow:[self window]
 					  modalDelegate:self
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:[userInfo retain]]; //keep in mind contextInfo is a void * and not an id => no memory management here
+						contextInfo:(__bridge void * _Nullable)(userInfo)];
 }
 
 /**
@@ -320,7 +320,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
 	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
@@ -329,7 +329,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[alert beginSheetModalForWindow:[self window]
 					  modalDelegate:self
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:[userInfo retain]]; //keep in mind contextInfo is a void * and not an id => no memory management here
+						contextInfo:(__bridge void * _Nullable)(userInfo)];
 }
 
 /**
@@ -418,7 +418,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		if (returnCode == NSAlertDefaultReturn) [self _startAutoRefreshTimerWithInterval:[customIntervalTextField integerValue]];
 	}
 	else {
-		NSDictionary *userInfo = [(NSDictionary *)contextInfo autorelease]; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
+		NSDictionary *userInfo = (__bridge NSDictionary *)contextInfo; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
 		if (returnCode == NSAlertDefaultReturn) {
 			long long processId = [[userInfo objectForKey:SPKillIdKey] longLongValue];
 			
@@ -515,8 +515,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)windowWillClose:(NSNotification *)notification
 {	
 	// If the filtered array is allocated and it's not a reference to the processes array get rid of it
-	if ((processesFiltered) && (processesFiltered != processes)) {
-		SPClear(processesFiltered);
+	if (processesFiltered && processesFiltered != processes) {
+		processesFiltered = nil;
 	}
 	
 	// Kill the auto refresh timer if running
@@ -559,7 +559,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (void)_startAutoRefreshTimer
 {		
-	autoRefreshTimer = [[NSTimer scheduledTimerWithTimeInterval:[prefs doubleForKey:SPProcessListAutoRrefreshInterval] target:self selector:@selector(_fireAutoRefresh:) userInfo:nil repeats:YES] retain];
+	autoRefreshTimer = [NSTimer scheduledTimerWithTimeInterval:[prefs doubleForKey:SPProcessListAutoRrefreshInterval] target:self selector:@selector(_fireAutoRefresh:) userInfo:nil repeats:YES];
 }
 
 /**
@@ -570,7 +570,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// If the auto refresh timer is running, kill it
 	if (autoRefreshTimer && [autoRefreshTimer isValid]) {		
 		[autoRefreshTimer invalidate];
-		SPClear(autoRefreshTimer);
+		
 	}
 }
 
@@ -669,8 +669,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 				// interfere with the NSTableView's reload cycle and there is no way
 				// to know when it starts/ends. We only know it will happen on the
 				// main thread, so we have to interlock with that.
-				[[processes onMainThread] addObject:[[rowsFixed copy] autorelease]];
-				[rowsFixed release];
+				[[processes onMainThread] addObject:[rowsFixed copy]];
 			}
 		}
 
@@ -732,14 +731,13 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	// If the filtered array is allocated and its not a reference to the processes array,
 	// relase it to prevent memory leaks upon the next allocation.
-	if ((processesFiltered) && (processesFiltered != processes)) {
-		SPClear(processesFiltered);
+	if (processesFiltered && processesFiltered != processes) {
+		processesFiltered = nil;
 	}
 	
 	processesFiltered = [[NSMutableArray alloc] init];
 	
 	if ([filterString length] == 0) {
-		[processesFiltered release];
 		processesFiltered = processes;
 		
 		[saveProcessesButton setEnabled:YES];
@@ -871,11 +869,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 
 	[self _removePreferenceObservers];
 
-	SPClear(processes);
-	
-	if (autoRefreshTimer) SPClear(autoRefreshTimer);
-	
-	[super dealloc];
 }
 
 @end

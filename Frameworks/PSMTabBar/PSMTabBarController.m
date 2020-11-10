@@ -12,6 +12,7 @@
 #import "PSMTabStyle.h"
 #import "NSString_AITruncation.h"
 #import "PSMTabDragAssistant.h"
+#import "PSMRolloverButton.h"
 
 #define MAX_OVERFLOW_MENUITEM_TITLE_LENGTH	60
 
@@ -31,7 +32,7 @@
     @returns    A newly created PSMTabBarController instance.
 */
 
-- (id)initWithTabBarControl:(PSMTabBarControl *)control
+- (instancetype)initWithTabBarControl:(PSMTabBarControl *)control
 {
     if ( (self = [super init]) ) {
         _control = control;
@@ -41,14 +42,6 @@
 		_addButtonRect = NSZeroRect;
     }
     return self;
-}
-
-- (void)dealloc
-{
-    [_cellTrackingRects release];
-    [_closeButtonTrackingRects release];
-    [_cellFrames release];
-    [super dealloc];
 }
 
 /*!
@@ -211,7 +204,7 @@
     
     //set up the rect from the add tab button
     _addButtonRect = [_control genericCellRect];
-    _addButtonRect.size = [[_control addTabButton] frame].size;
+    _addButtonRect.size = [_control.addTabButton frame].size;
     if ([_control orientation] == PSMTabBarHorizontalOrientation) {
         _addButtonRect.origin.y = MARGIN_Y;
 		_addButtonRect.origin.x += [[cellWidths valueForKeyPath:@"@sum.floatValue"] floatValue] + MARGIN_X;
@@ -528,8 +521,6 @@ static NSInteger potentialMinimumForArray(NSArray *array, NSInteger minimum)
     PSMTabBarCell *cell;
     NSTabViewItem *selectedTabViewItem = [[_control tabView] selectedTabViewItem];
     NSMenuItem *menuItem;
-    
-	[_overflowMenu release];
 	_overflowMenu = nil;
     
     for (i = 0; i < cellCount; i++) {

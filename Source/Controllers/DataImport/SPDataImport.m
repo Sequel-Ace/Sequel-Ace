@@ -58,11 +58,10 @@
 
 - (void)_startBackgroundImportTaskForFilename:(NSString *)filename;
 - (void)_importBackgroundProcess:(NSDictionary *)userInfo;
-- (void)_resetFieldMappingGlobals;
 - (void)_closeAndStopProgressSheet;
 - (NSString *)_getLineEndingForFile:(NSString *)filePath;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 
@@ -73,11 +72,10 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		
-		nibObjectsToRelease = [[NSMutableArray alloc] init];
 		geometryFields = [[NSMutableArray alloc] init];
 		geometryFieldsMapIndex = [[NSMutableIndexSet alloc] init];
 		bitFields = [[NSMutableArray alloc] init];
@@ -119,8 +117,6 @@
 	NSArray *importAccessoryTopLevelObjects = nil;
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ImportAccessory" bundle:[NSBundle mainBundle]];
 	[nibLoader instantiateWithOwner:self topLevelObjects:&importAccessoryTopLevelObjects];
-	[nibObjectsToRelease addObjectsFromArray:importAccessoryTopLevelObjects];
-	[nibLoader release];
 
 	// Set the accessory view's tabview to tabless (left in for easier editing in IB)
 	[importTabView setTabViewType:NSNoTabsNoBorder];
@@ -267,9 +263,8 @@
 	[importFieldNamesSwitch setState:[[prefs objectForKey:SPCSVImportFirstLineIsHeader] boolValue]];
 
 	[openPanel setAccessoryView:importView];
-	//on os x 10.11+ the accessory view will be hidden by default and has to be made visible
-	if([openPanel respondsToSelector:@selector(setAccessoryViewDisclosed:)]) {
-		[openPanel setAccessoryViewDisclosed:YES];
+	if ([openPanel respondsToSelector:@selector(isAccessoryViewDisclosed)]) {
+		openPanel.accessoryViewDisclosed = YES;
 	}
 	[openPanel setDelegate:self];
 	
@@ -294,8 +289,8 @@
 		[openPanel makeFirstResponder:nil];
 
 		// Save values to preferences
-		[prefs setObject:[[openPanel directoryURL] path] forKey:@"exportPath"];
-		[prefs setObject:[[importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
+		[self->prefs setObject:[[openPanel directoryURL] path] forKey:@"exportPath"];
+		[self->prefs setObject:[[self->importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
 
 		// Close NSOpenPanel sheet
 		[openPanel orderOut:self];
@@ -304,15 +299,15 @@
 		if (returnCode != NSModalResponseOK) return;
 
 		// Reset progress cancelled from any previous runs
-		progressCancelled = NO;
+		self->progressCancelled = NO;
 
-		if (lastFilename) SPClear(lastFilename);
+		
 
-		lastFilename = [[NSString stringWithString:[[openPanel URL] path]] retain];
+		self->lastFilename = [NSString stringWithString:[[openPanel URL] path]];
 
-		NSString *importFileName = [NSString stringWithString:lastFilename];
+		NSString *importFileName = [NSString stringWithString:self->lastFilename];
 
-		if (lastFilename == nil || ![lastFilename length]) {
+		if (self->lastFilename == nil || ![self->lastFilename length]) {
 			NSBeep();
 			return;
 		}
@@ -320,15 +315,15 @@
 		if (importFileName == nil) return;
 		
 		// Check to see if current connection has existing tables, if so warn
-		if([[tablesListInstance tables] count] > 1 && [[[importFormatPopup selectedItem] title] isEqualToString:@"SQL"]){
+		if([[self->tablesListInstance tables] count] > 1 && [[[self->importFormatPopup selectedItem] title] isEqualToString:@"SQL"]){
 			SPBeginAlertSheet(NSLocalizedString(@"The current database already has existing tables, importing may overwrite data. Are you sure you want to continue?", @"title of warning when trying to import data when tables already exist"),
 							  NSLocalizedString(@"Yes, continue anyway", @"Yes, continue anyway"),	// Main button
 							  NSLocalizedString(@"Cancel import", @"Cancel import"),	// Alternate button
 							  nil,	// Other button
-							  [tableDocumentInstance parentWindow],	// Window to attach to
+							  [self->tableDocumentInstance parentWindow],	// Window to attach to
 							  self,	// Modal delegate
 							  @selector(importOverwriteWarningSheetDidEnd:returnCode:contextInfo:),	// Did end selector
-							  importFileName,	// Contextual info for selectors
+							  (__bridge void *)(importFileName),	// Contextual info for selectors
 							  NSLocalizedString(@"The chosen import file can potentially overwrite existing data. You should use caution when proceeding with the import.", @"message of warning when trying to import data when tables already exist."));
 
 			return;
@@ -382,8 +377,7 @@
 	NSTimeInterval interval;
 	startDate = [NSDate date];
 #endif
-	
-	NSAutoreleasePool *importPool;
+
 	SPFileHandle *sqlFileHandle;
 	NSMutableData *sqlDataBuffer;
 	const unsigned char *sqlDataBufferBytes;
@@ -427,21 +421,16 @@
 
 	SPMainQSync(^{
 		// Reset progress interface
-		[errorsView setString:@""];
-		[singleProgressTitle setStringValue:NSLocalizedString(@"Importing SQL", @"text showing that the application is importing SQL")];
-		[singleProgressText setStringValue:NSLocalizedString(@"Reading...", @"text showing that app is reading dump")];
-		[singleProgressBar setIndeterminate:NO];
-		[singleProgressBar setMaxValue:fileTotalLength];
-		[singleProgressBar setUsesThreadedAnimation:YES];
-		[singleProgressBar startAnimation:self];
+		[self->errorsView setString:@""];
+		[self->singleProgressTitle setStringValue:NSLocalizedString(@"Importing SQL", @"text showing that the application is importing SQL")];
+		[self->singleProgressText setStringValue:NSLocalizedString(@"Reading...", @"text showing that app is reading dump")];
+		[self->singleProgressBar setIndeterminate:NO];
+		[self->singleProgressBar setMaxValue:fileTotalLength];
+		[self->singleProgressBar setUsesThreadedAnimation:YES];
+		[self->singleProgressBar startAnimation:self];
 		
 		// Open the progress sheet
-		[NSApp beginSheet:singleProgressSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-		    modalDelegate:nil
-		   didEndSelector:NULL
-		      contextInfo:NULL];
-		[singleProgressSheet makeKeyWindow];
+		[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
@@ -480,7 +469,6 @@
 	[mySQLConnection updateServerStatusBits:&serverStatus];
 	[sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
 	sqlDataBuffer = [[NSMutableData alloc] init];
-	importPool = [[NSAutoreleasePool alloc] init];
 	while (1) {
 		if (progressCancelled) break;
 
@@ -503,9 +491,6 @@
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)", @"SQL read error, including detail from system"), (long)queriesPerformed, [exception reason]]
 			);
-			[sqlParser release];
-			[sqlDataBuffer release];
-			[importPool drain];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 			return;
@@ -559,9 +544,6 @@
 						[tableDocumentInstance parentWindow],
 						[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed.", @"SQL encoding read error"), displayEncoding, (long)queriesPerformed]
 					);
-					[sqlParser release];
-					[sqlDataBuffer release];
-					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 					return;
@@ -569,7 +551,6 @@
 
 				// Add the NSString segment to the SQL parser and release it
 				[sqlParser appendString:sqlString];
-				[sqlString release];
 
 				if (allDataRead) break;
 
@@ -593,9 +574,6 @@
 			[self _closeAndStopProgressSheet];
 			[errors appendString:NSLocalizedString(@"The connection to the server was lost during the import.  The import is only partially complete.", @"Connection lost during import error message")];
 			[self showErrorSheetWithMessage:errors];
-			[sqlParser release];
-			[sqlDataBuffer release];
-			[importPool drain];
 
 			return;
 		}
@@ -637,7 +615,7 @@
 							                                           alternateButton:NSLocalizedString(@"Cancel Import", @"sql import : charset error alert : cancel button")
 							                                               otherButton:nil
 							                                 informativeTextWithFormat:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
-							[charsetErrorAlert setAlertStyle:NSWarningAlertStyle];
+							[charsetErrorAlert setAlertStyle:NSAlertStyleWarning];
 							charsetErrorSheetReturnCode = [charsetErrorAlert runModal];
 						});
 
@@ -663,8 +641,8 @@
 						                                         defaultButton:NSLocalizedString(@"Continue", @"continue button")
 						                                       alternateButton:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")
 						                                           otherButton:NSLocalizedString(@"Stop", @"stop button")
-						                             informativeTextWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
-						[sqlErrorAlert setAlertStyle:NSWarningAlertStyle];
+						                             informativeTextWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]];
+						[sqlErrorAlert setAlertStyle:NSAlertStyleWarning];
 						sqlImportErrorSheetReturnCode = [sqlErrorAlert runModal];
 					});
 
@@ -705,10 +683,6 @@
 
 		// If all the data has been read, break out of the processing loop
 		if (allDataRead) break;
-
-		// Reset the autorelease pool
-		[importPool drain];
-		importPool = [[NSAutoreleasePool alloc] init];
 	}
 
 	// If any text remains in the SQL parser, it's an unterminated query - execute it.
@@ -735,9 +709,6 @@
 	if (sqlModeToRestore) {
 		[mySQLConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
 	}
-	[sqlParser release];
-	[sqlDataBuffer release];
-	[importPool drain];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 
@@ -768,7 +739,6 @@
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 
 #ifdef DEBUG
 	endDate = [NSDate date];
@@ -796,7 +766,6 @@
  */
 - (void)importCSVFile:(NSString *)filename
 {
-	NSAutoreleasePool *importPool;
 	SPFileHandle *csvFileHandle;
 	NSMutableData *csvDataBuffer;
 	const unsigned char *csvDataBufferBytes;
@@ -834,7 +803,6 @@
 	[nullableNumericFields removeAllObjects];
 	[nullableNumericFieldsMapIndex removeAllIndexes];
 
-
 	// Open a filehandle for the CSV file
 	csvFileHandle = [SPFileHandle fileHandleForReadingAtPath:filename];
 	
@@ -856,32 +824,27 @@
 
 	// Reset progress interface
 	SPMainQSync(^{
-		[errorsView setString:@""];
-		[singleProgressTitle setStringValue:NSLocalizedString(@"Importing CSV", @"text showing that the application is importing CSV")];
-		[singleProgressText setStringValue:NSLocalizedString(@"Reading...", @"text showing that app is reading dump")];
-		[singleProgressBar setIndeterminate:NO];
-		[singleProgressBar setUsesThreadedAnimation:YES];
-		[singleProgressBar startAnimation:self];
+		[self->errorsView setString:@""];
+		[self->singleProgressTitle setStringValue:NSLocalizedString(@"Importing CSV", @"text showing that the application is importing CSV")];
+		[self->singleProgressText setStringValue:NSLocalizedString(@"Reading...", @"text showing that app is reading dump")];
+		[self->singleProgressBar setIndeterminate:NO];
+		[self->singleProgressBar setUsesThreadedAnimation:YES];
+		[self->singleProgressBar startAnimation:self];
 		
 		// Open the progress sheet
-		[NSApp beginSheet:singleProgressSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-		    modalDelegate:nil
-		   didEndSelector:NULL
-		      contextInfo:NULL];
-		[singleProgressSheet makeKeyWindow];
+		[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
 
 	SPMainQSync(^{
 		// Determine the file encoding.  The first item in the encoding menu is "Autodetect";
-		if (![importEncodingPopup indexOfSelectedItem]) {
+		if (![self->importEncodingPopup indexOfSelectedItem]) {
 			csvEncoding = 0;
 		}
 		// Otherwise, get the encoding to use from the menu
 		else {
-			csvEncoding = [importEncodingPopup selectedTag];
+			csvEncoding = [self->importEncodingPopup selectedTag];
 		}
 	});
 	// if "Autodetect" is selected, attempt to detect the encoding of the file.
@@ -898,27 +861,26 @@
 
 	SPMainQSync(^{
 		// Store settings in prefs
-		[prefs setObject:[importFieldsEnclosedField stringValue] forKey:SPCSVImportFieldEnclosedBy];
-		[prefs setObject:[importFieldsEscapedField stringValue] forKey:SPCSVImportFieldEscapeCharacter];
-		[prefs setObject:[importLinesTerminatedField stringValue] forKey:SPCSVImportLineTerminator];
-		[prefs setObject:[importFieldsTerminatedField stringValue] forKey:SPCSVImportFieldTerminator];
-		[prefs setBool:[importFieldNamesSwitch state] forKey:SPCSVImportFirstLineIsHeader];
+		[self->prefs setObject:[self->importFieldsEnclosedField stringValue] forKey:SPCSVImportFieldEnclosedBy];
+		[self->prefs setObject:[self->importFieldsEscapedField stringValue] forKey:SPCSVImportFieldEscapeCharacter];
+		[self->prefs setObject:[self->importLinesTerminatedField stringValue] forKey:SPCSVImportLineTerminator];
+		[self->prefs setObject:[self->importFieldsTerminatedField stringValue] forKey:SPCSVImportFieldTerminator];
+		[self->prefs   setBool:[self->importFieldNamesSwitch state] forKey:SPCSVImportFirstLineIsHeader];
 		
 		// Take CSV import setting from accessory view
-		[csvParser setFieldTerminatorString:[importFieldsTerminatedField stringValue] convertDisplayStrings:YES];
-		[csvParser setLineTerminatorString:[importLinesTerminatedField stringValue] convertDisplayStrings:YES];
-		[csvParser setFieldQuoteString:[importFieldsEnclosedField stringValue] convertDisplayStrings:YES];
-		if ([[importFieldsEscapedField stringValue] isEqualToString:@"\\ or \""]) {
+		[csvParser setFieldTerminatorString:[self->importFieldsTerminatedField stringValue] convertDisplayStrings:YES];
+		[csvParser  setLineTerminatorString:[self->importLinesTerminatedField stringValue] convertDisplayStrings:YES];
+		[csvParser      setFieldQuoteString:[self->importFieldsEnclosedField stringValue] convertDisplayStrings:YES];
+		if ([[self->importFieldsEscapedField stringValue] isEqualToString:@"\\ or \""]) {
 			[csvParser setEscapeString:@"\\" convertDisplayStrings:NO];
 		} else {
-			[csvParser setEscapeString:[importFieldsEscapedField stringValue] convertDisplayStrings:YES];
+			[csvParser setEscapeString:[self->importFieldsEscapedField stringValue] convertDisplayStrings:YES];
 			[csvParser setEscapeStringsAreMatchedStrictly:YES];
 		}
-		[csvParser setNullReplacementString:[prefs objectForKey:SPNullValue]];
+		[csvParser setNullReplacementString:[self->prefs objectForKey:SPNullValue]];
 	});
 
 	csvDataBuffer = [[NSMutableData alloc] init];
-	importPool = [[NSAutoreleasePool alloc] init];
 	while (1) {
 		if (progressCancelled) break;
 
@@ -934,12 +896,6 @@
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)", @"CSV read error, including detail string from system"), (long)rowsImported, [exception reason]]
 			);
-			[csvParser release];
-			[csvDataBuffer release];
-			[parsedRows release];
-			[parsePositions release];
-			[self _resetFieldMappingGlobals];
-			[importPool drain];
 			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 				[fileManager removeItemAtPath:filename error:nil];
@@ -975,23 +931,17 @@
 					[self _closeAndStopProgressSheet];
 					SPMainQSync(^{
 						NSString *displayEncoding;
-						if (![importEncodingPopup indexOfSelectedItem]) {
-							displayEncoding = [NSString stringWithFormat:@"%@ - %@", [importEncodingPopup titleOfSelectedItem], [NSString localizedNameOfStringEncoding:csvEncoding]];
+						if (![self->importEncodingPopup indexOfSelectedItem]) {
+							displayEncoding = [NSString stringWithFormat:@"%@ - %@", [self->importEncodingPopup titleOfSelectedItem], [NSString localizedNameOfStringEncoding:csvEncoding]];
 						} else {
 							displayEncoding = [NSString localizedNameOfStringEncoding:csvEncoding];
 						}
 						SPOnewayAlertSheet(
 							SP_FILE_READ_ERROR_STRING,
-							[tableDocumentInstance parentWindow],
+							[self->tableDocumentInstance parentWindow],
 							[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported.", @"CSV encoding read error"), displayEncoding, (long)rowsImported]
 						);
 					});
-					[csvParser release];
-					[csvDataBuffer release];
-					[parsedRows release];
-					[parsePositions release];
-					[self _resetFieldMappingGlobals];
-					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -1000,7 +950,6 @@
 
 				// Add the NSString segment to the CSV parser and release it
 				[csvParser appendString:csvString];
-				[csvString release];
 
 				if (allDataRead) break;
 
@@ -1033,12 +982,6 @@
 			{
 				[self _closeAndStopProgressSheet];
 				if (![self buildFieldMappingArrayWithData:parsedRows isPreview:!allDataRead ofSoureFile:filename]) {
-					[csvParser release];
-					[csvDataBuffer release];
-					[parsedRows release];
-					[parsePositions release];
-					[self _resetFieldMappingGlobals];
-					[importPool drain];
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -1047,15 +990,10 @@
 
 				// Reset progress interface and open the progress sheet
 				SPMainQSync(^{
-					[singleProgressBar setMaxValue:fileTotalLength];
-					[singleProgressBar setIndeterminate:NO];
-					[singleProgressBar startAnimation:self];
-					[NSApp beginSheet:singleProgressSheet
-					   modalForWindow:[tableDocumentInstance parentWindow]
-					    modalDelegate:nil
-					   didEndSelector:NULL
-					      contextInfo:NULL];
-					[singleProgressSheet makeKeyWindow];
+					[self->singleProgressBar setMaxValue:fileTotalLength];
+					[self->singleProgressBar setIndeterminate:NO];
+					[self->singleProgressBar startAnimation:self];
+					[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 				});
 
 				// Set up index sets for use during row enumeration
@@ -1110,12 +1048,6 @@
 			// If not, check the connection if appropriate and then clean up and exit if appropriate.
 			if (![mySQLConnection isConnected] && ([mySQLConnection userTriggeredDisconnect] || ![mySQLConnection checkConnection])) {
 				[self _closeAndStopProgressSheet];
-				[csvParser release];
-				[csvDataBuffer release];
-				[parsedRows release];
-				[parsePositions release];
-				[self _resetFieldMappingGlobals];
-				[importPool drain];
 				[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 				if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 					[fileManager removeItemAtPath:filename error:nil];
@@ -1143,7 +1075,6 @@
 						[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 					else
 						[mySQLConnection queryString:query];
-					[query release];
 				} else {
 					if(insertRemainingRowsAfterUpdate) {
 						[insertRemainingBaseString setString:@"INSERT INTO "];
@@ -1169,7 +1100,6 @@
 							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 						else
 							[mySQLConnection queryString:query];
-						[query release];
 
 						if ([mySQLConnection queryErrored]) {
 							[[tableDocumentInstance onMainThread] showConsole:nil];
@@ -1191,7 +1121,6 @@
 								[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 							else
 								[mySQLConnection queryString:query];
-							[query release];
 
 							if ([mySQLConnection queryErrored]) {
 								[errors appendFormat:
@@ -1205,11 +1134,11 @@
 #warning Updating the UI for every single row is likely a performance killer (even without synchronization).
 						SPMainQSync(^{
 							if (fileIsCompressed) {
-								[singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
-								[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]]]];
+								[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
+								[self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]]]];
 							} else {
-								[singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:i] doubleValue]];
-								[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"CSV import progress text"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]], [NSString stringForByteSize:fileTotalLength]]];
+								[self->singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:i] doubleValue]];
+								[self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"CSV import progress text"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]], [NSString stringForByteSize:fileTotalLength]]];
 							}
 						});
 					}
@@ -1231,7 +1160,6 @@
 							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
 						else
 							[mySQLConnection queryString:query];
-						[query release];
 
 						if ([mySQLConnection queryErrored]) {
 							[errors appendFormat:
@@ -1245,11 +1173,11 @@
 						rowsImported++;
 						SPMainQSync(^{
 							if (fileIsCompressed) {
-								[singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
-								[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]]]];
+								[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
+								[self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]]]];
 							} else {
-								[singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:i] doubleValue]];
-								[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]], [NSString stringForByteSize:fileTotalLength]]];
+								[self->singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:i] doubleValue]];
+								[self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"), [NSString stringForByteSize:[[parsePositions objectAtIndex:i] longValue]], [NSString stringForByteSize:fileTotalLength]]];
 							}
 						});
 					}
@@ -1258,11 +1186,11 @@
 #warning duplicate code (see above)
 					SPMainQSync(^{
 						if (fileIsCompressed) {
-							[singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
-							[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSString stringForByteSize:[[parsePositions objectAtIndex:csvRowsThisQuery-1] longValue]]]];
+							[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
+							[self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSString stringForByteSize:[[parsePositions objectAtIndex:csvRowsThisQuery-1] longValue]]]];
 						} else {
-							[singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:csvRowsThisQuery-1] doubleValue]];
-							[singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"), [NSString stringForByteSize:[[parsePositions objectAtIndex:csvRowsThisQuery-1] longValue]], [NSString stringForByteSize:fileTotalLength]]];
+							[self->singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:csvRowsThisQuery-1] doubleValue]];
+							[self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"), [NSString stringForByteSize:[[parsePositions objectAtIndex:csvRowsThisQuery-1] longValue]], [NSString stringForByteSize:fileTotalLength]]];
 						}
 					});
 				}
@@ -1275,19 +1203,9 @@
 		
 		// If all the data has been read, break out of the processing loop
 		if (allDataRead) break;
-
-		// Reset the autorelease pool
-		[importPool drain];
-		importPool = [[NSAutoreleasePool alloc] init];
 	}
 
 	// Clean up
-	[csvParser release];
-	[csvDataBuffer release];
-	[parsedRows release];
-	[parsePositions release];
-	[self _resetFieldMappingGlobals];
-	[importPool drain];
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 		[fileManager removeItemAtPath:filename error:nil];
@@ -1307,29 +1225,28 @@
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 
 	SPMainQSync(^{
 
-		if(importIntoNewTable) {
+		if(self->importIntoNewTable) {
 
 			// Select the new table
 			
 			// Update current database tables
-			[tablesListInstance updateTables:self];
+			[self->tablesListInstance updateTables:self];
 			
 			// Re-query the structure of all databases in the background
-			[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
+			[[self->tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 			
 			// Select the new table
-			[tablesListInstance selectItemWithName:selectedTableTarget];
+			[self->tablesListInstance selectItemWithName:self->selectedTableTarget];
 			
 		} else {
 			
 			// If import was done into a new table or the table selected for import is also selected in the content view,
 			// update the content view - on the main thread to avoid crashes.
-			if ([tablesListInstance tableName] && [selectedTableTarget isEqualToString:[tablesListInstance tableName]]) {
-				[tableDocumentInstance setContentRequiresReload:YES];
+			if ([self->tablesListInstance tableName] && [self->selectedTableTarget isEqualToString:[self->tablesListInstance tableName]]) {
+				[self->tableDocumentInstance setContentRequiresReload:YES];
 			}
 			
 		}
@@ -1371,7 +1288,6 @@
 	fieldMappingImportArrayIsPreview = dataIsPreviewData;
 
 	// Set the import array
-	if (fieldMappingImportArray) [fieldMappingImportArray release];
 	fieldMappingImportArray = [[NSArray alloc] initWithArray:importData];
 	numberOfImportDataColumns = [[importData objectAtIndex:0] count];
 
@@ -1383,18 +1299,14 @@
 	dispatch_async(dispatch_get_main_queue(), ^{
 		// Init the field mapper controller
 		fieldMapperController = [[SPFieldMapperController alloc] initWithDelegate:self];
-		[fieldMapperController setConnection:mySQLConnection];
+		[fieldMapperController setConnection:self->mySQLConnection];
 		[fieldMapperController setSourcePath:filename];
-		[fieldMapperController setImportDataArray:fieldMappingImportArray hasHeader:[importFieldNamesSwitch state] isPreview:fieldMappingImportArrayIsPreview];
+		[fieldMapperController setImportDataArray:self->fieldMappingImportArray hasHeader:[self->importFieldNamesSwitch state] isPreview:self->fieldMappingImportArrayIsPreview];
 		
 		// Show field mapper sheet and set the focus to it
-		[NSApp beginSheet:[fieldMapperController window]
-		   modalForWindow:[tableDocumentInstance parentWindow]
-		    modalDelegate:self
-		   didEndSelector:@selector(fieldMapperDidEndSheet:returnCode:contextInfo:)
-		      contextInfo:NULL];
-		
-		[[fieldMapperController window] makeKeyWindow];
+		[[self->tableDocumentInstance parentWindow] beginSheet:[fieldMapperController window] completionHandler:^(NSModalResponse returnCode) {
+			self->fieldMapperSheetStatus = (returnCode) ? SPFieldMapperCompleted : SPFieldMapperCancelled;
+		}];
 	});
 
 	// Wait for field mapper sheet
@@ -1405,23 +1317,23 @@
 
 	// If the mapping was cancelled, abort the import
 	if (fieldMapperSheetStatus == SPFieldMapperCancelled) {
-		goto cleanup;
+		return success;
 	}
 
 	// Get mapping settings and preset some global variables
 	SPMainQSync(^{
-		fieldMapperOperator                 = [[NSArray arrayWithArray:[fieldMapperController fieldMapperOperator]] retain];
-		fieldMappingArray                   = [[NSArray arrayWithArray:[fieldMapperController fieldMappingArray]] retain];
-		selectedTableTarget                 = [[NSString stringWithString:[fieldMapperController selectedTableTarget]] retain];
-		selectedImportMethod                = [[NSString stringWithString:[fieldMapperController selectedImportMethod]] retain];
-		fieldMappingTableColumnNames        = [[NSArray arrayWithArray:[fieldMapperController fieldMappingTableColumnNames]] retain];
-		fieldMappingGlobalValueArray        = [[NSArray arrayWithArray:[fieldMapperController fieldMappingGlobalValueArray]] retain];
-		fieldMappingTableDefaultValues      = [[NSArray arrayWithArray:[fieldMapperController fieldMappingTableDefaultValues]] retain];
-		csvImportHeaderString               = [[NSString stringWithString:[fieldMapperController importHeaderString]] retain];
-		csvImportTailString                 = [[NSString stringWithString:[fieldMapperController onupdateString]] retain];
-		importIntoNewTable                  = [fieldMapperController importIntoNewTable];
-		fieldMappingArrayHasGlobalVariables = [fieldMapperController globalValuesInUsage];
-		insertRemainingRowsAfterUpdate      = [fieldMapperController insertRemainingRowsAfterUpdate];
+		self->fieldMapperOperator                 = [NSArray arrayWithArray:[fieldMapperController fieldMapperOperator]];
+		self->fieldMappingArray                   = [NSArray arrayWithArray:[fieldMapperController fieldMappingArray]];
+		self->selectedTableTarget                 = [NSString stringWithString:[fieldMapperController selectedTableTarget]];
+		self->selectedImportMethod                = [NSString stringWithString:[fieldMapperController selectedImportMethod]];
+		self->fieldMappingTableColumnNames        = [NSArray arrayWithArray:[fieldMapperController fieldMappingTableColumnNames]];
+		self->fieldMappingGlobalValueArray        = [NSArray arrayWithArray:[fieldMapperController fieldMappingGlobalValueArray]];
+		self->fieldMappingTableDefaultValues      = [NSArray arrayWithArray:[fieldMapperController fieldMappingTableDefaultValues]];
+		self->csvImportHeaderString               = [NSString stringWithString:[fieldMapperController importHeaderString]];
+		self->csvImportTailString                 = [NSString stringWithString:[fieldMapperController onupdateString]];
+		self->importIntoNewTable                  = [fieldMapperController importIntoNewTable];
+		self->fieldMappingArrayHasGlobalVariables = [fieldMapperController globalValuesInUsage];
+		self->insertRemainingRowsAfterUpdate      = [fieldMapperController insertRemainingRowsAfterUpdate];
 	});
 	csvImportMethodHasTail = ([csvImportTailString length] == 0) ? NO : YES;
 	importMethodIsUpdate = ([selectedImportMethod isEqualToString:@"UPDATE"]) ? YES : NO;
@@ -1434,14 +1346,13 @@
 		|| ![csvImportHeaderString length])
 	{
 		NSBeep();
-		goto cleanup;
+		return success;
 	}
 
 	// Store target table definitions
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
 	NSDictionary *targetTableDetails = [selectedTableData informationForTable:selectedTableTarget];
-	[selectedTableData release];
 
 	// Store all field names which are of typegrouping 'geometry' and 'bit', and check if
 	// numeric columns can hold NULL values to map empty strings to.
@@ -1455,26 +1366,11 @@
 	}
 
 	SPMainQSync(^{
-		[importFieldNamesSwitch setState:[fieldMapperController importFieldNamesHeader]];
-		[prefs setBool:[importFieldNamesSwitch state] forKey:SPCSVImportFirstLineIsHeader];
+		[self->importFieldNamesSwitch setState:[fieldMapperController importFieldNamesHeader]];
+		[self->prefs setBool:[self->importFieldNamesSwitch state] forKey:SPCSVImportFirstLineIsHeader];
 	});
 	success = YES;
-	
-cleanup:
-	dispatch_async(dispatch_get_main_queue(), ^{
-		[fieldMapperController release];
-	});
-
 	return success;
-}
-
-/**
- *
- */
-- (void)fieldMapperDidEndSheet:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	[sheet orderOut:self];
-	fieldMapperSheetStatus = (returnCode) ? SPFieldMapperCompleted : SPFieldMapperCancelled;
 }
 
 /**
@@ -1754,14 +1650,13 @@ cleanup:
 {
 	NSButtonCell *switchButton = [[NSButtonCell alloc] init];
 	
-	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	prefs = [NSUserDefaults standardUserDefaults];
 	
 	mySQLConnection = theConnection;
 	
 	// Set up the interface
 	[switchButton setButtonType:NSSwitchButton];
 	[switchButton setControlSize:NSControlSizeSmall];
-	[switchButton release];
 
 	[errorsView setFont:[NSUserDefaults getFont]];
 }
@@ -1793,17 +1688,7 @@ cleanup:
 	}
 	
 	[errorsView setString:message];
-	[NSApp beginSheet:errorsSheet
-	   modalForWindow:[tableDocumentInstance parentWindow]
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:NULL];
-	[errorsSheet makeKeyWindow];
-}
-
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	[sheet orderOut:self];
+	[[tableDocumentInstance parentWindow] beginSheet:errorsSheet completionHandler:nil];
 }
 
 #pragma mark -
@@ -1841,30 +1726,16 @@ cleanup:
 }
 
 /**
- * Release and reset any field mapping global variables.
- */
-- (void)_resetFieldMappingGlobals
-{
-	if (csvImportTailString) SPClear(csvImportTailString);
-	if (csvImportHeaderString) SPClear(csvImportHeaderString);
-	if (fieldMappingArray) SPClear(fieldMappingArray);
-	if (fieldMappingGlobalValueArray) SPClear(fieldMappingGlobalValueArray);
-	if (fieldMappingTableColumnNames) SPClear(fieldMappingTableColumnNames);
-	if (fieldMappingTableDefaultValues) SPClear(fieldMappingTableDefaultValues);
-	if (fieldMapperOperator) SPClear(fieldMapperOperator);
-}
-
-/**
  * Convenience method for closing and restoring the progress sheet to default state.
  */
 - (void)_closeAndStopProgressSheet
 {
 	SPMainQSync(^{
-		[NSApp endSheet:singleProgressSheet];
-		[singleProgressBar setIndeterminate:YES];
-		[singleProgressSheet orderOut:nil];
-		[singleProgressBar stopAnimation:self];
-		[singleProgressBar setMaxValue:100];
+		[NSApp endSheet:self->singleProgressSheet];
+		[self->singleProgressBar setIndeterminate:YES];
+		[self->singleProgressSheet orderOut:nil];
+		[self->singleProgressBar stopAnimation:self];
+		[self->singleProgressBar setMaxValue:100];
 	});
 }
 
@@ -1909,32 +1780,7 @@ cleanup:
 		}
 	}
 
-	if (fileCheckOutput) [fileCheckOutput release];
-
-	[fileTask release];
-	[filePipe release];
-
 	return lineEnding;
-}
-
-#pragma mark -
-
-- (void)dealloc
-{	
-	if (fieldMappingImportArray)       SPClear(fieldMappingImportArray);
-	if (geometryFields)                SPClear(geometryFields);
-	if (geometryFieldsMapIndex)        SPClear(geometryFieldsMapIndex);
-	if (bitFields)                     SPClear(bitFields);
-	if (nullableNumericFields)         SPClear(nullableNumericFields);
-	if (bitFieldsMapIndex)             SPClear(bitFieldsMapIndex);
-	if (nullableNumericFieldsMapIndex) SPClear(nullableNumericFieldsMapIndex);
-	if (lastFilename)                  SPClear(lastFilename);
-	if (prefs)                         SPClear(prefs);
-	if (selectedTableTarget)           SPClear(selectedTableTarget);
-	
-	SPClear(nibObjectsToRelease);
-	
-	[super dealloc];
 }
 
 @end

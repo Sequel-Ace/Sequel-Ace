@@ -35,6 +35,6 @@
 }
 
 @property (readwrite, assign) NSInteger textLimit;
-@property (readwrite, retain) NSString* fieldType;
+@property (readwrite, copy) NSString* fieldType;
 
 @end

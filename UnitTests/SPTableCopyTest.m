@@ -66,14 +66,10 @@
 		
 		[tableCopy setConnection:mockConnection];
 		[tableCopy copyTable:@"table_name" from:@"source_db" to:@"target_db" withContent:YES];
-		
-		[tableCopy release];
 	}
 	
 	OCMVerifyAll(mockResult);
 	OCMVerifyAll(mockConnection);
-	
-	[resultArray release];
 }
 
 - (void)testCopyTableFromTo_NoPermissions
@@ -91,8 +87,6 @@
 		[tableCopy setConnection:mockConnection];
 		
 		XCTAssertFalse([tableCopy copyTable:@"table_name" from:@"source_db" to:@"target_db"], @"copy operation must fail.");
-		
-		[tableCopy release];
 	}
 	
 	[mockConnection verify];

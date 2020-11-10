@@ -113,7 +113,7 @@
 	[newTableDocument setParentWindow:[self window]];
 
 	// Set up a new tab with the connection view as the identifier, add the view, and add it to the tab view
-    NSTabViewItem *newItem = [[[NSTabViewItem alloc] initWithIdentifier:newTableDocument] autorelease];
+    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:newTableDocument];
 	
 	[newItem setView:[newTableDocument databaseView]];
     [tabView addTabViewItem:newItem];
@@ -127,7 +127,7 @@
 	// Bind the tab bar's progress display to the document
 	[self _updateProgressIndicatorForItem:newItem];
 	
-	return [newTableDocument autorelease];
+	return newTableDocument;
 }
 
 /**
@@ -411,39 +411,6 @@
 }
 
 /**
- * Override the default performSelector:, again either using NSObject defaults
- * or performing the selector on the selected table document.
- */
-- (id)performSelector:(SEL)theSelector
-{
-	if ([super respondsToSelector:theSelector]) {
-		return [super performSelector:theSelector];
-	}
-
-	if (![selectedTableDocument respondsToSelector:theSelector]) {
-		[self doesNotRecognizeSelector:theSelector];
-	}
-	
-	return [selectedTableDocument performSelector:theSelector];
-}
-
-/**
- * Override the default performSelector:withObject: - see performSelector:
- */
-- (id)performSelector:(SEL)theSelector withObject:(id)theObject
-{
-	if ([super respondsToSelector:theSelector]) {
-		return [super performSelector:theSelector withObject:theObject];
-	}
-
-	if (![selectedTableDocument respondsToSelector:theSelector]) {
-		[self doesNotRecognizeSelector:theSelector];
-	}
-	
-	return [selectedTableDocument performSelector:theSelector withObject:theObject];
-}
-
-/**
  * When receiving an update for a bound value - an observed value on the
  * document - ask the tab bar control to redraw as appropriate.
  */
@@ -505,7 +472,6 @@
 	[theDocument addObserver:self forKeyPath:@"isProcessing" options:0 context:nil];
 }
 
-
 - (void)_switchOutSelectedTableDocument:(SPDatabaseDocument *)newDoc
 {
 	NSAssert([NSThread isMainThread], @"Switching the selectedTableDocument via a background thread is not supported!");
@@ -565,8 +531,6 @@
 	{
 		[tabView removeTabViewItem:eachItem];
 	}
-
-	[self autorelease];
 }
 
 /**
@@ -607,8 +571,8 @@
  */
 - (void)windowDidBecomeMain:(NSNotification *)notification
 {
-
 }
+
 - (void)windowDidResignMain:(NSNotification *)notification
 {
 }
@@ -871,7 +835,6 @@
 	NSBitmapImageRep *viewRep = [[NSBitmapImageRep alloc] initWithCGImage:windowImage];
 	[viewRep setSize:[[self window] frame].size];
 	[viewImage addRepresentation:viewRep];
-	[viewRep release];
 
 	// Calculate the titlebar+toolbar height
 	CGFloat contentViewOffsetY = [[self window] frame].size.height - [[[self window] contentView] frame].size.height;
@@ -900,7 +863,7 @@
 
 	[viewImage unlockFocus];
 
-	return [viewImage autorelease];
+	return viewImage;
 }
 
 /**
@@ -914,7 +877,7 @@
 	[menu insertItem:[NSMenuItem separatorItem] atIndex:1];
 	[menu addItemWithTitle:NSLocalizedString(@"Open in New Tab", @"open connection in new tab context menu item") action:@selector(openDatabaseInNewTab:) keyEquivalent:@""];
 
-	return [menu autorelease];
+	return menu;
 }
 
 /**
@@ -947,10 +910,7 @@
 	
 	// Tear down the animations on the tab bar to stop redraws
 	[tabBar destroyAnimations];
-	
-	SPClear(managedDatabaseConnections);
 
-	[super dealloc];
 }
 
 @end

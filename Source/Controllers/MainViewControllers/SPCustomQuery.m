@@ -99,7 +99,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)_updateProgress;
 @end
 
-
 @interface SPCustomQuery ()
 
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
@@ -165,14 +164,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if ([tableDocumentInstance isWorking]) return;
 
 	// Fixes bug in key equivalents.
-	if ([[NSApp currentEvent] type] == NSKeyUp) {
+	if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) {
 		return;
 	}
 
 	// Re-init sort order
 	isDesc = NO;
 	sortColumn = nil;
-	if(sortField) SPClear(sortField);
+	
 
 	// Retrieve the custom query string and split it into separate SQL queries
 	queryParser = [[SPSQLParser alloc] initWithString:[textView string]];
@@ -187,8 +186,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 		queries = normalisedQueries;
 	}
-
-	[queryParser release];
 
 	// Reset queryStartPosition
 	queryStartPosition = 0;
@@ -216,7 +213,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Re-init sort order
 	isDesc = NO;
 	sortColumn = nil;
-	if(sortField) SPClear(sortField);
+	
 
 	// If the current selection is a single caret position, run the current query.
 	if (selectedRange.length == 0) {
@@ -244,8 +241,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			}
 			queries = normalisedQueries;
 		}
-
-		[queryParser release];
 	}
 
 	// Invoke textStorageDidProcessEditing: for syntax highlighting and auto-uppercase
@@ -315,7 +310,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// init query favorites controller
 		[prefs synchronize];
 
-		if(favoritesManager) [favoritesManager release];
 		favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
 
 		// Open query favorite manager
@@ -473,7 +467,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[textView setAutopair:enableAutopair];
 	}
 
-
 	// "Auto-help" toggle
 	if (sender == autohelpMenuItem) {
 		BOOL enableAutohelp = !([autohelpMenuItem state] == NSOffState);
@@ -482,7 +475,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[autohelpMenuItem setState:enableAutohelp?NSOnState:NSOffState];
 		[textView setAutohelp:enableAutohelp];
 	}
-
 
 	// "Auto-uppercase keywords" toggle
 	if (sender == autouppercaseKeywordsMenuItem) {
@@ -516,12 +508,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if (returnCode == NSModalResponseOK) {
 			NSError *error = nil;
             
-			[prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
-			[prefs synchronize];
+			[self->prefs setInteger:[[self->encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
+			[self->prefs synchronize];
             
 			[[self buildHistoryString] writeToURL:[panel URL]
                                        atomically:YES
-                                         encoding:[[encodingPopUp selectedItem] tag]
+                                         encoding:[[self->encodingPopUp selectedItem] tag]
                                             error:&error];
             
 			if (error) [[NSAlert alertWithError:error] runModal];
@@ -556,7 +548,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 									   otherButton:nil
 						 informativeTextWithFormat:@"%@", infoString];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -614,7 +606,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[self performQueriesTask:taskArguments];
 	}
 }
-
 
 /**
 *  Method that checks if an array of SQL queries contain any destructive SQL
@@ -753,7 +744,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		// Remove all the columns if not reloading the table
 		if(!reloadingExistingResult) {
-			SPClear(cqColumnDefinition);
+			
 			[[self onMainThread] updateTableView];
 		}
 
@@ -769,8 +760,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		SPQueryProgressUpdateDecoupling *progressUpdater = [[SPQueryProgressUpdateDecoupling alloc] initWithBlock:^(QueryProgress *qp) {
 			NSString *taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %ld of %lu...", @"Running multiple queries string"), (long)(qp->query+1), (unsigned long)(qp->total)];
-			[tableDocumentInstance setTaskDescription:taskString];
-			[errorText setString:taskString];
+			[self->tableDocumentInstance setTaskDescription:taskString];
+			[self->errorText setString:taskString];
 		}];
 
 		// Perform the supplied queries in series
@@ -790,7 +781,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[tempQueries addObject:query];
 
 			// Run the query, timing execution (note this also includes network and overhead)
-			resultStore = [[mySQLConnection resultStoreFromQueryString:query] retain];
+			resultStore = [mySQLConnection resultStoreFromQueryString:query];
 			executionTime += [resultStore queryExecutionTime];
 			totalQueriesRun++;
 
@@ -799,8 +790,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			if (totalQueriesRun == queryCount || [mySQLConnection lastQueryWasCancelled]) {
 
 				// Retrieve and cache the column definitions for the result array
-				if (cqColumnDefinition) [cqColumnDefinition release];
-				cqColumnDefinition = [[resultStore fieldDefinitions] retain];
+				cqColumnDefinition = [resultStore fieldDefinitions];
 
 				if(!reloadingExistingResult) {
 					[[self onMainThread] updateTableView];
@@ -837,8 +827,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			else if ( [resultStore numberOfRows] ) {
 				totalAffectedRows += (NSUInteger) [resultStore numberOfRows];
 			}
-
-			[resultStore release];
 
 			// Store any error messages
 			if ([mySQLConnection queryErrored] || [mySQLConnection lastQueryWasCancelled]) {
@@ -882,7 +870,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 							                                 defaultButton:NSLocalizedString(@"Run All", @"run all button")
 							                               alternateButton:NSLocalizedString(@"Continue", @"continue button")
 							                                   otherButton:NSLocalizedString(@"Stop", @"stop button")
-							                                    alertStyle:NSWarningAlertStyle
+							                                    alertStyle:NSAlertStyleWarning
 							                                     docWindow:[tableDocumentInstance parentWindow]
 							                                 modalDelegate:self
 							                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
@@ -927,8 +915,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			if ([mySQLConnection lastQueryWasCancelled]) break;
 		}
 
-		[progressUpdater release];
-
 		// Reload table list if at least one query began with drop, alter, rename, or create
 		if(tableListNeedsReload || databaseWasChanged) {
 			// Build database pulldown menu
@@ -943,13 +929,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[tablesListInstance updateTables:self];
 		}
 
-		if(usedQuery) [usedQuery release];
-
 		// if(!queriesSeparatedByDelimiter) // TODO: How to combine queries delimited by DELIMITER?
-		usedQuery = [[NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]] retain];
-
-		if (lastExecutedQuery) [lastExecutedQuery release];
-		lastExecutedQuery = [[tempQueries lastObject] retain];
+		usedQuery = [NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]];
+		lastExecutedQuery = [tempQueries lastObject];
 
 		// Perform empty query if no query is given
 		if ( !queryCount ) {
@@ -1039,7 +1021,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			notification.soundName = NSUserNotificationDefaultSoundName;
 
 			[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-			[notification release];
 
 			// Set up the callback if present
 			if ([taskArguments objectForKey:@"callback"]) {
@@ -1070,7 +1051,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		notification.soundName = NSUserNotificationDefaultSoundName;
 
 		[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-		[notification release];
 
 		// Set up the callback if present
 		if ([taskArguments objectForKey:@"callback"]) {
@@ -1098,8 +1078,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	pthread_mutex_lock(&resultDataLock);
 	// Remove all items from the table
 	SPMainQSync(^{
-		[resultData removeAllRows];
-		[customQueryView noteNumberOfRowsChanged];
+		[self->resultData removeAllRows];
+		[self->customQueryView noteNumberOfRowsChanged];
 	});
 
 	// Add the new store
@@ -1147,9 +1127,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		queries = [[NSArray alloc] initWithArray:[customQueryParser splitStringIntoRangesByCharacter:';']];
 		numberOfQueries = [queries count];
 		if(currentQueryRanges)
-			[currentQueryRanges release];
-		currentQueryRanges = [[NSArray arrayWithArray:queries] retain];
-		[customQueryParser release];
+		currentQueryRanges = [NSArray arrayWithArray:queries];
 	} else {
 		queries = [[NSArray alloc] initWithArray:currentQueryRanges];
 	}
@@ -1215,9 +1193,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		queryRange = [[queries lastObject] rangeValue];
 	}
 
-	[queries release];
-
-
 	queryRange = NSIntersectionRange(queryRange, NSMakeRange(0, [[textView string] length]));
 	if (!queryRange.length) {
 		return NSMakeRange(NSNotFound, 0);
@@ -1259,20 +1234,16 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	customQueryParser = [[SPSQLParser alloc] initWithString:[[textView string] substringWithRange:NSMakeRange(position, [[textView string] length]-position)]];
 	[customQueryParser setDelimiterSupport:YES];
 	queries = [[NSArray alloc] initWithArray:[customQueryParser splitStringIntoRangesByCharacter:';']];
-	[customQueryParser release];
 
 	// Check for a valid index
 	anIndex--;
 	if(anIndex < 0 || anIndex >= (NSInteger)[queries count])
 	{
-		[queries release];
 		return NSMakeRange(NSNotFound, 0);
 	}
 
 	NSRange theQueryRange = [[queries objectAtIndex:anIndex] rangeValue];
 	NSString *theQueryString = [[textView string] substringWithRange:theQueryRange];
-
-	[queries release];
 
 	// Remove all leading and trailing white spaces
 	NSInteger offset = [theQueryString rangeOfRegex:@"^(\\s*)"].length;
@@ -1573,7 +1544,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	queryLoadLastRowCount = 0;
 	queryLoadTimerTicksSinceLastUpdate = 0;
 
-	queryLoadTimer = [[NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(queryLoadUpdate:) userInfo:nil repeats:YES] retain];
+	queryLoadTimer = [NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(queryLoadUpdate:) userInfo:nil repeats:YES];
 }
 
 /**
@@ -1584,7 +1555,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
 	if (queryLoadTimer) {
 		[queryLoadTimer invalidate];
-		SPClear(queryLoadTimer);
+		
 	}
 }
 
@@ -1698,8 +1669,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[currentResult addObject:[NSArray arrayWithArray:tempRow]];
 	}
 	
-	[tempRow release];
-	
 	return currentResult;
 }
 
@@ -1777,12 +1746,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 		[theCol setResizingMask:NSTableColumnUserResizingMask];
 		[theCol setEditable:YES];
-		SPTextAndLinkCell *dataCell = [[[SPTextAndLinkCell alloc] initTextCell:@""] autorelease];
+		SPTextAndLinkCell *dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 		[dataCell setEditable:YES];
 		[dataCell setFont:tableFont];
 
 		[dataCell setLineBreakMode:NSLineBreakByTruncatingTail];
-		[dataCell setFormatter:[[SPDataCellFormatter new] autorelease]];
+		[dataCell setFormatter:[SPDataCellFormatter new]];
 
 		// Set field length limit if field is a varchar to match varchar length
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"string"]
@@ -1794,7 +1763,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"integer"]
 			|| [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"float"])
 		{
-			[dataCell setAlignment:NSRightTextAlignment];
+			[dataCell setAlignment:NSTextAlignmentRight];
 		}
 
 		// Set field type for validations
@@ -1812,7 +1781,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 
 		[customQueryView addTableColumn:theCol];
-		[theCol release];
 	}
 }
 
@@ -1837,7 +1805,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)setResultSelectedRowIndexesToRestore:(NSIndexSet *)theIndexSet
 {
-	if (selectionIndexToRestore) SPClear(selectionIndexToRestore);
+	
 
 	if (theIndexSet) selectionIndexToRestore = [[NSIndexSet alloc] initWithIndexSet:theIndexSet];
 }
@@ -2256,9 +2224,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // this is the same as saying (isDesc && !invert) || (!isDesc && invert)
-        if (isDesc != invert) {
-			SPClear(sortField);
-		} else {
+        if (isDesc == invert) {
 			isDesc = !isDesc;
 		}
 	} else {
@@ -2270,7 +2236,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
 		[[customQueryView onMainThread] setIndicatorImage:nil inTableColumn:[customQueryView tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)[sortField integerValue]]]];
-		if (sortField) [sortField release];
 		sortField = [[NSNumber alloc] initWithInteger:[[tableColumn identifier] integerValue]];
 	}
 
@@ -2376,7 +2341,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	if ([mySQLConnection queryErrored]) {
 		sortColumn = nil;
-		if(sortField) SPClear(sortField);
+		
 		return;
 	}
 
@@ -2471,7 +2436,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Suppress tooltip if another toolip is already visible, mainly displayed by a Bundle command
 	// TODO has to be improved
 	for(id win in [NSApp orderedWindows]) {
-		if([[[[win contentView] class] description] isEqualToString:@"WebView"]) {
+		if([[[[win contentView] class] description] isEqualToString:@"WKWebView"]) {
 			return nil;
 		}
 	}
@@ -2490,7 +2455,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (isWorking) {
 		pthread_mutex_lock(&resultDataLock);
 		if (SPIntS2U(row) < [resultData count] && (NSUInteger)[[aTableColumn identifier] integerValue] < [resultData columnCount]) {
-			theValue = [[SPDataStorageObjectAtRowAndColumn(resultData, row, [[aTableColumn identifier] integerValue]) copy] autorelease];
+			theValue = [SPDataStorageObjectAtRowAndColumn(resultData, row, [[aTableColumn identifier] integerValue]) copy];
 		}
 		pthread_mutex_unlock(&resultDataLock);
 
@@ -2503,7 +2468,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// Get the original data for trying to display the blob data as an image
 	if ([theValue isKindOfClass:[NSData class]]) {
-		image = [[[NSImage alloc] initWithData:theValue] autorelease];
+		image = [[NSImage alloc] initWithData:theValue];
 		if(image) {
 			[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
 			return nil;
@@ -2514,10 +2479,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		image = [v thumbnailImage];
 		if(image) {
 			[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-			[v release];
 			return nil;
 		}
-		[v release];
 	}
 
 	// Show the cell string value as tooltip (including line breaks and tabs)
@@ -2645,7 +2608,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[[NSMenuItem alloc] init] autorelease];
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
 
@@ -3008,16 +2971,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[headerMenuItem setToolTip:[NSString stringWithFormat:NSLocalizedString(@"‘%@’ based favorites",@"Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file)"), tblDocName]];
 		[headerMenuItem setIndentationLevel:0];
 		[menu addItem:headerMenuItem];
-		[headerMenuItem release];
 	}
 	for (NSDictionary *favorite in [[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]) {
 		if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
-		NSMutableParagraphStyle *paraStyle = [[[NSMutableParagraphStyle alloc] init] autorelease];
+		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
 		[paraStyle setTabStops:@[]];
-		[paraStyle addTabStop:[[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f] autorelease]];
+		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
-		NSAttributedString *titleString = [[[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
-		                                                                   attributes:attributes] autorelease];
+		NSAttributedString *titleString = [[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
+		                                                                   attributes:attributes];
 		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
 		if ([favorite objectForKey:@"query"]) {
 			[item setToolTip:[NSString stringWithString:[favorite objectForKey:@"query"]]];
@@ -3025,7 +2987,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[item setAttributedTitle:titleString];
 		[item setIndentationLevel:1];
 		[menu addItem:item];
-		[item release];
 	}
 
 	// Build global list
@@ -3035,16 +2996,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[headerMenuItem setToolTip:NSLocalizedString(@"Globally stored favorites",@"Query Favorites : List : Section Heading : global : tooltip")];
 		[headerMenuItem setIndentationLevel:0];
 		[menu addItem:headerMenuItem];
-		[headerMenuItem release];
 	}
 	for (NSDictionary *favorite in [prefs objectForKey:SPQueryFavorites]) {
 		if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
-		NSMutableParagraphStyle *paraStyle = [[[NSMutableParagraphStyle alloc] init] autorelease];
+		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
 		[paraStyle setTabStops:@[]];
-		[paraStyle addTabStop:[[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f] autorelease]];
+		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
-		NSAttributedString *titleString = [[[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
-		                                                                   attributes:attributes] autorelease];
+		NSAttributedString *titleString = [[NSAttributedString alloc] initWithString:([favorite objectForKey:@"tabtrigger"] && [(NSString*)[favorite objectForKey:@"tabtrigger"] length]) ? [NSString stringWithFormat:@"%@\t%@⇥", [favorite objectForKey:@"name"], [favorite objectForKey:@"tabtrigger"]] : [favorite objectForKey:@"name"]
+		                                                                   attributes:attributes];
 		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
 		if ([favorite objectForKey:@"query"]) {
 			[item setToolTip:[NSString stringWithString:[favorite objectForKey:@"query"]]];
@@ -3052,7 +3012,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[item setAttributedTitle:titleString];
 		[item setIndentationLevel:1];
 		[menu addItem:item];
-		[item release];
 	}
 
 	// Reapply the filter
@@ -3217,7 +3176,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 				[prefs setObject:favorites forKey:SPQueryFavorites];
 			} else {
 				[[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects:
-					[NSArray arrayWithObjects:[queryFavoriteNameTextField stringValue], [[queryToBeAddded mutableCopy] autorelease], nil]
+					[NSArray arrayWithObjects:[queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil]
 						forKeys:@[@"name", @"query"]] forFileURL:[tableDocumentInstance fileURL]];
 			}
 
@@ -3287,14 +3246,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		BOOL isResultFieldEditable = ([contextInfo objectForKey:@"isFieldEditable"]) ? YES : NO;
 
 		if(isResultFieldEditable) {
-			[self saveCellValue:[[data copy] autorelease] forTableColumn:[[customQueryView tableColumns] objectAtIndex:column] row:row];
+			[self saveCellValue:[data copy] forTableColumn:[[customQueryView tableColumns] objectAtIndex:column] row:row];
 		}
 	}
-
-	// this is a delegate method of the field editor controller. calling release
-	// now would risk a dealloc while it is still our parent on the stack:
-	[fieldEditor autorelease];
-	fieldEditor = nil;
 
 	// Preserve focus and restore selection indexes if appropriate
 	[[tableDocumentInstance parentWindow] makeFirstResponder:customQueryView]; 
@@ -3315,11 +3269,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 
-		usedQuery = [@"" retain];
+		usedQuery = @"";
 		lastExecutedQuery = nil;
 		fieldIDQueryString = nil;
 		sortField = nil;
@@ -3486,9 +3440,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			// Send moveDown/Up to the popup menu
 			NSEvent *arrowEvent;
 			if(command == @selector(moveDown:))
-				arrowEvent = [NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
+				arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
 			else
-				arrowEvent = [NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
+				arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
 			[NSApp postEvent:arrowEvent atStart:NO];
 			return YES;
 
@@ -3642,21 +3596,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 
 	[self clearQueryLoadTimer];
-	SPClear(usedQuery);
-	SPClear(lastExecutedQuery);
-	SPClear(resultData);
-	SPClear(favoritesManager);
 
-	if(fieldEditor) SPClear(fieldEditor);
-
-	if (sortField)               SPClear(sortField);
-	if (cqColumnDefinition)      SPClear(cqColumnDefinition);
-	if (selectionIndexToRestore) SPClear(selectionIndexToRestore);
-	if (currentQueryRanges)      SPClear(currentQueryRanges);
-	
-	[self.bracketHighlighter dealloc];
-
-	[super dealloc];
 }
 
 @end
@@ -3707,13 +3647,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	OSSpinLockUnlock(&qpLock);
 
 	if(doRun) updateHandler(&p);
-}
-
-- (void)dealloc
-{
-	[updateHandler release];
-	updateHandler = nil;
-	[super dealloc];
 }
 
 @end

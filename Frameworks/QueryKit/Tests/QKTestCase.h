@@ -39,12 +39,12 @@
 	QKQueryDatabase _database;
 }
 
-@property (readwrite, retain) QKQuery *query;
+@property (readwrite, strong) QKQuery *query;
 
-@property (readwrite, retain) NSString *identifierQuote;
+@property (readwrite, copy) NSString *identifierQuote;
 
 @property (readwrite, assign) QKQueryDatabase database;
 
-- (id)initWithInvocation:(NSInvocation *)invocation database:(QKQueryDatabase)database identifierQuote:(NSString *)quote;
+- (instancetype)initWithInvocation:(NSInvocation *)invocation database:(QKQueryDatabase)database identifierQuote:(NSString *)quote;
 
 @end

@@ -43,7 +43,7 @@
 	IBOutlet NSSearchField *filterVariablesSearchField;
 }
 
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 - (IBAction)copy:(id)sender;
 - (IBAction)copyServerVariableName:(id)sender;

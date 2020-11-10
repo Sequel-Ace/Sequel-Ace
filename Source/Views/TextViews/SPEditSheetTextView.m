@@ -34,12 +34,9 @@
 
 @implementation SPEditSheetTextView
 
-- (id)init
+- (instancetype)init
 {
-	if((self = [super init]))
-	{
-	}
-	return self;
+	return [super init];
 }
 
 - (IBAction)undo:(id)sender
@@ -170,7 +167,6 @@
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
 
-
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
 		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
 
@@ -215,12 +211,11 @@
 						[NSString stringForByteSize:[filesize longLongValue]]]];
 					[alert setHelpAnchor:filepath];
 					[alert setMessageText:NSLocalizedString(@"Warning", @"warning")];
-					[alert setAlertStyle:NSWarningAlertStyle];
+					[alert setAlertStyle:NSAlertStyleWarning];
 					[alert beginSheetModalForWindow:[self window] 
 						modalDelegate:self 
 						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
 						contextInfo:nil];
-					[alert release];
 					
 				} else
 					[self insertFileContentOfFile:filepath];
@@ -292,9 +287,6 @@
 	result=[[NSString alloc] initWithData:[handle readDataToEndOfFile]
 		encoding:NSASCIIStringEncoding];
 
-	[pipe release];
-	[task release];
-
 	// UTF16/32 files are detected as application/octet-stream resp. audio/mpeg
 	if( [result hasPrefix:@"text/plain"] 
 		|| [[[aPath pathExtension] lowercaseString] isEqualToString:SPFileExtensionSQL] 
@@ -323,7 +315,6 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			[self insertText:@""]; // Invoke keyword uppercasing
 			return;
 		}
@@ -332,13 +323,10 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			[self insertText:@""]; // Invoke keyword uppercasing
 			return;
 		}
 	}
-	
-	[result release];
 
 	NSLog(@"%@ ‘%@’.", NSLocalizedString(@"Couldn't read the file content of", @"Couldn't read the file content of"), aPath);
 }

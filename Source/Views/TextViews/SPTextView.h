@@ -108,21 +108,21 @@ typedef struct {
 	BOOL syntaxHighlightingApplied;
 }
 
-@property(retain) NSColor* queryHiliteColor;
-@property(retain) NSColor* queryEditorBackgroundColor;
-@property(retain) NSColor* commentColor;
-@property(retain) NSColor* quoteColor;
-@property(retain) NSColor* keywordColor;
-@property(retain) NSColor* backtickColor;
-@property(retain) NSColor* numericColor;
-@property(retain) NSColor* variableColor;
-@property(retain) NSColor* otherTextColor;
-@property(assign) NSRange queryRange;
-@property(assign) BOOL shouldHiliteQuery;
-@property(assign) BOOL enableSyntaxHighlighting;
-@property(assign) BOOL syntaxHighlightingApplied;
-@property(assign) BOOL completionIsOpen;
-@property(assign) BOOL completionWasReinvokedAutomatically;
+@property (strong) NSColor* queryHiliteColor;
+@property (strong) NSColor* queryEditorBackgroundColor;
+@property (strong) NSColor* commentColor;
+@property (strong) NSColor* quoteColor;
+@property (strong) NSColor* keywordColor;
+@property (strong) NSColor* backtickColor;
+@property (strong) NSColor* numericColor;
+@property (strong) NSColor* variableColor;
+@property (strong) NSColor* otherTextColor;
+@property (assign) NSRange queryRange;
+@property (assign) BOOL shouldHiliteQuery;
+@property (assign) BOOL enableSyntaxHighlighting;
+@property (assign) BOOL syntaxHighlightingApplied;
+@property (assign) BOOL completionIsOpen;
+@property (assign) BOOL completionWasReinvokedAutomatically;
 
 - (IBAction)showMySQLHelpForCurrentWord:(id)sender;
 

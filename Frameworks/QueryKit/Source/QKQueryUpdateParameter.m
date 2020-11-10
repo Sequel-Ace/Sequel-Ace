@@ -39,7 +39,7 @@
 	return [[QKQueryUpdateParameter alloc] initUpdateParamWithField:field value:value];
 }
 
-- (id)initUpdateParamWithField:(NSString *)field value:(id)value
+- (instancetype)initUpdateParamWithField:(NSString *)field value:(id)value
 {
 	if ((self = [super init])) {
 		[self setField:field];

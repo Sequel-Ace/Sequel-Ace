@@ -61,9 +61,9 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 	NSArray *matches;
 	BOOL isCustomItem;
 }
-@property(nonatomic,retain) NSString *string;
-@property(nonatomic,retain) NSArray *matches;
-@property(nonatomic,assign) BOOL isCustomItem;
+@property (nonatomic, copy) NSString *string;
+@property (nonatomic, strong) NSArray *matches;
+@property (nonatomic, assign) BOOL isCustomItem;
 
 + (SPGotoFilteredItem *)item;
 @end
@@ -74,7 +74,7 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 @synthesize matches;
 @synthesize isCustomItem;
 
-+ (SPGotoFilteredItem *)item { return [[[SPGotoFilteredItem alloc] init] autorelease]; }
++ (SPGotoFilteredItem *)item { return [[SPGotoFilteredItem alloc] init]; }
 @end
 
 #pragma mark -
@@ -83,17 +83,17 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 
 @synthesize allowCustomNames;
 
-- (id)init
+- (instancetype)init
 {
     if ((self = [super initWithWindowNibName:@"GotoDatabaseDialog"])) {
 		unfilteredList = [[NSMutableArray alloc] init];
 		filteredList   = [[NSMutableArray alloc] init];
 		isFiltered     = NO;
-		highlightAttrs = [@{
+		highlightAttrs = @{
 			NSBackgroundColorAttributeName: [NSColor colorWithCalibratedRed:249/255.0 green:247/255.0 blue:62/255.0 alpha:0.5],
 			NSUnderlineColorAttributeName:  [NSColor colorWithCalibratedRed:246/255.0 green:189/255.0 blue:85/255.0 alpha:1.0],
 			NSUnderlineStyleAttributeName:  [NSNumber numberWithInt:NSUnderlineStyleThick]
-		} retain];
+		};
 
 		[self setAllowCustomNames:YES];
     }
@@ -361,10 +361,10 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 		attrString = cellValue;
 	}
 	else if([cellValue isKindOfClass:[NSAttributedString class]]) {
-		attrString = [[[NSMutableAttributedString alloc] initWithAttributedString:cellValue] autorelease];
+		attrString = [[NSMutableAttributedString alloc] initWithAttributedString:cellValue];
 	}
 	else if([cellValue isKindOfClass:[NSString class]]) {
-		attrString = [[[NSMutableAttributedString alloc] initWithString:cellValue] autorelease];
+		attrString = [[NSMutableAttributedString alloc] initWithString:cellValue];
 	}
 	else {
 		SPLog(@"Unknown object for cellValue (type=%@)",[cellValue className]);
@@ -441,17 +441,6 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 		[(NSMenuItem *)anItem setState:([self qualifiesForWordSearch]? NSOnState : NSOffState)];
 	}
 	return YES;
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-    SPClear(unfilteredList);
-	SPClear(filteredList);
-	SPClear(highlightAttrs);
-
-	[super dealloc];
 }
 
 @end

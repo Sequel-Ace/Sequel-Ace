@@ -38,7 +38,7 @@
 
 @implementation ImageAndTextCell
 
-- (id)init
+- (instancetype)init
 {
 	self = [super init];
 	image = nil;
@@ -47,9 +47,7 @@
 }
 
 - (void)dealloc {
-	[image release];
 	image = nil;
-	[super dealloc];
 }
 
 - copyWithZone:(NSZone *)zone
@@ -64,8 +62,7 @@
 {
 	if (anImage != image)
 	{
-		[image release];
-		image = [anImage retain];
+		image = anImage;
 	}
 }
 

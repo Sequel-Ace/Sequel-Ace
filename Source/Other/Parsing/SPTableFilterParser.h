@@ -44,7 +44,7 @@
 	BOOL suppressLeadingTablePlaceholder;
 }
 
-- (id)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs;
+- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs;
 
 @property(readonly) NSString *clause;
 @property(readonly) NSUInteger numberOfArguments;

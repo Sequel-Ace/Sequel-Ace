@@ -82,7 +82,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		triggerData = [[NSMutableArray alloc] init];
@@ -320,7 +320,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 										   otherButton:nil
 							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected triggers? This action cannot be undone.", @"delete selected trigger informative message")];
 
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 
 		NSArray *buttons = [alert buttons];
 
@@ -507,8 +507,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 	[data addObject:headings];
 
-	[headings release];
-
 	// Get the relation data
 	for (NSDictionary *trigger in triggerData)
 	{
@@ -523,8 +521,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		[temp addObject:[trigger objectForKey:SPTriggerSQLMode]];
 
 		[data addObject:temp];
-
-		[temp release];
 	}
 
 	return data;
@@ -543,7 +539,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	NSDictionary *trigger = [triggerData objectAtIndex:index];
 	
 	// Cache the original trigger in the event that the editing process fails and we need to recreate it.
-	if (editedTrigger) [editedTrigger release];
 	editedTrigger = [trigger copy];
 	
 	[triggerNameTextField setStringValue:[trigger objectForKey:SPTriggerName]];
@@ -715,14 +710,10 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 - (void)dealloc
 {
-	SPClear(triggerData);
-	SPClear(editedTrigger);
-
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
 	[self _removePreferenceObservers];
 
-	[super dealloc];
 }
 
 @end

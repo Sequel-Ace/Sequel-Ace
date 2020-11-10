@@ -66,7 +66,6 @@ void SPApplyRevisionChanges(void)
 
 	// If no recorded version, or current version matches or is less than recorded version, don't show release notes or do version-specific processing
 	if (!recordedVersionNumber) {
-		[importantUpdateNotes release];
 		return;
 	}
 
@@ -79,9 +78,6 @@ void SPApplyRevisionChanges(void)
 	// Display any important release notes, if any.  Call this after a slight delay to prevent double help
 	// menus - see http://www.cocoabuilder.com/archive/cocoa/6200-two-help-menus-why.html .
 	[SPPreferencesUpgrade performSelector:@selector(showPostMigrationReleaseNotes:) withObject:importantUpdateNotes afterDelay:0.1];
-
-	//Release the release notes object
-	[importantUpdateNotes release];
 }
 
 /**
@@ -104,7 +100,7 @@ void SPApplyRevisionChanges(void)
 	NSAlert *noteAlert = [[NSAlert alloc] init];
 	
 	[noteAlert setAlertStyle:NSInformationalAlertStyle];
-	[noteAlert setAccessoryView:[[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 450, 1)] autorelease]];
+	[noteAlert setAccessoryView:[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 450, 1)]];
 	[noteAlert setMessageText:NSLocalizedString(@"Thanks for updating Sequel Ace!", @"Release notes dialog title thanking user for upgrade")];
 	[noteAlert addButtonWithTitle:NSLocalizedString(@"Continue", @"Continue button title")];
 	[noteAlert addButtonWithTitle:NSLocalizedString(@"View full release notes", @"Release notes button title")];
@@ -112,7 +108,6 @@ void SPApplyRevisionChanges(void)
 
 	// Show the dialog
 	NSInteger returnCode = [noteAlert runModal];
-	[noteAlert release];
 
 	// Show releae notes if desired
 	if (returnCode == NSAlertSecondButtonReturn || returnCode == NSAlertOtherReturn) {

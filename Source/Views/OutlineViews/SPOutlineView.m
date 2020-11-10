@@ -58,7 +58,6 @@
 		return [self menu];
 	}
 
-
 	// If more than one row is selected only returns the default contextual menu
 	if ([self numberOfSelectedRows] > 1) return [self menu];
 

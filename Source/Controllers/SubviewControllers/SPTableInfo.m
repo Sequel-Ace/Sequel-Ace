@@ -49,7 +49,7 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		info       = [[NSMutableArray alloc] init];
@@ -342,7 +342,7 @@
 	} 
 	else {
 		if (rowIndex == 0) {
-			SPTableTextFieldCell *c = [[[SPTableTextFieldCell alloc] initTextCell:NSLocalizedString(@"ACTIVITIES", @"header for activities pane")] autorelease];
+			SPTableTextFieldCell *c = [[SPTableTextFieldCell alloc] initTextCell:NSLocalizedString(@"ACTIVITIES", @"header for activities pane")];
 			
 			[tableColumn setDataCell:c];
 			
@@ -350,7 +350,7 @@
 		}
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
 			NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
-			SPActivityTextFieldCell *c = [[[SPActivityTextFieldCell alloc] init] autorelease];
+			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init];
 			
 			[c setActivityName:[[dict objectForKey:@"contextInfo"] objectForKey:@"name"]];
 			
@@ -367,7 +367,7 @@
 			return [dict objectForKey:@"name"];
 		} 
 		else {
-			SPActivityTextFieldCell *c = [[[SPActivityTextFieldCell alloc] init] autorelease];
+			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init];
 			
 			[c setActivityName:@"..."];
 			[c setActivityInfo:@""];
@@ -483,11 +483,7 @@
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	
-	SPClear(info);
-	SPClear(activities);
-	
-	[super dealloc];
+
 }
 
 @end

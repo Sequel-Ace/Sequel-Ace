@@ -49,13 +49,13 @@ static SPNotLoaded *notLoaded = nil;
 + (id)allocWithZone:(NSZone *)zone
 {
 	@synchronized(self) {
-		return [[self notLoaded] retain];
+		return [self notLoaded];
 	}
 	
 	return nil;
 }
 
-- (id)init
+- (instancetype)init
 {
 	Class notLoadedClass = [self class];
 	
@@ -72,16 +72,7 @@ static SPNotLoaded *notLoaded = nil;
 
 - (id)copyWithZone:(NSZone *)zone { return self; }
 
-- (id)retain { return self; }
-
-- (NSUInteger)retainCount { return NSUIntegerMax; }
-
-- (oneway void)release {}
-
-- (id)autorelease { return self; }
-
 @end
-
 
 /**
  * This Category is intended to allow easy testing of all objects for SPNotLoaded.

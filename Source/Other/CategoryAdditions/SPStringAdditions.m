@@ -145,15 +145,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
  */
 + (NSString *)stringWithNewUUID
 {
-	// Create a new UUID
-	CFUUIDRef uuidObj = CFUUIDCreate(nil);
-
-	// Get the string representation of the UUID
-	NSString *newUUID = (NSString *)CFUUIDCreateString(nil, uuidObj);
-	
-	CFRelease(uuidObj);
-	
-	return [newUUID autorelease];
+	return [[NSUUID UUID] UUIDString];
 }
 
 /**
@@ -195,8 +187,6 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	}
 
 	NSString *result = [NSString stringWithString:holder];
-
-	[holder release];
 
 	return result;
 }
@@ -297,8 +287,6 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	[tblSyntax appendString:@"\n"];
 	[tblSyntax appendString:from];
 	
-	[from release];
-	
 	// Where clause at a new line if given
 	[tblSyntax replaceOccurrencesOfString:@" WHERE (" withString:@"\nWHERE (" options:NSLiteralSearch range:NSMakeRange(0, [tblSyntax length])];
 	
@@ -376,7 +364,6 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	}
 	return newString;
 }
-
 
 - (NSString *)summarizeToLength:(NSUInteger)length withEllipsis:(BOOL)ellipsis
 {

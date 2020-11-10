@@ -130,7 +130,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.", @"change table type informative message"), newType];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -147,7 +147,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
 					  modalDelegate:self 
 					 didEndSelector:@selector(confirmChangeTableTypeDidEnd:returnCode:contextInfo:) 
-						contextInfo:dataDict];
+						contextInfo:(__bridge void * _Nullable)(dataDict)];
 }
 
 /**
@@ -223,7 +223,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (IBAction)tableRowAutoIncrementWasEdited:(id)sender
 {
 	[tableRowAutoIncrement setEditable:NO];
-	
+
 	NSNumber *value = [NSNumberFormatter.decimalStyleFormatter numberFromString:[tableRowAutoIncrement stringValue]];
 	
 	[tableSourceInstance setAutoIncrementTo:value];
@@ -534,7 +534,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		return tableInfo;
 	}
 
-	NSString *HTMLString = [[[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding] autorelease];
+	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding];
 
 	[tableInfo setObject:HTMLString forKey:@"createSyntax"];
 
@@ -591,8 +591,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[tableTypePopUpButton selectItemWithTitle:[contextInfo objectForKey:SPUpdateTableTypeCurrentType]];
 	}
-	
-	[contextInfo release];
 }
 
 #pragma mark -
@@ -709,7 +707,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
-
 			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
 			// 2020-06-30 14:14:11 is one example
 		}
@@ -736,9 +733,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	SPClear(connection);
-	
-	[super dealloc];
 }
 
 @end

@@ -83,7 +83,7 @@
 @property (readonly) BOOL passwordPromptCancelled;
 @property (readonly) BOOL taskExitedUnexpectedly;
 
-- (id)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost;
+- (instancetype)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost;
 - (BOOL)setConnectionStateChangeSelector:(SEL)theStateChangeSelector delegate:(id)theDelegate;
 - (void)setParentWindow:(NSWindow *)theWindow;
 - (BOOL)setPasswordKeychainName:(NSString *)theName account:(NSString *)theAccount;

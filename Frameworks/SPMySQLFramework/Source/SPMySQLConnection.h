@@ -162,7 +162,7 @@
  * their preference (earlier = better).
  * A value of nil (default) means SPMySQL will use its built-in cipher list.
  */
-@property (readwrite, retain) NSString *sslCipherList;
+@property (readwrite, copy) NSString *sslCipherList;
 
 @property (readwrite, assign) NSUInteger timeout;
 @property (readwrite, assign) BOOL useKeepAlive;

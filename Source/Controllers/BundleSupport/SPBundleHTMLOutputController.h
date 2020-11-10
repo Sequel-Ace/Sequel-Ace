@@ -35,7 +35,7 @@
 	IBOutlet WebView *webView;
 
 	NSString *docTitle;
-	NSString *initHTMLSourceString;
+	NSString *initialHTMLSourceString;
 	NSString *windowUUID;
 	NSString *docUUID;
 	
@@ -44,15 +44,15 @@
 	BOOL suppressExceptionAlerting;
 }
 
-@property(readwrite,retain) NSString *docTitle;
-@property(readwrite,retain) NSString *initHTMLSourceString;
-@property(readwrite,retain) NSString *windowUUID;
-@property(readwrite,retain) NSString *docUUID;
-@property(readwrite,retain) NSString *windowType;
+@property (readwrite, copy) NSString *docTitle;
+@property (readwrite, copy) NSString *initialHTMLSourceString;
+@property (readwrite, copy) NSString *windowUUID;
+@property (readwrite, copy) NSString *docUUID;
+@property (readwrite, copy) NSString *windowType;
 
-@property(assign) BOOL suppressExceptionAlerting;
-@property(assign) BOOL restoreFrame;
-@property(assign) CGRect origFrame;
+@property (assign) BOOL suppressExceptionAlerting;
+@property (assign) BOOL restoreFrame;
+@property (assign) CGRect origFrame;
 
 - (IBAction)printDocument:(id)sender;
 

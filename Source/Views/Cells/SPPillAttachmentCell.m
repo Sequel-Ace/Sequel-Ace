@@ -38,22 +38,14 @@
 
 @implementation SPPillAttachmentCell
 
-- (id)init
+- (instancetype)init
 {
     if(self = [super init]) {
-        _borderColor = [[NSColor colorWithCalibratedRed:168/255.0 green:184/255.0 blue:249/255.0 alpha: 1] retain];
+        _borderColor = [NSColor colorWithCalibratedRed:168/255.0 green:184/255.0 blue:249/255.0 alpha: 1];
         _gradient    = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedRed:199/255.0 green:216/255.0 blue:244/255.0 alpha: 1]
                                                      endingColor:[NSColor colorWithCalibratedRed:217/255.0 green:229/255.0 blue:247/255.0 alpha: 1]];
     }
     return self;
-}
-
-- (void)dealloc
-{
-    SPClear(_borderColor);
-    SPClear(_gradient);
-
-    [super dealloc];
 }
 
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
@@ -85,7 +77,7 @@
     [rectangleStyle setAlignment:NSCenterTextAlignment];
 
     NSMutableDictionary *rectangleFontAttributes = [NSMutableDictionary dictionaryWithDictionary:[self attributes]];
-    [rectangleFontAttributes setObject:[rectangleStyle autorelease] forKey:NSParagraphStyleAttributeName];
+    [rectangleFontAttributes setObject:rectangleStyle forKey:NSParagraphStyleAttributeName];
 
     //cellFrame.origin.y += [[self font] descender];
     [textContent drawInRect:cellFrame withAttributes:rectangleFontAttributes];
