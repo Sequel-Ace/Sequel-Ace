@@ -83,6 +83,12 @@
 @property (readonly) BOOL passwordPromptCancelled;
 @property (readonly) BOOL taskExitedUnexpectedly;
 
+@property (readwrite, retain) IBOutlet NSTextField *sshQuestionText;
+@property (readwrite, retain) IBOutlet NSWindow *sshQuestionDialog;
+@property (readwrite, retain) IBOutlet NSWindow *sshPasswordDialog;
+@property (readwrite, retain) IBOutlet NSTextField *sshPasswordText;
+@property (readwrite, retain) IBOutlet NSSecureTextField *sshPasswordField;
+
 - (instancetype)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost;
 - (BOOL)setConnectionStateChangeSelector:(SEL)theStateChangeSelector delegate:(id)theDelegate;
 - (void)setParentWindow:(NSWindow *)theWindow;

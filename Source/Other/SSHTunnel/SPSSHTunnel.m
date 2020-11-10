@@ -52,7 +52,7 @@ static unsigned short getRandomPort(void);
 
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
-
+@synthesize sshQuestionText, sshQuestionDialog, sshPasswordText, sshPasswordDialog, sshPasswordField;
 /*
  * Initialise with the supplied connection details.  Host, login and port should all be provided.
  * The password can either be set later via setPassword:, which stores the password locally and is
@@ -817,7 +817,6 @@ static unsigned short getRandomPort(void);
 	
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
-
 }
 
 @end
