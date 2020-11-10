@@ -47,7 +47,7 @@
  */
 @property (readwrite, strong) NSMutableDictionary *nodeFavorite;
 
-- (id)initWithDictionary:(NSMutableDictionary *)dictionary;
+- (instancetype)initWithDictionary:(NSMutableDictionary *)dictionary;
 
 + (SPFavoriteNode *)favoriteNodeWithDictionary:(NSMutableDictionary *)dictionary;
 

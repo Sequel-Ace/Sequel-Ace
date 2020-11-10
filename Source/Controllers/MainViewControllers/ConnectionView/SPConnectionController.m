@@ -3303,7 +3303,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * Initialise the connection controller, linking it to the parent document and setting up the parent window.
  */
-- (id)initWithDocument:(SPDatabaseDocument *)document
+- (instancetype)initWithDocument:(SPDatabaseDocument *)document
 {
 	if ((self = [super init])) {
 

@@ -68,7 +68,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithFilePath:(NSString *)path
+- (instancetype)initWithFilePath:(NSString *)path
 {
 	if ((self = [super init])) {
 		

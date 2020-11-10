@@ -36,7 +36,7 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		[self setUseQuotedIdentifier:YES];

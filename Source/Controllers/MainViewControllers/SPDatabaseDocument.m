@@ -156,7 +156,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 + (void)initialize {
 }
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		instanceId = OSAtomicIncrement64(&SPDatabaseDocumentInstanceCounter);

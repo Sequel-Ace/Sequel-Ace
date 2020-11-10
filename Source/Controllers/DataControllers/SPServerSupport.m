@@ -92,7 +92,7 @@
  *
  * @return The initializes SPServerSupport instance
  */
-- (id)initWithMajorVersion:(NSInteger)majorVersion minor:(NSInteger)minorVersion release:(NSInteger)releaseVersion
+- (instancetype)initWithMajorVersion:(NSInteger)majorVersion minor:(NSInteger)minorVersion release:(NSInteger)releaseVersion
 {
 	if ((self = [super init])) {
 		serverMajorVersion   = majorVersion;

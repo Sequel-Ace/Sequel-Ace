@@ -80,7 +80,7 @@
 /**
  * Initialise the application's main controller, setting itself as the app delegate.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		_sessionURL = nil;

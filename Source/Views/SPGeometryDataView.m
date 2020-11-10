@@ -47,7 +47,7 @@
  * @param coord Contains all necessary data to draw the geometry image
  *
  */
-- (id)initWithCoordinates:(NSDictionary*)coord
+- (instancetype)initWithCoordinates:(NSDictionary*)coord
 {
 	return [self initWithCoordinates:coord targetDimension:400.0f];
 }
@@ -59,7 +59,7 @@
  *
  * @param targetDimension Sets the maximum size (height or width) of the image
  */
-- (id)initWithCoordinates:(NSDictionary*)coord targetDimension:(CGFloat)targetDimension
+- (instancetype)initWithCoordinates:(NSDictionary*)coord targetDimension:(CGFloat)targetDimension
 {
 
 	margin_offset = 10.0f;

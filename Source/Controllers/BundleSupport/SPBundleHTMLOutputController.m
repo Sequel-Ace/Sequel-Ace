@@ -68,7 +68,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 @synthesize suppressExceptionAlerting;
 @synthesize restoreFrame, origFrame, windowType;
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"BundleHTMLOutput"])) {
 		[webView setContinuousSpellCheckingEnabled:NO];

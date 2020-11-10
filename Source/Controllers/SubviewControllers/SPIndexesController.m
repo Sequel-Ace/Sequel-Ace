@@ -74,7 +74,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"IndexesView"])) {
 		mainNibLoaded = NO;

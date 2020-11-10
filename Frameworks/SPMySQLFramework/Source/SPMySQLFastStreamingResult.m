@@ -77,7 +77,7 @@ typedef struct st_spmysqlstreamingrowdata {
  * As opposed to SPMySQLResult, defaults to returning rows as arrays, as the result
  * sets are likely to be larger and processed in loops.
  */
-- (id)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding connection:(SPMySQLConnection *)theConnection
+- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding connection:(SPMySQLConnection *)theConnection
 {
 	// If no result set was passed in, return nil.
 	if (!theResult) return nil;

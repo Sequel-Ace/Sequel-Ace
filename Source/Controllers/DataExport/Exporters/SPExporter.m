@@ -48,7 +48,7 @@
 /**
  * Initialise an instance of SPExporter, while setting some default values.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {		
 		[self setExportProgressValue:0];

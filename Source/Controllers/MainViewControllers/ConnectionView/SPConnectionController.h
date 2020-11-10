@@ -300,7 +300,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 #pragma mark - SPConnectionControllerInitializer
 
-- (id)initWithDocument:(SPDatabaseDocument *)document;
+- (instancetype)initWithDocument:(SPDatabaseDocument *)document;
 
 - (void)loadNib;
 - (void)registerForNotifications;

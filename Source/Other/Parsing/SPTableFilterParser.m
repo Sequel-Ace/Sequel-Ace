@@ -46,7 +46,7 @@
 @synthesize numberOfArguments               = numberOfArguments;
 @synthesize clause                          = _clause;
 
-- (id)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs
+- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs
 {
 	self = [super init];
 	if (self) {

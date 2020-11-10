@@ -91,7 +91,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"UserManagerView"])) {
 		

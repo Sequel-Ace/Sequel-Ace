@@ -63,7 +63,7 @@
 	return [[MGTemplateEngine alloc] init];
 }
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		_openBlocksStack = [[NSMutableArray alloc] init];

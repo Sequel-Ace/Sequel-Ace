@@ -83,7 +83,7 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 
 @synthesize allowCustomNames;
 
-- (id)init
+- (instancetype)init
 {
     if ((self = [super initWithWindowNibName:@"GotoDatabaseDialog"])) {
 		unfilteredList = [[NSMutableArray alloc] init];

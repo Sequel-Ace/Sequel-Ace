@@ -122,7 +122,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		_mainNibLoaded = NO;

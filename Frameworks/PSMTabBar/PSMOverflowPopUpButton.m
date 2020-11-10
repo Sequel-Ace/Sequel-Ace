@@ -14,7 +14,7 @@
 
 @implementation PSMOverflowPopUpButton
 
-- (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
+- (instancetype)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
 {
     if ((self = [super initWithFrame:frameRect pullsDown:YES])) {
         [self setBezelStyle:NSRegularSquareBezelStyle];
@@ -134,7 +134,7 @@
     }
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
     if ( (self = [super initWithCoder:aDecoder]) ) {
         if ([aDecoder allowsKeyedCoding]) {
             _PSMTabBarOverflowPopUpImage = [aDecoder decodeObjectForKey:@"PSMTabBarOverflowPopUpImage"];

@@ -125,7 +125,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		

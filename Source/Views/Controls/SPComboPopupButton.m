@@ -52,7 +52,7 @@
 #pragma mark -
 #pragma mark Setup
 
-- (id)initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
 	if ((self = [super initWithCoder:decoder])) {
 		[self _initCustomData];
@@ -60,7 +60,7 @@
 	return self;
 }
 
-- (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
+- (instancetype)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
 {
 	if ((self = [super initWithFrame:frameRect pullsDown:flag])) {
 		[self _initCustomData];

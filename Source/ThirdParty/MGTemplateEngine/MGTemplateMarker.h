@@ -9,7 +9,7 @@
 
 @protocol MGTemplateMarker <NSObject>
 @required
-- (id)initWithTemplateEngine:(MGTemplateEngine *)engine; // to avoid retain cycles, use a weak reference for engine.
+- (instancetype)initWithTemplateEngine:(MGTemplateEngine *)engine; // to avoid retain cycles, use a weak reference for engine.
 - (NSArray *)markers; // array of markers (each unique across all markers) this object handles.
 - (NSArray *)endMarkersForMarker:(NSString *)marker; // returns the possible corresponding end-markers for a marker which has just started a block.
 - (NSObject *)markerEncountered:(NSString *)marker withArguments:(NSArray *)args inRange:(NSRange)markerRange

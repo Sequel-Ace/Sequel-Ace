@@ -3269,7 +3269,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 

@@ -95,6 +95,6 @@
  */
 @property(readwrite, copy) NSString *dotDatabaseVersion;
 
-- (id)initWithDelegate:(NSObject *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject *)exportDelegate;
 
 @end

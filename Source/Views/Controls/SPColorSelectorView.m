@@ -78,7 +78,7 @@ enum trackingAreaIDs
 //
 //	Setup the tracking areas for each colored dot.
 // -------------------------------------------------------------------------------
-- (id)initWithFrame:(NSRect)frameRect
+- (instancetype)initWithFrame:(NSRect)frameRect
 {
 	if ((self = [super initWithFrame:frameRect])) {
 		

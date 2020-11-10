@@ -33,7 +33,7 @@
 
 @implementation SPFavoriteTextFieldCell
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		drawsDividerUnderCell = NO;

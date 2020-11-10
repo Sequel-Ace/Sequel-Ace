@@ -69,7 +69,7 @@
 - (NSColor*)textColor;
 - (void)setTextColor:(NSColor*)color;
 
-- (id)initWithScrollView:(NSScrollView *)aScrollView;
+- (instancetype)initWithScrollView:(NSScrollView *)aScrollView;
 - (NSUInteger)lineNumberForLocation:(CGFloat)location;
 - (NSUInteger)lineNumberForCharacterIndex:(NSUInteger)index;
 

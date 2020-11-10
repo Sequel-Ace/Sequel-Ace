@@ -84,7 +84,7 @@
 
 + (SPExportFile *)exportFileAtPath:(NSString *)path;
 
-- (id)initWithFilePath:(NSString *)path;
+- (instancetype)initWithFilePath:(NSString *)path;
 
 - (void)close;
 - (BOOL)delete;

@@ -34,7 +34,7 @@
 
 static SPFavoriteColorSupport *_colorSupport = nil;
 
-- (id)init
+- (instancetype)init
 {
     if ((self = [super init])) {
         prefs = [NSUserDefaults standardUserDefaults];

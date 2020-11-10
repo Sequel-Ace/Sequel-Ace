@@ -34,7 +34,7 @@
 
 @implementation SPEditSheetTextView
 
-- (id)init
+- (instancetype)init
 {
 	return [super init];
 }

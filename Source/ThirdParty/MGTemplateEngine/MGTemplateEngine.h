@@ -35,7 +35,7 @@
 
 @protocol MGTemplateEngineMatcher <NSObject>
 @required
-- (id)initWithTemplateEngine:(MGTemplateEngine *)engine;
+- (instancetype)initWithTemplateEngine:(MGTemplateEngine *)engine;
 - (void)engineSettingsChanged; // always called at least once before beginning to process a template.
 - (NSDictionary *)firstMarkerWithinRange:(NSRange)range;
 @end

@@ -16,7 +16,7 @@
 	return [[PSMTabDragWindow alloc] initWithImage:image styleMask:styleMask];
 }
 
-- (id)initWithImage:(NSImage *)image styleMask:(NSUInteger)styleMask
+- (instancetype)initWithImage:(NSImage *)image styleMask:(NSUInteger)styleMask
 {
 	NSSize size = [image size];
 	

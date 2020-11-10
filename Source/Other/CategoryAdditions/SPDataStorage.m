@@ -304,6 +304,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	@finally {
+		// No op
 	}
 }
 
@@ -344,6 +345,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	@finally {
+		// No op
 	}
 }
 
@@ -364,6 +366,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 	}
 	@finally {
+		// No op
 	}
 }
 

@@ -38,7 +38,7 @@
 
 @implementation SPPillAttachmentCell
 
-- (id)init
+- (instancetype)init
 {
     if(self = [super init]) {
         _borderColor = [NSColor colorWithCalibratedRed:168/255.0 green:184/255.0 blue:249/255.0 alpha: 1];

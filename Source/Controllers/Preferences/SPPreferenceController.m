@@ -57,7 +57,7 @@
 @synthesize filePreferencePane;
 @synthesize fontChangeTarget;
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"Preferences"])) {		
 		fontChangeTarget = 0;

@@ -55,7 +55,7 @@
 @synthesize defaultCollationFormatString;
 @synthesize _oldCharset;
 
-- (id)initWithCharsetButton:(NSPopUpButton *)aCharsetButton CollationButton:(NSPopUpButton *)aCollationButton
+- (instancetype)initWithCharsetButton:(NSPopUpButton *)aCharsetButton CollationButton:(NSPopUpButton *)aCollationButton
 {
 	NSAssert((aCharsetButton != nil),@"aCharsetButton != nil");
 	NSAssert((aCollationButton != nil),@"aCollationButton != nil");

@@ -42,7 +42,7 @@ static NSString *SPGroupNodeIsExpandedKey = @"SPGroupNodeIsExpanded";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		[self setNodeName:nil];
@@ -52,7 +52,7 @@ static NSString *SPGroupNodeIsExpandedKey = @"SPGroupNodeIsExpanded";
 	return self;
 }
 
-- (id)initWithName:(NSString *)name
+- (instancetype)initWithName:(NSString *)name
 {
 	if ((self = [self init])) {
 		[self setNodeName:name];
@@ -61,7 +61,7 @@ static NSString *SPGroupNodeIsExpandedKey = @"SPGroupNodeIsExpanded";
 	return self;
 }
 
-- (id)initWithDictionary:(NSDictionary *)dict
+- (instancetype)initWithDictionary:(NSDictionary *)dict
 {
 	if ((self = [self initWithName:[dict objectForKey:SPFavoritesGroupNameKey]])) {
 		[self setNodeIsExpanded:[(NSNumber *)[dict objectForKey:SPFavoritesGroupIsExpandedKey] boolValue]];
@@ -96,7 +96,7 @@ static NSString *SPGroupNodeIsExpandedKey = @"SPGroupNodeIsExpanded";
 #pragma mark -
 #pragma mark Coding protocol methods
 
-- (id)initWithCoder:(NSCoder *)coder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
 	if (!(self = [super init])) {
 		return nil;

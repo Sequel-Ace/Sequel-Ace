@@ -1773,12 +1773,12 @@ static id rkl_performEnumerationUsingBlock(id self, SEL _cmd,
 	void * scratchBuffer[_RKL_SCRATCH_BUFFERS];
 	NSUInteger     needToFreeBufferUniChar:1;
 }
-- (id)initWithRegex:(NSString *)initRegexString options:(RKLRegexOptions)initOptions string:(NSString *)initString range:(NSRange)initRange error:(NSError **)initError;
+- (instancetype)initWithRegex:(NSString *)initRegexString options:(RKLRegexOptions)initOptions string:(NSString *)initString range:(NSRange)initRange error:(NSError **)initError;
 @end
 
 @implementation RKLBlockEnumerationHelper
 
-- (id)initWithRegex:(NSString *)initRegexString options:(RKLRegexOptions)initOptions string:(NSString *)initString range:(NSRange)initRange error:(NSError **)initError
+- (instancetype)initWithRegex:(NSString *)initRegexString options:(RKLRegexOptions)initOptions string:(NSString *)initString range:(NSRange)initRange error:(NSError **)initError
 {
 	volatile NSUInteger RKL_CLEANUP(rkl_cleanup_cacheSpinLockStatus) rkl_cacheSpinLockStatus = 0UL;
 

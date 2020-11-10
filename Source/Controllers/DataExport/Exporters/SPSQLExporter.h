@@ -133,7 +133,7 @@
  */
 @property(readwrite, assign) SPSQLExportInsertDivider sqlInsertDivider;
 
-- (id)initWithDelegate:(NSObject<SPSQLExporterProtocol> *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject<SPSQLExporterProtocol> *)exportDelegate;
 
 - (BOOL)didExportErrorsOccur;
 

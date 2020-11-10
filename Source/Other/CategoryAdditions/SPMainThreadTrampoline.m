@@ -60,7 +60,7 @@
  * The master initiliasation - the category implementation calls this
  * with the requested object.
  */
-- (id)initWithObject:(id)theObject
+- (instancetype)initWithObject:(id)theObject
 {
 	if ((self = [super init])) {
 		trampolineObject = theObject;

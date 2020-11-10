@@ -49,7 +49,7 @@
 /**
  * Initializes a new console message instance using the suppled message, date and connection.
  */
-- (id)initWithMessage:(NSString *)consoleMessage date:(NSDate *)date connection:(NSString *)connection database:(NSString *)database
+- (instancetype)initWithMessage:(NSString *)consoleMessage date:(NSDate *)date connection:(NSString *)connection database:(NSString *)database
 {
 	if ((self = [super init])) {
 		[self setMessageDate:date];

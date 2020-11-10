@@ -71,7 +71,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"DatabaseProcessList"])) {
 		

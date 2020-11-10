@@ -72,7 +72,7 @@
 
 @synthesize fileManager;
 
-- (id)init
+- (instancetype)init
 {
 
 	if ((self = [super initWithWindowNibName:@"BundleEditor"])) {

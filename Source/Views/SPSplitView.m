@@ -79,7 +79,7 @@
 #pragma mark -
 #pragma mark Setup and teardown
 
-- (id)initWithFrame:(NSRect)frameRect
+- (instancetype)initWithFrame:(NSRect)frameRect
 {
 	if ((self = [super initWithFrame:frameRect])) {
 		[self _initCustomProperties];
@@ -87,7 +87,7 @@
 	return self;
 }
 
-- (id)initWithCoder:(NSCoder *)coder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
 	if ((self = [super initWithCoder:coder])) {
 		[self _initCustomProperties];

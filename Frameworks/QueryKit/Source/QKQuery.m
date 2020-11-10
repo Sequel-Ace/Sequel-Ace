@@ -104,17 +104,17 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 	return query;
 }
 
-- (id)init
+- (instancetype)init
 {
 	return [self initWithTable:nil];
 }
 
-- (id)initWithTable:(NSString *)table
+- (instancetype)initWithTable:(NSString *)table
 {
 	return [self initWithTable:table database:nil];
 }
 
-- (id)initWithTable:(NSString *)table database:(NSString *)database
+- (instancetype)initWithTable:(NSString *)table database:(NSString *)database
 {
 	if ((self = [super init])) {
 		[self setTable:table];

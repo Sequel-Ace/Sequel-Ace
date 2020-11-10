@@ -106,6 +106,6 @@
  */
 @property(readwrite, strong) SPTableData *csvTableData;
 
-- (id)initWithDelegate:(NSObject *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject *)exportDelegate;
 
 @end

@@ -55,8 +55,8 @@
 
 }
 
-- (id)initWithCoordinates:(NSDictionary*)coord targetDimension:(CGFloat)targetDimension;
-- (id)initWithCoordinates:(NSDictionary*)coord;
+- (instancetype)initWithCoordinates:(NSDictionary*)coord targetDimension:(CGFloat)targetDimension;
+- (instancetype)initWithCoordinates:(NSDictionary*)coord;
 - (NSImage*)thumbnailImage;
 - (NSData*)pdfData;
 

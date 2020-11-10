@@ -55,7 +55,7 @@ static SPNotLoaded *notLoaded = nil;
 	return nil;
 }
 
-- (id)init
+- (instancetype)init
 {
 	Class notLoadedClass = [self class];
 	

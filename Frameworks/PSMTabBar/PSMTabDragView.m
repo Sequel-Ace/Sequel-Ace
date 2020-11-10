@@ -10,7 +10,7 @@
 
 @implementation PSMTabDragView
 
-- (id)initWithFrame:(NSRect)frame {
+- (instancetype)initWithFrame:(NSRect)frame {
     if ( (self = [super initWithFrame:frame]) ) {
 		_alpha = 1.0f;
     }

@@ -57,7 +57,7 @@
 	BOOL _enabled;
 }
 
-- (id)initWithCharsetButton:(NSPopUpButton *)aCharsetButton CollationButton:(NSPopUpButton *)aCollationButton;
+- (instancetype)initWithCharsetButton:(NSPopUpButton *)aCharsetButton CollationButton:(NSPopUpButton *)aCollationButton;
 
 /** Set this to the instance of SPDatabaseData for the current connection */
 @property(readwrite,strong) SPDatabaseData *databaseData;

@@ -107,7 +107,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 // =============================
 // = Setup/tear-down functions =
 // =============================
-- (id)init
+- (instancetype)init
 {
 	maxWindowWidth = 450;
 

@@ -65,7 +65,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(id)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"DataMigrationDialog"])) {
 

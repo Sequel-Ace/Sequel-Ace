@@ -54,7 +54,7 @@
 	}
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
 {
 	if(self = [super initWithCoder:aDecoder]) {
 		if([aDecoder allowsKeyedCoding]) {

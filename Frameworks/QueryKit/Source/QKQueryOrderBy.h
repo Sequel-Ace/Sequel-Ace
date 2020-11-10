@@ -53,6 +53,6 @@
 
 + (QKQueryOrderBy *)orderByField:(NSString *)field descending:(BOOL)descending;
 
-- (id)initWithField:(NSString *)field descending:(BOOL)descending;
+- (instancetype)initWithField:(NSString *)field descending:(BOOL)descending;
 
 @end

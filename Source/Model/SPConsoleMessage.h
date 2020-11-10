@@ -49,7 +49,7 @@
 									 connection:(NSString *)connection
 									   database:(NSString *)database;
 
-- (id)initWithMessage:(NSString *)message
+- (instancetype)initWithMessage:(NSString *)message
 				 date:(NSDate *)date
 		   connection:(NSString *)connection
 			 database:(NSString *)database;

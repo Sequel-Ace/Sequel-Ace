@@ -49,7 +49,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 /**
  * Initialize the manager with the supplied document
  */
-- (id)initWithDatabaseDocument:(SPDatabaseDocument *)document forFilterType:(NSString *)compareType
+- (instancetype)initWithDatabaseDocument:(SPDatabaseDocument *)document forFilterType:(NSString *)compareType
 {
 	if (document == nil) {
 		NSBeep();

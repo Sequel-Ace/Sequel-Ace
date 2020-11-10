@@ -32,7 +32,7 @@
     @returns    A newly created PSMTabBarController instance.
 */
 
-- (id)initWithTabBarControl:(PSMTabBarControl *)control
+- (instancetype)initWithTabBarControl:(PSMTabBarControl *)control
 {
     if ( (self = [super init]) ) {
         _control = control;

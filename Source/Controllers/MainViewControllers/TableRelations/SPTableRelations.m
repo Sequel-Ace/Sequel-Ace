@@ -67,7 +67,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		relationData         = [[NSMutableArray alloc] init];

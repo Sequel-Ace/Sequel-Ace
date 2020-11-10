@@ -82,7 +82,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		triggerData = [[NSMutableArray alloc] init];

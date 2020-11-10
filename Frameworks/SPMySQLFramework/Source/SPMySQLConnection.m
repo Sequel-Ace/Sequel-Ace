@@ -122,7 +122,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  * Typically initialisation would be followed by setting the connection details
  * and then calling -connect.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		mySQLConnection = NULL;

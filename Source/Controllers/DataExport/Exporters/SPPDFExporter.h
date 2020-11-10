@@ -45,6 +45,6 @@
  */
 @property (readwrite, weak) NSObject <SPPDFExporterProtocol> *delegate;
 
-- (id)initWithDelegate:(NSObject *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject *)exportDelegate;
 
 @end

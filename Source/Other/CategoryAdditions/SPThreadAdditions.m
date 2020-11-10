@@ -38,7 +38,7 @@
 	id object;
 	SEL selector;
 }
-- (id)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName;
+- (instancetype)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName;
 - (void)run:(id)argument;
 @end
 
@@ -65,7 +65,7 @@
 
 @implementation SPNamedThread
 
-- (id)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName
+- (instancetype)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName
 {
 	if(self = [super init]) {
 		name = [aName copy];

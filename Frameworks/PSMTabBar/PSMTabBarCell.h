@@ -39,8 +39,8 @@
 }
 
 // creation/destruction
-- (id)initWithControlView:(PSMTabBarControl *)controlView;
-- (id)initPlaceholderWithFrame:(NSRect)frame expanded:(BOOL)value inControlView:(PSMTabBarControl *)controlView;
+- (instancetype)initWithControlView:(PSMTabBarControl *)controlView;
+- (instancetype)initPlaceholderWithFrame:(NSRect)frame expanded:(BOOL)value inControlView:(PSMTabBarControl *)controlView;
 
 // accessors
 - (id)customControlView;
@@ -103,7 +103,7 @@
 
 // archiving
 - (void)encodeWithCoder:(NSCoder *)aCoder;
-- (id)initWithCoder:(NSCoder *)aDecoder;
+- (instancetype)initWithCoder:(NSCoder *)aDecoder;
 
 @end
 

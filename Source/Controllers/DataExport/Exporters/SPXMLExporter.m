@@ -52,7 +52,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPXMLExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPXMLExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPXMLExporterProtocol));

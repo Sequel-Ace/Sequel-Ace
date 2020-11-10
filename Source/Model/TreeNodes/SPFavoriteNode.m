@@ -41,7 +41,7 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		[self setNodeFavorite:nil];
@@ -50,7 +50,7 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 	return self;
 }
 
-- (id)initWithDictionary:(NSMutableDictionary *)dictionary
+- (instancetype)initWithDictionary:(NSMutableDictionary *)dictionary
 {
 	if ((self = [self init])) {
 		[self setNodeFavorite:dictionary];
@@ -79,7 +79,7 @@ static NSString *SPFavoriteNodeKey = @"SPFavoriteNode";
 #pragma mark -
 #pragma mark Coding protocol methods
 
-- (id)initWithCoder:(NSCoder *)coder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
 	if (!(self = [super init])) {
 		return nil;

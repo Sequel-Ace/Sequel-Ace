@@ -42,7 +42,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
     return sharedDragAssistant;
 }
 
-- (id)init
+- (instancetype)init
 {
     if ( (self = [super init]) ) {
         _sourceTabBar = nil;
@@ -961,7 +961,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
     }
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
     //self = [super initWithCoder:aDecoder];
     //if (self) {
         if ([aDecoder allowsKeyedCoding]) {

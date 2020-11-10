@@ -179,7 +179,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 /**
  * Initializes an instance of SPExportController.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"ExportDialog"])) {
 		

@@ -13,7 +13,7 @@
 	return [[ICUTemplateMatcher alloc] initWithTemplateEngine:theEngine];
 }
 
-- (id)initWithTemplateEngine:(MGTemplateEngine *)theEngine
+- (instancetype)initWithTemplateEngine:(MGTemplateEngine *)theEngine
 {
 	if ((self = [super init])) {
 		self.engine = theEngine; // weak ref

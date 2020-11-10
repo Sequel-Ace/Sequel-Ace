@@ -90,7 +90,7 @@ int _isSPLeaksLog(const struct direct *entry);
 	return nil;
 }
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		initializedSuccessfully = YES;

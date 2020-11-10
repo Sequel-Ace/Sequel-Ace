@@ -38,7 +38,7 @@
 
 @implementation ImageAndTextCell
 
-- (id)init
+- (instancetype)init
 {
 	self = [super init];
 	image = nil;

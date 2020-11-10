@@ -61,7 +61,7 @@
 /**
  * Prevent SPDatabaseStructure from being init'd normally.
  */
-- (id)init
+- (instancetype)init
 {
 	[NSException raise:NSInternalInconsistencyException format:@"SPDatabaseStructures should not be init'd directly; use initWithDelegate: instead."];
 	return nil;
@@ -71,7 +71,7 @@
  * Standard init method, constructing the SPDatabaseStructure around a SPMySQL
  * connection pointer and a delegate.
  */
-- (id)initWithDelegate:(SPDatabaseDocument *)theDelegate
+- (instancetype)initWithDelegate:(SPDatabaseDocument *)theDelegate
 {
 	if ((self = [super init])) {
 

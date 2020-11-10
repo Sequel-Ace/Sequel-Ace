@@ -55,7 +55,7 @@
 
     // archiving
 - (void)encodeWithCoder:(NSCoder *)aCoder;
-- (id)initWithCoder:(NSCoder *)aDecoder;
+- (instancetype)initWithCoder:(NSCoder *)aDecoder;
 
     // convenience
 - (void)_bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item;
@@ -187,7 +187,7 @@
     }
 }
     
-- (id)initWithFrame:(NSRect)frame
+- (instancetype)initWithFrame:(NSRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
@@ -1888,7 +1888,7 @@
     }
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder 
+- (instancetype)initWithCoder:(NSCoder *)aDecoder 
 {
     self = [super initWithCoder:aDecoder];
     if (self) {

@@ -59,7 +59,7 @@ static unsigned short getRandomPort(void);
  * therefore not recommended, or via setPasswordKeychainName:, which will use the keychain on-demand
  * and is therefore preferred.
  */
-- (id)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost
+- (instancetype)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost
 {
 	if (!theHost || !targetPort || !targetHost) return nil;
 

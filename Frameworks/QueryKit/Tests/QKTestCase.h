@@ -45,6 +45,6 @@
 
 @property (readwrite, assign) QKQueryDatabase database;
 
-- (id)initWithInvocation:(NSInvocation *)invocation database:(QKQueryDatabase)database identifierQuote:(NSString *)quote;
+- (instancetype)initWithInvocation:(NSInvocation *)invocation database:(QKQueryDatabase)database identifierQuote:(NSString *)quote;
 
 @end

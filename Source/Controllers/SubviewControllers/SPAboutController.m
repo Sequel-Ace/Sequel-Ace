@@ -49,7 +49,7 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	return [super initWithWindowNibName:SPAboutPanelNibName];
 }

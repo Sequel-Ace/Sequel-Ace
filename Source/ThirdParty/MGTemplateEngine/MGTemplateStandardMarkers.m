@@ -79,7 +79,7 @@
 	NSMutableDictionary *cycles;
 }
 
-- (id)initWithTemplateEngine:(MGTemplateEngine *)theEngine
+- (instancetype)initWithTemplateEngine:(MGTemplateEngine *)theEngine
 {
 	if ((self = [super init])) {
 		engine = theEngine;

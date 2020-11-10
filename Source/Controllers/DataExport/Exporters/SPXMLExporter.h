@@ -87,6 +87,6 @@
  */
 @property (readwrite, assign) SPXMLExportFormat xmlFormat;
 
-- (id)initWithDelegate:(NSObject *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject *)exportDelegate;
 
 @end

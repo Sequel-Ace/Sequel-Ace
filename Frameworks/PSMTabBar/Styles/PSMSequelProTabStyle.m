@@ -645,7 +645,7 @@
 {
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder 
+- (instancetype)initWithCoder:(NSCoder *)aDecoder 
 {
     return [self init];
 }

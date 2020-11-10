@@ -65,7 +65,7 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	return nil;    
 }
 
-- (id)init
+- (instancetype)init
 {
     if ((self = [super init])) {
 		

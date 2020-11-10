@@ -59,7 +59,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 /**
  * Init.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		mainStringColor = [NSColor blackColor];

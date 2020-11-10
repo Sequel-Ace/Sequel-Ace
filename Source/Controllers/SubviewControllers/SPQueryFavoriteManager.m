@@ -53,7 +53,7 @@
 /**
  * Initialize the manager with the supplied delegate.
  */
-- (id)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(id)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"QueryFavoriteManager"])) {
 

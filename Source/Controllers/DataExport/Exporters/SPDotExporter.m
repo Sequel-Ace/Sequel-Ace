@@ -53,7 +53,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPDotExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPDotExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPDotExporterProtocol));

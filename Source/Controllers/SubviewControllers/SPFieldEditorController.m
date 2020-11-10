@@ -62,7 +62,7 @@ typedef enum {
  * Initialise an instance of SPFieldEditorController using the XIB “FieldEditorSheet.xib”. Init the available Quciklook format by reading
  * EditorQuickLookTypes.plist and if given user-defined format store in the Preferences for key (SPQuickLookTypes).
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"FieldEditorSheet"]))
 	{

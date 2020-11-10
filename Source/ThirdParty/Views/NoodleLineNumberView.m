@@ -67,7 +67,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 @synthesize alternateTextColor;
 @synthesize backgroundColor;
 
-- (id)initWithScrollView:(NSScrollView *)aScrollView
+- (instancetype)initWithScrollView:(NSScrollView *)aScrollView
 {
 
 	if ((self = [super initWithScrollView:aScrollView orientation:NSVerticalRuler]) != nil)
@@ -416,7 +416,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 #pragma mark -
 
-- (id)initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
 	if ((self = [super initWithCoder:decoder]) != nil)
 	{

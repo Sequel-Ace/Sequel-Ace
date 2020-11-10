@@ -38,7 +38,7 @@
 
 @implementation SPChooseMenuItemDialogTextView
 
-- (id)init;
+- (instancetype)init;
 {
 	return [super initWithFrame:NSMakeRect(1, 1, 2, 2)];
 }
@@ -62,7 +62,7 @@
 @synthesize selectedItemIndex;
 @synthesize waitForChoice;
 
-- (id)init;
+- (instancetype)init;
 {
 	if ((self = [super initWithContentRect:NSMakeRect(1, 1, 2, 2) 
 								styleMask:NSWindowStyleMaskBorderless 
