@@ -1,0 +1,235 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXFileReference section */
+		9069D28C0FCE659A0042E34C /* libcrypto.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcrypto.a; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		9069D12D0FCE340B0042E34C = {
+			isa = PBXGroup;
+			children = (
+				9069D25C0FCE62420042E34C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9069D25C0FCE62420042E34C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9069D28C0FCE659A0042E34C /* libcrypto.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9069D28B0FCE659A0042E34C /* crypto */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9069D2980FCE65C10042E34C /* Build configuration list for PBXNativeTarget "crypto" */;
+			buildPhases = (
+				9038ACD812DCAC96004FA0D0 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = crypto;
+			productName = crypto;
+			productReference = 9069D28C0FCE659A0042E34C /* libcrypto.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9069D12F0FCE340B0042E34C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1220;
+			};
+			buildConfigurationList = 9069D1320FCE340B0042E34C /* Build configuration list for PBXProject "openssl" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9069D12D0FCE340B0042E34C;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9069D28B0FCE659A0042E34C /* crypto */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		9038ACD812DCAC96004FA0D0 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/usr/bin/env bash\n# shellcheck shell=bash\n#set | grep ARCH\n\n# ARCHS='arm64 x86_64'\nunset CFLAGS\n#set -x\n\n## Determine the appropriate openssl source path to use\n## Introduced by michaeltyson, adapted to account for OPENSSL_SRC build path\n\n# locate src archive file if present\nSRC_ARCHIVE=$(ls openssl*tar.gz 2>/dev/null)\n\n# if there is an openssl directory immediately under the openssl.xcode source \n# folder then build there\nif [ -d \"$SRCROOT/openssl\" ]; then\nOPENSSL_SRC=\"$SRCROOT/openssl\"\n# else, if there is a openssl.tar.gz in the directory, expand it to openssl\n# and use it\nelif [ -f \"$SRC_ARCHIVE\" ]; then\nOPENSSL_SRC=\"$PROJECT_TEMP_DIR/openssl\"\nif [ ! -d \"$OPENSSL_SRC\" ]; then\necho \"extracting $SRC_ARCHIVE...\"\nmkdir \"$OPENSSL_SRC\"\ntar -C \"$OPENSSL_SRC\" --strip-components=1 -zxf \"$SRC_ARCHIVE\" || exit 1\ncp -RL \"$OPENSSL_SRC/include\" \"$TARGET_BUILD_DIR\"\nfi\nelif [ ! -f \"$SRC_ARCHIVE\" ]; then\necho \"***** Download openssl src from https://www.openssl.org/source and place in Frameworks/openssl *****\"\nexit 1;\nfi\n\ncp -f \"$SRCROOT\"/10-main.conf \"$OPENSSL_SRC\"/Configurations/\n\necho \"***** using $OPENSSL_SRC for openssl source code  *****\"\n\n# check whether libcrypto.a already exists - we'll only build if it does not\nif [ -f  \"$TARGET_BUILD_DIR/libcrypto.1.1.dylib\" ]; then\necho \"***** Using previously-built libary $TARGET_BUILD_DIR/libcrypto.1.1.dylib - skipping build *****\"\necho \"***** To force a rebuild clean project and clean dependencies *****\"\nexit 0;\nelse\necho \"***** No previously-built libary present at $TARGET_BUILD_DIR/libcrypto.1.1.dylib - performing build *****\"\nfi\n\n# figure out the right set of build architectures for this run\nBUILDARCHS=\"darwin64-arm64-cc darwin64-x86_64-cc\"\n\necho \"***** creating universal binary for architectures: $BUILDARCHS *****\"\n\nif [ \"$SDKROOT\" != \"\" ]; then\nISYSROOT=\"-isysroot $SDKROOT\"\nfi\n\necho \"***** using ISYSROOT $ISYSROOT *****\"\n\nOPENSSL_OPTIONS=\"\"\n\necho \"***** using OPENSSL_OPTIONS $OPENSSL_OPTIONS *****\"\n\necho \"$OPENSSL_SRC\"\necho \"$BUILD_DIR\"\n\ncd \"$OPENSSL_SRC\" || exit 1;\n\n\necho \"***** BUILDING UNIVERSAL ARCH darwin64-arm64-cc ******\"\n#make clean\n\n./Configure darwin64-arm64-cc no-asm -openssldir=\"$OPENSSL_SRC\" --prefix=\"$BUILD_DIR\"\n\nmake -j \"$(sysctl -n hw.ncpu)\" CFLAG=\"-D_DARWIN_C_SOURCE $ASM_DEF -arch arm64 $ISYSROOT -Wno-unused-value -Wno-parentheses\" SHARED_LDFLAGS=\"-arch arm64 -dynamiclib\"\n\necho \"***** copying intermediate libraries to $CONFIGURATION_TEMP_DIR/arm64-*.a *****\"\ncp libcrypto.a \"$CONFIGURATION_TEMP_DIR\"/arm64-libcrypto.a\ncp libssl.a \"$CONFIGURATION_TEMP_DIR\"/arm64-libssl.a\n\ncp libcrypto.1.1.dylib \"$CONFIGURATION_TEMP_DIR\"/arm64-libcrypto.1.1.dylib\ncp libssl.1.1.dylib \"$CONFIGURATION_TEMP_DIR\"/arm64-libssl.1.1.dylib\n\necho \"***** BUILDING UNIVERSAL ARCH darwin64-x86_64-cc ******\"\nmake clean\n\n./Configure darwin64-x86_64-cc -openssldir=\"$OPENSSL_SRC\" --prefix=\"$BUILD_DIR\"\n\nmake -j \"$(sysctl -n hw.ncpu)\" CFLAG=\"-D_DARWIN_C_SOURCE $ASM_DEF -arch x86_64 $ISYSROOT -Wno-unused-value -Wno-parentheses\" SHARED_LDFLAGS=\"-arch x86_64 -dynamiclib\"\n\necho \"***** copying intermediate libraries to $CONFIGURATION_TEMP_DIR/x86_64-*.a *****\"\ncp libcrypto.a \"$CONFIGURATION_TEMP_DIR\"/x86_64-libcrypto.a\ncp libssl.a \"$CONFIGURATION_TEMP_DIR\"/x86_64-libssl.a\ncp libcrypto.1.1.dylib \"$CONFIGURATION_TEMP_DIR\"/x86_64-libcrypto.1.1.dylib\ncp libssl.1.1.dylib \"$CONFIGURATION_TEMP_DIR\"/x86_64-libssl.1.1.dylib\n\necho \"***** creating universallibraries in $TARGET_BUILD_DIR *****\"\nmkdir -p \"$TARGET_BUILD_DIR\"\nlipo -create \"$CONFIGURATION_TEMP_DIR/\"*-libcrypto.1.1.dylib -output \"$TARGET_BUILD_DIR/libcrypto.1.1.dylib\"\nlipo -create \"$CONFIGURATION_TEMP_DIR/\"*-libssl.1.1.dylib -output \"$TARGET_BUILD_DIR/libssl.1.1.dylib\"\n                                       \necho \"***** removing temporary files from $CONFIGURATION_TEMP_DIR *****\"\nrm -f \"$CONFIGURATION_TEMP_DIR/\"*-libcrypto.*\nrm -f \"$CONFIGURATION_TEMP_DIR/\"*-libssl.*\n                              \necho \"***** copying libraries to $SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib\" \ncp \"$TARGET_BUILD_DIR/libcrypto.1.1.dylib\" \"$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib\" || exit 1;\ncp \"$TARGET_BUILD_DIR/libssl.1.1.dylib\" \"$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib\" || exit 1;\n\n#echo \"***** executing ranlib on libraries in $TARGET_BUILD_DIR *****\"\n#ranlib \"$TARGET_BUILD_DIR/libcrypto.a\"\n#ranlib \"$TARGET_BUILD_DIR/libssl.a\"\n                                       \n\n\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		9069D1300FCE340B0042E34C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"ARCHS[sdk=iphoneos*]" = "$(ARCHS_STANDARD)";
+				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD)";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = "$(PLATFORM_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				VALID_ARCHS = "arm64 x86_64";
+			};
+			name = Debug;
+		};
+		9069D1310FCE340B0042E34C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"ARCHS[sdk=iphoneos*]" = "$(ARCHS_STANDARD)";
+				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD)";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				SDKROOT = "$(PLATFORM_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				VALID_ARCHS = "arm64 x86_64";
+			};
+			name = Release;
+		};
+		9069D28D0FCE659B0042E34C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "@executable_path";
+				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_NAME = crypto;
+				VALID_ARCHS = "arm64 x86_64";
+			};
+			name = Debug;
+		};
+		9069D28E0FCE659B0042E34C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "@executable_path";
+				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_NAME = crypto;
+				VALID_ARCHS = "arm64 x86_64";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9069D1320FCE340B0042E34C /* Build configuration list for PBXProject "openssl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9069D1300FCE340B0042E34C /* Debug */,
+				9069D1310FCE340B0042E34C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9069D2980FCE65C10042E34C /* Build configuration list for PBXNativeTarget "crypto" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9069D28D0FCE659B0042E34C /* Debug */,
+				9069D28E0FCE659B0042E34C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9069D12F0FCE340B0042E34C /* Project object */;
+}

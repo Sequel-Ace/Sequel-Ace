@@ -20,6 +20,20 @@
                ReferencedContainer = "container:sequel-ace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9069D28B0FCE659A0042E34C"
+               BuildableName = "libcrypto.a"
+               BlueprintName = "crypto"
+               ReferencedContainer = "container:Frameworks/openssl/openssl.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
