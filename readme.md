@@ -42,9 +42,12 @@ Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects
 
 ## Compatibility
 
-- macOS >= 10.10
-- MySQL >= 5.6
-- MariaDB
+- **macOS:** >= 10.12
+- **Processor:** Intel & Apple Silicon _(via Rosetta 2)_
+- **MySQL:** >= 5.6
+- **MariaDB:** >= 10.0
+
+_Note: An [older version of Sequel Ace (version 2.3)](https://github.com/sequel-ace/sequel-ace/releases) is available to download for macOS versions 10.10 and 10.11, however support is limited and we encourage upgrading to the latest macOS and Sequel Ace._
 
 ## License
 
