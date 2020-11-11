@@ -40,7 +40,7 @@
 #import <netinet/in.h>
 #import <CommonCrypto/CommonDigest.h>
 
-static unsigned short getRandomPort();
+static unsigned short getRandomPort(void);
 
 @interface SPSSHTunnel ()
 
@@ -52,7 +52,7 @@ static unsigned short getRandomPort();
 
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
-
+@synthesize sshQuestionText, sshQuestionDialog, sshPasswordText, sshPasswordDialog, sshPasswordField;
 /*
  * Initialise with the supplied connection details.  Host, login and port should all be provided.
  * The password can either be set later via setPassword:, which stores the password locally and is
@@ -142,7 +142,7 @@ static unsigned short getRandomPort();
 	if (sshPasswordDialog) SPClear(sshPasswordDialog);
 
 	parentWindow = theWindow;
-	if (![NSBundle loadNibNamed:@"SSHQuestionDialog" owner:self]) {
+	if (![NSBundle.mainBundle loadNibNamed:@"SSHQuestionDialog" owner:self topLevelObjects:nil]) {
 		NSLog(@"SSH query dialog could not be loaded; SSH tunnels will not function correctly.");
 		parentWindow = nil;
 	}
@@ -838,6 +838,10 @@ static unsigned short getRandomPort();
 	// As this object is not a NSWindowController, use manual top-level nib item management
 	SPClear(sshQuestionDialog);
 	SPClear(sshPasswordDialog);
+	
+	SPClear(sshQuestionText);
+	SPClear(sshPasswordText);
+	SPClear(sshPasswordField);
 	
 	[super dealloc];
 }

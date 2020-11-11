@@ -48,23 +48,23 @@ extension String {
 }
 
 @objc extension NSString {
-	func dropPrefix(prefix: NSString) -> NSString {
+	public func dropPrefix(prefix: NSString) -> NSString {
 		return (self as String).dropPrefix(prefix as String) as NSString
 	}
 
-	func dropSuffix(suffix: NSString) -> NSString {
+	public func dropSuffix(suffix: NSString) -> NSString {
 		return (self as String).dropSuffix(suffix as String) as NSString
 	}
 
-	func hasPrefix(prefix: NSString, caseSensitive: Bool = true) -> Bool {
+	public func hasPrefix(prefix: NSString, caseSensitive: Bool = true) -> Bool {
 		return (self as String).hasPrefix(prefix as String, caseSensitive: caseSensitive)
 	}
 
-	func hasSuffix(suffix: NSString, caseSensitive: Bool = true) -> Bool {
+	public func hasSuffix(suffix: NSString, caseSensitive: Bool = true) -> Bool {
 		return (self as String).hasSuffix(suffix as String, caseSensitive: caseSensitive)
 	}
 	
-	func trimWhitespacesAndNewlines() -> NSString {
+	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
 	}
 }

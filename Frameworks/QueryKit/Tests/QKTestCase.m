@@ -43,16 +43,4 @@
     return self;
 }
 
-- (void)dealloc {
-    if (_query) {
-        [_query release];
-        _query = nil;
-    }
-	if (_identifierQuote) {
-        [_identifierQuote release];
-        _identifierQuote = nil;
-    }
-	[super dealloc];
-}
-
 @end

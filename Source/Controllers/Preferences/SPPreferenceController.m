@@ -33,6 +33,8 @@
 #import "SPEditorPreferencePane.h"
 #import "SPGeneralPreferencePane.h"
 
+#import "sequel-ace-Swift.h"
+
 @interface SPPreferenceController () <NSWindowDelegate>
 
 - (void)_setupToolbar;
@@ -123,19 +125,16 @@
  * pane controllers (NSViewController subclasses) don't seem to be in the responder chain so we need to catch
  * it here.
  */
-- (void)changeFont:(id)sender
-{		
+- (void)changeDefaultFont:(id)sender
+{
 	NSFont *font;
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 	
 	switch (fontChangeTarget)
 	{
-		case SPPrefFontChangeTargetTable:
-			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]]];
-			
-			[prefs setObject:[NSArchiver archivedDataWithRootObject:font] forKey:SPGlobalResultTableFont];
-			
-			[tablesPreferencePane updateDisplayedTableFontName];
+		case SPPrefFontChangeTargetGeneral:
+			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUserDefaults getFont]];
+			[NSUserDefaults saveFont:font];
 			break;
 		case SPPrefFontChangeTargetEditor:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];

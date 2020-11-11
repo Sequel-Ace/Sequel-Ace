@@ -34,6 +34,8 @@
 #import "NoodleLineNumberView.h"
 #import "RegexKitLite.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPBundleCommandTextView
 
 - (void)dealloc
@@ -97,7 +99,7 @@
 																	  inTextContainer: [self textContainer]
 																			rectCount: &rectCount ];
 			[[NSColor colorWithCalibratedRed:0.95f green:0.95f blue:0.95f alpha:1.0f] setFill];
-			NSRectFillListUsingOperation(queryRects, rectCount, NSCompositeSourceOver);
+			NSRectFillListUsingOperation(queryRects, rectCount, NSCompositingOperationSourceOver);
 		}
 	}
 
@@ -366,7 +368,7 @@
 		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
-		tvFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:12];
+		tvFont = [NSUserDefaults getFont];
 		[self setFont:tvFont];
 		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
 	}
@@ -820,6 +822,9 @@
 {
 	if([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 

@@ -30,7 +30,6 @@
 
 #import "SPMySQLFastStreamingResult.h"
 #import "SPMySQL Private APIs.h"
-#import "SPMySQLArrayAdditions.h"
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -112,10 +111,6 @@ typedef struct st_spmysqlstreamingrowdata {
 
 	// Destroy the linked list lock
 	pthread_mutex_destroy(&dataLock);
-
-	// Call dealloc on super to clean up everything else, and to throw an exception if
-	// the parent connection hasn't been cleaned up correctly.
-	[super dealloc];
 }
 
 #pragma mark -
@@ -210,7 +205,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-			SPMySQLMutableArrayInsertObject(theReturnData, cellData, i);
+            [(NSMutableArray *)theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}
@@ -296,10 +291,10 @@ typedef struct st_spmysqlstreamingrowdata {
  * the instance default, as specified in setDefaultRowReturnType: or defaulting to
  * NSDictionary.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	// To avoid lock issues, return one row at a time.
-	id nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+	id __autoreleasing nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
 
 	// If no row was available, return 0 to stop iteration.
 	if (!nextRow) return 0;
@@ -309,7 +304,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+	state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }

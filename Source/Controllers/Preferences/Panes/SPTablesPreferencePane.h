@@ -38,12 +38,5 @@
  * Tables preference pane controller.
  */
 @interface SPTablesPreferencePane : SPPreferencePane <SPPreferencePaneProtocol>
-{
-	IBOutlet NSTextField *globalResultTableFontName;
-}
-
-- (IBAction)showGlobalResultTableFontPanel:(id)sender;
-
-- (void)updateDisplayedTableFontName;
 
 @end
