@@ -2,12 +2,13 @@
 
 ## Supported Versions
 
-Sequel Ace starts at version 2.0 in honor of Sequel Pro's 1.x releases. We do not support Sequel Pro, so support for Sequel Ace starts at version 2.0.
+Sequel Ace starts at version 2.0 in honor of Sequel Pro's 1.x releases. We do not support issues with Sequel Pro.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 2.x     | :white_check_mark: |
-| < 2.0   | :x:                |
+| Version | Supported                        |
+| ------- | -------------------------------- |
+| 3.x     | :white_check_mark: (active)      |
+| 2.x     | :question: (security fixes only) |
+| 1.x     | :x:                              |
 
 ## Reporting a Vulnerability
 
