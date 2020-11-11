@@ -36,6 +36,8 @@
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
 
+#import "sequel-ace-Swift.h"
+
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
 
@@ -472,11 +474,7 @@
 				[tableListInstance updateTables:self];
 			}
 			
-			SPOnewayAlertSheet(
-			   NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message"),
-			   [[NSApp onMainThread] mainWindow],
-			   errorMessage
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
 
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
@@ -494,11 +492,7 @@
 	
 	// A NULL value indicates that the user does not have permission to view the syntax
 	if ([[syntaxResult objectAtIndex:1] isNSNull]) {
-		SPOnewayAlertSheet(
-							NSLocalizedString(@"Permission Denied", @"Permission Denied"),
-							[[NSApp onMainThread] mainWindow],
-							NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail")
-							);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 		 
 		 if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		 return nil;
@@ -569,15 +563,9 @@
 															 trimmingInclusively: YES
 															returningInclusively: NO
 														   ignoringQuotedStrings: NO];
-			if(fieldName == nil || [fieldName length] == 0) {
+			if (fieldName == nil || [fieldName length] == 0) {
 				NSBeep();
-				SPOnewayAlertSheetWithStyle(
-					NSLocalizedString(@"Error while parsing CREATE TABLE syntax",@"error while parsing CREATE TABLE syntax"),
-					nil,
-					nil,
-					[NSString stringWithFormat:NSLocalizedString(@"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.", @"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item."), fieldsParser],
-					NSAlertStyleCritical
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while parsing CREATE TABLE syntax",@"error while parsing CREATE TABLE syntax") message:[NSString stringWithFormat:NSLocalizedString(@"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.", @"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item."), fieldsParser] callback:nil];
 				continue;
 			}
 			//if the next character is again a backtick, we stumbled across an escaped backtick. we have to continue parsing.
@@ -843,11 +831,7 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[[NSApp onMainThread] mainWindow],
- 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"),[mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"),[mySQLConnection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 		return nil;
@@ -865,11 +849,7 @@
 
 	// A NULL value indicates that the user does not have permission to view the syntax
 	if ([syntaxString isNSNull]) {
-		SPOnewayAlertSheet(
-		   NSLocalizedString(@"Permission Denied", @"Permission Denied"),
-		   [[NSApp onMainThread] mainWindow],
-		   NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 		if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		return nil;
 	}
@@ -883,11 +863,7 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-			   NSLocalizedString(@"Error", @"error"),
-			   [[NSApp onMainThread] mainWindow],
-			   [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 		return nil;
@@ -990,12 +966,7 @@
 	// Check for any errors, only displaying them if the connection hasn't been terminated
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			
-			SPOnewayAlertSheet(
-							   NSLocalizedString(@"Error", @"error"),
-							   [[NSApp onMainThread] mainWindow],
-							   [NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [mySQLConnection lastErrorMessage]]
-							   );
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 		pthread_mutex_unlock(&dataProcessingLock);
@@ -1038,11 +1009,7 @@
 			}
 			else {
 				//FIXME that error should really show only when trying to view the table content, but we don't even try to load that if Rows==NULL
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Querying row count failed", @"table status : row count query failed : error title"),
-					[[NSApp onMainThread] mainWindow],
-					[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to determine the number of rows for “%@”.\nMySQL said: %@ (%lu)", @"table status : row count query failed : error message"),[tableListInstance tableName],[mySQLConnection lastErrorMessage],[mySQLConnection lastErrorID]]
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Querying row count failed", @"table status : row count query failed : error title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to determine the number of rows for “%@”.\nMySQL said: %@ (%lu)", @"table status : row count query failed : error message"),[tableListInstance tableName],[mySQLConnection lastErrorMessage],[mySQLConnection lastErrorID]] callback:nil];
 			}
 		}
 
@@ -1087,11 +1054,7 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message"),
-			    [[NSApp onMainThread] mainWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [mySQLConnection lastErrorMessage]] callback:nil];
 			
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}

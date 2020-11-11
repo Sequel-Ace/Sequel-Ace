@@ -703,11 +703,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	
     if ([[parent valueForKey:@"children"] count] == 0)
     {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Unable to remove host", @"error removing host message"),
-			[self window],
-			NSLocalizedString(@"This user doesn't seem to have any associated hosts and will be removed unless a host is added.", @"error removing host informative message")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to remove host", @"error removing host message") message:NSLocalizedString(@"This user doesn't seem to have any associated hosts and will be removed unless a host is added.", @"error removing host informative message") callback:nil];
     }
 }
 
@@ -1448,11 +1444,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			[errorsString appendFormat:@"%@\n", [connection lastErrorMessage]];
 		} 
 		else {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"An error occurred", @"mysql error occurred message"),
-				[self window],
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@", @"mysql error occurred informative message"), [connection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"mysql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@", @"mysql error occurred informative message"), [connection lastErrorMessage]] callback:nil];
 		}
 
 		return NO;

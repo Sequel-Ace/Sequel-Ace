@@ -1801,11 +1801,7 @@ retry:
 						[theHintString replaceCharactersInRange:tagRange withString:cmdResult];
 					} else if([err code] != 9) { // Suppress an error message if command was killed
 						NSString *errorMessage  = [err localizedDescription];
-						SPOnewayAlertSheet(
-							NSLocalizedString(@"BASH Error", @"bash error"),
-							[self window],
-							[NSString stringWithFormat:NSLocalizedString(@"Error for “%1$@”:\n%2$@", @"error for bash command ($1), $2=message"), [theHintString substringWithRange:cmdRange], errorMessage]
-						);
+						[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:[NSString stringWithFormat:NSLocalizedString(@"Error for “%1$@”:\n%2$@", @"error for bash command ($1), $2=message"), [theHintString substringWithRange:cmdRange], errorMessage] callback:nil];
 					}
 				} else {
 					[theHintString replaceCharactersInRange:tagRange withString:@""];

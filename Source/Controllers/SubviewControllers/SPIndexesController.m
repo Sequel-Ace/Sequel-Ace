@@ -854,11 +854,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
-					SPOnewayAlertSheet(
-						NSLocalizedString(@"Unable to add index", @"add index error message"),
-						[dbDocument parentWindow],
-						[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to add the index.\n\nMySQL said: %@", @"add index error informative message"), [connection lastErrorMessage]]
-					);
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to add index", @"add index error message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to add the index.\n\nMySQL said: %@", @"add index error informative message"), [connection lastErrorMessage]] callback:nil];
 				}
 				else {
 					[tableData resetAllData];
@@ -968,11 +964,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	//if the index has no columns, something's fucky
 	if(![myColumns count]) {
-		SPOnewayAlertSheet(
-			[NSString stringWithFormat:NSLocalizedString(@"Failed to remove index '%@'", @"table structure : indexes : delete index : no columns error : title"),keyName],
-			[dbDocument parentWindow],
-			NSLocalizedString(@"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?", @"table structure : indexes : delete index : no columns error : description")
-		);
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Failed to remove index '%@'", @"table structure : indexes : delete index : no columns error : title"), keyName] message:NSLocalizedString(@"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?", @"table structure : indexes : delete index : no columns error : description") callback:nil];
 		return;
 	}
 	
@@ -983,22 +975,14 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		NSArray *fkColumns = [[fkInfo objectForKey:@"columns"] sortedArrayUsingSelector:@selector(compare:)];
 		if(![myColumns isEqualToArray:fkColumns]) continue;
 		if(constraintName != nil) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title"),
-				[dbDocument parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
 			return;
 		}
 		constraintName = [fkInfo objectForKey:@"name"];
 	}
 	
 	if(!constraintName) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title"),
-			[dbDocument parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
 		return;
 	}
 	

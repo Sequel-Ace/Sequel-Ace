@@ -841,13 +841,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
 	// so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
 	if ([tablesListInstance hasNonTableObjects]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Database Rename Unsupported", @"databsse rename unsupported message"),
-			parentWindow,
-			[NSString stringWithFormat:NSLocalizedString(
-					@"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.",
-					@"databsse rename unsupported informative message"), selectedDatabase]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Database Rename Unsupported", @"databsse rename unsupported message") message:[NSString stringWithFormat:NSLocalizedString(@"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.", @"databsse rename unsupported informative message"), selectedDatabase] callback:nil];
 		return;
 	}
 	
@@ -936,11 +930,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	
 	if(![mySQLConnection serverShutdown]) {
 		if([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title"),
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[mySQLConnection lastErrorMessage]] callback:nil];
 		}
 	}
 	// shutdown successful.
@@ -1028,10 +1018,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  * Show Error sheet (can be called from inside of a endSheet selector)
  * via [self performSelector:@selector(showErrorSheetWithTitle:) withObject: afterDelay:]
  */
--(void)showErrorSheetWith:(NSArray *)error
-{
-	// error := first object is the title , second the message, only one button OK
-	SPOnewayAlertSheet([error objectAtIndex:0], parentWindow, [error objectAtIndex:1]);
+-(void)showErrorSheetWith:(NSArray *)error {
+	// error := first object is the title, second the message, only one button OK
+	[NSAlert createWarningAlertWithTitle:[error objectAtIndex:0] message:[error objectAtIndex:1] callback:nil];
 }
 
 /**
@@ -1758,11 +1747,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([mySQLConnection queryErrored]) {
 			if ([mySQLConnection isConnected]) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error", @"error message title"), 
-					parentWindow, 
-					[NSString stringWithFormat:NSLocalizedString(@"An error occured while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [mySQLConnection lastErrorMessage]]
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error message title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [mySQLConnection lastErrorMessage]] callback:nil];
 			}
 
 			return;
@@ -1774,11 +1759,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		// A NULL value indicates that the user does not have permission to view the syntax
 		if ([tableSyntax isNSNull]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Permission Denied", @"Permission Denied"), 
-				parentWindow,
-				NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 			return;
 		}
 
@@ -1860,11 +1841,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ([mySQLConnection queryErrored]) {
 		NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to check selected items", @"unable to check selected items message") : NSLocalizedString(@"Unable to check table", @"unable to check table message");
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				mText,
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to check the %@.\n\nMySQL said:%@",@"an error occurred while trying to check the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to check the %@.\n\nMySQL said:%@",@"an error occurred while trying to check the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 		return;
@@ -1923,11 +1900,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ([mySQLConnection queryErrored]) {
 		NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to analyze selected items", @"unable to analyze selected items message") : NSLocalizedString(@"Unable to analyze table", @"unable to analyze table message");
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				mText,
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while analyzing the %@.\n\nMySQL said:%@",@"an error occurred while analyzing the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while analyzing the %@.\n\nMySQL said:%@",@"an error occurred while analyzing the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 		return;
@@ -1987,13 +1960,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ([mySQLConnection queryErrored]) {
 		NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to optimze selected items", @"unable to optimze selected items message") : NSLocalizedString(@"Unable to optimze table", @"unable to optimze table message");
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				mText,
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while optimzing the %@.\n\nMySQL said:%@",@"an error occurred while trying to optimze the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while optimzing the %@.\n\nMySQL said:%@",@"an error occurred while trying to optimze the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
 		}
-
 		return;
 	}
 
@@ -2051,13 +2019,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ([mySQLConnection queryErrored]) {
 		NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to repair selected items", @"unable to repair selected items message") : NSLocalizedString(@"Unable to repair table", @"unable to repair table message");
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				mText,
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while repairing the %@.\n\nMySQL said:%@",@"an error occurred while trying to repair the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while repairing the %@.\n\nMySQL said:%@",@"an error occurred while trying to repair the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
 		}
-
 		return;
 	}
 
@@ -2115,11 +2078,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	if ([mySQLConnection queryErrored]) {
 		NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to flush selected items", @"unable to flush selected items message") : NSLocalizedString(@"Unable to flush table", @"unable to flush table message");
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-				mText,
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while flushing the %@.\n\nMySQL said:%@",@"an error occurred while trying to flush the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while flushing the %@.\n\nMySQL said:%@",@"an error occurred while trying to flush the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 		return;
@@ -2382,18 +2341,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	if (![mySQLConnection queryErrored]) {
 		//flushed privileges without errors
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Flushed Privileges", @"title of panel when successfully flushed privs"),
-			parentWindow,
-			NSLocalizedString(@"Successfully flushed privileges.", @"message of panel when successfully flushed privs")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Flushed Privileges", @"title of panel when successfully flushed privs") message:NSLocalizedString(@"Successfully flushed privileges.", @"message of panel when successfully flushed privs") callback:nil];
 	} else {
 		//error while flushing privileges
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			parentWindow,
-			[NSString stringWithFormat:NSLocalizedString(@"Couldn't flush privileges.\nMySQL said: %@", @"message of panel when flushing privs failed"), [mySQLConnection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't flush privileges.\nMySQL said: %@", @"message of panel when flushing privs failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -4945,11 +4896,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Authenticate command
 	if(![docProcessID isEqualToString:[commandDict objectForKey:@"id"]]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Remote Error", @"remote error"),
-			[self parentWindow],
-			NSLocalizedString(@"URL scheme command couldn't authenticated", @"URL scheme command couldn't authenticated")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Remote Error", @"remote error") message:NSLocalizedString(@"URL scheme command couldn't authenticated", @"URL scheme command couldn't authenticated") callback:nil];
 		return;
 	}
 
@@ -5134,24 +5081,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 				if ( ![queryResult numberOfRows] ) {
 					//error while getting table structure
-					SPOnewayAlertSheet(
-						NSLocalizedString(@"Error", @"error"),
-						[self parentWindow],
-						[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]]
-					);
-
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]] callback:nil];
 					status = @"1";
-
 				} else {
 					NSString *syntaxString = [[queryResult getRowAsArray] objectAtIndex:queryCol];
 
 					// A NULL value indicates that the user does not have permission to view the syntax
 					if ([syntaxString isNSNull]) {
-						SPOnewayAlertSheet(
-							NSLocalizedString(@"Permission Denied", @"Permission Denied"),
-							[NSApp mainWindow],
-							NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail")
-						);
+						[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 						return;
 					}
 					if(doSyntaxHighlighting) {
@@ -5175,13 +5112,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 			// write status file as notification that query was finished
 			BOOL succeed = [status writeToFile:statusFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
-			if(!succeed) {
+			if (!succeed) {
 				NSBeep();
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"BASH Error", @"bash error"),
-					[self parentWindow],
-					NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message") callback:nil];
 			}
 			
 		}
@@ -5351,20 +5284,12 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		BOOL succeed = [status writeToFile:statusFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
 		if(!succeed) {
 			NSBeep();
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"BASH Error", @"bash error"),
-				[self parentWindow],
-				NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message") callback:nil];
 		}
 		return;
 	}
 
-	SPOnewayAlertSheet(
-		NSLocalizedString(@"Remote Error", @"remote error"),
-		[self parentWindow],
-		[NSString stringWithFormat:NSLocalizedString(@"URL scheme command “%@” unsupported", @"URL scheme command “%@” unsupported"), command]
-	);
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Remote Error", @"remote error") message:[NSString stringWithFormat:NSLocalizedString(@"URL scheme command “%@” unsupported", @"URL scheme command “%@” unsupported"), command] callback:nil];
 }
 
 - (void)registerActivity:(NSDictionary *)commandDict
@@ -5670,7 +5595,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSString *newDatabaseName = [databaseCopyNameField stringValue];
 
 	if ([newDatabaseName isEqualToString:@""]) {
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), parentWindow, NSLocalizedString(@"Database must have a name.", @"message of panel when no db name is given"));
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Database must have a name.", @"message of panel when no db name is given") callback:nil];
 		return;
 	}
 
@@ -5716,13 +5641,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self endTask];
 
 		if (!success) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Unable to copy database", @"unable to copy database message"),
-				parentWindow,
-				[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to copy the database '%@' to '%@'.", @"unable to copy database message informative message"),
-				 [databaseDetails[SPNewDatabaseDetails] databaseName],
-				 newDatabaseName]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to copy database", @"unable to copy database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to copy the database '%@' to '%@'.", @"unable to copy database message informative message"), [databaseDetails[SPNewDatabaseDetails] databaseName], newDatabaseName] callback:nil];
 		}
 	}
 }
@@ -5735,7 +5654,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSString *newDatabaseName = [databaseRenameNameField stringValue];
 	
 	if ([newDatabaseName isEqualToString:@""]) {
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), parentWindow, NSLocalizedString(@"Database must have a name.", @"message of panel when no db name is given"));
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Database must have a name.", @"message of panel when no db name is given") callback:nil];
 		return;
 	}
 	
@@ -5749,11 +5668,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self selectDatabase:newDatabaseName item:nil];
 	}
 	else {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Unable to rename database", @"unable to rename database message"),
-			parentWindow,
-			[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
 	}
 }
 
@@ -5767,7 +5682,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// This check is not necessary anymore as the add database button is now only enabled if the name field
 	// has a length greater than zero. We'll leave it in just in case.
 	if ([[databaseNameField stringValue] isEqualToString:@""]) {
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), parentWindow, NSLocalizedString(@"Database must have a name.", @"message of panel when no db name is given"));
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Database must have a name.", @"message of panel when no db name is given") callback:nil];
 		return;
 	}
 
@@ -5782,7 +5697,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	
 	if (!res) {
 		// An error occurred
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), parentWindow, [NSString stringWithFormat:NSLocalizedString(@"Couldn't create database.\nMySQL said: %@", @"message of panel when creation of db failed"), [mySQLConnection lastErrorMessage]]);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create database.\nMySQL said: %@", @"message of panel when creation of db failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
 	}
 
@@ -5816,7 +5731,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	
 	if ([mySQLConnection queryErrored]) {
 		// An error occurred
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), parentWindow, [NSString stringWithFormat:NSLocalizedString(@"Couldn't alter database.\nMySQL said: %@", @"Alter Database : Query Failed ($1 = mysql error message)"), [mySQLConnection lastErrorMessage]]);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't alter database.\nMySQL said: %@", @"Alter Database : Query Failed ($1 = mysql error message)"), [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
 	}
 	
@@ -5892,11 +5807,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 					// Update the database list
 					[[self onMainThread] setDatabases:self];
 
-					SPOnewayAlertSheet(
-						NSLocalizedString(@"Error", @"error"),
-						parentWindow,
-						[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName]
-					);
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName] callback:nil];
 				}
 
 				return;
@@ -6636,11 +6547,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)noConnectionAvailable:(id)connection
 {
-	SPOnewayAlertSheet(
-		NSLocalizedString(@"No connection available", @"no connection available message"),
-		[self parentWindow],
-		NSLocalizedString(@"An error has occured and there doesn't seem to be a connection available.", @"no connection available informatie message")
-	);
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occured and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
 }
 
 /**
@@ -6681,7 +6588,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
 	if ([[self parentWindow] isVisible]) {
-		SPOnewayAlertSheet(theTitle, [self parentWindow], theMessage);
+		[NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
 	}
 }
 

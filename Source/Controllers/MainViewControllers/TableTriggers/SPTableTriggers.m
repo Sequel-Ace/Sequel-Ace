@@ -423,11 +423,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 				if ([connection queryErrored]) {
 					[[alert window] orderOut:self];
-					SPOnewayAlertSheet(
-						NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message"),
-						[tableDocumentInstance parentWindow],
-						[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]]
-					);
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}

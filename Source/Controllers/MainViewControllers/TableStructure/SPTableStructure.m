@@ -609,11 +609,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
 
 	if ([mySQLConnection queryErrored]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -1014,7 +1010,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Display the error sheet
-	SPOnewayAlertSheet([errorDictionary objectForKey:@"title"], [tableDocumentInstance parentWindow], [errorDictionary objectForKey:@"message"]);
+	[NSAlert createWarningAlertWithTitle:[errorDictionary objectForKey:@"title"] message:[errorDictionary objectForKey:@"message"] callback:nil];
 }
 
 /**
@@ -1407,11 +1403,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[[self onMainThread] setTableDetails:nil];
 
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-							   NSLocalizedString(@"Error", @"error"),
-							   [NSApp mainWindow],
-							   [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]]
-							   );
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 		return;
@@ -1988,11 +1980,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[mySQLConnection queryString:queryString];
 
 	if ([mySQLConnection queryErrored]) {
-		SPOnewayAlertSheet(
-						   NSLocalizedString(@"Error moving field", @"error moving field message"),
-						   [tableDocumentInstance parentWindow],
-						   [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]]
-						   );
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]] callback:nil];
 	}
 	else {
 		[tableDataInstance resetAllData];
