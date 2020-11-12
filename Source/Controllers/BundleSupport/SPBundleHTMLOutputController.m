@@ -226,7 +226,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 						encoding:NSUTF8StringEncoding
 						error:&err];
 			if (err != nil) {
-				SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [self window], [NSString stringWithFormat:@"%@", [err localizedDescription]]);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:@"%@", [err localizedDescription]] callback:nil];
 			}
 		}
 	}

@@ -142,7 +142,7 @@
 
 		imageFrame.origin.y += ceilf((cellFrame.size.height - imageFrame.size.height) / 2) - 1;
 
-		[image drawInRect:imageFrame fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f respectFlipped:YES hints:nil];
+		[image drawInRect:imageFrame fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 	} else
 		if (_indentationLevel == 0)
 			cellFrame.size.height = [view frame].size.height+2;
@@ -176,7 +176,7 @@
 
 		imageFrame.origin.y += ceilf((cellFrame.size.height - imageFrame.size.height) / 2);
 
-		[image drawInRect:imageFrame fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f respectFlipped:YES hints:nil];
+		[image drawInRect:imageFrame fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 	}
 
 	[super drawWithFrame:cellFrame inView:controlView];

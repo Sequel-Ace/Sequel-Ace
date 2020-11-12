@@ -171,11 +171,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[sender selectItemWithTitle:currentEncoding];
 
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error changing table encoding", @"error changing table encoding message"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@", @"error changing table encoding informative message"), newEncoding, [connection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table encoding", @"error changing table encoding message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@", @"error changing table encoding informative message"), newEncoding, [connection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -200,11 +196,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[sender selectItemWithTitle:currentCollation];
 
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error changing table collation", @"error changing table collation message"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@", @"error changing table collation informative message"), newCollation, [connection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table collation", @"error changing table collation message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@", @"error changing table collation informative message"), newCollation, [connection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -567,11 +559,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				[self reloadTable:self];
 			}
 			else {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error changing table comment", @"error changing table comment message"),
-					[NSApp mainWindow],
-					[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]]
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]] callback:nil];
 			}
 		}
 	}
@@ -671,12 +659,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 		[tableTypePopUpButton selectItemWithTitle:currentType];
 		
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error changing table type", @"error changing table type message"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@", @"error changing table type informative message"), newType, [connection lastErrorMessage]]
-		);
-		
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table type", @"error changing table type message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@", @"error changing table type informative message"), newType, [connection lastErrorMessage]] callback:nil];
 		return;
 	}
 	

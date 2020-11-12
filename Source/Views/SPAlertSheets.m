@@ -137,58 +137,6 @@
 @end
 
 /**
- * Shorthand for SPOnewayAlertSheetWithStyle() with defaultButton=nil and alertStyle=NSAlertStyleWarning
- */
-void SPOnewayAlertSheet(
-	NSString *title,
-	NSWindow *docWindow,
-	NSString *msg)
-{
-	SPOnewayAlertSheetWithStyle(title, nil, docWindow, msg, NSAlertStyleWarning);
-}
-
-/**
- * A Send-and-forget variant for displaying alerts.
- * It will queue the alert on the main thread and *always* immediately return.
- *   Because of that there is no way to set a delegate and callback method
- * and there is only one default button.
- * If nil is passed as the button title it will be changed to @"OK".
- * If nil is passed as the window NSAlert will be modal
- */
-void SPOnewayAlertSheetWithStyle(
-	NSString *title,
-	NSString *defaultButton,
-	NSWindow *docWindow,
-	NSString *msg,
-	NSAlertStyle alertStyle)
-{
-	NSString *defaultText = (defaultButton)? defaultButton : NSLocalizedString(@"OK", @"OK button");
-	
-	dispatch_async(dispatch_get_main_queue(), ^{
-		// Set up an NSAlert with the supplied details
-		NSAlert *alert = [[NSAlert alloc] init];
-		[alert setMessageText:title];
-		
-		NSButton *aButton = [alert addButtonWithTitle:defaultText];
-		[aButton setTag:NSAlertDefaultReturn];
-		
-		// Set the informative message if supplied
-		if (msg) [alert setInformativeText:msg];
-
-		// Set style (Defaults to NSAlertStyleWarning)
-		[alert setAlertStyle:alertStyle];
-		
-		// Run the alert
-		if (docWindow) {
-			[alert beginSheetModalForWindow:docWindow modalDelegate:nil didEndSelector:NULL contextInfo:NULL];
-			[docWindow makeKeyWindow]; // Ensure the alerting window is frontmost
-		} else {
-			[alert runModal];
-		}
-	});
-}
-
-/**
  * Provide a simple alias of NSBeginAlertSheet, with a few differences:
  *  - printf-type format strings are no longer supported within the "msg"
  *    message text argument, preventing access of random stack areas for

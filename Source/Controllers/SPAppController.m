@@ -850,7 +850,7 @@
 		}
 		if(![status writeToFile:statusFileName atomically:YES encoding:NSUTF8StringEncoding error:nil]) {
 			NSBeep();
-			SPOnewayAlertSheet(NSLocalizedString(@"BASH Error", @"bash error"), [self frontDocumentWindow], NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message"));
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message") callback:nil];
 		}
 		[result writeToFile:resultFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
 		return;
@@ -895,11 +895,7 @@
 		BOOL succeed = [status writeToFile:statusFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
 		if(!succeed) {
 			NSBeep();
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"BASH Error", @"bash error"),
-				[self frontDocumentWindow],
-				NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message") callback:nil];
 		}
 		return;
 	}
@@ -938,11 +934,7 @@
 			[cmdDict setObject:(passedProcessID)?:@"" forKey:@"id"];
 			[processDocument handleSchemeCommand:cmdDict];
 		} else {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error"),
-				[NSApp mainWindow],
-				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [command description], NSLocalizedString(@"sequelace URL scheme command not supported.", @"sequelace URL scheme command not supported.")]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [command description], NSLocalizedString(@"sequelace URL scheme command not supported.", @"sequelace URL scheme command not supported.")] callback:nil];
 
 			// If command failed notify the file handle hand shake mechanism
 			NSString *out = @"1";
@@ -982,11 +974,7 @@
 			encoding:NSUTF8StringEncoding
 			   error:nil];
 
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [command description], NSLocalizedString(@"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.", @"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.")]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [command description], NSLocalizedString(@"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.", @"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.")] callback:nil];
 
 		usleep(5000);
 		[fileManager removeItemAtPath:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], passedProcessID] error:nil];
@@ -994,11 +982,7 @@
 		[fileManager removeItemAtPath:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], passedProcessID] error:nil];
 		[fileManager removeItemAtPath:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], passedProcessID] error:nil];
 	} else {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [command description], NSLocalizedString(@"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.", @"an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane.")]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error") message: [NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [command description], NSLocalizedString(@"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.", @"an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane.")] callback:nil];
 	}
 
 	if(processDocument)
@@ -1150,11 +1134,7 @@
 
 		if(inputFileError != nil) {
 			NSString *errorMessage  = [inputFileError localizedDescription];
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Bundle Error", @"bundle error"),
-				[self frontDocumentWindow],
-				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Bundle Error", @"bundle error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage] callback:nil];
 			return;
 		}
 
@@ -1244,13 +1224,9 @@
 					}
 				}
 			}
-		} else if([err code] != 9) { // Suppress an error message if command was killed
+		} else if ([err code] != 9) { // Suppress an error message if command was killed
 			NSString *errorMessage  = [err localizedDescription];
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"BASH Error", @"bash error"),
-				[NSApp mainWindow],
-				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage] callback:nil];
 		}
 
 	}

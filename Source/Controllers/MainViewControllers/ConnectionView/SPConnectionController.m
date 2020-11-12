@@ -223,21 +223,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	// Ensure that host is not empty if this is a TCP/IP or SSH connection
 	if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Insufficient connection details", @"insufficient details message"),
-			[dbDocument parentWindow],
-			NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter at least the hostname.", @"insufficient details informative message")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter at least the hostname.", @"insufficient details informative message") callback:nil];
 		return;
 	}
 
 	// If SSH is enabled, ensure that the SSH host is not nil
 	if ([self type] == SPSSHTunnelConnection && ![[self sshHost] length]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Insufficient connection details", @"insufficient details message"),
-			[dbDocument parentWindow],
-			NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.", @"insufficient SSH tunnel details informative message")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.", @"insufficient SSH tunnel details informative message") callback:nil];
 		return;
 	}
 
@@ -245,11 +237,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if ([self type] == SPSSHTunnelConnection && sshKeyLocationEnabled && sshKeyLocation) {
 		if (![fileManager fileExistsAtPath:[sshKeyLocation stringByExpandingTildeInPath]]) {
 			[self setSshKeyLocationEnabled:NSOffState];
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"SSH Key not found", @"SSH key check error"),
-				[dbDocument parentWindow],
-				NSLocalizedString(@"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.", @"SSH key not found message")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSH Key not found", @"SSH key check error") message:NSLocalizedString(@"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.", @"SSH key not found message") callback:nil];
 			return;
 		}
 	}
@@ -266,12 +254,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setSslKeyFileLocationEnabled:NSOffState];
 			[self setSslKeyFileLocation:nil];
 			
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"SSL Key File not found", @"SSL key file check error"),
-				[dbDocument parentWindow],
-				NSLocalizedString(@"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.", @"SSL key file not found message")
-			);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL Key File not found", @"SSL key file check error") message:NSLocalizedString(@"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.", @"SSL key file not found message") callback:nil];
 			return;
 		}
 		
@@ -281,12 +264,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setSslCertificateFileLocationEnabled:NSOffState];
 			[self setSslCertificateFileLocation:nil];
 			
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"SSL Certificate File not found", @"SSL certificate file check error"),
-				[dbDocument parentWindow],
-				NSLocalizedString(@"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again.", @"SSL certificate file not found message")
-			);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL Certificate File not found", @"SSL certificate file check error") message:NSLocalizedString(@"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again.", @"SSL certificate file not found message") callback:nil];
 			return;
 		}
 		
@@ -296,12 +274,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[self setSslCACertFileLocationEnabled:NSOffState];
 			[self setSslCACertFileLocation:nil];
 			
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"SSL Certificate Authority File not found", @"SSL certificate authority file check error"),
-				[dbDocument parentWindow],
-				NSLocalizedString(@"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again.", @"SSL CA certificate file not found message")
-			);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL Certificate Authority File not found", @"SSL certificate authority file check error") message:NSLocalizedString(@"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again.", @"SSL CA certificate file not found message") callback:nil];
 			return;
 		}
 	}
@@ -1412,21 +1385,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Ensure that host is not empty if this is a TCP/IP or SSH connection
 	if (validateDetails && ([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Insufficient connection details", @"insufficient details message"),
-			[dbDocument parentWindow],
-			NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message") callback:nil];
 		return;
 	}
 	
 	// If SSH is enabled, ensure that the SSH host is not nil
 	if (validateDetails && [self type] == SPSSHTunnelConnection && ![[self sshHost] length]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Insufficient connection details", @"insufficient details message"),
-			[dbDocument parentWindow],
-			NSLocalizedString(@"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.", @"message of panel when ssh details are incomplete")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.", @"message of panel when ssh details are incomplete") callback:nil];
 		return;
 	}
 
@@ -2422,11 +2387,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// If SSL was enabled, check it was established correctly
 	if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
 		if (![mySQLConnection isConnectedViaSSL]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title"),
-				[dbDocument parentWindow],
-				NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
 		}
 		else {
 			[dbDocument setStatusIconToImageWithName:@"titlebarlock"];

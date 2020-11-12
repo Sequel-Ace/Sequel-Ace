@@ -39,6 +39,8 @@
 #import "SPDatabaseDocument.h"
 #import "SPBundleCommandRunner.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation NSTextView (SPTextViewAdditions)
 
 /*
@@ -651,11 +653,7 @@
 
 		if(inputFileError != nil) {
 			NSString *errorMessage  = [inputFileError localizedDescription];
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Bundle Error", @"bundle error"),
-				[self window],
-				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Bundle Error", @"bundle error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage] callback:nil];
 			return;
 		}
 
@@ -772,11 +770,7 @@
 			}
 		} else if([err code] != 9) { // Suppress an error message if command was killed
 			NSString *errorMessage  = [err localizedDescription];
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"BASH Error", @"bash error"),
-				[self window],
-				[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage] callback:nil];
 		}
 
 	}

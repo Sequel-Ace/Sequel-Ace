@@ -885,7 +885,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			else
 				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nMySQL said: %@", @"message of panel when loading of table failed"), [mySQLConnection lastErrorMessage]];
 		
-			SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [tableDocumentInstance parentWindow], errorDetail);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
 		}
 		// Filter task came from filter table
 		else if(activeFilter == SPTableContentFilterSourceTableFilter) {
@@ -979,11 +979,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSError *err = nil;
 		NSString *filter = [ruleFilterController sqlWhereExpressionWithBinary:caseSensitive error:&err];
 		if(err) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title"),
-				[tableDocumentInstance parentWindow],
-				[err localizedDescription]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title") message:[err localizedDescription] callback:nil];
 			return nil;
 		}
 		return ([filter length] ? filter : nil);
@@ -1391,11 +1387,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[self loadTableValues];
 
 		if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			return;
@@ -1661,11 +1653,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (![tableContentView numberOfSelectedRows]) return;
 	
 	if ([tableContentView numberOfSelectedRows] > 1) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			NSLocalizedString(@"You can only copy single rows.", @"message of panel when trying to copy multiple rows")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"You can only copy single rows.", @"message of panel when trying to copy multiple rows") callback:nil];
 		return;
 	}
 
@@ -2365,11 +2353,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If no rows have been changed, show error if appropriate.
 	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Warning", @"warning"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 		} else {
 			NSBeep();
 		}
@@ -2779,11 +2763,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// When the option to not show blob or text options is set, we have a problem - we don't have
 		// the right values to use in the WHERE statement.  Throw an error if this is the case.
 		if ( [prefs boolForKey:SPLoadBlobsAsNeeded] && [self tableContainsBlobOrTextColumns] ) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"You can't hide blob and text fields when working with tables without index.", @"message of panel when trying to edit tables without index and with hidden blob/text fields")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"You can't hide blob and text fields when working with tables without index.", @"message of panel when trying to edit tables without index and with hidden blob/text fields") callback:nil];
 			[keys removeAllObjects];
 			[tableContentView deselectAll:self];
 			return @"";
@@ -2980,7 +2960,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)showErrorSheetWith:(NSArray *)error
 {
 	// error := first object is the title , second the message, only one button OK
-	SPOnewayAlertSheet([error objectAtIndex:0], [tableDocumentInstance parentWindow], [error objectAtIndex:1]);
+	[NSAlert createWarningAlertWithTitle:[error objectAtIndex:0] message:[error objectAtIndex:1] callback:nil];
 }
 
 - (void)processFieldEditorResult:(id)data contextInfo:(NSDictionary*)contextInfo
@@ -3100,11 +3080,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Check for errors while UPDATE
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
@@ -3114,11 +3090,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Warning", @"warning"),
-					[tableDocumentInstance parentWindow],
-					NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db")
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 			} else {
 				NSBeep();
 			}
@@ -3128,11 +3100,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 	} else {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.", @"message of panel when error while updating field to db after enabling it"),(long)numberOfPossibleUpdateRows, tableForColumn]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.", @"message of panel when error while updating field to db after enabling it"),(long)numberOfPossibleUpdateRows, tableForColumn] callback:nil];
 
 		[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 		[tableDocumentInstance endTask];
@@ -4074,11 +4042,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			SPMySQLResult *tempResult = [mySQLConnection queryString:query];
 
 			if (![tempResult numberOfRows]) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error", @"error"),
-					[tableDocumentInstance parentWindow],
-					NSLocalizedString(@"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.", @"message of panel when loading of row failed")
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.", @"message of panel when loading of row failed") callback:nil];
 				return NO;
 			}
 
@@ -4425,11 +4389,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			// Convert the string back to binary, checking for errors.
 			NSData *data = [NSData dataWithHexString:[editor string]];
 			if (!data) {
-				SPOnewayAlertSheet(
-								   NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed"),
-								   [tableDocumentInstance parentWindow],
-								   NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed")
-								   );
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed") message:NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed") callback:nil];
 				return NO;
 			}
 		}

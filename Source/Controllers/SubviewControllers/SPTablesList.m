@@ -1628,7 +1628,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 	}
 	@catch (NSException * myException) {
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [tableDocumentInstance parentWindow], [myException reason]);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[myException reason] callback:nil];
 	}
 
 	// Set window title to reflect the new table name
@@ -2283,14 +2283,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Couldn't truncate table
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheetWithStyle(
-				NSLocalizedString(@"Error truncating table", @"error truncating table message"),
-				nil,
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]],
-				NSAlertStyleCritical
-			);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]] callback:nil];
 			*stop = YES;
 		}
 
@@ -2449,11 +2442,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	NSString *tableType = @"";
 
 	if ([[copyTableNameField stringValue] isEqualToString:@""]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			NSLocalizedString(@"Table must have a name.", @"message of panel when no name is given for table")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Table must have a name.", @"message of panel when no name is given for table") callback:nil];
 		return;
 	}
 
@@ -2494,12 +2483,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ( ![queryResult numberOfRows] ) {
 
 		//error while getting table structure
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]]
-		);
-
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
     }
 
@@ -2544,11 +2528,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([mySQLConnection queryErrored]) {
 			if ([mySQLConnection isConnected]) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error", @"error"),
-					[tableDocumentInstance parentWindow],
-					[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [mySQLConnection lastErrorMessage]]
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [mySQLConnection lastErrorMessage]] callback:nil];
 			}
 			return;
 		}
@@ -2560,22 +2540,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[mySQLConnection queryString:[tableSyntax stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[[copyTableNameField stringValue] backtickQuotedString]]];
 
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 	}
 
 	if ([mySQLConnection queryErrored]) {
 		//error while creating new table
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
 	}
 
@@ -2588,11 +2560,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 									  ]];
 
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Warning", @"warning"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"There have been errors while copying table content. Please control the new table.", @"message of panel when table content cannot be copied")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"There have been errors while copying table content. Please control the new table.", @"message of panel when table content cannot be copied") callback:nil];
 		}
 	}
 
