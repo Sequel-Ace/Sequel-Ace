@@ -53,6 +53,7 @@
     [copy setUseSocket:useSocket];
     [copy setSocketPath:socketPath];
     [copy setAllowDataLocalInfile:allowDataLocalInfile];
+    [copy setEnableClearTextPlugin:enableClearTextPlugin];
     [copy setUseSSL:useSSL];
     [copy setSslKeyFilePath:sslKeyFilePath];
     [copy setSslCipherList:sslCipherList];

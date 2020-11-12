@@ -46,8 +46,11 @@
 	BOOL useSocket;
 	NSString *socketPath;
     
-    //Special connection settings
-    BOOL allowDataLocalInfile;
+  //Special connection settings
+  BOOL allowDataLocalInfile;
+    
+  // Clear text plugin
+  BOOL enableClearTextPlugin;
 
 	// SSL connection details
 	BOOL useSSL;
@@ -149,6 +152,8 @@
 @property (readonly, copy) NSString *timeZoneIdentifier;
 
 @property (readwrite) BOOL allowDataLocalInfile;
+
+@property (readwrite) BOOL enableClearTextPlugin;
 
 @property (readwrite) BOOL useSSL;
 @property (readwrite, copy) NSString *sslKeyFilePath;
