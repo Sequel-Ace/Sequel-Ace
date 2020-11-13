@@ -509,20 +509,6 @@
 			remoteGlobalIDString = 17E5969E14F307CE0054EE08;
 			remoteInfo = Tests;
 		};
-		1A300E83255C238E00743FA8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1A300E7F255C238E00743FA8 /* openssl.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 9069D28C0FCE659A0042E34C;
-			remoteInfo = crypto;
-		};
-		1A40FD11255EA414003308E4 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1A300E7F255C238E00743FA8 /* openssl.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
-			remoteInfo = crypto;
-		};
 		29B70BD51C805B2A00D1BE0C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 584D876015140D3500F24774 /* SPMySQLFramework.xcodeproj */;
@@ -808,7 +794,6 @@
 		1A2711CD2539D9B10066ED58 /* SPReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPReachability.h; sourceTree = "<group>"; };
 		1A2711CE2539D9B10066ED58 /* SPReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReachability.m; sourceTree = "<group>"; };
 		1A2711E72539E2BB0066ED58 /* local-connection.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "local-connection.html"; sourceTree = "<group>"; };
-		1A300E7F255C238E00743FA8 /* openssl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openssl.xcodeproj; path = Frameworks/openssl/openssl.xcodeproj; sourceTree = "<group>"; };
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
@@ -2200,7 +2185,6 @@
 		17FC36AE141425D600AC3602 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				1A300E7F255C238E00743FA8 /* openssl.xcodeproj */,
 				17E5954E14F304000054EE08 /* QueryKit.xcodeproj */,
 				584D876015140D3500F24774 /* SPMySQLFramework.xcodeproj */,
 				58B906F811BD9B34000826E5 /* PSMTabBar */,
@@ -2235,14 +2219,6 @@
 				58B906E611BD989A000826E5 /* PSMTabBar.framework */,
 				58B9096111C3A42B000826E5 /* xibLocalizationPostprocessor */,
 				584754C2120A04560057631F /* Sequel Ace.qlgenerator */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		1A300E80255C238E00743FA8 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				1A300E84255C238E00743FA8 /* libcrypto.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2770,7 +2746,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				1A40FD12255EA414003308E4 /* PBXTargetDependency */,
 				58B907CD11BDA552000826E5 /* PBXTargetDependency */,
 				58CDB34B0FCE144000F8ACA3 /* PBXTargetDependency */,
 				58B9097011C3A462000826E5 /* PBXTargetDependency */,
@@ -2814,10 +2789,6 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 1A300E80255C238E00743FA8 /* Products */;
-					ProjectRef = 1A300E7F255C238E00743FA8 /* openssl.xcodeproj */;
-				},
-				{
 					ProductGroup = 17E5954F14F304000054EE08 /* Products */;
 					ProjectRef = 17E5954E14F304000054EE08 /* QueryKit.xcodeproj */;
 				},
@@ -2851,13 +2822,6 @@
 			fileType = wrapper.cfbundle;
 			path = Tests.xctest;
 			remoteRef = 17E596A114F307CE0054EE08 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		1A300E84255C238E00743FA8 /* libcrypto.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libcrypto.a;
-			remoteRef = 1A300E83255C238E00743FA8 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		29B70BD61C805B2A00D1BE0C /* SPMySQL Unit Tests.xctest */ = {
@@ -3371,11 +3335,6 @@
 			isa = PBXTargetDependency;
 			name = SPMySQL.framework;
 			targetProxy = 17D41AB12171157B00B1888D /* PBXContainerItemProxy */;
-		};
-		1A40FD12255EA414003308E4 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = crypto;
-			targetProxy = 1A40FD11255EA414003308E4 /* PBXContainerItemProxy */;
 		};
 		518402D924A3FF4F004693B0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
