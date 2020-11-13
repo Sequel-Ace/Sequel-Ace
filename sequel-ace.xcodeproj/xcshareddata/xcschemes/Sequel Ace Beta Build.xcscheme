@@ -3,7 +3,7 @@
    LastUpgradeVersion = "1200"
    version = "1.7">
    <BuildAction
-      parallelizeBuildables = "YES"
+      parallelizeBuildables = "NO"
       buildImplicitDependencies = "YES">
       <PostActions>
          <ExecutionAction

@@ -516,6 +516,13 @@
 			remoteGlobalIDString = 9069D28C0FCE659A0042E34C;
 			remoteInfo = crypto;
 		};
+		1A40FD11255EA414003308E4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A300E7F255C238E00743FA8 /* openssl.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9069D28B0FCE659A0042E34C;
+			remoteInfo = crypto;
+		};
 		29B70BD51C805B2A00D1BE0C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 584D876015140D3500F24774 /* SPMySQLFramework.xcodeproj */;
@@ -2763,6 +2770,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				1A40FD12255EA414003308E4 /* PBXTargetDependency */,
 				58B907CD11BDA552000826E5 /* PBXTargetDependency */,
 				58CDB34B0FCE144000F8ACA3 /* PBXTargetDependency */,
 				58B9097011C3A462000826E5 /* PBXTargetDependency */,
@@ -3363,6 +3371,11 @@
 			isa = PBXTargetDependency;
 			name = SPMySQL.framework;
 			targetProxy = 17D41AB12171157B00B1888D /* PBXContainerItemProxy */;
+		};
+		1A40FD12255EA414003308E4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = crypto;
+			targetProxy = 1A40FD11255EA414003308E4 /* PBXContainerItemProxy */;
 		};
 		518402D924A3FF4F004693B0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
