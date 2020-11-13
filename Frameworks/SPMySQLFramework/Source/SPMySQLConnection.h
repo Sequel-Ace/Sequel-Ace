@@ -45,12 +45,12 @@
 	NSUInteger port;
 	BOOL useSocket;
 	NSString *socketPath;
-    
-  //Special connection settings
-  BOOL allowDataLocalInfile;
-    
-  // Clear text plugin
-  BOOL enableClearTextPlugin;
+
+	//Special connection settings
+	BOOL allowDataLocalInfile;
+
+	// Clear text plugin
+	BOOL enableClearTextPlugin;
 
 	// SSL connection details
 	BOOL useSSL;
