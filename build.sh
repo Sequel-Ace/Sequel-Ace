@@ -29,23 +29,24 @@ dir_exists() {
 	return 1
 }
 
-OPENSSL_VER=1.1.1h
-OPENSSL_FILE="openssl-$OPENSSL_VER.tar.gz"
-OPENSSL_URL="https://www.openssl.org/source/$OPENSSL_FILE"
-OPENSSL_TARGET_DIR="Frameworks/openssl"
-
-if ! dir_exists "$OPENSSL_TARGET_DIR"; then
-  echo "$OPENSSL_TARGET_DIR doesn't exist"
-  trap - EXIT
-  exit 1
-fi
-
-if ! curl -L "$OPENSSL_URL" -o "$OPENSSL_TARGET_DIR/$OPENSSL_FILE";
-then
-  echo "curl of $OPENSSL_URL failed"
-  trap - EXIT
-  exit 1
-fi
+#Shouldn't be needed anymore
+#OPENSSL_VER=1.1.1h
+#OPENSSL_FILE="openssl-$OPENSSL_VER.tar.gz"
+#OPENSSL_URL="https://www.openssl.org/source/$OPENSSL_FILE"
+#OPENSSL_TARGET_DIR="Frameworks/openssl"
+#
+#if ! dir_exists "$OPENSSL_TARGET_DIR"; then
+#  echo "$OPENSSL_TARGET_DIR doesn't exist"
+#  trap - EXIT
+#  exit 1
+#fi
+#
+#if ! curl -L "$OPENSSL_URL" -o "$OPENSSL_TARGET_DIR/$OPENSSL_FILE";
+#then
+#  echo "curl of $OPENSSL_URL failed"
+#  trap - EXIT
+#  exit 1
+#fi
 
 if [ "$MODE" = "tests" ]; then
   echo "Running Sequel Ace Unit tests"
