@@ -1675,8 +1675,12 @@
 				}
 				
 				if(!cmdData || readError) {
-					NSLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError);
-					NSBeep();
+					SPLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError.localizedDescription);
+										
+					if(![SPAppDelegate.alreadyBeeped objectForKey:bundle]){
+						NSBeep();
+						[SPAppDelegate.alreadyBeeped setObject:@YES forKey:bundle];
+					}
 					if (cmdData) [cmdData release];
 				}
 				else {

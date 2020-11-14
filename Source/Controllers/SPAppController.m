@@ -51,6 +51,7 @@
 #import "SPSyntaxParser.h"
 #import "SPOSInfo.h"
 #import <PSMTabBar/PSMTabBarControl.h>
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -71,7 +72,7 @@
 @implementation SPAppController
 
 @synthesize lastBundleBlobFilesDirectory;
-@synthesize fileManager;
+@synthesize fileManager, alreadyBeeped;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -97,6 +98,8 @@
 		runningActivitiesArray = [[NSMutableArray alloc] init];
 
 		fileManager = [NSFileManager defaultManager];
+		
+		alreadyBeeped = [[NSMutableDictionary alloc] init];
 		
 		//Create runtime directiories
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
@@ -305,7 +308,7 @@
 
 	// If no lastSqlFileEncoding in prefs set it to UTF-8
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-
+	
 	if (![prefs integerForKey:SPLastSQLFileEncoding]) {
 		[prefs setInteger:4 forKey:SPLastSQLFileEncoding];
 	}
@@ -1623,8 +1626,6 @@
 				for(NSString* bundle in foundBundles) {
 					if(![bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtension.lowercaseString]) continue;
 
-					SPLog(@"processing bundle: %@",bundle );
-
 					foundInstalledBundles = YES;
 
 					NSString *infoPath = [NSString stringWithFormat:@"%@/%@/%@", bundlePath, bundle, SPBundleFileName];
@@ -1642,9 +1643,31 @@
 						}
 
 						if(!cmdData || readError) {
-							NSLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError);
-							NSBeep();
-							continue;
+							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							if(![alreadyBeeped objectForKey:bundle]){
+								NSBeep();
+								[alreadyBeeped setObject:@YES forKey:bundle];
+								// need to wait a few seconds for the window to load
+								delayCallback(^{
+									NSString *title = [NSString stringWithFormat:NSLocalizedString(@"Bundle '%@' is corrupt.", @"bundle corrupt message"), bundle];
+									NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Would you like to delete bundle '%@'? This operation cannot be undone.", @"delete bundle informative message"), bundle];
+
+									[NSAlert createDefaultAlertWithTitle:title
+																 message:message
+													  primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button")
+													primaryButtonHandler:^{
+
+										[self removeBundle:bundle];
+									}
+													 cancelButtonHandler:nil];
+
+								}, 4);
+								
+								continue;
+							}
+							else{
+								SPLog(@"already beeped for %@", bundle);
+							}
 						}
 					}
 
@@ -1867,7 +1890,7 @@
 							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
 						}
 
-
+						
 						if([cmdData objectForKey:SPBundleFileTooltipKey] && [(NSString *)[cmdData objectForKey:SPBundleFileTooltipKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileTooltipKey] forKey:SPBundleFileTooltipKey];
 
@@ -2023,6 +2046,31 @@
 		k++;
 	}
 
+}
+
+- (void)removeBundle:(NSString*)bundle{
+	
+	NSString *bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder error:nil];
+	
+	NSString *thePath = [NSString stringWithFormat:@"%@/%@", bundlePath, bundle];
+	
+	SPLog(@"the path %@", thePath);
+	
+	if([fileManager fileExistsAtPath:thePath isDirectory:nil]) {
+		NSError *error = nil;
+		
+		[fileManager removeItemAtPath:thePath error:&error];
+		
+		if(error != nil) {
+			SPLog(@"file could not be deleted: %@", thePath);
+		}
+		else{
+			SPLog(@"file was deleted: %@", thePath);
+		}
+	}
+	else{
+		SPLog(@"file does not exist %@", thePath);
+	}
 }
 
 /**
@@ -2553,6 +2601,7 @@
 
 	SPClear(prefsController);
 	SPClear(fileManager);
+	SPClear(alreadyBeeped);
 
 	if (aboutController) SPClear(aboutController);
 	if (bundleEditorController) SPClear(bundleEditorController);

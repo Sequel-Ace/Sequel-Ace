@@ -60,8 +60,10 @@
 }
 
 @property (readwrite, retain) NSString *lastBundleBlobFilesDirectory;
+@property (readwrite, retain) NSMutableDictionary *alreadyBeeped;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
+- (void)removeBundle:(NSString*)bundle;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;
