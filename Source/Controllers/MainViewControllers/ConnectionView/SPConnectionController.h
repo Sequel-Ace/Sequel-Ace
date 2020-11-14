@@ -92,6 +92,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	//Special settings
 	NSInteger allowDataLocalInfile;
 	
+	// Clear text plugin
+	NSInteger enableClearTextPlugin;
+	
 	// SSL details
 	NSInteger useSSL;
 	NSInteger sslKeyFileLocationEnabled;
@@ -208,6 +211,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite) SPConnectionTimeZoneMode timeZoneMode;
 @property (readwrite, copy) NSString *timeZoneIdentifier;
 @property (readwrite) NSInteger allowDataLocalInfile;
+@property (readwrite) NSInteger enableClearTextPlugin;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
 @property (readwrite) NSInteger sslKeyFileLocationEnabled;
