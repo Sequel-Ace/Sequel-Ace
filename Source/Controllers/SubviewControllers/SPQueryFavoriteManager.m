@@ -39,6 +39,9 @@
 #import "SPSplitView.h"
 #import "SPAppController.h"
 
+#import "sequel-ace-Swift.h"
+
+
 #define SP_MULTIPLE_SELECTION_PLACEHOLDER_STRING NSLocalizedString(@"[multiple selection]", @"[multiple selection]")
 #define SP_NO_SELECTION_PLACEHOLDER_STRING       NSLocalizedString(@"[no selection]", @"[no selection]")
 
@@ -95,8 +98,14 @@
 			[favorites addObject:[fav mutableCopy]];
 	}
 
+	NSString *delegatesFileURLStr = [delegatesFileURL absoluteString];
+	
+	if(delegatesFileURLStr.isPercentEncoded){
+		delegatesFileURLStr = delegatesFileURLStr.stringByRemovingPercentEncoding;
+	}
+
 	[favorites addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-		[[[delegatesFileURL absoluteString] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] lastPathComponent], @"name", 
+		[delegatesFileURLStr lastPathComponent], @"name",
 		[delegatesFileURL absoluteString], @"headerOfFileURL", 
 		@"", @"query",
 		nil]];

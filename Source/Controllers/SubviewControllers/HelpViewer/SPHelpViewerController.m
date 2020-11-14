@@ -33,6 +33,8 @@
 
 #import "SPOSInfo.h"
 #import <WebKit/WebKit.h>
+#import "sequel-ace-Swift.h"
+
 
 NSString * const SPHelpViewerSearchTOC = @"contents";
 
@@ -347,7 +349,13 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 - (void)webView:(WebView *)webView decidePolicyForNavigationAction:(NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id<WebPolicyDecisionListener>)listener
 {
 	NSInteger navigationType = [[actionInformation objectForKey:WebActionNavigationTypeKey] integerValue];
-
+	
+	NSString *actionInformationStr = [[[actionInformation objectForKey:WebActionOriginalURLKey] absoluteString] lastPathComponent];
+	
+	if(actionInformationStr.isPercentEncoded == YES){
+		actionInformationStr = actionInformationStr.stringByRemovingPercentEncoding;
+	}
+	
 	if([[[request URL] scheme] isEqualToString:@"applewebdata"] && navigationType == WebNavigationTypeLinkClicked) {
 		[self showHelpFor:[[[request URL] path] lastPathComponent] addToHistory:YES calledByAutoHelp:NO];
 		[listener ignore];
@@ -367,7 +375,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 		}
 		else if (navigationType == WebNavigationTypeBackForward) {
 			// catch back/forward events from contextual menu
-			[self showHelpFor:[[[[actionInformation objectForKey:WebActionOriginalURLKey] absoluteString] lastPathComponent] stringByReplacingPercentEscapesUsingEncoding:NSASCIIStringEncoding] addToHistory:NO calledByAutoHelp:NO];
+			[self showHelpFor:actionInformationStr addToHistory:NO calledByAutoHelp:NO];
 			[listener ignore];
 		}
 		else {
