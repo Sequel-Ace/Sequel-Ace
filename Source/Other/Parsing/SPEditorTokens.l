@@ -74,7 +74,7 @@ keywords	(X(OR|509|A)|S(MALLINT|SL|H(OW({s}(E(NGINE(S)?|RRORS)|M(ASTER|UTEX)|BIN
 
 
 \$\{1?[0-9]:						{ BEGIN(snippet); return SPT_OTHER; }
-<snippet>\\\}						{ return SPT_OTHER; }
+<snippet>{word}						{ return SPT_VARIABLE; }
 <snippet>\}							{ BEGIN(INITIAL); return SPT_OTHER; }
 
 
