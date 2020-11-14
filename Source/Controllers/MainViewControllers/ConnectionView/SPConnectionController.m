@@ -142,6 +142,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize timeZoneMode;
 @synthesize timeZoneIdentifier;
 @synthesize allowDataLocalInfile;
+@synthesize enableClearTextPlugin;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -779,6 +780,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[connectionSplitView setDelegate:self];
 }
 
+- (IBAction)updateClearTextPlugin:(id)sender
+{
+	[self _startEditingConnection];
+}
+
 #pragma mark -
 #pragma mark Connection details interaction and display
 
@@ -929,6 +935,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	//Special prefs
 	[self setAllowDataLocalInfile:([fav objectForKey:SPFavoriteAllowDataLocalInfileKey] ? [[fav objectForKey:SPFavoriteAllowDataLocalInfileKey] intValue] : NSOffState)];
+	
+	// Clear text plugin
+	[self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSOffState)];
 	
 	// SSL details
 	[self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSOffState)];
@@ -1094,6 +1103,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		SPFavoriteTimeZoneModeKey,
 		SPFavoriteTimeZoneIdentifierKey,
 		SPFavoriteAllowDataLocalInfileKey,
+		SPFavoriteEnableClearTextPluginKey,
 		SPFavoriteUseSSLKey,
 		SPFavoriteSSLKeyFileLocationEnabledKey,
 		SPFavoriteSSLCertificateFileLocationEnabledKey,
@@ -1505,6 +1515,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	_setOrRemoveKey(SPFavoriteTimeZoneIdentifierKey, [self timeZoneIdentifier]);
 	//Special prefs
 	[theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
+	// Clear text plugin
+	[theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
 	// SSL details
 	[theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
 	[theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -2218,6 +2230,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		if([self allowDataLocalInfile]) {
 			[mySQLConnection setAllowDataLocalInfile:YES];
+		}
+		
+		// Enable Clear Text plugin when enabled
+		if ([self enableClearTextPlugin]) {
+			[mySQLConnection setEnableClearTextPlugin:YES];
 		}
 
 		// Enable SSL if set
@@ -3619,6 +3636,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		   forKeyPath:SPFavoriteAllowDataLocalInfileKey
 			  options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
 			  context:NULL];
+	
+	[self addObserver:self
+		   forKeyPath:SPFavoriteEnableClearTextPluginKey
+			  options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
+			  context:NULL];
 
 	[self addObserver:self
 	       forKeyPath:SPFavoriteUseSSLKey
@@ -3879,6 +3901,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self removeObserver:self forKeyPath:SPFavoriteSocketKey];
 	[self removeObserver:self forKeyPath:SPFavoritePortKey];
 	[self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
+	[self removeObserver:self forKeyPath:SPFavoriteEnableClearTextPluginKey];
 	[self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];
