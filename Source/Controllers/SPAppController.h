@@ -35,6 +35,8 @@
 @class SPBundleEditorController;
 @class SPWindowController;
 
+@import Firebase;
+
 @interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate>
 {
 	SPAboutController *aboutController;
@@ -59,7 +61,7 @@
 	NSString *lastBundleBlobFilesDirectory;
 }
 
-@property (readwrite, retain) NSString *lastBundleBlobFilesDirectory;
+@property (readwrite, strong) NSString *lastBundleBlobFilesDirectory;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
 

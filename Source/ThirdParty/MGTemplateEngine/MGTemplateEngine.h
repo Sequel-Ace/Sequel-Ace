@@ -3,6 +3,7 @@
 //
 //  Created by Matt Gemmell on 11/05/2008.
 //  Copyright 2008 Instinctive Code. All rights reserved.
+//
 
 // Keys in blockInfo dictionaries passed to delegate methods.
 #define	BLOCK_NAME_KEY					@"name"				// NSString containing block name (first word of marker)
@@ -14,7 +15,7 @@
 #define TEMPLATE_ENGINE_ERROR_DOMAIN	@"MGTemplateEngineErrorDomain"
 
 @class MGTemplateEngine;
-@protocol MGTemplateEngineDelegate
+@protocol MGTemplateEngineDelegate <NSObject>
 @optional
 - (void)templateEngine:(MGTemplateEngine *)engine blockStarted:(NSDictionary *)blockInfo;
 - (void)templateEngine:(MGTemplateEngine *)engine blockEnded:(NSDictionary *)blockInfo;
@@ -32,9 +33,9 @@
 #define MARKER_FILTER_ARGUMENTS_KEY		@"filterArgs"		// NSArray of filter arguments, if any
 #define MARKER_RANGE_KEY				@"range"			// NSRange (as NSValue) of marker's range
 
-@protocol MGTemplateEngineMatcher
+@protocol MGTemplateEngineMatcher <NSObject>
 @required
-- (id)initWithTemplateEngine:(MGTemplateEngine *)engine;
+- (instancetype)initWithTemplateEngine:(MGTemplateEngine *)engine;
 - (void)engineSettingsChanged; // always called at least once before beginning to process a template.
 - (NSDictionary *)firstMarkerWithinRange:(NSRange)range;
 @end
@@ -42,45 +43,22 @@
 #import "MGTemplateMarker.h"
 #import "MGTemplateFilter.h"
 
-@interface MGTemplateEngine : NSObject {
-@public
-	NSString *markerStartDelimiter;		// default: {%
-	NSString *markerEndDelimiter;		// default: %}
-	NSString *expressionStartDelimiter;	// default: {{
-	NSString *expressionEndDelimiter;	// default: }}
-	NSString *filterDelimiter;			// default: |	example: {{ myVar|uppercase }}
-	NSString *literalStartMarker;		// default: literal
-	NSString *literalEndMarker;			// default: /literal
-@private
-	NSMutableArray *_openBlocksStack;
-	NSMutableDictionary *_globals;
-	NSInteger _outputDisabledCount;
-	NSInteger _templateLength;
-	NSMutableDictionary *_filters;
-	NSMutableDictionary *_markers;
-	NSMutableDictionary *_templateVariables;
-	BOOL _literal;
-@public
-	NSRange remainingRange;
-	id <MGTemplateEngineDelegate> delegate;
-	id <MGTemplateEngineMatcher> matcher;
-	NSString *templateContents;
-}
+@interface MGTemplateEngine : NSObject
 
-@property(retain) NSString *markerStartDelimiter;
-@property(retain) NSString *markerEndDelimiter;
-@property(retain) NSString *expressionStartDelimiter;
-@property(retain) NSString *expressionEndDelimiter;
-@property(retain) NSString *filterDelimiter;
-@property(retain) NSString *literalStartMarker;
-@property(retain) NSString *literalEndMarker;
-@property(assign, readonly) NSRange remainingRange;
-@property(assign) id <MGTemplateEngineDelegate> delegate;	// weak ref
-@property(retain) id <MGTemplateEngineMatcher> matcher;
-@property(retain, readonly) NSString *templateContents;
+@property (nonatomic, copy) NSString *markerStartDelimiter;
+@property (nonatomic, copy) NSString *markerEndDelimiter;
+@property (nonatomic, copy) NSString *expressionStartDelimiter;
+@property (nonatomic, copy) NSString *expressionEndDelimiter;
+@property (nonatomic, copy) NSString *filterDelimiter;
+@property (nonatomic, copy) NSString *literalStartMarker;
+@property (nonatomic, copy) NSString *literalEndMarker;
+@property (nonatomic, readonly) NSRange remainingRange;
+@property (nonatomic, weak) id <MGTemplateEngineDelegate> delegate;	// weak ref
+@property (nonatomic, strong) id <MGTemplateEngineMatcher> matcher;
+@property (nonatomic, copy, readonly) NSString *templateContents;
 
 // Creation.
-+ (NSString *)version;
++ (NSString *)engineVersion;
 + (MGTemplateEngine *)templateEngine;
 
 // Managing persistent values.
@@ -89,8 +67,8 @@
 - (id)objectForKey:(id)aKey;
 
 // Configuration and extensibility.
-- (void)loadMarker:(NSObject <MGTemplateMarker> *)marker;
-- (void)loadFilter:(NSObject <MGTemplateFilter> *)filter;
+- (void)loadMarker:(id<MGTemplateMarker>)marker;
+- (void)loadFilter:(id<MGTemplateFilter>)filter;
 
 // Utilities.
 - (NSObject *)resolveVariable:(NSString *)var;

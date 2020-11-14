@@ -34,7 +34,7 @@
 
 static SPFavoriteColorSupport *_colorSupport = nil;
 
-- (id)init
+- (instancetype)init
 {
     if ((self = [super init])) {
         prefs = [NSUserDefaults standardUserDefaults];
@@ -51,7 +51,6 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 	
 	return _colorSupport;
 }
-
 
 + (NSArray *)defaultColorList
 {
@@ -102,7 +101,7 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 		[colorList addObject:color];
 	}
 	
-	return [[colorList copy] autorelease];
+	return [colorList copy];
 }
 
 @end

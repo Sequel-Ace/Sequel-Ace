@@ -30,17 +30,17 @@
 
 //	Usage:
 //	#import "SPTooltip.h"
-//	
-//	[SPTooltip showWithObject:@"<h1>Hello</h1>I am a <b>tooltip</b>" ofType:@"html" 
+//
+//	[SPTooltip showWithObject:@"<h1>Hello</h1>I am a <b>tooltip</b>" ofType:@"html"
 //			displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
 //			@"#EEEEEE", @"backgroundcolor",
 //			@"transparent", @"transparent", nil]];
-//	
-//	[SPTooltip  showWithObject:(id)content 
-//					atLocation:(NSPoint)point 
-//						ofType:(NSString *)type 
+//
+//	[SPTooltip  showWithObject:(id)content
+//					atLocation:(NSPoint)point
+//						ofType:(NSString *)type
 //				displayOptions:(NSDictionary *)displayOptions]
-//	
+//
 //			content: a NSString with the actual content; a NSImage object AND type:"image"
 //			  point: n NSPoint where the tooltip should be shown
 //			         if not given it will be shown under the current caret position or
@@ -51,7 +51,7 @@
 //	                 if no displayOptions are passed or if a key doesn't exist the following default
 //	                 are taken:
 //	                       "Lucida Grande", "10", "#F9FBC5", NO
-//	
+//
 //	See more possible syntaxa in SPTooltip to init a tooltip
 
 #import "SPTooltip.h"
@@ -79,9 +79,37 @@ static CGFloat slow_in_out (CGFloat t)
 + (void)setDisplayOptions:(NSDictionary *)aDict;
 - (void)initMeWithOptions:(NSDictionary *)displayOptions;
 
+@property (nonatomic, assign) BOOL gotHeight;
+@property (nonatomic, assign) BOOL gotWidth;
+
 @end
 
 @implementation SPTooltip
+
+@synthesize gotHeight, gotWidth;
+
++ (instancetype)sharedInstance {
+	static SPTooltip *sharedInstance = nil;
+
+	static dispatch_once_t SPTooltipOnceToken;
+
+	dispatch_once(&SPTooltipOnceToken, ^{
+		sharedInstance = [[[self class] alloc] init];
+	});
+
+	return sharedInstance;
+}
+
+- (instancetype)init {
+	if((self = [super initWithContentRect:NSMakeRect(1,1,1,1)
+					styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO]))
+	{
+		
+		// some setup?
+		
+	}
+	return self;
+}
 
 // ==================
 // = Setup/teardown =
@@ -89,43 +117,52 @@ static CGFloat slow_in_out (CGFloat t)
 
 + (void)showWithObject:(id)content atLocation:(NSPoint)point
 {
-	[self showWithObject:content atLocation:point ofType:@"text" displayOptions:@{}];
+	[self.sharedInstance showWithObject:content atLocation:point ofType:@"text" displayOptions:@{}];
 }
 
 + (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type
 {
-	[self showWithObject:content atLocation:point ofType:type displayOptions:nil];
+	[self.sharedInstance showWithObject:content atLocation:point ofType:type displayOptions:nil];
 }
 
 + (void)showWithObject:(id)content
 {
-	[self showWithObject:content atLocation:[self caretPosition] ofType:@"text" displayOptions:nil];
+	[self.sharedInstance showWithObject:content atLocation:[self caretPosition] ofType:@"text" displayOptions:nil];
 }
 
 + (void)showWithObject:(id)content ofType:(NSString *)type
 {
-	[self showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:nil];
+	[self.sharedInstance showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:nil];
 }
 
 + (void)showWithObject:(id)content ofType:(NSString *)type displayOptions:(NSDictionary *)options
 {
-	[self showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:options];
+	[self.sharedInstance showWithObject:content atLocation:[self caretPosition] ofType:type displayOptions:options];
 }
 
-+ (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions
++ (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions{
+	
+	[self.sharedInstance showWithObject:content atLocation:point ofType:type displayOptions:displayOptions];
+}
+
+- (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions
 {
 
 	spTooltipCounter++;
 	
-	SPTooltip* tip = [SPTooltip new]; // Automatically released on close
-	[tip initMeWithOptions:displayOptions];
-	[tip setFrameTopLeftPoint:point];
+	self.gotWidth = NO;
+	self.gotHeight = NO;
+	
+	[self initMeWithOptions:displayOptions];
+	[self setFrameTopLeftPoint:point];
 
 	if([type isEqualToString:@"text"]) {
 		NSString* html = nil;
-		NSMutableString* text = [[(NSString*)content mutableCopy] autorelease];
+		NSMutableString* text = [(NSString*)content mutableCopy];
 		if(text)
 		{
+			int fontSize = ([displayOptions objectForKey:@"fontsize"]) ? [[displayOptions objectForKey:@"fontsize"] intValue] : 10;
+			if(fontSize < 5) fontSize = 5;
 			[text replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, [text length])];
 			[text replaceOccurrencesOfString:@"<" withString:@"&lt;" options:0 range:NSMakeRange(0, [text length])];
 			html = text;
@@ -134,17 +171,17 @@ static CGFloat slow_in_out (CGFloat t)
 		{
 			html = @"Error";
 		}
-		[tip setContent:html withOptions:displayOptions];
+		[self setContent:html withOptions:displayOptions];
 	}
 	else if([type isEqualToString:@"html"]) {
-		[tip setContent:(NSString*)content withOptions:displayOptions];
+		[self setContent:(NSString*)content withOptions:displayOptions];
 	}
 	else if([type isEqualToString:@"image"]) {
-		[tip setBackgroundColor:[NSColor clearColor]];
-		[tip setOpaque:NO];
-		[tip setLevel:NSNormalWindowLevel];
-		[tip setExcludedFromWindowsMenu:YES];
-		[tip setAlphaValue:1];
+		[self setBackgroundColor:[NSColor clearColor]];
+		[self setOpaque:NO];
+		[self setLevel:NSNormalWindowLevel];
+		[self setExcludedFromWindowsMenu:YES];
+		[self setAlphaValue:1];
 
 		NSSize s = [(NSImage *)content size];
 		
@@ -167,16 +204,15 @@ static CGFloat slow_in_out (CGFloat t)
 		NSImageView *backgroundImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0,0,w, h)];
 		[backgroundImageView setImage:(NSImage *)content];
 		[backgroundImageView setFrameSize:NSMakeSize(w, h)];
-		[tip setContentView:backgroundImageView];
-		[tip setContentSize:NSMakeSize(w,h)];
-		[tip setFrameTopLeftPoint:point];
-		[tip sizeToContent];
-		[tip orderFront:self];
-		[tip performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
-		[backgroundImageView release];
+		[self setContentView:backgroundImageView];
+		[self setContentSize:NSMakeSize(w,h)];
+		[self setFrameTopLeftPoint:point];
+		[self sizeToContent];
+		[self orderFront:self];
+		[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
 	}
 	else {
-		[tip setContent:(NSString*)content withOptions:displayOptions];
+		[self setContent:(NSString*)content withOptions:displayOptions];
 		NSBeep();
 		NSLog(@"SPTooltip: Type '%@' is not supported. Please use 'text' or 'html'. Tooltip is displayed as type 'html'", type);
 	}
@@ -185,7 +221,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 - (void)initMeWithOptions:(NSDictionary *)displayOptions
 {
-	[self setReleasedWhenClosed:YES];
+	[self setReleasedWhenClosed:NO]; // important that this is NO, otherwise self is released
 	[self setAlphaValue:0.97f];
 	[self setOpaque:NO];
 	[self setBackgroundColor:[NSColor clearColor]];
@@ -194,36 +230,42 @@ static CGFloat slow_in_out (CGFloat t)
 	[self setHidesOnDeactivate:YES];
 	[self setIgnoresMouseEvents:YES];
 
-	webPreferences = [[WebPreferences alloc] initWithIdentifier:@"SequelPro Tooltip"];
-	[webPreferences setJavaScriptEnabled:YES];
-
-	webView = [[WebView alloc] initWithFrame:NSZeroRect];
-	[webView setPreferencesIdentifier:@"SequelPro Tooltip"];
-	[webView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-	[webView setFrameLoadDelegate:self];
-	if ([webView respondsToSelector:@selector(setDrawsBackground:)])
-	    [webView setDrawsBackground:NO];
-
-	[self setContentView:webView];
+	WKPreferences *prefs = [WKPreferences new];
+	prefs.javaScriptEnabled = YES;
 	
+	/* Create a configuration for our preferences */
+	WKWebViewConfiguration *conf = [WKWebViewConfiguration new];
+	conf.preferences = prefs;
+	conf.applicationNameForUserAgent = @"SequelPro Tooltip";
+	
+	wkWebView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:conf];
+	
+	[wkWebView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	wkWebView.navigationDelegate = self;
+	
+	[self setContentView:wkWebView];
 }
 
-- (id)init;
-{
-	if((self = [self initWithContentRect:NSMakeRect(1,1,1,1) 
-					styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO]))
-	{
-	}
-	return self;
+- (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation {
+	SPLog(@"didFinishNavigation FINISHING LOAD");
+	
+	[self sizeToContent];
+	[self orderFront:self];
+	[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+	
+}
+- (void)webView:(WKWebView *)webView didFailNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	SPLog(@"didFailNavigation. error is: %@", error);
+}
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	SPLog(@"didFailProvisionalNavigation. error is: %@", error);
 }
 
 - (void)dealloc
 {
+	SPLog(@"dealloc called");
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	SPClear(didOpenAtDate);
-	SPClear(webView);
-	SPClear(webPreferences);
-	[super dealloc];
+
 }
 
 + (void)setDisplayOptions:(NSDictionary *)aDict
@@ -237,7 +279,7 @@ static CGFloat slow_in_out (CGFloat t)
 	id fr = [[NSApp keyWindow] firstResponder];
 
 	//If first responder is a textview return the caret position
-	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSLeftTextAlignment) || [[[fr class] description] isEqualToString:@"SPTextView"]) {
+	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSTextAlignmentLeft) || [[[fr class] description] isEqualToString:@"SPTextView"]) {
 		NSRange range = NSMakeRange([fr selectedRange].location,1);
 		NSRange glyphRange = [[fr layoutManager] glyphRangeForCharacterRange:range actualCharacterRange:NULL];
 		NSRect boundingRect = [[fr layoutManager] boundingRectForGlyphRange:glyphRange inTextContainer:[fr textContainer]];
@@ -286,9 +328,8 @@ static CGFloat slow_in_out (CGFloat t)
 	NSString *bgColor = ([displayOptions objectForKey:@"backgroundcolor"]) ? [displayOptions objectForKey:@"backgroundcolor"] : tooltipColor;
 	BOOL isTransparent = ([displayOptions objectForKey:@"transparent"]) ? YES : NO;
 
-
 	fullContent = [NSString stringWithFormat:fullContent, isTransparent ? @"transparent" : bgColor, content];
-	[[webView mainFrame] loadHTMLString:fullContent baseURL:nil];
+	[wkWebView loadHTMLString:fullContent baseURL:nil];
 
 }
 
@@ -304,16 +345,44 @@ static CGFloat slow_in_out (CGFloat t)
 	NSRect screenFrame = [NSScreen rectOfScreenAtPoint:pos];
 
 	// is contentView a webView calculate actual rendered size via JavaScript
-	if([[[[self contentView] class] description] isEqualToString:@"WebView"]) {
+	if([[[[self contentView] class] description] isEqualToString:@"WKWebView"]) {
 		// The webview is set to a large initial size and then sized down to fit the content
 		[self setContentSize:NSMakeSize(screenFrame.size.width - screenFrame.size.width / 3.0f , screenFrame.size.height)];
 
-		NSInteger height  = [[[webView windowScriptObject] evaluateWebScript:@"document.body.offsetHeight + document.body.offsetTop;"] integerValue];
-		NSInteger width   = [[[webView windowScriptObject] evaluateWebScript:@"document.body.offsetWidth + document.body.offsetLeft;"] integerValue];
-	
-		[webView setFrameSize:NSMakeSize(width, height)];
+		NSInteger __block height = 21;
+		NSInteger __block width = 400;
+		
+		[self->wkWebView evaluateJavaScript:@"document.body.offsetHeight + document.body.offsetTop;" completionHandler:^(id _Nullable height2, NSError * _Nullable error) {
+			SPLog(@"height2: %@", height2);
+			if (error) SPLog(@"error: %@", error.localizedDescription);
+			
+			height = [height2 integerValue];
+			self->gotHeight = YES;
+			
+		}];
+		
+		[self->wkWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
+			SPLog(@"width2: %@", width2);
+			if (error) SPLog(@"error: %@", error.localizedDescription);
+			
+			width = [width2 integerValue];
+			self->gotWidth = YES;
+		}];
+		
+		// wait until we have both height and width
+		if (gotHeight == NO || gotWidth == NO) {
 
-		frame = [self frameRectForContentRect:[webView frame]];
+			[NSThread detachNewThreadSelector:@selector(runInBackground:) toTarget:self withObject:nil];
+
+			while (gotHeight == NO || gotWidth == NO) {
+				SPLog(@"waiting");
+				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+			}
+		}
+			
+		[wkWebView setFrameSize:NSMakeSize(width, height)];
+
+		frame = [self frameRectForContentRect:[wkWebView frame]];
 	} else {
 		frame = [self frame];
 	}
@@ -329,15 +398,21 @@ static CGFloat slow_in_out (CGFloat t)
 	pos.y = MIN(MAX(NSMinY(screenFrame)+NSHeight(frame), pos.y), NSMaxY(screenFrame));
 
 	[self setFrameTopLeftPoint:pos];
-	
+		
 }
 
-- (void)webView:(WebView*)sender didFinishLoadForFrame:(WebFrame*)frame;
-{
-	[self sizeToContent];
-	[self orderFront:self];
-	[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+- (void)runInBackground:(id)arg {
+	@autoreleasepool {
+		[self performSelectorOnMainThread:@selector(wakeUpMainThreadRunloop:) withObject:nil waitUntilDone:NO];
+	}
 }
+
+- (void)wakeUpMainThreadRunloop:(id)arg {
+	// This method is executed on main thread!
+	// It doesn't need to do anything actually, just having it run will
+	// make sure the main thread stops running the runloop
+}
+
 
 // ==================
 // = Event handling =
@@ -368,18 +443,18 @@ static CGFloat slow_in_out (CGFloat t)
 	[self setValue:[NSDate date] forKey:@"didOpenAtDate"];
 	mousePositionWhenOpened = NSZeroPoint;
 
-	NSWindow* appKeyWindow = [[NSApp keyWindow] retain];
+	NSWindow* appKeyWindow = [NSApp keyWindow];
 	BOOL didAcceptMouseMovedEvents = [appKeyWindow acceptsMouseMovedEvents];
 	[appKeyWindow setAcceptsMouseMovedEvents:YES];
 	NSEvent* event = nil;
 	NSInteger eventType;
-	while((event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:[NSDate distantFuture] inMode:NSDefaultRunLoopMode dequeue:YES]))
+	while((event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantFuture] inMode:NSDefaultRunLoopMode dequeue:YES]))
 	{
 		eventType = [event type];
-		if(eventType == NSKeyDown || eventType == NSLeftMouseDown || eventType == NSRightMouseDown || eventType == NSOtherMouseDown || eventType == NSScrollWheel)
+		if(eventType == NSEventTypeKeyDown || eventType == NSEventTypeLeftMouseDown || eventType == NSEventTypeRightMouseDown || eventType == NSEventTypeOtherMouseDown || eventType == NSEventTypeScrollWheel)
 			break;
 
-		if(eventType == NSMouseMoved && [self shouldCloseForMousePosition:[NSEvent mouseLocation]])
+		if(eventType == NSEventTypeMouseMoved && [self shouldCloseForMousePosition:[NSEvent mouseLocation]])
 			break;
 
 		if(appKeyWindow != [NSApp keyWindow] || ![NSApp isActive])
@@ -392,7 +467,6 @@ static CGFloat slow_in_out (CGFloat t)
 	}
 
 	[appKeyWindow setAcceptsMouseMovedEvents:didAcceptMouseMovedEvents];
-	[appKeyWindow release];
 
 	[self orderOut:self];
 
@@ -405,6 +479,10 @@ static CGFloat slow_in_out (CGFloat t)
 // =============
 - (void)orderOut:(id)sender
 {
+	// must set this to nil here
+	// otherwise subsequent tootips do not display
+	self.contentView = nil;
+	
 	if(![self isVisible] || animationTimer)
 		return;
 
@@ -435,7 +513,6 @@ static CGFloat slow_in_out (CGFloat t)
 {
 	if(animationTimer)
 	{
-		[[self retain] autorelease];
 		[animationTimer invalidate];
 		[self setValue:nil forKey:@"animationTimer"];
 		[self setValue:nil forKey:@"animationStart"];
@@ -444,3 +521,4 @@ static CGFloat slow_in_out (CGFloat t)
 }
 
 @end
+

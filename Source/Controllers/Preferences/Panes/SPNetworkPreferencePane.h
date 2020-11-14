@@ -51,8 +51,8 @@
 	NSString *sshConfigFile;
 }
 
-@property (readwrite, retain) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
-@property (readwrite, retain) NSMutableArray<NSURL *> *resolvedBookmarks;
+@property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (readwrite, strong) NSMutableArray<NSURL *> *resolvedBookmarks;
 
 - (IBAction)pickSSHClientViaFileBrowser:(id)sender;
 - (IBAction)pickSSHClient:(id)sender;

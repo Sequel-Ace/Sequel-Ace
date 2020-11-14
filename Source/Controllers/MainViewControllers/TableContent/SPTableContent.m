@@ -56,6 +56,8 @@
 #import "SPFunctions.h"
 #import "SPRuleFilterController.h"
 #import "SPFilterTableController.h"
+#import "SPSplitView.h"
+#import "SPExtendedTableInfo.h"
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
@@ -76,7 +78,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 @interface ContentPaginationViewController : NSViewController
 {
-	id target;
 	SEL action;
 
 	NSNumber *page;
@@ -90,7 +91,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)makeInputFirstResponder;
 - (BOOL)isFirstResponderInside;
 
-@property (assign, nonatomic) id target;
+@property (weak, nonatomic) id target;
 @property (assign, nonatomic) SEL action;
 
 // IB Bindings
@@ -121,7 +122,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		_mainNibLoaded = NO;
@@ -167,7 +168,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		showFilterRuleEditor = [prefs boolForKey:SPRuleFilterEditorLastVisibilityChoice];
 
-		usedQuery = [[NSString alloc] initWithString:@""];
+		usedQuery = @"";
 
 		tableLoadTimer = nil;
 
@@ -312,8 +313,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (!NSEqualRects(selectionViewportToRestore, NSZeroRect)) {
 		SPMainQSync(^{
 			// Scroll the viewport to the saved location
-			selectionViewportToRestore.size = [tableContentView visibleRect].size;
-			[tableContentView scrollRectToVisible:selectionViewportToRestore];
+			self->selectionViewportToRestore.size = [self->tableContentView visibleRect].size;
+			[self->tableContentView scrollRectToVisible:self->selectionViewportToRestore];
 		});
 	}
 
@@ -351,7 +352,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[countText setStringValue:@""];
 
 	// Reset sort column
-	if (sortCol) SPClear(sortCol);
+	if (sortCol) sortCol = nil;
+	
 	isDesc = NO;
 
 	// Empty and disable filter options
@@ -410,7 +412,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
 
 	// Reset table key store for use in argumentForRow:
-	if (keys) SPClear(keys);
+	if (keys) keys = nil;
 
 	// Check the supplied table name.  If it matches the old one, a reload is being performed;
 	// reload the data in-place to maintain table state if possible.
@@ -425,7 +427,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Otherwise store the newly selected table name and reset the data
 	} else {
-		if (selectedTable) SPClear(selectedTable);
+		
 		if (newTableName) selectedTable = [[NSString alloc] initWithString:newTableName];
 		previousTableRowsCount = 0;
 		contentPage = 1;
@@ -524,7 +526,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Set up the data cell depending on the column type
 		id dataCell;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[[NSComboBoxCell alloc] initTextCell:@""] autorelease];
+			dataCell = [[NSComboBoxCell alloc] initTextCell:@""];
 			[dataCell setButtonBordered:NO];
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
@@ -537,12 +539,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Add a foreign key arrow if applicable
 		} else if ([columnDefinition objectForKey:@"foreignkeyreference"]) {
-			dataCell = [[[SPTextAndLinkCell alloc] initTextCell:@""] autorelease];
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 			[dataCell setTarget:self action:@selector(clickLinkArrow:)];
 
 		// Otherwise instantiate a text-only cell
 		} else {
-			dataCell = [[[SPTextAndLinkCell alloc] initTextCell:@""] autorelease];
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 		}
 
 		// Set the column to right-aligned for numeric data types
@@ -556,7 +558,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Set the line break mode and an NSFormatter subclass which displays line breaks nicely
 		[dataCell setLineBreakMode:NSLineBreakByTruncatingTail];
-		[dataCell setFormatter:[[SPDataCellFormatter new] autorelease]];
+		[dataCell setFormatter:[SPDataCellFormatter new]];
 
 		// Set field length limit if field is a varchar to match varchar length
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"string"]
@@ -585,13 +587,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Add the column to the table
 		[tableContentView addTableColumn:theCol];
-		[theCol release];
 	}
 
 	// If the table has been reloaded and the previously selected sort column is still present, reselect it.
 	if (sortColumnNumberToRestore != NSNotFound) {
 		theCol = [tableContentView tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)sortColumnNumberToRestore]];
-		if (sortCol) [sortCol release];
 		sortCol = [[NSNumber alloc] initWithInteger:sortColumnNumberToRestore];
 		[tableContentView setHighlightedTableColumn:theCol];
 		isDesc = !sortColumnToRestoreIsAsc;
@@ -604,7 +604,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Otherwise, clear sorting
 	} else {
 		if (sortCol) {
-			SPClear(sortCol);
+			sortCol = nil;
 		}
 		isDesc = NO;
 	}
@@ -674,7 +674,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableValues = [[SPDataStorage alloc] init];
 	[tableContentView setTableData:tableValues];
 	pthread_mutex_unlock(&tableValuesLock);
-	[tableValuesTransition release];
 }
 
 /**
@@ -750,7 +749,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Perform and process the query
 	[tableContentView performSelectorOnMainThread:@selector(noteNumberOfRowsChanged) withObject:nil waitUntilDone:YES];
 	[self setUsedQuery:queryString];
-	resultStore = [[mySQLConnection resultStoreFromQueryString:queryString] retain];
+	resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
 
 	// Ensure the number of columns are unchanged; if the column count has changed, abort the load
 	// and queue a full table reload.
@@ -766,7 +765,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (!fullTableReloadRequired && resultStore) {
 		[self updateResultStore:resultStore approximateRowCount:rowsToLoad];
 	}
-	if (resultStore) [resultStore release];
 
 	// If the result is empty, and a late page is selected, reset the page
 	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
@@ -774,10 +772,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		previousTableRowsCount = tableRowsCount;
 		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT 0,%ld", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
 		[self setUsedQuery:queryString];
-		resultStore = [[mySQLConnection resultStoreFromQueryString:queryString] retain];
+		resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
 		if (resultStore) {
 			[self updateResultStore:resultStore approximateRowCount:[prefs integerForKey:SPLimitResultsValue]];
-			[resultStore release];
 		}
 	}
 
@@ -832,7 +829,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 							[lookupString appendString:[SPDataStorageObjectAtRowAndColumn(tableValues, i, primaryKeyFieldIndexes[j]) description]];
 						}
 						if ([selectionKeysToRestore objectForKey:lookupString]) rowMatches = YES;
-						[lookupString release];
 					}
 					
 					if (rowMatches) {
@@ -876,9 +872,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	});
 
 	// Retrieve and cache the column definitions for editing views
-	if (cqColumnDefinition) [cqColumnDefinition release];
-	cqColumnDefinition = [[resultStore fieldDefinitions] retain];
-
+	cqColumnDefinition = [resultStore fieldDefinitions];
 
 	// Notify listenters that the query has finished
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
@@ -891,7 +885,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			else
 				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nMySQL said: %@", @"message of panel when loading of table failed"), [mySQLConnection lastErrorMessage]];
 		
-			SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [tableDocumentInstance parentWindow], errorDetail);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
 		}
 		// Filter task came from filter table
 		else if(activeFilter == SPTableContentFilterSourceTableFilter) {
@@ -944,13 +938,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableValues awaitDataDownloaded];
 
 	SPMainQSync(^{
-		tableRowsCount = [tableValues count];
+		self->tableRowsCount = [self->tableValues count];
 		
 		// If the final column autoresize wasn't performed, perform it
-		if (tableLoadLastRowCount < 200) [self autosizeColumns];
+		if (self->tableLoadLastRowCount < 200) [self autosizeColumns];
 
 		// Ensure the table is aware of changes
-		[tableContentView noteNumberOfRowsChanged]; // UI method!
+		[self->tableContentView noteNumberOfRowsChanged]; // UI method!
 
 		// Reset the progress indicator
 		[dataLoadingIndicator setIndeterminate:YES]; // UI method!
@@ -985,11 +979,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSError *err = nil;
 		NSString *filter = [ruleFilterController sqlWhereExpressionWithBinary:caseSensitive error:&err];
 		if(err) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title"),
-				[tableDocumentInstance parentWindow],
-				[err localizedDescription]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title") message:[err localizedDescription] callback:nil];
 			return nil;
 		}
 		return ([filter length] ? filter : nil);
@@ -1070,7 +1060,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableLoadLastRowCount = 0;
 	tableLoadTimerTicksSinceLastUpdate = 0;
 
-	tableLoadTimer = [[NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(tableLoadUpdate:) userInfo:nil repeats:YES] retain];
+	tableLoadTimer = [NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(tableLoadUpdate:) userInfo:nil repeats:YES];
 }
 
 /**
@@ -1081,7 +1071,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	if (tableLoadTimer) {
 		[tableLoadTimer invalidate];
-		SPClear(tableLoadTimer);
+		
 	}
 }
 
@@ -1144,7 +1134,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	tableLoadTimerTicksSinceLastUpdate = 0;
 }
 
-
 #pragma mark -
 #pragma mark Table interface actions
 
@@ -1196,8 +1185,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Record whether the filter is being triggered by using delete/backspace in the filter field, which
 	// can trigger the effect of clicking the "clear filter" button in the field.
 	// (Keycode 51 is backspace, 117 is delete.)
-	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
-
+	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSEventTypeKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
 
 	BOOL resetPaging = NO; // if filtering was triggered by pressing the "Filter" button, reset to page 1
 	
@@ -1208,8 +1196,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 	// If a string was supplied, use a custom query from that URL scheme
 	else if([sender isKindOfClass:[NSString class]] && [(NSString *)sender length]) {
-		if(schemeFilter) SPClear(schemeFilter);
-		schemeFilter = [sender retain];
+		
+		schemeFilter = sender;
 		activeFilter = SPTableContentFilterSourceURLScheme;
 		resetPaging = YES;
 	}
@@ -1328,7 +1316,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)setUsedQuery:(NSString *)query
 {
-	if (usedQuery) [usedQuery release];
 	usedQuery = [[NSString alloc] initWithString:query];
 }
 
@@ -1354,7 +1341,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			// this is the same as saying (isDesc && !invert) || (!isDesc && invert)
 			if (isDesc != invert) {
-				SPClear(sortCol);
+				if (sortCol) sortCol = nil;
 			}
 			else {
 				isDesc = !isDesc;
@@ -1370,28 +1357,26 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			[[tableContentView onMainThread] setIndicatorImage:nil inTableColumn:[[tableContentView onMainThread] tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)[sortCol integerValue]]]];
 
-			if (sortCol) [sortCol release];
-
 			sortCol = [[NSNumber alloc] initWithInteger:[[tableColumn identifier] integerValue]];
 		}
 
 		SPMainQSync(^{
-			if (sortCol) {
+			if (self->sortCol) {
 				// Set the highlight and indicatorImage
-				[tableContentView setHighlightedTableColumn:tableColumn];
+				[self->tableContentView setHighlightedTableColumn:tableColumn];
 
-				if (isDesc) {
-					[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:tableColumn];
+				if (self->isDesc) {
+					[self->tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:tableColumn];
 				}
 				else {
-					[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:tableColumn];
+					[self->tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:tableColumn];
 				}
 			}
 			else {
 				// If no sort order deselect column header and
 				// remove indicator image
-				[tableContentView setHighlightedTableColumn:nil];
-				[tableContentView setIndicatorImage:nil inTableColumn:tableColumn];
+				[self->tableContentView setHighlightedTableColumn:nil];
+				[self->tableContentView setIndicatorImage:nil inTableColumn:tableColumn];
 			}
 		});
 
@@ -1402,11 +1387,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[self loadTableValues];
 
 		if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			return;
@@ -1672,11 +1653,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (![tableContentView numberOfSelectedRows]) return;
 	
 	if ([tableContentView numberOfSelectedRows] > 1) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			NSLocalizedString(@"You can only copy single rows.", @"message of panel when trying to copy multiple rows")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"You can only copy single rows.", @"message of panel when trying to copy multiple rows") callback:nil];
 		return;
 	}
 
@@ -1791,7 +1768,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow]
 	                  modalDelegate:self
 	                 didEndSelector:@selector(removeRowSheetDidEnd:returnCode:contextInfo:)
-	                    contextInfo:contextInfo];
+						contextInfo:(__bridge void * _Nullable)(contextInfo)];
 }
 
 /**
@@ -1808,7 +1785,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
 
-	if ( [(NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
+	if ( [(__bridge NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
 		if ( returnCode == NSAlertDefaultReturn ) {
 
 			// Check if the user is currently editing a row, and revert to ensure a somewhat
@@ -1841,7 +1818,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					afterDelay:0.3];
 			}
 		}
-	} else if ( [(NSString*)contextInfo isEqualToString:@"removerow"] ) {
+	} else if ( [(__bridge NSString*)contextInfo isEqualToString:@"removerow"] ) {
 		if ( returnCode == NSAlertDefaultReturn ) {
 			[selectedRows addIndexes:[tableContentView selectedRowIndexes]];
 
@@ -2086,7 +2063,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 }
 
-
 #pragma mark -
 #pragma mark Data accessors
 
@@ -2202,8 +2178,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 						(long)imageWidth,
 						[[image TIFFRepresentationUsingCompression:NSTIFFCompressionJPEG factor:0.01f] base64Encoding]];
 				}
-				
-				[v release];
 				[tempRow addObject:[NSString stringWithFormat:@"%@%@", [o wktString], imageStr]];
 			}
 			else {
@@ -2231,8 +2205,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					}
 					[tempRow addObject:str];
 				}
-				
-				if(image) [image release];
 			}
 		}
 		
@@ -2281,25 +2253,25 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	@autoreleasepool {
 		SPMainQSync(^{
-			NSUInteger dataColumnIndex = [[[[tableContentView tableColumns] objectAtIndex:[theArrowCell getClickedColumn]] identifier] integerValue];
+			NSUInteger dataColumnIndex = [[[[self->tableContentView tableColumns] objectAtIndex:[theArrowCell getClickedColumn]] identifier] integerValue];
 			BOOL tableFilterRequired = NO;
 
 			// Ensure the clicked cell has foreign key details available
-			NSDictionary *columnDefinition = [dataColumns objectAtIndex:dataColumnIndex];
+			NSDictionary *columnDefinition = [self->dataColumns objectAtIndex:dataColumnIndex];
 			NSDictionary *refDictionary = [columnDefinition objectForKey:@"foreignkeyreference"];
 			if (!refDictionary) {
 				return;
 			}
 
 			// Save existing scroll position and details and mark that state is being modified
-			[spHistoryControllerInstance updateHistoryEntries];
-			[spHistoryControllerInstance setModifyingState:YES];
+			[self->spHistoryControllerInstance updateHistoryEntries];
+			[self->spHistoryControllerInstance setModifyingState:YES];
 
-			id targetFilterValue = [tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
+			id targetFilterValue = [self->tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
 			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
 			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
-			if(navigateAsHex) targetFilterValue = [mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -2313,12 +2285,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
 			NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
 
-			if (![databaseToJumpTo isEqualToString:[tableDocumentInstance database]]) {
+			if (![databaseToJumpTo isEqualToString:[self->tableDocumentInstance database]]) {
 				// fk points to a table in another database; switch database, and select the target table
-				[[tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
-			} else if (![tableToJumpTo isEqualToString:selectedTable]) {
+				[[self->tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
+			} else if (![tableToJumpTo isEqualToString:self->selectedTable]) {
 				// fk points to another table in the same database: switch to the target table
-				if (![tablesListInstance selectItemWithName:tableToJumpTo]) {
+				if (![self->tablesListInstance selectItemWithName:tableToJumpTo]) {
 					NSBeep();
 					[self setFiltersToRestore:nil];
 					[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
@@ -2329,8 +2301,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			
 			if (tableFilterRequired) {
-				[ruleFilterController restoreSerializedFilters:filterSettings];
-				activeFilter = SPTableContentFilterSourceRuleFilter;
+				[self->ruleFilterController restoreSerializedFilters:filterSettings];
+				self->activeFilter = SPTableContentFilterSourceRuleFilter;
 			} else {
 				[self setFiltersToRestore:filterSettings];
 				[self setActiveFilterToRestore:SPTableContentFilterSourceRuleFilter];
@@ -2338,10 +2310,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[self setRuleEditorVisible:YES animate:YES];
 
 			// End modifying state
-			[spHistoryControllerInstance setModifyingState:NO];
+			[self->spHistoryControllerInstance setModifyingState:NO];
 
 			// End the task
-			[tableDocumentInstance endTask];
+			[self->tableDocumentInstance endTask];
 
 			if (tableFilterRequired) {
 				// If the same table is the target, trigger a filter task on the main thread
@@ -2349,7 +2321,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			} else {
 				// Will prevent table-load from overwriting the filtersToRestore we set above
 				// See [SPHistoryController restoreViewStates]
-				[spHistoryControllerInstance setNavigatingFK:YES];
+				[self->spHistoryControllerInstance setNavigatingFK:YES];
 			}
 		});
 	}
@@ -2381,11 +2353,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If no rows have been changed, show error if appropriate.
 	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Warning", @"warning"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 		} else {
 			NSBeep();
 		}
@@ -2428,7 +2396,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			else {
 				// Set the insertId for fields with auto_increment
-				for ( i = 0; i < [dataColumns count] ; i++ ) {
+				for ( i = 0; i < [dataColumns count]; i++ ) {
 					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
 						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
 					}
@@ -2574,21 +2542,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if(![whereArg length]) {
 			SPLog(@"Did not find plausible WHERE condition for UPDATE.");
 			NSBeep();
-			[rowFieldsToSave release];
-			[rowValuesToSave release];
 			return (NSMutableString*)@"";
 		}
 		[queryString appendFormat:@" WHERE %@", whereArg];
 	}
-
-	[rowFieldsToSave release];
-	[rowValuesToSave release];
 	
 	SPLog(@"query: %@", queryString);
 
 	return queryString;
 }
-
 
 /**
  * Tries to write a new row to the table.
@@ -2642,8 +2604,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 							 cancelButtonHandler:^{
 				SPLog(@"Cancel pressed");
-				isEditingRow = NO;
-				currentlyEditingRow = -1;
+				self->isEditingRow = NO;
+				self->currentlyEditingRow = -1;
 				// reload
 				[self loadTableValues];
 				returnCode = YES;
@@ -2679,7 +2641,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Edit row selected - reselect the row, and start editing.
 	if ( returnCode == NSAlertDefaultReturn ) {
 		[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
+		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 
 	} 
 	else {
@@ -2801,11 +2763,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// When the option to not show blob or text options is set, we have a problem - we don't have
 		// the right values to use in the WHERE statement.  Throw an error if this is the case.
 		if ( [prefs boolForKey:SPLoadBlobsAsNeeded] && [self tableContainsBlobOrTextColumns] ) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"You can't hide blob and text fields when working with tables without index.", @"message of panel when trying to edit tables without index and with hidden blob/text fields")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"You can't hide blob and text fields when working with tables without index.", @"message of panel when trying to edit tables without index and with hidden blob/text fields") callback:nil];
 			[keys removeAllObjects];
 			[tableContentView deselectAll:self];
 			return @"";
@@ -2814,7 +2772,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	NSMutableString *argument = [NSMutableString string];
 	// Walk through the keys list constructing the argument list
-	for (NSUInteger i = 0 ; i < [keys count] ; i++ ) {
+	for (NSUInteger i = 0 ; i < [keys count]; i++ ) {
 		if ( i )
 			[argument appendString:@" AND "];
 
@@ -2867,7 +2825,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	return argument;
 }
-
 
 /**
  * Returns YES if the table contains any columns which are of any of the blob or text types,
@@ -2996,8 +2953,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 }
 
-
-
 /**
  * Show Error sheet (can be called from inside of a endSheet selector)
  * via [self performSelector:@selector(showErrorSheetWithTitle:) withObject: afterDelay:]
@@ -3005,7 +2960,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)showErrorSheetWith:(NSArray *)error
 {
 	// error := first object is the title , second the message, only one button OK
-	SPOnewayAlertSheet([error objectAtIndex:0], [tableDocumentInstance parentWindow], [error objectAtIndex:1]);
+	[NSAlert createWarningAlertWithTitle:[error objectAtIndex:0] message:[error objectAtIndex:1] callback:nil];
 }
 
 - (void)processFieldEditorResult:(id)data contextInfo:(NSDictionary*)contextInfo
@@ -3031,7 +2986,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ([data isKindOfClass:[NSString class]]
 			&& [data isEqualToString:[prefs objectForKey:SPNullValue]] && [[NSArrayObjectAtIndex(dataColumns, [[theTableColumn identifier] integerValue]) objectForKey:@"null"] boolValue])
 		{
-			data = [[NSNull null] retain];
+			data = [NSNull null];
 		}
 		if(isFieldEditable) {
 			if ([tablesListInstance tableType] == SPTableTypeView) {
@@ -3040,18 +2995,18 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				isEditingRow = NO;
 
 				// update the field and refresh the table
-				[self saveViewCellValue:[[data copy] autorelease] forTableColumn:theTableColumn row:row];
+				[self saveViewCellValue:[data copy] forTableColumn:theTableColumn row:row];
 
 			// Otherwise, in tables, save back to the row store
 			} else {
-				[tableValues replaceObjectInRow:row column:[[theTableColumn identifier] integerValue] withObject:[[data copy] autorelease]];
+				[tableValues replaceObjectInRow:row column:[[theTableColumn identifier] integerValue] withObject:[data copy]];
 			}
 		}
 	}
 	
 	// this is a delegate method of the field editor controller. calling release
 	// now would risk a dealloc while it is still our parent on the stack:
-	(void)([fieldEditor autorelease]), fieldEditor = nil;
+	(void)(fieldEditor), fieldEditor = nil;
 
 	[[tableContentView window] makeFirstResponder:tableContentView];
 
@@ -3123,29 +3078,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString],
 				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryStr]];
 
-
 		// Check for errors while UPDATE
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 			return;
 		}
 
-
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Warning", @"warning"),
-					[tableDocumentInstance parentWindow],
-					NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db")
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 			} else {
 				NSBeep();
 			}
@@ -3155,11 +3100,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 	} else {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.", @"message of panel when error while updating field to db after enabling it"),(long)numberOfPossibleUpdateRows, tableForColumn]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.", @"message of panel when error while updating field to db after enabling it"),(long)numberOfPossibleUpdateRows, tableForColumn] callback:nil];
 
 		[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 		[tableDocumentInstance endTask];
@@ -3344,7 +3285,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setSortColumnNameToRestore:(NSString *)theSortColumnName isAscending:(BOOL)isAscending
 {
-	if (sortColumnToRestore) SPClear(sortColumnToRestore);
+	
 
 	if (theSortColumnName) {
 		sortColumnToRestore = [[NSString alloc] initWithString:theSortColumnName];
@@ -3365,7 +3306,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setSelectionToRestore:(NSDictionary *)theSelection
 {
-	if (selectionToRestore) SPClear(selectionToRestore);
+	
 
 	if (theSelection) selectionToRestore = [theSelection copy];
 }
@@ -3383,8 +3324,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setFiltersToRestore:(NSDictionary *)filterSettings
 {
-	[filterSettings retain];
-	SPClear(filtersToRestore);
+	
 	filtersToRestore = filterSettings;
 }
 
@@ -3888,7 +3828,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		return YES;
 	}
 
-
 	return NO;
 }
 
@@ -3905,7 +3844,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 #pragma mark - SPTableContentFilter
 
-
 /**
  * Makes the content filter field have focus by making it the first responder.
  */
@@ -3921,7 +3859,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[toggleRuleFilterButton setState:NSOnState];
 	[ruleFilterController focusFirstInputField];
 }
-
 
 #pragma mark -
 #pragma mark TableView delegate methods
@@ -3986,7 +3923,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	for (NSString *cmdPath in triggeredCommands)
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[[NSMenuItem alloc] init] autorelease];
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -4105,11 +4042,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			SPMySQLResult *tempResult = [mySQLConnection queryString:query];
 
 			if (![tempResult numberOfRows]) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error", @"error"),
-					[tableDocumentInstance parentWindow],
-					NSLocalizedString(@"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.", @"message of panel when loading of row failed")
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.", @"message of panel when loading of row failed") callback:nil];
 				return NO;
 			}
 
@@ -4375,7 +4308,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// TODO has to be improved
 		for (id win in [NSApp orderedWindows])
 		{
-			if ([[[[win contentView] class] description] isEqualToString:@"WebView"]) return nil;
+			if ([[[[win contentView] class] description] isEqualToString:@"WKWebView"]) return nil;
 		}
 
 		NSImage *image;
@@ -4393,7 +4326,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			pthread_mutex_lock(&tableValuesLock);
 
 			if (row < (NSInteger)tableRowsCount && [[tableColumn identifier] integerValue] < (NSInteger)[tableValues columnCount]) {
-				theValue = [[SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy] autorelease];
+				theValue = [SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy];
 			}
 
 			pthread_mutex_unlock(&tableValuesLock);
@@ -4404,14 +4337,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			theValue = SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]);
 		}
 
-		if (theValue == nil) return nil;
+		if (theValue == nil) return @"";
 
 		if ([theValue isKindOfClass:[NSData class]]) {
-			image = [[[NSImage alloc] initWithData:theValue] autorelease];
+			image = [[NSImage alloc] initWithData:theValue];
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				return nil;
+				return @"";
 			}
 		}
 		else if ([theValue isKindOfClass:[SPMySQLGeometryData class]]) {
@@ -4420,11 +4353,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
-				[v release];
-				return nil;
+				return @"";
 			}
-
-			[v release];
 		}
 
 		// Show the cell string value as tooltip (including line breaks and tabs)
@@ -4434,10 +4364,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		                   ofType:@"text"
 		           displayOptions:nil];
 
-		return nil;
+		return @"";
 	}
 
-	return nil;
+	return @"";
 }
 
 #pragma mark -
@@ -4459,11 +4389,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			// Convert the string back to binary, checking for errors.
 			NSData *data = [NSData dataWithHexString:[editor string]];
 			if (!data) {
-				SPOnewayAlertSheet(
-								   NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed"),
-								   [tableDocumentInstance parentWindow],
-								   NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed")
-								   );
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed") message:NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed") callback:nil];
 				return NO;
 			}
 		}
@@ -4608,27 +4534,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	[NSObject cancelPreviousPerformRequestsWithTarget:tableContentView];
 
-	if(fieldEditor) SPClear(fieldEditor);
-
 	[self clearTableLoadTimer];
-	SPClear(tableValues);
+	
 	pthread_mutex_destroy(&tableValuesLock);
-	SPClear(dataColumns);
-	SPClear(oldRow);
-	SPClear(paginationPopover);
-	SPClear(paginationViewController);
-
-	if (selectedTable)          SPClear(selectedTable);
-	if (keys)                   SPClear(keys);
-	if (sortCol)                SPClear(sortCol);
-	SPClear(usedQuery);
-	if (sortColumnToRestore)    SPClear(sortColumnToRestore);
-	if (selectionToRestore)     SPClear(selectionToRestore);
-	if (cqColumnDefinition)     SPClear(cqColumnDefinition);
-
-	SPClear(filtersToRestore);
-
-	[super dealloc];
 }
 
 @end
@@ -4670,11 +4578,5 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	);
 }
 
-- (void)dealloc
-{
-	[self setPage:nil];
-	[self setMaxPage:nil];
-	[super dealloc];
-}
 
 @end

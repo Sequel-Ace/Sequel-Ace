@@ -36,14 +36,5 @@
 @synthesize defaultEncoding;
 @synthesize defaultCollation;
 
-- (void)dealloc
-{
-	if (databaseName) SPClear(databaseName);
-	if (defaultEncoding) SPClear(defaultEncoding);
-	if (defaultCollation) SPClear(defaultCollation);
-
-	[super dealloc];
-}
-
 @end
 

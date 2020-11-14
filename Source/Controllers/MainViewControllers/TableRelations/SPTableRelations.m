@@ -67,7 +67,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		relationData         = [[NSMutableArray alloc] init];
@@ -189,7 +189,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		// Retrieve the last connection error message.
 		NSString *errorText = [connection lastErrorMessage];
 		
-		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+		NSAlert *alert = [[NSAlert alloc] init];
 		
 		[alert setMessageText:NSLocalizedString(@"Error creating relation", @"error creating relation message")];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -317,7 +317,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 										   otherButton:nil 
 							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected relations? This action cannot be undone.", @"delete selected relation informative message")];
 
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 
 		NSArray *buttons = [alert buttons];
 
@@ -326,7 +326,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 		[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 
-		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:SPRemoveRelation];
+		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(SPRemoveRelation)];
 	}
 }
 
@@ -387,7 +387,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	//dim the database name if it matches the current database
 	if([[tableColumn identifier] isEqualToString:SPRelationFKDatabaseKey] && [[tableDocumentInstance database] isEqual:data]) {
 		NSDictionary *textAttributes = @{NSForegroundColorAttributeName: [NSColor lightGrayColor]};
-		data = [[[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes] autorelease];
+		data = [[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes];
 	}
 	return data;
 }
@@ -443,8 +443,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	
 	[data addObject:headings];
-	
-	[headings release];
 
 	// Get the relation data
 	for (NSDictionary *eachRelation in relationData)
@@ -459,8 +457,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[temp addObject:([eachRelation objectForKey:SPRelationOnDeleteKey]) ? [eachRelation objectForKey:SPRelationOnDeleteKey] : @""];
 
 		[data addObject:temp];
-
-		[temp release];
 	}
 	
 	return data; 
@@ -486,12 +482,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 				if ([connection queryErrored]) {
 
-					SPOnewayAlertSheet(
-						NSLocalizedString(@"Unable to delete relation", @"error deleting relation message"),
-						[NSApp mainWindow],
-						[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nMySQL said: %@", @"error deleting relation informative message"), [connection lastErrorMessage]]
-					);
-
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nMySQL said: %@", @"error deleting relation informative message"), [connection lastErrorMessage]] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}
@@ -674,8 +665,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[refColumnPopUpButton setEnabled:YES];
 		[confirmAddRelationButton setEnabled:YES];
 	}
-	
-	[columnInfo release];
 }
 
 #pragma mark -
@@ -685,10 +674,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
-	SPClear(relationData);
-	SPClear(takenConstraintNames);
-
-	[super dealloc];
 }
 
 @end

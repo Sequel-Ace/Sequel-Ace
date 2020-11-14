@@ -56,7 +56,6 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 // List of permissible ciphers to use for SSL connections
 const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:AES128-SHA:AES256-RMD:AES128-RMD:DES-CBC3-RMD:DHE-RSA-AES256-RMD:DHE-RSA-AES128-RMD:DHE-RSA-DES-CBC3-RMD:RC4-SHA:RC4-MD5:DES-CBC3-SHA:DES-CBC-SHA:EDH-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC-SHA";
 
-
 @implementation SPMySQLConnection
 
 #pragma mark -
@@ -124,7 +123,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  * Typically initialisation would be followed by setting the connection details
  * and then calling -connect.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		mySQLConnection = NULL;
@@ -463,6 +462,20 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	}
 
 	return nil;
+}
+
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
+    if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
+        return;
+    }
+
+    self.timeZoneIdentifier = nil;
+    if (!timeZoneIdentifier || [timeZoneIdentifier isEqualToString:@""]) {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
+    } else {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
+        self.timeZoneIdentifier = timeZoneIdentifier;
+    }
 }
 
 @end
@@ -943,7 +956,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 	return (state == SPMySQLConnected);
 }
 
-
 /**
  * Loop while a connection isn't available; allows blocking while the network is disconnected
  * or still connecting (eg Airport still coming up after sleep).
@@ -1149,19 +1161,5 @@ asm(".desc ___crashreporter_info__, 0x10");
 + (void)_removeThreadVariables:(NSNotification *)aNotification
 {
 	mysql_thread_end();
-}
-
-- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
-    if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
-        return;
-    }
-
-    self.timeZoneIdentifier = nil;
-    if (!timeZoneIdentifier || [timeZoneIdentifier isEqualToString:@""]) {
-        [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
-    } else {
-        [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
-        self.timeZoneIdentifier = timeZoneIdentifier;
-    }
 }
 @end

@@ -38,7 +38,7 @@
 	id object;
 	SEL selector;
 }
-- (id)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName;
+- (instancetype)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName;
 - (void)run:(id)argument;
 @end
 
@@ -57,8 +57,6 @@
 	
 	NSThread *newThread = [[NSThread alloc] initWithTarget:namedThread selector:@selector(run:) object:anArgument];
 	[newThread start];
-	[newThread autorelease];
-	[namedThread autorelease];
 }
 
 @end
@@ -67,11 +65,11 @@
 
 @implementation SPNamedThread
 
-- (id)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName
+- (instancetype)initWithTarget:(id)aObject selector:(SEL)aSelector name:(NSString *)aName
 {
 	if(self = [super init]) {
 		name = [aName copy];
-		object = [aObject retain];
+		object = aObject;
 		selector = aSelector;
 	}
 	return self;
@@ -83,15 +81,13 @@
 	
 	void (*msgsend)(id, SEL, id) = (void (*)(id, SEL, id)) objc_msgSend; //hint for the compiler
 	
-	msgsend(object,selector,argument);
+	msgsend(object,selector,argument); // TODO: this leaks
 }
 
 - (void)dealloc
 {
-	SPClear(object);
 	selector = NULL;
-	SPClear(name);
-	[super dealloc];
+	
 }
 
 @end

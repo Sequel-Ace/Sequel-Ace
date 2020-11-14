@@ -12,7 +12,6 @@
 #import "SPDateAdditions.h"
 #import "sequel-ace-Swift.h"
 
-
 @interface SPDateAdditionsTests : XCTestCase
 
 @end
@@ -132,7 +131,6 @@
 	str3 = [[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
-
 
 }
 #pragma clang diagnostic pop

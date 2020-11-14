@@ -88,11 +88,9 @@ NSString * const SPUserClosedHelpViewerNotification;
 	IBOutlet NSSegmentedControl *helpTargetSelector;
 
 	HelpTarget helpTarget;
-
-	id<SPHelpViewerDataSource> dataSource;
 }
 
-@property (assign, nonatomic) id <SPHelpViewerDataSource> dataSource;
+@property (weak, nonatomic) id <SPHelpViewerDataSource> dataSource;
 
 - (void)showHelpFor:(NSString *)aString addToHistory:(BOOL)addToHistory calledByAutoHelp:(BOOL)autoHelp;
 

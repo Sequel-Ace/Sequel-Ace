@@ -31,24 +31,22 @@
 #import "SPFavoritesExportProtocol.h"
 
 @interface SPFavoritesExporter : NSObject 
-{	
-	NSObject <SPFavoritesExportProtocol> *delegate;
-	
+{
 	NSString *exportPath;
 	NSArray *exportFavorites;
 }
 
-@property (readwrite, assign) NSObject <SPFavoritesExportProtocol> *delegate;
+@property (readwrite, weak) NSObject <SPFavoritesExportProtocol> *delegate;
 
 /**
  * @property exportPath The file path to export to
  */
-@property (readwrite, retain) NSString *exportPath;
+@property (readwrite, strong) NSString *exportPath;
 
 /**
  * @property exportFavorites The array of favorites to be exported
  */
-@property (readwrite, retain) NSArray *exportFavorites;
+@property (readwrite, strong) NSArray *exportFavorites;
 
 - (void)writeFavorites:(NSArray *)favorites toFile:(NSString *)path;
 

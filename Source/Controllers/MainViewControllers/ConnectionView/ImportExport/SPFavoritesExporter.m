@@ -78,8 +78,6 @@
 
 		NSDictionary *dictionary = @{SPFavoritesDataRootKey : favorites};
 
-		[favorites release];
-
 		// Convert the current favorites tree to a dictionary representation to create the plist data
 		NSError *error = nil;
 		NSData *plistData = [NSPropertyListSerialization dataWithPropertyList:dictionary

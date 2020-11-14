@@ -32,6 +32,9 @@
 #import "SPTablesPreferencePane.h"
 #import "SPEditorPreferencePane.h"
 #import "SPGeneralPreferencePane.h"
+#import "SPNotificationsPreferencePane.h"
+#import "SPNetworkPreferencePane.h"
+#import "SPFilePreferencePane.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -54,7 +57,7 @@
 @synthesize filePreferencePane;
 @synthesize fontChangeTarget;
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"Preferences"])) {		
 		fontChangeTarget = 0;
@@ -154,7 +157,7 @@
  */
 - (void)_setupToolbar
 {
-	toolbar = [[[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"] autorelease];
+	toolbar = [[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"];
 
 	// General preferences
 	generalItem = [[NSToolbarItem alloc] initWithItemIdentifier:[generalPreferencePane preferencePaneIdentifier]];
@@ -288,7 +291,7 @@
 		return fileItem;
 	}
 
-	return [[[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] autorelease];
+	return [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 }
 
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)aToolbar
@@ -328,21 +331,6 @@
 			 SPPreferenceToolbarNetwork,
 			 SPPreferenceToolbarFile
 			 ];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(preferencePanes);
-	SPClear(generalItem);
-	SPClear(tablesItem);
-	SPClear(notificationsItem);
-	SPClear(editorItem);
-	SPClear(networkItem);
-	SPClear(fileItem);
-	
-	[super dealloc];
 }
 
 @end

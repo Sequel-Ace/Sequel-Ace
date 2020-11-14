@@ -54,7 +54,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		characterSetEncoding = nil;
@@ -90,12 +90,16 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 	[storageEngines removeAllObjects];
 	
 	@synchronized(charsetCollationLock) {
-		SPClear(characterSetEncoding);
-		SPClear(defaultCollationForCharacterSet);
-		SPClear(defaultCharacterSetEncoding);
-		SPClear(defaultCollation);
-		SPClear(serverDefaultCharacterSetEncoding);
-		SPClear(serverDefaultCollation);
+		
+		// need to set these to nil
+		// otherwise leftover values are used
+		// in future queries
+		characterSetEncoding = nil;
+		defaultCollationForCharacterSet = nil;
+		defaultCharacterSetEncoding = nil;
+		defaultCollation = nil;
+		serverDefaultCharacterSetEncoding = nil;
+		serverDefaultCollation = nil;
 		
 		[collations removeAllObjects];
 		[characterSetEncodings removeAllObjects];
@@ -158,9 +162,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 {
 	@synchronized(charsetCollationLock) {
 		if (encoding && ((characterSetEncoding == nil) || (![characterSetEncoding isEqualToString:encoding]) || ([characterSetCollations count] == 0))) {
-			
-			[characterSetEncoding release];
-			SPClear(defaultCollationForCharacterSet); //depends on encoding
+			 //depends on encoding
 			[characterSetCollations removeAllObjects];
 			
 			characterSetEncoding = [[NSString alloc] initWithString:encoding];
@@ -239,7 +241,7 @@ copy_return:
 				}
 			}
 		}
-		return [[defaultCollationForCharacterSet copy] autorelease]; // -copy accepts nil, -stringWithString: does not
+		return [defaultCollationForCharacterSet copy]; // -copy accepts nil, -stringWithString: does not
 	}
 }
 
@@ -412,10 +414,10 @@ copy_return:
 		if (!defaultCharacterSetEncoding) {
 			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_database" : @"character_set";
 			
-			defaultCharacterSetEncoding = [[self _getSingleVariableValue:variable] retain];
+			defaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
 		}
 		
-		return [[defaultCharacterSetEncoding copy] autorelease];
+		return [defaultCharacterSetEncoding copy];
 	}
 }
 
@@ -430,10 +432,10 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!defaultCollation && [serverSupport supportsCharacterSetAndCollationVars]) {
-			defaultCollation = [[self _getSingleVariableValue:@"collation_database"] retain];
+			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
 		}
 			
-		return [[defaultCollation copy] autorelease];
+		return [defaultCollation copy];
 	}
 }
 
@@ -450,10 +452,10 @@ copy_return:
 		if (!serverDefaultCharacterSetEncoding) {
 			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_server" : @"character_set";
 			
-			serverDefaultCharacterSetEncoding = [[self _getSingleVariableValue:variable] retain];
+			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
 		}
 		
-		return [[serverDefaultCharacterSetEncoding copy] autorelease];
+		return [serverDefaultCharacterSetEncoding copy];
 	}
 }
 
@@ -468,10 +470,10 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!serverDefaultCollation) {
-			serverDefaultCollation = [[self _getSingleVariableValue:@"collation_server"] retain];
+			serverDefaultCollation = [self _getSingleVariableValue:@"collation_server"];
 		}
 		
-		return [[serverDefaultCollation copy] autorelease];
+		return [serverDefaultCollation copy];
 	}
 }
 
@@ -499,7 +501,7 @@ copy_return:
 		}
 
 		// Retrieve the corresponding value for the determined key, ensuring return as a string
-		defaultStorageEngine = [[self _getSingleVariableValue:storageEngineKey] retain];
+		defaultStorageEngine = [self _getSingleVariableValue:storageEngineKey];
 	}
 	
 	return defaultStorageEngine;
@@ -563,7 +565,7 @@ copy_return:
 		
 		[outData addObject:convertedCollation];
 	}
-	return [outData autorelease];
+	return outData;
 }
 
 /**
@@ -596,17 +598,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 - (void)dealloc
 {
 	[self resetAllData];
-	
-	SPClear(storageEngines);
-	@synchronized(charsetCollationLock) {
-		SPClear(collations);
-		SPClear(characterSetEncodings);
-		SPClear(characterSetCollations);
-		SPClear(cachedCollationsByEncoding);
-	}
-	SPClear(charsetCollationLock);
-	
-	[super dealloc];
+
 }
 
 @end

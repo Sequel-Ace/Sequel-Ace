@@ -48,7 +48,7 @@
 /**
  * Initialise an instance of SPExporter, while setting some default values.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {		
 		[self setExportProgressValue:0];
@@ -130,12 +130,8 @@
  */
 - (void)dealloc
 {
-	if (exportData) SPClear(exportData);
-	if (connection) SPClear(connection);
 	[self setServerSupport:nil];
-	if (exportOutputFile) SPClear(exportOutputFile);
 	
-	[super dealloc];
 }
 
 @end

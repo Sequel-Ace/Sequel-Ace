@@ -33,7 +33,7 @@
 
 @implementation SPFavoriteTextFieldCell
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		drawsDividerUnderCell = NO;
@@ -88,7 +88,6 @@
 	[super drawWithFrame:cellFrame inView:controlView];
 }
 
-
 /**
  * Draws the actual cell, with a divider if appropriate.
  */
@@ -123,8 +122,6 @@
 
 		[NSBezierPath strokeLineFromPoint:startPoint toPoint:endPoint];
 
-		[lineGlow release];
-
 		[NSGraphicsContext restoreGraphicsState];
 	}
 }
@@ -133,7 +130,6 @@
 {
 	[self setLabelColor:nil];
 	
-	[super dealloc];
 }
 
 @end

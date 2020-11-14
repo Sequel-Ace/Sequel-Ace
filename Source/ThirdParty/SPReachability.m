@@ -29,7 +29,6 @@
 
 #import <netdb.h>
 
-
 @interface SPReachability ()
 
 @property (nonatomic, assign) SCNetworkReachabilityRef  reachabilityRef;
@@ -37,7 +36,6 @@
 -(BOOL)isReachableWithFlags:(SCNetworkReachabilityFlags)flags;
 
 @end
-
 
 @implementation SPReachability
 
@@ -48,7 +46,7 @@
     SCNetworkReachabilityRef ref = SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, (const struct sockaddr*)hostAddress);
     if (ref) 
     {
-        id reachability = [[self alloc] initWithReachabilityRef:ref];
+        id reachability = [[self alloc] initWithReachabilityRef:ref]; // do not release
         
         return reachability;
     }
@@ -65,7 +63,6 @@
     
     return [self reachabilityWithAddress:&zeroAddress];
 }
-
 
 // Initialization methods
 
@@ -91,8 +88,6 @@
         self.reachabilityRef = nil;
     }	
 }
-
-
 
 #pragma mark - reachability tests
 

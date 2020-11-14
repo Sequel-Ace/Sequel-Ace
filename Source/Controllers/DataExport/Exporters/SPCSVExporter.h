@@ -41,9 +41,7 @@
  * CSV exporter class.
  */
 @interface SPCSVExporter : SPExporter
-{		
-	NSObject <SPCSVExporterProtocol> *delegate;
-	
+{
 	NSArray *csvDataArray;
 	
 	NSString *csvTableName;
@@ -61,53 +59,53 @@
 /**
  * @property delegate Exporter delegate
  */
-@property(readwrite, assign) NSObject <SPCSVExporterProtocol> *delegate;
+@property(readwrite, weak) NSObject <SPCSVExporterProtocol> *delegate;
 
 /** 
  * @property csvDataArray Data array
  */
-@property(readwrite, retain) NSArray *csvDataArray;
+@property(readwrite, strong) NSArray *csvDataArray;
 
 /**
  * @property csvTableName Table name
  */
-@property(readwrite, retain) NSString *csvTableName;
+@property(readwrite, copy) NSString *csvTableName;
 
 /**
  * @property csvFieldSeparatorString CSV field separator string
  */
-@property(readwrite, retain) NSString *csvFieldSeparatorString;
+@property(readwrite, copy) NSString *csvFieldSeparatorString;
 
 /**
  * @property csvEnclosingCharacterString CSV enclosing character string
  */
-@property(readwrite, retain) NSString *csvEnclosingCharacterString;
+@property(readwrite, copy) NSString *csvEnclosingCharacterString;
 
 /**
  * @property csvEscapeString CSV escape string
  */
-@property(readwrite, retain) NSString *csvEscapeString;
+@property(readwrite, copy) NSString *csvEscapeString;
 
 /**
  * @property csvLineEndingString CSV line ending string
  */
-@property(readwrite, retain) NSString *csvLineEndingString;
+@property(readwrite, copy) NSString *csvLineEndingString;
 
 /**
  * @property csvNULLString CSV NULL string
  */
-@property(readwrite, retain) NSString *csvNULLString;
+@property(readwrite, copy) NSString *csvNULLString;
 
 /**
  * @property csvOutputFieldNames csvOutputFieldNames Output field names
  */
-@property(readwrite, assign) BOOL csvOutputFieldNames;
+@property(readwrite) BOOL csvOutputFieldNames;
 
 /**
  * @property csvTableData Table data
  */
-@property(readwrite, retain) SPTableData *csvTableData;
+@property(readwrite, strong) SPTableData *csvTableData;
 
-- (id)initWithDelegate:(NSObject *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject *)exportDelegate;
 
 @end

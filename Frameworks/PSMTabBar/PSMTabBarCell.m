@@ -20,7 +20,7 @@
 
 #pragma mark -
 #pragma mark Creation/Destruction
-- (id)initWithControlView:(PSMTabBarControl *)controlView
+- (instancetype)initWithControlView:(PSMTabBarControl *)controlView
 {
     if ( (self = [super init]) ) {
         _customControlView = controlView;
@@ -45,7 +45,7 @@
     return self;
 }
 
-- (id)initPlaceholderWithFrame:(NSRect)frame expanded:(BOOL)value inControlView:(PSMTabBarControl *)controlView
+- (instancetype)initPlaceholderWithFrame:(NSRect)frame expanded:(BOOL)value inControlView:(PSMTabBarControl *)controlView
 {
     if ( (self = [super init]) ) {
         _customControlView = controlView;
@@ -81,13 +81,7 @@
 
 - (void)dealloc
 {
-	[_countColor release];
-	
 	[_indicator removeFromSuperviewWithoutNeedingDisplay];
-
-    [_indicator release];
-	[_backgroundColor release];
-    [super dealloc];
 }
 
 #pragma mark -
@@ -253,7 +247,6 @@
 	_hasLargeImage = value;
 }
 
-
 - (NSInteger)count
 {
     return _count;
@@ -272,8 +265,7 @@
 
 - (void)setCountColor:(NSColor *)color
 {
-	[_countColor release];
-	_countColor = [color retain];
+	_countColor = color;
 }
 
 - (BOOL)isPlaceholder
@@ -319,8 +311,6 @@
 
 - (void)setBackgroundColor:(NSColor *)aColor
 {
-	[aColor retain];
-	[_backgroundColor release];
 	_backgroundColor = aColor;
 }
 
@@ -426,7 +416,7 @@
 	tabDrawFrame.origin.x -= cellFrame.origin.x;
 
 	// Draw the tab into a new image
-	NSImage *image = [[[NSImage alloc] initWithSize:cellFrame.size] autorelease];
+	NSImage *image = [[NSImage alloc] initWithSize:cellFrame.size];
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED < 1060
 	[image setFlipped:YES];
@@ -450,7 +440,6 @@
 		NSRect indicatorRect = NSMakeRect(indicatorPoint.x, indicatorPoint.y, [pieImage size].width, [pieImage size].height);
 		[pieImage drawInRect:indicatorRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
         [image unlockFocus];
-        [pieImage release];
     }
 
 	return image;
@@ -482,7 +471,7 @@
     }
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
     self = [super initWithCoder:aDecoder];
     if (self) {
         if ([aDecoder allowsKeyedCoding]) {
@@ -495,7 +484,7 @@
             _cellTrackingTag = [aDecoder decodeIntegerForKey:@"cellTrackingTag"];
             _closeButtonOver = [aDecoder decodeBoolForKey:@"closeButtonOver"];
             _closeButtonPressed = [aDecoder decodeBoolForKey:@"closeButtonPressed"];
-            _indicator = [[aDecoder decodeObjectForKey:@"indicator"] retain];
+            _indicator = [aDecoder decodeObjectForKey:@"indicator"];
             _isInOverflowMenu = [aDecoder decodeBoolForKey:@"isInOverflowMenu"];
             _hasCloseButton = [aDecoder decodeBoolForKey:@"hasCloseButton"];
             _isCloseButtonSuppressed = [aDecoder decodeBoolForKey:@"isCloseButtonSuppressed"];

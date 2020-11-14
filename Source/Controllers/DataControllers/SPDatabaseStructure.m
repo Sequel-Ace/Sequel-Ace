@@ -61,7 +61,7 @@
 /**
  * Prevent SPDatabaseStructure from being init'd normally.
  */
-- (id)init
+- (instancetype)init
 {
 	[NSException raise:NSInternalInconsistencyException format:@"SPDatabaseStructures should not be init'd directly; use initWithDelegate: instead."];
 	return nil;
@@ -71,7 +71,7 @@
  * Standard init method, constructing the SPDatabaseStructure around a SPMySQL
  * connection pointer and a delegate.
  */
-- (id)initWithDelegate:(SPDatabaseDocument *)theDelegate
+- (instancetype)initWithDelegate:(SPDatabaseDocument *)theDelegate
 {
 	if ((self = [super init])) {
 
@@ -121,9 +121,9 @@
 {
 	// this much is needed to make the accessor atomic and thread-safe
 	pthread_mutex_lock(&connectionCheckLock);
-	SPMySQLConnection *c = [mySQLConnection retain];
+	SPMySQLConnection *c = mySQLConnection;
 	pthread_mutex_unlock(&connectionCheckLock);
-	return [c autorelease];
+	return c;
 }
 
 - (SPDatabaseDocument *)delegate
@@ -145,7 +145,7 @@
 /**
  * Updates the dict containing the structure of all available databases (mainly for completion/navigator)
  * executed on the helper connection.
- * Should always be executed on a background thread.
+ * Should always be executed on a background thread. // JCS: but it calls delegate getDbStructure which eventually calls initWithWindowNibName .. which needs to be on main
  */
 - (void)queryDbStructureWithUserInfo:(NSDictionary *)userInfo
 {
@@ -153,7 +153,10 @@
 		BOOL structureWasUpdated = NO;
 
 		[self _addToListAndWaitForFrontCancellingOtherThreads:[[userInfo objectForKey:@"cancelQuerying"] boolValue]];
-		if([[NSThread currentThread] isCancelled]) goto cleanup_thread_and_pool;
+		if([[NSThread currentThread] isCancelled]) {
+			[self _removeThreadFromList];
+			return;
+		}
 
 		// This thread is now first on the stack, and about to process the structure.
 		[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureIsUpdating" object:self];
@@ -231,7 +234,16 @@
 
 		// If it has been determined that no new structure needs to be retrieved, clean up and return.
 		if (!shouldQueryStructure) {
-			goto update_globals_and_cleanup;
+			// Update the global variables
+			[self _updateGlobalVariablesWithStructure:queriedStructure keys:queriedStructureKeys];
+
+			if(structureWasUpdated) {
+				// Notify that the structure querying has been performed
+				[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureWasUpdated" object:self];
+			}
+
+			// Remove this thread from the processing stack
+			[self _removeThreadFromList];
 		}
 
 		// Retrieve the tables and views for this database from SPTablesList
@@ -255,7 +267,8 @@
 		if ([tablesAndViews count] > 2000) {
 			NSLog(@"%lu items in database %@. Only 2000 items can be parsed. Stopped parsing.", (unsigned long)[tablesAndViews count], currentDatabase);
 
-			goto cleanup_thread_and_pool;
+			[self _removeThreadFromList];
+			return;
 		}
 
 #if 0
@@ -273,12 +286,12 @@
 #endif
 
 		// Delete all stored data for the database to be updated, leaving the structure key
-		[queriedStructure removeObjectForKey:db_id];
+		[queriedStructure safeRemoveObjectForKey:db_id];
 		NSPredicate *predicate = [NSPredicate predicateWithFormat:@"NOT SELF BEGINSWITH %@", [NSString stringWithFormat:@"%@%@", db_id, SPUniqueSchemaDelimiter]];
 		[queriedStructureKeys filterUsingPredicate:predicate];
 
 		// Set up the database as an empty mutable dictionary ready for tables, and store a reference
-		[queriedStructure setObject:[NSMutableDictionary dictionary] forKey:db_id];
+		[queriedStructure safeSetObject:[NSMutableDictionary dictionary] forKey:db_id];
 		NSMutableDictionary *databaseStructure = [queriedStructure objectForKey:db_id];
 		structureWasUpdated = YES;
 
@@ -296,8 +309,9 @@
 			// check the connection.
 			// also NO if thread is cancelled which is fine, too (same consequence).
 			if(![self _checkConnection]) {
-				goto cleanup_thread_and_pool;
-			}
+				[self _removeThreadFromList];
+			 return;
+		 }
 
 			// Retrieve the column details
 			theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@ FROM %@", [aTableName backtickQuotedString], [currentDatabase backtickQuotedString]]];
@@ -354,7 +368,8 @@
 			// check the connection.
 			// also NO if thread is cancelled which is fine, too (same consequence).
 			if(![self _checkConnection]) {
-				goto cleanup_thread_and_pool;
+				[self _removeThreadFromList];
+				return;
 			}
 
 			// Retrieve the column details (only those we need so we don't fetch the whole function body which might be huge)
@@ -391,7 +406,6 @@
 			}
 		}
 
-update_globals_and_cleanup:
 		// Update the global variables
 		[self _updateGlobalVariablesWithStructure:queriedStructure keys:queriedStructureKeys];
 
@@ -400,7 +414,6 @@ update_globals_and_cleanup:
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureWasUpdated" object:self];
 		}
 
-cleanup_thread_and_pool:
 		// Remove this thread from the processing stack
 		[self _removeThreadFromList];
 	}
@@ -460,17 +473,11 @@ cleanup_thread_and_pool:
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
 	[self _destroy:nil];
-	SPClear(structureRetrievalThreads);
 	
 	pthread_mutex_destroy(&threadManagementLock);
 	pthread_mutex_destroy(&dataLock);
 	pthread_mutex_destroy(&connectionCheckLock);
-	
-	if (mySQLConnection) SPClear(mySQLConnection);
-	if (structure) SPClear(structure);
-	if (allKeysofDbStructure) SPClear(allKeysofDbStructure);
-	
-	[super dealloc];
+
 }
 
 #pragma mark -
@@ -517,8 +524,6 @@ cleanup_thread_and_pool:
 		// If a connection is already set, ensure it's idle before releasing it
 		if (mySQLConnection) {
 			[self _cancelAllThreadsAndWait];
-
-			(void)([mySQLConnection autorelease]), mySQLConnection = nil; // note: aConnection could be == mySQLConnection
 		}
 
 		// Create a copy of the supplied connection

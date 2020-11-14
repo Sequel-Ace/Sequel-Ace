@@ -62,7 +62,7 @@ typedef enum {
  * Initialise an instance of SPFieldEditorController using the XIB “FieldEditorSheet.xib”. Init the available Quciklook format by reading
  * EditorQuickLookTypes.plist and if given user-defined format store in the Preferences for key (SPQuickLookTypes).
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"FieldEditorSheet"]))
 	{
@@ -106,7 +106,7 @@ typedef enum {
 		allowUndo = NO;
 		selectionChanged = NO;
 
-		tmpDirPath = [NSTemporaryDirectory() retain];
+		tmpDirPath = NSTemporaryDirectory();
 		tmpFileName = nil;
 
 		NSMenu *menu = [editSheetQuickLookButton menu];
@@ -115,7 +115,6 @@ typedef enum {
 		[menuItem setTag:1];
 		[menuItem setEnabled:NO];
 		[menu addItem:menuItem];
-		[menuItem release];
 		NSUInteger tag = 2;
 
 		// Load default QL types
@@ -147,7 +146,6 @@ typedef enum {
 				[aMenuItem setTag:tag];
 				[aMenuItem setAction:@selector(quickLookFormatButton:)];
 				[menu addItem:aMenuItem];
-				[aMenuItem release];
 				tag++;
 				[qlTypesItems addObject:type];
 			}
@@ -159,14 +157,12 @@ typedef enum {
 				[aMenuItem setTag:tag];
 				[aMenuItem setAction:@selector(quickLookFormatButton:)];
 				[menu addItem:aMenuItem];
-				[aMenuItem release];
 				tag++;
 				[qlTypesItems addObject:type];
 			}
 		}
 
-		qlTypes = [@{SPQuickLookTypes : qlTypesItems} retain];
-		[qlTypesItems release];
+		qlTypes = @{SPQuickLookTypes : qlTypesItems};
 
 		fieldType = @"";
 		fieldEncoding = @"";
@@ -182,21 +178,8 @@ typedef enum {
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	// On Mac OSX 10.6 QuickLook runs non-modal thus order out the panel
-	// if still visible
-	if ([[QLPreviewPanel sharedPreviewPanel] isVisible]) {
-		[[QLPreviewPanel sharedPreviewPanel] orderOut:nil];
-	}
-
 	[self setEditedFieldInfo:nil];
-	if ( sheetEditData ) SPClear(sheetEditData);
-	if ( qlTypes )       SPClear(qlTypes);
-	if ( tmpFileName )   SPClear(tmpFileName);
-	if ( tmpDirPath )    SPClear(tmpDirPath);
-	if ( esUndoManager ) SPClear(esUndoManager);
-	if ( contextInfo )   SPClear(contextInfo);
-	
-	[super dealloc];
+
 }
 
 #pragma mark -
@@ -225,7 +208,7 @@ typedef enum {
 	usedSheet = nil;
 
 	_isEditable = isEditable;
-	contextInfo = [theContextInfo retain];
+	contextInfo = theContextInfo;
 	callerInstance = sender;
 
 	_isGeometry = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
@@ -254,7 +237,7 @@ typedef enum {
 
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
 
-		sheetEditData = [(NSString*)data retain];
+		sheetEditData = (NSString*)data;
 
 		[bitSheetNULLButton setEnabled:_allowNULL];
 
@@ -336,7 +319,7 @@ typedef enum {
 		
 		BOOL isBinary = ([[fieldType uppercaseString] isEqualToString:@"BINARY"] || [[fieldType uppercaseString] isEqualToString:@"VARBINARY"]);
 
-		sheetEditData = [data retain];
+		sheetEditData = data;
 
 		// Hide all views in editSheet
 		[hexTextView setHidden:YES];
@@ -384,7 +367,7 @@ typedef enum {
 		NSImage *image = nil;
 
 		if ([sheetEditData isKindOfClass:[NSData class]]) {
-			image = [[[NSImage alloc] initWithData:sheetEditData] autorelease];
+			image = [[NSImage alloc] initWithData:sheetEditData];
 
 			// Set hex view to "" - load on demand only
 			[hexTextView setString:@""];
@@ -407,11 +390,11 @@ typedef enum {
 			[editSheetSegmentControl setSelectedSegment:HexSegment];
 		}
 		else if ([sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
-			SPGeometryDataView *v = [[[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f] autorelease];
+			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 
 			image = [v thumbnailImage];
 
-			stringValue = [[sheetEditData wktString] retain];
+			stringValue = [sheetEditData wktString];
 
 			[hexTextView setString:@""];
 			[hexTextView setHidden:YES];
@@ -428,11 +411,11 @@ typedef enum {
 				if(_isJSON) {
 					NSString *formatted = [SPJSONFormatter stringByFormattingString:sheetEditData];
 					if(formatted) {
-						stringValue = [formatted retain];
+						stringValue = formatted;
 						break;
 					}
 				}
-				stringValue = [sheetEditData retain];
+				stringValue = sheetEditData;
 			} while(0);
 
 			[hexTextView setString:@""];
@@ -494,7 +477,7 @@ typedef enum {
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
 		}
 		
-		if (stringValue) SPClear(stringValue);
+		
 
 		editSheetWillBeInitialized = NO;
 
@@ -693,11 +676,6 @@ typedef enum {
 
 		[editSheetProgressBar startAnimation:self];
 
-		// free old data
-		if ( sheetEditData != nil ) {
-			[sheetEditData release];
-		}
-
 		// load new data/images
 		sheetEditData = [[NSData alloc] initWithContentsOfURL:[panel URL]];
 
@@ -736,10 +714,7 @@ typedef enum {
 			[editTextView setHidden:NO];
 			[editTextScrollView setHidden:NO];
 		}
-
-		[image release];
 		if(contents)
-			[contents release];
 		[editSheetProgressBar stopAnimation:self];
 		editSheetWillBeInitialized = NO;
 	}
@@ -772,7 +747,7 @@ typedef enum {
 
 			} else if (editImage != nil){
 
-				SPGeometryDataView *v = [[[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f] autorelease];
+				SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 				NSData *pdf = [v pdfData];
 				if(pdf)
 					[pdf writeToURL:fileURL atomically:YES];
@@ -800,8 +775,7 @@ typedef enum {
  */
 - (IBAction)dropImage:(id)sender
 {
-	if ( [editImage image] == nil ) {
-		if (nil != sheetEditData) [sheetEditData release];
+	if ([editImage image] == nil ) {
 		sheetEditData = [[NSData alloc] init];
 		[editTextView setString:@""];
 		[hexTextView setString:@""];
@@ -835,7 +809,6 @@ typedef enum {
 	// Create a temporary file name to store the data as file
 	// since QuickLook only works on files.
 	// Alternate the file name to suppress caching by using counter%2.
-	if (tmpFileName) [tmpFileName release];
 	tmpFileName = [[NSString alloc] initWithFormat:@"%@SequelProQuickLook%ld.%@", tmpDirPath, (long)(counter%2), type];
 
 	// if data are binary
@@ -997,12 +970,11 @@ typedef enum {
 
 	NSImage *image = nil;
 
-	image = [[[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]] autorelease];
+	image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]];
 	if (image) {
 
 		[editImage setImage:image];
 
-		if( sheetEditData ) [sheetEditData release];
 		sheetEditData = [[NSData alloc] initWithData:[image TIFFRepresentationUsingCompression:NSTIFFCompressionLZW factor:1]];
 
 		NSString *contents = [[NSString alloc] initWithData:sheetEditData encoding:encoding];
@@ -1014,8 +986,6 @@ typedef enum {
 			[editTextView setString:contents];
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
-
-		[contents release];
 
 	}
 
@@ -1031,8 +1001,6 @@ typedef enum {
 {
 
 	editSheetWillBeInitialized = YES;
-
-	if (nil != sheetEditData) [sheetEditData release];
 
 	// If the image was not processed, set a blank string as the contents of the edit and hex views.
 	if ( data == nil ) {
@@ -1054,8 +1022,6 @@ typedef enum {
 		[editTextView setString:contents];
 	if(![[hexTextView string] isEqualToString:@""])
 		[hexTextView setString:[sheetEditData dataToFormattedHexString]];
-
-	[contents release];
 	editSheetWillBeInitialized = NO;
 }
 
@@ -1071,12 +1037,8 @@ typedef enum {
 	NSUInteger maxBit = (NSUInteger)((maxTextLength > 64) ? 64 : maxTextLength);
 
 	if([bitSheetNULLButton state] == NSOnState) {
-		if ( sheetEditData != nil ) {
-			[sheetEditData release];
-		}
-
 		NSString *nullString = [prefs objectForKey:SPNullValue];
-		sheetEditData = [[NSString stringWithString:nullString] retain];
+		sheetEditData = [NSString stringWithString:nullString];
 		[bitSheetIntegerTextField setStringValue:nullString];
 		[bitSheetHexTextField setStringValue:nullString];
 		[bitSheetOctalTextField setStringValue:nullString];
@@ -1101,13 +1063,9 @@ typedef enum {
 	[bitSheetIntegerTextField setStringValue:[[NSNumber numberWithUnsignedLongLong:intValue] stringValue]];
 	[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%lX", (unsigned long)intValue]];
 	[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", (unsigned long long)intValue]];
-	// free old data
-	if ( sheetEditData != nil ) {
-		[sheetEditData release];
-	}
 
 	// set edit data to text
-	sheetEditData = [[NSString stringWithString:bitString] retain];
+	sheetEditData = [NSString stringWithString:bitString];
 
 }
 
@@ -1379,14 +1337,9 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
-
-		// free old data
-		if ( sheetEditData != nil ) {
-			[sheetEditData release];
-		}
-
+		
 		// set edit data to text
-		sheetEditData = [[NSString stringWithString:[editTextView string]] retain];
+		sheetEditData = [NSString stringWithString:[editTextView string]];
 	}
 }
 

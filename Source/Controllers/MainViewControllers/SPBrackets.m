@@ -31,17 +31,12 @@
 
 #import "SPBrackets.h"
 
-
 static NSDictionary *bracketPairs;
 static NSDictionary *bracketPairsReverse;
 static NSSet *openingBrackets;
 static NSSet *closingBrackets;
 
-
-
 @implementation SPBrackets
-
-
 
 +(void)initialize {
 	bracketPairs = [[NSDictionary alloc] initWithDictionary:@{
@@ -104,7 +99,6 @@ static NSSet *closingBrackets;
 	
 	return inComment || inUnclosedComment;
 }
-
 
 +(NSInteger)nextMatchingClosingBracket:(NSString*)string atPosition:(NSInteger)openPosition {
 	unichar openingBracket = [string characterAtIndex:openPosition];

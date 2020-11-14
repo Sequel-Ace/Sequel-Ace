@@ -49,7 +49,7 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	return [super initWithWindowNibName:SPAboutPanelNibName];
 }
@@ -127,7 +127,7 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 
 	[resource addAttribute:NSForegroundColorAttributeName value:[NSColor textColor] range:NSMakeRange(0, [resource length])];
 
-	return [resource autorelease];
+	return resource;
 }
 
 @end

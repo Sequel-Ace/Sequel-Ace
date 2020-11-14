@@ -44,6 +44,6 @@
  * May be nil.
  * This is only valid during the call to the doubleAction target!
  */
-@property (nonatomic,readonly,assign) id itemForDoubleAction;
+@property (nonatomic, readonly, strong) id itemForDoubleAction;
 
 @end

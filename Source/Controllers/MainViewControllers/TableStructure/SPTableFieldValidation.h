@@ -36,7 +36,7 @@
 /**
  * @property fieldTypes Field types array.
  */
-@property (readwrite, retain) NSArray *fieldTypes;
+@property (readwrite, strong) NSArray *fieldTypes;
 
 - (BOOL)isFieldTypeNumeric:(NSString *)fieldType;
 - (BOOL)isFieldTypeDate:(NSString *)fieldType;

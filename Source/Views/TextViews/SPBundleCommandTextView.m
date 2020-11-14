@@ -42,15 +42,13 @@
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth];
-	SPClear(prefs);
-	SPClear(lineNumberView);
-	[super dealloc];
+	
 }
 
 - (void)awakeFromNib
 {
 
-	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	prefs = [NSUserDefaults standardUserDefaults];
 
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -171,7 +169,6 @@
 		return YES;
 
 }
-
 
 /**
  * Shifts the selection, if any, leftwards by un-indenting any selected lines by one tab if possible.
@@ -386,18 +383,16 @@
 	myArrayOfTabs = [NSMutableArray arrayWithCapacity:numberOfTabs];
 	aTab = [[NSTextTab alloc] initWithType:NSLeftTabStopType location:tabWidth];
 	[myArrayOfTabs addObject:aTab];
-	[aTab release];
 	for(i=1; i<numberOfTabs; i++) {
 		aTab = [[NSTextTab alloc] initWithType:NSLeftTabStopType location:tabWidth + ((float)i * tabWidth)];
 		[myArrayOfTabs addObject:aTab];
-		[aTab release];
 	}
 	paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
 	[paragraphStyle setTabStops:myArrayOfTabs];
 	// Soft wrapped lines are indented slightly
 	[paragraphStyle setHeadIndent:4.0f];
 
-	NSMutableDictionary *textAttributes = [[[NSMutableDictionary alloc] initWithCapacity:1] autorelease];
+	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1];
 	[textAttributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
 
 	NSRange range = NSMakeRange(0, [[self textStorage] length]);
@@ -410,8 +405,6 @@
 	[self setFont:tvFont];
 
 	[self setEditable:oldEditableStatus];
-
-	[paragraphStyle release];
 }
 
 /**
@@ -574,8 +567,6 @@
 		whitespaceScanner = [[NSScanner alloc] initWithString:currentLine];
 		[whitespaceScanner setCharactersToBeSkipped:nil];
 		[whitespaceScanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:&indentString];
-		[whitespaceScanner release];
-		[currentLine release];
 
 		// Always add the newline, whether or not we want to indent the next line
 		[self insertNewline:self];
@@ -612,7 +603,6 @@
 
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
-
 
 	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
 		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
@@ -656,12 +646,11 @@
 						[NSString stringForByteSize:[filesize longLongValue]]]];
 					[alert setHelpAnchor:filepath];
 					[alert setMessageText:NSLocalizedString(@"Warning", @"warning")];
-					[alert setAlertStyle:NSWarningAlertStyle];
+					[alert setAlertStyle:NSAlertStyleWarning];
 					[alert beginSheetModalForWindow:[self window] 
 						modalDelegate:self 
 						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
 						contextInfo:nil];
-					[alert release];
 					
 				} else
 					[self insertFileContentOfFile:filepath];
@@ -736,9 +725,6 @@
 	result=[[NSString alloc] initWithData:[handle readDataToEndOfFile]
 		encoding:NSASCIIStringEncoding];
 
-	[aPipe release];
-	[aTask release];
-
 	// UTF16/32 files are detected as application/octet-stream resp. audio/mpeg
 	if( [result hasPrefix:@"text/plain"] 
 		|| [[[aPath pathExtension] lowercaseString] isEqualToString:SPFileExtensionSQL] 
@@ -767,7 +753,6 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
@@ -775,12 +760,9 @@
 		if(content)
 		{
 			[self insertText:content];
-			[result release];
 			return;
 		}
 	}
-	
-	[result release];
 
 	NSLog(@"%@ ‘%@’.", NSLocalizedString(@"Couldn't read the file content of", @"Couldn't read the file content of"), aPath);
 }

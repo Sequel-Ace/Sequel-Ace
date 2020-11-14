@@ -123,7 +123,7 @@
  *
  * Results may be inconsistent if not called on the main thread!
  */
-@property (assign, nonatomic) id target;
-@property (assign, nonatomic) SEL action;
+@property (strong, nonatomic) id target;
+@property (nonatomic) SEL action;
 
 @end

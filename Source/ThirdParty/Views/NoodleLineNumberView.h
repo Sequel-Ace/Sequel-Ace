@@ -53,32 +53,23 @@
 	// Add support for selection by clicking/dragging
 	NSUInteger      dragSelectionStartLine;
 
-	SEL lineNumberForCharacterIndexSel;
-	IMP lineNumberForCharacterIndexIMP;
-	SEL lineRangeForRangeSel;
-	SEL numberWithUnsignedIntegerSel;
-	IMP numberWithUnsignedIntegerIMP;
-	SEL addObjectSel;
-	IMP addObjectIMP;
-	SEL rangeOfLineSel;
 	Class numberClass;
 
 	NSLayoutManager  *layoutManager;
 	NSTextContainer  *container;
 	NSTextView       *clientView;
 
-
 }
 
-@property(retain) NSColor *alternateTextColor;
-@property(retain) NSColor *backgroundColor;
+@property(strong) NSColor *alternateTextColor;
+@property(strong) NSColor *backgroundColor;
 
 - (NSFont*)font;
 - (void)setFont:(NSFont*)aFont;
 - (NSColor*)textColor;
 - (void)setTextColor:(NSColor*)color;
 
-- (id)initWithScrollView:(NSScrollView *)aScrollView;
+- (instancetype)initWithScrollView:(NSScrollView *)aScrollView;
 - (NSUInteger)lineNumberForLocation:(CGFloat)location;
 - (NSUInteger)lineNumberForCharacterIndex:(NSUInteger)index;
 

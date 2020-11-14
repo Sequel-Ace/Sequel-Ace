@@ -53,7 +53,7 @@ static NSString *SPDatabaseImage = @"database-small";
 - (void)awakeFromNib
 {
 	// Generic folder image for use in the outline view's groups
-	folderImage = [[[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(kGenericFolderIcon)] retain];
+	folderImage = [[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(kGenericFolderIcon)];
 	
 	[folderImage setSize:NSMakeSize(16, 16)];
 }
@@ -169,8 +169,6 @@ static NSString *SPDatabaseImage = @"database-small";
 		
 		[items addObject:groupItem];
 		
-		[groupItem release];
-		
 		for (SPTreeNode *childNode in [node childNodes])
 		{
 			NSArray *innerItems = [self _constructMenuItemsForNode:childNode atLevel:level];
@@ -189,8 +187,6 @@ static NSString *SPDatabaseImage = @"database-small";
 		[menuItem setTarget:self];
 		
 		[items addObject:menuItem];
-		
-		[menuItem release];
 	}
 	
 	return items;
@@ -233,16 +229,6 @@ static NSString *SPDatabaseImage = @"database-small";
 {
 	[self updateDisplayedFontName];
 	[self updateDefaultFavoritePopup];
-}
-
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(folderImage);
-	
-	[super dealloc];
 }
 
 @end

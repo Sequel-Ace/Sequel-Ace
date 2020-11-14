@@ -57,25 +57,25 @@
 	BOOL _enabled;
 }
 
-- (id)initWithCharsetButton:(NSPopUpButton *)aCharsetButton CollationButton:(NSPopUpButton *)aCollationButton;
+- (instancetype)initWithCharsetButton:(NSPopUpButton *)aCharsetButton CollationButton:(NSPopUpButton *)aCollationButton;
 
 /** Set this to the instance of SPDatabaseData for the current connection */
-@property(readwrite,retain) SPDatabaseData *databaseData;
+@property(readwrite,strong) SPDatabaseData *databaseData;
 
 /** Set this to the instance of SPServerSupport for the current connection */
-@property(readwrite,retain) SPServerSupport *serverSupport;
+@property(readwrite,strong) SPServerSupport *serverSupport;
 
 /**
  * Set wether the UTF8 menu item should be put at the top of the charset list
  * or appear along the other items.
  */
-@property(readwrite,assign) BOOL promoteUTF8;
+@property(readwrite) BOOL promoteUTF8;
 
 /**
  * This item will be put at the top of the list as "Default (x)". Set
  * it to nil if there is no default.
  */
-@property(readwrite,retain) NSString *defaultCharset;
+@property(readwrite,copy) NSString *defaultCharset;
 
 /**
  * This item will be put at the top of the collation list as "Default (x)".
@@ -84,27 +84,27 @@
  *   a) This property is only used when selectedCharset == defaultCharset
  *   b) If you don't set it the default collation will be queried from the server
  */
-@property(readwrite,retain) NSString *defaultCollation;
+@property(readwrite,copy) NSString *defaultCollation;
 
 /**
  * The currently selected charset. Is nil when the Default item is selected or the
  * server does not support charsets.
  * You can set it to make a preselection.
  */
-@property(readwrite,retain) NSString *selectedCharset;
+@property(readwrite,copy) NSString *selectedCharset;
 
 /**
  * The currently selected collation. Is nil when the Default item is selected or the
  * server does not support collations.
  * You can set it to make a preselection.
  */
-@property(readwrite,retain) NSString *selectedCollation;
+@property(readwrite,copy) NSString *selectedCollation;
 
 /**
  * This is the format string that will be used for formatting the Default item.
  * It must contain one %@ variable (the charset name).
  */
-@property(readwrite,retain) NSString *defaultCharsetFormatString;
+@property(readwrite,copy) NSString *defaultCharsetFormatString;
 
 /**
  * This is the format string that will be used for formatting the defaultCollation.
@@ -125,15 +125,15 @@
  * the collation list will be the global default for the given charset (not the inherited one)
  * and named "Default (...)", because that is how MySQL applies the settings.
  */
-@property(readwrite,retain) NSString *defaultCollationFormatString;
+@property(readwrite,copy) NSString *defaultCollationFormatString;
 
 /**
  * Set this to YES before showing the UI and NO after dismissing it.
  * This will cause the charsets to be re-read and the selection to be reset.
  */
-@property(readwrite,assign) BOOL enabled;
+@property(readwrite) BOOL enabled;
 
 //used to detected "real" changes of the charset button
-@property(readwrite,retain) NSString *_oldCharset;
+@property(readwrite,copy) NSString *_oldCharset;
 
 @end

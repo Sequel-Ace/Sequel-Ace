@@ -165,9 +165,9 @@
 	NSString *kCellEditorErrorTooManyMatches;
 }
 
-@property (assign) NSButton* runAllButton;
-@property (assign) BOOL textViewWasChanged;
-@property (assign) SPBracketHighlighter *bracketHighlighter;
+@property (strong) NSButton* runAllButton;
+@property BOOL textViewWasChanged;
+@property (strong) SPBracketHighlighter *bracketHighlighter;
 
 // IBAction methods
 - (IBAction)runPrimaryQueryAction:(id)sender;

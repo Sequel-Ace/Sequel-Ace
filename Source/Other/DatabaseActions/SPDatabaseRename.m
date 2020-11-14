@@ -95,8 +95,6 @@
 	{
 		[dbActionTableCopy moveTable:table from:sourceDatabase to:targetDatabase];
 	}
-	
-	[dbActionTableCopy release];
 }
 
 - (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
@@ -109,8 +107,6 @@
 	{
 		[dbActionViewCopy moveView:view from:sourceDatabase to:targetDatabase];
 	}
-	
-	[dbActionViewCopy release];
 }
 
 @end

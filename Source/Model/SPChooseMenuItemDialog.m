@@ -38,7 +38,7 @@
 
 @implementation SPChooseMenuItemDialogTextView
 
-- (id)init;
+- (instancetype)init;
 {
 	return [super initWithFrame:NSMakeRect(1, 1, 2, 2)];
 }
@@ -62,10 +62,10 @@
 @synthesize selectedItemIndex;
 @synthesize waitForChoice;
 
-- (id)init;
+- (instancetype)init;
 {
 	if ((self = [super initWithContentRect:NSMakeRect(1, 1, 2, 2) 
-								styleMask:NSBorderlessWindowMask 
+								styleMask:NSWindowStyleMaskBorderless 
 								  backing:NSBackingStoreBuffered 
 									defer:NO]))
 	{
@@ -78,7 +78,7 @@
 
 - (void)initDialog
 {
-	[self setReleasedWhenClosed:YES];
+	[self setReleasedWhenClosed:NO];
 	[self setLevel:NSNormalWindowLevel];
 	[self setHidesOnDeactivate:YES];
 	[self setHasShadow:YES];
@@ -100,7 +100,7 @@
 	[dialog initDialog];
 	
 	NSInteger cnt = 0;
-	NSMenu *theMenu = [[[NSMenu alloc] init] autorelease];
+	NSMenu *theMenu = [[NSMenu alloc] init];
 	
 	for (id item in theList) 
 	{
@@ -126,7 +126,6 @@
         if (aMenuItem) {
             [aMenuItem setTag:cnt++];
             [theMenu addItem:aMenuItem];
-            [aMenuItem release];
         }
 	}
 	
@@ -138,7 +137,7 @@
 
 	// Send a right-click to order front the context menu
 	NSEvent *theEvent = [NSEvent
-	        mouseEventWithType:NSRightMouseDown
+	        mouseEventWithType:NSEventTypeRightMouseDown
 	        location:NSMakePoint(1,1)
 	        modifierFlags:0
 	        timestamp:1
@@ -152,7 +151,7 @@
 
 	while ([dialog waitForChoice] && [[[NSApp keyWindow] firstResponder] isKindOfClass:[SPChooseMenuItemDialogTextView class]]) 
 	{
-		NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                           untilDate:[NSDate distantFuture]
                                              inMode:NSDefaultRunLoopMode
                                             dequeue:YES];
@@ -168,15 +167,6 @@
 	[dialog performSelector:@selector(close) withObject:nil afterDelay:0.01];
 
 	return [dialog selectedItemIndex];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(dummyTextView);
-	
-	[super dealloc];
 }
 
 @end

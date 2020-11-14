@@ -26,7 +26,6 @@
 // names if you decide to change the names defined in the Info.plist
 //
 
-
 // -----------------------------------------------------------------------------
 //	typedefs
 // -----------------------------------------------------------------------------
@@ -75,7 +74,6 @@ static QLGeneratorInterfaceStruct myInterfaceFtbl = {
     NULL,
     NULL
 };
-
 
 // -----------------------------------------------------------------------------
 //	AllocQuickLookGeneratorPluginType

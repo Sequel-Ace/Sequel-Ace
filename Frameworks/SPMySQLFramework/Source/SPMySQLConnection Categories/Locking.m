@@ -35,7 +35,6 @@
 
 @implementation SPMySQLConnection (Locking)
 
-
 /**
  * Lock the connection. This must be done before performing any operation
  * that is not thread safe, eg. performing queries or pinging.
@@ -66,7 +65,6 @@
 	[connectionLock unlockWithCondition:SPMySQLConnectionBusy];
 	return YES;
 }
-
 
 /**
  * Unlock the connection.

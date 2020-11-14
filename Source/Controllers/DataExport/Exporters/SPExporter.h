@@ -79,12 +79,12 @@
 /**
  * @property connection The MySQL connection to use
  */
-@property(readwrite, retain) SPMySQLConnection *connection;
+@property(readwrite, strong) SPMySQLConnection *connection;
 
 /**
  * @property serverSupport Information about the features supported by this mysql version
  */
-@property(readwrite, retain) SPServerSupport *serverSupport;
+@property(readwrite, strong) SPServerSupport *serverSupport;
 
 /**
  * @property exportProgressValue The export's current progress value
@@ -114,12 +114,12 @@
 /**
  * @property exportData The resulting exported data as a string
  */
-@property(readwrite, retain) NSString *exportData;
+@property(readwrite, copy) NSString *exportData;
 
 /**
  * @property exportOutputFile The output file of the exporter
  */
-@property(readwrite, retain) SPExportFile *exportOutputFile;
+@property(readwrite, strong) SPExportFile *exportOutputFile;
 
 /**
  * @property exportOutputEncoding Export output encoding

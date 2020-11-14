@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "SPMySQLKeepAliveTimer.h"
 
 @interface SPMySQLKeepAliveTimer () // Private API

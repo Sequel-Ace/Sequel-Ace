@@ -50,6 +50,6 @@
 	IBOutlet id	trampolineObject;
 }
 
-- (id)initWithObject:(id)theObject;
+- (instancetype)initWithObject:(id)theObject;
 
 @end

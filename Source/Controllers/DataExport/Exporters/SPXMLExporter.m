@@ -52,7 +52,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPXMLExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPXMLExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPXMLExporterProtocol));
@@ -188,9 +188,6 @@
 		
 		if ([self xmlDataArray]) currentRowIndex++;
 		
-		// Drop into the processing loop
-		NSAutoreleasePool *xmlExportPool = [[NSAutoreleasePool alloc] init];
-		
 		currentPoolDataLength = 0;
 		
 		// Inform the delegate that we are about to start writing the data to disk
@@ -204,8 +201,6 @@
 					[connection cancelCurrentQuery];
 					[streamingResult cancelResultLoad];
 				}
-				
-				[xmlExportPool release];
 				
 				return;
 			}
@@ -235,9 +230,6 @@
 						[connection cancelCurrentQuery];
 						[streamingResult cancelResultLoad];
 					}
-					
-					[xmlExportPool release];
-					
 					return;
 				}
 				
@@ -253,7 +245,6 @@
 					}
 					
 					[xmlItem setString:[NSString stringWithString:dataConversionString]];
-					[dataConversionString release];
 				}
 
 				// Check for null value using a pointer comparison; as [NSNull null] is a singleton this works correctly.
@@ -313,12 +304,6 @@
 			// Inform the delegate that the export's progress has been updated
 			[delegate performSelectorOnMainThread:@selector(xmlExportProcessProgressUpdated:) withObject:self waitUntilDone:NO];
 			
-			// Drain the autorelease pool as required to keep memory usage low
-			if (currentPoolDataLength > 250000) {
-				[xmlExportPool release];
-				xmlExportPool = [[NSAutoreleasePool alloc] init];
-			}
-			
 			// If an array was supplied and we've processed all rows, break
 			if ([self xmlDataArray] && totalRows == currentRowIndex) break;
 		}
@@ -329,8 +314,6 @@
 		else if ([self xmlFormat] == SPXMLExportPlainFormat) {
 			[self writeString:[NSString stringWithFormat:@"\t</%@>\n\n", ([self xmlTableName]) ? [[self xmlTableName] HTMLEscapeString] : @"custom"]];
 		}
-		
-		[xmlExportPool release];
 	}
 	
 	// Write data to disk
@@ -341,17 +324,6 @@
 	
 	// Inform the delegate that the export process is complete
 	[delegate performSelectorOnMainThread:@selector(xmlExportProcessComplete:) withObject:self waitUntilDone:NO];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	if (xmlDataArray) SPClear(xmlDataArray);
-	if (xmlTableName) SPClear(xmlTableName);
-	if (xmlNULLString) SPClear(xmlNULLString);
-	
-	[super dealloc];
 }
 
 @end

@@ -18,7 +18,6 @@
 // your source code. If you do redistribute the source code, you must
 // leave the original header comments, but you may add additional ones.
 
-
 // Stride factor defines the size of the shell sort loop's stride. It can be tweaked 
 // for performance, though 3 seems to be a good general purpose value
 #define STRIDE_FACTOR 3 

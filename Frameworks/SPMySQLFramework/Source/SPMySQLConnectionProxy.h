@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 /**
  * Connection proxy state constants.
  */
@@ -40,7 +39,6 @@ typedef enum {
 	SPMySQLProxyForwardingFailed = 4,
 	SPMySQLProxyLaunchFailed     = 5
 } SPMySQLConnectionProxyState;
-
 
 @protocol SPMySQLConnectionProxy <NSObject>
 

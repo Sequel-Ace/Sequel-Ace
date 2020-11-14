@@ -42,6 +42,13 @@ void SPMainQSync(void (^block)(void));
 void SPMainLoopAsync(void (^block)(void));
 
 /**
+ * Helper to ensure code runs on main thread
+ * @param predicate A predicate for use with dispatch_once - use a static var
+ * @param block a block to execute
+ */
+void dispatch_once_on_main_thread(dispatch_once_t *predicate,
+								  dispatch_block_t block);
+/**
  * Copies count bytes into buf provided by caller
  * @param buf Base address to copy to
  * @param count Number of bytes to copy

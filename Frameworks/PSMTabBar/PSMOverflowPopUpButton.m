@@ -14,7 +14,7 @@
 
 @implementation PSMOverflowPopUpButton
 
-- (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
+- (instancetype)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
 {
     if ((self = [super initWithFrame:frameRect pullsDown:YES])) {
         [self setBezelStyle:NSRegularSquareBezelStyle];
@@ -26,13 +26,6 @@
 		_animatingAlternateImage = NO;
     }
     return self;
-}
-
-- (void)dealloc
-{
-    [_PSMTabBarOverflowPopUpImage release];
-	[_PSMTabBarOverflowDownPopUpImage release];
-    [super dealloc];
 }
 
 - (void)drawRect:(NSRect)rect
@@ -141,11 +134,11 @@
     }
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
     if ( (self = [super initWithCoder:aDecoder]) ) {
         if ([aDecoder allowsKeyedCoding]) {
-            _PSMTabBarOverflowPopUpImage = [[aDecoder decodeObjectForKey:@"PSMTabBarOverflowPopUpImage"] retain];
-            _PSMTabBarOverflowDownPopUpImage = [[aDecoder decodeObjectForKey:@"PSMTabBarOverflowDownPopUpImage"] retain];
+            _PSMTabBarOverflowPopUpImage = [aDecoder decodeObjectForKey:@"PSMTabBarOverflowPopUpImage"];
+            _PSMTabBarOverflowDownPopUpImage = [aDecoder decodeObjectForKey:@"PSMTabBarOverflowDownPopUpImage"];
 			[self setAnimatingAlternateImage:[aDecoder decodeBoolForKey:@"PSMTabBarOverflowAnimatingAlternateImage"]];
         }
     }

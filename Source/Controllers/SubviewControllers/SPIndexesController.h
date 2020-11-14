@@ -90,12 +90,12 @@
 /**
  * @property table The table currently being viewed
  */
-@property (readwrite, retain) NSString *table;
+@property (readwrite, copy) NSString *table;
 
 /**
  * @property connection The MySQL connection to use
  */
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 - (IBAction)addIndex:(id)sender;
 - (IBAction)removeIndex:(id)sender;

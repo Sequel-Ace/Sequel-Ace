@@ -56,7 +56,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPCSVExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPCSVExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPCSVExporterProtocol));
@@ -146,8 +146,6 @@
 					|| [tableColumnTypeGrouping isEqualToString:@"float"])
 			]]; 
 		}
-		
-		[tableDetails release];
 	}
 
 	// Make a streaming request for the data if the data array isn't set
@@ -208,11 +206,6 @@
 	
 	if ([self csvDataArray]) totalRows = [[self csvDataArray] count];
 	if (([self csvDataArray]) && (![self csvOutputFieldNames])) currentRowIndex++;
-		
-	// Drop into the processing loop
-	NSAutoreleasePool *csvExportPool = [[NSAutoreleasePool alloc] init];
-	
-	NSUInteger currentPoolDataLength = 0;
 	
 	// Inform the delegate that we are about to start writing the data to disk
 	[delegate performSelectorOnMainThread:@selector(csvExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -225,8 +218,6 @@
 				[connection cancelCurrentQuery];
 				[streamingResult cancelResultLoad];
 			}
-			
-			[csvExportPool release];
 
 			return;
 		}
@@ -260,7 +251,6 @@
 		{
 			// Check for cancellation flag
 			if ([self isCancelled]) {
-				[csvExportPool release];
 
 				return;
 			}
@@ -285,7 +275,6 @@
 				}
 				
 				[csvCellString setString:[NSString stringWithString:dataConversionString]];
-				[dataConversionString release];
 			}
 			else if ([csvCell isKindOfClass:[SPMySQLGeometryData class]]) {
 				[csvCellString setString:[csvCell wktString]];
@@ -366,7 +355,6 @@
 		
 		// Append the line ending to the string for this row, and record the length processed for pool flushing
 		[csvString appendString:[self csvLineEndingString]];
-		currentPoolDataLength += [csvString length];
 		
 		// Write it to the fileHandle
 		[self writeString:csvString];
@@ -386,12 +374,6 @@
 		// Inform the delegate that the export's progress has been updated
 		[delegate performSelectorOnMainThread:@selector(csvExportProcessProgressUpdated:) withObject:self waitUntilDone:NO];
 		
-		// Drain the autorelease pool as required to keep memory usage low
-		if (currentPoolDataLength > 250000) {
-			[csvExportPool release];
-			csvExportPool = [[NSAutoreleasePool alloc] init];
-		}
-		
 		// If an array was supplied and we've processed all rows, break
 		if ([self csvDataArray] && (totalRows == currentRowIndex)) break;
 	}
@@ -404,25 +386,6 @@
 	
 	// Inform the delegate that the export process is complete
 	[delegate performSelectorOnMainThread:@selector(csvExportProcessComplete:) withObject:self waitUntilDone:NO];
-	
-	[csvExportPool release];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	if (csvDataArray) SPClear(csvDataArray);
-	if (csvTableName) SPClear(csvTableName);
-	
-	SPClear(csvFieldSeparatorString);
-	SPClear(csvEnclosingCharacterString);
-	SPClear(csvEscapeString);
-	SPClear(csvLineEndingString);
-	SPClear(csvNULLString);
-	SPClear(csvTableData);
-	
-	[super dealloc];
 }
 
 @end

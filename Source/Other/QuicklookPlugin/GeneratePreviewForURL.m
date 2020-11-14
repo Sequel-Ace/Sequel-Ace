@@ -68,7 +68,7 @@ static inline NSString *PathForHTMLResource(NSString *named)
 OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview, CFURLRef url, CFStringRef contentTypeUTI, CFDictionaryRef options)
 {
 	@autoreleasepool {
-		NSURL *myURL = (NSURL *)url;
+		NSURL *myURL = (__bridge NSURL *)url;
 		NSString *urlExtension = [[[myURL path] pathExtension] lowercaseString];
 
 		NSString *html = nil;
@@ -123,15 +123,10 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 			[props setObject:[NSNumber numberWithInt:NSUTF8StringEncoding] forKey:(NSString *)kQLPreviewPropertyStringEncodingKey];
 			[props setObject:@"text/html" forKey:(NSString *)kQLPreviewPropertyMIMETypeKey];
 
-			QLPreviewRequestSetDataRepresentation(
-				preview,
-				(CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
-				kUTTypeHTML,
-				(CFDictionaryRef)props
-			);
-
-			[props release];
-			[imgProps release];
+			QLPreviewRequestSetDataRepresentation(preview,
+												  (__bridge CFDataRef)[html dataUsingEncoding:NSUTF8StringEncoding],
+												  kUTTypeHTML,
+												  (__bridge CFDictionaryRef)props);
 		}
 	}
 
@@ -155,10 +150,10 @@ NSString *PreviewForSPF(NSURL *myURL, NSInteger *previewHeight) {
 											 error:&readError];
 	
 	if(pData && !readError) {
-		spf = [[NSPropertyListSerialization propertyListWithData:pData
+		spf = [NSPropertyListSerialization propertyListWithData:pData
 														 options:NSPropertyListImmutable
 														  format:NULL
-														   error:&readError] retain];
+														   error:&readError];
 	}
 	
 	NSString *html = nil;
@@ -183,8 +178,6 @@ NSString *PreviewForSPF(NSURL *myURL, NSInteger *previewHeight) {
 			html = (*fp)(spf,myURL,previewHeight);
 		}
 	}
-
-	[spf release];
 	
 	return html;
 }
@@ -243,8 +236,6 @@ NSString *PreviewForConnectionSPF(NSDictionary *spf, NSURL *myURL, NSInteger *pr
 			[dateFormatter stringFromDate:[fileAttributes fileModificationDate]],
 			autoConnect
 	];
-	
-	[dateFormatter release];
 
 	return html;
 }
@@ -390,14 +381,13 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 											 error:&readError];
 	
 	if(pData && !readError) {
-		spf = [[NSPropertyListSerialization propertyListWithData:pData
+		spf = [NSPropertyListSerialization propertyListWithData:pData
 														 options:NSPropertyListImmutable
 														  format:NULL
-														   error:&readError] retain];
+														   error:&readError];
 	}
 	
 	if(!spf || readError) {
-		[spf release];
 		return nil;
 	}
 	
@@ -446,10 +436,10 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 			NSDictionary *sessionSpf = nil;
 			pData = [NSData dataWithContentsOfFile:spfPath options:NSUncachedRead error:&readError];
 			if(pData && !readError) {
-				sessionSpf = [[NSPropertyListSerialization propertyListWithData:pData
+				sessionSpf = [NSPropertyListSerialization propertyListWithData:pData
 																		options:NSPropertyListImmutable
 																		 format:NULL
-																		  error:&readError] retain];
+																		  error:&readError];
 			}
 			
 			if(!sessionSpf || readError) {
@@ -510,8 +500,6 @@ NSString *PreviewForSPFS(NSURL *myURL,NSInteger *previewHeight)
 			spfsHTML
 	];
 	
-	[spf release];
-	
 	return html;
 }
 
@@ -561,11 +549,8 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 		// truncate large files since Finder blocks
 		if([filesize unsignedLongValue] > kMaxSQLFileSize) {
 			NSString *truncatedSqlText = [[NSString alloc] initWithString:[sqlText substringToIndex:kMaxSQLFileSize-1]];
-			[sqlText release];
 			sqlText = [[NSString alloc] initWithString:truncatedSqlText];
-			[truncatedSqlText release];
-			[truncatedString release];
-			truncatedString = [[NSString alloc] initWithString:@"\n ✂ ..."];
+			truncatedString = @"\n ✂ ...";
 		}
 		
 		NSString *tokenColor;
@@ -579,7 +564,6 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 		
 		// now loop through all the tokens
 		NSUInteger poolCount = 0;
-		NSAutoreleasePool *loopPool = [[NSAutoreleasePool alloc] init];
 		while ((token=yylex())){
 			skipFontTag = NO;
 			switch (token) {
@@ -617,32 +601,21 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 				[sqlHTML appendFormat:@"<font color=%@>%@</font>", tokenColor, [[sqlText substringWithRange:tokenRange] HTMLEscapeString]];
 			
 			if (QLPreviewRequestIsCancelled(preview)) {
-				if (sqlHTML) {
-					SPClear(sqlHTML);
-				}
 				if (truncatedString) {
-					[truncatedString release];
 					sqlHTML = nil;
 				}
 				if (sqlText) {
-					[sqlText release];
 					sqlHTML = nil;
 				}
-				[loopPool release];
 				return nil;
 			}
 			
 			poolCount++;
 			if (poolCount > 1000) {
 				poolCount = 0;
-				[loopPool release];
-				loopPool = [[NSAutoreleasePool alloc] init];
 			}
 		}
-		[loopPool release];
 		[sqlHTML appendString:truncatedString];
-		[sqlText release];
-		[truncatedString release];
 		
 	}
 	
@@ -658,7 +631,6 @@ NSString *PreviewForSQL(NSURL *myURL, NSInteger *previewHeight, QLPreviewRequest
 			sqlHTML
 			];
 	if(previewHeight != NULL) *previewHeight = 495;
-	[sqlHTML release];
 	
 	return html;
 }

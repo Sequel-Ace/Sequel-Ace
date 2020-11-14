@@ -67,7 +67,7 @@
 	SPMySQLConnection *connection;
 }
 
-@property (readwrite, retain) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 // IBAction methods
 - (IBAction)reloadTable:(id)sender;

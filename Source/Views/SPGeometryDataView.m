@@ -47,7 +47,7 @@
  * @param coord Contains all necessary data to draw the geometry image
  *
  */
-- (id)initWithCoordinates:(NSDictionary*)coord
+- (instancetype)initWithCoordinates:(NSDictionary*)coord
 {
 	return [self initWithCoordinates:coord targetDimension:400.0f];
 }
@@ -59,7 +59,7 @@
  *
  * @param targetDimension Sets the maximum size (height or width) of the image
  */
-- (id)initWithCoordinates:(NSDictionary*)coord targetDimension:(CGFloat)targetDimension
+- (instancetype)initWithCoordinates:(NSDictionary*)coord targetDimension:(CGFloat)targetDimension
 {
 
 	margin_offset = 10.0f;
@@ -85,9 +85,7 @@
 	x_min*=zoom_factor;
 	y_min*=zoom_factor;
 
-	if ( (self = [super initWithFrame:NSMakeRect(0,0,width+margin_offset*2,height+margin_offset*2)]) )
-	{
-	}
+	self = [super initWithFrame:NSMakeRect(0,0,width+margin_offset*2,height+margin_offset*2)];
 
 	lineColor         = [NSColor blackColor];
 	borderLineColor   = [NSColor grayColor];
@@ -255,7 +253,7 @@
 	[bitmap setSize:imgSize];
 	[self cacheDisplayInRect:myBounds toBitmapImageRep:bitmap];
 
-	NSImage* image = [[[NSImage alloc]initWithSize:imgSize] autorelease];
+	NSImage* image = [[NSImage alloc]initWithSize:imgSize];
 	[image addRepresentation:bitmap];
 	return image;
 
@@ -272,14 +270,6 @@
 
 	return [self dataWithPDFInsideRect:myBounds];
 
-}
-
-/**
- * dealloc
- */
-- (void)dealloc
-{
-	[super dealloc];
 }
 
 #pragma mark -

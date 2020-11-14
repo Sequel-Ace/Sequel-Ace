@@ -58,7 +58,7 @@
  */
 + (SPExportFile *)exportFileAtPath:(NSString *)path
 {
-	return [[[SPExportFile alloc] initWithFilePath:path] autorelease];
+	return [[SPExportFile alloc] initWithFilePath:path];
 }
 
 /**
@@ -68,7 +68,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithFilePath:(NSString *)path
+- (instancetype)initWithFilePath:(NSString *)path
 {
 	if ((self = [super init])) {
 		
@@ -213,7 +213,7 @@
 	}
 	
 	// Retrieve a filehandle for the file, attempting to delete it on failure.
-	exportFileHandle = [[SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]] retain];
+	exportFileHandle = [SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]];
 	
 	if (!exportFileHandle) {
 		[fileManager removeItemAtPath:[self exportFilePath] error:nil];
@@ -222,15 +222,6 @@
 	}
 	
 	return SPExportFileHandleCreated;
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	if (exportFileHandle) SPClear(exportFileHandle);
-	
-	[super dealloc];
 }
 
 @end

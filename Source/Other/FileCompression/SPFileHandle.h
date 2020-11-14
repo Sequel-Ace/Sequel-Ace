@@ -69,7 +69,7 @@ struct SPRawFileHandles;
 #pragma mark Initialisation
 
 // Returns a file handle initialised with a file
-- (id)initWithFile:(FILE *)theFile fromPath:(const char *)path mode:(int)mode;
+- (instancetype)initWithFile:(FILE *)theFile fromPath:(const char *)path mode:(int)mode;
 
 #pragma mark -
 #pragma mark Data reading

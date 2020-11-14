@@ -33,7 +33,7 @@
 #import "SPCustomQuery.h"
 #import "SPAppController.h"
 #import "sequel-ace-Swift.h"
-
+#import "SPFunctions.h"
 #import "pthread.h"
 
 #import "sequel-ace-Swift.h"
@@ -72,26 +72,20 @@ static SPQueryController *sharedQueryController = nil;
  */
 + (SPQueryController *)sharedQueryController
 {
-	@synchronized(self) {
-		if (sharedQueryController == nil) {
-			sharedQueryController = [[super allocWithZone:NULL] init];
-		}
+	static dispatch_once_t onceToken;
+	
+	if (sharedQueryController == nil) {
+		dispatch_once_on_main_thread(&onceToken, ^{
+			sharedQueryController = [[SPQueryController alloc] init];
+		});
 	}
 
 	return sharedQueryController;
 }
 
-+ (id)allocWithZone:(NSZone *)zone
+- (instancetype)init
 {
-	@synchronized(self) {
-		return [[self sharedQueryController] retain];
-	}
-	
-	return nil;
-}
-
-- (id)init
-{
+		
 	if ((self = [super initWithWindowNibName:@"Console"])) {
 		messagesFullSet		= [[NSMutableArray alloc] init];
 		messagesFilteredSet	= [[NSMutableArray alloc] init];
@@ -126,9 +120,12 @@ static SPQueryController *sharedQueryController = nil;
 		if (error) {
 			NSLog(@"Error loading completion tokens data: %@", [error localizedDescription]); 
 		}
+	
+		return self;
 	}
-
-	return self;
+	else{
+		return nil;;
+	}
 }
 
 /**
@@ -136,14 +133,6 @@ static SPQueryController *sharedQueryController = nil;
  */
 
 - (id)copyWithZone:(NSZone *)zone { return self; }
-
-- (id)retain { return self; }
-
-- (NSUInteger)retainCount { return NSUIntegerMax; }
-
-- (id)autorelease { return self; }
-
-- (oneway void)release { }
 
 #pragma mark -
 #pragma mark QueryConsoleController
@@ -210,7 +199,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}];
 	
-	return [string autorelease];
+	return string;
 }
 
 /**
@@ -243,9 +232,9 @@ static SPQueryController *sharedQueryController = nil;
 
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            [[self _getConsoleStringWithTimeStamps:[includeTimeStampsButton state]
-                                       connections:[includeConnectionButton state]
-										 databases:[includeDatabaseButton state]] writeToFile:[[panel URL] path] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+            [[self _getConsoleStringWithTimeStamps:[self->includeTimeStampsButton state]
+                                       connections:[self->includeConnectionButton state]
+										 databases:[self->includeDatabaseButton state]] writeToFile:[[panel URL] path] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
         }
     }];
 }
@@ -524,8 +513,6 @@ static SPQueryController *sharedQueryController = nil;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases
 {
 	NSMutableString *consoleString = [NSMutableString string];
-
-	NSArray *messageCopy = [messagesVisibleSet copy];
 	
 	for (SPConsoleMessage *message in messagesVisibleSet)
 	{
@@ -555,8 +542,6 @@ static SPQueryController *sharedQueryController = nil;
 
 		[consoleString appendFormat:@"%@\n", [message message]];
 	}
-	
-	[messageCopy release];
 
 	return consoleString;
 }
@@ -589,7 +574,7 @@ static SPQueryController *sharedQueryController = nil;
 
 	// Reload the table and scroll to the new message if it's visible (for speed)
 	dispatch_async(dispatch_get_main_queue(), ^{
-		if (allowConsoleUpdate && [[self window] isVisible]) {
+		if (self->allowConsoleUpdate && [[self window] isVisible]) {
 			[self performSelectorOnMainThread:@selector(updateEntries) withObject:nil waitUntilDone:NO];
 		}
 	});
@@ -676,21 +661,21 @@ static SPQueryController *sharedQueryController = nil;
 	}
 	else {
 		if ([completionPlist objectForKey:SPCompletionTokensKeywordsKey]) {
-			completionKeywordList = [[NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensKeywordsKey]] retain];
+			completionKeywordList = [NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensKeywordsKey]];
 		}
 		else {
 			errorDescription = [NSString stringWithFormat:@"No '%@' array found.", SPCompletionTokensKeywordsKey];
 		}
 
 		if ([completionPlist objectForKey:SPCompletionTokensFunctionsKey]) {
-			completionFunctionList = [[NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensFunctionsKey]] retain];
+			completionFunctionList = [NSArray arrayWithArray:[completionPlist objectForKey:SPCompletionTokensFunctionsKey]];
 		}
 		else {
 			errorDescription = [NSString stringWithFormat:@"No '%@' array found.", SPCompletionTokensFunctionsKey];
 		}
 
 		if ([completionPlist objectForKey:SPCompletionTokensSnippetsKey]) {
-			functionArgumentSnippets = [[NSDictionary dictionaryWithDictionary:[completionPlist objectForKey:SPCompletionTokensSnippetsKey]] retain];
+			functionArgumentSnippets = [NSDictionary dictionaryWithDictionary:[completionPlist objectForKey:SPCompletionTokensSnippetsKey]];
 		}
 		else {
 			errorDescription = [NSString stringWithFormat:@"No '%@' dictionary found.", SPCompletionTokensSnippetsKey];
@@ -753,7 +738,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}
 
-	return [[[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes] autorelease];
+	return [[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes];
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
@@ -779,7 +764,6 @@ static SPQueryController *sharedQueryController = nil;
 		if (![favoritesContainer objectForKey:[new absoluteString]]) {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[favoritesContainer setObject:arr forKey:[new absoluteString]];
-			[arr release];
 		}
 
 		// Set the global history coming from the Prefs as default if available
@@ -788,12 +772,9 @@ static SPQueryController *sharedQueryController = nil;
 				NSMutableArray *arr = [[NSMutableArray alloc] init];
 				[arr addObjectsFromArray:[prefs objectForKey:SPQueryHistory]];
 				[historyContainer setObject:arr forKey:[new absoluteString]];
-				[arr release];
 			}
 			else {
-				NSMutableArray *arr = [[NSMutableArray alloc] init];
 				[historyContainer setObject:[NSMutableArray array] forKey:[new absoluteString]];
-				[arr release];
 			}
 		}
 
@@ -812,12 +793,10 @@ static SPQueryController *sharedQueryController = nil;
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[arr addObjectsFromArray:[contextInfo objectForKey:SPQueryFavorites]];
 			[favoritesContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 		else {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[favoritesContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 	}
 
@@ -826,12 +805,10 @@ static SPQueryController *sharedQueryController = nil;
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[arr addObjectsFromArray:[contextInfo objectForKey:SPQueryHistory]];
 			[historyContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 		else {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[historyContainer setObject:arr forKey:[fileURL absoluteString]];
-			[arr release];
 		}
 	}
 
@@ -842,7 +819,6 @@ static SPQueryController *sharedQueryController = nil;
 		else {
 			NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
 			[contentFilterContainer setObject:dict forKey:[fileURL absoluteString]];
-			[dict release];
 		}
 	}
 
@@ -888,7 +864,6 @@ static SPQueryController *sharedQueryController = nil;
 		[c setDictionary:[contentFilterContainer objectForKey:[fileURL absoluteString]]];
 		[c setObject:contentFilterArray forKey:filterType];
 		[contentFilterContainer setObject:c forKey:[fileURL absoluteString]];
-		[c release];
 	}
 }
 
@@ -957,7 +932,6 @@ static SPQueryController *sharedQueryController = nil;
 		}
 
 		[self replaceHistoryByArray:[uniquifier itemTitles] forFileURL:fileURL];
-		[uniquifier release];
 	}
 
 	// Save history items coming from each Untitled document in the global Preferences successively
@@ -975,7 +949,6 @@ static SPQueryController *sharedQueryController = nil;
 		}
 
 		[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
-		[uniquifier release];
 	}
 }
 
@@ -1005,9 +978,9 @@ static SPQueryController *sharedQueryController = nil;
 
 		for (NSString* history in [historyContainer objectForKey:[fileURL absoluteString]])
 		{
-			historyMenuItem = [[[NSMenuItem alloc] initWithTitle:([history length] > 64) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:63]] : history
+			historyMenuItem = [[NSMenuItem alloc] initWithTitle:([history length] > 64) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:63]] : history
 														  action:NULL
-												   keyEquivalent:@""] autorelease];
+												   keyEquivalent:@""];
 
 			[historyMenuItem setToolTip:([history length] > 256) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:255]] : history];
 			[returnArray addObject:historyMenuItem];
@@ -1077,7 +1050,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 	}
 
-	return [result autorelease];
+	return result;
 }
 
 #pragma mark -
@@ -1117,23 +1090,7 @@ static SPQueryController *sharedQueryController = nil;
 	messagesVisibleSet = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-	SPClear(dateFormatter);
-
-	SPClear(messagesFullSet);
-	SPClear(messagesFilteredSet);
-	SPClear(activeFilterString);
-
-	SPClear(favoritesContainer);
-	SPClear(historyContainer);
-	SPClear(contentFilterContainer);
-
-	if (completionKeywordList) SPClear(completionKeywordList);
-	if (completionFunctionList) SPClear(completionFunctionList);
-	if (functionArgumentSnippets) SPClear(functionArgumentSnippets);
-	
 	pthread_mutex_destroy(&consoleLock);
-
-	[super dealloc];
 }
 
 @end

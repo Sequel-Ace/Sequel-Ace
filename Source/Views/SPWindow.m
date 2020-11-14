@@ -30,6 +30,7 @@
 
 #import "SPWindow.h"
 #import "SPWindowController.h"
+#import "SPDatabaseDocument.h"
 
 @implementation SPWindow
 
@@ -55,7 +56,7 @@
  */
 - (void) sendEvent:(NSEvent *)theEvent
 {
-	if ([theEvent type] == NSKeyDown && [[theEvent charactersIgnoringModifiers] length]) {
+	if ([theEvent type] == NSEventTypeKeyDown && [[theEvent charactersIgnoringModifiers] length]) {
 
 		unichar theCharacter = [[theEvent charactersIgnoringModifiers] characterAtIndex:0];
 
@@ -71,7 +72,7 @@
 				loc.y += theRect.size.height+5;
 				loc = [firstResponder convertPoint:loc toView:nil];
 				NSEvent *anEvent = [NSEvent
-				        mouseEventWithType:NSRightMouseDown
+				        mouseEventWithType:NSEventTypeRightMouseDown
 				        location:loc
 				        modifierFlags:0
 				        timestamp:1
