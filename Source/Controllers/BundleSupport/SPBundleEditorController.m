@@ -964,7 +964,7 @@
 																   error:&error] retain];
 			
 			if(!cmdData || error) {
-				NSLog(@"“%@” file couldn't be read. (error=%@)", cmdFilePath, error);
+				SPLog(@"“%@” file couldn't be read. (error=%@)", cmdFilePath, error);
 				NSBeep();
 				if (cmdData) [cmdData release];
 				return NO;
