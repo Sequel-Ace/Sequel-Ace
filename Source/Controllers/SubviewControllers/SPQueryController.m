@@ -758,7 +758,7 @@ static SPQueryController *sharedQueryController = nil;
 {
 	// Register a new untiled document and return its URL
 	if (fileURL == nil) {
-		NSURL *new = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+		NSURL *new = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet]];
 		untitledDocumentCounter++;
 
 		if (![favoritesContainer objectForKey:[new absoluteString]]) {

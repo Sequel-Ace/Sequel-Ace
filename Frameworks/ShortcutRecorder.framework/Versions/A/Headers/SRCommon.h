@@ -116,7 +116,7 @@ enum {
 
 // Some default values
 #define ShortcutRecorderEmptyFlags 0
-#define ShortcutRecorderAllFlags ShortcutRecorderEmptyFlags | (NSCommandKeyMask | NSAlternateKeyMask | NSControlKeyMask | NSShiftKeyMask | NSFunctionKeyMask)
+#define ShortcutRecorderAllFlags ShortcutRecorderEmptyFlags | (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagControl | NSEventModifierFlagShift | NSEventModifierFlagFunction)
 #define ShortcutRecorderEmptyCode -1
 
 // These keys will cancel the recoding mode if not pressed with any modifier

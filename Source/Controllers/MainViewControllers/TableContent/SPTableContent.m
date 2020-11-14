@@ -2450,13 +2450,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (NSMutableString *)deriveQueryString{
 		
 	// Iterate through the row contents, constructing the (ordered) arrays of keys and values to be saved
-	NSMutableArray *rowFieldsToSave = [[NSMutableArray alloc] initWithCapacity:[dataColumns count]];
-	NSMutableArray *rowValuesToSave = [[NSMutableArray alloc] initWithCapacity:[dataColumns count]];
+	NSUInteger dataColumnsCount = [dataColumns count];
+	NSMutableArray *rowFieldsToSave = [[NSMutableArray alloc] initWithCapacity:dataColumnsCount];
+	NSMutableArray *rowValuesToSave = [[NSMutableArray alloc] initWithCapacity:dataColumnsCount];
 	NSUInteger i;
 	NSDictionary *fieldDefinition;
 	id rowObject;
 	
-	for (i = 0; i < [dataColumns count]; i++)
+	for (i = 0; i < dataColumnsCount; i++)
 	{
 		rowObject = [tableValues cellDataAtRow:currentlyEditingRow column:i];
 		fieldDefinition = NSArrayObjectAtIndex(dataColumns, i);
@@ -2489,10 +2490,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		} else {
 
 			// I believe these class matches are not ever met at present.
-			if ([rowObject isKindOfClass:[NSCalendarDate class]]) {
-				SPLog(@"object was NSCalendarDate");
-				fieldValue = [mySQLConnection escapeAndQuoteString:[rowObject description]];
-			} else if ([rowObject isKindOfClass:[NSNumber class]]) {
+			// JCS - NSCalendarDate seeems to be a Mysql 4 thing. I'm removing it.
+			if ([rowObject isKindOfClass:[NSNumber class]]) {
 				fieldValue = [rowObject stringValue];
 
 			// Convert data to its hex representation
@@ -3049,10 +3048,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if(numberOfPossibleUpdateRows == 1) {
 
 		NSString *newObject = nil;
-		if ( [anObject isKindOfClass:[NSCalendarDate class]] ) {
-			SPLog(@"object was NSCalendarDate");
-			newObject = [mySQLConnection escapeAndQuoteString:[anObject description]];
-		} else if ( [anObject isKindOfClass:[NSNumber class]] ) {
+		if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];
 		} else if ( [anObject isKindOfClass:[NSData class]] ) {
 			newObject = [mySQLConnection escapeAndQuoteData:anObject];

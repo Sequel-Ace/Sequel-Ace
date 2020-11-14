@@ -420,8 +420,8 @@ static unsigned short getRandomPort(void);
 		[taskEnvironment setObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
 		if (passwordInKeychain) {
 			[taskEnvironment setObject:[[NSNumber numberWithInteger:SPSSHPasswordUsesKeychain] stringValue] forKey:@"SP_PASSWORD_METHOD"];
-			[taskEnvironment setObject:[keychainName stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
-			[taskEnvironment setObject:[keychainAccount stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
+			[taskEnvironment setObject:[keychainName stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
+			[taskEnvironment setObject:[keychainAccount stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
 		} else if (password) {
 			[taskEnvironment setObject:[[NSNumber numberWithInteger:SPSSHPasswordAsksUI] stringValue] forKey:@"SP_PASSWORD_METHOD"];
 		} else {

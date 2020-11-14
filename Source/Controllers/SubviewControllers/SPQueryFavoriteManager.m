@@ -854,7 +854,7 @@
 												  otherButton:nil 
 									informativeTextWithFormat:NSLocalizedString(@"No query favorites found.", @"error that no query favorites found")];
 
-				[alert setAlertStyle:NSInformationalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleInformational];
 				[alert runModal];
 				return;
 			}
