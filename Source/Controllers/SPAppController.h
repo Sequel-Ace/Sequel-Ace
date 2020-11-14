@@ -61,6 +61,7 @@
 
 @property (readwrite, retain) NSString *lastBundleBlobFilesDirectory;
 @property (readwrite, retain) NSMutableDictionary *alreadyBeeped;
+@property (readwrite, retain) NSMutableArray<NSString *> *badBundles;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
 - (void)removeBundle:(NSString*)bundle;

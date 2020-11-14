@@ -72,7 +72,9 @@
 @implementation SPAppController
 
 @synthesize lastBundleBlobFilesDirectory;
-@synthesize fileManager, alreadyBeeped;
+@synthesize fileManager;
+@synthesize alreadyBeeped;
+@synthesize badBundles;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -100,7 +102,8 @@
 		fileManager = [NSFileManager defaultManager];
 		
 		alreadyBeeped = [[NSMutableDictionary alloc] init];
-		
+		badBundles = [[NSMutableArray alloc] init];
+
 		//Create runtime directiories
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
@@ -1641,27 +1644,15 @@
 																				 format:NULL
 																				  error:&readError];
 						}
-
+						
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							if(![alreadyBeeped objectForKey:bundle]){
 								NSBeep();
 								[alreadyBeeped setObject:@YES forKey:bundle];
-								// need to wait a few seconds for the window to load
-								delayCallback(^{
-									NSString *title = [NSString stringWithFormat:NSLocalizedString(@"Bundle '%@' is corrupt.", @"bundle corrupt message"), bundle];
-									NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Would you like to delete bundle '%@'? This operation cannot be undone.", @"delete bundle informative message"), bundle];
-
-									[NSAlert createDefaultAlertWithTitle:title
-																 message:message
-													  primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button")
-													primaryButtonHandler:^{
-
-										[self removeBundle:bundle];
-									}
-													 cancelButtonHandler:nil];
-
-								}, 4);
+								
+								// remove the dodgy bundle
+								[self removeBundle:bundle];
 								
 								continue;
 							}
@@ -2066,6 +2057,7 @@
 		}
 		else{
 			SPLog(@"file was deleted: %@", thePath);
+			[badBundles addObject:bundle];
 		}
 	}
 	else{
@@ -2602,6 +2594,7 @@
 	SPClear(prefsController);
 	SPClear(fileManager);
 	SPClear(alreadyBeeped);
+	SPClear(badBundles);
 
 	if (aboutController) SPClear(aboutController);
 	if (bundleEditorController) SPClear(bundleEditorController);
