@@ -563,7 +563,8 @@
  */
 - (CGFloat)tableView:(NSTableView *)aTableView heightOfRow:(NSInteger)rowIndex
 {
-	return ([[favorites objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18;
+
+	return ([[favorites objectOrNilAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18;
 }
 
 /*
@@ -571,7 +572,8 @@
  */
 - (BOOL)tableView:(NSTableView *)aTableView shouldEditTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	if([[favorites objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) {
+
+	if([[favorites objectOrNilAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) {
 		return NO;
 	} else {
 		isTableCellEditing = YES;
@@ -593,7 +595,8 @@
  */
 - (BOOL)tableView:(NSTableView *)aTableView isGroupRow:(NSInteger)rowIndex
 {
-	return ([[favorites objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? YES : NO;
+	
+	return ([[favorites objectOrNilAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? YES : NO;
 }
 /*
  * Detect if inline editing was done - then ESC to close the sheet will be activate
