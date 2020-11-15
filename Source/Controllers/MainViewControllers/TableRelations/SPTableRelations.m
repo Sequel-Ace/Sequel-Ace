@@ -272,7 +272,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	// Get all InnoDB tables in the current database
 	if ([[tableDocumentInstance serverSupport] supportsInformationSchema]) {
 		//MySQL 5.0+
-		SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@", [[tableDocumentInstance database] tickQuotedString]]];
+		SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [[tableDocumentInstance database] tickQuotedString]]];
 		[result setDefaultRowReturnType:SPMySQLResultRowAsArray];
 		[result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
 		for (NSArray *eachRow in result) {
