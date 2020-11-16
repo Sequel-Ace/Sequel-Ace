@@ -118,47 +118,56 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 //	}];
 //}
 
-//BOOL match = [desc isMatchedByRegex:SPCurrentTimestampPattern];
-//NSRange range = [desc rangeOfString:SPCurrentTimestampPattern options:NSRegularExpressionSearch];
-//if(range.location == NSNotFound){
-//	SPLog(@"not found");
-//}
-
-#define OWS @"\\s*" /* optional whitespace */
-//                                                    CURRENT_TIMESTAMP    [            (           [n]          )    ]
-NSString *SPCurrentTimestampPattern2 = (@"(?i)^" OWS @"CURRENT_TIMESTAMP" @"(?:" OWS @"\\(" OWS @"(\\d*)" OWS @"\\)" @")?" OWS @"$");
-#undef OWS
-
-- (void)testPerformance_rangeOfString {
+- (void)testPerformance_RegexSearch {
 	// this is on main thread
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
-		int const iterations = 1000000;
+		int const iterations = 1;
 		
-		NSString *str = @"CURRENT_TIMESTAMP";
-
+		NSArray *queryHist = [self randomHistArray];
+		
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
-				NSRange __unused range2 = [str rangeOfString:SPCurrentTimestampPattern2 options:NSRegularExpressionSearch];
+				NSString *ran = [[NSProcessInfo processInfo] globallyUniqueString];
+				
+				for(NSString *str in queryHist){
+					BOOL __unused match = [str isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", ran]];
+				}
 			}
 		}
 	}];
 }
 
-- (void)testPerformance_isMatchedByRegex {
+- (void)testPerformance_CaseInsensitiveSearch {
 	// this is on main thread
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
-		int const iterations = 1000000;
+		int const iterations = 1;
 		
-		NSString *str = @"CURRENT_TIMESTAMP";
-
+		NSArray *queryHist = [self randomHistArray];
+		
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
-				BOOL __unused match = [str isMatchedByRegex:SPCurrentTimestampPattern2];
+				NSString *ran = [[NSProcessInfo processInfo] globallyUniqueString];
+				
+				for(NSString *str in queryHist){
+					BOOL __unused match = [str localizedCaseInsensitiveContainsString:ran];
+				}
 			}
 		}
 	}];
+}
+
+- (NSMutableArray *)randomHistArray {
+	
+	NSMutableArray *randomHistArray = [NSMutableArray array];
+	
+	for (int i = 0; i < 10000; i++) {
+		NSString *ran = [[NSProcessInfo processInfo] globallyUniqueString];
+		[randomHistArray addObject:[NSString stringWithFormat:@"%@%@'",@"select * from '", ran]];
+	}
+	
+	return randomHistArray;
 }
 
 - (void)testPerformance_StringWithString {
