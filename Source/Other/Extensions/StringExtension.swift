@@ -49,14 +49,13 @@ extension String {
 	// so before we replace stringByReplacingPercentEscapesUsingEncoding all over
 	// we should check the string first
 	var isPercentEncoded: Bool {
-		let decoded = self.removingPercentEncoding
 		
-		if (decoded == nil) || (decoded == self) {
+		guard let decoded = self.removingPercentEncoding else {
 			return false
 		}
-		else {
-			return true
-		}
+		
+		return self != decoded
+		
 	}
 	
 	// the string with new lines and spaces trimmed from BOTH ends
