@@ -91,7 +91,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	QueryProgressHandler updateHandler;
 
 	volatile BOOL dirtyMarker;
-	volatile OSSpinLock qpLock;
+	os_unfair_lock qpLock;
 	volatile QueryProgress _queryProgress;
 }
 @property(atomic,assign) QueryProgress queryProgress;
@@ -2039,10 +2039,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if(numberOfPossibleUpdateRows == 1) {
 
 		NSString *newObject = nil;
-		if ( [anObject isKindOfClass:[NSCalendarDate class]] ) {
-			SPLog(@"object was NSCalendarDate");
-			newObject = [mySQLConnection escapeAndQuoteString:[anObject description]];
-		} else if ( [anObject isKindOfClass:[NSNumber class]] ) {
+		if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];
 		} else if ( [anObject isKindOfClass:[NSData class]] ) {
 			newObject = [mySQLConnection escapeAndQuoteData:anObject];
@@ -3589,7 +3586,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	self = [super init];
 	if (self) {
 		updateHandler = [anUpdateHandler copy];
-		qpLock = OS_SPINLOCK_INIT;
+		qpLock = OS_UNFAIR_LOCK_INIT;
 	}
 
 	return self;
@@ -3598,32 +3595,32 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)setQueryProgress:(QueryProgress)newProgress
 {
 	BOOL notify = NO;
-	OSSpinLockLock(&qpLock);
+	os_unfair_lock_lock(&qpLock);
 	_queryProgress = newProgress;
 	if(!dirtyMarker) {
 		dirtyMarker = 1;
 		notify = YES;
 	}
-	OSSpinLockUnlock(&qpLock);
+	os_unfair_lock_unlock(&qpLock);
 
 	if(notify) [self performSelectorOnMainThread:@selector(_updateProgress) withObject:nil waitUntilDone:NO];
 }
 
 - (QueryProgress)queryProgress
 {
-	OSSpinLockLock(&qpLock);
+	os_unfair_lock_lock(&qpLock);
 	QueryProgress cpy = _queryProgress;
-	OSSpinLockUnlock(&qpLock);
+	os_unfair_lock_unlock(&qpLock);
 	return cpy;
 }
 
 - (void)_updateProgress
 {
-	OSSpinLockLock(&qpLock);
+	os_unfair_lock_lock(&qpLock);
 	bool doRun = dirtyMarker;
 	dirtyMarker = NO;
 	QueryProgress p = _queryProgress;
-	OSSpinLockUnlock(&qpLock);
+	os_unfair_lock_unlock(&qpLock);
 
 	if(doRun) updateHandler(&p);
 }

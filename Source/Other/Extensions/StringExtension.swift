@@ -41,6 +41,23 @@ extension String {
 		}
 	}
 	
+	// stringByReplacingPercentEscapesUsingEncoding is deprecated
+	// Use -stringByRemovingPercentEncoding
+	// however: per https://developer.apple.com/documentation/foundation/nsstring/1409569-stringbyremovingpercentencoding?language=objc
+	// You must call this method only on strings that you know to be percent-encoded
+	// Generally, removingPercentEncoding fails when the original String contains non-escaped percent symbols
+	// so before we replace stringByReplacingPercentEscapesUsingEncoding all over
+	// we should check the string first
+	var isPercentEncoded: Bool {
+		
+		guard let decoded = self.removingPercentEncoding else {
+			return false
+		}
+		
+		return self != decoded
+		
+	}
+	
 	// the string with new lines and spaces trimmed from BOTH ends
 	var trimmedString: String {
         return self.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -66,5 +83,9 @@ extension String {
 	
 	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
+	}
+	
+	public func isPercentEncoded() -> Bool {
+		return (self as String).isPercentEncoded
 	}
 }

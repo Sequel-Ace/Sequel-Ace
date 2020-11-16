@@ -82,8 +82,9 @@ int main(int argc, const char *argv[])
 			// request the password
 			if ([[environment objectForKey:@"SP_PASSWORD_METHOD"] integerValue] == SPSSHPasswordUsesKeychain) {
 				SPKeychain *keychain;
-				NSString *keychainName = [[environment objectForKey:@"SP_KEYCHAIN_ITEM_NAME"] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-				NSString *keychainAccount = [[environment objectForKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+				// think we can risk these stringByRemovingPercentEncoding rather than linking swift
+				NSString *keychainName = [[environment objectForKey:@"SP_KEYCHAIN_ITEM_NAME"] stringByRemovingPercentEncoding];
+				NSString *keychainAccount = [[environment objectForKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"] stringByRemovingPercentEncoding];
 
 				if (!keychainName || !keychainAccount) {
 					NSLog(@"SSH Tunnel: keychain authentication specified but insufficient internal details supplied");

@@ -819,11 +819,12 @@
 	NSMutableArray *decodedPathComponents = [NSMutableArray arrayWithCapacity:pathComponents.count];
 	for (NSString *component in pathComponents) {
 		NSString *decoded;
-		if([SPOSInfo isOSVersionAtLeastMajor:10 minor:9 patch:0]) {
-			decoded = [component stringByRemovingPercentEncoding];
+		
+		if(component.isPercentEncoded){
+			decoded = component.stringByRemovingPercentEncoding;
 		}
 		else {
-			decoded = [component stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+			decoded = component;
 		}
 		[decodedPathComponents addObject:decoded];
 	}

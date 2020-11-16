@@ -118,6 +118,49 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 //	}];
 //}
 
+//BOOL match = [desc isMatchedByRegex:SPCurrentTimestampPattern];
+//NSRange range = [desc rangeOfString:SPCurrentTimestampPattern options:NSRegularExpressionSearch];
+//if(range.location == NSNotFound){
+//	SPLog(@"not found");
+//}
+
+#define OWS @"\\s*" /* optional whitespace */
+//                                                    CURRENT_TIMESTAMP    [            (           [n]          )    ]
+NSString *SPCurrentTimestampPattern2 = (@"(?i)^" OWS @"CURRENT_TIMESTAMP" @"(?:" OWS @"\\(" OWS @"(\\d*)" OWS @"\\)" @")?" OWS @"$");
+#undef OWS
+
+- (void)testPerformance_rangeOfString {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+		
+		NSString *str = @"CURRENT_TIMESTAMP";
+
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				NSRange __unused range2 = [str rangeOfString:SPCurrentTimestampPattern2 options:NSRegularExpressionSearch];
+			}
+		}
+	}];
+}
+
+- (void)testPerformance_isMatchedByRegex {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		int const iterations = 1000000;
+		
+		NSString *str = @"CURRENT_TIMESTAMP";
+
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				BOOL __unused match = [str isMatchedByRegex:SPCurrentTimestampPattern2];
+			}
+		}
+	}];
+}
+
 - (void)testPerformance_StringWithString {
 	// this is on main thread
 	[self measureBlock:^{

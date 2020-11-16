@@ -751,8 +751,8 @@ static const NSInteger kBlobAsImageFile = 4;
 
 	// Determine the available size
 	NSScrollView *parentScrollView = (NSScrollView*)[[self superview] superview];
- 	CGFloat visibleTableWidth = [parentScrollView bounds].size.width - [NSScroller scrollerWidth] - [columnDefinitions count] * 3.5f;
-
+	CGFloat visibleTableWidth = [parentScrollView bounds].size.width - [NSScroller scrollerWidthForControlSize:NSControlSizeSmall scrollerStyle:NSScrollerStyleOverlay] - [columnDefinitions count] * 3.5f;
+		
 	for (NSDictionary *columnDefinition in columnDefinitions) {
 		if ([[NSThread currentThread] isCancelled]) return nil;
 
