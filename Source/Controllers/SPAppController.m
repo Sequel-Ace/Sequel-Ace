@@ -2047,22 +2047,22 @@
 	
 	SPLog(@"the path %@", thePath);
 	
-	if([fileManager fileExistsAtPath:thePath isDirectory:nil]) {
-		NSError *error = nil;
-		
-		[fileManager removeItemAtPath:thePath error:&error];
-		
-		if(error != nil) {
-			SPLog(@"file could not be deleted: %@", thePath);
-		}
-		else{
-			SPLog(@"file was deleted: %@", thePath);
-			[badBundles addObject:bundle];
-		}
-	}
-	else{
+	if(![fileManager fileExistsAtPath:thePath isDirectory:nil]) {
 		SPLog(@"file does not exist %@", thePath);
+		return;
 	}
+
+	NSError *error = nil;
+
+	[fileManager removeItemAtPath:thePath error:&error];
+
+	if(error != nil) {
+		SPLog(@"file could not be deleted: %@", thePath);
+		return;
+	}
+
+	SPLog(@"file was deleted: %@", thePath);
+	[badBundles addObject:bundle];
 }
 
 /**
