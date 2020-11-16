@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17156" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17156"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -78,17 +78,17 @@
         <window title="Preferences" allowsToolTipsWhenApplicationIsInactive="NO" visibleAtLaunch="NO" animationBehavior="default" id="1" userLabel="PreferencesPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="430" y="486" width="580" height="172"/>
+            <rect key="contentRect" x="430" y="486" width="839" height="494"/>
             <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
             <value key="minSize" type="size" width="580" height="50"/>
             <view key="contentView" id="2">
-                <rect key="frame" x="0.0" y="0.0" width="580" height="172"/>
+                <rect key="frame" x="0.0" y="0.0" width="839" height="494"/>
                 <autoresizingMask key="autoresizingMask"/>
             </view>
             <connections>
                 <outlet property="delegate" destination="-2" id="599"/>
             </connections>
-            <point key="canvasLocation" x="139" y="147"/>
+            <point key="canvasLocation" x="268.5" y="308"/>
         </window>
         <window allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="1716" userLabel="Enter Name Sheet">
             <windowStyleMask key="styleMask" titled="YES"/>
@@ -206,7 +206,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <clipView key="contentView" id="eRr-LP-c79">
                             <rect key="frame" x="1" y="1" width="264" height="133"/>
-                            <autoresizingMask key="autoresizingMask"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" id="1774">
                                     <rect key="frame" x="0.0" y="0.0" width="264" height="133"/>
@@ -215,7 +215,7 @@ Gw
                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                     <tableColumns>
-                                        <tableColumn width="252" minWidth="40" maxWidth="1000" id="1776">
+                                        <tableColumn width="223" minWidth="40" maxWidth="1000" id="1776">
                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
@@ -295,20 +295,21 @@ Gw
             <connections>
                 <outlet property="initialFirstResponder" destination="1774" id="1819"/>
             </connections>
+            <point key="canvasLocation" x="-364" y="155"/>
         </window>
         <customView id="17" userLabel="General">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="361"/>
+            <rect key="frame" x="0.0" y="0.0" width="670" height="400"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <userGuides>
-                <userLayoutGuide location="195" affinity="minX"/>
+                <userLayoutGuide location="196" affinity="minX"/>
             </userGuides>
             <subviews>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1420">
-                    <rect key="frame" x="202" y="285" width="360" height="5"/>
+                    <rect key="frame" x="202" y="324" width="360" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1419">
-                    <rect key="frame" x="17" y="256" width="182" height="17"/>
+                    <rect key="frame" x="17" y="295" width="182" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Default View:" id="1421">
                         <font key="font" metaFont="system"/>
@@ -317,7 +318,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1418">
-                    <rect key="frame" x="201" y="250" width="254" height="26"/>
+                    <rect key="frame" x="201" y="289" width="254" height="26"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <popUpButtonCell key="cell" type="push" title="Last Used" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="1449" id="1422">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -354,15 +355,15 @@ Gw
                     </connections>
                 </popUpButton>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="582">
-                    <rect key="frame" x="204" y="189" width="358" height="5"/>
+                    <rect key="frame" x="204" y="228" width="358" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="581">
-                    <rect key="frame" x="202" y="237" width="360" height="5"/>
+                    <rect key="frame" x="202" y="276" width="360" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="947">
-                    <rect key="frame" x="202" y="145" width="360" height="18"/>
+                    <rect key="frame" x="202" y="184" width="360" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Display comments in tables list" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="948">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -373,7 +374,7 @@ Gw
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="957">
-                    <rect key="frame" x="202" y="166" width="360" height="18"/>
+                    <rect key="frame" x="202" y="205" width="360" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Display vertical grid lines" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="958">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -384,7 +385,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="577">
-                    <rect key="frame" x="17" y="208" width="182" height="17"/>
+                    <rect key="frame" x="17" y="247" width="182" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Default Encoding:" id="578">
                         <font key="font" metaFont="system"/>
@@ -393,7 +394,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1465">
-                    <rect key="frame" x="17" y="166" width="182" height="17"/>
+                    <rect key="frame" x="17" y="205" width="182" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Table Views:" id="1466">
                         <font key="font" metaFont="system"/>
@@ -402,7 +403,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="569">
-                    <rect key="frame" x="201" y="317" width="254" height="26"/>
+                    <rect key="frame" x="201" y="356" width="254" height="26"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" autoenablesItems="NO" id="570">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -414,7 +415,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="568">
-                    <rect key="frame" x="11" y="323" width="187" height="17"/>
+                    <rect key="frame" x="11" y="362" width="187" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Default Favorite:" id="575">
                         <font key="font" metaFont="system"/>
@@ -423,7 +424,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="567">
-                    <rect key="frame" x="202" y="295" width="362" height="18"/>
+                    <rect key="frame" x="202" y="334" width="362" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Connect to default on startup" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="576">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -434,7 +435,7 @@ Gw
                     </connections>
                 </button>
                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="24" userLabel="Default Encoding Dropdown">
-                    <rect key="frame" x="201" y="203" width="254" height="26"/>
+                    <rect key="frame" x="201" y="242" width="254" height="26"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" id="25">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -495,7 +496,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="790">
-                    <rect key="frame" x="247" y="105" width="316" height="17"/>
+                    <rect key="frame" x="247" y="144" width="316" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="queries (100 max)" id="791">
                         <font key="font" metaFont="system"/>
@@ -504,7 +505,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField toolTip="Enter the maximum number of entries to remember in the Custom Query query history, from 0 to 99" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="787">
-                    <rect key="frame" x="203" y="102" width="38" height="22"/>
+                    <rect key="frame" x="203" y="141" width="38" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="center" title="20" drawsBackground="YES" usesSingleLineMode="YES" id="788">
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" allowsFloats="NO" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="3" id="792">
@@ -522,7 +523,7 @@ Gw
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="785">
-                    <rect key="frame" x="17" y="105" width="181" height="17"/>
+                    <rect key="frame" x="17" y="144" width="181" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Remember Last:" id="786">
                         <font key="font" metaFont="system"/>
@@ -531,11 +532,11 @@ Gw
                     </textFieldCell>
                 </textField>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="784">
-                    <rect key="frame" x="204" y="135" width="357" height="5"/>
+                    <rect key="frame" x="204" y="174" width="357" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <box fixedFrame="YES" boxType="custom" borderType="none" cornerRadius="4" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="7J9-Yp-qMZ">
-                    <rect key="frame" x="13" y="44" width="567" height="50"/>
+                    <rect key="frame" x="13" y="83" width="567" height="50"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <view key="contentView" id="8QO-1r-5jB">
                         <rect key="frame" x="0.0" y="0.0" width="567" height="50"/>
@@ -595,7 +596,7 @@ Gw
                     </view>
                 </box>
                 <box fixedFrame="YES" boxType="custom" borderType="none" cornerRadius="4" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="F3U-SQ-W2d">
-                    <rect key="frame" x="13" y="0.0" width="567" height="50"/>
+                    <rect key="frame" x="13" y="39" width="567" height="50"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <view key="contentView" id="typ-rs-Tmp">
                         <rect key="frame" x="0.0" y="0.0" width="567" height="50"/>
@@ -638,10 +639,10 @@ Gw
                     </view>
                 </box>
             </subviews>
-            <point key="canvasLocation" x="230" y="483.5"/>
+            <point key="canvasLocation" x="275" y="502"/>
         </customView>
         <customView id="512" userLabel="Tables">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="276"/>
+            <rect key="frame" x="0.0" y="0.0" width="670" height="276"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <userGuides>
                 <userLayoutGuide location="195" affinity="minX"/>
@@ -829,10 +830,10 @@ Gw
                     </connections>
                 </popUpButton>
             </subviews>
-            <point key="canvasLocation" x="236" y="22"/>
+            <point key="canvasLocation" x="275" y="22"/>
         </customView>
         <customView id="56" userLabel="Notifications">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="211"/>
+            <rect key="frame" x="0.0" y="0.0" width="670" height="211"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <userGuides>
                 <userLayoutGuide location="195" affinity="minX"/>
@@ -924,10 +925,10 @@ Gw
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
             </subviews>
-            <point key="canvasLocation" x="148" y="740.5"/>
+            <point key="canvasLocation" x="275" y="873.5"/>
         </customView>
         <customView id="641" userLabel="Network">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="380"/>
+            <rect key="frame" x="0.0" y="0.0" width="670" height="380"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="681">
@@ -1037,7 +1038,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" heightSizable="YES"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
                         <rect key="frame" x="1" y="1" width="332" height="171"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" id="RuH-Yq-cdH">
                                 <rect key="frame" x="0.0" y="0.0" width="332" height="171"/>
@@ -1046,7 +1047,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn editable="NO" width="320" minWidth="40" maxWidth="1000" id="2w5-RF-2LR">
+                                    <tableColumn editable="NO" width="291" minWidth="40" maxWidth="1000" id="2w5-RF-2LR">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Cipher Suite">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -1076,7 +1077,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </scroller>
                 </scrollView>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TG6-Q3-g30">
-                    <rect key="frame" x="264" y="20" width="298" height="28"/>
+                    <rect key="frame" x="354" y="20" width="298" height="28"/>
                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Drag the items in the list to reorder their preference and/or disable them." id="Ukm-oW-lSS">
                         <font key="font" metaFont="message" size="11"/>
@@ -1138,10 +1139,10 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </popUpButton>
             </subviews>
-            <point key="canvasLocation" x="200" y="836"/>
+            <point key="canvasLocation" x="275" y="836"/>
         </customView>
         <customView id="802" userLabel="Editor">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="451"/>
+            <rect key="frame" x="0.0" y="0.0" width="670" height="451"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <userGuides>
                 <userLayoutGuide location="147" affinity="minX"/>
@@ -1332,7 +1333,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
                         <rect key="frame" x="1" y="1" width="220" height="286"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" id="1685">
                                 <rect key="frame" x="0.0" y="0.0" width="220" height="286"/>
@@ -1341,7 +1342,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn identifier="name" width="184" minWidth="40" maxWidth="1000" id="1687">
+                                    <tableColumn identifier="name" width="155" minWidth="40" maxWidth="1000" id="1687">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
@@ -1601,7 +1602,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
             </subviews>
-            <point key="canvasLocation" x="200" y="1305.5"/>
+            <point key="canvasLocation" x="275" y="1308.5"/>
         </customView>
         <menu id="1547" userLabel="Context Menu">
             <items>
@@ -1683,7 +1684,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             <point key="canvasLocation" x="-609.5" y="138"/>
         </customView>
         <customView id="5dZ-tO-Ldn" userLabel="File">
-            <rect key="frame" x="0.0" y="0.0" width="580" height="400"/>
+            <rect key="frame" x="0.0" y="0.0" width="670" height="400"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <userGuides>
                 <userLayoutGuide location="146" affinity="minX"/>
@@ -1724,7 +1725,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" heightSizable="YES"/>
                     <clipView key="contentView" id="u3q-XC-nUM">
                         <rect key="frame" x="1" y="1" width="538" height="285"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="eH2-Ed-Xh3">
                                 <rect key="frame" x="0.0" y="0.0" width="538" height="285"/>
@@ -1733,7 +1734,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn editable="NO" width="526" minWidth="40" maxWidth="1000" id="oAq-cQ-smW" userLabel="Granted Files">
+                                    <tableColumn editable="NO" width="497" minWidth="40" maxWidth="1000" id="oAq-cQ-smW" userLabel="Granted Files">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Granted Files">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -1774,7 +1775,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
             </subviews>
-            <point key="canvasLocation" x="200" y="1772"/>
+            <point key="canvasLocation" x="275" y="1794"/>
         </customView>
     </objects>
     <resources>

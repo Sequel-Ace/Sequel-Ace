@@ -61,11 +61,6 @@
 	return NSLocalizedString(@"Table Preferences", @"general preference pane tooltip");
 }
 
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
-}
-
 - (void)preferencePaneWillBeShown
 {
 }

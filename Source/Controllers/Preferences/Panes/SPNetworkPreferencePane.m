@@ -100,11 +100,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	return NSLocalizedString(@"Network Preferences", @"network preference pane tooltip");
 }
 
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
-}
-
 - (void)preferencePaneWillBeShown
 {
 	[self updateSSHConfigPopUp];

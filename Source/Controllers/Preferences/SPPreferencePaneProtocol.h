@@ -73,13 +73,6 @@
 - (NSString *)preferencePaneToolTip;
 
 /**
- * Indicates whether or not the preference pane can be resized.
- *
- * @return A BOOL indicating resizability
- */
-- (BOOL)preferencePaneAllowsResizing;
-
-/**
  * Called shortly before the preference pane will be made visible
  */
 - (void)preferencePaneWillBeShown;
