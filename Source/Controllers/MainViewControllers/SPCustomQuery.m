@@ -3385,7 +3385,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	for (NSInteger i = 7; i < [menu numberOfItems]; i++)
 	{
 		// this populates the menu with all matches
-		if(sender == nil){
+		if(sender == nil || stringValue.length < 1){
 			[[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", stringValue]])];
 		}
 		else{
