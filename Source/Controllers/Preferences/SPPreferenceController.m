@@ -223,17 +223,12 @@
  * Resizes the window to the size of the supplied view.
  */
 - (void)_resizeWindowForContentView:(NSView *)view
-{  
-	// Remove all subviews
-	for (NSView *subview in [[[self window] contentView] subviews]) [subview removeFromSuperview];
-
-	// Resize window
-	[[self window] resizeForContentView:view titleBarVisible:YES];
-
+{
 	// Add view
-	[[[self window] contentView] addSubview:view];
+	[self window].contentView = view;
 
-	[view setFrameOrigin:NSMakePoint(0, 0)];
+	// Resize window a second time for some reason
+	[[self window] resizeForContentView:view];
 }
 
 #pragma mark - SPPreferenceControllerDelegate
