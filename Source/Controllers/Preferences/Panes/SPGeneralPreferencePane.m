@@ -220,11 +220,6 @@ static NSString *SPDatabaseImage = @"database-small";
 	return NSLocalizedString(@"General Preferences", @"general preference pane tooltip");
 }
 
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
-}
-
 - (void)preferencePaneWillBeShown
 {
 	[self updateDisplayedFontName];
