@@ -367,6 +367,8 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 			}
 		}
 		
+		// JCS note: at the moment I'm not deleting the queryHistory key from prefs
+		// in case something goes horribly wrong.
 		if(success == YES){
 			SPLog(@"migrated prefs to db");
 			user_defaults_set_bool(SPMigratedQueriesFromPrefs, YES, prefs);
