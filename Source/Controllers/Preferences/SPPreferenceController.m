@@ -224,10 +224,13 @@
  */
 - (void)_resizeWindowForContentView:(NSView *)view
 {
+	// Handle expanding
+	[[self window] resizeForContentView:view];
+
 	// Add view
 	[self window].contentView = view;
 
-	// Resize window a second time for some reason
+	// Handle contracting
 	[[self window] resizeForContentView:view];
 }
 

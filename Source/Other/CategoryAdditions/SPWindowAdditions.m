@@ -55,6 +55,11 @@
  */
 - (void)resizeForContentView:(NSView *)view
 {
+	//Zoomed in handling
+	if([self frame].size.width == [self maxSize].width) {
+		return;
+	}
+
 	NSSize viewSize = view.fittingSize;
 	NSRect frame    = [self frame];
 
@@ -68,9 +73,9 @@
 	CGFloat newHeight = viewSize.height + (self.frame.size.height - self.contentView.frame.size.height);
 	frame.origin.y += frame.size.height - newHeight;
 
-	frame.size.height = newHeight;
-	//Preserve previous width if larger
-	frame.size.width  = MAX(self.contentView.frame.size.width, viewSize.width + (self.frame.size.width - self.contentView.frame.size.width));
+	frame.size.height = MAX(newHeight, [self minSize].height);
+	//If width is bigger, keep it the same for consistency
+	frame.size.width  = MAX(MAX(self.contentView.frame.size.width, viewSize.width + (self.frame.size.width - self.contentView.frame.size.width)), [self minSize].width);
 
 	[self setFrame:frame display:YES animate:YES];
 }
