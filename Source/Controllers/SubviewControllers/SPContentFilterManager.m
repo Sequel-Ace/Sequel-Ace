@@ -36,6 +36,8 @@
 #import "SPConnectionController.h"
 #import "SPSplitView.h"
 #import "SPAppController.h"
+#import "sequel-ace-Swift.h"
+
 
 static NSString *SPExportFilterAction = @"SPExportFilter";
 
@@ -103,9 +105,15 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		}
 	}
 
+	NSString *delegatesFileURLStr = [documentFileURL absoluteString];
+	
+	if(delegatesFileURLStr.isPercentEncoded){
+		delegatesFileURLStr = delegatesFileURLStr.stringByRemovingPercentEncoding;
+	}
+	
 	// Build doc-based filters
 	[contentFilters addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-		[[[documentFileURL absoluteString] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] lastPathComponent], @"MenuLabel",
+		[delegatesFileURLStr lastPathComponent], @"MenuLabel",
 		[documentFileURL absoluteString], @"headerOfFileURL",
 		@"", @"Clause",
 		nil]];

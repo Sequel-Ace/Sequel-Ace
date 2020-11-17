@@ -53,24 +53,29 @@
 /**
  * Resizes this window to the size of the supplied view.
  */
-- (void)resizeForContentView:(NSView *)view titleBarVisible:(BOOL)visible
+- (void)resizeForContentView:(NSView *)view
 {
-	NSSize viewSize = [view frame].size;
-	NSRect frame    = [self frame];
-
-	if (viewSize.height < [self contentMinSize].height) {
-		viewSize.height = [self contentMinSize].height;
+	//Zoomed in handling
+	if([self frame].size.width == [self maxSize].width) {
+		return;
 	}
 
-	CGFloat newHeight = (viewSize.height + [self toolbarHeight]);
+	NSSize viewSize = view.fittingSize;
+	NSRect frame    = [self frame];
 
-	// If the title bar is visible add 22 pixels to new height of window.
-	if (visible) newHeight += 22;
+	if(viewSize.height < [self contentMinSize].height) {
+		viewSize.height = [self contentMinSize].height;
+	}
+	if(viewSize.width < [self contentMinSize].width) {
+		viewSize.width = [self contentMinSize].width;
+	}
 
+	CGFloat newHeight = viewSize.height + (self.frame.size.height - self.contentView.frame.size.height);
 	frame.origin.y += frame.size.height - newHeight;
 
-	frame.size.height = newHeight;
-	frame.size.width  = viewSize.width; 
+	frame.size.height = MAX(newHeight, [self minSize].height);
+	//If width is bigger, keep it the same for consistency
+	frame.size.width  = MAX(MAX(self.contentView.frame.size.width, viewSize.width + (self.frame.size.width - self.contentView.frame.size.width)), [self minSize].width);
 
 	[self setFrame:frame display:YES animate:YES];
 }

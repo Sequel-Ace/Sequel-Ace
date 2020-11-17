@@ -110,8 +110,8 @@
 		}
 	}
 	
-	[[self window] setMinSize:NSMakeSize(0, 0)];
-	[[self window] setShowsResizeIndicator:[preferencePane preferencePaneAllowsResizing]];
+	[[self window] setMinSize:NSMakeSize(500, 350)];
+	[[self window] setShowsResizeIndicator:YES];
 	
 	[toolbar setSelectedItemIdentifier:[preferencePane preferencePaneIdentifier]];
 	
@@ -223,17 +223,15 @@
  * Resizes the window to the size of the supplied view.
  */
 - (void)_resizeWindowForContentView:(NSView *)view
-{  
-	// Remove all subviews
-	for (NSView *subview in [[[self window] contentView] subviews]) [subview removeFromSuperview];
-  
-	// Resize window
-	[[self window] resizeForContentView:view titleBarVisible:YES];
-  
+{
+	// Handle expanding
+	[[self window] resizeForContentView:view];
+
 	// Add view
-	[[[self window] contentView] addSubview:view];
-	
-	[view setFrameOrigin:NSMakePoint(0, 0)];
+	[self window].contentView = view;
+
+	// Handle contracting
+	[[self window] resizeForContentView:view];
 }
 
 #pragma mark - SPPreferenceControllerDelegate
@@ -251,17 +249,6 @@
 	if ([[self window] firstResponder]) {
 		[[self window] endEditingFor:[[self window] firstResponder]];
 	}
-}
-
-/**
- * Trap window resize notifications and use them to disable resizing on most tabs
- * - except for the favourites tab.
- */
-- (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize
-{
-	[[NSColorPanel sharedColorPanel] close];
-
-	return [sender showsResizeIndicator] ? frameSize : [sender frame].size;
 }
 
 #pragma mark -
