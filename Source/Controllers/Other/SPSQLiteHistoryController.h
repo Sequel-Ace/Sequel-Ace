@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface SPSQLiteHistoryController : NSObject
 
 @property (atomic, assign) BOOL migratedPrefsToDB;
-@property (readwrite, strong) NSMutableDictionary *queryHist;
+@property (readwrite, copy) NSMutableDictionary *queryHist;
 @property (readwrite, strong) FMDatabaseQueue *queue;
 
 + (SPSQLiteHistoryController *)sharedSQLiteHistoryController;
@@ -26,6 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)updateQueryHistory:(NSArray*)newHist;
 - (long)idForRowAlreadyInDB:(NSString*)query;
 - (void)reloadQueryHistory;
+- (void)getDBsize;
+- (void)vac;
 
 @end
 

@@ -17,13 +17,15 @@ typedef void (^SASchemaBuilder)(FMDatabase *db, int *schemaVersion);
 
 @property (readwrite, strong) NSUserDefaults *prefs;
 @property (readwrite, strong) NSFileManager *fileManager;
-@property (readwrite, strong) NSString *sqlitePath;
+@property (readwrite, copy) NSString *sqlitePath;
+@property (readwrite, copy) NSString *dbSizeHumanReadable;
+@property (nonatomic, assign) long dbSize;
 
 @end
 
 @implementation SPSQLiteHistoryController
 
-@synthesize queue, prefs, fileManager, migratedPrefsToDB, queryHist, sqlitePath;
+@synthesize queue, prefs, fileManager, migratedPrefsToDB, queryHist, sqlitePath, dbSizeHumanReadable, dbSize;
 
 static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 
@@ -47,6 +49,8 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 		prefs = [NSUserDefaults standardUserDefaults];
 		fileManager = [NSFileManager defaultManager];
 		queryHist = [[NSMutableDictionary alloc] init];
+		dbSize = 0;
+		dbSizeHumanReadable = nil;
 		
 		NSError *error = nil;
 		sqlitePath = [NSString stringWithFormat:@"%@/%@",[fileManager applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error], @"queryHistory.db"];
@@ -58,8 +62,6 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 		
 		SPLog(@"Is SQLite compiled with it's thread safe options turned on? %@!", [FMDatabase isSQLiteThreadSafe] ? @"Yes" : @"No");
 		
-		SPLog(@"sqliteLibVersion = %@", [FMDatabase sqliteLibVersion]);
-		
 		[self setupQueryHistoryDatabase];
 		
 		migratedPrefsToDB = user_defaults_get_bool_ud(SPMigratedQueriesFromPrefs, prefs);
@@ -70,6 +72,10 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 			[self loadQueryHistory];
 		}
 		
+		[self getDBsize];
+		
+		SPLog(@"sqliteLibVersion = %@", [FMDatabase sqliteLibVersion]);
+		
 		return self;
 	}
 	
@@ -77,9 +83,7 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 }
 
 - (long)idForRowAlreadyInDB:(NSString*)query{
-	
-	SPLog(@"JIMMY idForRowalreadyInDB");
-	
+		
 	if(!queue){
 		SPLog(@"reopening queue");
 		queue = [FMDatabaseQueue databaseQueueWithPath:sqlitePath];
@@ -91,7 +95,6 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 		
 		FMResultSet *rs = [db executeQuery:@"SELECT id FROM QueryHistory where query = ?", query];
 		while ([rs next]) {
-			SPLog(@"JIMMY existing row!");
 			idForExistingRow = [rs longForColumn:@"id"];
 		}
 		[rs close];
@@ -102,107 +105,125 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 
 - (void)updateQueryHistory:(NSArray*)newHist{
 	
-	
-	SPLog(@"JIMMY updateQueryHistory");
-	
-	if(!queue){
-		SPLog(@"reopening queue");
-		queue = [FMDatabaseQueue databaseQueueWithPath:sqlitePath];
-	}
-	
-	BOOL __block success = NO;
-	
-	for(id obj in newHist){
+	executeOnBackgroundThread(^{
 		
-		if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
-			// JCS - not sure we need this check .. just insert or ignore....
-			long idForExistingRow = [self idForRowAlreadyInDB:obj];
+		if(!self->queue){
+			SPLog(@"reopening queue");
+			self->queue = [FMDatabaseQueue databaseQueueWithPath:self->sqlitePath];
+		}
+		
+		BOOL __block success = NO;
+		
+		for(id obj in newHist){
 			
-			if (idForExistingRow > 0){
-				SPLog(@"JIMMY existing row %li", idForExistingRow);
+			if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
+				// JCS - not sure we need this check .. just insert or ignore....
+				long idForExistingRow = [self idForRowAlreadyInDB:obj];
 				
-				[queue inDatabase:^(FMDatabase *db) {
-					//db.traceExecution = YES;
+				if (idForExistingRow > 0){
 					
-					success = [db executeUpdate:@"UPDATE QueryHistory set modifiedTime = ? where id = ?", [NSDate date], @(idForExistingRow)];
-					
-					if (success) {
-						SPLog(@"UPDATED = %ld, %@", idForExistingRow, obj);
-						// nothing to update on the queryHist array
-					}
-					else{
-						FMDBQuickCheck([db hadError]);
-						if ([db hadError]) {
-							SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+					[self->queue inDatabase:^(FMDatabase *db) {
+						//db.traceExecution = YES;
+						
+						success = [db executeUpdate:@"UPDATE QueryHistory set modifiedTime = ? where id = ?", [NSDate date], @(idForExistingRow)];
+						
+						if (!success) {
+							FMDBQuickCheck([db hadError]);
+							if ([db hadError]) {
+								SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+							}
 						}
-					}
-				}];
-			}
-			else{
-				// if this is not unique then it's going to break
-				// we could check, but max 100 items ... probability of clash is low.
-				NSNumber *newKeyValue = [self primaryKeyValueForNewRow];
-				
-				SPLog(@"newKeyValue: %@", newKeyValue);
-				
-				[queue inDatabase:^(FMDatabase *db) {
-					success = [db executeUpdate:@"INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", newKeyValue, obj, [NSDate date]];
+//						SPLog(@"UPDATED = %ld, %@", idForExistingRow, obj);
+						// no else - nothing to update on the queryHist array
+					}];
+				}
+				else{
+					// if this is not unique then it's going to break
+					// we could check, but max 100 items ... probability of clash is low.
+					NSNumber *newKeyValue = [self primaryKeyValueForNewRow];
 					
-					if (success) {
-						[queryHist safeSetObject:obj forKey:newKeyValue];
-						SPLog(@"INSERTED = %@, %@", newKeyValue, obj);
-					}
-					else{
-						FMDBQuickCheck([db hadError]);
-						if ([db hadError]) {
-							SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+//					SPLog(@"newKeyValue: %@", newKeyValue);
+					
+					[self->queue inDatabase:^(FMDatabase *db) {
+						success = [db executeUpdate:@"INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", newKeyValue, obj, [NSDate date]];
+						
+						if (success) {
+							[self->queryHist safeSetObject:obj forKey:newKeyValue];
+//							SPLog(@"INSERTED = %@, %@", newKeyValue, obj);
 						}
-					}
-				}];
+						else{
+							FMDBQuickCheck([db hadError]);
+							if ([db hadError]) {
+								SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+							}
+						}
+					}];
+				}
 			}
+			
+			if (!success) {
+				break;
+			}
+		}
+		if(success == YES){
+			SPLog(@"query history updated");
 		}
 		
-		if (!success) {
-			break;
-		}
-	}
-	if(success == YES){
-		SPLog(@"query history updated, reload?");
-	}
+		[self vac];
+		[self getDBsize];
+		[self->queue close];
+	});
+}
+
+- (void)vac{
 	
-	[queue close];
+	executeOnBackgroundThread(^{
+		if(!self->queue){
+			SPLog(@"reopening queue");
+			self->queue = [FMDatabaseQueue databaseQueueWithPath:self->sqlitePath];
+		}
+		[self->queue inDatabase:^(FMDatabase *db) {
+			[db executeUpdate:@"vacuum"];
+			FMDBQuickCheck([db hadError]);
+			if ([db hadError]) {
+				SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+			}
+		}];
+	});
 }
 
 - (void)deleteQueryHistory{
 	
-	SPLog(@"JIMMY deleteQueryHistory");
-	
-	if(!queue){
-		SPLog(@"reopening queue");
-		queue = [FMDatabaseQueue databaseQueueWithPath:sqlitePath];
-	}
-	[queue inDatabase:^(FMDatabase *db) {
-		if([db executeUpdate:@"DELETE FROM QueryHistory"]){
-			[queryHist removeAllObjects];
-		}
-		//		db.traceExecution = YES;
-		[db executeUpdate:@"vacuum"];
-		FMDBQuickCheck([db hadError]);
+	executeOnBackgroundThread(^{
+		SPLog(@"JIMMY deleteQueryHistory");
 		
-		if ([db hadError]) {
-			SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+		if(!self->queue){
+			SPLog(@"reopening queue");
+			self->queue = [FMDatabaseQueue databaseQueueWithPath:self->sqlitePath];
 		}
+		[self->queue inDatabase:^(FMDatabase *db) {
+			if([db executeUpdate:@"DELETE FROM QueryHistory"]){
+				[self->queryHist removeAllObjects];
+			}
+			
+			if ([db hadError]) {
+				SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
+			}
+		}];
 		
-	}];
-	
-	[queue close];
+		[self vac];
+		[self getDBsize];
+		[self->queue close];
+	});
 	
 }
 
 - (void)reloadQueryHistory{
 	
-	[queryHist removeAllObjects];
-	[self loadQueryHistory];
+	executeOnBackgroundThread(^{
+		[self->queryHist removeAllObjects];
+		[self loadQueryHistory];
+	});
 }
 
 - (void)loadQueryHistory{
@@ -231,11 +252,11 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 	
 	if (![fileManager fileExistsAtPath:sqlitePath isDirectory:nil]) {
 		SPLog(@"db doesn't exist, they can't have migrated");
-		user_defaults_set_bool(SPMigratedQueriesFromPrefs, NO, prefs);
-		migratedPrefsToDB = NO;
+			user_defaults_set_bool(SPMigratedQueriesFromPrefs, NO, self->prefs);
+			self->migratedPrefsToDB = NO;
 	}
 	
-	queue = [FMDatabaseQueue databaseQueueWithPath:sqlitePath];
+	queue = [FMDatabaseQueue databaseQueueWithPath:self->sqlitePath];
 	
 	// this block creates the database, if needed
 	// can also be used to modify schema
@@ -281,7 +302,6 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 		 */
 		
 		[db commit];
-		
 	};
 	
 	[queue inDatabase:^(FMDatabase *db) {
@@ -304,11 +324,9 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 			SPLog(@"db schema did not need an update");
 		}
 	}];
-	
 }
 
 - (void)migrateQueriesFromPrefs{
-	
 	
 	if(!queue){
 		SPLog(@"reopening queue");
@@ -322,16 +340,12 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 		NSArray *arr = [NSArray arrayWithArray:[prefs objectForKey:SPQueryHistory]];
 		
 		for(id obj in arr){
-			
-			//			SPLog(@"item: %@", obj);
-			
+						
 			if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
 				
 				// if this is not unique then it's going to break
 				// we could check, but max 100 items ... probability of clash is low.
 				NSNumber *newKeyValue = [self primaryKeyValueForNewRow];
-				
-				//				SPLog(@"newKeyValue: %@", newKeyValue);
 				
 				[queue inDatabase:^(FMDatabase *db) {
 					
@@ -366,6 +380,29 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 	}
 }
 
+- (void)getDBsize{
+	
+	executeOnBackgroundThread(^{
+		if(!self->queue){
+			SPLog(@"reopening queue");
+			self->queue = [FMDatabaseQueue databaseQueueWithPath:self->sqlitePath];
+		}
+		
+		[self->queue inDatabase:^(FMDatabase *db) {
+			FMResultSet *rs = [db executeQuery:@"SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"];
+			while ([rs next]) {
+				//retrieve values for each record
+				self->dbSize = [rs longForColumn:@"size"];
+				self->dbSizeHumanReadable = [NSByteCountFormatter stringFromByteCount:self->dbSize countStyle:NSByteCountFormatterCountStyleFile];
+			}
+			[rs close];
+		}];
+		
+		SPLog(@"JIMMY db size = %ld", self.dbSize);
+		SPLog(@"JIMMY db size2 = %@", self.dbSizeHumanReadable);
+	});
+}
+
 - (NSNumber*)primaryKeyValueForNewRow
 {
 	// Issue random 64-bit signed ints
@@ -379,7 +416,19 @@ static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
 	return @(random);
 }
 
+// future - when file is massive, maybe we can zip?
+//- (void)applicationWillTerminate:(NSNotification *)notification{
+//
+//	NSError *error = nil;
+//	NSData *zippedContent = [NSData gul_dataByGzippingData:[NSData dataWithContentsOfFile:sqlitePath] error:&error];
+//	NSString *gzPath = [NSString stringWithFormat:@"%@%@",sqlitePath, @".gz"];
+//	[zippedContent writeToFile:gzPath atomically:NO];
+//}
+
+
 - (void)dealloc{
+	
+	SPLog(@"JIMMY dealloc");
 	[queue close];
 }
 

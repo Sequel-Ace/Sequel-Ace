@@ -67,6 +67,35 @@ void dispatch_once_on_main_thread(dispatch_once_t *predicate,
 	}
 }
 
+void executeOnBackgroundThreadSync(void (^block)(void))
+{
+	static dispatch_once_t onceToken5;
+	   dispatch_once(&onceToken5, ^{
+		   dispatch_queue_set_specific(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), &onceToken5, &onceToken5, NULL);
+	   });
+	
+   if (dispatch_get_specific(&onceToken5) == &onceToken5) {
+		block();
+	}
+	else {
+		dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), block);
+	}
+}
+
+void executeOnBackgroundThread(void (^block)(void))
+{
+	static dispatch_once_t onceToken3;
+	dispatch_once(&onceToken3, ^{
+		dispatch_queue_set_specific(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), &onceToken3, &onceToken3, NULL);
+	});
+
+	if (dispatch_get_specific(&onceToken3) == &onceToken3) {
+		block();
+	} else {
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), block);
+	}
+}
+
 int SPBetterRandomBytes(uint8_t *buf, size_t count)
 {
 	return SecRandomCopyBytes(kSecRandomDefault, count, buf);
