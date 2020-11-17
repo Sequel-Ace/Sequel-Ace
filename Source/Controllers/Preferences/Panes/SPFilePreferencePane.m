@@ -61,10 +61,6 @@
 
 }
 
-- (BOOL)preferencePaneAllowsResizing {
-	return NO;
-}
-
 - (NSImage *)preferencePaneIcon {
 	return [NSImage imageNamed:NSImageNameFolder];
 }

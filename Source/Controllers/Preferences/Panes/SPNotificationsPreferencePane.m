@@ -60,9 +60,4 @@
 	return NSLocalizedString(@"Alerts & Logs Preferences", @"notifications preference pane tooltip");
 }
 
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
-}
-
 @end

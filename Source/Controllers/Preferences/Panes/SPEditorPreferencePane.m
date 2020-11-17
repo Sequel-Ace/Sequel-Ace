@@ -725,11 +725,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	return NSLocalizedString(@"Query Editor Preferences", @"query editor preference pane tooltip");
 }
 
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
-}
-
 - (void)preferencePaneWillBeShown
 {
 	[self updateColorSchemeSelectionMenu];
