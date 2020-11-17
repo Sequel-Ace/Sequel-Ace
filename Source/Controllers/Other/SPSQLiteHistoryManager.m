@@ -1,19 +1,19 @@
 //
-//  SPSQLiteHistoryController.m
+//  SPSQLiteHistoryManager.m
 //  Sequel Ace
 //
 //  Created by James on 17/11/2020.
 //  Copyright © 2020 Sequel-Ace. All rights reserved.
 //
 
-#import "SPSQLiteHistoryController.h"
+#import "SPSQLiteHistoryManager.h"
 #import "SPFunctions.h"
 
 #define FMDBQuickCheck(SomeBool) { if ((SomeBool)) { NSLog(@"Failure on line %d", __LINE__); /*abort();*/ } }
 
 typedef void (^SASchemaBuilder)(FMDatabase *db, int *schemaVersion);
 
-@interface SPSQLiteHistoryController ()
+@interface SPSQLiteHistoryManager ()
 
 @property (readwrite, strong) NSUserDefaults *prefs;
 @property (readwrite, strong) NSFileManager *fileManager;
@@ -23,23 +23,23 @@ typedef void (^SASchemaBuilder)(FMDatabase *db, int *schemaVersion);
 
 @end
 
-@implementation SPSQLiteHistoryController
+@implementation SPSQLiteHistoryManager
 
 @synthesize queue, prefs, fileManager, migratedPrefsToDB, queryHist, sqlitePath, dbSizeHumanReadable, dbSize;
 
-static SPSQLiteHistoryController *sharedSQLiteHistoryControllerr = nil;
+static SPSQLiteHistoryManager *sharedSQLiteHistoryManager = nil;
 
-+ (SPSQLiteHistoryController *)sharedSQLiteHistoryController
++ (SPSQLiteHistoryManager *)sharedSQLiteHistoryManager
 {
 	static dispatch_once_t onceToken;
 	
-	if (sharedSQLiteHistoryControllerr == nil) {
+	if (sharedSQLiteHistoryManager == nil) {
 		dispatch_once_on_main_thread(&onceToken, ^{
-			sharedSQLiteHistoryControllerr = [[SPSQLiteHistoryController alloc] init];
+			sharedSQLiteHistoryManager = [[SPSQLiteHistoryManager alloc] init];
 		});
 	}
 	
-	return sharedSQLiteHistoryControllerr;
+	return sharedSQLiteHistoryManager;
 }
 
 - (instancetype)init

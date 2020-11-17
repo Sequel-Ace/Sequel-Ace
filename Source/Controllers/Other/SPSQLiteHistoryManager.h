@@ -1,5 +1,5 @@
 //
-//  SPSQLiteHistoryController.h
+//  SPSQLiteHistoryManager.h
 //  Sequel Ace
 //
 //  Created by James on 17/11/2020.
@@ -11,13 +11,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface SPSQLiteHistoryController : NSObject
+@interface SPSQLiteHistoryManager : NSObject
 
 @property (atomic, assign) BOOL migratedPrefsToDB;
 @property (readwrite, copy) NSMutableDictionary *queryHist;
 @property (readwrite, strong) FMDatabaseQueue *queue;
 
-+ (SPSQLiteHistoryController *)sharedSQLiteHistoryController;
++ (SPSQLiteHistoryManager *)sharedSQLiteHistoryManager;
 - (void)setupQueryHistoryDatabase;
 - (void)migrateQueriesFromPrefs;
 - (NSNumber*)primaryKeyValueForNewRow;

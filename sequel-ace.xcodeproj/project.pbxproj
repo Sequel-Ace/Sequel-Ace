@@ -107,7 +107,7 @@
 		1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2711CE2539D9B10066ED58 /* SPReachability.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */ = {isa = PBXBuildFile; fileRef = 1A2711E72539E2BB0066ED58 /* local-connection.html */; };
-		1A2D0D4125640346002403DB /* SPSQLiteHistoryController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2D0D4025640346002403DB /* SPSQLiteHistoryController.m */; };
+		1A2D0D4125640346002403DB /* SPSQLiteHistoryManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2D0D4025640346002403DB /* SPSQLiteHistoryManager.m */; };
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
@@ -799,8 +799,8 @@
 		1A2711CD2539D9B10066ED58 /* SPReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPReachability.h; sourceTree = "<group>"; };
 		1A2711CE2539D9B10066ED58 /* SPReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReachability.m; sourceTree = "<group>"; };
 		1A2711E72539E2BB0066ED58 /* local-connection.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "local-connection.html"; sourceTree = "<group>"; };
-		1A2D0D3F25640346002403DB /* SPSQLiteHistoryController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSQLiteHistoryController.h; sourceTree = "<group>"; };
-		1A2D0D4025640346002403DB /* SPSQLiteHistoryController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPSQLiteHistoryController.m; sourceTree = "<group>"; };
+		1A2D0D3F25640346002403DB /* SPSQLiteHistoryManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSQLiteHistoryManager.h; sourceTree = "<group>"; };
+		1A2D0D4025640346002403DB /* SPSQLiteHistoryManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPSQLiteHistoryManager.m; sourceTree = "<group>"; };
 		1A47996E2543343A00D29E6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Plists/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
 		1A479B19254375D200D29E6E /* Pods-Sequel Ace-acknowledgements.markdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "Pods-Sequel Ace-acknowledgements.markdown"; sourceTree = "<group>"; };
@@ -1618,8 +1618,8 @@
 		173E70D5107FF7AF008733C9 /* Other */ = {
 			isa = PBXGroup;
 			children = (
-				1A2D0D3F25640346002403DB /* SPSQLiteHistoryController.h */,
-				1A2D0D4025640346002403DB /* SPSQLiteHistoryController.m */,
+				1A2D0D3F25640346002403DB /* SPSQLiteHistoryManager.h */,
+				1A2D0D4025640346002403DB /* SPSQLiteHistoryManager.m */,
 				589235311020C1230011DE00 /* SPHistoryController.h */,
 				589235301020C1230011DE00 /* SPHistoryController.m */,
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
@@ -3275,7 +3275,7 @@
 				B57747D40F7A8974003B34F9 /* SPPreferenceController.m in Sources */,
 				B57747D90F7A8990003B34F9 /* SPWindowAdditions.m in Sources */,
 				B57747DC0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m in Sources */,
-				1A2D0D4125640346002403DB /* SPSQLiteHistoryController.m in Sources */,
+				1A2D0D4125640346002403DB /* SPSQLiteHistoryManager.m in Sources */,
 				B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */,
 				B52460D80F8EF92300171639 /* SPTextViewAdditions.m in Sources */,
 				296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */,

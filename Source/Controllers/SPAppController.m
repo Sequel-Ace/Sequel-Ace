@@ -52,7 +52,7 @@
 #import "SPOSInfo.h"
 #import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
-#import "SPSQLiteHistoryController.h"
+#import "SPSQLiteHistoryManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -206,7 +206,7 @@
 #endif
 	
 	// init SQLite query history
-	SPSQLiteHistoryController __unused *con = [SPSQLiteHistoryController sharedSQLiteHistoryController];
+	SPSQLiteHistoryManager __unused *con = [SPSQLiteHistoryManager sharedSQLiteHistoryManager];
 
 	
 	NSDictionary *spfDict = nil;
