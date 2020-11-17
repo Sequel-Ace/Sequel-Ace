@@ -1065,7 +1065,6 @@
 			[deletedDefaultBundles setArray:stillUndeletedBundles];
 			[undeleteTableView reloadData];
 			[[NSUserDefaults standardUserDefaults] setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
-			[[NSUserDefaults standardUserDefaults] synchronize];
 			[SPAppDelegate reloadBundles:nil];
 			[self reloadBundles:self];
 

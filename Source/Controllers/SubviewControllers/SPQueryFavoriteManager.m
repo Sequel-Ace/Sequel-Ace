@@ -885,7 +885,6 @@
 			NSError *error = nil;
 		
 			[prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
-			[prefs synchronize];
 		
 			[[favoriteQueryTextView string] writeToURL:[panel URL] atomically:YES encoding:[[encodingPopUp selectedItem] tag] error:&error];
 		

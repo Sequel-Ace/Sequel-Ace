@@ -1238,8 +1238,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)openContentFilterManagerForFilterType:(NSString *)filterType
 {
 	// init query favorites controller
-	[[NSUserDefaults standardUserDefaults] synchronize];
-
 	contentFilterManager = [[SPContentFilterManager alloc] initWithDatabaseDocument:tableDocumentInstance forFilterType:filterType];
 
 	// Open query favorite manager

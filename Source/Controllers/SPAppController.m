@@ -320,7 +320,6 @@
 	// If no lastSqlFileEncoding in prefs set it to UTF-8
 	if (![[NSUserDefaults standardUserDefaults] integerForKey:SPLastSQLFileEncoding]) {
 		[[NSUserDefaults standardUserDefaults] setInteger:4 forKey:SPLastSQLFileEncoding];
-		[[NSUserDefaults standardUserDefaults] synchronize];
 	}
 
 	[panel setAccessoryView:[SPEncodingPopupAccessory encodingAccessory:[[NSUserDefaults standardUserDefaults] integerForKey:SPLastSQLFileEncoding]
@@ -1880,7 +1879,6 @@
 	}
 	if(doBundleUpdate) {
 		[[NSUserDefaults standardUserDefaults] removeObjectForKey:@"doBundleUpdate"];
-		[[NSUserDefaults standardUserDefaults] synchronize];
 	}
 
 	// Inform user about default Bundle updates which were modified by the user and re-run Reload Bundles

@@ -436,8 +436,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		BOOL enableAutoindent = !([autoindentMenuItem state] == NSOffState);
 
 		[prefs setBool:enableAutoindent forKey:SPCustomQueryAutoIndent];
-		[prefs synchronize];
-
 		[autoindentMenuItem setState:enableAutoindent?NSOnState:NSOffState];
 		[textView setAutoindent:enableAutoindent];
 	}
@@ -447,8 +445,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		BOOL enableAutopair = !([autopairMenuItem state] == NSOffState);
 
 		[prefs setBool:enableAutopair forKey:SPCustomQueryAutoPairCharacters];
-		[prefs synchronize];
-
 		[autopairMenuItem setState:enableAutopair?NSOnState:NSOffState];
 		[textView setAutopair:enableAutopair];
 	}
@@ -457,7 +453,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (sender == autohelpMenuItem) {
 		BOOL enableAutohelp = !([autohelpMenuItem state] == NSOffState);
 		[prefs setBool:enableAutohelp forKey:SPCustomQueryUpdateAutoHelp];
-		[prefs synchronize];
 		[autohelpMenuItem setState:enableAutohelp?NSOnState:NSOffState];
 		[textView setAutohelp:enableAutohelp];
 	}
@@ -467,8 +462,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		BOOL enableAutouppercaseKeywords = !([autouppercaseKeywordsMenuItem state] == NSOffState);
 
 		[prefs setBool:enableAutouppercaseKeywords forKey:SPCustomQueryAutoUppercaseKeywords];
-		[prefs synchronize];
-
 		[autouppercaseKeywordsMenuItem setState:enableAutouppercaseKeywords?NSOnState:NSOffState];
 		[textView setAutouppercaseKeywords:enableAutouppercaseKeywords];
 	}
@@ -495,7 +488,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			NSError *error = nil;
             
 			[self->prefs setInteger:[[self->encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
-			[self->prefs synchronize];
             
 			[[self buildHistoryString] writeToURL:[panel URL]
                                        atomically:YES
@@ -2884,7 +2876,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	//TODO: this doesn't belong in the document context, since multiple open documents can become out of sync through this
 	[prefs setBool:NO forKey:SPCustomQueryUpdateAutoHelp];
-	[prefs synchronize];
 	[autohelpMenuItem setState:NSOffState];
 	[textView setAutohelp:NO];
 }
