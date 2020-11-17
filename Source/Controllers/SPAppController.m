@@ -686,7 +686,16 @@
 
 		if (!cmdData || error) {
 			NSLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
-			NSBeep();
+			if(![alreadyBeeped objectForKey:filePath]){
+				NSBeep();
+				[alreadyBeeped setObject:@YES forKey:filePath];
+			}
+			else{
+				SPLog(@"already beeped for %@", filePath);
+			}
+			
+			// no need remove the dodgy bundle, it wont be created
+			
 			if (cmdData) [cmdData release];
 			return;
 		}
@@ -1650,15 +1659,14 @@
 							if(![alreadyBeeped objectForKey:bundle]){
 								NSBeep();
 								[alreadyBeeped setObject:@YES forKey:bundle];
-								
-								// remove the dodgy bundle
-								[self removeBundle:bundle];
-								
 								continue;
 							}
 							else{
 								SPLog(@"already beeped for %@", bundle);
 							}
+							
+							// remove the dodgy bundle
+							[self removeBundle:bundle];
 						}
 					}
 
