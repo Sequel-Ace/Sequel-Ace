@@ -1582,16 +1582,12 @@
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
 
-			SPLog(@"processing path: %@",bundlePath );
-
 			NSError *error = nil;
 			NSArray *foundBundles = [fileManager contentsOfDirectoryAtPath:bundlePath error:&error];
 			if (foundBundles && [foundBundles count] && error == nil) {
 
 				for(NSString* bundle in foundBundles) {
 					if(![[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtension lowercaseString]]) continue;
-
-					SPLog(@"processing bundle: %@",bundle );
 
 					foundInstalledBundles = YES;
 
@@ -1846,8 +1842,6 @@
 						if([cmdData objectForKey:SPBundleFileUUIDKey] && [(NSString *)[cmdData objectForKey:SPBundleFileUUIDKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileUUIDKey] forKey:SPBundleFileUUIDKey];
 
-						SPLog(@"UUID = %@", [cmdData objectForKey:SPBundleFileUUIDKey]);
-
 						BOOL __block alreadyAdded = NO;
 
 						// check UUID, only add if it's different
@@ -1861,7 +1855,6 @@
 						}];
 
 						if(alreadyAdded == NO){
-							SPLog(@"NEW UUID, add to menu bundle, name = %@",[cmdData objectForKey:SPBundleFileNameKey] );
 							[[bundleItems objectForKey:scope] addObject:aDict];
 						}
 					}
