@@ -248,7 +248,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowTimeStamps:(id)sender
 {
-	[[consoleTableView tableColumnWithIdentifier:SPTableViewDateColumnID] setHidden:[sender state]];
+	[[consoleTableView tableColumnWithIdentifier:SPTableViewDateColumnID] setHidden:[(NSMenuItem*)sender state]];
 }
 
 /**
@@ -256,7 +256,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowConnections:(id)sender
 {
-	[[consoleTableView tableColumnWithIdentifier:SPTableViewConnectionColumnID] setHidden:[sender state]];
+	[[consoleTableView tableColumnWithIdentifier:SPTableViewConnectionColumnID] setHidden:[(NSMenuItem*)sender state]];
 }
 
 /**
@@ -264,7 +264,7 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (IBAction)toggleShowDatabases:(id)sender
 {
-	[[consoleTableView tableColumnWithIdentifier:SPTableViewDatabaseColumnID] setHidden:[sender state]];
+	[[consoleTableView tableColumnWithIdentifier:SPTableViewDatabaseColumnID] setHidden:[(NSMenuItem*)sender state]];
 }
 
 /**
@@ -273,7 +273,7 @@ static SPQueryController *sharedQueryController = nil;
 - (IBAction)toggleShowSelectShowStatements:(id)sender
 {
 	// Store the state of the toggle for later quick reference
-	showSelectStatementsAreDisabled = [sender state];
+	showSelectStatementsAreDisabled = [(NSMenuItem*)sender state];
 
 	[self _updateFilterState];
 }
@@ -284,7 +284,7 @@ static SPQueryController *sharedQueryController = nil;
 - (IBAction)toggleShowHelpStatements:(id)sender
 {
 	// Store the state of the toggle for later quick reference
-	showHelpStatementsAreDisabled = [sender state];
+	showHelpStatementsAreDisabled = [(NSMenuItem*)sender state];
 
 	[self _updateFilterState];
 }
@@ -762,7 +762,7 @@ static SPQueryController *sharedQueryController = nil;
 {
 	// Register a new untiled document and return its URL
 	if (fileURL == nil) {
-		NSURL *newURL = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+		NSURL *newURL = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet]];
 		untitledDocumentCounter++;
 
 		if (![favoritesContainer safeObjectForKey:[newURL absoluteString]]) {
