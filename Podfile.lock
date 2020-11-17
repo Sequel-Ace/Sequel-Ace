@@ -45,7 +45,7 @@ PODS:
 DEPENDENCIES:
   - Firebase/Crashlytics
   - FirebaseCore
-  - FMDB (from `https://github.com/ccgus/fmdb.git`)
+  - FMDB (from `https://github.com/ccgus/fmdb.git`, tag `2.7.7`)
 
 SPEC REPOS:
   trunk:
@@ -62,11 +62,12 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   FMDB:
     :git: https://github.com/ccgus/fmdb.git
+    :tag: 2.7.7
 
 CHECKOUT OPTIONS:
   FMDB:
-    :commit: d718d113eb23b5fef74abe1495eb78d2f4d9884c
     :git: https://github.com/ccgus/fmdb.git
+    :tag: 2.7.7
 
 SPEC CHECKSUMS:
   Firebase: 78e8dd2e39d653de6270432ad84fe8b59f7bf4e8
@@ -80,6 +81,6 @@ SPEC CHECKSUMS:
   nanopb: 1bf24dd71191072e120b83dd02d08f3da0d65e53
   PromisesObjC: 8c196f5a328c2cba3e74624585467a557dcb482f
 
-PODFILE CHECKSUM: ebfc56f3a31c8b6290e2cc56462a00ea55389434
+PODFILE CHECKSUM: 5c8914336978615aa60855ec979ddf96b8c0e6b6
 
 COCOAPODS: 1.10.0

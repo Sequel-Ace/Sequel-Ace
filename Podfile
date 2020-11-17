@@ -22,7 +22,7 @@ target 'Sequel Ace' do
   # Pods for Sequel Ace
   pod 'FirebaseCore'
   pod 'Firebase/Crashlytics'
-  pod 'FMDB', :git => 'https://github.com/ccgus/fmdb.git'
+  pod 'FMDB', :git => 'https://github.com/ccgus/fmdb.git', :tag => '2.7.7' #2.7.7 is not published to the specs repo yet, only 2.7.5, so targeting the tag.
 end
 
 # target 'Sequel Ace QLGenerator' do
