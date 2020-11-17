@@ -456,6 +456,7 @@ NSString *SPBundleShellVariableSelectedTables               = @"SP_SELECTED_TABL
 NSString *SPBundleShellVariableSelectedText                 = @"SP_SELECTED_TEXT";
 NSString *SPBundleShellVariableSelectedTextRange            = @"SP_SELECTED_TEXT_RANGE";
 NSString *SPBundleShellVariableUsedQueryForTable            = @"SP_USED_QUERY_FOR_TABLE";
+NSString *SPMigratedQueriesFromPrefs            			= @"SPMigratedQueriesFromPrefs";
 
 #define OWS @"\\s*" /* optional whitespace */
 //                                                    CURRENT_TIMESTAMP    [            (           [n]          )    ]

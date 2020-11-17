@@ -298,9 +298,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	else if ([queryFavoritesButton indexOfSelectedItem] == 3) {
 
-		// init query favorites controller
-		[prefs synchronize];
-
 		favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
 
 		// Open query favorite manager
@@ -332,8 +329,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)chooseQueryHistory:(id)sender
 {
-	[prefs synchronize];
-
 	// Choose history item
 	if ([queryHistoryButton indexOfSelectedItem] > 6) {
 

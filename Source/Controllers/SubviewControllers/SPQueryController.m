@@ -30,11 +30,10 @@
 
 #import "SPQueryController.h"
 #import "SPConsoleMessage.h"
-#import "SPCustomQuery.h"
 #import "SPAppController.h"
-#import "sequel-ace-Swift.h"
 #import "SPFunctions.h"
 #import "pthread.h"
+#import "SPSQLiteHistoryController.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -59,13 +58,16 @@ static NSUInteger SPMessageTruncateCharacterLength = 256;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases;
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database;
 
+@property (readwrite, strong) SPSQLiteHistoryController *SQLiteHistoryController ;
+
+
 @end
 
 static SPQueryController *sharedQueryController = nil;
 
 @implementation SPQueryController
 
-@synthesize consoleFont;
+@synthesize consoleFont, SQLiteHistoryController;
 
 /**
  * Returns the shared query console.
@@ -108,6 +110,8 @@ static SPQueryController *sharedQueryController = nil;
 		completionKeywordList = nil;
 		completionFunctionList = nil;
 		functionArgumentSnippets = nil;
+		
+		SQLiteHistoryController = [SPSQLiteHistoryController sharedSQLiteHistoryController];
 		
 		pthread_mutex_init(&consoleLock, NULL);
 
@@ -758,67 +762,72 @@ static SPQueryController *sharedQueryController = nil;
 {
 	// Register a new untiled document and return its URL
 	if (fileURL == nil) {
-		NSURL *new = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+		NSURL *newURL = [NSURL URLWithString:[[NSString stringWithFormat:NSLocalizedString(@"Untitled %ld",@"Title of a new Sequel Ace Document"), (unsigned long)untitledDocumentCounter] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
 		untitledDocumentCounter++;
 
-		if (![favoritesContainer objectForKey:[new absoluteString]]) {
+		if (![favoritesContainer safeObjectForKey:[newURL absoluteString]]) {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
-			[favoritesContainer setObject:arr forKey:[new absoluteString]];
+			[favoritesContainer safeSetObject:arr forKey:[newURL absoluteString]];
 		}
 
 		// Set the global history coming from the Prefs as default if available
-		if (![historyContainer objectForKey:[new absoluteString]]) {
-			if ([prefs objectForKey:SPQueryHistory]) {
-				NSMutableArray *arr = [[NSMutableArray alloc] init];
-				[arr addObjectsFromArray:[prefs objectForKey:SPQueryHistory]];
-				[historyContainer setObject:arr forKey:[new absoluteString]];
+		if (![historyContainer safeObjectForKey:[newURL absoluteString]]) {
+			if(SQLiteHistoryController.migratedPrefsToDB == YES){
+				[historyContainer safeSetObject:SQLiteHistoryController.queryHist.allValues forKey:[newURL absoluteString]];
 			}
-			else {
-				[historyContainer setObject:[NSMutableArray array] forKey:[new absoluteString]];
+			else{
+				if ([prefs objectForKey:SPQueryHistory]) {
+					NSMutableArray *arr = [[NSMutableArray alloc] init];
+					[arr addObjectsFromArray:[prefs objectForKey:SPQueryHistory]];
+					[historyContainer safeSetObject:arr forKey:[newURL absoluteString]];
+				}
+				else {
+					[historyContainer safeSetObject:[NSMutableArray array] forKey:[newURL absoluteString]];
+				}
 			}
 		}
 
 		// Set the doc-based content filters
-		if (![contentFilterContainer objectForKey:[new absoluteString]]) {
-			[contentFilterContainer setObject:[NSMutableDictionary dictionary] forKey:[new absoluteString]];
+		if (![contentFilterContainer safeObjectForKey:[newURL absoluteString]]) {
+			[contentFilterContainer safeSetObject:[NSMutableDictionary dictionary] forKey:[newURL absoluteString]];
 		}
 
-		return new;
+		return newURL;
 	}
 
 	// Register a spf file to manage all query favorites and query history items
 	// file path based (incl. Untitled docs) in a dictionary whereby the key represents the file URL as string.
-	if (![favoritesContainer objectForKey:[fileURL absoluteString]]) {
-		if (contextInfo != nil && [contextInfo objectForKey:SPQueryFavorites] && [[contextInfo objectForKey:SPQueryFavorites] count]) {
+	if (![favoritesContainer safeObjectForKey:[fileURL absoluteString]]) {
+		if (contextInfo != nil && [contextInfo safeObjectForKey:SPQueryFavorites] && [[contextInfo safeObjectForKey:SPQueryFavorites] count]) {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
-			[arr addObjectsFromArray:[contextInfo objectForKey:SPQueryFavorites]];
-			[favoritesContainer setObject:arr forKey:[fileURL absoluteString]];
+			[arr addObjectsFromArray:[contextInfo safeObjectForKey:SPQueryFavorites]];
+			[favoritesContainer safeSetObject:arr forKey:[fileURL absoluteString]];
 		}
 		else {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
-			[favoritesContainer setObject:arr forKey:[fileURL absoluteString]];
+			[favoritesContainer safeSetObject:arr forKey:[fileURL absoluteString]];
 		}
 	}
 
-	if (![historyContainer objectForKey:[fileURL absoluteString]]) {
-		if (contextInfo != nil && [contextInfo objectForKey:SPQueryHistory] && [[contextInfo objectForKey:SPQueryHistory] count]) {
+	if (![historyContainer safeObjectForKey:[fileURL absoluteString]]) {
+		if (contextInfo != nil && [contextInfo safeObjectForKey:SPQueryHistory] && [[contextInfo safeObjectForKey:SPQueryHistory] count]) {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
 			[arr addObjectsFromArray:[contextInfo objectForKey:SPQueryHistory]];
-			[historyContainer setObject:arr forKey:[fileURL absoluteString]];
+			[historyContainer safeSetObject:arr forKey:[fileURL absoluteString]];
 		}
 		else {
 			NSMutableArray *arr = [[NSMutableArray alloc] init];
-			[historyContainer setObject:arr forKey:[fileURL absoluteString]];
+			[historyContainer safeSetObject:arr forKey:[fileURL absoluteString]];
 		}
 	}
 
-	if (![contentFilterContainer objectForKey:[fileURL absoluteString]]) {
-		if (contextInfo != nil && [contextInfo objectForKey:SPContentFilters]) {
-			[contentFilterContainer setObject:[contextInfo objectForKey:SPContentFilters] forKey:[fileURL absoluteString]];
+	if (![contentFilterContainer safeObjectForKey:[fileURL absoluteString]]) {
+		if (contextInfo != nil && [contextInfo safeObjectForKey:SPContentFilters]) {
+			[contentFilterContainer safeSetObject:[contextInfo safeObjectForKey:SPContentFilters] forKey:[fileURL absoluteString]];
 		}
 		else {
 			NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
-			[contentFilterContainer setObject:dict forKey:[fileURL absoluteString]];
+			[contentFilterContainer safeSetObject:dict forKey:[fileURL absoluteString]];
 		}
 	}
 
@@ -902,7 +911,14 @@ static SPQueryController *sharedQueryController = nil;
 
 	// User did choose to clear the global history list
 	if (![fileURL isFileURL] && ![historyArray count]) {
-		[prefs setObject:historyArray forKey:SPQueryHistory];
+		
+		if(SQLiteHistoryController.migratedPrefsToDB == YES){
+			[SQLiteHistoryController deleteQueryHistory];
+			[historyContainer setObject:@[] forKey:[fileURL absoluteString]]; // justt set array to empty
+		}
+		else{
+			[prefs setObject:historyArray forKey:SPQueryHistory];
+		}
 	}
 }
 
@@ -918,12 +934,12 @@ static SPQueryController *sharedQueryController = nil;
 	NSUInteger maxHistoryItems = [[prefs objectForKey:SPCustomQueryMaxHistoryItems] integerValue];
 
 	// Save each history item due to its document source
-	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
+	if ([historyContainer safeObjectForKey:[fileURL absoluteString]]) {
 
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
 
-		[uniquifier addItemsWithTitles:[historyContainer objectForKey:[fileURL absoluteString]]];
+		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:[fileURL absoluteString]]];
 		[uniquifier insertItemWithTitle:history atIndex:0];
 
 		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)
@@ -940,7 +956,12 @@ static SPQueryController *sharedQueryController = nil;
 
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
-		[uniquifier addItemsWithTitles:[prefs objectForKey:SPQueryHistory]];
+		if(SQLiteHistoryController.migratedPrefsToDB == YES){
+			[uniquifier addItemsWithTitles:SQLiteHistoryController.queryHist.allValues];
+		}
+		else{
+			[uniquifier addItemsWithTitles:[prefs objectForKey:SPQueryHistory]];
+		}
 		[uniquifier insertItemWithTitle:history atIndex:0];
 
 		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)
@@ -948,7 +969,12 @@ static SPQueryController *sharedQueryController = nil;
 			[uniquifier removeItemAtIndex:[uniquifier numberOfItems] - 1];
 		}
 
-		[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
+		if(SQLiteHistoryController.migratedPrefsToDB == YES){
+			[SQLiteHistoryController updateQueryHistory:[uniquifier itemTitles]];
+		}
+		else{
+			[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
+		}
 	}
 }
 
@@ -963,8 +989,8 @@ static SPQueryController *sharedQueryController = nil;
 
 - (NSMutableArray *)historyForFileURL:(NSURL *)fileURL
 {
-	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
-		return [historyContainer objectForKey:[fileURL absoluteString]];
+	if ([historyContainer safeObjectForKey:[fileURL absoluteString]]) {
+		return [historyContainer safeObjectForKey:[fileURL absoluteString]];
 	}
 
 	return [NSMutableArray array];
@@ -972,11 +998,11 @@ static SPQueryController *sharedQueryController = nil;
 
 - (NSArray *)historyMenuItemsForFileURL:(NSURL *)fileURL
 {
-	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
-		NSMutableArray *returnArray = [NSMutableArray arrayWithCapacity:[[historyContainer objectForKey:[fileURL absoluteString]] count]];
+	if ([historyContainer safeObjectForKey:[fileURL absoluteString]]) {
+		NSMutableArray *returnArray = [NSMutableArray arrayWithCapacity:[[historyContainer safeObjectForKey:[fileURL absoluteString]] count]];
 		NSMenuItem *historyMenuItem;
 
-		for (NSString* history in [historyContainer objectForKey:[fileURL absoluteString]])
+		for (NSString* history in [historyContainer safeObjectForKey:[fileURL absoluteString]])
 		{
 			historyMenuItem = [[NSMenuItem alloc] initWithTitle:([history length] > 64) ? [NSString stringWithFormat:@"%@…", [history substringToIndex:63]] : history
 														  action:NULL
@@ -1000,8 +1026,8 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (NSUInteger)numberOfHistoryItemsForFileURL:(NSURL *)fileURL
 {
-	if ([historyContainer objectForKey:[fileURL absoluteString]]) {
-		return [[historyContainer objectForKey:[fileURL absoluteString]] count];
+	if ([historyContainer safeObjectForKey:[fileURL absoluteString]]) {
+		return [[historyContainer safeObjectForKey:[fileURL absoluteString]] count];
 	}
 	else {
 		return 0;
@@ -1019,8 +1045,8 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (NSMutableDictionary *)contentFilterForFileURL:(NSURL *)fileURL
 {
-	if ([contentFilterContainer objectForKey:[fileURL absoluteString]]) {
-		return [contentFilterContainer objectForKey:[fileURL absoluteString]];
+	if ([contentFilterContainer safeObjectForKey:[fileURL absoluteString]]) {
+		return [contentFilterContainer safeObjectForKey:[fileURL absoluteString]];
 	}
 
 	return [NSMutableDictionary dictionary];
@@ -1089,6 +1115,8 @@ static SPQueryController *sharedQueryController = nil;
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	messagesVisibleSet = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
+	
+	[SQLiteHistoryController.queue close];
 
 	pthread_mutex_destroy(&consoleLock);
 }
