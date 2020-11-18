@@ -13,9 +13,9 @@ extension NumberFormatter {
 		let formatter = NumberFormatter()
 		formatter.numberStyle = .decimal
 		return formatter
-	}
+	}()
 
-	@objc static func withFormat(_ format: String) -> NumberFormatter {
+	@objc public static func formatter(_ format: String) -> NumberFormatter {
 		let formatter = NumberFormatter()
 		formatter.numberStyle = .decimal
 		formatter.format = format

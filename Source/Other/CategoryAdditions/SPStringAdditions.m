@@ -46,30 +46,30 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	double size = byteSize;
 		
 	if (size < 1023) {
-		return [[NSNumberFormatter withFormat:@"#,##0 B"] stringFromNumber:@(size)];
+		return [[NSNumberFormatter formatter:@"#,##0 B"] stringFromNumber:@(size)];
 	}
 	
 	size = (size / 1024);
 	
 	if (size < 1023) {
-		return [[NSNumberFormatter withFormat:@"#,##0.0 KiB"] stringFromNumber:@(size)];
+		return [[NSNumberFormatter formatter:@"#,##0.0 KiB"] stringFromNumber:@(size)];
 	}
 	
 	size = (size / 1024);
 	
 	if (size < 1023) {
-		return [[NSNumberFormatter withFormat:@"#,##0.0 MiB"] stringFromNumber:@(size)];
+		return [[NSNumberFormatter formatter:@"#,##0.0 MiB"] stringFromNumber:@(size)];
 	}
 	
 	size = (size / 1024);
 	
 	if (size < 1023) {
-		return [[NSNumberFormatter withFormat:@"#,##0.0 GiB"] stringFromNumber:@(size)];
+		return [[NSNumberFormatter formatter:@"#,##0.0 GiB"] stringFromNumber:@(size)];
 	}
 
 	size = (size / 1024);
 	
-	return [[NSNumberFormatter withFormat:@"#,##0.0 TiB"] stringFromNumber:@(size)];
+	return [[NSNumberFormatter formatter:@"#,##0.0 TiB"] stringFromNumber:@(size)];
 }
 
 /**
@@ -80,37 +80,37 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 
 	// For time periods of less than one millisecond, display a localised "< 0.1 ms"
 	if (timeInterval < 0.0001) {
-		return [[NSNumberFormatter withFormat:@"< #,##0.0 ms"] stringFromNumber:@(0.1)];	}
+		return [[NSNumberFormatter formatter:@"< #,##0.0 ms"] stringFromNumber:@(0.1)];	}
 
 	if (timeInterval < 0.1) {
 		timeInterval = (timeInterval * 1000);
-		return [[NSNumberFormatter withFormat:@"#,##0.0 ms"] stringFromNumber:@(timeInterval)];
+		return [[NSNumberFormatter formatter:@"#,##0.0 ms"] stringFromNumber:@(timeInterval)];
 	}
 	if (timeInterval < 1) {
 		timeInterval = (timeInterval * 1000);
-		return [[NSNumberFormatter withFormat:@"#,##0 ms"] stringFromNumber:@(timeInterval)];
+		return [[NSNumberFormatter formatter:@"#,##0 ms"] stringFromNumber:@(timeInterval)];
 	}
 	
 	if (timeInterval < 10) {
-		return [[NSNumberFormatter withFormat:@"#,##0.00 s"] stringFromNumber:@(timeInterval)];
+		return [[NSNumberFormatter formatter:@"#,##0.00 s"] stringFromNumber:@(timeInterval)];
 	}
 
 	if (timeInterval < 100) {
-		return [[NSNumberFormatter withFormat:@"#,##0.0 s"] stringFromNumber:@(timeInterval)];
+		return [[NSNumberFormatter formatter:@"#,##0.0 s"] stringFromNumber:@(timeInterval)];
 	}
 
 	if (timeInterval < 300) {
-		return [[NSNumberFormatter withFormat:@"#,##0 s"] stringFromNumber:@(timeInterval)];
+		return [[NSNumberFormatter formatter:@"#,##0 s"] stringFromNumber:@(timeInterval)];
 	}
 
 	if (timeInterval < 3600) {
 		timeInterval = (timeInterval / 60);
-		return [[NSNumberFormatter withFormat:@"#,##0 min"] stringFromNumber:@(timeInterval)];
+		return [[NSNumberFormatter formatter:@"#,##0 min"] stringFromNumber:@(timeInterval)];
 	}
 
 	timeInterval = (timeInterval / 3600);
 	
-	return [[NSNumberFormatter withFormat:@"#,##0 hours"] stringFromNumber:@(timeInterval)];
+	return [[NSNumberFormatter formatter:@"#,##0 hours"] stringFromNumber:@(timeInterval)];
 }
 
 /**
