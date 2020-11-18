@@ -33,7 +33,7 @@
 #import "SPAppController.h"
 #import "SPFunctions.h"
 #import "pthread.h"
-#import "SPSQLiteHistoryManager.h"
+//#import "SPSQLiteHistoryManager.h"
 #import <fmdb/FMDB.h>
 
 #import "sequel-ace-Swift.h"
@@ -59,7 +59,7 @@ static NSUInteger SPMessageTruncateCharacterLength = 256;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases;
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database;
 
-@property (readwrite, strong) SPSQLiteHistoryManager *SQLiteHistoryManager ;
+@property (readwrite, strong) SQLiteHistoryManager2 *SQLiteHistoryManager ;
 
 
 @end
@@ -112,7 +112,7 @@ static SPQueryController *sharedQueryController = nil;
 		completionFunctionList = nil;
 		functionArgumentSnippets = nil;
 		
-		SQLiteHistoryManager = [SPSQLiteHistoryManager sharedSQLiteHistoryManager];
+		SQLiteHistoryManager = SQLiteHistoryManager2.sharedInstance;
 		
 		pthread_mutex_init(&consoleLock, NULL);
 
@@ -971,7 +971,7 @@ static SPQueryController *sharedQueryController = nil;
 		}
 
 		if(SQLiteHistoryManager.migratedPrefsToDB == YES){
-			[SQLiteHistoryManager updateQueryHistory:[uniquifier itemTitles]];
+			[SQLiteHistoryManager updateQueryHistoryWithNewHist:[uniquifier itemTitles]];
 		}
 		else{
 			[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
