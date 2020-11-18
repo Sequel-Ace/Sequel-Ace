@@ -12,7 +12,9 @@
 				<string>spf</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>SPF.icns</string>
+			<string></string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Sequel Ace Connection</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -37,7 +39,9 @@
 				<string>spfs</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>SPF.icns</string>
+			<string></string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Sequel Ace Session</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -65,7 +69,9 @@
 				<string>spbundle</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>Generic.icns</string>
+			<string></string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Sequel Ace Bundle</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -93,7 +99,9 @@
 				<string>sptheme</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>Generic.icns</string>
+			<string></string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Sequel Ace Color Theme</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -118,7 +126,9 @@
 				<string>sql</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>SQL.icns</string>
+			<string></string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>SQL File</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -138,7 +148,9 @@
 				<string>mysql</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>SQL.icns</string>
+			<string></string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>MySQL File</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -206,44 +218,22 @@
 	<string>10.12</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
 		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>www.apple.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.3</string>
-				<key>NSRequiresCertificateTransparency</key>
-				<false/>
-			</dict>
 			<key>github.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.3</string>
-				<key>NSRequiresCertificateTransparency</key>
-				<false/>
-			</dict>
-			<key>www.w3.org</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
 				<key>NSIncludeSubdomains</key>
 				<true/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.3</string>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -251,10 +241,10 @@
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.3</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -262,10 +252,10 @@
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.2</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -273,10 +263,32 @@
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.2</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
+				<key>NSRequiresCertificateTransparency</key>
+				<false/>
+			</dict>
+			<key>www.apple.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.3</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
+				<key>NSRequiresCertificateTransparency</key>
+				<false/>
+			</dict>
+			<key>www.w3.org</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.3</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -327,12 +339,19 @@
 			<string>Sequel Ace Connection</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBackgroundName</key>
+				<string></string>
+				<key>UTTypeIconBadgeName</key>
+				<string>Document_icon</string>
+				<key>UTTypeIconText</key>
+				<string>SPF</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.sequel-ace.sequel-ace.spf</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.ostype</key>
-				<string>connection</string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>spf</string>
@@ -348,12 +367,17 @@
 			<string>Sequel Ace Session</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBadgeName</key>
+				<string>Document_icon</string>
+				<key>UTTypeIconText</key>
+				<string>SPFS</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.sequel-ace.sequel-ace.spfs</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.ostype</key>
-				<string>connections</string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>spfs</string>
@@ -369,12 +393,19 @@
 			<string>Sequel Ace Bundle</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBackgroundName</key>
+				<string></string>
+				<key>UTTypeIconBadgeName</key>
+				<string>Document_icon</string>
+				<key>UTTypeIconText</key>
+				<string>SPBUNDLE</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.sequel-ace.sequel-ace.spbundle</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.ostype</key>
-				<string>sequel Ace bundle</string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>spbundle</string>
@@ -391,12 +422,17 @@
 			<string>SQL File</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBadgeName</key>
+				<string>Document_icon</string>
+				<key>UTTypeIconText</key>
+				<string>SQL</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.sequel-ace.sequel-ace.sql</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.ostype</key>
-				<string>sql text</string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>sql</string>
@@ -412,12 +448,17 @@
 			<string>Sequel Ace Color Theme</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBadgeName</key>
+				<string>Document_icon</string>
+				<key>UTTypeIconText</key>
+				<string>SPTHEME</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.sequel-ace.sequel-ace.spTheme</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.ostype</key>
-				<string>theme</string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>spTheme</string>

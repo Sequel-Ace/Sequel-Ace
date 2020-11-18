@@ -359,10 +359,6 @@
 		58E205FC1234FE4F00A97059 /* KeyTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58E205FB1234FE4F00A97059 /* KeyTemplate.pdf */; };
 		58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58F48AA2161D03C6008536A1 /* quick-connect-icon.pdf */; };
 		58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58F48B2D161D08C0008536A1 /* quick-connect-icon-white.pdf */; };
-		58FEEF3D1676D14B009CD478 /* appIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF3C1676D14B009CD478 /* appIcon.icns */; };
-		58FEEF451676D160009CD478 /* Generic.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF421676D160009CD478 /* Generic.icns */; };
-		58FEEF461676D160009CD478 /* SPF.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF431676D160009CD478 /* SPF.icns */; };
-		58FEEF471676D160009CD478 /* SQL.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF441676D160009CD478 /* SQL.icns */; };
 		58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF16C0F23D66600518E8E /* SPSQLParser.m */; };
 		58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF57D0F3B4E9700518E8E /* SPTableData.m */; };
 		5F0D8BFCF803672E68C345C0 /* libPods-Sequel Ace.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2758841FDDA66578D812C45F /* libPods-Sequel Ace.a */; };
@@ -1091,10 +1087,6 @@
 		58E205FB1234FE4F00A97059 /* KeyTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = KeyTemplate.pdf; sourceTree = "<group>"; };
 		58F48AA2161D03C6008536A1 /* quick-connect-icon.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "quick-connect-icon.pdf"; sourceTree = "<group>"; };
 		58F48B2D161D08C0008536A1 /* quick-connect-icon-white.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "quick-connect-icon-white.pdf"; sourceTree = "<group>"; };
-		58FEEF3C1676D14B009CD478 /* appIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = appIcon.icns; sourceTree = "<group>"; };
-		58FEEF421676D160009CD478 /* Generic.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Generic.icns; sourceTree = "<group>"; };
-		58FEEF431676D160009CD478 /* SPF.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = SPF.icns; sourceTree = "<group>"; };
-		58FEEF441676D160009CD478 /* SQL.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = SQL.icns; sourceTree = "<group>"; };
 		58FEF16B0F23D66600518E8E /* SPSQLParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSQLParser.h; sourceTree = "<group>"; };
 		58FEF16C0F23D66600518E8E /* SPSQLParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPSQLParser.m; sourceTree = "<group>"; };
 		58FEF57C0F3B4E9700518E8E /* SPTableData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableData.h; sourceTree = "<group>"; };
@@ -1701,17 +1693,6 @@
 			path = TreeNodes;
 			sourceTree = "<group>";
 		};
-		17BFC80D10D3FF5200A3B112 /* Icons */ = {
-			isa = PBXGroup;
-			children = (
-				58FEEF3C1676D14B009CD478 /* appIcon.icns */,
-				58FEEF421676D160009CD478 /* Generic.icns */,
-				58FEEF431676D160009CD478 /* SPF.icns */,
-				58FEEF441676D160009CD478 /* SQL.icns */,
-			);
-			name = Icons;
-			sourceTree = "<group>";
-		};
 		17D3583C1533766800A654D7 /* Window */ = {
 			isa = PBXGroup;
 			children = (
@@ -2078,7 +2059,6 @@
 				17E6419D0EF02036001BC333 /* grabber-horizontal.png */,
 				17E6419E0EF02036001BC333 /* grabber-vertical.png */,
 				582E944B16837986003459FD /* hideconsole.png */,
-				17BFC80D10D3FF5200A3B112 /* Icons */,
 				5843DA68161FA35600EAA6D1 /* key-icon-alternate.png */,
 				5843DA69161FA35600EAA6D1 /* key-icon-alternate@2x.png */,
 				5843DA6A161FA35600EAA6D1 /* key-icon.png */,
@@ -3043,10 +3023,6 @@
 				C9AD7C7B1676158C00234EEE /* toolbar-switch-to-sql.png in Resources */,
 				C9AD7C7C1676158C00234EEE /* toolbar-switch-to-sql@2x.png in Resources */,
 				50D3C3491A75B8A800B5429C /* GotoDatabaseDialog.xib in Resources */,
-				58FEEF3D1676D14B009CD478 /* appIcon.icns in Resources */,
-				58FEEF451676D160009CD478 /* Generic.icns in Resources */,
-				58FEEF461676D160009CD478 /* SPF.icns in Resources */,
-				58FEEF471676D160009CD478 /* SQL.icns in Resources */,
 				8831EFB4224014C700D10172 /* button_clearTemplate.pdf in Resources */,
 				C9C994411678A439001F5DA8 /* button_bar_spacer.png in Resources */,
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
