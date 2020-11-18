@@ -8,6 +8,7 @@
 
 #import "SPSQLiteHistoryManager.h"
 #import "SPFunctions.h"
+#import <fmdb/FMDB.h>
 
 #define FMDBQuickCheck(SomeBool) { if ((SomeBool)) { NSLog(@"Failure on line %d", __LINE__); /*abort();*/ } }
 
@@ -123,8 +124,6 @@ static SPSQLiteHistoryManager *sharedSQLiteHistoryManager = nil;
 				if (idForExistingRow > 0){
 					
 					[self->queue inDatabase:^(FMDatabase *db) {
-						//db.traceExecution = YES;
-						
 						success = [db executeUpdate:@"UPDATE QueryHistory set modifiedTime = ? where id = ?", [NSDate date], @(idForExistingRow)];
 						
 						if (!success) {
@@ -133,7 +132,6 @@ static SPSQLiteHistoryManager *sharedSQLiteHistoryManager = nil;
 								SPLog(@"Err %d: %@", [db lastErrorCode], [db lastErrorMessage]);
 							}
 						}
-//						SPLog(@"UPDATED = %ld, %@", idForExistingRow, obj);
 						// no else - nothing to update on the queryHist array
 					}];
 				}
@@ -142,14 +140,11 @@ static SPSQLiteHistoryManager *sharedSQLiteHistoryManager = nil;
 					// we could check, but max 100 items ... probability of clash is low.
 					NSNumber *newKeyValue = [self primaryKeyValueForNewRow];
 					
-//					SPLog(@"newKeyValue: %@", newKeyValue);
-					
 					[self->queue inDatabase:^(FMDatabase *db) {
 						success = [db executeUpdate:@"INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", newKeyValue, obj, [NSDate date]];
 						
 						if (success) {
 							[self->queryHist safeSetObject:obj forKey:newKeyValue];
-//							SPLog(@"INSERTED = %@, %@", newKeyValue, obj);
 						}
 						else{
 							FMDBQuickCheck([db hadError]);
@@ -169,13 +164,13 @@ static SPSQLiteHistoryManager *sharedSQLiteHistoryManager = nil;
 			SPLog(@"query history updated");
 		}
 		
-		[self vac];
+		[self execSQLiteVacuum];
 		[self getDBsize];
 		[self->queue close];
 	});
 }
 
-- (void)vac{
+- (void)execSQLiteVacuum{
 	
 	executeOnBackgroundThread(^{
 		if(!self->queue){
@@ -211,7 +206,7 @@ static SPSQLiteHistoryManager *sharedSQLiteHistoryManager = nil;
 			}
 		}];
 		
-		[self vac];
+		[self execSQLiteVacuum];
 		[self getDBsize];
 		[self->queue close];
 	});

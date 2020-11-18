@@ -7,9 +7,11 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <fmdb/FMDB.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FMDatabase;
+@class FMDatabaseQueue;
 
 @interface SPSQLiteHistoryManager : NSObject
 
@@ -27,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (long)idForRowAlreadyInDB:(NSString*)query;
 - (void)reloadQueryHistory;
 - (void)getDBsize;
-- (void)vac;
+- (void)execSQLiteVacuum;
 
 @end
 

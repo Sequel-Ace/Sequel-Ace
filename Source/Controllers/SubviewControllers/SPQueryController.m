@@ -34,6 +34,7 @@
 #import "SPFunctions.h"
 #import "pthread.h"
 #import "SPSQLiteHistoryManager.h"
+#import <fmdb/FMDB.h>
 
 #import "sequel-ace-Swift.h"
 
