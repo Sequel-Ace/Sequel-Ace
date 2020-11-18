@@ -216,6 +216,7 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50EAB5B81A8FBB08008F627A /* SPOSInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EAB5B71A8FBB08008F627A /* SPOSInfo.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
+		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
@@ -904,6 +905,7 @@
 		50EAB5B61A8FBB08008F627A /* SPOSInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPOSInfo.h; sourceTree = "<group>"; };
 		50EAB5B71A8FBB08008F627A /* SPOSInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPOSInfo.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
+		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -1922,6 +1924,7 @@
 				17F90E2B1210B34900274C98 /* Credits.rtf */,
 				17CC993A10B4C9C80034CD7A /* License.rtf */,
 				583A278D23F06F1000FBE97B /* Colors.xcassets */,
+				51A709382565B99F001F1D2F /* Images.xcassets */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -3035,6 +3038,7 @@
 				C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */,
 				C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */,
 				C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */,
+				51A709392565B99F001F1D2F /* Images.xcassets in Resources */,
 				C9AD7C781676138000234EEE /* database-small@2x.png in Resources */,
 				C9AD7C7B1676158C00234EEE /* toolbar-switch-to-sql.png in Resources */,
 				C9AD7C7C1676158C00234EEE /* toolbar-switch-to-sql@2x.png in Resources */,
@@ -4061,6 +4065,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				APPLY_RULES_IN_COPY_HEADERS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -4465,6 +4470,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				APPLY_RULES_IN_COPY_HEADERS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -4675,6 +4681,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				APPLY_RULES_IN_COPY_HEADERS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -4745,6 +4752,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				APPLY_RULES_IN_COPY_HEADERS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
