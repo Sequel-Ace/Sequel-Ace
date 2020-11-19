@@ -14,25 +14,20 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 @objc final class SQLiteHistoryManager: NSObject {
     @objc static let sharedInstance = SQLiteHistoryManager()
 
-    @objc public var traceExecution: Bool
     @objc public var migratedPrefsToDB: Bool
-    @objc public var queryHist: [Int64: String]
+    @objc public var queryHist: [Int64: String] = [:]
     @objc public var queue: FMDatabaseQueue
+	private var traceExecution: Bool
     private let sqlitePath: String
-    private var dbSizeHumanReadable: String
-    private var dbSize: Double
-    private let prefs: UserDefaults
+    private var dbSizeHumanReadable: String = ""
+    private var dbSize: Double = 0
+    private let prefs: UserDefaults = UserDefaults.standard
     private let log: OSLog
 
     private var newSchemaVersion: Int32 = 0
 
     override private init() {
         log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "database")
-
-        queryHist = [:]
-        dbSize = 0
-        dbSizeHumanReadable = ""
-        prefs = UserDefaults.standard
 
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
@@ -45,9 +40,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
 		sqlitePath = tmpPath + "/" + "queryHistory2.db"
 
-        var isDirectory: ObjCBool = false
-
-        if !FileManager.default.fileExists(atPath: sqlitePath, isDirectory: &isDirectory) {
+        if !FileManager.default.fileExists(atPath: sqlitePath) {
             os_log("db doesn't exist, they can't have migrated", log: log, type: .info)
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
@@ -76,7 +69,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// creates the database schema
     /// can also be used to alter the schema
-    func setupQueryHistoryDatabase() {
+    private func setupQueryHistoryDatabase() {
         // this block creates the database, if needed
         // can also be used to modify schema
         let schemaBlock: SASchemaBuilder = { db, schemaVersion in
@@ -147,13 +140,13 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     os_log("db schema did not need an update", log: self.log, type: .info)
                 }
             } catch {
-                os_log("Something went wrong", log: self.log, type: .error)
+				os_log("Something went wrong. Error: %@", log: self.log, type: .error, error as CVarArg)
             }
         }
     }
 
     /// Loads the query history from the SQLite database.
-    func loadQueryHistory() {
+    private func loadQueryHistory() {
         os_log("loading Query History", log: log, type: .debug)
 
         queue.inDatabase { db in
@@ -173,14 +166,14 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     }
 
     /// Reloads the query history from the SQLite database.
-    func reloadQueryHistory() {
+    private func reloadQueryHistory() {
         os_log("reloading Query History", log: log, type: .debug)
         queryHist.removeAll()
         loadQueryHistory()
     }
 
     /// Gets the size of the SQLite database.
-    func getDBsize() {
+    private func getDBsize() {
         os_log("getDBsize", log: log, type: .debug)
 
         queue.inDatabase { db in
@@ -203,41 +196,43 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     }
 
     /// Migrates existing query history in the prefs plist to the SQLite db.
-    func migrateQueriesFromPrefs() {
-        if prefs.object(forKey: SPQueryHistory) != nil {
-            os_log("migrateQueriesFromPrefs", log: log, type: .debug)
+	private func migrateQueriesFromPrefs() {
+		guard prefs.object(forKey: SPQueryHistory) != nil  else {
+			os_log("no query history?", log: log, type: .error)
+			migratedPrefsToDB = false
+			prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
+			return
+		}
 
-			let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
+		os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-			for query in queryHistoryArray where !query.isEmpty {
-				os_log("query: %@", log: log, type: .debug, query)
+		let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
-				let newKeyValue = primaryKeyValueForNewRow()
+		for query in queryHistoryArray where !query.isEmpty {
+			os_log("query: %@", log: log, type: .debug, query)
 
-				queue.inDatabase { db in
-					db.traceExecution = traceExecution
-					do {
-						try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
-											 values: [newKeyValue, query, Date()])
-					} catch {
-						logDBError(db: db)
-					}
+			let newKeyValue = primaryKeyValueForNewRow
 
-					os_log("insert successful", log: self.log, type: .debug)
-					queryHist[newKeyValue] = query
+			queue.inDatabase { db in
+				db.traceExecution = traceExecution
+				do {
+					try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
+										 values: [newKeyValue, query, Date()])
+				} catch {
+					logDBError(db: db)
 				}
+
+				os_log("insert successful", log: self.log, type: .debug)
+				queryHist[newKeyValue] = query
 			}
-            // JCS note: at the moment I'm not deleting the queryHistory key from prefs
-            // in case something goes horribly wrong.
-            os_log("migrated prefs query hist to db", log: log, type: .info)
-            migratedPrefsToDB = true
-            prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
-        } else {
-            os_log("no query history?", log: log, type: .error)
-            migratedPrefsToDB = false
-            prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
-        }
-    }
+		}
+		// JCS note: at the moment I'm not deleting the queryHistory key from prefs
+		// in case something goes horribly wrong.
+		os_log("migrated prefs query hist to db", log: log, type: .info)
+		migratedPrefsToDB = true
+		prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
+
+	}
 
     /// Updates the history.
     /// - Parameters:
@@ -267,7 +262,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 			} else {
 				// if this is not unique then it's going to break
 				// we could check, but max 100 items ... probability of clash is low.
-				let newKeyValue = primaryKeyValueForNewRow()
+				let newKeyValue = primaryKeyValueForNewRow
 				os_log("INSERT QueryHistory", log: log, type: .debug)
 
 				queue.inDatabase { db in
@@ -308,7 +303,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Executes the vacuum command on the db
     /// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
-    func execSQLiteVacuum() {
+    private func execSQLiteVacuum() {
         os_log("execSQLiteVacuum", log: log, type: .debug)
 
         queue.inDatabase { db in
@@ -326,7 +321,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - Parameters:
     ///   - query: String - the query to search for
     /// - Returns: Int64 - the ID of the row
-    func idForQueryAlreadyInDB(query: String) -> Int64 {
+    private func idForQueryAlreadyInDB(query: String) -> Int64 {
         var idForExistingRow: Int64 = 0
 
         queue.inDatabase { db in
@@ -370,7 +365,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Creates a new random Int64 ID
     /// - Returns: Int64 - new ID for the row
-    func primaryKeyValueForNewRow() -> Int64 {
+	private var primaryKeyValueForNewRow : Int64 {
         return Int64.random(in: 0 ... 1_000_000_000_000_000_000)
     }
 }
