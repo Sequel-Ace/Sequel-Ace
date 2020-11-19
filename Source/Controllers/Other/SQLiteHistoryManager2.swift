@@ -14,8 +14,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 @objc final class SQLiteHistoryManager2: NSObject {
     @objc static let sharedInstance = SQLiteHistoryManager2()
 
+	@objc public var traceExecution: Bool
     @objc public var migratedPrefsToDB: Bool
-    @objc public var queryHist: [Double: String]
+    @objc public var queryHist: [Int64: String]
     @objc public var queue: FMDatabaseQueue
     private let sqlitePath: String
     private var dbSizeHumanReadable: String
@@ -34,14 +35,24 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         prefs = UserDefaults.standard
 
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
+		traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
 
         // error handle
         let tmpPath = try! FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
 
         sqlitePath = tmpPath + "/" + "queryHistory2.db"
 
-        queue = FMDatabaseQueue(path: sqlitePath)!
+		var isDirectory: ObjCBool = false
 
+		if !FileManager.default.fileExists(atPath: sqlitePath, isDirectory: &isDirectory) {
+			os_log("db doesn't exist, they can't have migrated", log: log, type: .info)
+			migratedPrefsToDB = false
+			prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
+		}
+		
+		// this creates the db file if it doesn't exist...
+        queue = FMDatabaseQueue(path: sqlitePath)!
+		
         os_log("sqlitePath = %@", log: log, type: .info, sqlitePath)
 
         let str = "Is SQLite compiled with it's thread safe options turned on? : " + String(FMDatabase.isSQLiteThreadSafe())
@@ -51,8 +62,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         os_log("sqliteLibVersion = %@", log: log, type: .info, FMDatabase.sqliteLibVersion())
 
         super.init()
-
-        //		os_log("primaryKeyValueForNewRow = %@", log: log, type: .info, self.primaryKeyValueForNewRow());
 
         setupQueryHistoryDatabase()
 
@@ -65,22 +74,13 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         getDBsize()
     }
 
+	/// creates the database schema
+	/// can also be used to alter the schema
     func setupQueryHistoryDatabase() {
-        var isDirectory: ObjCBool = false
-
-        //  this doesn't work...
-        if !FileManager.default.fileExists(atPath: sqlitePath, isDirectory: &isDirectory) {
-            os_log("db doesn't exist, they can't have migrated", log: log, type: .info)
-            migratedPrefsToDB = false
-            prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
-        }
 
         // this block creates the database, if needed
         // can also be used to modify schema
         let schemaBlock: SASchemaBuilder = { db, schemaVersion in
-
-//            db.traceExecution = true
-            //			db.crashOnErrors = true
 
             db.beginTransaction()
 
@@ -151,7 +151,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             }
         }
     }
-
+	
+	
+	/// Loads the query history from the SQLite database.
     func loadQueryHistory() {
         os_log("loading Query History", log: log, type: .debug)
 
@@ -160,49 +162,57 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                 let rs = try db.executeQuery("SELECT id, query FROM QueryHistory order by createdTime", values: nil)
 
                 while rs.next() {
-                    queryHist[rs.double(forColumn: "id")] = rs.string(forColumn: "query")
-                    //					rs.string(forColumn: "query")
-                    //					rs.double(forColumn: "id")
+                    queryHist[rs.longLongInt(forColumn: "id")] = rs.string(forColumn: "query")
                 }
                 rs.close()
             } catch {
                 logDBError(db: db)
             }
         }
+		queue.close()
     }
-
+	
+	/// Reloads the query history from the SQLite database.
     func reloadQueryHistory() {
-        os_log("reloading Query History", log: log, type: .debug)
-        queryHist.removeAll()
-        loadQueryHistory()
+		
+		DispatchQueue.global(qos: .background).async { [self] in
+			os_log("reloading Query History", log: log, type: .debug)
+			queryHist.removeAll()
+			loadQueryHistory()
+		}
     }
 
-    func getDBsize() {
-        os_log("getDBsize", log: log, type: .debug)
+	/// Gets the size of the SQLite database.
+	func getDBsize() {
+		
+		DispatchQueue.global(qos: .background).async { [self] in
+			os_log("getDBsize", log: log, type: .debug)
+			
+			queue.inDatabase { db in
+				do {
+					let rs = try db.executeQuery("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()", values: nil)
+					
+					while rs.next() {
+						dbSize = rs.double(forColumn: "size")
+						dbSizeHumanReadable = ByteCountFormatter.string(fromByteCount: Int64(dbSize), countStyle: .file)
+					}
+					rs.close()
+				} catch {
+					logDBError(db: db)
+				}
+			}
+			queue.close()
+			os_log("JIMMY db size = %@", log: log, type: .debug, NSNumber(value: dbSize))
+			os_log("JIMMY db size2 = %@", log: log, type: .debug, dbSizeHumanReadable)
+			
+		}
+	}
 
-        queue.inDatabase { db in
-            do {
-                let rs = try db.executeQuery("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()", values: nil)
-
-                while rs.next() {
-                    dbSize = rs.double(forColumn: "size")
-                    dbSizeHumanReadable = ByteCountFormatter.string(fromByteCount: Int64(dbSize), countStyle: .file)
-                }
-                rs.close()
-            } catch {
-                logDBError(db: db)
-            }
-        }
-
-        os_log("JIMMY db size = %@", log: log, type: .debug, NSNumber(value: dbSize))
-        os_log("JIMMY db size2 = %@", log: log, type: .debug, dbSizeHumanReadable)
-    }
-
+	/// Migrates existing query history in the prefs plist to the SQLite db.
     func migrateQueriesFromPrefs() {
         if prefs.object(forKey: SPQueryHistory) != nil {
             os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-            //			let queryHistoryArray = Array( arrayLiteral: prefs.object(forKey: SPQueryHistory))
             let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
             for query in queryHistoryArray {
@@ -219,102 +229,141 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                         }
 
                         os_log("insert successful", log: self.log, type: .debug)
-                        queryHist[Double(truncating: newKeyValue)] = query
+						queryHist[newKeyValue] = query
                     }
                 }
             }
             // JCS note: at the moment I'm not deleting the queryHistory key from prefs
             // in case something goes horribly wrong.
-            os_log("migrated prefs query hist to db", log: log, type: .info)
-            migratedPrefsToDB = true
-            prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
-        } else {
-            os_log("no query history?", log: log, type: .error)
-            migratedPrefsToDB = false
-            prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
-        }
+			os_log("migrated prefs query hist to db", log: log, type: .info)
+			migratedPrefsToDB = true
+			prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
+		} else {
+			os_log("no query history?", log: log, type: .error)
+			migratedPrefsToDB = false
+			prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
+		}
+	}
+	
+	/// Updates the history.
+	/// - Parameters:
+	///   - newHist: Array of Strings - the Strings being the new history to update
+	/// - Returns: Nothing
+	@objc func updateQueryHistory(newHist: [String]) {
+		
+		DispatchQueue.global(qos: .background).async { [self] in
+			os_log("updateQueryHistory", log: log, type: .debug)
+			
+			for query in newHist {
+				if query.count > 0 {
+					let idForExistingRow = idForQueryAlreadyInDB(query: query)
+					
+					// not sure we need this
+					// if it's already in the db, do we need to know the modified time?
+					// could just skip
+					if idForExistingRow > 0 {
+						os_log("updateQueryHistory", log: log, type: .debug)
+						queue.inDatabase { db in
+							do {
+								let str = String(format: "UPDATE QueryHistory set modifiedTime = '%@' where id = %i", Date() as CVarArg, idForExistingRow)
+								os_log("query: %@", log: log, type: .info, str)
+								try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
+							} catch {
+								logDBError(db: db)
+							}
+						}
+					} else {
+						// if this is not unique then it's going to break
+						// we could check, but max 100 items ... probability of clash is low.
+						let newKeyValue = primaryKeyValueForNewRow()
+						os_log("INSERT QueryHistory", log: log, type: .debug)
+						
+						queue.inDatabase { db in
+							do {
+								try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", values: [newKeyValue, query, Date()])
+							} catch {
+								logDBError(db: db)
+							}
+						}
+						queryHist[newKeyValue] = query
+					}
+				}
+			}
+			execSQLiteVacuum()
+			getDBsize()
+			queue.close()
+		}
     }
 
-    @objc func updateQueryHistory(newHist: [String]) {
-        os_log("updateQueryHistory", log: log, type: .debug)
+	/// Deletes all query history from the db
+	@objc func deleteQueryHistory() {
+		
+		DispatchQueue.global(qos: .background).async { [self] in
 
-        for query in newHist {
-            if query.count > 0 {
-                let idForExistingRow = idForQueryAlreadyInDB(query: query)
+			os_log("deleteQueryHistory", log: log, type: .debug)
+			queue.inDatabase { db in
+				do {
+					try db.executeUpdate("DELETE FROM QueryHistory", values: nil)
+				} catch {
+					logDBError(db: db)
+				}
+			}
+			
+			queryHist.removeAll()
+			execSQLiteVacuum()
+			getDBsize()
+			queue.close()
+		}
+	}
 
-                if idForExistingRow > 0 {
-                    queue.inDatabase { db in
-                        do {
-                            try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), NSNumber(value: idForExistingRow)])
-                        } catch {
-                            logDBError(db: db)
-                        }
-                    }
-                } else {
-                    // if this is not unique then it's going to break
-                    // we could check, but max 100 items ... probability of clash is low.
-                    let newKeyValue = primaryKeyValueForNewRow()
-
-                    queue.inDatabase { db in
-                        do {
-                            try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", values: [newKeyValue, query, Date()])
-                        } catch {
-                            logDBError(db: db)
-                        }
-                    }
-                    queryHist[Double(truncating: newKeyValue)] = query
-                }
-            }
-        }
-    }
-
-    @objc func deleteQueryHistory() {
-        os_log("deleteQueryHistory", log: log, type: .debug)
-        queue.inDatabase { db in
-            do {
-                try db.executeUpdate("DELETE FROM QueryHistory", values: nil)
-            } catch {
-                logDBError(db: db)
-            }
-        }
-
-        queryHist.removeAll()
-        execSQLiteVacuum()
-        getDBsize()
-    }
-
+	/// Executes the vacuum command on the db
+	/// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
     func execSQLiteVacuum() {
-        os_log("execSQLiteVacuum", log: log, type: .debug)
+		
+		DispatchQueue.global(qos: .background).async { [self] in
+			
+			os_log("execSQLiteVacuum", log: log, type: .debug)
+			
+			queue.inDatabase { db in
+				do {
+					try db.executeUpdate("vacuum", values: nil)
+				} catch {
+					logDBError(db: db)
+				}
+			}
+			queue.close()
+		}
+	}
 
-        queue.inDatabase { db in
-            do {
-                try db.executeUpdate("vacuum", values: nil)
-            } catch {
-                logDBError(db: db)
-            }
-        }
-    }
+	/// Looks up an ID for a query .. probably not fast....
+	/// - Parameters:
+	///   - query: String - the query to search for
+	/// - Returns: Int64 - the ID of the row
+    func idForQueryAlreadyInDB(query: String) -> Int64 {
 
-    func idForQueryAlreadyInDB(query: String) -> Double {
-        os_log("idForQueryAlreadyInDB", log: log, type: .debug)
-
-        var idForExistingRow: Double = 0
+        var idForExistingRow: Int64 = 0
 
         queue.inDatabase { db in
             do {
                 let rs = try db.executeQuery("SELECT id FROM QueryHistory where query = ?", values: [query])
                 while rs.next() {
-                    idForExistingRow = rs.double(forColumn: "id")
+                    idForExistingRow = rs.longLongInt(forColumn: "id")
                 }
                 rs.close()
             } catch {
                 logDBError(db: db)
             }
         }
+		queue.close()
 
         return idForExistingRow
     }
 
+	/// Handles db fails
+	/// - Parameters:
+	///   - statement: Int - the command that failed
+	///   - db: FMDatabase - the FMDatabase instance
+	/// - Returns: nothing, should crash
     func failedAt(statement: Int, db: FMDatabase) {
         let lastErrorCode = db.lastErrorCode()
         let lastErrorMessage = db.lastErrorMessage()
@@ -322,13 +371,19 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         assert(0 != 0, "Migration statement \(statement) failed, code \(lastErrorCode): \(lastErrorMessage)")
     }
 
+	/// Logs db errors
+	/// - Parameters:
+	///   - db: FMDatabase - the FMDatabase instance
+	/// - Returns: nothing
     func logDBError(db: FMDatabase) {
         let lastErrorCode = db.lastErrorCode()
         let lastErrorMessage = db.lastErrorMessage()
         os_log("Query failed, code %@:%@", log: log, type: .error, lastErrorCode, lastErrorMessage)
     }
 
-    func primaryKeyValueForNewRow() -> NSNumber {
-        return NSNumber(value: Int64.random(in: 0 ... 1_000_000_000_000_000_000))
+	/// Creates a new random Int64 ID
+	/// - Returns: Int64 - new ID for the row
+    func primaryKeyValueForNewRow() -> Int64 {
+        return Int64.random(in: 0 ... 1_000_000_000_000_000_000)
     }
 }
