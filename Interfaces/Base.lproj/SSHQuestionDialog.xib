@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -22,7 +22,7 @@
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="301" width="620" height="209"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
             <view key="contentView" id="368">
                 <rect key="frame" x="0.0" y="0.0" width="620" height="209"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -51,7 +51,7 @@
                     <imageView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="462">
                         <rect key="frame" x="20" y="115" width="75" height="74"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="appIcon" id="463"/>
+                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="AppIconImage" id="463"/>
                     </imageView>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="460">
                         <rect key="frame" x="414" y="12" width="96" height="32"/>
@@ -84,7 +84,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="301" width="471" height="209"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
             <view key="contentView" id="469">
                 <rect key="frame" x="0.0" y="0.0" width="471" height="209"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -116,7 +116,7 @@ DQ
                     <imageView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="472">
                         <rect key="frame" x="20" y="115" width="75" height="74"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="appIcon" id="477"/>
+                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="AppIconImage" id="477"/>
                     </imageView>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="470">
                         <rect key="frame" x="265" y="12" width="96" height="32"/>
@@ -182,7 +182,7 @@ Gw
         </window>
     </objects>
     <resources>
-        <image name="appIcon" width="512" height="512"/>
+        <image name="AppIconImage" width="256" height="256"/>
         <image name="toolbar-preferences-network" width="32" height="32"/>
     </resources>
 </document>

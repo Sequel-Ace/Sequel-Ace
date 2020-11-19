@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097.3" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097.3"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -22,7 +22,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="428" y="316" width="600" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1792" height="1097"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
             <value key="minSize" type="size" width="213" height="107"/>
             <view key="contentView" id="15">
                 <rect key="frame" x="0.0" y="0.0" width="600" height="320"/>
@@ -64,7 +64,7 @@
                         </textFieldCell>
                     </textField>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="16">
-                        <rect key="frame" x="24" y="51" width="162" height="32"/>
+                        <rect key="frame" x="23" y="52" width="164" height="32"/>
                         <constraints>
                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="150" id="8ny-qN-gUR"/>
                         </constraints>
@@ -82,7 +82,7 @@
                             <constraint firstAttribute="width" constant="150" id="Il9-Lu-1nr"/>
                             <constraint firstAttribute="height" constant="150" id="c98-eY-t62"/>
                         </constraints>
-                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="appIcon" id="36"/>
+                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="AppIconImage" id="36"/>
                     </imageView>
                     <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="43">
                         <rect key="frame" x="8" y="91" width="194" height="14"/>
@@ -119,7 +119,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="197" y="142" width="500" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1792" height="1097"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
             <value key="minSize" type="size" width="500" height="400"/>
             <value key="maxSize" type="size" width="500" height="400"/>
             <view key="contentView" id="8">
@@ -127,17 +127,17 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <scrollView horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="10">
-                        <rect key="frame" x="20" y="61" width="460" height="319"/>
+                        <rect key="frame" x="20" y="60" width="460" height="320"/>
                         <clipView key="contentView" drawsBackground="NO" id="1cm-5U-29V">
-                            <rect key="frame" x="1" y="1" width="458" height="317"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <rect key="frame" x="1" y="1" width="458" height="318"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" id="13">
-                                    <rect key="frame" x="0.0" y="0.0" width="458" height="317"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="458" height="318"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    <size key="minSize" width="458" height="317"/>
+                                    <size key="minSize" width="458" height="318"/>
                                     <size key="maxSize" width="941" height="10000000"/>
                                     <color key="insertionPointColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                 </textView>
@@ -148,12 +148,12 @@
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" controlSize="small" horizontal="NO" id="12">
-                            <rect key="frame" x="445" y="1" width="14" height="317"/>
+                            <rect key="frame" x="445" y="1" width="14" height="318"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                     </scrollView>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9">
-                        <rect key="frame" x="373" y="13" width="112" height="32"/>
+                        <rect key="frame" x="372" y="13" width="114" height="32"/>
                         <constraints>
                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="100" id="VWh-9D-bYy"/>
                         </constraints>
@@ -183,6 +183,6 @@ DQ
         </window>
     </objects>
     <resources>
-        <image name="appIcon" width="512" height="512"/>
+        <image name="AppIconImage" width="256" height="256"/>
     </resources>
 </document>
