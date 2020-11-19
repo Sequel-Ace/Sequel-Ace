@@ -467,15 +467,10 @@
 
 - (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate
 {
-	NSDateFormatter *dateFormatter = NSDateFormatter.mediumStyleFormatter;
-
-	[dateFormatter setDateStyle:NSDateFormatterShortStyle];
-	[dateFormatter setTimeStyle:NSDateFormatterNoStyle];
-
 	// Convert our string date from the result to an NSDate
 	NSDate *updateDate = [NSDate dateWithNaturalLanguageString:mysqlDate];
 
-	return [dateFormatter stringFromDate:updateDate];
+	return [NSDateFormatter.shortStyleNoTimeFormatter stringFromDate:updateDate];
 }
 
 #pragma mark -
