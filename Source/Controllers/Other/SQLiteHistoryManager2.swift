@@ -37,10 +37,13 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
 
+		var tmpPath: String = ""
         // error handle
-        let tmpPath = try! FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
+		do {
+			tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
+		} catch {}
 
-        sqlitePath = tmpPath + "/" + "queryHistory2.db"
+		sqlitePath = tmpPath + "/" + "queryHistory2.db"
 
         var isDirectory: ObjCBool = false
 
@@ -204,27 +207,26 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         if prefs.object(forKey: SPQueryHistory) != nil {
             os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-            let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
+			let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
-            for query in queryHistoryArray {
-                if query.count > 0 {
-                    os_log("query: %@", log: log, type: .debug, query)
+			for query in queryHistoryArray where !query.isEmpty {
+				os_log("query: %@", log: log, type: .debug, query)
 
-                    let newKeyValue = primaryKeyValueForNewRow()
+				let newKeyValue = primaryKeyValueForNewRow()
 
-                    queue.inDatabase { db in
-                        db.traceExecution = traceExecution
-                        do {
-                            try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", values: [newKeyValue, query, Date()])
-                        } catch {
-                            logDBError(db: db)
-                        }
+				queue.inDatabase { db in
+					db.traceExecution = traceExecution
+					do {
+						try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
+											 values: [newKeyValue, query, Date()])
+					} catch {
+						logDBError(db: db)
+					}
 
-                        os_log("insert successful", log: self.log, type: .debug)
-                        queryHist[newKeyValue] = query
-                    }
-                }
-            }
+					os_log("insert successful", log: self.log, type: .debug)
+					queryHist[newKeyValue] = query
+				}
+			}
             // JCS note: at the moment I'm not deleting the queryHistory key from prefs
             // in case something goes horribly wrong.
             os_log("migrated prefs query hist to db", log: log, type: .info)
@@ -240,47 +242,47 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Updates the history.
     /// - Parameters:
     ///   - newHist: Array of Strings - the Strings being the new history to update
-    /// - Returns: Nothing
-    @objc func updateQueryHistory(newHist: [String]) {
-        os_log("updateQueryHistory", log: log, type: .debug)
+	/// - Returns: Nothing
+	@objc func updateQueryHistory(newHist: [String]) {
+		os_log("updateQueryHistory", log: log, type: .debug)
 
-        for query in newHist {
-            if query.count > 0 {
-                let idForExistingRow = idForQueryAlreadyInDB(query: query)
+		for query in newHist where !query.isEmpty {
+			let idForExistingRow = idForQueryAlreadyInDB(query: query)
 
-                // not sure we need this
-                // if it's already in the db, do we need to know the modified time?
-                // could just skip
-                if idForExistingRow > 0 {
-                    os_log("updateQueryHistory", log: log, type: .debug)
-                    queue.inDatabase { db in
-                        db.traceExecution = traceExecution
-                        do {
-                            let str = String(format: "UPDATE QueryHistory set modifiedTime = '%@' where id = %i", Date() as CVarArg, idForExistingRow)
-                            os_log("query: %@", log: log, type: .info, str)
-                            try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
-                        } catch {
-                            logDBError(db: db)
-                        }
-                    }
-                } else {
-                    // if this is not unique then it's going to break
-                    // we could check, but max 100 items ... probability of clash is low.
-                    let newKeyValue = primaryKeyValueForNewRow()
-                    os_log("INSERT QueryHistory", log: log, type: .debug)
+			// not sure we need this
+			// if it's already in the db, do we need to know the modified time?
+			// could just skip
+			if idForExistingRow > 0 {
+				os_log("updateQueryHistory", log: log, type: .debug)
+				queue.inDatabase { db in
+					db.traceExecution = traceExecution
+					do {
+						let str = String(format: "UPDATE QueryHistory set modifiedTime = '%@' where id = %i", Date() as CVarArg, idForExistingRow)
+						os_log("query: %@", log: log, type: .info, str)
+						try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
+					} catch {
+						logDBError(db: db)
+					}
+				}
+			} else {
+				// if this is not unique then it's going to break
+				// we could check, but max 100 items ... probability of clash is low.
+				let newKeyValue = primaryKeyValueForNewRow()
+				os_log("INSERT QueryHistory", log: log, type: .debug)
 
-                    queue.inDatabase { db in
-                        db.traceExecution = traceExecution
-                        do {
-                            try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)", values: [newKeyValue, query, Date()])
-                        } catch {
-                            logDBError(db: db)
-                        }
-                    }
-                    queryHist[newKeyValue] = query
-                }
-            }
-        }
+				queue.inDatabase { db in
+					db.traceExecution = traceExecution
+					do {
+						try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
+											 values: [newKeyValue, query, Date()])
+					} catch {
+						logDBError(db: db)
+					}
+				}
+				queryHist[newKeyValue] = query
+			}
+
+		}
         execSQLiteVacuum()
         getDBsize()
         queue.close()

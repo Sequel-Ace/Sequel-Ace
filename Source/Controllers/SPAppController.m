@@ -52,7 +52,6 @@
 #import "SPOSInfo.h"
 #import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
-#import "SPSQLiteHistoryManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -205,9 +204,7 @@
 	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
 #endif
 	
-	// init SQLite query history
-//	SPSQLiteHistoryManager __unused *con = [SPSQLiteHistoryManager sharedSQLiteHistoryManager];
-	
+	// init SQLite query history	
 	SQLiteHistoryManager2 __unused *con2 = SQLiteHistoryManager2.sharedInstance;
 
 	

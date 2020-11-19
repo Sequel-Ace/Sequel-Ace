@@ -33,7 +33,6 @@
 #import "SPAppController.h"
 #import "SPFunctions.h"
 #import "pthread.h"
-//#import "SPSQLiteHistoryManager.h"
 #import <fmdb/FMDB.h>
 
 #import "sequel-ace-Swift.h"
@@ -915,7 +914,7 @@ static SPQueryController *sharedQueryController = nil;
 		
 		if(SQLiteHistoryManager.migratedPrefsToDB == YES){
 			[SQLiteHistoryManager deleteQueryHistory];
-			[historyContainer setObject:@[] forKey:[fileURL absoluteString]]; // justt set array to empty
+			[historyContainer setObject:@[] forKey:[fileURL absoluteString]]; // just set array to empty
 		}
 		else{
 			[prefs setObject:historyArray forKey:SPQueryHistory];
