@@ -656,6 +656,7 @@ typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 };
 
 extern NSString *SPMigratedQueriesFromPrefs;
+extern NSString *SPTraceSQLiteExecutions;
 
 // URL scheme
 extern NSString *SPURLSchemeQueryInputPathHeader;
