@@ -610,9 +610,7 @@ static SPQueryController *sharedQueryController = nil;
 	[loggingDisabledTextField setStringValue:([prefs boolForKey:SPConsoleEnableLogging]) ? @"" : NSLocalizedString(@"Query logging is currently disabled", @"query logging disabled label")];
 
 	// Setup data formatter
-	dateFormatter = NSDateFormatter.mediumStyleFormatter;
-
-	[dateFormatter setDateStyle:NSDateFormatterNoStyle];
+	dateFormatter = NSDateFormatter.mediumStyleNoDateFormatter;
 
 	// Set the process table view's vertical gridlines if required
 	[consoleTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];

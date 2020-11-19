@@ -710,8 +710,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		NSCharacterSet *whitespaceAndNewlineSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
 		[tableDocumentInstance setQueryMode:SPCustomQueryQueryMode];
 
+		NSNotificationCenter *defaultNC = [NSNotificationCenter defaultCenter];
+		
 		// Notify listeners that a query has started
-		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
+		[defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
 		// Reset the current table view as necessary to avoid redraw and reload issues.
 		// Restore the view position to the top left to be within the results for all datasets.
@@ -985,12 +987,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 
+		NSUserNotificationCenter *defaultUNC = [NSUserNotificationCenter defaultUserNotificationCenter];
+		
 		// If no results were returned, redraw the empty table and post notifications before returning.
 		if ( ![resultData count] ) {
 			[customQueryView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
 
 			// Notify any listeners that the query has completed
-			[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+			[defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
 			// Perform the notification for query completion
 			NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -998,7 +1002,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"%@",@"description for query finished notification"), [[errorText onMainThread] string]];
 			notification.soundName = NSUserNotificationDefaultSoundName;
 
-			[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+			[defaultUNC deliverNotification:notification];
 
 			// Set up the callback if present
 			if ([taskArguments objectForKey:@"callback"]) {
@@ -1020,7 +1024,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		}
 
 		//query finished
-		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+		[defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
 		// Query finished notification
 		NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -1028,7 +1032,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"%@",@"description for query finished notification"), [[errorText onMainThread] string]];
 		notification.soundName = NSUserNotificationDefaultSoundName;
 
-		[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+		[defaultUNC deliverNotification:notification];
 
 		// Set up the callback if present
 		if ([taskArguments objectForKey:@"callback"]) {

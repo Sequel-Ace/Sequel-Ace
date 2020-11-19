@@ -52,6 +52,7 @@
 #import "SPOSInfo.h"
 #import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -73,6 +74,8 @@
 
 @synthesize lastBundleBlobFilesDirectory;
 @synthesize fileManager;
+@synthesize alreadyBeeped;
+@synthesize badBundles;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -99,6 +102,9 @@
 
 		fileManager = [NSFileManager defaultManager];
 		
+		alreadyBeeped = [[NSMutableDictionary alloc] init];
+		badBundles = [[NSMutableArray alloc] init];
+
 		//Create runtime directiories
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
@@ -317,11 +323,13 @@
 	[panel setResolvesAliases:YES];
 
 	// If no lastSqlFileEncoding in prefs set it to UTF-8
-	if (![[NSUserDefaults standardUserDefaults] integerForKey:SPLastSQLFileEncoding]) {
-		[[NSUserDefaults standardUserDefaults] setInteger:4 forKey:SPLastSQLFileEncoding];
+	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+	
+	if (![prefs integerForKey:SPLastSQLFileEncoding]) {
+		[prefs setInteger:4 forKey:SPLastSQLFileEncoding];
 	}
 
-	[panel setAccessoryView:[SPEncodingPopupAccessory encodingAccessory:[[NSUserDefaults standardUserDefaults] integerForKey:SPLastSQLFileEncoding]
+	[panel setAccessoryView:[SPEncodingPopupAccessory encodingAccessory:[prefs integerForKey:SPLastSQLFileEncoding]
 			includeDefaultEntry:NO encodingPopUp:&encodingPopUp]];
 
 	// it will enabled if user selects a *.sql file
@@ -393,7 +401,7 @@
 		}
 		else {
 			NSBeep();
-			NSLog(@"Only files with the extensions ‘%@’, ‘%@’, ‘%@’ or ‘%@’ are allowed.", SPFileExtensionDefault, SPBundleFileExtension, SPColorThemeFileExtension, SPFileExtensionSQL);
+			SPLog(@"Only files with the extensions ‘%@’, ‘%@’, ‘%@’ or ‘%@’ are allowed.", SPFileExtensionDefault, SPBundleFileExtension, SPColorThemeFileExtension, SPFileExtensionSQL);
 		}
 	}
 }
@@ -603,7 +611,7 @@
 
 				}
 				else {
-					NSLog(@"Bundle file “%@” does not exists", fileName);
+					SPLog(@"Bundle file “%@” does not exists", fileName);
 					NSBeep();
 				}
 			}
@@ -661,7 +669,7 @@
 	if (![fileManager fileExistsAtPath:bundlePath isDirectory:nil]) {
 		if (![fileManager createDirectoryAtPath:bundlePath withIntermediateDirectories:YES attributes:nil error:nil]) {
 			NSBeep();
-			NSLog(@"Couldn't create folder “%@”", bundlePath);
+			SPLog(@"Couldn't create folder “%@”", bundlePath);
 			return;
 		}
 	}
@@ -683,8 +691,14 @@
 		}
 
 		if (!cmdData || error) {
-			NSLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error);
+			NSLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
+			if(![alreadyBeeped objectForKey:filePath]){
 			NSBeep();
+				[alreadyBeeped setObject:@YES forKey:filePath];
+			}
+			else{
+				SPLog(@"already beeped for %@", filePath);
+			}
 			return;
 		}
 	}
@@ -720,7 +734,7 @@
 	if (![fileManager fileExistsAtPath:newPath isDirectory:nil]) {
 		if (![fileManager moveItemAtPath:filePath toPath:newPath error:nil]) {
 			NSBeep();
-			NSLog(@"Couldn't move “%@” to “%@”", filePath, newPath);
+			SPLog(@"Couldn't move “%@” to “%@”", filePath, newPath);
 			return;
 		}
 
@@ -764,7 +778,7 @@
 	}
 	else {
 		NSBeep();
-		NSLog(@"Error in sequelace URL scheme for URL <%@>",url);
+		SPLog(@"Error in sequelace URL scheme for URL <%@>",url);
 	}
 }
 
@@ -989,12 +1003,12 @@
 	}
 
 	if(processDocument)
-		NSLog(@"process doc ID: %@\n%@", [processDocument processID], [processDocument tabTitleForTooltip]);
+		SPLog(@"process doc ID: %@\n%@", [processDocument processID], [processDocument tabTitleForTooltip]);
 	else
-		NSLog(@"No corresponding doc found");
-	NSLog(@"param: %@", parameter);
-	NSLog(@"command: %@", command);
-	NSLog(@"command id: %@", passedProcessID);
+		SPLog(@"No corresponding doc found");
+	SPLog(@"param: %@", parameter);
+	SPLog(@"command: %@", command);
+	SPLog(@"command id: %@", passedProcessID);
 
 }
 
@@ -1086,7 +1100,7 @@
 	}
 
 	if(!infoPath) {
-		NSLog(@"No path to Bundle command passed");
+		SPLog(@"No path to Bundle command passed");
 		NSBeep();
 		return;
 	}
@@ -1105,7 +1119,7 @@
 		}
 
 		if(!cmdData || error) {
-			NSLog(@"“%@” file couldn't be read. (error=%@)", infoPath, error);
+			SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, error);
 			NSBeep();
 			return;
 		}
@@ -1581,12 +1595,14 @@
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
 
+			SPLog(@"processing path: %@",bundlePath );
+
 			NSError *error = nil;
 			NSArray *foundBundles = [fileManager contentsOfDirectoryAtPath:bundlePath error:&error];
-			if (foundBundles && [foundBundles count] && error == nil) {
+			if (foundBundles && foundBundles.count && error == nil) {
 
 				for(NSString* bundle in foundBundles) {
-					if(![[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtension lowercaseString]]) continue;
+					if(![bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtension.lowercaseString]) continue;
 
 					foundInstalledBundles = YES;
 
@@ -1605,9 +1621,18 @@
 						}
 
 						if(!cmdData || readError) {
-							NSLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError);
+							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							if(![alreadyBeeped objectForKey:bundle]){
 							NSBeep();
+								[alreadyBeeped setObject:@YES forKey:bundle];
 							continue;
+							}
+							else{
+								SPLog(@"already beeped for %@", bundle);
+							}
+							
+							// remove the dodgy bundle
+							[self removeBundle:bundle];
 						}
 					}
 
@@ -1658,7 +1683,7 @@
 											}
 
 											if(!cmdDataOld || readError) {
-												NSLog(@"“%@” file couldn't be read. (error=%@)", oldBundlePath, readError);
+												SPLog(@"“%@” file couldn't be read. (error=%@)", oldBundlePath, readError.localizedDescription);
 //												NSBeep();
 //												continue;
 											}
@@ -1673,7 +1698,7 @@
 											// Duplicate Bundle, change the UUID and rename the menu label
 											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtension length] - 1)], (long)(random() % 35000), SPUserBundleFileExtension];
 											if(![fileManager copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
-												NSLog(@"Couldn't copy “%@” to update it", bundle);
+												SPLog(@"Couldn't copy “%@” to update it", bundle);
 												NSBeep();
 												continue;
 											}
@@ -1696,7 +1721,7 @@
 												}
 
 												if (![dupData count] || readError) {
-													NSLog(@"“%@” file couldn't be read. (error=%@)", duplicatedBundleCommand, readError);
+													SPLog(@"“%@” file couldn't be read. (error=%@)", duplicatedBundleCommand, readError.localizedDescription);
 													NSBeep();
 													continue;
 												}
@@ -1721,7 +1746,7 @@
 											SPLog(@"default bundle not modified, delete and ....");
 											// If no modifications are done simply remove the old one
 											if(![fileManager removeItemAtPath:oldBundle error:nil] && ![fileManager removeItemAtPath:oldBundlePath error:nil]) {
-												NSLog(@"Couldn't remove “%@” to update it", bundle);
+												SPLog(@"Couldn't remove “%@” to update it", bundle);
 												NSBeep();
 												continue;
 											}
@@ -1741,7 +1766,7 @@
 									[fileManager copyItemAtPath:orgPath toPath:newPath error:&error];
 									if(error != nil) {
 										NSBeep();
-										NSLog(@"Default Bundle “%@” couldn't be copied to '%@'", bundle, newInfoPath);
+										SPLog(@"Default Bundle “%@” couldn't be copied to '%@'", bundle, newInfoPath);
 										continue;
 									}
 									infoPath = [NSString stringWithString:newInfoPath];
@@ -1759,7 +1784,7 @@
 									infoPath, @"path", nil] forKey:[cmdData objectForKey:SPBundleFileUUIDKey]];
 
 						} else {
-							NSLog(@"No UUID for %@", bundle);
+							SPLog(@"No UUID for %@", bundle);
 							NSBeep();
 							continue;
 						}
@@ -1828,6 +1853,7 @@
 
 							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
 						}
+
 
 						if([cmdData objectForKey:SPBundleFileTooltipKey] && [(NSString *)[cmdData objectForKey:SPBundleFileTooltipKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileTooltipKey] forKey:SPBundleFileTooltipKey];
@@ -1979,6 +2005,32 @@
 		k++;
 	}
 
+}
+
+- (void)removeBundle:(NSString*)bundle{
+	
+	NSString *bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder error:nil];
+	
+	NSString *thePath = [NSString stringWithFormat:@"%@/%@", bundlePath, bundle];
+	
+	SPLog(@"the path %@", thePath);
+	
+	if(![fileManager fileExistsAtPath:thePath isDirectory:nil]) {
+		SPLog(@"file does not exist %@", thePath);
+		return;
+	}
+
+	NSError *error = nil;
+
+	[fileManager removeItemAtPath:thePath error:&error];
+
+	if(error != nil) {
+		SPLog(@"file could not be deleted: %@", thePath);
+		return;
+	}
+
+	SPLog(@"file was deleted: %@", thePath);
+	[badBundles addObject:bundle];
 }
 
 /**
