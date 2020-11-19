@@ -101,7 +101,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     try db.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS query_idx ON QueryHistory (query)", values: nil)
                 } catch {
                     db.rollback()
-                    self.failed(error)
+                    self.failed(error: error)
                 }
 
                 self.newSchemaVersion = Int32(schemaVersion + 1)
@@ -347,7 +347,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - Parameters:
 	///   - error: the thrown Error
     /// - Returns: nothing, should crash
-    func failed(_ error: Error) {
+    func failed(error: Error) {
         Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
         assert(0 != 0, "Migration failed: \(error.localizedDescription)")
     }

@@ -67,9 +67,6 @@
 - (void)openUserBundleAtPath:(NSString *)filePath;
 
 @property (readwrite, strong) NSFileManager *fileManager;
-@property (readwrite, strong) SQLiteHistoryManager *sqliteHistoryManager;
-;
-
 
 @end
 
@@ -79,7 +76,6 @@
 @synthesize fileManager;
 @synthesize alreadyBeeped;
 @synthesize badBundles;
-@synthesize sqliteHistoryManager;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -215,7 +211,7 @@
 #endif
 	
 	// init SQLite query history	
-	sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
+	SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
 
 	NSDictionary *spfDict = nil;
 	NSArray *args = [[NSProcessInfo processInfo] arguments];
@@ -2194,7 +2190,7 @@
 {
 	BOOL shouldSaveFavorites = NO;
 
-	[sqliteHistoryManager execSQLiteVacuum];
+	[SQLiteHistoryManager.sharedInstance execSQLiteVacuum];
 	
 	if (lastBundleBlobFilesDirectory != nil) {
 		[fileManager removeItemAtPath:lastBundleBlobFilesDirectory error:nil];
