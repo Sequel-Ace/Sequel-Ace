@@ -8,6 +8,7 @@
 
 import Foundation
 import os.log
+import Firebase
 
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
@@ -100,7 +101,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     try db.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS query_idx ON QueryHistory (query)", values: nil)
                 } catch {
                     db.rollback()
-                    self.failedAt(error)
+                    self.failed(error)
                 }
 
                 self.newSchemaVersion = Int32(schemaVersion + 1)
@@ -304,7 +305,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Executes the vacuum command on the db
     /// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
-    private func execSQLiteVacuum() {
+	@objc func execSQLiteVacuum() {
         os_log("execSQLiteVacuum", log: log, type: .debug)
 
         queue.inDatabase { db in
@@ -344,10 +345,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Handles db fails
     /// - Parameters:
-    ///   - statement: Int - the command that failed
-    ///   - db: FMDatabase - the FMDatabase instance
+	///   - error: the thrown Error
     /// - Returns: nothing, should crash
-    func failedAt(_ error: Error) {
+    func failed(_ error: Error) {
         Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
         assert(0 != 0, "Migration failed: \(error.localizedDescription)")
     }
