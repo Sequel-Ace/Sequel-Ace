@@ -315,11 +315,11 @@ DQ
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5156">
-                                                                                    <rect key="frame" x="22" y="165" width="377" height="346"/>
+                                                                                    <rect key="frame" x="22" y="137" width="377" height="376"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5188">
-                                                                                            <rect key="frame" x="7" y="103" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="131" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Port:" id="5189">
                                                                                                 <font key="font" metaFont="system"/>
@@ -328,7 +328,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the MySQL server.  The default MySQL port is 3306" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5187">
-                                                                                            <rect key="frame" x="110" y="101" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="129" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="3306" drawsBackground="YES" usesSingleLineMode="YES" id="5190">
                                                                                                 <font key="font" metaFont="system"/>
@@ -346,7 +346,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5184">
-                                                                                            <rect key="frame" x="7" y="137" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="165" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Database:" id="5185">
                                                                                                 <font key="font" metaFont="system"/>
@@ -355,7 +355,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Optionally enter a database to select after successfully connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5183">
-                                                                                            <rect key="frame" x="110" y="135" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="163" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5186">
                                                                                                 <font key="font" metaFont="system"/>
@@ -373,7 +373,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5180">
-                                                                                            <rect key="frame" x="7" y="171" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="199" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Password:" id="5181">
                                                                                                 <font key="font" metaFont="system"/>
@@ -382,7 +382,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5179" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="110" y="169" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="197" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5182">
                                                                                                 <font key="font" metaFont="system"/>
@@ -399,7 +399,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5176">
-                                                                                            <rect key="frame" x="7" y="205" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="233" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Username:" id="5177">
                                                                                                 <font key="font" metaFont="system"/>
@@ -408,7 +408,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the MySQL username to connect with" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5175">
-                                                                                            <rect key="frame" x="110" y="203" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="231" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5178">
                                                                                                 <font key="font" metaFont="system"/>
@@ -426,7 +426,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5377">
-                                                                                            <rect key="frame" x="7" y="299" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="327" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Name:" id="5378">
                                                                                                 <font key="font" metaFont="system"/>
@@ -435,7 +435,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5376">
-                                                                                            <rect key="frame" x="110" y="297" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="325" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5379">
                                                                                                 <font key="font" metaFont="system"/>
@@ -453,7 +453,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5173">
-                                                                                            <rect key="frame" x="7" y="239" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="267" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Host:" id="5174">
                                                                                                 <font key="font" metaFont="system"/>
@@ -462,7 +462,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the hostname of the MySQL server you want to connect to.  Enter 127.0.0.1 to connect to a server on this computer" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5171">
-                                                                                            <rect key="frame" x="110" y="237" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="265" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5172">
                                                                                                 <font key="font" metaFont="system"/>
@@ -480,14 +480,14 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5894" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="110" y="267" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="295" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <connections>
                                                                                                 <outlet property="delegate" destination="-2" id="5900"/>
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qjy-56-fjI">
-                                                                                            <rect key="frame" x="7" y="69" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="97" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="htb-Ht-iA8">
                                                                                                 <font key="font" metaFont="system"/>
@@ -496,7 +496,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JYc-99-MtL">
-                                                                                            <rect key="frame" x="108" y="64" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="92" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="MXg-Pz-0Nh">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -508,7 +508,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oIH-sM-vBJ">
-                                                                                            <rect key="frame" x="108" y="36" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="64" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Ot7-jd-TIL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -517,6 +517,25 @@ DQ
                                                                                             <connections>
                                                                                                 <action selector="allowLocalDataInfileChanged:" target="-2" id="Eth-Xl-lgv"/>
                                                                                                 <binding destination="-2" name="value" keyPath="allowDataLocalInfile" id="jk7-hb-Saf">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2k2-ul-dtp">
+                                                                                            <rect key="frame" x="108" y="37" width="251" height="18"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mSn-DP-BWp">
+                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="updateClearTextPlugin:" target="-2" id="f3x-0d-TpI"/>
+                                                                                                <binding destination="-2" name="value" keyPath="enableClearTextPlugin" id="TSv-Nq-ohb">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
                                                                                                         <integer key="NSNoSelectionPlaceholder" value="0"/>
@@ -548,7 +567,7 @@ DQ
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5595">
-                                                                                    <rect key="frame" x="22" y="62" width="377" height="104"/>
+                                                                                    <rect key="frame" x="22" y="34" width="377" height="104"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <button toolTip="Click to choose the SSL private key file to use when establishing a secure connection." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5600">
@@ -708,11 +727,11 @@ DQ
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5162">
-                                                                                    <rect key="frame" x="22" y="197" width="377" height="314"/>
+                                                                                    <rect key="frame" x="22" y="169" width="377" height="342"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5386">
-                                                                                            <rect key="frame" x="7" y="267" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="295" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Name:" id="5387">
                                                                                                 <font key="font" metaFont="system"/>
@@ -721,7 +740,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5385">
-                                                                                            <rect key="frame" x="110" y="265" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="293" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5388">
                                                                                                 <font key="font" metaFont="system"/>
@@ -739,7 +758,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5219">
-                                                                                            <rect key="frame" x="7" y="105" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="133" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Socket:" id="5220">
                                                                                                 <font key="font" metaFont="system"/>
@@ -748,7 +767,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the path to the socket file to use when connecting to MySQL.  Leave this field blank to use the default socket location" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5218">
-                                                                                            <rect key="frame" x="110" y="103" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="131" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5221">
                                                                                                 <font key="font" metaFont="system"/>
@@ -766,7 +785,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5217">
-                                                                                            <rect key="frame" x="7" y="139" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="167" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Database:" id="5222">
                                                                                                 <font key="font" metaFont="system"/>
@@ -775,7 +794,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Optionally enter a database to select after successfully connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5216">
-                                                                                            <rect key="frame" x="110" y="137" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="165" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5223">
                                                                                                 <font key="font" metaFont="system"/>
@@ -793,7 +812,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5215">
-                                                                                            <rect key="frame" x="7" y="173" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="201" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Password:" id="5224">
                                                                                                 <font key="font" metaFont="system"/>
@@ -802,7 +821,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5214" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="110" y="171" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="199" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5225">
                                                                                                 <font key="font" metaFont="system"/>
@@ -819,7 +838,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5213">
-                                                                                            <rect key="frame" x="7" y="207" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="235" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Username:" id="5226">
                                                                                                 <font key="font" metaFont="system"/>
@@ -828,7 +847,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the MySQL username to connect with" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5212">
-                                                                                            <rect key="frame" x="110" y="205" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="233" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5227">
                                                                                                 <font key="font" metaFont="system"/>
@@ -846,14 +865,14 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5896" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="110" y="235" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="263" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <connections>
                                                                                                 <outlet property="delegate" destination="-2" id="5901"/>
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zQi-oD-96m">
-                                                                                            <rect key="frame" x="7" y="71" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="oq0-5L-7Ai">
                                                                                                 <font key="font" metaFont="system"/>
@@ -862,7 +881,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jLB-fx-dGx">
-                                                                                            <rect key="frame" x="108" y="66" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="bmK-iD-Bdh">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -874,7 +893,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="UTU-OQ-h6m">
-                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="6E5-jx-aGT">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -883,6 +902,25 @@ DQ
                                                                                             <connections>
                                                                                                 <action selector="allowLocalDataInfileChanged:" target="-2" id="AOg-eK-20m"/>
                                                                                                 <binding destination="-2" name="value" keyPath="allowDataLocalInfile" id="P7M-Db-xqP">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="f6I-gs-bxP">
+                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="ls3-qw-kiN">
+                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="updateClearTextPlugin:" target="-2" id="uXa-7C-RDw"/>
+                                                                                                <binding destination="-2" name="value" keyPath="enableClearTextPlugin" id="17G-p6-JcU">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
                                                                                                         <integer key="NSNoSelectionPlaceholder" value="0"/>
@@ -914,7 +952,7 @@ DQ
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5688">
-                                                                                    <rect key="frame" x="22" y="94" width="377" height="104"/>
+                                                                                    <rect key="frame" x="22" y="66" width="377" height="104"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <button toolTip="Click to choose the SSL private key file to use when establishing a secure connection." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5695">
@@ -1074,11 +1112,11 @@ DQ
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5166">
-                                                                                    <rect key="frame" x="22" y="14" width="377" height="497"/>
+                                                                                    <rect key="frame" x="22" y="-14" width="377" height="525"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5523">
-                                                                                            <rect key="frame" x="110" y="102" width="219" height="22"/>
+                                                                                            <rect key="frame" x="110" y="130" width="219" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" lineBreakMode="truncatingHead" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5524">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1104,7 +1142,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5525">
-                                                                                            <rect key="frame" x="7" y="104" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="132" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Key:" id="5526">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1124,7 +1162,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5404">
-                                                                                            <rect key="frame" x="7" y="450" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="478" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Name:" id="5405">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1133,7 +1171,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5403">
-                                                                                            <rect key="frame" x="110" y="448" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="476" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5406">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1151,7 +1189,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5291">
-                                                                                            <rect key="frame" x="7" y="70" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="98" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Port:" id="5292">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1160,7 +1198,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the SSH server.  The default SSH port is 22" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5290">
-                                                                                            <rect key="frame" x="110" y="68" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="96" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5293">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1178,7 +1216,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5289">
-                                                                                            <rect key="frame" x="7" y="104" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="132" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Password:" id="5294">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1197,7 +1235,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the SSH server." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5288" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="110" y="102" width="219" height="22"/>
+                                                                                            <rect key="frame" x="110" y="130" width="219" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5295">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1215,7 +1253,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5287">
-                                                                                            <rect key="frame" x="7" y="138" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="166" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH User:" id="5296">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1224,7 +1262,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the SSH username to connect with" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5286">
-                                                                                            <rect key="frame" x="110" y="136" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="164" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5297">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1241,7 +1279,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5285">
-                                                                                            <rect key="frame" x="10" y="172" width="95" height="17"/>
+                                                                                            <rect key="frame" x="10" y="200" width="95" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Host:" id="5298">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1250,7 +1288,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the hostname of the SSH server to tunnel via when connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5284">
-                                                                                            <rect key="frame" x="110" y="170" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="198" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5299">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1267,7 +1305,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5273">
-                                                                                            <rect key="frame" x="10" y="254" width="95" height="17"/>
+                                                                                            <rect key="frame" x="10" y="282" width="95" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Port:" id="5274">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1276,7 +1314,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the MySQL server.  The default MySQL port is 3306" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5272">
-                                                                                            <rect key="frame" x="110" y="252" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="280" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="3306" drawsBackground="YES" usesSingleLineMode="YES" id="5275">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1294,7 +1332,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5271">
-                                                                                            <rect key="frame" x="7" y="288" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="316" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Database:" id="5276">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1303,7 +1341,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Optionally enter a database to select after successfully connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5270">
-                                                                                            <rect key="frame" x="110" y="286" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="314" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5277">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1321,7 +1359,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5269">
-                                                                                            <rect key="frame" x="7" y="322" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="350" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Password:" id="5278">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1330,7 +1368,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5268" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="110" y="320" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="348" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5279">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1347,7 +1385,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5267">
-                                                                                            <rect key="frame" x="7" y="356" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="384" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Username:" id="5280">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1356,7 +1394,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the MySQL username to connect with" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5266">
-                                                                                            <rect key="frame" x="110" y="354" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="382" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5281">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1374,7 +1412,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5265">
-                                                                                            <rect key="frame" x="7" y="390" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="418" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="MySQL Host:" id="5282">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1383,7 +1421,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5264">
-                                                                                            <rect key="frame" x="110" y="388" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="416" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <string key="toolTip">Enter the hostname of the MySQL server you want to connect to.  Enter 127.0.0.1 to connect to a server running on the machine you are tunnelling to</string>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5283">
@@ -1401,7 +1439,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5898" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="110" y="418" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="446" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <connections>
                                                                                                 <outlet property="delegate" destination="-2" id="5902"/>
@@ -1427,7 +1465,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pI7-sy-bsp">
-                                                                                            <rect key="frame" x="7" y="220" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="248" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="UEC-JC-iN3">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1436,7 +1474,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5DJ-XN-oYd">
-                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="FJo-A3-GTr">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1454,8 +1492,27 @@ DQ
                                                                                                 </binding>
                                                                                             </connections>
                                                                                         </button>
+                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9zy-Sk-eFd">
+                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Dcr-B7-c20">
+                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="updateClearTextPlugin:" target="-2" id="j6g-5U-p1O"/>
+                                                                                                <binding destination="-2" name="value" keyPath="enableClearTextPlugin" id="THS-Fx-kCH">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XXN-zL-2iW">
-                                                                                            <rect key="frame" x="108" y="215" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="243" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="gcf-uF-VQA">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1467,7 +1524,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button toolTip="Click to choose the SSH key file to use with this connection.  Standard locations like ~/.ssh are NOT checked automatically." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5492">
-                                                                                            <rect key="frame" x="328" y="101" width="29" height="24"/>
+                                                                                            <rect key="frame" x="328" y="129" width="29" height="24"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="key-icon" imagePosition="overlaps" alignment="center" alternateImage="key-icon-alternate" borderStyle="border" inset="2" id="5493">
                                                                                                 <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
@@ -1488,7 +1545,7 @@ DQ
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9t3-JG-c1l">
-                                                                                    <rect key="frame" x="22" y="-89" width="377" height="104"/>
+                                                                                    <rect key="frame" x="22" y="-117" width="377" height="104"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <button toolTip="Click to choose the SSL private key file to use when establishing a secure connection." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vPP-gd-c4a">

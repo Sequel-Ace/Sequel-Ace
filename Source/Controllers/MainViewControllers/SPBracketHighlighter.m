@@ -49,7 +49,11 @@
 	self.textView = textView;
 	self.pos1 = NSNotFound;
 	self.pos2 = NSNotFound;
-	self.highlightColor = [NSColor systemTealColor];
+	if (@available(macOS 10.12, *)) {
+		self.highlightColor = [NSColor systemTealColor];
+	} else {
+		self.highlightColor = [NSColor systemYellowColor];
+	}
 	self.enabled = YES;
 	return self;
 }

@@ -70,6 +70,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 @synthesize useSocket;
 @synthesize socketPath;
 @synthesize allowDataLocalInfile;
+@synthesize enableClearTextPlugin;
 @synthesize useSSL;
 @synthesize sslKeyFilePath;
 @synthesize sslCertificatePath;
@@ -608,6 +609,11 @@ asm(".desc ___crashreporter_info__, 0x10");
     if(allowDataLocalInfile) {
         mysql_options(theConnection, MYSQL_OPT_LOCAL_INFILE, [@"On" UTF8String]);
     }
+    
+	// Allow using ENABLE CLEARTEXT PLUGIN; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/368
+	if (enableClearTextPlugin) {
+		mysql_options(theConnection, MYSQL_ENABLE_CLEARTEXT_PLUGIN, [@"On" UTF8String]);
+	}
 
 	// Set up the connection variables in the format MySQL needs, from the class-wide variables
 	const char *theHost = NULL;
