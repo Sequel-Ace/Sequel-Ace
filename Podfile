@@ -82,6 +82,11 @@ post_install do |installer_representation|
       else
         config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
       end
+      
+      if target.name == "FMDB"
+        config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)', '-Wno-unguarded-availability']
+      end
+      
     end
   end
     
