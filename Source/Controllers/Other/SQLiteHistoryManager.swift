@@ -17,7 +17,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     @objc public var migratedPrefsToDB: Bool
     @objc public var queryHist: [Int64: String] = [:]
     @objc public var queue: FMDatabaseQueue
-	private var traceExecution: Bool
+    private var traceExecution: Bool
     private let sqlitePath: String
     private var dbSizeHumanReadable: String = ""
     private var dbSize: Double = 0
@@ -32,22 +32,22 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
 
-		var tmpPath: String = ""
+        var tmpPath: String = ""
         // error handle
-		do {
-			tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
-		} catch {
-			os_log("Could not get path to applicationSupportDirectory. Error: %@", log: self.log, type: .error, error as CVarArg)
-			Crashlytics.crashlytics().log("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
-			migratedPrefsToDB = false
-			prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
-			sqlitePath = ""
-			queue = FMDatabaseQueue(path: sqlitePath)!
-			super.init()
-			return
-		}
+        do {
+            tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
+        } catch {
+            os_log("Could not get path to applicationSupportDirectory. Error: %@", log: self.log, type: .error, error as CVarArg)
+            Crashlytics.crashlytics().log("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
+            migratedPrefsToDB = false
+            prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
+            sqlitePath = ""
+            queue = FMDatabaseQueue(path: sqlitePath)!
+            super.init()
+            return
+        }
 
-		sqlitePath = tmpPath + "/" + "queryHistory.db"
+        sqlitePath = tmpPath + "/" + "queryHistory.db"
 
         if !FileManager.default.fileExists(atPath: sqlitePath) {
             os_log("db doesn't exist, they can't have migrated", log: log, type: .info)
@@ -56,8 +56,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
 
         // this creates the db file if it doesn't exist...
-		// aborts here though if queue is nil?
-		queue = FMDatabaseQueue(path: sqlitePath)!
+        // aborts here though if queue is nil?
+        queue = FMDatabaseQueue(path: sqlitePath)!
 
         os_log("sqlitePath = %@", log: log, type: .info, sqlitePath)
         let str = "Is SQLite compiled with it's thread safe options turned on? : " + String(FMDatabase.isSQLiteThreadSafe())
@@ -99,8 +99,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     try db.executeUpdate(createTableSQL, values: nil)
                     try db.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS query_idx ON QueryHistory (query)", values: nil)
                 } catch {
-					db.rollback()
-					self.failedAt(error)
+                    db.rollback()
+                    self.failedAt(error)
                 }
 
                 self.newSchemaVersion = Int32(schemaVersion + 1)
@@ -114,7 +114,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             /*
              if schemaVersion < 3 {
              do {
-             	try db.executeUpdate("ALTER TABLE QueryHistory ADD COLUMN lastModified INTEGER NULL", values: nil)
+                try db.executeUpdate("ALTER TABLE QueryHistory ADD COLUMN lastModified INTEGER NULL", values: nil)
              }
              self.newSchemaVersion = Int32(schemaVersion + 1)
               }
@@ -147,8 +147,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     os_log("db schema did not need an update", log: self.log, type: .info)
                 }
             } catch {
-				Crashlytics.crashlytics().log("Something went wrong: \(error.localizedDescription)")
-				os_log("Something went wrong. Error: %@", log: self.log, type: .error, error as CVarArg)
+                Crashlytics.crashlytics().log("Something went wrong: \(error.localizedDescription)")
+                os_log("Something went wrong. Error: %@", log: self.log, type: .error, error as CVarArg)
             }
         }
     }
@@ -191,7 +191,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
                 while rs.next() {
                     dbSize = rs.double(forColumn: "size")
-					dbSizeHumanReadable = ByteCountFormatter.string(fromByteCount: Int64(dbSize), countStyle: .file)
+                    dbSizeHumanReadable = ByteCountFormatter.string(fromByteCount: Int64(dbSize), countStyle: .file)
                 }
                 rs.close()
             } catch {
@@ -204,82 +204,82 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     }
 
     /// Migrates existing query history in the prefs plist to the SQLite db.
-	private func migrateQueriesFromPrefs() {
-		guard prefs.object(forKey: SPQueryHistory) != nil  else {
-			os_log("no query history?", log: log, type: .error)
-			migratedPrefsToDB = false
-			prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
-			return
-		}
+    private func migrateQueriesFromPrefs() {
+        guard prefs.object(forKey: SPQueryHistory) != nil  else {
+            os_log("no query history?", log: log, type: .error)
+            migratedPrefsToDB = false
+            prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
+            return
+        }
 
-		os_log("migrateQueriesFromPrefs", log: log, type: .debug)
+        os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-		let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
+        let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
-		for query in queryHistoryArray where !query.isEmpty {
-			os_log("query: %@", log: log, type: .debug, query)
+        for query in queryHistoryArray where !query.isEmpty {
+            os_log("query: %@", log: log, type: .debug, query)
 
-			let newKeyValue = primaryKeyValueForNewRow
+            let newKeyValue = primaryKeyValueForNewRow
 
-			queue.inDatabase { db in
-				db.traceExecution = traceExecution
-				do {
-					try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
-										 values: [newKeyValue, query, Date()])
-				} catch {
-					logDBError(error)
-				}
-				queryHist[newKeyValue] = query
-			}
-		}
-		// JCS note: at the moment I'm not deleting the queryHistory key from prefs
-		// in case something goes horribly wrong.
-		os_log("migrated prefs query hist to db", log: log, type: .info)
-		migratedPrefsToDB = true
-		prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
+            queue.inDatabase { db in
+                db.traceExecution = traceExecution
+                do {
+                    try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
+                                         values: [newKeyValue, query, Date()])
+                } catch {
+                    logDBError(error)
+                }
+                queryHist[newKeyValue] = query
+            }
+        }
+        // JCS note: at the moment I'm not deleting the queryHistory key from prefs
+        // in case something goes horribly wrong.
+        os_log("migrated prefs query hist to db", log: log, type: .info)
+        migratedPrefsToDB = true
+        prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
 
-	}
+    }
 
     /// Updates the history.
     /// - Parameters:
     ///   - newHist: Array of Strings - the Strings being the new history to update
-	/// - Returns: Nothing
-	@objc func updateQueryHistory(newHist: [String]) {
-		os_log("updateQueryHistory", log: log, type: .debug)
+    /// - Returns: Nothing
+    @objc func updateQueryHistory(newHist: [String]) {
+        os_log("updateQueryHistory", log: log, type: .debug)
 
-		for query in newHist where !query.isEmpty {
-			let idForExistingRow = idForQueryAlreadyInDB(query: query)
+        for query in newHist where !query.isEmpty {
+            let idForExistingRow = idForQueryAlreadyInDB(query: query)
 
-			// not sure we need this
-			// if it's already in the db, do we need to know the modified time?
-			// could just skip
-			if idForExistingRow > 0 {
-				queue.inDatabase { db in
-					db.traceExecution = traceExecution
-					do {
-						try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
-					} catch {
-						logDBError(error)
-					}
-				}
-			} else {
-				// if this is not unique then it's going to break
-				// we could check, but max 100 items ... probability of clash is low.
-				let newKeyValue = primaryKeyValueForNewRow
+            // not sure we need this
+            // if it's already in the db, do we need to know the modified time?
+            // could just skip
+            if idForExistingRow > 0 {
+                queue.inDatabase { db in
+                    db.traceExecution = traceExecution
+                    do {
+                        try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
+                    } catch {
+                        logDBError(error)
+                    }
+                }
+            } else {
+                // if this is not unique then it's going to break
+                // we could check, but max 100 items ... probability of clash is low.
+                let newKeyValue = primaryKeyValueForNewRow
 
-				queue.inDatabase { db in
-					db.traceExecution = traceExecution
-					do {
-						try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
-											 values: [newKeyValue, query, Date()])
-					} catch {
-						logDBError(error)
-					}
-				}
-				queryHist[newKeyValue] = query
-			}
+                queue.inDatabase { db in
+                    db.traceExecution = traceExecution
+                    do {
+                        try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
+                                             values: [newKeyValue, query, Date()])
+                    } catch {
+                        logDBError(error)
+                    }
+                }
+                queryHist[newKeyValue] = query
+            }
 
-		}
+        }
         getDBsize()
         queue.close()
     }
@@ -347,9 +347,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     ///   - statement: Int - the command that failed
     ///   - db: FMDatabase - the FMDatabase instance
     /// - Returns: nothing, should crash
-	func failedAt(_ error: Error) {
-		Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
-		assert(0 != 0, "Migration failed: \(error.localizedDescription)")
+    func failedAt(_ error: Error) {
+        Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
+        assert(0 != 0, "Migration failed: \(error.localizedDescription)")
     }
 
     /// Logs db errors
@@ -357,13 +357,13 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     ///   - error: the thrown Error
     /// - Returns: nothing
     func logDBError(_ error: Error) {
-		Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
-		os_log("Query failed: %@", log: log, type: .error, error.localizedDescription)
+        Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
+        os_log("Query failed: %@", log: log, type: .error, error.localizedDescription)
     }
 
     /// Creates a new random Int64 ID
     /// - Returns: Int64 - new ID for the row
-	private var primaryKeyValueForNewRow : Int64 {
+    private var primaryKeyValueForNewRow : Int64 {
         return Int64.random(in: 0 ... 1_000_000_000_000_000_000)
     }
 }
