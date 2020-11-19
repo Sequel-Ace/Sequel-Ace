@@ -36,9 +36,18 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         // error handle
 		do {
 			tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
-		} catch {}
+		} catch {
+			os_log("Could not get path to applicationSupportDirectory. Error: %@", log: self.log, type: .error, error as CVarArg)
+			Crashlytics.crashlytics().log("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
+			migratedPrefsToDB = false
+			prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
+			sqlitePath = ""
+			queue = FMDatabaseQueue(path: sqlitePath)!
+			super.init()
+			return
+		}
 
-		sqlitePath = tmpPath + "/" + "queryHistory2.db"
+		sqlitePath = tmpPath + "/" + "queryHistory.db"
 
         if !FileManager.default.fileExists(atPath: sqlitePath) {
             os_log("db doesn't exist, they can't have migrated", log: log, type: .info)
@@ -47,7 +56,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
 
         // this creates the db file if it doesn't exist...
-        queue = FMDatabaseQueue(path: sqlitePath)!
+		// aborts here though if queue is nil?
+		queue = FMDatabaseQueue(path: sqlitePath)!
 
         os_log("sqlitePath = %@", log: log, type: .info, sqlitePath)
         let str = "Is SQLite compiled with it's thread safe options turned on? : " + String(FMDatabase.isSQLiteThreadSafe())
@@ -87,13 +97,10 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
                 do {
                     try db.executeUpdate(createTableSQL, values: nil)
-                } catch {
-                    self.failedAt(statement: 1, db: db)
-                }
-                do {
                     try db.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS query_idx ON QueryHistory (query)", values: nil)
                 } catch {
-                    self.failedAt(statement: 2, db: db)
+					db.rollback()
+					self.failedAt(error)
                 }
 
                 self.newSchemaVersion = Int32(schemaVersion + 1)
@@ -140,6 +147,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     os_log("db schema did not need an update", log: self.log, type: .info)
                 }
             } catch {
+				Crashlytics.crashlytics().log("Something went wrong: \(error.localizedDescription)")
 				os_log("Something went wrong. Error: %@", log: self.log, type: .error, error as CVarArg)
             }
         }
@@ -159,7 +167,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                 }
                 rs.close()
             } catch {
-                logDBError(db: db)
+                logDBError(error)
             }
         }
         queue.close()
@@ -183,11 +191,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
                 while rs.next() {
                     dbSize = rs.double(forColumn: "size")
-                    dbSizeHumanReadable = ByteCountFormatter.string(fromByteCount: Int64(dbSize), countStyle: .file)
+					dbSizeHumanReadable = ByteCountFormatter.string(fromByteCount: Int64(dbSize), countStyle: .file)
                 }
                 rs.close()
             } catch {
-                logDBError(db: db)
+                logDBError(error)
             }
         }
         queue.close()
@@ -219,10 +227,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 					try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
 										 values: [newKeyValue, query, Date()])
 				} catch {
-					logDBError(db: db)
+					logDBError(error)
 				}
-
-				os_log("insert successful", log: self.log, type: .debug)
 				queryHist[newKeyValue] = query
 			}
 		}
@@ -248,22 +254,18 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 			// if it's already in the db, do we need to know the modified time?
 			// could just skip
 			if idForExistingRow > 0 {
-				os_log("updateQueryHistory", log: log, type: .debug)
 				queue.inDatabase { db in
 					db.traceExecution = traceExecution
 					do {
-						let str = String(format: "UPDATE QueryHistory set modifiedTime = '%@' where id = %i", Date() as CVarArg, idForExistingRow)
-						os_log("query: %@", log: log, type: .info, str)
 						try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
 					} catch {
-						logDBError(db: db)
+						logDBError(error)
 					}
 				}
 			} else {
 				// if this is not unique then it's going to break
 				// we could check, but max 100 items ... probability of clash is low.
 				let newKeyValue = primaryKeyValueForNewRow
-				os_log("INSERT QueryHistory", log: log, type: .debug)
 
 				queue.inDatabase { db in
 					db.traceExecution = traceExecution
@@ -271,14 +273,13 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 						try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
 											 values: [newKeyValue, query, Date()])
 					} catch {
-						logDBError(db: db)
+						logDBError(error)
 					}
 				}
 				queryHist[newKeyValue] = query
 			}
 
 		}
-        execSQLiteVacuum()
         getDBsize()
         queue.close()
     }
@@ -291,7 +292,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             do {
                 try db.executeUpdate("DELETE FROM QueryHistory", values: nil)
             } catch {
-                logDBError(db: db)
+                logDBError(error)
             }
         }
 
@@ -311,7 +312,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             do {
                 try db.executeUpdate("vacuum", values: nil)
             } catch {
-                logDBError(db: db)
+                logDBError(error)
             }
         }
         queue.close()
@@ -333,7 +334,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                 }
                 rs.close()
             } catch {
-                logDBError(db: db)
+                logDBError(error)
             }
         }
         queue.close()
@@ -346,21 +347,18 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     ///   - statement: Int - the command that failed
     ///   - db: FMDatabase - the FMDatabase instance
     /// - Returns: nothing, should crash
-    func failedAt(statement: Int, db: FMDatabase) {
-        let lastErrorCode = db.lastErrorCode()
-        let lastErrorMessage = db.lastErrorMessage()
-        db.rollback()
-        assert(0 != 0, "Migration statement \(statement) failed, code \(lastErrorCode): \(lastErrorMessage)")
+	func failedAt(_ error: Error) {
+		Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
+		assert(0 != 0, "Migration failed: \(error.localizedDescription)")
     }
 
     /// Logs db errors
     /// - Parameters:
-    ///   - db: FMDatabase - the FMDatabase instance
+    ///   - error: the thrown Error
     /// - Returns: nothing
-    func logDBError(db: FMDatabase) {
-        let lastErrorCode = db.lastErrorCode()
-        let lastErrorMessage = db.lastErrorMessage()
-        os_log("Query failed, code %@:%@", log: log, type: .error, lastErrorCode, lastErrorMessage)
+    func logDBError(_ error: Error) {
+		Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
+		os_log("Query failed: %@", log: log, type: .error, error.localizedDescription)
     }
 
     /// Creates a new random Int64 ID
