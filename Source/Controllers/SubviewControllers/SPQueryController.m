@@ -58,7 +58,7 @@ static NSUInteger SPMessageTruncateCharacterLength = 256;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases;
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database;
 
-@property (readwrite, strong) SQLiteHistoryManager2 *SQLiteHistoryManager ;
+@property (readwrite, strong) SQLiteHistoryManager *_SQLiteHistoryManager ;
 
 
 @end
@@ -67,7 +67,7 @@ static SPQueryController *sharedQueryController = nil;
 
 @implementation SPQueryController
 
-@synthesize consoleFont, SQLiteHistoryManager;
+@synthesize consoleFont, _SQLiteHistoryManager;
 
 /**
  * Returns the shared query console.
@@ -111,7 +111,7 @@ static SPQueryController *sharedQueryController = nil;
 		completionFunctionList = nil;
 		functionArgumentSnippets = nil;
 		
-		SQLiteHistoryManager = SQLiteHistoryManager2.sharedInstance;
+		_SQLiteHistoryManager = SQLiteHistoryManager.sharedInstance;
 		
 		pthread_mutex_init(&consoleLock, NULL);
 
@@ -772,8 +772,8 @@ static SPQueryController *sharedQueryController = nil;
 
 		// Set the global history coming from the Prefs as default if available
 		if (![historyContainer safeObjectForKey:[newURL absoluteString]]) {
-			if(SQLiteHistoryManager.migratedPrefsToDB == YES){
-				[historyContainer safeSetObject:SQLiteHistoryManager.queryHist.allValues forKey:[newURL absoluteString]];
+			if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
+				[historyContainer safeSetObject:_SQLiteHistoryManager.queryHist.allValues forKey:[newURL absoluteString]];
 			}
 			else{
 				if ([prefs objectForKey:SPQueryHistory]) {
@@ -912,8 +912,8 @@ static SPQueryController *sharedQueryController = nil;
 	// User did choose to clear the global history list
 	if (![fileURL isFileURL] && ![historyArray count]) {
 		
-		if(SQLiteHistoryManager.migratedPrefsToDB == YES){
-			[SQLiteHistoryManager deleteQueryHistory];
+		if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
+			[_SQLiteHistoryManager deleteQueryHistory];
 			[historyContainer setObject:@[] forKey:[fileURL absoluteString]]; // just set array to empty
 		}
 		else{
@@ -956,8 +956,8 @@ static SPQueryController *sharedQueryController = nil;
 
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
-		if(SQLiteHistoryManager.migratedPrefsToDB == YES){
-			[uniquifier addItemsWithTitles:SQLiteHistoryManager.queryHist.allValues];
+		if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
+			[uniquifier addItemsWithTitles:_SQLiteHistoryManager.queryHist.allValues];
 		}
 		else{
 			[uniquifier addItemsWithTitles:[prefs objectForKey:SPQueryHistory]];
@@ -969,8 +969,8 @@ static SPQueryController *sharedQueryController = nil;
 			[uniquifier removeItemAtIndex:[uniquifier numberOfItems] - 1];
 		}
 
-		if(SQLiteHistoryManager.migratedPrefsToDB == YES){
-			[SQLiteHistoryManager updateQueryHistoryWithNewHist:[uniquifier itemTitles]];
+		if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
+			[_SQLiteHistoryManager updateQueryHistoryWithNewHist:[uniquifier itemTitles]];
 		}
 		else{
 			[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
@@ -1116,7 +1116,7 @@ static SPQueryController *sharedQueryController = nil;
 	messagesVisibleSet = nil;
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	
-	[SQLiteHistoryManager.queue close];
+	[_SQLiteHistoryManager.queue close];
 
 	pthread_mutex_destroy(&consoleLock);
 }

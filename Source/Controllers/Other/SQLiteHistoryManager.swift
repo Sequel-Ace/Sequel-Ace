@@ -11,8 +11,8 @@ import os.log
 
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
-@objc final class SQLiteHistoryManager2: NSObject {
-    @objc static let sharedInstance = SQLiteHistoryManager2()
+@objc final class SQLiteHistoryManager: NSObject {
+    @objc static let sharedInstance = SQLiteHistoryManager()
 
     @objc public var traceExecution: Bool
     @objc public var migratedPrefsToDB: Bool

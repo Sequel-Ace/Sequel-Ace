@@ -205,7 +205,7 @@
 #endif
 	
 	// init SQLite query history	
-	SQLiteHistoryManager2 __unused *con2 = SQLiteHistoryManager2.sharedInstance;
+	SQLiteHistoryManager __unused *con2 = SQLiteHistoryManager.sharedInstance;
 
 	
 	NSDictionary *spfDict = nil;
