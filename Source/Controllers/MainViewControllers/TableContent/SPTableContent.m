@@ -4353,12 +4353,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 
+		NSDictionary *displayOptions = nil;
+
+		if([aCell isMemberOfClass:[SPTextAndLinkCell class]] == YES){
+			displayOptions = @{ @"fontsize" : @(((SPTextAndLinkCell*) aCell).font.pointSize),
+								@"fontname" : ((SPTextAndLinkCell*) aCell).font.fontName };
+		}
+
 		// Show the cell string value as tooltip (including line breaks and tabs)
 		// by using the cell's font
 		[SPTooltip showWithObject:[aCell stringValue]
 		               atLocation:pos
 		                   ofType:@"text"
-		           displayOptions:nil];
+		           displayOptions:displayOptions];
 
 		return @"";
 	}

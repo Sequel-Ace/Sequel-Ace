@@ -33,7 +33,9 @@
 //
 //	[SPTooltip showWithObject:@"<h1>Hello</h1>I am a <b>tooltip</b>" ofType:@"html"
 //			displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
+//			SPDefaultMonospacedFontName, @"fontname",
 //			@"#EEEEEE", @"backgroundcolor",
+//			@"20", @"fontsize",
 //			@"transparent", @"transparent", nil]];
 //
 //	[SPTooltip  showWithObject:(id)content
@@ -47,7 +49,7 @@
 //			         if no caret could be found in the upper left corner of the current window
 //			   type: a NSString of: "text", "html", or "image"; no type - 'text' is default
 //	 displayOptions: a NSDictionary with the following keys (all values must be of type NSString):
-//	                        backgroundcolor (as #RRGGBB), transparent (any value)
+//	                       fontname, fontsize, backgroundcolor (as #RRGGBB), transparent (any value)
 //	                 if no displayOptions are passed or if a key doesn't exist the following default
 //	                 are taken:
 //	                       "Lucida Grande", "10", "#F9FBC5", NO
@@ -165,6 +167,10 @@ static CGFloat slow_in_out (CGFloat t)
 			if(fontSize < 5) fontSize = 5;
 			[text replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, [text length])];
 			[text replaceOccurrencesOfString:@"<" withString:@"&lt;" options:0 range:NSMakeRange(0, [text length])];
+			[text insertString:[NSString stringWithFormat:@"<pre style=\"font-family:'%@'; font-size: %dpx\">",
+							([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande", fontSize]
+							atIndex:0];
+			[text appendString:@"</pre>"];
 			html = text;
 		}
 		else
@@ -292,6 +298,8 @@ static CGFloat slow_in_out (CGFloat t)
 		} else {
 			pos = [[fr window] convertRectToScreen:(CGRect){.origin=oppositeOrigin}].origin;
 		}
+		NSFont* font = [fr font];
+		if(font) pos.y -= [font pointSize]*1.3f;
 		return pos;
 	// Otherwise return mouse location
 	} else {
