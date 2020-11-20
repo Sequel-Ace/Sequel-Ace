@@ -158,15 +158,6 @@
 		4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */; };
 		4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B79D101E0CF200D116A1 /* SPUserMO.m */; };
 		4D90B7A2101E0D1500D116A1 /* UserManagerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4D90B7A0101E0D1500D116A1 /* UserManagerView.xib */; };
-		50082B3D1BF7CD2100746ECC /* ICUTemplateMatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AC0F909194002A3258 /* ICUTemplateMatcher.m */; };
-		50082B3E1BF7CD2100746ECC /* NSArray_DeepMutableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AE0F909194002A3258 /* NSArray_DeepMutableCopy.m */; };
-		50082B3F1BF7CD2100746ECC /* NSDictionary_DeepMutableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8B10F909194002A3258 /* NSDictionary_DeepMutableCopy.m */; };
-		50082B421BF7CD3C00746ECC /* ICUTemplateMatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8A90F909194002A3258 /* ICUTemplateMatcher.h */; };
-		50082B431BF7CD3C00746ECC /* NSArray_DeepMutableCopy.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8AF0F909194002A3258 /* NSArray_DeepMutableCopy.h */; };
-		50082B441BF7CD3C00746ECC /* NSDictionary_DeepMutableCopy.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8B20F909194002A3258 /* NSDictionary_DeepMutableCopy.h */; };
-		50082B451BF7D1C300746ECC /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		50082B461BF7D1CD00746ECC /* RegexKitLite.h in Headers */ = {isa = PBXBuildFile; fileRef = 296DC8B00F909194002A3258 /* RegexKitLite.h */; };
-		50082B471BF7D1F600746ECC /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
 		500C1F921BFB5F9F0095DC7F /* SPPrivilegesMO.m in Sources */ = {isa = PBXBuildFile; fileRef = 500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */; };
 		500DA4B71BEFF877000773FE /* SPComboBoxCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 500DA4B61BEFF877000773FE /* SPComboBoxCell.m */; };
 		500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 500DA4BB1BF0CD57000773FE /* SPScreenAdditions.m */; };
@@ -331,10 +322,6 @@
 		58E205FC1234FE4F00A97059 /* KeyTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58E205FB1234FE4F00A97059 /* KeyTemplate.pdf */; };
 		58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58F48AA2161D03C6008536A1 /* quick-connect-icon.pdf */; };
 		58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58F48B2D161D08C0008536A1 /* quick-connect-icon-white.pdf */; };
-		58FEEF3D1676D14B009CD478 /* appIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF3C1676D14B009CD478 /* appIcon.icns */; };
-		58FEEF451676D160009CD478 /* Generic.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF421676D160009CD478 /* Generic.icns */; };
-		58FEEF461676D160009CD478 /* SPF.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF431676D160009CD478 /* SPF.icns */; };
-		58FEEF471676D160009CD478 /* SQL.icns in Resources */ = {isa = PBXBuildFile; fileRef = 58FEEF441676D160009CD478 /* SQL.icns */; };
 		58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF16C0F23D66600518E8E /* SPSQLParser.m */; };
 		58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF57D0F3B4E9700518E8E /* SPTableData.m */; };
 		5F0D8BFCF803672E68C345C0 /* libPods-Sequel Ace.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2758841FDDA66578D812C45F /* libPods-Sequel Ace.a */; };
@@ -435,7 +422,6 @@
 		BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */ = {isa = PBXBuildFile; fileRef = BCA6271B1031B9D40047E5D5 /* SPTooltip.m */; };
 		BCA6F631100FA7D700E80253 /* FieldEditorSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = BCA6F62F100FA7D700E80253 /* FieldEditorSheet.xib */; };
 		BCB56197106F893F00167321 /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = BCB56196106F893F00167321 /* ContentFilters.plist */; };
-		BCB5619B106F8A1B00167321 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = BCB5619A106F8A1B00167321 /* EditorQuickLookTypes.plist */; };
 		BCCB747A128D4FD100339E25 /* BundleEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = BCCB7478128D4FD100339E25 /* BundleEditor.xib */; };
 		BCCBD7FC104408B000D4C50A /* SaveSPFAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = BCCBD7FA104408B000D4C50A /* SaveSPFAccessory.xib */; };
 		BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */ = {isa = PBXBuildFile; fileRef = BCD0AD480FBBFC340066EA5C /* SPSQLTokenizer.l */; };
@@ -1026,10 +1012,6 @@
 		58E205FB1234FE4F00A97059 /* KeyTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = KeyTemplate.pdf; sourceTree = "<group>"; };
 		58F48AA2161D03C6008536A1 /* quick-connect-icon.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "quick-connect-icon.pdf"; sourceTree = "<group>"; };
 		58F48B2D161D08C0008536A1 /* quick-connect-icon-white.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "quick-connect-icon-white.pdf"; sourceTree = "<group>"; };
-		58FEEF3C1676D14B009CD478 /* appIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = appIcon.icns; sourceTree = "<group>"; };
-		58FEEF421676D160009CD478 /* Generic.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Generic.icns; sourceTree = "<group>"; };
-		58FEEF431676D160009CD478 /* SPF.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = SPF.icns; sourceTree = "<group>"; };
-		58FEEF441676D160009CD478 /* SQL.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = SQL.icns; sourceTree = "<group>"; };
 		58FEF16B0F23D66600518E8E /* SPSQLParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSQLParser.h; sourceTree = "<group>"; };
 		58FEF16C0F23D66600518E8E /* SPSQLParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPSQLParser.m; sourceTree = "<group>"; };
 		58FEF57C0F3B4E9700518E8E /* SPTableData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableData.h; sourceTree = "<group>"; };
@@ -1065,7 +1047,6 @@
 		965125F424926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		965125F624926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = ../en.lproj/ContentFilters.plist; sourceTree = "<group>"; };
-		965125F724926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = en.lproj/EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		965125F824926B6400E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9651260124926B7B00E65B53 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Interfaces/Base.lproj/AboutPanel.xib; sourceTree = "<group>"; };
 		9651260224926B7B00E65B53 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/BundleEditor.xib; sourceTree = "<group>"; };
@@ -1569,7 +1550,6 @@
 				B58731270F838C9E00087794 /* PreferenceDefaults.plist */,
 				58B9088711BDB7AA000826E5 /* PSMTabBar-Info.plist */,
 				BCB56196106F893F00167321 /* ContentFilters.plist */,
-				BCB5619A106F8A1B00167321 /* EditorQuickLookTypes.plist */,
 				BC962D651144EACA006170BD /* CompletionTokens.plist */,
 			);
 			name = Plists;
@@ -1611,17 +1591,6 @@
 			);
 			name = "Tree Nodes";
 			path = TreeNodes;
-			sourceTree = "<group>";
-		};
-		17BFC80D10D3FF5200A3B112 /* Icons */ = {
-			isa = PBXGroup;
-			children = (
-				58FEEF3C1676D14B009CD478 /* appIcon.icns */,
-				58FEEF421676D160009CD478 /* Generic.icns */,
-				58FEEF431676D160009CD478 /* SPF.icns */,
-				58FEEF441676D160009CD478 /* SQL.icns */,
-			);
-			name = Icons;
 			sourceTree = "<group>";
 		};
 		17D3583C1533766800A654D7 /* Window */ = {
@@ -1988,7 +1957,6 @@
 				17E6419D0EF02036001BC333 /* grabber-horizontal.png */,
 				17E6419E0EF02036001BC333 /* grabber-vertical.png */,
 				582E944B16837986003459FD /* hideconsole.png */,
-				17BFC80D10D3FF5200A3B112 /* Icons */,
 				5843DA68161FA35600EAA6D1 /* key-icon-alternate.png */,
 				5843DA69161FA35600EAA6D1 /* key-icon-alternate@2x.png */,
 				5843DA6A161FA35600EAA6D1 /* key-icon.png */,
@@ -2817,7 +2785,6 @@
 				8831EFC7224016E000D10172 /* button_filterTemplate.pdf in Resources */,
 				173C4362104455CA001F3A30 /* QueryFavoriteManager.xib in Resources */,
 				BCB56197106F893F00167321 /* ContentFilters.plist in Resources */,
-				BCB5619B106F8A1B00167321 /* EditorQuickLookTypes.plist in Resources */,
 				8831EFAA2240128700D10172 /* button_removeTemplate.pdf in Resources */,
 				BC675A17107203BA00C5ACD4 /* ContentFilterManager.xib in Resources */,
 				BC65C3B2107CE3EE003F7B02 /* ImportAccessory.xib in Resources */,
@@ -2872,10 +2839,6 @@
 				C9AD7C7B1676158C00234EEE /* toolbar-switch-to-sql.png in Resources */,
 				C9AD7C7C1676158C00234EEE /* toolbar-switch-to-sql@2x.png in Resources */,
 				50D3C3491A75B8A800B5429C /* GotoDatabaseDialog.xib in Resources */,
-				58FEEF3D1676D14B009CD478 /* appIcon.icns in Resources */,
-				58FEEF451676D160009CD478 /* Generic.icns in Resources */,
-				58FEEF461676D160009CD478 /* SPF.icns in Resources */,
-				58FEEF471676D160009CD478 /* SQL.icns in Resources */,
 				8831EFB4224014C700D10172 /* button_clearTemplate.pdf in Resources */,
 				C9C994411678A439001F5DA8 /* button_bar_spacer.png in Resources */,
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
@@ -3515,14 +3478,6 @@
 			);
 			name = ContentFilters.plist;
 			path = English.lproj;
-			sourceTree = "<group>";
-		};
-		BCB5619A106F8A1B00167321 /* EditorQuickLookTypes.plist */ = {
-			isa = PBXVariantGroup;
-			children = (
-				965125F724926B6300E65B53 /* en */,
-			);
-			name = EditorQuickLookTypes.plist;
 			sourceTree = "<group>";
 		};
 		BCCB7478128D4FD100339E25 /* BundleEditor.xib */ = {

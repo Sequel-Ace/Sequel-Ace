@@ -1,9 +1,25 @@
-.DS_Store
-xcuserdata
-project.xcworkspace
-*.pbxuser
-prebuild.log
+## OSX generated files
+.DS_store
 
-# I want the pod project file in the repo
+## User settings
+xcuserdata/
+
+## Build generated
+build/
+DerivedData/
+
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Custom
 Pods/*
-!Pods/Pods.xcodeproj/
+!Pods/SwiftLint
+fastlane/metadata
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/build_folder
