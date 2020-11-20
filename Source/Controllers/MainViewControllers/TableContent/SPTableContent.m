@@ -4357,7 +4357,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		if([aCell isMemberOfClass:[SPTextAndLinkCell class]] == YES){
 			displayOptions = @{ @"fontsize" : @(((SPTextAndLinkCell*) aCell).font.pointSize),
-								@"fontname" : ((SPTextAndLinkCell*) aCell).font };
+								@"fontname" : ((SPTextAndLinkCell*) aCell).font.fontName };
 		}
 
 		// Show the cell string value as tooltip (including line breaks and tabs)
