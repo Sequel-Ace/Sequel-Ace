@@ -514,6 +514,7 @@ extern NSString *SPFavoriteSSHUserKey;
 extern NSString *SPFavoriteSSHKeyLocationEnabledKey;
 extern NSString *SPFavoriteSSHKeyLocationKey;
 extern NSString *SPFavoriteAllowDataLocalInfileKey;
+extern NSString *SPFavoriteEnableClearTextPluginKey;
 extern NSString *SPFavoriteUseSSLKey;
 extern NSString *SPFavoriteSSLKeyFileLocationEnabledKey;
 extern NSString *SPFavoriteSSLKeyFileLocationKey;

@@ -3,3 +3,7 @@ xcuserdata
 project.xcworkspace
 *.pbxuser
 prebuild.log
+
+# I want the pod project file in the repo
+Pods/*
+!Pods/Pods.xcodeproj/
