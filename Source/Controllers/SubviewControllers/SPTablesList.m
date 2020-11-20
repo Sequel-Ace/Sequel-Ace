@@ -227,11 +227,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Select the table list for the current database.  On MySQL versions after 5 this will include
 		// views; on MySQL versions >= 5.0.02 select the "full" list to also select the table type column.
-//		theResult = [mySQLConnection queryString:@"SHOW /*!50002 FULL*/ TABLES"];
-		theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
+		if ([prefs boolForKey:SPDisplayCommentsInTablesList]) {
+			theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
+		} else {
+			theResult = [mySQLConnection queryString:@"SHOW TABLES"];
+		}
 		[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
 		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
-		if ([theResult numberOfFields] == 1) {
+		if ([theResult numberOfFields] == 1 && [[theResult getRow] isKindOfClass:[NSArray class]]) {
 			for (NSArray *eachRow in theResult) {
 				[tables addObject:[eachRow objectAtIndex:0]];
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
@@ -244,6 +247,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				id tableName = [eachRow objectForKey:@"Name"];
 				if (tableName == nil || [tableName isNSNull]) {
 					tableName = [eachRow objectForKey:@"NAME"];
+				}
+				if ((tableName == nil || [tableName isNSNull]) && eachRow.allValues.count == 1) {
+					tableName = [eachRow.allValues firstObject];
 				}
 				if (tableName == nil || [tableName isNSNull]) {
 					tableName = @"...";

@@ -37,9 +37,7 @@
  */
 - (id) initWithCoder:(NSCoder *)coder
 {
-	self = [super initWithCoder:coder];
-	if (self) {
-//		noteButton = nil;
+	if (self = [super initWithCoder:coder]) {
 		noteButton = [[NSCell alloc] init];
 		[noteButton setTitle:@""];
 		[noteButton setBordered:NO];
@@ -104,7 +102,7 @@
 	
 }
 
-- (void) setNote:(NSString *)lableText
+- (void)setNote:(NSString *)lableText
 {
 	if (noteButton != nil)
 	{
