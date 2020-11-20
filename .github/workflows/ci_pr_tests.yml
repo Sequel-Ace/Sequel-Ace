@@ -5,7 +5,7 @@ on: pull_request
 jobs:
   tests:
     name: Run Tests
-    runs-on: macOS-11
+    runs-on: macOS-11.0
     steps:
     - name: Checkout the Git repository
       uses: actions/checkout@v2
