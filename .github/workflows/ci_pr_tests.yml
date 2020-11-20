@@ -13,4 +13,3 @@ jobs:
       run: ./build.sh tests
       env:
         DEVELOPER_DIR: /Applications/Xcode_12.2.app/Contents/Developer
-
