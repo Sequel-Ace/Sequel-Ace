@@ -38,7 +38,6 @@
 
 @end
 
-
 @implementation SPTableCopy
 
 - (BOOL)copyTable:(NSString *)tableName from:(NSString *)sourceDatabase to:(NSString *)targetDatabase
@@ -53,8 +52,6 @@
 		[createTableStatement insertString:[targetDatabase backtickQuotedString] atIndex:13];
 
 		[connection queryString:createTableStatement];		
-	
-		[createTableStatement release];
 		
 		return ![connection queryErrored];
 	}

@@ -74,11 +74,6 @@
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-
-	SPClear(tableContentStates);
-	SPClear(history);
-
-	[super dealloc];
 }
 
 #pragma mark -
@@ -115,7 +110,6 @@
 			[navMenu addItem:[self menuEntryForHistoryEntryAtIndex:i]];
 		}
 		[historyControl setMenu:navMenu forSegment:0];
-		[navMenu release];
 	} else {
 		[historyControl setMenu:nil forSegment:0];
 	}
@@ -125,7 +119,6 @@
 			[navMenu addItem:[self menuEntryForHistoryEntryAtIndex:i]];
 		}
 		[historyControl setMenu:navMenu forSegment:1];
-		[navMenu release];
 	} else {
 		[historyControl setMenu:nil forSegment:1];
 	}
@@ -538,7 +531,7 @@ abort_entry_load:
 	[theMenuItem setTarget:self];
 	[theMenuItem setAction:@selector(loadEntryFromMenuItem:)];
 	
-	return [theMenuItem autorelease];
+	return theMenuItem;
 }
 
 /**

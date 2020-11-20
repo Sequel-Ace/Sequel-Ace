@@ -269,62 +269,61 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	XCTAssertTrue([uuid isMatchedByRegex:@"[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}"], @"UUID %@ doesn't match regex", uuid);
 }
 
-- (void)testDropPrefix {
-	NSString *string = @"prefixString";
-	string = [string dropPrefixWithPrefix:@"prefix"];
-	XCTAssertTrue([string isEqualToString:@"String"]);
-}
-
-- (void)testHasPrefix {
-	NSString *string = @"prefixString";
-	XCTAssertTrue([string hasPrefixWithPrefix:@"prefix" caseSensitive:NO]);
-}
-
-- (void)testDropSuffix {
-	NSString *string = @"stringSuffix";
-	string = [string dropSuffixWithSuffix:@"Suffix"];
-	XCTAssertTrue([string isEqualToString:@"string"]);
-}
-
-- (void)testHasSuffix {
-	NSString *string = @"stringSuffix";
-	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: NO]);
-}
-
-- (void)testHasSuffixCaseSensitive {
-	NSString *string = @"stringSuffix";
-	XCTAssertFalse([string hasSuffixWithSuffix:@"suffix" caseSensitive: YES]);
-	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: YES]);
-}
-
-- (void)testHasPrefixCaseSensitive {
-	NSString *string = @"prefixString";
-	XCTAssertFalse([string hasPrefixWithPrefix:@"Prefix" caseSensitive:YES]);
-	XCTAssertTrue([string hasPrefixWithPrefix:@"prefix" caseSensitive:YES]);
-}
-
-- (void)testTrim {
-	NSString *string = @"  \n\nstring\n\n  ";
-	string = [string trimWhitespacesAndNewlines];
-	XCTAssertTrue([string isEqualToString:@"string"]);
-	
-	string = @" \n \n string \n \n  ";
-	string = [string trimWhitespacesAndNewlines];
-	XCTAssertTrue([string isEqualToString:@"string"]);
-	
-	string = @"..  ..string... ";
-	string = [string trimWhitespacesAndNewlines];
-	XCTAssertTrue([string isEqualToString:@"..  ..string..."]);
-	
-	string = @"str ing";
-	string = [string trimWhitespacesAndNewlines];
-	XCTAssertTrue([string isEqualToString:@"str ing"]);
-	
-	string = @"\nstr\ning\n";
-	string = [string trimWhitespacesAndNewlines];
-	XCTAssertTrue([string isEqualToString:@"str\ning"]);
-
-}
+//- (void)testDropPrefix {
+//	NSString *string = @"prefixString";
+//	string = [string dropPrefixWithPrefix:@"prefix"];
+//	XCTAssertTrue([string isEqualToString:@"String"]);
+//}
+//
+//- (void)testHasPrefix {
+//	NSString *string = @"prefixString";
+//	XCTAssertTrue([string hasPrefixWithPrefix:@"prefix" caseSensitive:NO]);
+//}
+//
+//- (void)testDropSuffix {
+//	NSString *string = @"stringSuffix";
+//	string = [string dropSuffixWithSuffix:@"Suffix"];
+//	XCTAssertTrue([string isEqualToString:@"string"]);
+//}
+//
+//- (void)testHasSuffix {
+//	NSString *string = @"stringSuffix";
+//	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: NO]);
+//}
+//
+//- (void)testHasSuffixCaseSensitive {
+//	NSString *string = @"stringSuffix";
+//	XCTAssertFalse([string hasSuffixWithSuffix:@"suffix" caseSensitive: YES]);
+//	XCTAssertTrue([string hasSuffixWithSuffix:@"Suffix" caseSensitive: YES]);
+//}
+//
+//- (void)testHasPrefixCaseSensitive {
+//	NSString *string = @"prefixString";
+//	XCTAssertFalse([string hasPrefixWithPrefix:@"Prefix" caseSensitive:YES]);
+//	XCTAssertTrue([string hasPrefixWithPrefix:@"prefix" caseSensitive:YES]);
+//}
+//
+//- (void)testTrim {
+//	NSString *string = @"  \n\nstring\n\n  ";
+//	string = [string trimWhitespacesAndNewlines];
+//	XCTAssertTrue([string isEqualToString:@"string"]);
+//
+//	string = @" \n \n string \n \n  ";
+//	string = [string trimWhitespacesAndNewlines];
+//	XCTAssertTrue([string isEqualToString:@"string"]);
+//
+//	string = @"..  ..string... ";
+//	string = [string trimWhitespacesAndNewlines];
+//	XCTAssertTrue([string isEqualToString:@"..  ..string..."]);
+//
+//	string = @"str ing";
+//	string = [string trimWhitespacesAndNewlines];
+//	XCTAssertTrue([string isEqualToString:@"str ing"]);
+//
+//	string = @"\nstr\ning\n";
+//	string = [string trimWhitespacesAndNewlines];
+//	XCTAssertTrue([string isEqualToString:@"str\ning"]);
+//}
 /**
  * createViewSyntaxPrettifier test case.
  */
@@ -348,7 +347,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}
 	
 	{
-		NSArray *matches = (void *)0xdeadbeef;
+		NSArray *matches = (__bridge NSArray *)((void *)0xdeadbeef);
 		XCTAssertFalse([@"" nonConsecutivelySearchString:@"R" matchingRanges:&matches], @"Inequality with empty left side");
 		XCTAssertTrue((matches == (void *)0xdeadbeef), @"out variable not touched by mismatch");
 	}

@@ -56,7 +56,6 @@ typedef NS_ENUM(NSInteger, NetworkStatus) {
 
 @property (nonatomic, assign) BOOL reachableOnWWAN;
 
-
 +(instancetype)reachabilityForInternetConnection;
 +(instancetype)reachabilityWithAddress:(void *)hostAddress;
 -(instancetype)initWithReachabilityRef:(SCNetworkReachabilityRef)ref;

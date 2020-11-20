@@ -53,7 +53,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 
@@ -61,21 +61,20 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 @synthesize fileManager;
 
-
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		
 		fileManager = [NSFileManager defaultManager];
 
-		themePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil] retain];
+		themePath = [fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
 		
-		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+		editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 		
-		editorColors = [@[
+		editorColors = @[
 			SPCustomQueryEditorTextColor,
 			SPCustomQueryEditorBackgroundColor,
 			SPCustomQueryEditorCaretColor,
@@ -87,9 +86,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			SPCustomQueryEditorVariableColor,
 			SPCustomQueryEditorHighlightQueryColor,
 			SPCustomQueryEditorSelectionColor
-		] retain];
+		];
 		
-		editorNameForColors = [@[
+		editorNameForColors = @[
 			NSLocalizedString(@"Text", @"text label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Background", @"background label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Caret", @"caret label for color table (Prefs > Editor)"),
@@ -101,7 +100,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			NSLocalizedString(@"Variable", @"variable label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Query Background", @"query background label for color table (Prefs > Editor)"),
 			NSLocalizedString(@"Selection", @"selection label for color table (Prefs > Editor)")
-		] retain];
+		];
 	}
 	
 	return self;
@@ -115,13 +114,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[NSColor setIgnoresAlpha:NO];
 	
 	NSTableColumn *column = [[colorSettingTableView tableColumns] objectAtIndex:0];
-	NSTextFieldCell *textCell = [[[NSTextFieldCell alloc] init] autorelease];
+	NSTextFieldCell *textCell = [[NSTextFieldCell alloc] init];
 	
 	[textCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 	
 	column = [[colorSettingTableView tableColumns] objectAtIndex: 1];
 	
-	SPColorWellCell *colorCell = [[[SPColorWellCell alloc] init] autorelease];
+	SPColorWellCell *colorCell = [[SPColorWellCell alloc] init];
 	
 	[colorCell setEditable:YES];
 	[colorCell setTarget:self];
@@ -171,7 +170,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	{
 		if (returnCode == NSModalResponseOK) {
 			if ([self _loadColorSchemeFromFile:[[[panel URLs] objectAtIndex:0] path] ]) {
-				[prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
+				[self->prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 
 				[self updateDisplayColorThemeName];
 			}
@@ -202,7 +201,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	   modalForWindow:[[self view] window]
 	    modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:SPSaveColorScheme];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPSaveColorScheme)];
 	
 }
 
@@ -215,9 +214,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![fileManager fileExistsAtPath:selectedPath isDirectory:nil]) {
 		if ([fileManager copyItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension] toPath:selectedPath error:nil]) {
 			
-			if (editThemeListItems) SPClear(editThemeListItems);
 			
-			editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+			
+			editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 			
 			[editThemeListTable reloadData];
 			
@@ -245,9 +244,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 				[prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 			}
 			
-			if (editThemeListItems) SPClear(editThemeListItems);
 			
-			editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+			
+			editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 			
 			[editThemeListTable reloadData];
 			
@@ -322,9 +321,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	[[NSColorPanel sharedColorPanel] close];
 	
-	if (editThemeListItems) SPClear(editThemeListItems);
 	
-	editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+	
+	editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 	
 	[editThemeListTable reloadData];
 	
@@ -366,8 +365,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[themeSelectionMenu addItem:defaultItem];
 	[themeSelectionMenu addItem:[NSMenuItem separatorItem]];
 	
-	[defaultItem release];
-	
 	NSArray *foundThemes = [self _getAvailableThemes];
 	
 	if ([foundThemes count]) {
@@ -378,8 +375,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			[loadItem setTarget:self];
 			
 			[themeSelectionMenu addItem:loadItem];
-			
-			[loadItem release];
 		}
 		
 		[themeSelectionMenu addItem:[NSMenuItem separatorItem]];
@@ -392,8 +387,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[editItem setTarget:self];
 	
 	[themeSelectionMenu addItem:editItem];
-	
-	[editItem release];
 }
 
 /**
@@ -600,8 +593,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		}
 		
 		// Reload everything needed
-		if (editThemeListItems) SPClear(editThemeListItems);
-		editThemeListItems = [[NSArray arrayWithArray:[self _getAvailableThemes]] retain];
+		
+		editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 		
 		[editThemeListTable reloadData];
 		
@@ -732,11 +725,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	return NSLocalizedString(@"Query Editor Preferences", @"query editor preference pane tooltip");
 }
 
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
-}
-
 - (void)preferencePaneWillBeShown
 {
 	[self updateColorSchemeSelectionMenu];
@@ -758,7 +746,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		                                 defaultButton:NSLocalizedString(@"Proceed", @"proceed button")
 		                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
 		                                   otherButton:nil
-		                                    alertStyle:NSWarningAlertStyle
+		                                    alertStyle:NSAlertStyleWarning
 		                                     docWindow:[[self view] window]
 		                                 modalDelegate:self
 		                                didEndSelector:@selector(checkForUnsavedThemeDidEndSheet:returnCode:contextInfo:)
@@ -1031,20 +1019,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		return NO;
 	}
 	return YES;
-}
-
-#pragma mark -
-
-/**
- * Dealloc.
- */
-- (void)dealloc {
-	if (themePath)           SPClear(themePath);
-	if (editThemeListItems)  SPClear(editThemeListItems);
-	if (editorColors)        SPClear(editorColors);
-	if (editorNameForColors) SPClear(editorNameForColors);
-	
-	[super dealloc];
 }
 
 @end

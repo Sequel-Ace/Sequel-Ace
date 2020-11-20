@@ -49,7 +49,7 @@
 }
 
 // Setup and teardown
-- (id)initWithDelegate:(SPDatabaseDocument *)theDelegate;
+- (instancetype)initWithDelegate:(SPDatabaseDocument *)theDelegate;
 - (void)setConnectionToClone:(SPMySQLConnection *)aConnection;
 
 // Information

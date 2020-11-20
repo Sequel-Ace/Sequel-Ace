@@ -19,7 +19,7 @@
     NSMenu *_overflowMenu;
 }
 
-- (id)initWithTabBarControl:(PSMTabBarControl *)control;
+- (instancetype)initWithTabBarControl:(PSMTabBarControl *)control;
 
 - (NSRect)addButtonRect;
 - (NSMenu *)overflowMenu;

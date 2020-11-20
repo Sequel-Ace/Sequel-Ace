@@ -32,8 +32,6 @@
 // the regular image
 - (void)setUsualImage:(NSImage *)newImage
 {
-    [newImage retain];
-    [_usualImage release];
     _usualImage = newImage;
 
 	[self setImage:_usualImage];
@@ -46,8 +44,6 @@
 
 - (void)setRolloverImage:(NSImage *)newImage
 {
-    [newImage retain];
-    [_rolloverImage release];
     _rolloverImage = newImage;
 }
 
@@ -107,13 +103,6 @@
 	BOOL mouseInside = NSPointInRect(localPoint, trackRect);
 	
     _myTrackingRectTag = [self addTrackingRect:trackRect owner:self userData:nil assumeInside:mouseInside];
-
-	if (mouseInside) {
-		[self mouseEntered:nil];
-	}
-	else {
-		[self mouseExited:nil];
-	}
 }
 
 - (void)removeTrackingRect
@@ -123,23 +112,6 @@
 	}
 
 	_myTrackingRectTag = -1;
-}
-
-// override for rollover effect
-- (void)mouseEntered:(nullable NSEvent *)event
-{
-    // set rollover image
-    [self setImage:_rolloverImage];
-
-	[super mouseEntered:event];
-}
-
-- (void)mouseExited:(nullable NSEvent *)event
-{
-    // restore usual image
-	[self setImage:_usualImage];
-
-	[super mouseExited:event];
 }
 
 - (void)resetCursorRects
@@ -175,12 +147,12 @@
     }
 }
 
-- (id)initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
     if ((self = [super initWithCoder:decoder])) {
         if ([decoder allowsKeyedCoding]) {
-            _rolloverImage = [[decoder decodeObjectForKey:@"rolloverImage"] retain];
-            _usualImage = [[decoder decodeObjectForKey:@"usualImage"] retain];
+            _rolloverImage = [decoder decodeObjectForKey:@"rolloverImage"];
+            _usualImage = [decoder decodeObjectForKey:@"usualImage"];
             _myTrackingRectTag = [decoder decodeIntegerForKey:@"myTrackingRectTag"];
         }
     }
@@ -196,10 +168,6 @@
 
 	[self removeTrackingRect];
 
-	[_rolloverImage release];
-	[_usualImage release];
-
-	[super dealloc];
 }
 
 @end

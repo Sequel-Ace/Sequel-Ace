@@ -31,6 +31,7 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
+#import "SPWindowController.h"
 #import "sequel-ace-Swift.h"
 
 // Defined to suppress warnings
@@ -142,7 +143,7 @@
 	NSMutableDictionary *theEnv = [NSMutableDictionary dictionary];
 	[theEnv setDictionary:shellEnvironment];
 
-	[theEnv setObject:[[NSBundle mainBundle] pathForResource:@"appIcon" ofType:@"icns"] forKey:SPBundleShellVariableIconFile];
+	[theEnv setObject:[NSImage imageNamed:@"AppIconImage"] forKey:SPBundleShellVariableIconFile];
 	[theEnv setObject:[NSString stringWithFormat:@"%@/Contents/Resources", [[NSBundle mainBundle] bundlePath]] forKey:SPBundleShellVariableAppResourcesDirectory];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionNone] forKey:SPBundleShellVariableExitNone];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionReplaceSection] forKey:SPBundleShellVariableExitReplaceSelection];
@@ -287,14 +288,14 @@
 
 		if(status == 9 || userTerminated) return @"";
 		if(theError != NULL) {
-			NSMutableString *errMessage = [[[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] autorelease];
+			NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
 			[errMessage replaceOccurrencesOfString:[NSString stringWithFormat:@"%@: ", scriptFilePath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
-			*theError = [[[NSError alloc] initWithDomain:NSPOSIXErrorDomain
+			*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 													code:status
 												userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
 														  errMessage,
 														  NSLocalizedDescriptionKey,
-														  nil]] autorelease];
+														  nil]];
 		} else {
 			NSBeep();
 		}
@@ -304,7 +305,7 @@
 	// Read STDOUT saved to file
 	if([fileManager fileExistsAtPath:stdoutFilePath isDirectory:nil]) {
 		NSString *stdoutContent = [NSString stringWithContentsOfFile:stdoutFilePath encoding:NSUTF8StringEncoding error:nil];
-		if(bashTask) SPClear(bashTask);
+		
 		[fileManager removeItemAtPath:stdoutFilePath error:nil];
 		if(stdoutContent != nil) {
 			if (status == 0) {
@@ -312,14 +313,14 @@
 			} else {
 				if(theError != NULL) {
 					if(status == 9 || userTerminated) return @"";
-					NSMutableString *errMessage = [[[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding] autorelease];
+					NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
 					[errMessage replaceOccurrencesOfString:[SPBundleTaskScriptCommandFilePath stringByExpandingTildeInPath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
-					*theError = [[[NSError alloc] initWithDomain:NSPOSIXErrorDomain
+					*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 															code:status
 														userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
 																  errMessage,
 																  NSLocalizedDescriptionKey,
-																  nil]] autorelease];
+																  nil]];
 				} else {
 					NSBeep();
 				}
@@ -333,8 +334,6 @@
 			NSBeep();
 		}
 	}
-
-	if (bashTask) [bashTask release];
 	[fileManager removeItemAtPath:stdoutFilePath error:nil];
 	return @"";
 }

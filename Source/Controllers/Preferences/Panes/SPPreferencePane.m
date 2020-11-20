@@ -38,7 +38,7 @@
 /**
  * Initialisation. Establishes a reference to the user's defaults to be used by subclasses.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithNibName:nil bundle:nil])) {
 		prefs = [NSUserDefaults standardUserDefaults];

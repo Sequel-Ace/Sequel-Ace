@@ -678,19 +678,14 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
 
-// Provides a standard method for our "[x release], x = nil;" convention.
-// Yes, this could have been done with a preprocessor macro alone, however
-// a function works more nicely in the debugger and in production code
-// the optimizer will most likely remove all overhead by inlining anyway :)
-void _SPClear(id *addr);
-#define SPClear(x) _SPClear(&x)
-
 // Stolen from Stack Overflow: http://stackoverflow.com/questions/969130
 #ifdef DEBUG
 #   define SPLog(fmt, ...) NSLog((@"%s:%d: " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
 #   define SPLog(...)
 #endif
+
+#define CLS_LOG(__FORMAT__, ...) [[FIRCrashlytics crashlytics] logWithFormat:@"%s line %d $ " __FORMAT__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__]
 
 // See http://stackoverflow.com/questions/4415524
 #define COUNT_OF(x) (NSInteger)((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))

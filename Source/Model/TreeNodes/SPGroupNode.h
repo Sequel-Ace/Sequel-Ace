@@ -47,15 +47,15 @@
 /**
  * @property nodeName The group node's name
  */
-@property (readwrite, retain) NSString *nodeName;
+@property (readwrite, strong) NSString *nodeName;
 
 /**
  * @property nodeIsExpanded Indicates whether the group node is expanded
  */
 @property (readwrite, assign) BOOL nodeIsExpanded;
 
-- (id)initWithName:(NSString *)name;
-- (id)initWithDictionary:(NSDictionary *)dict;
+- (instancetype)initWithName:(NSString *)name;
+- (instancetype)initWithDictionary:(NSDictionary *)dict;
 
 + (SPGroupNode *)groupNodeWithName:(NSString *)name;
 + (SPGroupNode *)groupNodeWithDictionary:(NSDictionary *)dict;

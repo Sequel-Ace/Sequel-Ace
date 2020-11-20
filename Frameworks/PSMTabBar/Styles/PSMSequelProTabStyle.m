@@ -72,23 +72,6 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [sequelProCloseButton release];
-    [sequelProCloseButtonDown release];
-    [sequelProCloseButtonOver release];
-    [sequelProCloseDirtyButton release];
-    [sequelProCloseDirtyButtonDown release];
-    [sequelProCloseDirtyButtonOver release];
-    [_addTabButtonImage release];
-    [_addTabButtonPressedImage release];
-    [_addTabButtonRolloverImage release];
-    
-	[_objectCountStringAttributes release];
-	
-    [super dealloc];
-}
-
 #pragma mark -
 #pragma mark Detect Dark Aqua Mode
 
@@ -329,14 +312,14 @@
 {
     NSString *contents = [NSString stringWithFormat:@"%lu", (unsigned long)[cell count]];
 
-    return [[[NSMutableAttributedString alloc] initWithString:contents attributes:_objectCountStringAttributes] autorelease];
+    return [[NSMutableAttributedString alloc] initWithString:contents attributes:_objectCountStringAttributes];
 }
 
 - (NSAttributedString *)attributedStringValueForTabCell:(PSMTabBarCell *)cell
 {
     NSMutableAttributedString *attrStr;
     NSString *contents = [cell stringValue];
-    attrStr = [[[NSMutableAttributedString alloc] initWithString:contents] autorelease];
+    attrStr = [[NSMutableAttributedString alloc] initWithString:contents];
     NSRange range = NSMakeRange(0, [contents length]);
     
     // Add font attribute
@@ -345,7 +328,7 @@
     
     // Add shadow attribute
     NSShadow* textShadow;
-    textShadow = [[[NSShadow alloc] init] autorelease];
+    textShadow = [[NSShadow alloc] init];
     CGFloat shadowAlpha;
     if (([cell state] == NSOnState) || [cell isHighlighted]) {
         shadowAlpha = 0.8f;
@@ -361,7 +344,7 @@
     if (!TruncatingTailParagraphStyle) {
         TruncatingTailParagraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
         [TruncatingTailParagraphStyle setLineBreakMode:NSLineBreakByTruncatingTail];
-        [TruncatingTailParagraphStyle setAlignment:NSCenterTextAlignment];
+        [TruncatingTailParagraphStyle setAlignment:NSTextAlignmentCenter];
     }
     [attrStr addAttribute:NSParagraphStyleAttributeName value:TruncatingTailParagraphStyle range:range];
     
@@ -391,17 +374,16 @@
         labelRect.origin.y += 4.0f;
         NSMutableAttributedString *attrStr;
         NSString *contents = @"PSMTabBarControl";
-        attrStr = [[[NSMutableAttributedString alloc] initWithString:contents] autorelease];
+        attrStr = [[NSMutableAttributedString alloc] initWithString:contents];
 		NSRange range = NSMakeRange(0, [contents length]);
         [attrStr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0f] range:range];
         NSMutableParagraphStyle *centeredParagraphStyle = nil;
         
 		if (!centeredParagraphStyle) {
             centeredParagraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
-            [centeredParagraphStyle setAlignment:NSCenterTextAlignment];
+            [centeredParagraphStyle setAlignment:NSTextAlignmentCenter];
         }
         [attrStr addAttribute:NSParagraphStyleAttributeName value:centeredParagraphStyle range:range];
-        [centeredParagraphStyle release];
         [attrStr drawInRect:labelRect];
         return;
     }
@@ -663,7 +645,7 @@
 {
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder 
+- (instancetype)initWithCoder:(NSCoder *)aDecoder 
 {
     return [self init];
 }

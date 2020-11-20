@@ -40,6 +40,7 @@
 #import "SPAppController.h"
 #import "SPDatabaseStructure.h"
 #import "SPThreadAdditions.h"
+#import "SPFunctions.h"
 
 #import <objc/message.h>
 #import <SPMySQL/SPMySQL.h>
@@ -64,7 +65,14 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 {
 	@synchronized(self) {
 		if (sharedNavigatorController == nil) {
-			sharedNavigatorController = [[super allocWithZone:NULL] init];
+			if (![NSThread isMainThread]){
+				SPMainQSync(^{ // JCS: alloc on main as it calls initWithWindowNibName
+					sharedNavigatorController = [[super allocWithZone:NULL] init];
+				});
+			}
+			else{
+				sharedNavigatorController = [[super allocWithZone:NULL] init];
+			}
 		}
 	}
 
@@ -74,12 +82,12 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 + (id)allocWithZone:(NSZone *)zone
 {    
 	@synchronized(self) {
-		return [[self sharedNavigatorController] retain];
+		return [self sharedNavigatorController];
 	}
 	return nil;
 }
 
-- (id)init
+- (instancetype)init
 {
 	if((self = [super initWithWindowNibName:@"Navigator"])) {
 		schemaDataFiltered  = [[NSMutableDictionary alloc] init];
@@ -104,37 +112,13 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	if(schemaDataFiltered)  SPClear(schemaDataFiltered);
-	if(allSchemaKeys)       SPClear(allSchemaKeys);
-	if(schemaData)          SPClear(schemaData);
-	if(infoArray)           SPClear(infoArray);
-	if(updatingConnections) SPClear(updatingConnections);
-	if(expandStatus2)       SPClear(expandStatus2);
-	if(cachedSortedKeys)    SPClear(cachedSortedKeys);
 
-	SPClear(connectionIcon);
-	SPClear(databaseIcon);
-	SPClear(tableIcon);
-	SPClear(viewIcon);
-	SPClear(procedureIcon);
-	SPClear(functionIcon);
-	SPClear(fieldIcon);
-
-	[super dealloc];
 }
 /**
  * The following base protocol methods are implemented to ensure the singleton status of this class.
  */
 
 - (id)copyWithZone:(NSZone *)zone { return self; }
-
-- (id)retain { return self; }
-
-- (NSUInteger)retainCount { return NSUIntegerMax; }
-
-- (id)autorelease { return self; }
-
-- (oneway void)release { }
 
 /**
  * Set the window's auto save name and initialise display
@@ -152,13 +136,13 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:YES];
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:NO];
 
-	connectionIcon = [[NSImage imageNamed:@"network-small"] retain];
-	databaseIcon = [[NSImage imageNamed:@"database-small"] retain];
-	tableIcon = [[NSImage imageNamed:@"table-small-square"] retain];
-	viewIcon = [[NSImage imageNamed:@"table-view-small-square"] retain];
-	procedureIcon = [[NSImage imageNamed:@"proc-small"] retain];
-	functionIcon = [[NSImage imageNamed:@"func-small"] retain];
-	fieldIcon = [[NSImage imageNamed:@"field-small-square"] retain];
+	connectionIcon = [NSImage imageNamed:@"network-small"];
+	databaseIcon = [NSImage imageNamed:@"database-small"];
+	tableIcon = [NSImage imageNamed:@"table-small-square"];
+	viewIcon = [NSImage imageNamed:@"table-view-small-square"];
+	procedureIcon = [NSImage imageNamed:@"proc-small"];
+	functionIcon = [NSImage imageNamed:@"func-small"];
+	fieldIcon = [NSImage imageNamed:@"field-small-square"];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateNavigator:) name:@"SPDBStructureWasUpdated" object:nil];
 
@@ -568,7 +552,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 #pragma mark -
 #pragma mark IBActions
 
-
 - (IBAction)reloadAllStructures:(id)sender
 {
 
@@ -598,8 +581,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 }
 
 - (IBAction)outlineViewAction:(id)sender
-{
-	
+{	
 }
 
 - (IBAction)filterTree:(id)sender
@@ -620,7 +602,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 			parentObject = [outlineSchema2 parentForItem:currentItem] ? [outlineSchema2 parentForItem:currentItem] : schemaData;
 
 	@try{
-
 
 		NSString *connectionID = nil;
 		if(parentObject && [[parentObject allKeys] count])
@@ -645,7 +626,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		NSMutableDictionary *structure = [NSMutableDictionary dictionary];
 		[structure setObject:[NSMutableDictionary dictionary] forKey:connectionID];
-
 
 		NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF CONTAINS[c] %@", pattern];
 		NSArray *filteredItems = [[allSchemaKeys objectForKey:connectionID] filteredArrayUsingPredicate:predicate];
@@ -702,7 +682,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		
 		isFiltering = NO;
 	}
-
 
 }
 
@@ -973,9 +952,9 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		if([outlineView levelForItem:item] == 3 && [item isKindOfClass:[NSArray class]])
 		{
-			NSTokenFieldCell *b = [[[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)] autorelease];
+			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)];
 			[b setEditable:NO];
-			[b setAlignment:NSRightTextAlignment];
+			[b setAlignment:NSTextAlignmentRight];
 			[b setFont:[NSFont systemFontOfSize:11]];
 			[b setWraps:NO];
 			return b;
@@ -1109,8 +1088,8 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 
 	// Drag the array with schema paths
-	NSMutableData *arraydata = [[[NSMutableData alloc] init] autorelease];
-	NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:arraydata] autorelease];
+	NSMutableData *arraydata = [[NSMutableData alloc] init];
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:arraydata];
 	[archiver encodeObject:draggedItems forKey:@"itemdata"];
 	[archiver finishEncoding];
 	[pboard setData:arraydata forType:SPNavigatorPasteboardDragType];
@@ -1163,7 +1142,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		
 	return YES;
 }
-
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {

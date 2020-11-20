@@ -32,7 +32,6 @@
 #import "SPUserMO.h"
 #import "SPUserManager.h"
 
-
 @implementation SPPrivilegesMO
 
 @dynamic db;

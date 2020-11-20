@@ -75,7 +75,6 @@
 		NSBitmapImageRep *draggedImage = [[NSBitmapImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSTIFFPboardType"]];
 		if (draggedImage) {
 			pngData = [draggedImage representationUsingType:NSPNGFileType properties:@{}];
-			[draggedImage release];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];
@@ -94,11 +93,8 @@
 			NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:[draggedImage boundingBox]];
 			if (bitmapImageRep) {
 				pngData = [bitmapImageRep representationUsingType:NSPNGFileType properties:@{}];
-				[bitmapImageRep release];
 			}
 			[convertImage unlockFocus];
-			[convertImage release];
-			[draggedImage release];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];

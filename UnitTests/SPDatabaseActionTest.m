@@ -31,10 +31,8 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
-
 #import "SPDatabaseAction.h"
 #import <SPMySQL/SPMySQL.h>
-
 
 @interface SPDatabaseActionTest : XCTestCase
 
@@ -51,13 +49,12 @@
 	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
 	//OCMStrictClassMock would fail on any call, which is desired here
 	
-	SPDatabaseAction *createDb = [[[SPDatabaseAction alloc] init] autorelease];
+	SPDatabaseAction *createDb = [[SPDatabaseAction alloc] init];
 	[createDb setConnection:mockConnection];
 	XCTAssertFalse([createDb createDatabase:@"" withEncoding:nil collation:nil],@"create database = NO with empty db name");
 	
 	OCMVerifyAll(mockConnection);
 }
-
 
 - (void)testCreateDatabase_02_allParams
 {
@@ -66,7 +63,7 @@
 	OCMExpect([mockConnection queryString:@"CREATE DATABASE `target_name` DEFAULT CHARACTER SET = `utf8` DEFAULT COLLATE = `utf8_bin_ci`"]);
 	OCMStub([mockConnection queryErrored]).andReturn(NO);
 	
-	SPDatabaseAction *createDb = [[[SPDatabaseAction alloc] init] autorelease];
+	SPDatabaseAction *createDb = [[SPDatabaseAction alloc] init];
 	[createDb setConnection:mockConnection];
 	
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"utf8" collation:@"utf8_bin_ci"], @"create database return");
@@ -81,7 +78,7 @@
 	OCMExpect([mockConnection queryString:@"CREATE DATABASE `target_name`"]);
 	OCMStub([mockConnection queryErrored]).andReturn(NO);
 	
-	SPDatabaseAction *createDb = [[[SPDatabaseAction alloc] init] autorelease];
+	SPDatabaseAction *createDb = [[SPDatabaseAction alloc] init];
 	[createDb setConnection:mockConnection];
 	
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");

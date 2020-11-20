@@ -49,7 +49,7 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 
 #pragma mark -
 
-- (id)init
+- (instancetype)init
 {
 	return [super initWithWindowNibName:SPAboutPanelNibName];
 }
@@ -123,11 +123,14 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
  */
 - (NSAttributedString *)_loadRtfResource:(NSString *)filename
 {
-	NSMutableAttributedString *resource = [[NSMutableAttributedString alloc] initWithPath:[[NSBundle mainBundle] pathForResource:filename ofType:@"rtf"] documentAttributes:nil];
-
+		
+	NSURL *url = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:filename ofType:@"rtf"] isDirectory:NO];
+	
+	NSMutableAttributedString *resource = [[NSMutableAttributedString alloc] initWithURL:url options:@{NSDocumentTypeDocumentOption : NSRTFTextDocumentType} documentAttributes:nil error:nil];
+	
 	[resource addAttribute:NSForegroundColorAttributeName value:[NSColor textColor] range:NSMakeRange(0, [resource length])];
 
-	return [resource autorelease];
+	return resource;
 }
 
 @end

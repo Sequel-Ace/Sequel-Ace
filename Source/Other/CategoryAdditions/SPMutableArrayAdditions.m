@@ -41,13 +41,22 @@
 	{
 		NSUInteger j = ((count - i) - 1);
 		
-		id obj = [NSArrayObjectAtIndex(self, i) retain];
+		id obj = NSArrayObjectAtIndex(self, i);
 		
 		[self replaceObjectAtIndex:i withObject:NSArrayObjectAtIndex(self, j)];
 		[self replaceObjectAtIndex:j withObject:obj];
-		
-		[obj release];
 	}
 }
+
+- (id)safeObjectAtIndex:(NSUInteger)idx{
+	return idx < self.count ? [self objectAtIndex:idx] : nil;
+}
+
+- (void)safeAddObject:(id)obj{
+	if (obj != nil) {
+		[self addObject:obj];
+	}
+}
+
 
 @end

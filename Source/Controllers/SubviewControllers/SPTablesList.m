@@ -91,7 +91,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 
@@ -197,9 +197,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	if (isTableListFiltered) {
 		previousFilterString = [[NSString alloc] initWithString:[listFilterField stringValue]];
-		if (filteredTables) [filteredTables release];
 		filteredTables = tables;
-		if (filteredTableTypes) [filteredTableTypes release];
 		filteredTableTypes = tableTypes;
 		isTableListFiltered = NO;
 		[[self onMainThread] clearFilter];
@@ -211,9 +209,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	tableListIsSelectable = previousTableListIsSelectable;
 	SPMainQSync(^{
 		//this has to be executed en-block on the main queue, otherwise the table view might have a chance to access released memory before we tell it to throw away everything.
-		[tables removeAllObjects];
-		[tableTypes removeAllObjects];
-		[tablesListView reloadData];
+		[self->tables removeAllObjects];
+		[self->tableTypes removeAllObjects];
+		[self->tablesListView reloadData];
 	});
 
 	if ([tableDocumentInstance database]) {
@@ -332,12 +330,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListIsSelectable = YES;
 		[[tablesListView onMainThread] selectRowIndexes:[NSIndexSet indexSetWithIndex:itemToReselect] byExtendingSelection:NO];
 		tableListIsSelectable = previousTableListIsSelectable;
-		if (selectedTableName) [selectedTableName release];
 		selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemToReselect]];
 		selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemToReselect] integerValue];
 	} 
 	else {
-		if (selectedTableName) SPClear(selectedTableName);
+		if (selectedTableName) selectedTableName = nil;
 		selectedTableType = SPTableTypeNone;
 	}
 
@@ -357,13 +354,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tableDocumentInstance database]) {
 		SPMainQSync(^{
 			// -cell is a UI call according to Xcode 9.2 (and -setPlaceholderString: is too, obviously)
-			[[listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
+			[[self->listFilterField cell] setPlaceholderString:NSLocalizedString(@"Filter", @"filter label")];
 		});
 	}
 
-	if (previousSelectedTable) [previousSelectedTable release];
-	if (previousFilterString) [previousFilterString release];
-
+	if (previousSelectedTable) previousSelectedTable = nil;
+	if (previousFilterString) previousFilterString = nil;
+	
 	// Query the structure of all databases in the background
 	if (sender == self)
 		// Invoked by SP
@@ -415,9 +412,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	   modalForWindow:[tableDocumentInstance parentWindow]
 		modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:SPAddNewTable];
+		  contextInfo:(__bridge void * _Null_unspecified)(SPAddNewTable)];
 }
-
 
 - (IBAction)tableEncodingButtonChanged:(id)sender
 {
@@ -509,7 +505,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	NSAlert *alert = [NSAlert alertWithMessageText:@"" defaultButton:NSLocalizedString(@"Delete", @"delete button") alternateButton:NSLocalizedString(@"Cancel", @"cancel button") otherButton:nil informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -593,7 +589,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
 					  modalDelegate:self 
 					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) 
-						contextInfo:SPRemoveTable];
+						contextInfo:(__bridge void * _Nullable)(SPRemoveTable)];
 }
 
 /**
@@ -639,7 +635,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	   modalForWindow:[tableDocumentInstance parentWindow]
 		modalDelegate:self
 	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:SPDuplicateTable];
+		  contextInfo:(__bridge void * _Null_unspecified)SPDuplicateTable];
 }
 
 /**
@@ -675,7 +671,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 									   otherButton:nil
 						 informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -693,7 +689,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[alert setInformativeText:NSLocalizedString(@"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.", @"truncate tables informative message")];
 	}
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:SPTruncateTable];
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(SPTruncateTable)];
 }
 
 /**
@@ -743,7 +739,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
 }
-
 
 #pragma mark -
 #pragma mark Alert sheet methods
@@ -847,8 +842,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if (!selectionDetails || ![selectionDetails objectForKey:@"name"]) {
 		NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 		// Update the selected table name and type
-		if (selectedTableName) SPClear(selectedTableName);
-
+		
+		if (selectedTableName) selectedTableName = nil;
+		
 		// Set gear menu items Remove/Duplicate table/view according to the table types
 		// if at least one item is selected
 		if ([indexes count]) {
@@ -965,7 +961,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	SPTableType selectedItemType = (SPTableType)[[selectionDetails objectForKey:@"type"] integerValue];
 
 	// Update the selected table name and type
-	if (selectedTableName) [selectedTableName release];
 	selectedTableName = [[NSString alloc] initWithString:selectedItemName];
 	selectedTableType = selectedItemType;
 
@@ -1430,7 +1425,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 		else {
 			[self deselectAllTables];
-			if (selectedTableName) [selectedTableName release];
 			
 			selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemIndex]];
 			selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemIndex] integerValue];
@@ -1519,7 +1513,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	// empty table names are invalid
 	if([fieldStr length] == 0) return NO;
-
 
 	NSArray *similarTables;
 	switch (tableType) {
@@ -1626,7 +1619,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[tables replaceObjectAtIndex:unfilteredIndex withObject:newTableName];
 		}
 		[filteredTables replaceObjectAtIndex:rowIndex withObject:newTableName];
-		if (selectedTableName) [selectedTableName release];
 		selectedTableName = [[NSString alloc] initWithString:newTableName];
 
 		// if the 'table' is a view or a table, ensure data is reloaded
@@ -1636,7 +1628,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 	}
 	@catch (NSException * myException) {
-		SPOnewayAlertSheet(NSLocalizedString(@"Error", @"error"), [tableDocumentInstance parentWindow], [myException reason]);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[myException reason] callback:nil];
 	}
 
 	// Set window title to reflect the new table name
@@ -1723,7 +1715,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[tableInfoInstance tableChanged:nil];
 		}
 		
-		if (selectedTableName) SPClear(selectedTableName);
+		if (selectedTableName) selectedTableName = nil;
 		
 		selectedTableType = SPTableTypeNone;
 		
@@ -1746,7 +1738,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Save existing scroll position and details
 	[spHistoryControllerInstance updateHistoryEntries];
 
-	if (selectedTableName) SPClear(selectedTableName);
+	
 	
 	selectedTableName = [[NSString alloc] initWithString:newName];
 	selectedTableType = newType;
@@ -1897,7 +1889,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"),
 									query, [mySQLConnection lastErrorMessage]];
 
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"truncateTableError"];
 			return NO;
 		}
@@ -2008,14 +2000,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] > 1) {
 		[self deselectAllTables];
 
-		if (selectedTableName) SPClear(selectedTableName);
+		if (selectedTableName) selectedTableName = nil;
 	}
 
 	if ([[listFilterField stringValue] length]) {
-		if (isTableListFiltered) {
-			[filteredTables release];
-			[filteredTableTypes release];
-		}
 		filteredTables = [[NSMutableArray alloc] init];
 		filteredTableTypes = [[NSMutableArray alloc] init];
 
@@ -2073,9 +2061,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	} 
 	else if (isTableListFiltered) {
 		isTableListFiltered = NO;
-		[filteredTables release];
 		filteredTables = tables;
-		[filteredTableTypes release];
 		filteredTableTypes = tableTypes;
 	}
 
@@ -2166,7 +2152,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	return NO;
 }
 
-
 #pragma mark -
 #pragma mark Private API
 
@@ -2226,7 +2211,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		} 
 		// Otherwise, display an alert - and if there's tables left, ask whether to proceed
 		else {
-			NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+			NSAlert *alert = [[NSAlert alloc] init];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -2247,7 +2232,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
 			[alert setInformativeText:[NSString stringWithFormat:userMessage, [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]]];
-			[alert setAlertStyle:NSWarningAlertStyle];
+			[alert setAlertStyle:NSAlertStyleWarning];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:nil contextInfo:nil];
@@ -2298,14 +2283,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Couldn't truncate table
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheetWithStyle(
-				NSLocalizedString(@"Error truncating table", @"error truncating table message"),
-				nil,
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]],
-				NSCriticalAlertStyle
-			);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]] callback:nil];
 			*stop = YES;
 		}
 
@@ -2430,7 +2408,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 			// Set the selected table name and type, and then update the filter list and the
 			// selection.
-			if (selectedTableName) [selectedTableName release];
 
 			selectedTableName = [[NSString alloc] initWithString:tableName];
 			selectedTableType = SPTableTypeTable;
@@ -2448,9 +2425,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		else {
 			// Error while creating new table
 
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:^{
-
-			}];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];
 
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
@@ -2467,11 +2442,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	NSString *tableType = @"";
 
 	if ([[copyTableNameField stringValue] isEqualToString:@""]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			NSLocalizedString(@"Table must have a name.", @"message of panel when no name is given for table")
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Table must have a name.", @"message of panel when no name is given for table") callback:nil];
 		return;
 	}
 
@@ -2512,12 +2483,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ( ![queryResult numberOfRows] ) {
 
 		//error while getting table structure
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]]
-		);
-
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
     }
 
@@ -2529,14 +2495,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create View"]];
 		[scanner scanUpToString:@"AS" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
-		[scanner release];
 		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [[copyTableNameField stringValue] backtickQuotedString], scanString]];
 	}
 	else if(tblType == SPTableTypeTable){
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create Table"]];
 		[scanner scanUpToString:@"(" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
-		[scanner release];
 
 		// If there are any InnoDB referencial constraints we need to strip out the names as they must be unique.
 		// MySQL will generate the new names based on the new table name.
@@ -2564,11 +2528,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([mySQLConnection queryErrored]) {
 			if ([mySQLConnection isConnected]) {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error", @"error"),
-					[tableDocumentInstance parentWindow],
-					[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [mySQLConnection lastErrorMessage]]
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [mySQLConnection lastErrorMessage]] callback:nil];
 			}
 			return;
 		}
@@ -2580,22 +2540,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[mySQLConnection queryString:[tableSyntax stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[[copyTableNameField stringValue] backtickQuotedString]]];
 
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Error", @"error"),
-				[tableDocumentInstance parentWindow],
-				[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]]
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 	}
 
 	if ([mySQLConnection queryErrored]) {
 		//error while creating new table
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[tableDocumentInstance parentWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
 	}
 
@@ -2608,11 +2560,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 									  ]];
 
 		if ([mySQLConnection queryErrored]) {
-			SPOnewayAlertSheet(
-				NSLocalizedString(@"Warning", @"warning"),
-				[tableDocumentInstance parentWindow],
-				NSLocalizedString(@"There have been errors while copying table content. Please control the new table.", @"message of panel when table content cannot be copied")
-			);
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"There have been errors while copying table content. Please control the new table.", @"message of panel when table content cannot be copied") callback:nil];
 		}
 	}
 
@@ -2644,7 +2592,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 
 	// Set the selected table name and type, and use updateFilter to update the filter list and selection
-	if (selectedTableName) [selectedTableName release];
 
 	selectedTableName = [[NSString alloc] initWithString:[copyTableNameField stringValue]];
 	selectedTableType = tblType;
@@ -2782,16 +2729,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
-	
-	SPClear(tables);
-	SPClear(tableTypes);
 
-	if (isTableListFiltered && filteredTables)     SPClear(filteredTables);
-	if (isTableListFiltered && filteredTableTypes) SPClear(filteredTableTypes);
-	if (selectedTableName)                         SPClear(selectedTableName);
-	if (addTableCharsetHelper)                     SPClear(addTableCharsetHelper);
-	
-	[super dealloc];
 }
 
 @end

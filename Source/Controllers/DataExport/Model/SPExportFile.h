@@ -55,7 +55,7 @@
 /**
  * @property exportFilePath
  */
-@property (readwrite, retain) NSString *exportFilePath;
+@property (readwrite, copy) NSString *exportFilePath;
 
 /**
  * @property exportFileHandle
@@ -84,7 +84,7 @@
 
 + (SPExportFile *)exportFileAtPath:(NSString *)path;
 
-- (id)initWithFilePath:(NSString *)path;
+- (instancetype)initWithFilePath:(NSString *)path;
 
 - (void)close;
 - (BOOL)delete;

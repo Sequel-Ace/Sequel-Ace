@@ -83,7 +83,6 @@ compend		{s}"end"
 
 {scol}{s}*							{ return SP_SQL_TOKEN_SEMICOLON; }
 
-
 <<EOF>>   						{
                                     BEGIN(INITIAL);   /* make sure we return to initial state when finished! */
             						yy_delete_buffer(YY_CURRENT_BUFFER);

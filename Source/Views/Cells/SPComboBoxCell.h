@@ -57,11 +57,9 @@
  * but NSTableView foils that as it will copy the cell right before the notification
  * is sent, so we don't know what object to observe.
  */
-@interface SPComboBoxCell : NSComboBoxCell {
-	id<SPComboBoxCellDelegate> spDelegate;
-}
+@interface SPComboBoxCell : NSComboBoxCell
 
-@property (assign) IBOutlet id<SPComboBoxCellDelegate> spDelegate; // NSComboBoxCell already has a delegate property
+@property (weak) IBOutlet id<SPComboBoxCellDelegate> spDelegate; // NSComboBoxCell already has a delegate property
 
 /**
  * The popUp window that contains the item list.

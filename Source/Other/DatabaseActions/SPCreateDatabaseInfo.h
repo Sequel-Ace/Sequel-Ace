@@ -35,8 +35,8 @@
 	NSString *defaultCollation;
 }
 
-@property (nonnull, readwrite, retain) NSString *databaseName;
-@property (nonnull, readwrite, retain) NSString *defaultEncoding;
-@property (nonnull, readwrite, retain) NSString *defaultCollation;
+@property (nonnull, readwrite, copy) NSString *databaseName;
+@property (nonnull, readwrite, copy) NSString *defaultEncoding;
+@property (nonnull, readwrite, copy) NSString *defaultCollation;
 
 @end

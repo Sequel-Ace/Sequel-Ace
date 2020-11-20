@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 // Connection state
 typedef enum {
 	SPMySQLDisconnected               = 0,

@@ -45,9 +45,9 @@
 	NSColor  *subStringColor;
 }
 
-@property(readwrite,retain) NSString *activityName;
-@property(readwrite,retain) NSString *activityInfo;
-@property(readwrite,retain) NSDictionary *contextInfo;
+@property(readwrite, copy) NSString *activityName;
+@property(readwrite, copy) NSString *activityInfo;
+@property(readwrite, strong) NSDictionary *contextInfo;
 
 - (void)invertFontColors;
 - (void)restoreFontColors;

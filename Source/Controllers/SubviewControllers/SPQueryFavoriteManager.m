@@ -39,6 +39,9 @@
 #import "SPSplitView.h"
 #import "SPAppController.h"
 
+#import "sequel-ace-Swift.h"
+
+
 #define SP_MULTIPLE_SELECTION_PLACEHOLDER_STRING NSLocalizedString(@"[multiple selection]", @"[multiple selection]")
 #define SP_NO_SELECTION_PLACEHOLDER_STRING       NSLocalizedString(@"[no selection]", @"[no selection]")
 
@@ -53,7 +56,7 @@
 /**
  * Initialize the manager with the supplied delegate.
  */
-- (id)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(id)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"QueryFavoriteManager"])) {
 
@@ -92,18 +95,24 @@
 	// change will be stored in the prefs at once)
 	if([prefs objectForKey:SPQueryFavorites]) {
 		for(id fav in [prefs objectForKey:SPQueryFavorites])
-			[favorites addObject:[[fav mutableCopy] autorelease]];
+			[favorites addObject:[fav mutableCopy]];
+	}
+
+	NSString *delegatesFileURLStr = [delegatesFileURL absoluteString];
+	
+	if(delegatesFileURLStr.isPercentEncoded){
+		delegatesFileURLStr = delegatesFileURLStr.stringByRemovingPercentEncoding;
 	}
 
 	[favorites addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-		[[[delegatesFileURL absoluteString] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] lastPathComponent], @"name", 
+		[delegatesFileURLStr lastPathComponent], @"name",
 		[delegatesFileURL absoluteString], @"headerOfFileURL", 
 		@"", @"query",
 		nil]];
 
 	if([[SPQueryController sharedQueryController] favoritesForFileURL:delegatesFileURL]) {
 		for(id fav in [[SPQueryController sharedQueryController] favoritesForFileURL:delegatesFileURL])
-			[favorites addObject:[[fav mutableCopy] autorelease]];
+			[favorites addObject:[fav mutableCopy]];
 	}
 
 	// Select the first query if any		
@@ -263,7 +272,7 @@
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected query favorites? This action cannot be undone.", @"remove all selected query favorites informative message")];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -286,7 +295,7 @@
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all of your saved query favorites? This action cannot be undone.", @"remove all query favorites informative message")];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -359,8 +368,7 @@
 }
 
 - (IBAction)importFavoritesByReplacing:(id)sender
-{
-	
+{	
 }
 
 /**
@@ -674,8 +682,8 @@
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[[NSMutableData alloc] init] autorelease];
-	NSKeyedArchiver *archiver = [[[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] autorelease];
+	NSMutableData *indexdata = [[NSMutableData alloc] init];
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata];
 	[archiver encodeObject:rows forKey:@"indexdata"];
 	[archiver finishEncoding];
 	[pboard setData:indexdata forType:SPFavoritesPasteboardDragType];
@@ -711,7 +719,7 @@
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]] autorelease];
+	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]];
 	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
 	[unarchiver finishDecoding];
 
@@ -752,8 +760,6 @@
 
 	[favoritesTableView reloadData];
 	[favoritesArrayController rearrangeObjects];
-	[draggedIndexes release];
-	[draggedRows release];
 
 	return YES;
 }
@@ -809,10 +815,10 @@
 			NSData *pData = [NSData dataWithContentsOfFile:filename options:NSUncachedRead error:&readError];
 
 			if(pData && !readError) {
-				spf = [[NSPropertyListSerialization propertyListWithData:pData
+				spf = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&readError] retain];
+																   error:&readError];
 			}
 			
 			if(!spf || readError) {
@@ -822,9 +828,8 @@
 												   otherButton:nil
 									 informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [readError localizedDescription]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
-				if (spf) [spf release];
 				return;
 			}
 
@@ -854,7 +859,6 @@
 				[favoritesTableView reloadData];
 				[favoritesTableView selectRowIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(insertionIndexStart, insertionIndexEnd - insertionIndexStart)] byExtendingSelection:NO];
 				[favoritesTableView scrollRowToVisible:insertionIndexEnd];
-				[spf release];
 			} else {
 				NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithString:NSLocalizedString(@"Error while reading data file", @"error while reading data file")]
 												 defaultButton:NSLocalizedString(@"OK", @"OK button") 
@@ -862,9 +866,8 @@
 												  otherButton:nil 
 									informativeTextWithFormat:NSLocalizedString(@"No query favorites found.", @"error that no query favorites found")];
 
-				[alert setAlertStyle:NSInformationalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleInformational];
 				[alert runModal];
-				[spf release];
 				return;
 			}
 		}
@@ -925,7 +928,7 @@
 												   otherButton:nil
 									 informativeTextWithFormat:@"%@", [error localizedDescription]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				return;
 			}
@@ -946,15 +949,6 @@
 	[[favoriteNameTextField cell] setPlaceholderString:SP_NO_SELECTION_PLACEHOLDER_STRING];
 	[favoriteNameTextField setStringValue:@""];
 	[favoriteQueryTextView setString:@""];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(favorites);
-	
-	[super dealloc];
 }
 
 @end

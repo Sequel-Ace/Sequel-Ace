@@ -43,13 +43,13 @@
  */
 + (SPConsoleMessage *)consoleMessageWithMessage:(NSString *)message date:(NSDate *)date connection:(NSString *)connection database:(NSString *)database
 {
-	return [[[SPConsoleMessage alloc] initWithMessage:message date:date connection:connection database:database] autorelease];
+	return [[SPConsoleMessage alloc] initWithMessage:message date:date connection:connection database:database];
 }
 
 /**
  * Initializes a new console message instance using the suppled message, date and connection.
  */
-- (id)initWithMessage:(NSString *)consoleMessage date:(NSDate *)date connection:(NSString *)connection database:(NSString *)database
+- (instancetype)initWithMessage:(NSString *)consoleMessage date:(NSDate *)date connection:(NSString *)connection database:(NSString *)database
 {
 	if ((self = [super init])) {
 		[self setMessageDate:date];
@@ -59,18 +59,6 @@
 	}
 	
 	return self;
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(message);
-	SPClear(messageDate);
-	SPClear(messageDatabase);
-	SPClear(messageConnection);
-	
-	[super dealloc];
 }
 
 @end

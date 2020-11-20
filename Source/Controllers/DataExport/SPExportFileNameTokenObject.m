@@ -38,7 +38,7 @@
 {
 	SPExportFileNameTokenObject *obj = [[SPExportFileNameTokenObject alloc] init];
 	[obj setTokenId:token];
-	return [obj autorelease];
+	return obj;
 }
 
 - (NSString *)description
@@ -57,7 +57,7 @@
 #pragma mark -
 #pragma mark NSCoding compatibility
 
-- (id)initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
 	if ((self = [super init])) {
 		[self setTokenId:[decoder decodeObjectForKey:@"tokenId"]];

@@ -45,10 +45,10 @@ static NSString *SPTreeNodeIsGroupKey = @"SPTreeNodeIsGroup";
 
 + (id)treeNodeWithRepresentedObject:(id)object
 {
-	return [[[SPTreeNode alloc] initWithRepresentedObject:object] autorelease];
+	return [[SPTreeNode alloc] initWithRepresentedObject:object];
 }
 
-- (id)initWithRepresentedObject:(id)object
+- (instancetype)initWithRepresentedObject:(id)object
 {
 	if ((self = [super initWithRepresentedObject:object])) {
 		[self setIsGroup:[object isKindOfClass:[SPGroupNode class]]];
@@ -293,7 +293,7 @@ static NSString *SPTreeNodeIsGroupKey = @"SPTreeNodeIsGroup";
 #pragma mark -
 #pragma mark Coding protocol methods
 
-- (id)initWithCoder:(NSCoder *)coder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
 	if (!(self = [super init])) {
 		return nil;

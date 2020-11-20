@@ -179,7 +179,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 /**
  * Initializes an instance of SPExportController.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"ExportDialog"])) {
 		
@@ -214,7 +214,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 		
-		localizedTokenNames = [@{
+		localizedTokenNames = @{
 			SPFileNameHostTokenName:       NSLocalizedString(@"Host", @"export filename host token"),
 			SPFileNameDatabaseTokenName:   NSLocalizedString(@"Database", @"export filename database token"),
 			SPFileNameTableTokenName:      NSLocalizedString(@"Table", @"table"),
@@ -225,7 +225,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			SPFileNameTimeTokenName:       NSLocalizedString(@"Time", @"export filename time token"),
 			SPFileName24HourTimeTokenName: NSLocalizedString(@"24-Hour Time", @"export filename time token"),
 			SPFileNameFavoriteTokenName:   NSLocalizedString(@"Favorite", @"export filename favorite name token")
-		} retain];
+		};
 	}
 	
 	return self;
@@ -376,7 +376,6 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-	[notification release];
 }
 
 #pragma mark -
@@ -435,7 +434,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			NSLog(@"sender title: %@, sender tag: %ld", [(NSButton*)sender title], (long)[sender tag]);
 			
 			NSAlert *alert = [[NSAlert alloc] init];
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert setMessageText:NSLocalizedString(@"No directory selected.", @"No directory selected.")];
 			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
 			
@@ -551,10 +550,8 @@ set_input:
 
 - (void)_waitUntilQueueIsEmptyAfterCancelling:(id)sender
 {
-	[sender retain];
 	[operationQueue waitUntilAllOperationsAreFinished];
 	[self performSelectorOnMainThread:@selector(_queueIsEmptyAfterCancelling:) withObject:sender waitUntilDone:NO];
-	[sender release];
 }
 
 - (void)_queueIsEmptyAfterCancelling:(id)sender
@@ -599,7 +596,7 @@ set_input:
  */
 - (IBAction)changeExportOutputPath:(id)sender
 {	
-	self.changeExportOutputPathPanel = [NSOpenPanel openPanel] ; 	// need to retain, so we can relinquish access via stopAccessingSecurityScopedResource
+	self.changeExportOutputPathPanel = [NSOpenPanel openPanel]; 	// need to retain, so we can relinquish access via stopAccessingSecurityScopedResource
 																	// I'm not sure though, haven't written non-ARC code for years.
 	
 	changeExportOutputPathPanel.delegate = self;
@@ -611,28 +608,28 @@ set_input:
     [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-			NSString *path = [[changeExportOutputPathPanel directoryURL] path];
+			NSString *path = [[self->changeExportOutputPathPanel directoryURL] path];
 			if(!path) {
 				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[changeExportOutputPathPanel directoryURL],[[changeExportOutputPathPanel directoryURL] isFileURL]]
+											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[self->changeExportOutputPathPanel directoryURL],[[self->changeExportOutputPathPanel directoryURL] isFileURL]]
 											 userInfo:nil];
 			}
 			
-			[exportPathField setStringValue:path];
+			[self->exportPathField setStringValue:path];
 			
 			// the code always seems to go into this block as the
 			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
-			if([changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
+			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
 				
-				NSLog(@"got access to: %@", changeExportOutputPathPanel.URL.absoluteString);
+				NSLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
 				
 				BOOL __block beenHereBefore = NO;
 				
 				// have we been here before?
 				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
 					
-					if(dict[changeExportOutputPathPanel.URL.absoluteString] != nil){
-						NSLog(@"beenHereBefore: %@", dict[changeExportOutputPathPanel.URL.absoluteString]);
+					if(dict[self->changeExportOutputPathPanel.URL.absoluteString] != nil){
+						NSLog(@"beenHereBefore: %@", dict[self->changeExportOutputPathPanel.URL.absoluteString]);
 						beenHereBefore = YES;
 						*stop = YES;
 					}
@@ -641,14 +638,14 @@ set_input:
 				if(beenHereBefore == NO){
 					// create a bookmark
 					NSError *error = nil;
-					NSData *tmpAppScopedBookmark = [changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
+					NSData *tmpAppScopedBookmark = [self->changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
 																			 includingResourceValuesForKeys:nil
 																							  relativeToURL:nil
 																									  error:&error];
 					// save to prefs
 					if(tmpAppScopedBookmark && !error) {
-						[bookmarks addObject:@{changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
-						[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+						[self->bookmarks addObject:@{self->changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
+						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
 				}
 			}
@@ -739,15 +736,11 @@ set_input:
 				[newItem insertObject:[[tables objectAtIndex:i] objectAtIndex:0] atIndex:0];
 				
 				[tables replaceObjectAtIndex:i withObject:newItem];
-				
-				[newItem release];
 			}
 		}
 	}
 	
 	[exportTableList reloadData];
-	
-	[tableDict release];
 }
 
 /**
@@ -1244,8 +1237,6 @@ set_input:
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeDropSyntaxCheck state]] forKey:SPSQLExportDropEnabled];
 
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController export button updater",tableDocumentInstance) target:self selector:@selector(_toggleExportButton:) object:uiStateDict];
-	
-	[uiStateDict release];
 }
 
 /**
@@ -1257,7 +1248,6 @@ set_input:
 {
 	[exportButton setEnabled:[enable boolValue]];
 }
-
 
 #pragma mark - SPExportInitializer
 
@@ -1326,8 +1316,7 @@ set_input:
 	// I think...
 	// userChosenDirectory leaks if we don't release here
 	// the panel wasn't leaking according to Leaks instrument.
-	SPClear(userChosenDirectory);
-//	SPClear(changeExportOutputPathPanel);
+	
 
 	// Display export finished notification
 	[self displayExportFinishedNotification];
@@ -1344,7 +1333,7 @@ set_input:
 	NSArray *dataArray = nil;
 
 	// Get rid of the cached connection encoding
-	if (previousConnectionEncoding) SPClear(previousConnectionEncoding);
+	
 
 	createCustomFilename = ([[exportCustomFilenameTokenField stringValue] length] > 0);
 
@@ -1502,7 +1491,7 @@ set_input:
 					if (!singleFileHandleSet) {
 						[singleExportFile setExportFileNeedsCSVHeader:YES];
 
-						[exportFiles addObject:singleExportFile];
+						[exportFiles safeAddObject:singleExportFile];
 
 						singleFileHandleSet = YES;
 					}
@@ -1516,11 +1505,11 @@ set_input:
 		else {
 			csvExporter = [self initializeCSVExporterForTable:nil orDataArray:dataArray];
 
-			[exportFiles addObject:singleExportFile];
+			[exportFiles safeAddObject:singleExportFile];
 
 			[csvExporter setExportOutputFile:singleExportFile];
 
-			[exporters addObject:csvExporter];
+			[exporters safeAddObject:csvExporter];
 		}
 	}
 	// SQL export
@@ -1561,8 +1550,6 @@ set_input:
 		[sqlExporter setExportOutputFile:file];
 
 		[exporters addObject:sqlExporter];
-
-		[sqlExporter release];
 	}
 	// XML export
 	else if (exportType == SPXMLExport) {
@@ -1601,7 +1588,7 @@ set_input:
 					if (!singleFileHandleSet) {
 						[singleExportFile setExportFileNeedsXMLHeader:YES];
 
-						[exportFiles addObject:singleExportFile];
+						[exportFiles safeAddObject:singleExportFile];
 
 						singleFileHandleSet = YES;
 					}
@@ -1617,11 +1604,11 @@ set_input:
 
 			[singleExportFile setExportFileNeedsXMLHeader:YES];
 
-			[exportFiles addObject:singleExportFile];
+			[exportFiles safeAddObject:singleExportFile];
 
 			[xmlExporter setExportOutputFile:singleExportFile];
 
-			[exporters addObject:xmlExporter];
+			[exporters safeAddObject:xmlExporter];
 		}
 	}
 	// Dot export
@@ -1660,8 +1647,6 @@ set_input:
 		[dotExporter setExportOutputFile:file];
 
 		[exporters addObject:dotExporter];
-
-		[dotExporter release];
 	}
 
 	// For each of the created exporters, set their generic properties
@@ -1712,8 +1697,6 @@ set_input:
 	else {
 		[self startExport];
 	}
-
-	[problemFiles release];
 }
 
 /**
@@ -1777,7 +1760,7 @@ set_input:
 		[csvExporter setExportOutputFile:file];
 	}
 
-	return [csvExporter autorelease];
+	return csvExporter;
 }
 
 /**
@@ -1841,7 +1824,7 @@ set_input:
 		[xmlExporter setExportOutputFile:file];
 	}
 
-	return [xmlExporter autorelease];
+	return xmlExporter;
 }
 
 #pragma mark - SPExportFileUtilitiesPrivateAPI
@@ -1859,7 +1842,6 @@ set_input:
 	[lineEnding replaceOccurrencesOfString:@"\\t" withString:@"\t"
 								   options:NSLiteralSearch
 									 range:NSMakeRange(0, [lineEnding length])];
-
 
 	[lineEnding replaceOccurrencesOfString:@"\\n" withString:@"\n"
 								   options:NSLiteralSearch
@@ -1935,7 +1917,6 @@ set_input:
 	// We don't know where "files" came from, but we know 2 things:
 	// - NSAlert will NOT retain it as contextInfo
 	// - This method continues execution after [alert beginSheet:...], thus even if files was retained before, it could be released before the alert ends
-	[files retain];
 
 	// Get the number of files that already exist as well as couldn't be created because of other reasons
 	NSUInteger filesAlreadyExisting = 0;
@@ -1970,8 +1951,6 @@ set_input:
 
 			[exporters removeObjectsInArray:exportersToRemove];
 
-			[exportersToRemove release];
-
 			// Check the parent folder to see if it still is present
 			BOOL parentIsFolder = NO;
 			if (![[NSFileManager defaultManager] fileExistsAtPath:[[[file exportFilePath] stringByDeletingLastPathComponent] stringByExpandingTildeInPath] isDirectory:&parentIsFolder] || !parentIsFolder) {
@@ -1983,7 +1962,7 @@ set_input:
 	}
 
 	NSAlert *alert = [[NSAlert alloc] init];
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	// If files failed because they already existed, show a OS-like dialog.
 	if (filesAlreadyExisting) {
@@ -2072,8 +2051,7 @@ set_input:
 
 	[self _hideExportProgress];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:files];
-	[alert autorelease];
+	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:CFBridgingRetain(files)];
 }
 
 /**
@@ -2081,7 +2059,8 @@ set_input:
  */
 - (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-	NSArray *files = (NSArray *)contextInfo;
+	
+	NSArray *files = (NSArray *)CFBridgingRelease(contextInfo); // TODO: check if this leaks, it shouldn't
 
 	// Ignore the files that exist and remove the associated exporters
 	if (returnCode == SPExportErrorSkipErrorFiles) {
@@ -2098,8 +2077,6 @@ set_input:
 				}
 			}
 		}
-
-		[files release];
 
 		// If we're now left with no exporters, cancel the export operation
 		if ([exporters count] == 0) {
@@ -2133,8 +2110,6 @@ set_input:
 			}
 		}
 
-		[files release];
-
 		// Start the export after a short delay to give this sheet a chance to close
 		[self performSelector:@selector(startExport) withObject:nil afterDelay:0.1];
 
@@ -2147,8 +2122,6 @@ set_input:
 		{
 			[file delete];
 		}
-
-		[files release];
 
 		// Finally get rid of all the exporters and files
 		[exportFiles removeAllObjects];
@@ -2187,7 +2160,6 @@ set_input:
 
 		//note that there will be no tableName if the export is done from a query result without a database selected (or empty).
 		filename = [self expandCustomFilenameFormatUsingTableName:[[tablesListInstance tables] objectOrNilAtIndex:1]];
-
 
 		if (![[self customFilenamePathExtension] length] && [extension length] > 0) filename = [filename stringByAppendingPathExtension:extension];
 	}
@@ -2396,8 +2368,6 @@ set_input:
 {
 	NSMutableString *string = [NSMutableString string];
 
-	NSDateFormatter *dateFormatter = NSDateFormatter.mediumStyleFormatter;
-
 	// Walk through the token field, appending token replacements or strings
 	NSArray *representedFilenameParts = [exportCustomFilenameTokenField objectValue];
 
@@ -2418,10 +2388,7 @@ set_input:
 				[string appendStringOrNil:table];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameDateTokenName]) {
-				[dateFormatter setDateStyle:NSDateFormatterShortStyle];
-				[dateFormatter setTimeStyle:NSDateFormatterNoStyle];
-				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
-
+				[string appendString:[NSDateFormatter.shortStyleNoTimeFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameYearTokenName]) {
 				[string appendString:[[NSDate date] stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
@@ -2433,9 +2400,7 @@ set_input:
 				[string appendString:[[NSDate date] stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameTimeTokenName]) {
-				[dateFormatter setDateStyle:NSDateFormatterNoStyle];
-				[dateFormatter setTimeStyle:NSDateFormatterShortStyle];
-				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
+				[string appendString:[NSDateFormatter.shortStyleNoDateFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileName24HourTimeTokenName]) {
 				[string appendString:[[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
@@ -2744,7 +2709,7 @@ set_input:
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_tokenizeCustomFilenameTokenField) object:nil];
 		// do not queue a call if the key causing this change was the return key.
 		// This is to prevent a loop with _tokenizeCustomFilenameTokenField.
-		if([[NSApp currentEvent] type] != NSKeyDown || [[NSApp currentEvent] keyCode] != 0x24) {
+		if([[NSApp currentEvent] type] != NSEventTypeKeyDown || [[NSApp currentEvent] keyCode] != 0x24) {
 			[self performSelector:@selector(_tokenizeCustomFilenameTokenField) withObject:nil afterDelay:0.5];
 		}
 	}
@@ -2856,19 +2821,12 @@ set_input:
 		NSUInteger length;
 		BOOL isText = NO;
 		if(IS_STRING(obj)) {
-			length = [obj length];
+			NSString *objString = (NSString *)obj;
+			length = [objString length];
 			isText = YES;
 			
-			// we already know this is an NSString, but anyway, safety first.
-			// hmmm, check for nil?
-			// see tests
-			// obj = (NSString*)obj; is twice as fast as:
-			// obj = [NSString cast:obj]; which is twice as fast as
-			// obj = [NSString stringWithString:obj];
-			obj = [NSString cast:obj]; // this doesn't leak, it uses the same memory address
-			
 			// only attempt tokenization if string contains a { or }
-			if([obj containsString:@"{"] == NO && [obj containsString:@"}"] == NO){
+			if([objString containsString:@"{"] == NO && [objString containsString:@"}"] == NO){
 				SPLog(@"string does not contain token delimiters");
 				return;
 			}
@@ -2888,7 +2846,7 @@ set_input:
 	}
 
 	// All conditions met - synthesize the return key to trigger tokenization.
-	NSEvent *tokenizingEvent = [NSEvent keyEventWithType:NSKeyDown
+	NSEvent *tokenizingEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown
 												location:NSMakePoint(0,0)
 										   modifierFlags:0
 											   timestamp:0
@@ -3055,7 +3013,7 @@ set_input:
 		}
 
 		NSAlert *alert = [NSAlert alertWithError:err];
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 		[alert runModal];
 	}];
 }
@@ -3089,7 +3047,7 @@ set_input:
 		}
 
 		NSAlert *alert = [NSAlert alertWithError:err];
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 		[alert runModal];
 	}];
 }
@@ -3927,26 +3885,12 @@ set_input:
 #pragma mark Memory Management
 - (void)dealloc
 {
-	
 	// relinquish access to userChosenDirectory
 	[userChosenDirectory stopAccessingSecurityScopedResource];
 	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
-		
-    SPClear(tables);
-	SPClear(exporters);
-	SPClear(exportFiles);
-	SPClear(operationQueue);
-	SPClear(exportFilename);
-	SPClear(localizedTokenNames);
-	SPClear(appScopedBookmark);
-	SPClear(userChosenDirectory);
-	SPClear(previousConnectionEncoding);
-	SPClear(changeExportOutputPathPanel);
-	SPClear(startTime);
-	
+
 	[self setServerSupport:nil];
 	
-	[super dealloc];
 }
 
 @end
@@ -3963,12 +3907,12 @@ BOOL IS_STRING(id x)
 	return [x isKindOfClass:[NSString class]];
 }
 
-NSNumber *IsOn(id obj)
+NSNumber *IsOn(NSButton *obj)
 {
 	return (([obj state] == NSOnState)? @YES : @NO);
 }
 
-void SetOnOff(NSNumber *ref,id obj)
+void SetOnOff(NSNumber *ref,NSButton *obj)
 {
 	[obj setState:([ref boolValue] ? NSOnState : NSOffState)];
 }

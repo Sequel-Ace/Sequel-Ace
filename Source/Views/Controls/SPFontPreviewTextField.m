@@ -48,7 +48,7 @@
 	[super setFont:theFont];
 
 	// Set up a paragraph style for display, setting bounds and display settings
-	NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle new] autorelease];
+	NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new];
 	
 	[paragraphStyle setAlignment:NSNaturalTextAlignment];
 	[paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];

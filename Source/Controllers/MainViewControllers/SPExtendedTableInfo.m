@@ -130,7 +130,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.", @"change table type informative message"), newType];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -147,7 +147,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
 					  modalDelegate:self 
 					 didEndSelector:@selector(confirmChangeTableTypeDidEnd:returnCode:contextInfo:) 
-						contextInfo:dataDict];
+						contextInfo:(__bridge void * _Nullable)(dataDict)];
 }
 
 /**
@@ -171,11 +171,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[sender selectItemWithTitle:currentEncoding];
 
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error changing table encoding", @"error changing table encoding message"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@", @"error changing table encoding informative message"), newEncoding, [connection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table encoding", @"error changing table encoding message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@", @"error changing table encoding informative message"), newEncoding, [connection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -200,11 +196,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[sender selectItemWithTitle:currentCollation];
 
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error changing table collation", @"error changing table collation message"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@", @"error changing table collation informative message"), newCollation, [connection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table collation", @"error changing table collation message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@", @"error changing table collation informative message"), newCollation, [connection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -223,7 +215,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (IBAction)tableRowAutoIncrementWasEdited:(id)sender
 {
 	[tableRowAutoIncrement setEditable:NO];
-	
+
 	NSNumber *value = [NSNumberFormatter.decimalStyleFormatter numberFromString:[tableRowAutoIncrement stringValue]];
 	
 	[tableSourceInstance setAutoIncrementTo:value];
@@ -534,7 +526,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		return tableInfo;
 	}
 
-	NSString *HTMLString = [[[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding] autorelease];
+	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding];
 
 	[tableInfo setObject:HTMLString forKey:@"createSyntax"];
 
@@ -567,11 +559,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				[self reloadTable:self];
 			}
 			else {
-				SPOnewayAlertSheet(
-					NSLocalizedString(@"Error changing table comment", @"error changing table comment message"),
-					[NSApp mainWindow],
-					[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]]
-				);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]] callback:nil];
 			}
 		}
 	}
@@ -591,8 +579,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[tableTypePopUpButton selectItemWithTitle:[contextInfo objectForKey:SPUpdateTableTypeCurrentType]];
 	}
-	
-	[contextInfo release];
 }
 
 #pragma mark -
@@ -673,12 +659,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 		[tableTypePopUpButton selectItemWithTitle:currentType];
 		
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error changing table type", @"error changing table type message"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@", @"error changing table type informative message"), newType, [connection lastErrorMessage]]
-		);
-		
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table type", @"error changing table type message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@", @"error changing table type informative message"), newType, [connection lastErrorMessage]] callback:nil];
 		return;
 	}
 	
@@ -709,7 +690,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
-
 			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
 			// 2020-06-30 14:14:11 is one example
 		}
@@ -736,9 +716,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	SPClear(connection);
-	
-	[super dealloc];
 }
 
 @end

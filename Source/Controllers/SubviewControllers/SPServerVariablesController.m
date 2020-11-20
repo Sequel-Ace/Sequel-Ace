@@ -51,7 +51,7 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"DatabaseServerVariables"])) {
 		variables = [[NSMutableArray alloc] init];
@@ -114,8 +114,8 @@
 	[[self window] orderOut:self];
 	
 	// If the filtered array is allocated and it's not a reference to the processes array get rid of it
-	if ((variablesFiltered) && (variablesFiltered != variables)) {
-		SPClear(variablesFiltered);
+	if (variablesFiltered && variablesFiltered != variables) {
+		variablesFiltered = nil;
 	}		
 }
 
@@ -135,10 +135,10 @@
     [panel setNameFieldStringValue:@"ServerVariables"];
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            if ([variablesFiltered count] > 0) {
+            if ([self->variablesFiltered count] > 0) {
                 NSMutableString *variablesString = [NSMutableString stringWithFormat:@"# MySQL server variables for %@\n\n", [[SPAppDelegate frontDocument] host]];
                 
-                for (NSDictionary *variable in variablesFiltered)
+                for (NSDictionary *variable in self->variablesFiltered)
                 {
                     [variablesString appendFormat:@"%@ = %@\n", [variable objectForKey:@"Variable_name"], [variable objectForKey:@"Value"]];
                 }
@@ -148,7 +148,6 @@
         }
     }];
 }
-
 
 #pragma mark -
 #pragma mark Other methods
@@ -289,14 +288,13 @@
 	
 	// If the filtered array is allocated and its not a reference to the variables array
 	// relase it to prevent memory leaks upon the next allocation.
-	if ((variablesFiltered) && (variablesFiltered != variables)) {
-		SPClear(variablesFiltered);
+	if (variablesFiltered && variablesFiltered != variables) {
+		variablesFiltered = nil;
 	}
 	
 	variablesFiltered = [[NSMutableArray alloc] init];
 	
 	if ([filterString length] == 0) {
-		[variablesFiltered release];
 		variablesFiltered = variables;
 		
 		[saveVariablesButton setEnabled:YES];
@@ -365,7 +363,6 @@
 		// Copy the string to the pasteboard
 		[pasteBoard declareTypes:@[NSStringPboardType] owner:nil];
 		[pasteBoard setString:string forType:NSStringPboardType];
-		[string release];
 	}
 }
 
@@ -395,9 +392,6 @@
 {
 	[self _removePreferenceObservers];
 
-	SPClear(variables);
-	
-	[super dealloc];
 }
 
 @end

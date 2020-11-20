@@ -64,12 +64,12 @@
 /**
  * @property connection The current database connection
  */
-@property (readwrite, assign) SPMySQLConnection *connection;
+@property (readwrite, strong) SPMySQLConnection *connection;
 
 /**
  * @property serverSupport The connection's associated SPServerSupport instance
  */
-@property (readwrite, assign) SPServerSupport *serverSupport;
+@property (readwrite, strong) SPServerSupport *serverSupport;
 
 - (void)resetAllData;
 

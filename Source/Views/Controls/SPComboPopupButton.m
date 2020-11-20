@@ -52,7 +52,7 @@
 #pragma mark -
 #pragma mark Setup
 
-- (id)initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
 	if ((self = [super initWithCoder:decoder])) {
 		[self _initCustomData];
@@ -60,7 +60,7 @@
 	return self;
 }
 
-- (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
+- (instancetype)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
 {
 	if ((self = [super initWithFrame:frameRect pullsDown:flag])) {
 		[self _initCustomData];
@@ -255,7 +255,7 @@
 	BOOL trackAsPerMenuButton = NO;
 
 	// If the event isn't a mouse button event, allow the NSPopUpButtonCell to handle it
-	if ([theEvent type] != NSLeftMouseDown) {
+	if ([theEvent type] != NSEventTypeLeftMouseDown) {
 		trackAsPerMenuButton = YES;
 	}
 
@@ -273,13 +273,12 @@
 		return [super trackMouse:theEvent inRect:cellFrame ofView:controlView untilMouseUp:untilMouseUp];
 	}
 
-
 	// Custom tracking to be performed - indent the vertical button area slightly
 	activeRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y + heightIndent, cellFrame.size.width - [(SPComboPopupButton *)controlView lineOffset] + 1, cellFrame.size.height - fabs(2 * heightIndent));
 
 	// Continue tracking the mouse while it's down, updating the state as it enters and leaves the cell,
 	// until it is released; if still within the cell, perform a click.
-	while ([theEvent type] != NSLeftMouseUp) {
+	while ([theEvent type] != NSEventTypeLeftMouseUp) {
 		thePoint = [controlView convertPoint:[theEvent locationInWindow] fromView:nil];
 
 		if (NSMouseInRect(thePoint, activeRect, [controlView isFlipped]) != mouseInButton) {
@@ -287,7 +286,7 @@
 			[self setHighlighted:mouseInButton];
 		}
 
-		theEvent = [[controlView window] nextEventMatchingMask:(NSLeftMouseUpMask | NSLeftMouseDraggedMask)];
+		theEvent = [[controlView window] nextEventMatchingMask:(NSEventTypeLeftMouseUp | NSEventMaskLeftMouseDragged)];
 	}
 
 	// If the mouse is still inside the button area, perform a click action and restore state

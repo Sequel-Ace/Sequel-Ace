@@ -35,7 +35,7 @@
 
 @interface SPPrivilegesMO : NSManagedObject
 
-@property (nonatomic, retain) NSString *db;
-@property (nonatomic, retain) SPUserMO *user;
+@property (nonatomic, copy) NSString *db;
+@property (nonatomic, strong) SPUserMO *user;
 
 @end

@@ -72,8 +72,6 @@ static NSString *SPUserMOChildrenKey = @"children";
     [self willChangeValueForKey:SPUserMOChildrenKey withSetMutation:NSKeyValueUnionSetMutation usingObjects:changedObjects];
     [[self primitiveValueForKey:SPUserMOChildrenKey] addObject:value];
     [self didChangeValueForKey:SPUserMOChildrenKey withSetMutation:NSKeyValueUnionSetMutation usingObjects:changedObjects];
-    
-    [changedObjects release];
 	
 	value.user = self.user;
 }
@@ -85,8 +83,6 @@ static NSString *SPUserMOChildrenKey = @"children";
     [self willChangeValueForKey:SPUserMOChildrenKey withSetMutation:NSKeyValueMinusSetMutation usingObjects:changedObjects];
     [[self primitiveValueForKey:SPUserMOChildrenKey] removeObject:value];
     [self didChangeValueForKey:SPUserMOChildrenKey withSetMutation:NSKeyValueMinusSetMutation usingObjects:changedObjects];
-    
-    [changedObjects release];
 }
 
 - (BOOL)validateForInsert:(NSError **)error

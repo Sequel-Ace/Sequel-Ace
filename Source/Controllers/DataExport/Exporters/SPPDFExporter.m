@@ -42,7 +42,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPPDFExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPPDFExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPPDFExporterProtocol));

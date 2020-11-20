@@ -76,7 +76,6 @@
 	[self setTypeDefinition:nil];
 	[self setTypeRange:nil];
 	[self setTypeDescription:nil];
-	[super dealloc];
 }
 
 @end
@@ -89,7 +88,7 @@ static inline SPFieldTypeHelp *MakeFieldTypeHelp(NSString *typeName,NSString *ty
 	[obj setTypeRange:      typeRange];
 	[obj setTypeDescription:typeDescription];
 	
-	return [obj autorelease];
+	return obj;
 }
 
 struct _cmpMap {
@@ -126,7 +125,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		
@@ -165,16 +164,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[tableSourceView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 	[indexesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
-	extraFieldSuggestions = [@[
+	extraFieldSuggestions = @[
 			@"None",
 			@"auto_increment",
 			@"on update CURRENT_TIMESTAMP",
 			@"SERIAL DEFAULT VALUE"
-	] retain];
+	];
 
 	// Note that changing the contents or ordering of this array will affect the implementation of 
 	// SPTableFieldValidation. See it's implementation file for more details.
-	typeSuggestions = [@[
+	typeSuggestions = @[
 		SPMySQLTinyIntType,
 		SPMySQLSmallIntType,
 		SPMySQLMediumIntType,
@@ -222,7 +221,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		SPMySQLMultiPointType,
 		SPMySQLMultiLineStringType,
 		SPMySQLMultiPolygonType,
-		SPMySQLGeometryCollectionType] retain];
+		SPMySQLGeometryCollectionType];
 
 	[fieldValidation setFieldTypes:typeSuggestions];
 	
@@ -463,17 +462,17 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Delete field '%@'?", @"delete field message"), field] message:alertMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 
-		[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
+		[self->tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
 
 		NSNumber *removeKey = [NSNumber numberWithBool:hasForeignKey];
 
 		if ([NSThread isMainThread]) {
-			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", tableDocumentInstance)
+			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", self->tableDocumentInstance)
 									   target:self
 									 selector:@selector(_removeFieldAndForeignKey:)
 									   object:removeKey];
 
-			[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
+			[self->tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
 													callbackObject:self
 												  callbackFunction:NULL];
 		} else {
@@ -610,11 +609,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
 
 	if ([mySQLConnection queryErrored]) {
-		SPOnewayAlertSheet(
-			NSLocalizedString(@"Error", @"error"),
-			[NSApp mainWindow],
-			[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]]
-		);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -720,7 +715,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		if (![[theRow objectForKey:@"unsigned"] boolValue]) {
 			NSMutableDictionary *rowCpy = [theRow mutableCopy];
 			[rowCpy setObject:@YES forKey:@"unsigned"];
-			theRow = [rowCpy autorelease];
+			theRow = rowCpy;
 		}
 	}
 
@@ -809,7 +804,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
 				[self cancelRowEditing];
-				[tableSourceView reloadData];
+				[self->tableSourceView reloadData];
 			}];
 
 		} else {
@@ -818,7 +813,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
 				[self cancelRowEditing];
-				[tableSourceView reloadData];
+				[self->tableSourceView reloadData];
 			}];
 		}
 
@@ -889,7 +884,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	if(!specialFieldTypes) {
-
 
 		if ([theRowType isEqualToString:@"JSON"]) {
 			// we "see" JSON as a string, but it is not internally to MySQL and so doesn't allow CHARACTER SET/BINARY/COLLATE either.
@@ -1016,7 +1010,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Display the error sheet
-	SPOnewayAlertSheet([errorDictionary objectForKey:@"title"], [tableDocumentInstance parentWindow], [errorDictionary objectForKey:@"message"]);
+	[NSAlert createWarningAlertWithTitle:[errorDictionary objectForKey:@"title"] message:[errorDictionary objectForKey:@"message"] callback:nil];
 }
 
 /**
@@ -1089,7 +1083,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Problem: reentering edit mode for first cell doesn't function
 	[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-	[tableSourceView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
+	[tableSourceView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 
 	[tableSourceView reloadData];
 }
@@ -1213,8 +1207,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	[tempResult2 addObject:temp];
 
-	[temp release];
-
 	for (i = 0; i < [structureQueryResult numberOfRows]; i++) {
 		NSMutableArray *row = [[structureQueryResult getRowAsArray] mutableCopy];
 
@@ -1222,13 +1214,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [row count]; j++)
 		{
 			if ([[row objectAtIndex:j] isNSNull]) {
-				[row replaceObjectAtIndex:j withObject:(NSString *)escapedNullValue];
+				[row replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
 		[tempResult addObject:row];
-
-		[row release];
 	}
 
 	for (i = 0; i < [indexesQueryResult numberOfRows]; i++) {
@@ -1241,13 +1231,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [eachIndex count]; j++)
 		{
 			if ([[eachIndex objectAtIndex:j] isNSNull]) {
-				[eachIndex replaceObjectAtIndex:j withObject:(NSString *)escapedNullValue];
+				[eachIndex replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
 		[tempResult2 addObject:eachIndex];
-
-		[eachIndex release];
 	}
 
 	CFRelease(escapedNullValue);
@@ -1321,10 +1309,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// Remove the foreign key before the field if required
 			if ([removeForeignKey boolValue]) {
 				NSString *relationName = @"";
-				NSString *field = [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"];
+				NSString *field = [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"];
 
 				// Get the foreign key name
-				for (NSDictionary *constraint in [tableDataInstance getConstraints])
+				for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
 				{
 					for (NSString *column in [constraint objectForKey:@"columns"])
 					{
@@ -1335,46 +1323,46 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
+				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
 
 				// Check for errors, but only if the query wasn't cancelled
-				if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
+				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
 					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [mySQLConnection lastErrorMessage]] forKey:@"message"];
+					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 					[[self onMainThread] showErrorSheetWith:errorDictionary];
 				}
 			}
 
 			// Remove field
-			[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[selectedTable backtickQuotedString], [[[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString]]];
+			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
+																	[self->selectedTable backtickQuotedString], [[[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
-			if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
+			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
 				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
-																	  [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"],
-																	  [mySQLConnection lastErrorMessage]] forKey:@"message"];
+																	  [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
+																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 
 				[[self onMainThread] showErrorSheetWith:errorDictionary];
 			}
 			else {
-				[tableDataInstance resetAllData];
+				[self->tableDataInstance resetAllData];
 
 				// Refresh relevant views
-				[tableDocumentInstance setStatusRequiresReload:YES];
-				[tableDocumentInstance setContentRequiresReload:YES];
-				[tableDocumentInstance setRelationsRequiresReload:YES];
+				[self->tableDocumentInstance setStatusRequiresReload:YES];
+				[self->tableDocumentInstance setContentRequiresReload:YES];
+				[self->tableDocumentInstance setRelationsRequiresReload:YES];
 
-				[self loadTable:selectedTable];
+				[self loadTable:self->selectedTable];
 			}
 
-			[tableDocumentInstance endTask];
+			[self->tableDocumentInstance endTask];
 
 			// Preserve focus on table for keyboard navigation
-			[[tableDocumentInstance parentWindow] makeFirstResponder:tableSourceView];
+			[[self->tableDocumentInstance parentWindow] makeFirstResponder:self->tableSourceView];
 		}
 	});
 }
@@ -1403,7 +1391,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Make a mutable copy out of the cached [tableDataInstance columns] since we're adding infos
 	for (id col in [tableDataInstance columns])
 	{
-		[theTableFields addObject:[[col mutableCopy] autorelease]];
+		[theTableFields addObject:[col mutableCopy]];
 	}
 
 	// Retrieve the indexes for the table
@@ -1415,11 +1403,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[[self onMainThread] setTableDetails:nil];
 
 		if ([mySQLConnection isConnected]) {
-			SPOnewayAlertSheet(
-							   NSLocalizedString(@"Error", @"error"),
-							   [NSApp mainWindow],
-							   [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]]
-							   );
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 		return;
@@ -1457,36 +1441,36 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSArray *encodings  = [databaseDataInstance getDatabaseCharacterSetEncodings];
 
 	SPMainQSync(^{
-		[encodingPopupCell removeAllItems];
+		[self->encodingPopupCell removeAllItems];
 
 		if ([encodings count]) {
 
-			[encodingPopupCell addItemWithTitle:@"dummy"];
+			[self->encodingPopupCell addItemWithTitle:@"dummy"];
 			//copy the default attributes and add gray color
-			NSMutableDictionary *defaultAttrs = [NSMutableDictionary dictionaryWithDictionary:[[encodingPopupCell attributedTitle] attributesAtIndex:0 effectiveRange:NULL]];
+			NSMutableDictionary *defaultAttrs = [NSMutableDictionary dictionaryWithDictionary:[[self->encodingPopupCell attributedTitle] attributesAtIndex:0 effectiveRange:NULL]];
 			[defaultAttrs setObject:[NSColor lightGrayColor] forKey:NSForegroundColorAttributeName];
-			[[encodingPopupCell lastItem] setTitle:@""];
+			[[self->encodingPopupCell lastItem] setTitle:@""];
 
 			for (NSDictionary *encoding in encodings)
 			{
 				NSString *encodingName = [encoding objectForKey:@"CHARACTER_SET_NAME"];
 				NSString *title = (![encoding objectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], encodingName];
 
-				[encodingPopupCell addItemWithTitle:title];
-				NSMenuItem *item = [encodingPopupCell lastItem];
+				[self->encodingPopupCell addItemWithTitle:title];
+				NSMenuItem *item = [self->encodingPopupCell lastItem];
 
 				[item setRepresentedObject:encodingName];
 
-				if ([encodingName isEqualToString:[tableDataInstance tableEncoding]]) {
+				if ([encodingName isEqualToString:[self->tableDataInstance tableEncoding]]) {
 
 					NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:[item title] attributes:defaultAttrs];
 
-					[item setAttributedTitle:[itemString autorelease]];
+					[item setAttributedTitle:itemString];
 				}
 			}
 		}
 		else {
-			[encodingPopupCell addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
+			[self->encodingPopupCell addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 		}
 	});
 
@@ -1600,8 +1584,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Send the query finished/work complete notification
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
-
-	[theTableFields release];
 }
 
 /**
@@ -1636,7 +1618,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	![tableDocumentInstance isWorking];
 
 	// Update the selected table name
-	if (selectedTable) SPClear(selectedTable);
+	
 	if (newTableName) selectedTable = [[NSString alloc] initWithString:newTableName];
 
 	[indexesController setTable:selectedTable];
@@ -1670,7 +1652,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[indexesController setFields:tableFields];
 	[indexesController setIndexes:[tableDetails objectForKey:@"tableIndexes"]];
 
-	if (defaultValues) SPClear(defaultValues);
+	
 
 	newDefaultValues = [NSMutableDictionary dictionaryWithCapacity:[tableFields count]];
 
@@ -1679,7 +1661,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[newDefaultValues setObject:[theField objectForKey:@"default"] forKey:[theField objectForKey:@"name"]];
 	}
 
-	defaultValues = [[NSDictionary dictionaryWithDictionary:newDefaultValues] retain];
+	defaultValues = [NSDictionary dictionaryWithDictionary:newDefaultValues];
 
 	// Enable the edit table button
 	[editTableButton setEnabled:enableInteraction];
@@ -1749,7 +1731,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					// If this matches the table's collation, draw in gray
 					if (columnUsesTableDefaultEncoding && [collationName isEqualToString:tableCollation]) {
 						NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:[item title] attributes:menuAttrs];
-						[item setAttributedTitle:[itemString autorelease]];
+						[item setAttributedTitle:itemString];
 					}
 				}
 
@@ -1998,11 +1980,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[mySQLConnection queryString:queryString];
 
 	if ([mySQLConnection queryErrored]) {
-		SPOnewayAlertSheet(
-						   NSLocalizedString(@"Error moving field", @"error moving field message"),
-						   [tableDocumentInstance parentWindow],
-						   [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]]
-						   );
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]] callback:nil];
 	}
 	else {
 		[tableDataInstance resetAllData];
@@ -2017,8 +1995,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
-
-	[originalRow release];
 
 	return YES;
 }
@@ -2320,7 +2296,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		{
 			NSDictionary *titleAttr = @{NSFontAttributeName: [NSFont boldSystemFontOfSize:[NSFont systemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
 			NSAttributedString *title = [[NSAttributedString alloc] initWithString:[help typeDefinition] attributes:titleAttr];
-			[as appendAttributedString:[title autorelease]];
+			[as appendAttributedString:title];
 			[[as mutableString] appendString:@"\n"];
 		}
 
@@ -2328,7 +2304,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		if ([[help typeRange] length]) {
 			NSDictionary *rangeAttr = @{NSFontAttributeName: [NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
 			NSAttributedString *range = [[NSAttributedString alloc] initWithString:[help typeRange] attributes:rangeAttr];
-			[as appendAttributedString:[range autorelease]];
+			[as appendAttributedString:range];
 			[[as mutableString] appendString:@"\n"];
 		}
 
@@ -2338,12 +2314,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		{
 			NSDictionary *descAttr = @{NSFontAttributeName: [NSFont systemFontOfSize:[NSFont systemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
 			NSAttributedString *desc = [[NSAttributedString alloc] initWithString:[help typeDescription] attributes:descAttr];
-			[as appendAttributedString:[desc autorelease]];
+			[as appendAttributedString:desc];
 		}
 
 		[as addAttribute:NSParagraphStyleAttributeName value:[NSParagraphStyle defaultParagraphStyle] range:NSMakeRange(0, [as length])];
 
-		[[structureHelpText textStorage] setAttributedString:[as autorelease]];
+		[[structureHelpText textStorage] setAttributedString:as];
 
 		NSRect rect = [as boundingRectWithSize:NSMakeSize([structureHelpText frame].size.width-2, CGFLOAT_MAX) options:NSStringDrawingUsesFontLeading|NSStringDrawingUsesLineFragmentOrigin];
 
@@ -2463,18 +2439,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	SPClear(tableFields);
-	SPClear(oldRow);
-	SPClear(enumFields);
-	SPClear(typeSuggestions);
-	SPClear(extraFieldSuggestions);
-
-	SPClear(fieldValidation);
-
-	if (defaultValues) SPClear(defaultValues);
-	if (selectedTable) SPClear(selectedTable);
-
-	[super dealloc];
 }
 
 + (SPFieldTypeHelp *)helpForFieldType:(NSString *)typeName
@@ -2487,7 +2451,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *intRangeTpl = NSLocalizedString(@"Signed: %@ to %@\nUnsigned: %@ to %@",@"range of integer types");
 		// NSString *INTR(NSNumber *sMin, NSNumber *sMax, NSNumber *uMin, NSNumber *uMax): return formatted string for integer types (signed min/max, unsigned min/max)
 #define INTR(sMin,sMax,uMin,uMax) [NSString stringWithFormat:intRangeTpl,FN(sMin),FN(sMax),FN(uMin),FN(uMax)]
-		list = [@[
+		list = @[
 			MakeFieldTypeHelp(
 				SPMySQLTinyIntType,
 				@"TINYINT[(M)] [UNSIGNED] [ZEROFILL]",
@@ -2761,7 +2725,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				@"",
 				NSLocalizedString(@"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.",@"description of geometrycollection")
 			),
-		] retain];
+		];
 #undef FN
 #undef INTR
 	});
@@ -2802,9 +2766,9 @@ void _BuildMenuWithPills(NSMenu *menu, struct _cmpMap *map, size_t mapEntries)
 
 				NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
 
-				[attachment setAttachmentCell:[cell autorelease]];
+				[attachment setAttachmentCell:cell];
 
-				NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:[attachment autorelease]];
+				NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
 
 				[[itemStr mutableString] appendString:@" "];
 				[itemStr appendAttributedString:attachmentString];
@@ -2819,6 +2783,6 @@ void _BuildMenuWithPills(NSMenu *menu, struct _cmpMap *map, size_t mapEntries)
 			[item setToolTip:[tooltipParts componentsJoinedByString:@" "]];
 		}
 
-		[item setAttributedTitle:[itemStr autorelease]];
+		[item setAttributedTitle:itemStr];
 	}
 }

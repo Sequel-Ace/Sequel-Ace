@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Ping & KeepAlive.h"
 #import "SPMySQL Private APIs.h"
 #import "Locking.h"

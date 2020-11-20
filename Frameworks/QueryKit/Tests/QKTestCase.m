@@ -34,7 +34,7 @@
 @synthesize identifierQuote = _identifierQuote;
 @synthesize database = _database;
 
-- (id)initWithInvocation:(NSInvocation *)invocation database:(QKQueryDatabase)database identifierQuote:(NSString *)quote {
+- (instancetype)initWithInvocation:(NSInvocation *)invocation database:(QKQueryDatabase)database identifierQuote:(NSString *)quote {
     if ((self = [super initWithInvocation:invocation])) {
 		[self setDatabase:database];
 		[self setIdentifierQuote:quote];

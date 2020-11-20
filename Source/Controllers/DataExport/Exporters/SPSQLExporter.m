@@ -69,7 +69,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPSQLExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPSQLExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPSQLExporterProtocol));
@@ -97,10 +97,11 @@
 	    (![self sqlDatabaseName])     || ([[self sqlDatabaseName] isEqualToString:@""]) ||
 	    (![self sqlDatabaseVersion]   || ([[self sqlDatabaseName] isEqualToString:@""])))
 	{
-		goto end_cleanup;
+		[self endCleanup:oldSqlMode];
+		return;
 	}
 
-	sqlTableDataInstance = [[[SPTableData alloc] init] autorelease];
+	sqlTableDataInstance = [[SPTableData alloc] init];
 	[sqlTableDataInstance setConnection:connection];
 
 	// Inform the delegate that the export process is about to begin
@@ -120,7 +121,10 @@
 	for (NSArray *item in [self sqlExportTables])
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 
 		NSMutableArray *targetArray;
 		switch ([NSArrayObjectAtIndex(item, 4) intValue]) {
@@ -257,7 +261,10 @@
 	for (NSArray *table in tables) 
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 		
 		[self setSqlCurrentTableExportIndex:[self sqlCurrentTableExportIndex]+1];
 		NSString *tableName = NSArrayObjectAtIndex(table, 0);
@@ -294,16 +301,14 @@
 				NSDictionary *tableDetails = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 
 				if ([tableDetails objectForKey:@"Create View"]) {
-					[viewSyntaxes setValue:[[[[tableDetails objectForKey:@"Create View"] copy] autorelease] createViewSyntaxPrettifier] forKey:tableName];
+					[viewSyntaxes setValue:[[[tableDetails objectForKey:@"Create View"] copy] createViewSyntaxPrettifier] forKey:tableName];
 					createTableSyntax = [self _createViewPlaceholderSyntaxForView:tableName];
 					tableType = SPTableTypeView;
 				}
 				else {
-					createTableSyntax = [[[tableDetails objectForKey:@"Create Table"] copy] autorelease];
+					createTableSyntax = [[tableDetails objectForKey:@"Create Table"] copy];
 					tableType = SPTableTypeTable;
 				}
-
-				[tableDetails release];
 			}
 
 			if ([connection queryErrored]) {
@@ -325,7 +330,7 @@
 
 			if ([createTableSyntax isKindOfClass:[NSData class]]) {
 #warning This doesn't make sense. If the NSData really contains a string it would be in utf8, utf8mb4 or a mysql pre-4.1 legacy charset, but not in the export output charset. This whole if() is likely a side effect of the BINARY flag confusion (#2700)
-				createTableSyntax = [[[NSString alloc] initWithData:createTableSyntax encoding:[self exportOutputEncoding]] autorelease];
+				createTableSyntax = [[NSString alloc] initWithData:createTableSyntax encoding:[self exportOutputEncoding]];
 			}
 			
 			// If necessary strip out the AUTO_INCREMENT from the table structure definition
@@ -400,7 +405,7 @@
 
 			if (rowCount) {
 				// Set up a result set in streaming mode
-				SPMySQLStreamingResult *streamingResult = [[connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName backtickQuotedString]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])] retain];
+				SPMySQLStreamingResult *streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName backtickQuotedString]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])];
 
 				// Inform the delegate that we are about to start writing data for the current table
 				[delegate performSelectorOnMainThread:@selector(sqlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -419,9 +424,6 @@
 				// Iterate through the rows to construct a VALUES group for each
 				NSUInteger rowsWrittenForTable = 0;
 				NSUInteger rowsWrittenForCurrentStmt = 0;
-				BOOL cleanAutoReleasePool = NO;
-				
-				NSAutoreleasePool *sqlExportPool = [[NSAutoreleasePool alloc] init];
 				
 				// Inform the delegate that we are about to start writing the data to disk
 				[delegate performSelectorOnMainThread:@selector(sqlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -433,12 +435,11 @@
 					if ([self isCancelled]) {
 						[connection cancelCurrentQuery];
 						[streamingResult cancelResultLoad];
-						[streamingResult release];
-						[sqlExportPool release];
 						free(useRawDataForColumnAtIndex);
 						free(useRawHexDataForColumnAtIndex);
 
-						goto end_cleanup;
+						[self endCleanup:oldSqlMode];
+						return;
 					}
 
 					// Update the progress
@@ -465,9 +466,6 @@
 
 						queryLength = 0;
 						rowsWrittenForCurrentStmt = 0;
-
-						// Use the opportunity to drain and reset the autorelease pool at the end of this row
-						cleanAutoReleasePool = YES;
 					}
 					else if (rowsWrittenForTable == 0) {
 						[sqlString setString:@"\n\t("];
@@ -526,8 +524,6 @@
 								}
 								
 								[sqlString appendFormat:@"'%@'", data];
-								
-								[data release];
 							}
 						} 
 
@@ -545,13 +541,6 @@
 
 					// Write this row to the file
 					[self writeUTF8String:sqlString];
-
-					// Clean autorelease pool if so decided earlier
-					if (cleanAutoReleasePool) {
-						[sqlExportPool release];
-						sqlExportPool = [[NSAutoreleasePool alloc] init];
-						cleanAutoReleasePool = NO;
-					}
 					
 					rowsWrittenForTable++;
 					rowsWrittenForCurrentStmt++;
@@ -565,12 +554,8 @@
 				[metaString appendFormat:@"/*!40000 ALTER TABLE %@ ENABLE KEYS */;\nUNLOCK TABLES;\n", [tableName backtickQuotedString]];
 				
 				[self writeUTF8String:metaString];
-				
-				// Drain the autorelease pool
-				[sqlExportPool release];
 			
 				// Release the result set
-				[streamingResult release];
 			}
 
 			free(useRawDataForColumnAtIndex);
@@ -599,7 +584,10 @@
 				for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
 				{
 					// Check for cancellation flag
-					if ([self isCancelled]) goto end_cleanup;
+					if ([self isCancelled]) {
+						[self endCleanup:oldSqlMode];
+						return;
+					}
 					
 					NSDictionary *triggers = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 					
@@ -615,8 +603,6 @@
 					                         [triggers objectForKey:@"Event"],
 					                         [[triggers objectForKey:@"Table"] backtickQuotedString],
 					                         [triggers objectForKey:@"Statement"]];
-					
-					[triggers release];
 				}
 				
 				[metaString appendString:@"DELIMITER ;\n/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;\n"];
@@ -641,7 +627,10 @@
 	for (NSString *viewName in viewSyntaxes)
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 		
 		[metaString setString:@"\n\n"];
 
@@ -657,7 +646,10 @@
 	for (NSString *procedureType in @[@"PROCEDURE", @"FUNCTION"])
 	{
 		// Check for cancellation flag
-		if ([self isCancelled]) goto end_cleanup;
+		if ([self isCancelled]) {
+			[self endCleanup:oldSqlMode];
+			return;
+		}
 		
 		// Retrieve the array of selected procedures or functions, and skip export if not selected
 		NSMutableArray *items;
@@ -683,7 +675,10 @@
 			for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
 			{
 				// Check for cancellation flag
-				if ([self isCancelled]) goto end_cleanup;
+				if ([self isCancelled]) {
+					[self endCleanup:oldSqlMode];
+					return;
+				}
 
 				NSDictionary *proceduresList = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 				NSString *procedureName = [NSString stringWithFormat:@"%@", [proceduresList objectForKey:@"Name"]];
@@ -696,8 +691,8 @@
 				{
 					// Check for cancellation flag
 					if ([self isCancelled]) {
-						[proceduresList release];
-						goto end_cleanup;
+						[self endCleanup:oldSqlMode];
+						return;
 					}
 					
 					if ([NSArrayObjectAtIndex(item, 0) isEqualToString:procedureName]) {
@@ -708,7 +703,6 @@
 					}
 				}
 				if (!itemFound) {
-					[proceduresList release];
 					continue;
 				}
 
@@ -723,7 +717,6 @@
 				
 				// Only continue if the 'CREATE SYNTAX' is required
 				if (!sqlOutputIncludeStructure) {
-					[proceduresList release];
 					continue;
 				}
 				
@@ -743,7 +736,6 @@
 					if ([self sqlOutputIncludeErrors]) {
 						[self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
 					}
-					[proceduresList release];
 					continue;
 				}
 				
@@ -760,8 +752,6 @@
 					if ([self sqlOutputIncludeErrors]) {
 						[self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", errorString]];
 					}
-					[proceduresList release];
-					[procedureInfo release];
 					continue;
 				}
 
@@ -775,9 +765,6 @@
 				//
 				// Build the CREATE PROCEDURE string to include MySQL Version limiters
 				[metaString appendFormat:@"/*!50003 CREATE*/ /*!50020 DEFINER=%@*/ /*!50003 %@ */;;\n\n/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;;\n", escapedDefiner, procedureBody];
-				
-				[procedureInfo release];
-				[proceduresList release];
 				
 			}
 			
@@ -821,12 +808,13 @@
 	// Inform the delegate that the export process is complete
 	[delegate performSelectorOnMainThread:@selector(sqlExportProcessComplete:) withObject:self waitUntilDone:NO];
 
-end_cleanup:
+	[self endCleanup:oldSqlMode];
+}
+
+- (void)endCleanup:(NSString *)oldSqlMode {
 	if(oldSqlMode) {
 		[connection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@",[oldSqlMode tickQuotedString]]];
 	}
-	[errors release];
-	[sqlString release];
 }
 
 /**
@@ -934,23 +922,8 @@ end_cleanup:
 	[placeholderSyntax appendString:@") ENGINE=MyISAM"];
 	
 	// Clean up and return
-	[fieldString release];
 	
-	return [placeholderSyntax autorelease];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(sqlExportTables);
-	SPClear(sqlDatabaseHost);
-	SPClear(sqlDatabaseName);
-	SPClear(sqlExportCurrentTable);
-	SPClear(sqlDatabaseVersion);
-	SPClear(sqlExportErrors);
-	
-	[super dealloc];
+	return placeholderSyntax;
 }
 
 @end

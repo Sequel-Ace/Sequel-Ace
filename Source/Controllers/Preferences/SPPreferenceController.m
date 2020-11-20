@@ -32,6 +32,9 @@
 #import "SPTablesPreferencePane.h"
 #import "SPEditorPreferencePane.h"
 #import "SPGeneralPreferencePane.h"
+#import "SPNotificationsPreferencePane.h"
+#import "SPNetworkPreferencePane.h"
+#import "SPFilePreferencePane.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -54,7 +57,7 @@
 @synthesize filePreferencePane;
 @synthesize fontChangeTarget;
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super initWithWindowNibName:@"Preferences"])) {		
 		fontChangeTarget = 0;
@@ -107,8 +110,8 @@
 		}
 	}
 	
-	[[self window] setMinSize:NSMakeSize(0, 0)];
-	[[self window] setShowsResizeIndicator:[preferencePane preferencePaneAllowsResizing]];
+	[[self window] setMinSize:NSMakeSize(500, 350)];
+	[[self window] setShowsResizeIndicator:YES];
 	
 	[toolbar setSelectedItemIdentifier:[preferencePane preferencePaneIdentifier]];
 	
@@ -154,7 +157,7 @@
  */
 - (void)_setupToolbar
 {
-	toolbar = [[[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"] autorelease];
+	toolbar = [[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"];
 
 	// General preferences
 	generalItem = [[NSToolbarItem alloc] initWithItemIdentifier:[generalPreferencePane preferencePaneIdentifier]];
@@ -220,17 +223,15 @@
  * Resizes the window to the size of the supplied view.
  */
 - (void)_resizeWindowForContentView:(NSView *)view
-{  
-	// Remove all subviews
-	for (NSView *subview in [[[self window] contentView] subviews]) [subview removeFromSuperview];
-  
-	// Resize window
-	[[self window] resizeForContentView:view titleBarVisible:YES];
-  
+{
+	// Handle expanding
+	[[self window] resizeForContentView:view];
+
 	// Add view
-	[[[self window] contentView] addSubview:view];
-	
-	[view setFrameOrigin:NSMakePoint(0, 0)];
+	[self window].contentView = view;
+
+	// Handle contracting
+	[[self window] resizeForContentView:view];
 }
 
 #pragma mark - SPPreferenceControllerDelegate
@@ -248,17 +249,6 @@
 	if ([[self window] firstResponder]) {
 		[[self window] endEditingFor:[[self window] firstResponder]];
 	}
-}
-
-/**
- * Trap window resize notifications and use them to disable resizing on most tabs
- * - except for the favourites tab.
- */
-- (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize
-{
-	[[NSColorPanel sharedColorPanel] close];
-
-	return [sender showsResizeIndicator] ? frameSize : [sender frame].size;
 }
 
 #pragma mark -
@@ -288,7 +278,7 @@
 		return fileItem;
 	}
 
-	return [[[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] autorelease];
+	return [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 }
 
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)aToolbar
@@ -328,21 +318,6 @@
 			 SPPreferenceToolbarNetwork,
 			 SPPreferenceToolbarFile
 			 ];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(preferencePanes);
-	SPClear(generalItem);
-	SPClear(tablesItem);
-	SPClear(notificationsItem);
-	SPClear(editorItem);
-	SPClear(networkItem);
-	SPClear(fileItem);
-	
-	[super dealloc];
 }
 
 @end

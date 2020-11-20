@@ -106,8 +106,8 @@
 + (QKQuery *)selectQueryFromTable:(NSString *)table;
 + (QKQuery *)selectQueryFromTable:(NSString *)table database:(NSString *)database;
 
-- (id)initWithTable:(NSString *)table;
-- (id)initWithTable:(NSString *)table database:(NSString *)database;
+- (instancetype)initWithTable:(NSString *)table;
+- (instancetype)initWithTable:(NSString *)table database:(NSString *)database;
 
 - (NSString *)query;
 - (void)clear;

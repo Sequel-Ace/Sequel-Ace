@@ -42,7 +42,7 @@
 	return [[QKQueryParameter alloc] initParamWithField:field operator:op value:value];
 }
 
-- (id)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value
+- (instancetype)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value
 {
 	if ((self = [super init])) {
 		[self setField:field];

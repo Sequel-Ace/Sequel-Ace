@@ -32,7 +32,6 @@
 
 @implementation SPNotificationsPreferencePane
 
-
 #pragma mark -
 #pragma mark Preference pane protocol methods
 
@@ -59,11 +58,6 @@
 - (NSString *)preferencePaneToolTip
 {
 	return NSLocalizedString(@"Alerts & Logs Preferences", @"notifications preference pane tooltip");
-}
-
-- (BOOL)preferencePaneAllowsResizing
-{
-	return NO;
 }
 
 @end

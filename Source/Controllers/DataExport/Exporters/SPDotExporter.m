@@ -53,7 +53,7 @@
  *
  * @return The initialised instance
  */
-- (id)initWithDelegate:(NSObject<SPDotExporterProtocol> *)exportDelegate
+- (instancetype)initWithDelegate:(NSObject<SPDotExporterProtocol> *)exportDelegate
 {
 	if ((self = [super init])) {
 		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPDotExporterProtocol));
@@ -112,7 +112,6 @@
 	{
 		// Check for cancellation flag
 		if ([self isCancelled]) {
-			[fkInfo release];
 			
 			return;
 		}
@@ -162,7 +161,6 @@
 			{
 				// Check for cancellation flag
 				if ([self isCancelled]) {
-					[fkInfo release];
 					
 					return;
 				}
@@ -201,8 +199,6 @@
 		[metaString appendFormat:@"%@;\n", item];
 	}
 	
-	[fkInfo release];
-	
 	[metaString appendString:@"}\n"];
 	
 	// Write information to the file
@@ -224,14 +220,6 @@
 {
 	delegate = nil;
 	
-	SPClear(dotExportTables);
-	SPClear(dotExportCurrentTable);
-	SPClear(dotTableData);
-	SPClear(dotDatabaseHost);
-	SPClear(dotDatabaseName);
-	SPClear(dotDatabaseVersion);
-	
-	[super dealloc];
 }
 
 @end

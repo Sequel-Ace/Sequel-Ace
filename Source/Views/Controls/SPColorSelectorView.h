@@ -40,7 +40,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import <Foundation/Foundation.h>
 
 @interface SPColorSelectorView : NSView {

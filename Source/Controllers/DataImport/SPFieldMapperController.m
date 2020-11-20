@@ -65,7 +65,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(id)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"DataMigrationDialog"])) {
 
@@ -127,7 +127,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Note: [fileSourcePath setURL:[NSURL fileWithPath:sourcePath]] does NOT work
 	// if Sequel Ace runs localized. Reason unknown, it seems to be a NSPathControl bug.
 	// Ask HansJB for more info.
-	NSPathControl *pc = [[[NSPathControl alloc] initWithFrame:NSZeroRect] autorelease];
+	NSPathControl *pc = [[NSPathControl alloc] initWithFrame:NSZeroRect];
 	[pc setURL:[NSURL fileURLWithPath:sourcePath]];
 	if([pc pathComponentCells])
 		[fileSourcePath setPathComponentCells:[pc pathComponentCells]];
@@ -217,33 +217,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[self validateImportButton];
 }
 
-- (void)dealloc
-{
-	if (mySQLConnection) SPClear(mySQLConnection);
-	if (sourcePath) SPClear(sourcePath);
-	if (fieldMappingTableColumnNames) SPClear(fieldMappingTableColumnNames);
-	if (defaultFieldTypesForComboBox) SPClear(defaultFieldTypesForComboBox);
-	if (fieldMappingTableTypes) SPClear(fieldMappingTableTypes);
-	if (fieldMappingArray) SPClear(fieldMappingArray);
-	if (fieldMappingButtonOptions) SPClear(fieldMappingButtonOptions);
-	if (fieldMappingOperatorOptions) SPClear(fieldMappingOperatorOptions);
-	if (fieldMappingOperatorArray) SPClear(fieldMappingOperatorArray);
-	if (fieldMappingGlobalValues) SPClear(fieldMappingGlobalValues);
-	if (fieldMappingGlobalValuesSQLMarked) SPClear(fieldMappingGlobalValuesSQLMarked);
-	if (fieldMappingTableDefaultValues) SPClear(fieldMappingTableDefaultValues);
-	if (primaryKeyFields) SPClear(primaryKeyFields);
-	if (toBeEditedRowIndexes) SPClear(toBeEditedRowIndexes);
-	
-	[super dealloc];
-}
-
 #pragma mark -
 #pragma mark Setter methods
 
 - (void)setConnection:(SPMySQLConnection *)theConnection
 {
 	mySQLConnection = theConnection;
-	[mySQLConnection retain];
 }
 
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview
@@ -442,7 +421,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 												   otherButton:nil
 									 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
 				return;
 			} else {
@@ -451,7 +430,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 			currentIndex = [toBeEditedRowIndexes indexGreaterThanIndex:currentIndex];
 		}
-
 
 	}
 
@@ -494,13 +472,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 											   otherButton:nil
 								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]];
 
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
 			return;
 		}
 
 	}
-
 
 	[advancedReplaceView setHidden:YES];
 	[advancedUpdateView setHidden:YES];
@@ -584,8 +561,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					[fieldMappingTableDefaultValues addObject:@"0"];
 				}
 				targetTableHasPrimaryKey = YES;
-				if (primaryKeyFields) [primaryKeyFields release];
-				primaryKeyFields = [[tableDetails objectForKey:@"primarykeyfield"] retain];
+				primaryKeyFields = [tableDetails objectForKey:@"primarykeyfield"];
 			} else {
 				if([column objectForKey:@"unique"]) {
 					[type appendFormat:@",%@",@"UNIQUE"];
@@ -604,15 +580,13 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[fieldMappingTableTypes addObject:[NSString stringWithString:type]];
 		}
 	}
-
-	[selectedTableData release];
 	[[importMethodPopup menu] setAutoenablesItems:NO];
 	[[importMethodPopup itemWithTitle:@"REPLACE"] setEnabled:(targetTableHasPrimaryKey|isReplacePossible)];
 	[skipexistingRowsCheckBox setEnabled:targetTableHasPrimaryKey];
 
 	// Update the table view
 	fieldMappingCurrentRow = 0;
-	if (fieldMappingArray) SPClear(fieldMappingArray);
+	
 	[self setupFieldMappingArray];
 	[self updateRowNavigation];
 
@@ -878,7 +852,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-
 	[fieldMappingTableColumnNames removeAllObjects];
 	[fieldMappingTableDefaultValues removeAllObjects];
 	[fieldMappingTableTypes removeAllObjects];
@@ -923,7 +896,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	// Update the table view
 	fieldMappingCurrentRow = 0;
-	if (fieldMappingArray) SPClear(fieldMappingArray);
+	
 	[self setupFieldMappingArray];
 	[self updateRowNavigation];
 	
@@ -962,7 +935,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[fieldMapperTableView editColumn:2 row:newIndex withEvent:nil select:YES];
 
 }
-
 
 /*
  * Remove currently new added column
@@ -1008,13 +980,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		NSBeep();
 		return;
 	}
-	NSString *type = [[fieldMappingTableTypes objectAtIndex:row] retain];
+	NSString *type = [fieldMappingTableTypes objectAtIndex:row];
 	[fieldMappingTableTypes removeAllObjects];
 	NSUInteger i;
 	for(i=0; i<[fieldMappingTableColumnNames count]; i++)
 		[fieldMappingTableTypes addObject:type];
 	[fieldMapperTableView reloadData];
-	[type release];
 }
 
 /*
@@ -1414,7 +1385,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 						[fuzzyRegexp appendFormat:@".*?%c",c];
 				}
 				dist -= [tableHeadName rangeOfRegex:fuzzyRegexp].length;
-				[fuzzyRegexp release];
 
 			} else {
 				// Levenshtein distance == 0 means that both names are equal set dist to 
@@ -1434,7 +1404,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	}
 
 	// Sort the matrix according distance
-	NSSortDescriptor *sortByDistance = [[[NSSortDescriptor alloc] initWithKey:@"dist" ascending:YES] autorelease];
+	NSSortDescriptor *sortByDistance = [[NSSortDescriptor alloc] initWithKey:@"dist" ascending:YES];
 	[distMatrix sortUsingDescriptors:[NSArray arrayWithObjects:sortByDistance, nil]];
 
 	NSMutableArray *matchedFile  = [NSMutableArray array];
@@ -1843,9 +1813,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[aTableColumn setDataCell:typeComboxBox];
 				return [fieldMappingTableTypes objectAtIndex:rowIndex];
 			} else {
-				NSTokenFieldCell *b = [[[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]] autorelease];
+				NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]];
 				[b setEditable:NO];
-				[b setAlignment:NSLeftTextAlignment];
+				[b setAlignment:NSTextAlignmentLeft];
 				[b setWraps:NO];
 				[b setFont:[NSFont systemFontOfSize:9]];
 				[b setDelegate:self];
@@ -1874,7 +1844,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-
 	else if(aTableView == globalValuesTableView) {
 		if ([[aTableColumn identifier] isEqualToString:SPTableViewValueIndexColumnID]) {
 			return [NSString stringWithFormat:@"%ld.", (long)(numberOfImportColumns + rowIndex + 1)];
@@ -1888,7 +1857,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			return [fieldMappingGlobalValuesSQLMarked objectAtIndex:numberOfImportColumns + rowIndex];
 
 	}
-
 
 	return nil;
 }
@@ -1978,8 +1946,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					if(![defaultFieldTypesForComboBox containsObject:anObject])
 						[defaultFieldTypesForComboBox insertObject:anObject atIndex:0];
 				}
-			} else {
-
 			}
 		}
 
@@ -2036,7 +2002,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	}
 
 }
-
 
 /*
  * Trap the enter, escape, tab and arrow keys, overriding default behaviour and continuing/ending editing,
@@ -2096,7 +2061,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 		// If newTableNameTextField is active enter key closes the sheet
 		if(control == newTableNameTextField) {
-			NSButton *b = [[[NSButton alloc] init] autorelease];
+			NSButton *b = [[NSButton alloc] init];
 			[b setTag:1];
 			[self closeSheet:b];
 			return YES;
@@ -2142,7 +2107,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		return YES;
 	}
 
-
 	// Trap the escape key
 	else if (  [[control window] methodForSelector:command] == [[control window] methodForSelector:@selector(cancelOperation:)] )
 	{
@@ -2162,7 +2126,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 #pragma mark -
 #pragma mark NSTextField delegates
-
 
 /*
  * Validate some user input in newTableMode

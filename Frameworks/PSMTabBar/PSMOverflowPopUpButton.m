@@ -14,7 +14,7 @@
 
 @implementation PSMOverflowPopUpButton
 
-- (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
+- (instancetype)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
 {
     if ((self = [super initWithFrame:frameRect pullsDown:YES])) {
         [self setBezelStyle:NSRegularSquareBezelStyle];
@@ -26,13 +26,6 @@
 		_animatingAlternateImage = NO;
     }
     return self;
-}
-
-- (void)dealloc
-{
-    [_PSMTabBarOverflowPopUpImage release];
-	[_PSMTabBarOverflowDownPopUpImage release];
-    [super dealloc];
 }
 
 - (void)drawRect:(NSRect)rect
@@ -49,7 +42,7 @@
 	NSPoint drawPoint = NSMakePoint(NSMidX(bounds) - (imageSize.width * 0.5f), NSMidY(bounds) - (imageSize.height * 0.5f));
 	NSRect drawRect = NSMakeRect(drawPoint.x, drawPoint.y, imageSize.width, imageSize.height);
 	
-	[image drawInRect:drawRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:(_animatingAlternateImage ? 0.7f : 1.0f) respectFlipped:YES hints:nil];
+	[image drawInRect:drawRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:(_animatingAlternateImage ? 0.7f : 1.0f) respectFlipped:YES hints:nil];
 	
 	if (_animatingAlternateImage) {
 		NSImage *alternateImage = [self alternateImage];
@@ -57,7 +50,7 @@
 		drawPoint = NSMakePoint(NSMidX(bounds) - (altImageSize.width * 0.5f), NSMidY(bounds) - (altImageSize.height * 0.5f));
 		drawRect = NSMakeRect(drawPoint.x, drawPoint.y, altImageSize.width, altImageSize.height);
 		
-		[[self alternateImage] drawInRect:drawRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:sinf(_animationValue * (float)M_PI) respectFlipped:YES hints:nil];
+		[[self alternateImage] drawInRect:drawRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:sinf(_animationValue * (float)M_PI) respectFlipped:YES hints:nil];
 	}
 }
 
@@ -141,11 +134,11 @@
     }
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
     if ( (self = [super initWithCoder:aDecoder]) ) {
         if ([aDecoder allowsKeyedCoding]) {
-            _PSMTabBarOverflowPopUpImage = [[aDecoder decodeObjectForKey:@"PSMTabBarOverflowPopUpImage"] retain];
-            _PSMTabBarOverflowDownPopUpImage = [[aDecoder decodeObjectForKey:@"PSMTabBarOverflowDownPopUpImage"] retain];
+            _PSMTabBarOverflowPopUpImage = [aDecoder decodeObjectForKey:@"PSMTabBarOverflowPopUpImage"];
+            _PSMTabBarOverflowDownPopUpImage = [aDecoder decodeObjectForKey:@"PSMTabBarOverflowDownPopUpImage"];
 			[self setAnimatingAlternateImage:[aDecoder decodeBoolForKey:@"PSMTabBarOverflowAnimatingAlternateImage"]];
         }
     }

@@ -33,6 +33,8 @@
 
 #import "SPOSInfo.h"
 #import <WebKit/WebKit.h>
+#import "sequel-ace-Swift.h"
+
 
 NSString * const SPHelpViewerSearchTOC = @"contents";
 
@@ -71,7 +73,6 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 
 + (void)initialize
 {
-	
 }
 
 - (instancetype)init
@@ -89,7 +90,6 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 	if (@available(macOS 10.14, *)) {
 		[[self window] removeObserver:self forKeyPath:@"effectiveAppearance" context:HelpViewerControllerKVOContext];
 	}
-	[super dealloc];
 }
 
 - (void)windowDidLoad
@@ -193,7 +193,6 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 	if(addToHistory) {
 		WebHistoryItem *aWebHistoryItem = [[WebHistoryItem alloc] initWithURLString:[NSString stringWithFormat:@"applewebdata://%@", searchString] title:searchString lastVisitedTimeInterval:[[NSDate date] timeIntervalSinceDate:[NSDate distantFuture]]];
 		[[helpWebView backForwardList] addItem:aWebHistoryItem];
-		[aWebHistoryItem release];
 	}
 
 	// validate goback/forward buttons
@@ -350,7 +349,13 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 - (void)webView:(WebView *)webView decidePolicyForNavigationAction:(NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id<WebPolicyDecisionListener>)listener
 {
 	NSInteger navigationType = [[actionInformation objectForKey:WebActionNavigationTypeKey] integerValue];
-
+	
+	NSString *actionInformationStr = [[[actionInformation objectForKey:WebActionOriginalURLKey] absoluteString] lastPathComponent];
+	
+	if(actionInformationStr.isPercentEncoded == YES){
+		actionInformationStr = actionInformationStr.stringByRemovingPercentEncoding;
+	}
+	
 	if([[[request URL] scheme] isEqualToString:@"applewebdata"] && navigationType == WebNavigationTypeLinkClicked) {
 		[self showHelpFor:[[[request URL] path] lastPathComponent] addToHistory:YES calledByAutoHelp:NO];
 		[listener ignore];
@@ -370,7 +375,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 		}
 		else if (navigationType == WebNavigationTypeBackForward) {
 			// catch back/forward events from contextual menu
-			[self showHelpFor:[[[[actionInformation objectForKey:WebActionOriginalURLKey] absoluteString] lastPathComponent] stringByReplacingPercentEscapesUsingEncoding:NSASCIIStringEncoding] addToHistory:NO calledByAutoHelp:NO];
+			[self showHelpFor:actionInformationStr addToHistory:NO calledByAutoHelp:NO];
 			[listener ignore];
 		}
 		else {
@@ -386,7 +391,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
  */
 - (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
 {
-	NSMutableArray *webViewMenuItems = [[defaultMenuItems mutableCopy] autorelease];
+	NSMutableArray *webViewMenuItems = [defaultMenuItems mutableCopy];
 
 	if (webViewMenuItems) {
 		// Remove all needless default menu items
@@ -435,13 +440,11 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 		[searchInMySQLonline setEnabled:YES];
 		[searchInMySQLonline setTarget:self];
 		[webViewMenuItems insertObject:searchInMySQLonline atIndex:0];
-		[searchInMySQLonline release];
 
 		searchInMySQL = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in MySQL Help", @"Search in MySQL Help") action:@selector(showHelpForWebViewSelection:) keyEquivalent:@""];
 		[searchInMySQL setEnabled:YES];
 		[searchInMySQL setTarget:self];
 		[webViewMenuItems insertObject:searchInMySQL atIndex:0];
-		[searchInMySQL release];
 	}
 
 	return webViewMenuItems;

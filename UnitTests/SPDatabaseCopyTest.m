@@ -49,12 +49,12 @@
 
 - (SPDatabaseCopy *)getDatabaseCopyFixture 
 {
-    return [[[SPDatabaseCopy alloc] init] autorelease];
+    return [[SPDatabaseCopy alloc] init];
 }
 
 - (SPTableCopy *)getTableCopyFixture 
 {
-    return [[[SPTableCopy alloc] init] autorelease];
+    return [[SPTableCopy alloc] init];
 }
 
 - (id)getMockConnection 
@@ -86,8 +86,6 @@
 	STAssertTrue([dbCopy copyDatabaseFrom:source to:target withContent:YES], @"method renameDatabaseFrom:to: is supposed to return YES");
 	
 	[mockConnection verify];
-	[source release];
-	[target release];
 }
 
 - (void)testCreateDatabase 

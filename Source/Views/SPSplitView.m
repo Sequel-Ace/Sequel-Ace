@@ -71,17 +71,15 @@
 
 @end
 
-
 @implementation SPSplitView
 
 + (void)initialize {
-	
 }
 
 #pragma mark -
 #pragma mark Setup and teardown
 
-- (id)initWithFrame:(NSRect)frameRect
+- (instancetype)initWithFrame:(NSRect)frameRect
 {
 	if ((self = [super initWithFrame:frameRect])) {
 		[self _initCustomProperties];
@@ -89,7 +87,7 @@
 	return self;
 }
 
-- (id)initWithCoder:(NSCoder *)coder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
 	if ((self = [super initWithCoder:coder])) {
 		[self _initCustomProperties];
@@ -111,14 +109,11 @@
 
 - (void)dealloc
 {
-	SPClear(viewMinimumSizes);
-	SPClear(viewMaximumSizes);
-
-	if (animationTimer) (void)([animationTimer invalidate]), SPClear(animationTimer);
-	if (animationRetainCycleBypassObject) SPClear(animationRetainCycleBypassObject);
-
+	if (animationTimer) {
+		[animationTimer invalidate];
+	}
+	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[super dealloc];
 }
 
 #pragma mark -
@@ -224,7 +219,7 @@
 		// If collapsing, ensure the original view is wrapped in a helper view to avoid
 		// animation resizes of the contained view.  (Uncollapses will already be wrapped.)
 		if (![viewToAnimate isMemberOfClass:[SPSplitViewHelperView class]]) { 
-			[[[SPSplitViewHelperView alloc] initReplacingView:viewToAnimate inVerticalSplitView:[self isVertical]] autorelease];
+			[[SPSplitViewHelperView alloc] initReplacingView:viewToAnimate inVerticalSplitView:[self isVertical]];
 			viewToAnimate = [[self subviews] objectAtIndex:collapsibleSubviewIndex];
 		}
 
@@ -239,15 +234,16 @@
 
 	// Otherwise, start an animation.
 	} else {
-		if (animationTimer) (void)([animationTimer invalidate]), SPClear(animationTimer);
-		if (animationRetainCycleBypassObject) SPClear(animationRetainCycleBypassObject);
+        if (animationTimer) {
+			[animationTimer invalidate];
+        }
 		animationStartTime = [NSDate monotonicTime];
 
 		// Determine the animation length, in seconds, starting with a quarter of a second
 		animationDuration = 0.25f;
 
 		// Make it a slow animation if appropriate
-		if ([[NSApp currentEvent] type] == NSLeftMouseUp && [[NSApp currentEvent] modifierFlags] & NSEventModifierFlagShift) {
+		if ([[NSApp currentEvent] type] == NSEventTypeLeftMouseUp && [[NSApp currentEvent] modifierFlags] & NSEventModifierFlagShift) {
 			animationDuration *= 10;
 		}
 
@@ -260,10 +256,10 @@
 		}
 
 		// Create an object to avoid NSTimer retain cycles
-		animationRetainCycleBypassObject = [[SPSplitViewAnimationRetainCycleBypass alloc] initWithParent:self];
+		animationRetainCycleBypassObject = [[SPSplitViewAnimationRetainCycleBypass alloc] initWithParent:self]; // TODO: leaks
 
 		// Start an animation at 30fps
-		animationTimer = [[NSTimer timerWithTimeInterval:(1.f/30.f) target:animationRetainCycleBypassObject selector:@selector(_animationStep:) userInfo:nil repeats:YES] retain];
+		animationTimer = [NSTimer timerWithTimeInterval:(1.f/30.f) target:animationRetainCycleBypassObject selector:@selector(_animationStep:) userInfo:nil repeats:YES];
 		[[NSRunLoop currentRunLoop] addTimer:animationTimer forMode:NSRunLoopCommonModes];
 	}
 }
@@ -799,12 +795,13 @@
 	float viewLength, sizeDifference, totalGive, changedLength;
 	float totalCurrentSize = 0;
 	float resizeProportionTotal = 1.f;
+	// TODO: jcs - all these callocs leak
 	float *originalSizes = calloc(subviewCount, sizeof(float));
 	float *minSizes = calloc(subviewCount, sizeof(float));
 	float *maxSizes = calloc(subviewCount, sizeof(float));
 	BOOL *sizesCalculated;
 	float *resizeProportions;
-	NSMutableArray *outputSizes = [NSMutableArray arrayWithCapacity:subviewCount];
+	NSMutableArray *outputSizes = [NSMutableArray arrayWithCapacity:subviewCount]; // TODO: this leaks
 
 	[self _ensureDefaultSubviewSizesToIndex:(subviewCount + 1)];
 
@@ -856,14 +853,10 @@
 		if (animationProgress == 1) {
 			if (animationTimer) {
 				[animationTimer invalidate];
-				SPClear(animationTimer);
-			}
-			if (animationRetainCycleBypassObject) {
-				SPClear(animationRetainCycleBypassObject);
 			}
 
 			// If uncollapsing, restore the original view and remove the helper
-			if (!collapsibleSubviewCollapsed) {
+			if ([eachSubview isKindOfClass:[SPSplitViewHelperView class]] && !collapsibleSubviewCollapsed) {
 				[(SPSplitViewHelperView *)eachSubview restoreOriginalView];
 			}
 		}
@@ -1080,7 +1073,7 @@
 	NSAutoresizingMaskOptions wrappedResizeMask = [wrappedView autoresizingMask];
 
 	// Retain the wrapped view while this view exists
-	wrappedView = [aView retain];
+	wrappedView = aView;
 
 	// Copy over the autoresizing mask from the wrapped view to this view, to keep the same
 	// draw appearance during the resize.
@@ -1146,14 +1139,7 @@
 	// see #3271 - This is a quick workaround for 10.14 not properly redrawing the view
 	[wrappedView setNeedsDisplay:YES];
 
-	SPClear(wrappedView);
-}
-
-- (void)dealloc
-{
-	if (wrappedView) SPClear(wrappedView);
-
-	[super dealloc];
+	
 }
 
 @end

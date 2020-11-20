@@ -62,7 +62,7 @@
 - (NSUInteger)_arrangedCategoryIndexForScopeIndex:(NSUInteger)scopeIndex andCategory:(NSString*)category;
 - (void)_metaSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
-@property (readwrite, retain) NSFileManager *fileManager;
+@property (readwrite, strong) NSFileManager *fileManager;
 
 @end
 
@@ -72,7 +72,7 @@
 
 @synthesize fileManager;
 
-- (id)init
+- (instancetype)init
 {
 
 	if ((self = [super initWithWindowNibName:@"BundleEditor"])) {
@@ -105,8 +105,7 @@
 	// Init all needed variables; popup menus (with the chance for localization); and set
 	// defaults
 
-	bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil] retain];
-
+	bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil];
 
 	touchedBundleArray = [[NSMutableArray alloc] initWithCapacity:1];
 	commandBundleTree = [[NSMutableDictionary alloc] initWithCapacity:1];
@@ -133,17 +132,17 @@
 	withBlobDataTablePopUpMenu = [[NSMenu alloc] initWithTitle:@""];
 	inputNonePopUpMenu = [[NSMenu alloc] initWithTitle:@""];
 
-	inputGeneralScopeArray = [@[SPBundleInputSourceNone] retain];
-	inputInputFieldScopeArray = [@[SPBundleInputSourceNone, SPBundleInputSourceSelectedText, SPBundleInputSourceEntireContent] retain];
-	inputDataTableScopeArray = [@[SPBundleInputSourceNone, SPBundleInputSourceSelectedTableRowsAsTab, SPBundleInputSourceSelectedTableRowsAsCsv, SPBundleInputSourceSelectedTableRowsAsSqlInsert, SPBundleInputSourceTableRowsAsTab, SPBundleInputSourceTableRowsAsCsv, SPBundleInputSourceTableRowsAsSqlInsert] retain];
-	outputInputFieldScopeArray = [@[SPBundleOutputActionNone, SPBundleOutputActionInsertAsText, SPBundleOutputActionInsertAsSnippet, SPBundleOutputActionReplaceSelection, SPBundleOutputActionReplaceContent, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML] retain];
-	outputGeneralScopeArray = [@[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML] retain];
-	outputDataTableScopeArray = [@[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML] retain];
-	inputFallbackInputFieldScopeArray = [@[SPBundleInputSourceNone, SPBundleInputSourceCurrentWord, SPBundleInputSourceCurrentLine, SPBundleInputSourceCurrentQuery, SPBundleInputSourceEntireContent] retain];
-	triggerInputFieldArray = [@[SPBundleTriggerActionNone] retain];
-	triggerDataTableArray = [@[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged, SPBundleTriggerActionTableRowChanged] retain];
-	triggerGeneralArray = [@[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged] retain];
-	withBlobDataTableArray = [@[SPBundleInputSourceBlobHandlingExclude, SPBundleInputSourceBlobHandlingInclude, SPBundleInputSourceBlobHandlingImageFileReference, SPBundleInputSourceBlobHandlingFileReference] retain];
+	inputGeneralScopeArray = @[SPBundleInputSourceNone];
+	inputInputFieldScopeArray = @[SPBundleInputSourceNone, SPBundleInputSourceSelectedText, SPBundleInputSourceEntireContent];
+	inputDataTableScopeArray = @[SPBundleInputSourceNone, SPBundleInputSourceSelectedTableRowsAsTab, SPBundleInputSourceSelectedTableRowsAsCsv, SPBundleInputSourceSelectedTableRowsAsSqlInsert, SPBundleInputSourceTableRowsAsTab, SPBundleInputSourceTableRowsAsCsv, SPBundleInputSourceTableRowsAsSqlInsert];
+	outputInputFieldScopeArray = @[SPBundleOutputActionNone, SPBundleOutputActionInsertAsText, SPBundleOutputActionInsertAsSnippet, SPBundleOutputActionReplaceSelection, SPBundleOutputActionReplaceContent, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML];
+	outputGeneralScopeArray = @[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML];
+	outputDataTableScopeArray = @[SPBundleOutputActionNone, SPBundleOutputActionShowAsTextTooltip, SPBundleOutputActionShowAsHTMLTooltip, SPBundleOutputActionShowAsHTML];
+	inputFallbackInputFieldScopeArray = @[SPBundleInputSourceNone, SPBundleInputSourceCurrentWord, SPBundleInputSourceCurrentLine, SPBundleInputSourceCurrentQuery, SPBundleInputSourceEntireContent];
+	triggerInputFieldArray = @[SPBundleTriggerActionNone];
+	triggerDataTableArray = @[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged, SPBundleTriggerActionTableRowChanged];
+	triggerGeneralArray = @[SPBundleTriggerActionNone, SPBundleTriggerActionDatabaseChanged, SPBundleTriggerActionTableChanged];
+	withBlobDataTableArray = @[SPBundleInputSourceBlobHandlingExclude, SPBundleInputSourceBlobHandlingInclude, SPBundleInputSourceBlobHandlingImageFileReference, SPBundleInputSourceBlobHandlingFileReference];
 	NSArray *inputNoneArray = @[SPBundleInputSourceNone]; //we only need that once to construct the menu
 
 	NSMutableArray *allPopupScopeItems = [NSMutableArray array];
@@ -245,7 +244,6 @@
 		for(NSString* title in menu->items) {
 			NSMenuItem *anItem = [[NSMenuItem alloc] initWithTitle:[menuItemTitles objectForKey:title] action:menu->action keyEquivalent:@""];
 			[menu->menu addItem:anItem];
-			[anItem release];
 		}
 	}
 
@@ -254,22 +252,19 @@
 	anItem = [[NSMenuItem alloc] initWithTitle:SP_BUNDLEEDITOR_SCOPE_GENERAL_STRING action:@selector(scopeButtonChanged:) keyEquivalent:@""];
 	[anItem setTag:kGeneralScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:SP_BUNDLEEDITOR_SCOPE_INPUTFIELD_STRING action:@selector(scopeButtonChanged:) keyEquivalent:@""];
 	[anItem setTag:kInputFieldScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
-	[anItem release];
 	anItem = [[NSMenuItem alloc] initWithTitle:SP_BUNDLEEDITOR_SCOPE_DATATABLE_STRING action:@selector(scopeButtonChanged:) keyEquivalent:@""];
 	[anItem setTag:kDataTableScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
-	[anItem release];
 	[scopePopupButton setMenu:inputGeneralScopePopUpMenu];
 
 	[keyEquivalentField setCanCaptureGlobalHotKeys:YES];
 
 	[commandBundleTreeController setSortDescriptors:[NSArray arrayWithObjects:sortDescriptor, nil]];
 
-	shellVariableSuggestions = [@[
+	shellVariableSuggestions = @[
 			SPBundleShellVariableAllDatabases,
 			SPBundleShellVariableAllFunctions,
 			SPBundleShellVariableAllProcedures,
@@ -314,7 +309,7 @@
 			SPBundleShellVariableSelectedText,
 			SPBundleShellVariableSelectedTextRange,
 			SPBundleShellVariableUsedQueryForTable
-	] retain];
+	];
 
 	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]) {
 		[deletedDefaultBundles setArray:[[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]];
@@ -409,7 +404,7 @@
 	id currentDict = [self _currentSelectedObject];
 
 	NSInteger selectedTag = [sender tag];
-	NSString *oldScope = [[currentDict objectForKey:SPBundleFileScopeKey] retain];
+	NSString *oldScope = [currentDict objectForKey:SPBundleFileScopeKey];
 
 	switch(selectedTag) {
 		case kGeneralScopeArrayIndex:
@@ -449,8 +444,6 @@
 			[commandsOutlineView reloadData];
 		}
 	}
-
-	[oldScope release];
 
 	[self _updateBundleDataView];
 
@@ -577,7 +570,7 @@
 			alert.informativeText = NSLocalizedString(@"Error while duplicating Bundle content.", @"Bundle Editor : Copy-Command-Error : Copying failed error message");
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Copy-Command-Error : OK button")]; // first button is OK
 					
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert runModal];
 
 			return;
@@ -690,7 +683,7 @@
 	[alert addButtonWithTitle:NSLocalizedString(@"Remove", @"Bundle Editor : Remove-Bundle: remove button")]; // first button is delete
 	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Bundle Editor : Remove-Bundle: cancel button")]; // second is cancel
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -739,7 +732,7 @@
 		id aBundle = [self _currentSelectedObject];
 		
 		NSString *bundleFileName = [aBundle objectForKey:kBundleNameKey];
-		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtension];
+		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleFileName, SPUserBundleFileExtension];
 		NSAssert(possibleExisitingBundleFilePath != nil, @"source bundle path must be non-nil!");
 		
 		NSString *savePath = [[panel URL] path];
@@ -750,9 +743,9 @@
 		NSError *err = nil;
 		
 		// Copy possible existing bundle with content
-		if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
+		if([self->fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
 			//FIXME This will fail if savePath exists, but the user already consented overwriting in the save panel. We should use trashItemAtURL:... once we are 10.8+
-			if(![fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:savePath error:&err]) {
+			if(![self->fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:savePath error:&err]) {
 				//if we have an NSError that will provide the nicest error message.
 				if(err) {
 					[[NSAlert alertWithError:err] runModal];
@@ -767,9 +760,8 @@
 			NSAlert *alert = [[NSAlert alloc] init];
 			[alert setMessageText:NSLocalizedString(@"Error while saving the Bundle.", @"Bundle Editor : Save-Bundle-Error : error dialog title")];
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Save-Bundle-Error : OK button")];
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert runModal]; //blocks
-			[alert release];
 		}
 	}];
 }
@@ -892,7 +884,7 @@
 				alert.messageText = [NSString stringWithFormat:NSLocalizedString(@"Error while saving “%@”.", @"Bundle Editor : Save-and-Close-Error : error dialog title"), [item objectForKey:kBundleNameKey]];
 				alert.informativeText = @"";
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Save-and-Close-Error : OK button")]; // first button is OK
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				break;
 			}
@@ -922,7 +914,7 @@
 			return NO;
 		}
 		if(!bundlePath)
-			bundlePath = [[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil] retain];
+			bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil];
 		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], SPUserBundleFileExtension];
 	}
 
@@ -950,7 +942,6 @@
 	// Remove unnecessary keys
 	[saveDict removeObjectsForKeys:@[kBundleNameKey]];
 
-
 	if(!isNewBundle) {
 		NSDictionary *cmdData = nil;
 		{
@@ -958,15 +949,14 @@
 			
 			NSData *pData = [NSData dataWithContentsOfFile:cmdFilePath options:NSUncachedRead error:&error];
 			
-			cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																 options:NSPropertyListImmutable
 																  format:NULL
-																   error:&error] retain];
+																   error:&error];
 			
 			if(!cmdData || error) {
 				SPLog(@"“%@” file couldn't be read. (error=%@)", cmdFilePath, error);
 				NSBeep();
-				if (cmdData) [cmdData release];
 				return NO;
 			}
 		}
@@ -976,8 +966,6 @@
 			return YES;
 		if([cmdData objectForKey:SPBundleFileIsDefaultBundleKey]) 
 			[saveDict setObject:@YES forKey:SPBundleFileDefaultBundleWasModifiedKey];
-		
-		if (cmdData) [cmdData release];
 	}
 
 	// Remove a given old command.plist file
@@ -1029,7 +1017,7 @@
 						alert.informativeText = [NSString stringWithFormat:@"%@", [error localizedDescription]];
 						[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Trash-Bundle(s)-Error : OK button")]; // first button is OK
 						
-						[alert setAlertStyle:NSCriticalAlertStyle];
+						[alert setAlertStyle:NSAlertStyleCritical];
 						[alert runModal];
 						deletionSuccessfully = NO;
 						break;
@@ -1119,9 +1107,9 @@
 	// Remove temporary drag file if any
 	if(draggedFilePath) {
 		[fileManager removeItemAtPath:draggedFilePath error:nil];
-		SPClear(draggedFilePath);
+		
 	}
-	if(oldBundleName) SPClear(oldBundleName);
+	
 }
 
 #pragma mark -
@@ -1262,13 +1250,13 @@
 
 	// Remember selected bundle name to reset the name if the user cancelled
 	// the editing of the bundle name
-	if(oldBundleName) SPClear(oldBundleName);
+	
 	if(![[self _currentSelectedObject] objectForKey:kChildrenKey]) {
-		oldBundleName = [[[self _currentSelectedObject] objectForKey:kBundleNameKey] retain];
+		oldBundleName = [[self _currentSelectedObject] objectForKey:kBundleNameKey];
 		[self _enableBundleDataInput:YES bundleEnabled:![[[self _currentSelectedObject] objectForKey:@"disabled"] boolValue]];
 	} else {
 		[self _enableBundleDataInput:NO bundleEnabled:NO];
-		if(oldBundleName) SPClear(oldBundleName);
+		
 	}
 
 	// Remember the selected bundle name in touchedBundleArray to save only those 
@@ -1413,8 +1401,8 @@
 			[commandBundleTreeController rearrangeObjects];
 			[commandsOutlineView reloadData];
 
-			if(oldBundleName) SPClear(oldBundleName);
-			oldBundleName = [[[self _currentSelectedObject] objectForKey:kBundleNameKey] retain];
+			
+			oldBundleName = [[self _currentSelectedObject] objectForKey:kBundleNameKey];
 			if(oldBundleName != nil && ![touchedBundleArray containsObject:oldBundleName])
 				[touchedBundleArray addObject:oldBundleName];
 		}
@@ -1504,7 +1492,7 @@
 	// Remove old temporary drag file if any
 	if(draggedFilePath) {
 		[fileManager removeItemAtPath:draggedFilePath error:nil];
-		SPClear(draggedFilePath);
+		
 	}
 
 	NSImage *dragImage;
@@ -1514,7 +1502,7 @@
 	NSString *bundleFileName = [bundleDict objectForKey:kBundleNameKey];
 	NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtension];
 
-	draggedFilePath = [[NSString stringWithFormat:@"%@/%@.%@", [NSFileManager temporaryDirectory], bundleFileName, SPUserBundleFileExtension] retain];
+	draggedFilePath = [NSString stringWithFormat:@"%@/%@.%@", [NSFileManager temporaryDirectory], bundleFileName, SPUserBundleFileExtension];
 
 	BOOL isDir;
 
@@ -1668,10 +1656,10 @@
 				NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&readError];
 				
 				if(pData && !error) {
-					cmdData = [[NSPropertyListSerialization propertyListWithData:pData
+					cmdData = [NSPropertyListSerialization propertyListWithData:pData
 																		 options:NSPropertyListImmutable
 																		  format:NULL
-																		   error:&readError] retain];
+																		   error:&readError];
 				}
 				
 				if(!cmdData || readError) {
@@ -1681,7 +1669,6 @@
 						NSBeep();
 						[SPAppDelegate.alreadyBeeped setObject:@YES forKey:bundle];
 					}
-					if (cmdData) [cmdData release];
 				}
 				else {
 					if([cmdData objectForKey:SPBundleFileNameKey] && [[cmdData objectForKey:SPBundleFileNameKey] length] && [cmdData objectForKey:SPBundleFileScopeKey])
@@ -1764,7 +1751,6 @@
 						}
 
 					}
-					if (cmdData) [cmdData release];
 				}
 			}
 		}
@@ -1950,7 +1936,7 @@
 		return;
 	}
 
-	NSMutableString *metaString = [[[NSMutableString alloc] init] autorelease];
+	NSMutableString *metaString = [[NSMutableString alloc] init];
 	if ([currentDict objectForKey:@"author"]) {
 		[metaString appendFormat:@"(%@) ", [currentDict objectForKey:@"author"]];
 	} else if ([currentDict objectForKey:@"contact"]) {
@@ -2101,48 +2087,6 @@
 	[sheet makeFirstResponder:nil];
 	
 	[self _updateBundleMetaSummary];
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-	SPClear(inputGeneralScopePopUpMenu);
-	SPClear(inputInputFieldScopePopUpMenu);
-	SPClear(inputDataTableScopePopUpMenu);
-	SPClear(outputGeneralScopePopUpMenu);
-	SPClear(outputInputFieldScopePopUpMenu);
-	SPClear(outputDataTableScopePopUpMenu);
-	SPClear(inputFallbackInputFieldScopePopUpMenu);
-	SPClear(triggerInputFieldPopUpMenu);
-	SPClear(triggerDataTablePopUpMenu);
-	SPClear(triggerGeneralPopUpMenu);
-	SPClear(withBlobDataTablePopUpMenu);
-	SPClear(inputNonePopUpMenu);
-	
-	SPClear(inputGeneralScopeArray);
-	SPClear(inputInputFieldScopeArray);
-	SPClear(inputDataTableScopeArray);
-	SPClear(outputGeneralScopeArray);
-	SPClear(outputInputFieldScopeArray);
-	SPClear(outputDataTableScopeArray);
-	SPClear(inputFallbackInputFieldScopeArray);
-	SPClear(triggerInputFieldArray);
-	SPClear(triggerDataTableArray);
-	SPClear(triggerGeneralArray);
-	SPClear(withBlobDataTableArray);
-	
-	SPClear(shellVariableSuggestions);
-	SPClear(deletedDefaultBundles);
-	SPClear(fileManager);
-	
-	if (touchedBundleArray) SPClear(touchedBundleArray);
-	if (commandBundleTree) SPClear(commandBundleTree);
-	if (sortDescriptor) SPClear(sortDescriptor);
-	if (bundlePath) SPClear(bundlePath);
-	if (esUndoManager) SPClear(esUndoManager);
-	
-	[super dealloc];
 }
 
 @end

@@ -56,7 +56,7 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 - (BOOL)_addString:(NSString *)string toArray:(NSMutableArray *)array;
 
 @property (readwrite, nonatomic, copy) NSString *identifierQuote;
-@property (readwrite, nonatomic, copy) NSMutableString *query;
+@property (readwrite, nonatomic, strong) NSMutableString *query;
 
 @property (readwrite, nonatomic,strong) NSMutableArray *groupByFields;
 @property (readwrite, nonatomic,strong) NSMutableArray *orderByFields;
@@ -104,17 +104,17 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 	return query;
 }
 
-- (id)init
+- (instancetype)init
 {
 	return [self initWithTable:nil];
 }
 
-- (id)initWithTable:(NSString *)table
+- (instancetype)initWithTable:(NSString *)table
 {
 	return [self initWithTable:table database:nil];
 }
 
-- (id)initWithTable:(NSString *)table database:(NSString *)database
+- (instancetype)initWithTable:(NSString *)table database:(NSString *)database
 {
 	if ((self = [super init])) {
 		[self setTable:table];

@@ -40,8 +40,7 @@
  */
 @interface SPXMLExporter : SPExporter 
 {
-	NSObject <SPXMLExporterProtocol> *delegate;
-	
+
 	NSArray *xmlDataArray;
 
 	NSString *xmlTableName;
@@ -56,22 +55,22 @@
 /**
  * @property delegate Exporter delegate
  */
-@property (readwrite, assign) NSObject <SPXMLExporterProtocol> *delegate;
+@property (readwrite, weak) NSObject <SPXMLExporterProtocol> *delegate;
 
 /**
  * @property xmlDataArray Data array
  */
-@property (readwrite, retain) NSArray *xmlDataArray;
+@property (readwrite, strong) NSArray *xmlDataArray;
 
 /**
  * @property xmlTableName Table name
  */
-@property (readwrite, retain) NSString *xmlTableName;
+@property (readwrite, copy) NSString *xmlTableName;
 
 /**
  * @property xmlNULLString XML NULL string
  */
-@property (readwrite, retain) NSString *xmlNULLString;
+@property (readwrite, copy) NSString *xmlNULLString;
 
 /**
  * @property xmlOutputIncludeStructure Include table structure
@@ -88,6 +87,6 @@
  */
 @property (readwrite, assign) SPXMLExportFormat xmlFormat;
 
-- (id)initWithDelegate:(NSObject *)exportDelegate;
+- (instancetype)initWithDelegate:(NSObject *)exportDelegate;
 
 @end

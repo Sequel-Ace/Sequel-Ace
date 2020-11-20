@@ -38,8 +38,7 @@
  * Notifications preference pane controller.
  */
 @interface SPNotificationsPreferencePane : SPPreferencePane <SPPreferencePaneProtocol>
-{
-	
+{	
 }
 
 @end

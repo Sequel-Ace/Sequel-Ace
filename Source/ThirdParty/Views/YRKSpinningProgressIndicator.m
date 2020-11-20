@@ -42,7 +42,7 @@
 
 @implementation YRKSpinningProgressIndicator
 
-- (id)initWithFrame:(NSRect)frame
+- (instancetype)initWithFrame:(NSRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
@@ -60,12 +60,8 @@
 }
 
 - (void) dealloc {
-	if (_foreColor) [_foreColor release];
-	if (_backColor) [_backColor release];
-	if (_shadow) [_shadow release];
 	if (_isAnimating) [self stopAnimation:self];
     
-	[super dealloc];
 }
 
 - (void)viewDidMoveToWindow
@@ -134,7 +130,6 @@
 			CGContextRotateCTM(currentContext, 6.282185f/_numFins);
 			alpha -= 1.0f/_numFins;
 		}
-		[path release];
 
 	} else {
 
@@ -146,12 +141,10 @@
 		[path setLineWidth:lineWidth];
 		[path appendBezierPathWithOvalInRect:NSMakeRect(-circleRadius, -circleRadius, circleRadius*2, circleRadius*2)];
 		[path stroke];
-		[path release];
 		path = [[NSBezierPath alloc] init];
 		[path appendBezierPathWithArcWithCenter:circleCenter radius:circleRadius startAngle:90 endAngle:90-(360*(float)(_currentValue/_maxValue)) clockwise:YES];
-		[path lineToPoint:circleCenter] ;
+		[path lineToPoint:circleCenter];
 		[path fill];
-		[path release];
 	}
 
 	[NSGraphicsContext restoreGraphicsState];
@@ -179,9 +172,8 @@
     }
 }
 
-- (void) animateInBackgroundThread
+- (void)animateInBackgroundThread
 {
-	NSAutoreleasePool *animationPool = [[NSAutoreleasePool alloc] init];
 	
 	// Set up the animation speed to subtly change with size > 32.
 	useconds_t animationDelay = 38000 + (2000 * ([self bounds].size.height / 32));
@@ -192,13 +184,9 @@
 		usleep(animationDelay);
 		poolFlushCounter++;
 		if (poolFlushCounter > 256) {
-			[animationPool drain];
-			animationPool = [[NSAutoreleasePool alloc] init];
 			poolFlushCounter = 0;
 		}
 	} while (![[NSThread currentThread] isCancelled]); 
-
-	[animationPool release];
 }
 
 - (void)startAnimation:(id)sender
@@ -229,11 +217,11 @@
             [_animationThread start];
         }
         else {
-            _animationTimer = [[NSTimer timerWithTimeInterval:(NSTimeInterval)0.05
+            _animationTimer = [NSTimer timerWithTimeInterval:(NSTimeInterval)0.05
                                                        target:self
                                                      selector:@selector(updateFrame:)
                                                      userInfo:nil
-                                                      repeats:YES] retain];
+                                                      repeats:YES];
 
             [[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSRunLoopCommonModes];
             [[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSDefaultRunLoopMode];
@@ -250,13 +238,11 @@
 		if (![_animationThread isFinished]) {
 			[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
 		}
-		[_animationThread release];
         _animationThread = nil;
 	}
     else if (_animationTimer) {
         // we were using timer-based animation
         [_animationTimer invalidate];
-        [_animationTimer release];
         _animationTimer = nil;
     }
     [self setNeedsDisplay:YES];
@@ -271,19 +257,17 @@
     }
 }
 
-
 # pragma mark -
 # pragma mark Accessors
 
 - (NSColor *)foreColor
 {
-    return [[_foreColor retain] autorelease];
+    return _foreColor;
 }
 
 - (void)setForeColor:(NSColor *)value
 {
     if (_foreColor != value) {
-        [_foreColor release];
         _foreColor = [value copy];
         [self setNeedsDisplay:YES];
     }
@@ -291,13 +275,12 @@
 
 - (NSColor *)backColor
 {
-    return [[_backColor retain] autorelease];
+    return _backColor;
 }
 
 - (void)setBackColor:(NSColor *)value
 {
     if (_backColor != value) {
-        [_backColor release];
         _backColor = [value copy];
         [self setNeedsDisplay:YES];
     }
@@ -318,13 +301,12 @@
 
 - (NSShadow *)shadow
 {
-	return [[_shadow retain] autorelease];
+	return _shadow;
 }
 
 - (void)setShadow:(NSShadow *)value
 {
 	if (_shadow != value) {
-		[_shadow release];
 		_shadow = [value copy];
 		[self setNeedsDisplay:YES];
 	}

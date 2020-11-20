@@ -42,13 +42,12 @@
 /**
  * @property connection References the SPMySQL.framework MySQL connection; it has to be set.
  */
-@property (nonnull, readwrite, assign) SPMySQLConnection *connection;
-
+@property (nonnull, readwrite, strong) SPMySQLConnection *connection;
 
 /**
  * @property tablesList
  */
-@property (nonnull, readwrite, assign) SPTablesList *tablesList;
+@property (nonnull, readwrite, strong) SPTablesList *tablesList;
 
 /**
  * This method creates a new database.

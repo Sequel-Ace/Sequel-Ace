@@ -94,7 +94,6 @@ int SPJSONTokenizerInit(NSString *input, SPJSONTokenizerState *stateInfo);
  */
 int SPJSONTokenizerGetNextToken(SPJSONTokenizerState *stateInfo, SPJSONTokenInfo *tokenMatch);
 
-
 @interface SPJSONFormatter : NSObject
 
 /**

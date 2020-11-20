@@ -8,21 +8,13 @@
 
 #import "PSMTabDragView.h"
 
-
 @implementation PSMTabDragView
 
-- (id)initWithFrame:(NSRect)frame {
+- (instancetype)initWithFrame:(NSRect)frame {
     if ( (self = [super initWithFrame:frame]) ) {
 		_alpha = 1.0f;
     }
     return self;
-}
-
-- (void)dealloc
-{
-	[_image release];
-	[_alternateImage release];
-	[super dealloc];
 }
 
 - (void)drawRect:(NSRect)rect {
@@ -52,8 +44,7 @@
 
 - (void)setImage:(NSImage *)image
 {
-	[_image release];
-	_image = [image retain];
+	_image = image;
 }
 
 - (NSImage *)alternateImage
@@ -63,8 +54,7 @@
 
 - (void)setAlternateImage:(NSImage *)image
 {
-	[_alternateImage release];
-	_alternateImage = [image retain];
+	_alternateImage = image;
 }
 
 @end

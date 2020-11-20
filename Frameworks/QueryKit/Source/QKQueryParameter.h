@@ -47,6 +47,6 @@
 
 + (QKQueryParameter *)queryParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
 
-- (id)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
+- (instancetype)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
 
 @end

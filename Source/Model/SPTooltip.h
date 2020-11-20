@@ -30,9 +30,10 @@
 
 #import <WebKit/WebKit.h>
 
-@interface SPTooltip : NSWindow <WebFrameLoadDelegate>
+@interface SPTooltip : NSWindow <WKNavigationDelegate>
 {
-	WebView*		webView;
+	WKWebView*		wkWebView;
+	
 	WebPreferences*	webPreferences;
 	NSTimer*		animationTimer;
 	NSDate*			animationStart;
@@ -43,7 +44,11 @@
 	NSPoint			mousePositionWhenOpened;
 	
 	NSString* 		SPTooltipPreferencesIdentifier;
+	
 }
+
+@property (nonatomic, class, readonly, strong) SPTooltip *sharedInstance;
+
 
 + (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions;
 + (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type;
@@ -51,7 +56,9 @@
 + (void)showWithObject:(id)content ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions;
 + (void)showWithObject:(id)content ofType:(NSString *)type;
 + (void)showWithObject:(id)content;
+- (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions;
 
 - (void)animationTick:(id)sender;
 
 @end
+

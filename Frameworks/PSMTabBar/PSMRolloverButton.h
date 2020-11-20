@@ -28,7 +28,4 @@
 - (void)addTrackingRect;
 - (void)removeTrackingRect;
 
-- (void)mouseEntered:(nullable NSEvent *)event;
-- (void)mouseExited:(nullable NSEvent *)event;
-
 @end

@@ -32,10 +32,10 @@
 
 @interface SPUserMO : NSManagedObject
 
-@property (nonatomic, retain) NSString *user;
-@property (nonatomic, retain) NSString *host;
-@property (nonatomic, retain) SPUserMO *parent;
-@property (nonatomic, retain) NSSet *children;
+@property (nonatomic, copy) NSString *user;
+@property (nonatomic, copy) NSString *host;
+@property (nonatomic, strong) SPUserMO *parent;
+@property (nonatomic, strong) NSSet *children;
 
 - (NSString *)displayName;
 - (void)setDisplayName:(NSString *)value;

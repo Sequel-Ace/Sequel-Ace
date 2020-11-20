@@ -65,11 +65,6 @@
 	return self;
 }
 
-- (void)dealloc
-{
-	[super dealloc];
-}
-
 - (void) awakeFromNib
 {
 	[super setDoubleAction:@selector(_doubleClickAction)];
@@ -218,7 +213,7 @@
 			// ENTER or RETURN closes the SPFieldMapperController sheet
 			// by sending an object with the tag 1 if no table cell is edited
 			if ([(SPFieldMapperController*)[self delegate] canBeClosed]) {
-				NSButton *b = [[[NSButton alloc] init] autorelease];
+				NSButton *b = [[NSButton alloc] init];
 				[b setTag:1];
 				[(SPFieldMapperController*)[self delegate] closeSheet:b];
 				
@@ -342,6 +337,5 @@ pass_keyDown_to_super:
 {
 	[super setDoubleAction:@selector(_doubleClickAction)];
 }
-
 
 @end
