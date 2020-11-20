@@ -38,13 +38,8 @@
  * alternative to using file formats that are ten times more volatile than the Mac hardware lineup.
  */
 @interface SPButtonBar : NSView
-{
-	NSImage *lightImage;
-	NSImage *darkImage;
-}
 
 @property (readwrite, strong) NSColor *systemColorOfName;
 
-- (instancetype)init NS_UNAVAILABLE;
 
 @end
