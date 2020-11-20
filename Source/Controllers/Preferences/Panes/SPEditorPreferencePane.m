@@ -707,7 +707,11 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 - (NSImage *)preferencePaneIcon
 {
-	return [NSImage imageNamed:@"toolbar-switch-to-sql"];
+	if (@available(macOS 10.16, *)) {
+		return [NSImage imageWithSystemSymbolName:@"terminal" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:@"toolbar-switch-to-sql"];
+	}
 }
 
 - (NSString *)preferencePaneName

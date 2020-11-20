@@ -82,7 +82,11 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (NSImage *)preferencePaneIcon
 {
-	return [NSImage imageNamed:@"toolbar-preferences-network"];
+	if (@available(macOS 10.16, *)) {
+		return [NSImage imageWithSystemSymbolName:@"network" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:NSImageNameNetwork];
+	}
 }
 
 - (NSString *)preferencePaneName

@@ -43,7 +43,11 @@
 
 - (NSImage *)preferencePaneIcon
 {
-	return [NSImage imageNamed:@"toolbar-preferences-tables"];
+	if (@available(macOS 10.16, *)) {
+		return [NSImage imageWithSystemSymbolName:@"tablecells" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:@"toolbar-preferences-tables"];
+	}
 }
 
 - (NSString *)preferencePaneName
