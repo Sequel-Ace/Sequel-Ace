@@ -202,7 +202,7 @@ static NSString *SPDatabaseImage = @"database-small";
 
 - (NSImage *)preferencePaneIcon
 {
-	if (@available(macOS 10.16, *)) {
+	if (@available(macOS 11.0, *)) {
 		return [NSImage imageWithSystemSymbolName:@"gear" accessibilityDescription:nil];
 	} else {
 		return [NSImage imageNamed:NSImageNamePreferencesGeneral];
