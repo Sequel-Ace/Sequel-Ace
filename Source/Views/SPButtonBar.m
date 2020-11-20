@@ -31,11 +31,8 @@
 #import "SPButtonBar.h"
 #import "SPOSInfo.h"
 
-static void init(SPButtonBar *obj);
-
 @interface SPButtonBar ()
 
-- (BOOL)isInDarkMode;
 
 @end
 
@@ -43,57 +40,5 @@ static void init(SPButtonBar *obj);
 
 @synthesize systemColorOfName;
 
-+ (void)initialize
-{
-}
-
-- (instancetype)init
-{
-	[NSException raise:NSInternalInconsistencyException format:@"%s is not a valid initializer for class!",__func__];
-	return nil; // compiler hint
-}
-
-- (instancetype)initWithFrame:(NSRect)frameRect //designated initializer of super
-{
-	if(self = [super initWithFrame:frameRect]) {
-		init(self);
-	}
-	return self;
-}
-
-- (instancetype)initWithCoder:(NSCoder *)decoder //designated initializer of super
-{
-	if(self = [super initWithCoder:decoder]) {
-		init(self);
-	}
-	return self;
-}
-
-void init(SPButtonBar *obj)
-{
-	obj->lightImage = [NSImage imageNamed:@"button_bar_spacer"];
-	obj->darkImage  = [NSImage imageNamed:@"button_bar_spacer_dark"];
-}
-
-
-- (BOOL)isInDarkMode
-{
-	if (@available(macOS 10.14, *)) {
-		NSString *match = [[self effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
-		if ([NSAppearanceNameDarkAqua isEqualToString:match]) {
-			return YES;
-		}
-	}
-	return NO;
-}
-
-- (void)drawRect:(NSRect)dirtyRect
-{
-	NSImage *img = ([self isInDarkMode] ? darkImage : lightImage);
-	NSRect drawFrame = [self bounds];
-	drawFrame.origin.x = dirtyRect.origin.x;
-	drawFrame.size.width = dirtyRect.size.width;
-	[img drawInRect:drawFrame fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0];
-}
 
 @end

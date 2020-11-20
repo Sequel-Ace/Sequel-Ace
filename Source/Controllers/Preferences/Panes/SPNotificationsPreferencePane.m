@@ -42,7 +42,11 @@
 
 - (NSImage *)preferencePaneIcon
 {
-	return [NSImage imageNamed:@"toolbar-preferences-notifications"];
+	if (@available(macOS 11.0, *)) {
+		return [NSImage imageWithSystemSymbolName:@"exclamationmark.triangle" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:NSImageNameCaution];
+	}
 }
 
 - (NSString *)preferencePaneName

@@ -62,7 +62,11 @@
 }
 
 - (NSImage *)preferencePaneIcon {
-	return [NSImage imageNamed:NSImageNameFolder];
+	if (@available(macOS 11.0, *)) {
+		return [NSImage imageWithSystemSymbolName:@"folder" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:NSImageNameFolder];
+	}
 }
 
 - (NSString *)preferencePaneIdentifier {
