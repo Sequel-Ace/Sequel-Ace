@@ -1,0 +1,61 @@
+# By Jakub Kaspar 21/11/2020
+# Copyright © 2020 Sequel-Ace. All rights reserved.
+
+# Fastlane Constants
+default_platform :mac
+fastlane_version "2.168.0"
+
+GITHUB_REPO = "Sequel-Ace/Sequel-Ace"
+PROJECT_NAME = "sequel-ace.xcodeproj"
+WORKSPACE_NAME = "sequel-ace.xcworkspace"
+TARGET_NAME = "Sequel Ace"
+
+platform :ios do
+
+   ############################## Overrides ##############################
+
+   before_all do
+   end
+
+   after_all do |lane|
+      clean_build_artifacts
+   end
+
+   error do |lane, exception|
+      clean_build_artifacts
+   end
+
+   ############################## XCode ##############################
+
+   desc "Creates new branch changelog, generates changelog, creates a PR."
+   lane :generate_changelog do |options|
+
+      # Checkout to changelog branch
+      sh "git checkout -b changelog"
+      ensure_git_branch(
+         branch: 'changelog'
+      )
+
+      version = get_version_number(xcodeproj: PROJECT_NAME, target: TARGET_NAME)
+      sh "../Scripts/generate-changelog.sh #{version}"
+
+      # Commit and push changelog changes
+      sh "git commit -am 'Changelog updates'"
+      sh "git push -u origin changelog"
+
+      # Create Pull request to master
+      create_pull_request(
+         api_token: ENV["GITHUB_TOKEN"],
+         repo: GITHUB_REPO,
+         title: "Changelog",
+         body: "Updated changelog for the release"
+      )
+   end
+
+   desc "Increase build number"
+   lane :increment_build do |options|
+      # Bump build number
+      increment_build_number(xcodeproj: PROJECT_NAME)
+      commit_version_bump(xcodeproj: PROJECT_NAME)
+   end
+end
