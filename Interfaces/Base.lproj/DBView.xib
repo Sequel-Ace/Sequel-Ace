@@ -1242,14 +1242,14 @@
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <popUpButton fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7975">
-                                                        <rect key="frame" x="36" y="10" width="36" height="23"/>
+                                                        <rect key="frame" x="35" y="10" width="35" height="25"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                        <popUpButtonCell key="cell" type="bevel" bezelStyle="regularSquare" imagePosition="right" alignment="center" lineBreakMode="truncatingTail" state="on" inset="2" pullsDown="YES" arrowPosition="noArrow" selectedItem="7978" id="7976">
+                                                        <popUpButtonCell key="cell" type="bevel" bezelStyle="regularSquare" imagePosition="only" alignment="center" lineBreakMode="truncatingTail" state="on" inset="2" pullsDown="YES" selectedItem="7978" id="7976">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="menu"/>
                                                             <menu key="menu" title="OtherViews" id="7977">
                                                                 <items>
-                                                                    <menuItem state="on" image="button_actionTemplate" hidden="YES" id="7978"/>
+                                                                    <menuItem state="on" image="NSActionTemplate" hidden="YES" id="7978"/>
                                                                     <menuItem title="Export Result" id="8005">
                                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                                         <menu key="submenu" title="Export Result" id="8006">
@@ -1275,27 +1275,30 @@
                                                                 </items>
                                                             </menu>
                                                         </popUpButtonCell>
+                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     </popUpButton>
                                                     <button toolTip="Toggle the visibility of the Query Information Pane" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7970">
-                                                        <rect key="frame" x="6" y="9" width="32" height="25"/>
+                                                        <rect key="frame" x="10" y="10" width="25" height="25"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_pane_hideTemplate" imagePosition="only" alignment="center" alternateImage="button_pane_showTemplate" inset="2" id="7971">
+                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSQuickLookTemplate" imagePosition="only" alignment="center" alternateImage="NSQuickLookTemplate" inset="2" id="7971">
                                                             <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                             <string key="keyEquivalent">a</string>
                                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                                         </buttonCell>
+                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                         <connections>
                                                             <action selector="toggleCollapse:" target="7206" id="8024"/>
                                                         </connections>
                                                     </button>
                                                     <button toolTip="Toggle between editing simple text cells as a spreadsheet or in pop-up sheets" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8012">
-                                                        <rect key="frame" x="68" y="9" width="32" height="25"/>
+                                                        <rect key="frame" x="80" y="10" width="25" height="25"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_edit_modeTemplate" imagePosition="only" alignment="center" alternateImage="button_edit_mode_selectedTemplate" inset="2" id="8013">
+                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_edit_modeTemplate" imagePosition="only" alignment="center" alternateImage="button_edit_mode_selectedTemplate" inset="2" id="8013">
                                                             <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
+                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                         <connections>
                                                             <binding destination="1907" name="value" keyPath="values.EditInSheetEnabled" id="8016"/>
                                                         </connections>
@@ -4957,8 +4960,6 @@ Gw
         <image name="button_edit_mode_selectedTemplate" width="10" height="10"/>
         <image name="button_filterTemplate" width="11" height="10"/>
         <image name="button_filter_activeTemplate" width="11" height="10"/>
-        <image name="button_pane_hideTemplate" width="10" height="10"/>
-        <image name="button_pane_showTemplate" width="10" height="10"/>
         <image name="button_refreshTemplate" width="9" height="10"/>
         <image name="button_removeTemplate" width="10" height="10"/>
         <image name="grabber-horizontal" width="10" height="8"/>
