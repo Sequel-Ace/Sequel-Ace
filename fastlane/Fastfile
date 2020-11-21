@@ -1,6 +1,8 @@
 # By Jakub Kaspar 21/11/2020
 # Copyright © 2020 Sequel-Ace. All rights reserved.
 
+fastlane_require 'dotenv'
+
 # Fastlane Constants
 default_platform :mac
 fastlane_version "2.168.0"
@@ -15,6 +17,7 @@ platform :mac do
    ############################## Overrides ##############################
 
    before_all do
+      Dotenv.overload '.env.local'
    end
 
    after_all do |lane|
