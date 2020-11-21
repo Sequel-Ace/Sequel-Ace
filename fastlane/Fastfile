@@ -47,6 +47,7 @@ platform :mac do
       create_pull_request(
          api_token: ENV['GITHUB_TOKEN'],
          repo: GITHUB_REPO,
+         base: "main",
          title: "Changelog",
          body: "Updated changelog for the release"
       )
