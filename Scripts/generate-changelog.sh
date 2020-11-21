@@ -24,7 +24,7 @@ printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | 
 echo -e "\n### Infra" >> $TEMP_FILE
 printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#infra' | sed 's/#infra//g')\n" >> $TEMP_FILE
 
-echo -e "\n\n"
+echo -e "\n" >> $TEMP_FILE
 
 ################  Prepend Tempfile to CHANGELOG ###############
 
