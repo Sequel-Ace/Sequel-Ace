@@ -10,7 +10,7 @@ PROJECT_NAME = "sequel-ace.xcodeproj"
 WORKSPACE_NAME = "sequel-ace.xcworkspace"
 TARGET_NAME = "Sequel Ace"
 
-platform :ios do
+platform :mac do
 
    ############################## Overrides ##############################
 
