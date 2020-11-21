@@ -56,11 +56,11 @@
                                             <rect key="frame" x="0.0" y="0.0" width="177" height="476"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
-                                                <outlineView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" headerView="923" indentationPerLevel="14" autoresizesOutlineColumn="YES" outlineTableColumn="33" id="31" customClass="SPOutlineView">
-                                                    <rect key="frame" x="0.0" y="0.0" width="177" height="459"/>
+                                                <outlineView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" headerView="i5I-fd-SyY" indentationPerLevel="14" autoresizesOutlineColumn="YES" outlineTableColumn="33" id="31" customClass="SPOutlineView">
+                                                    <rect key="frame" x="0.0" y="0.0" width="177" height="448"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <size key="intercellSpacing" width="3" height="0.0"/>
-                                                    <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                     <tableColumns>
                                                         <tableColumn identifier="NameColumn" width="145" minWidth="16" maxWidth="1000" id="33">
@@ -102,8 +102,8 @@
                                             <rect key="frame" x="183" y="17" width="11" height="456"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <tableHeaderView key="headerView" wantsLayer="YES" id="923">
-                                            <rect key="frame" x="0.0" y="0.0" width="177" height="17"/>
+                                        <tableHeaderView key="headerView" wantsLayer="YES" id="i5I-fd-SyY">
+                                            <rect key="frame" x="0.0" y="0.0" width="177" height="28"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </tableHeaderView>
                                     </scrollView>
@@ -112,7 +112,7 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <popUpButtonCell key="cell" type="bevel" bezelStyle="regularSquare" imagePosition="only" alignment="center" alternateImage="NSActionTemplate" lineBreakMode="truncatingTail" state="on" inset="2" pullsDown="YES" selectedItem="1019" id="1011">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
+                                            <font key="font" metaFont="menu"/>
                                             <menu key="menu" title="OtherViews" id="1012">
                                                 <items>
                                                     <menuItem state="on" image="NSActionTemplate" hidden="YES" id="1019"/>
