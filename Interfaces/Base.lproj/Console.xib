@@ -99,7 +99,7 @@
                                             </textFieldCell>
                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         </tableColumn>
-                                        <tableColumn identifier="message" editable="NO" width="289" minWidth="50" maxWidth="3.4028234663852886e+38" id="wyq-H4-GHT">
+                                        <tableColumn identifier="message" editable="NO" width="260" minWidth="50" maxWidth="3.4028234663852886e+38" id="wyq-H4-GHT">
                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Query">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -143,6 +143,7 @@
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <connections>
                             <action selector="clearConsole:" target="-2" id="75"/>
                         </connections>
@@ -211,6 +212,7 @@
                                 </items>
                             </menu>
                         </popUpButtonCell>
+                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                     </popUpButton>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="108">
                         <rect key="frame" x="66" y="4" width="326" height="25"/>
