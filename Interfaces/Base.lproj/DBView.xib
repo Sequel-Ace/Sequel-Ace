@@ -986,14 +986,14 @@
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <scrollView focusRingType="none" fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="18" horizontalPageScroll="10" verticalLineScroll="18" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="35">
-                                                                        <rect key="frame" x="-1" y="22" width="697" height="436"/>
+                                                                        <rect key="frame" x="0.0" y="25" width="695" height="433"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" id="lwO-LP-RWZ">
-                                                                            <rect key="frame" x="1" y="1" width="695" height="434"/>
-                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                            <rect key="frame" x="1" y="1" width="693" height="431"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView identifier="TableContentTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="3920" id="36" customClass="SPCopyTable">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="695" height="417"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="693" height="414"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <size key="intercellSpacing" width="3" height="2"/>
                                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1029,72 +1029,73 @@
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
                                                                         <tableHeaderView key="headerView" wantsLayer="YES" id="3920">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="695" height="17"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="693" height="17"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </tableHeaderView>
                                                                     </scrollView>
-                                                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NHu-6H-yk7" customClass="SPButtonBar">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="695" height="23"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                                                    </customView>
                                                                     <button toolTip="Add row (⌥⌘A)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5175">
-                                                                        <rect key="frame" x="-1" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="1" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_addTemplate" imagePosition="only" alignment="center" alternateImage="button_addTemplate" enabled="NO" inset="2" id="5184">
-                                                                            <behavior key="behavior" lightByContents="YES"/>
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSAddTemplate" imagePosition="only" alignment="center" alternateImage="NSAddTemplate" enabled="NO" inset="2" id="5184">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                             <string key="keyEquivalent">a</string>
                                                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="addRow:" target="67" id="5188"/>
                                                                         </connections>
                                                                     </button>
                                                                     <button toolTip="Refresh table contents (⌘R)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5176">
-                                                                        <rect key="frame" x="93" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="90" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_refreshTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_refreshTemplate" inset="2" id="5183">
-                                                                            <behavior key="behavior" lightByContents="YES"/>
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSRefreshTemplate" imagePosition="only" alignment="center" alternateImage="NSRefreshTemplate" inset="2" id="5183">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                             <string key="keyEquivalent">r</string>
                                                                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="reloadTable:" target="67" id="5185"/>
                                                                         </connections>
                                                                     </button>
                                                                     <button toolTip="Delete selected row(s) (⌫)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5177">
-                                                                        <rect key="frame" x="30" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="30" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_removeTemplate" imagePosition="only" alignment="center" alternateImage="button_removeTemplate" enabled="NO" inset="2" id="5182">
-                                                                            <behavior key="behavior" lightByContents="YES"/>
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSRemoveTemplate" imagePosition="only" alignment="center" alternateImage="NSRemoveTemplate" enabled="NO" inset="2" id="5182">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                             <string key="keyEquivalent"></string>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="removeRow:" target="67" id="5187"/>
                                                                         </connections>
                                                                     </button>
                                                                     <button toolTip="Duplicate selected row (⌘D)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5178">
-                                                                        <rect key="frame" x="61" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="60" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_duplicateTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_duplicateTemplate" enabled="NO" inset="2" id="5181">
-                                                                            <behavior key="behavior" lightByContents="YES"/>
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_duplicateTemplate" imagePosition="only" alignment="center" alternateImage="button_duplicateTemplate" enabled="NO" inset="2" id="5181">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                             <string key="keyEquivalent">d</string>
                                                                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="duplicateRow:" target="67" id="7838"/>
                                                                         </connections>
                                                                     </button>
                                                                     <button toolTip="Toggle between editing simple text cells as a spreadsheet or in pop-up sheets" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5201">
-                                                                        <rect key="frame" x="124" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="120" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_edit_modeTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_edit_mode_selectedTemplate" inset="2" id="5202">
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_edit_modeTemplate" imagePosition="only" alignment="center" alternateImage="button_edit_mode_selectedTemplate" inset="2" id="5202">
                                                                             <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <binding destination="1907" name="value" keyPath="values.EditInSheetEnabled" id="6351"/>
                                                                         </connections>
@@ -1108,54 +1109,58 @@
                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                         </textFieldCell>
                                                                     </textField>
-                                                                    <button toolTip="View next page of results" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6647">
-                                                                        <rect key="frame" x="647" y="-1" width="32" height="25"/>
-                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_rightTemplate" imagePosition="only" alignment="center" alternateImage="button_rightTemplate" inset="2" id="6648">
-                                                                            <behavior key="behavior" lightByContents="YES"/>
-                                                                            <font key="font" metaFont="system"/>
-                                                                        </buttonCell>
-                                                                        <connections>
-                                                                            <action selector="navigatePaginationFromButton:" target="67" id="6666"/>
-                                                                        </connections>
-                                                                    </button>
                                                                     <button toolTip="View previous page of results" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6650">
-                                                                        <rect key="frame" x="585" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="600" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_leftTemplate" imagePosition="only" alignment="center" alternateImage="button_leftTemplate" inset="2" id="6651">
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSLeftFacingTriangleTemplate" imagePosition="only" alignment="center" alternateImage="NSLeftFacingTriangleTemplate" inset="2" id="6651">
                                                                             <behavior key="behavior" lightByContents="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="navigatePaginationFromButton:" target="67" id="6665"/>
                                                                         </connections>
                                                                     </button>
                                                                     <button toolTip="Jump to page (⌘J) or view pagination options" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6653">
-                                                                        <rect key="frame" x="616" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="630" y="0.0" width="25" height="25"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_paginationTemplate" imagePosition="overlaps" alignment="center" inset="2" id="6654">
-                                                                            <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
-                                                                            <font key="font" metaFont="message" size="11"/>
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSActionTemplate" imagePosition="only" alignment="center" alternateImage="NSActionTemplate" inset="2" id="6654">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                            <font key="font" metaFont="system"/>
                                                                             <string key="keyEquivalent">j</string>
                                                                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="togglePagination:" target="67" id="6662"/>
                                                                         </connections>
                                                                     </button>
                                                                     <progressIndicator wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" maxValue="100" displayedWhenStopped="NO" bezeled="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="858">
-                                                                        <rect key="frame" x="561" y="4" width="16" height="16"/>
+                                                                        <rect key="frame" x="575" y="4" width="16" height="16"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                     </progressIndicator>
                                                                     <button toolTip="Show/Hide table content filters" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LYg-Ux-Lph">
-                                                                        <rect key="frame" x="155" y="-1" width="32" height="25"/>
+                                                                        <rect key="frame" x="150" y="1" width="25" height="23"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="button_filterTemplate" imagePosition="overlaps" alignment="center" alternateImage="button_filter_activeTemplate" inset="2" id="WNc-7G-qPQ">
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="button_filterTemplate" imagePosition="only" alignment="center" alternateImage="button_filter_activeTemplate" inset="2" id="WNc-7G-qPQ">
                                                                             <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                                                             <font key="font" metaFont="system"/>
                                                                         </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="toggleRuleEditorVisible:" target="67" id="Os7-vn-sUJ"/>
+                                                                        </connections>
+                                                                    </button>
+                                                                    <button toolTip="View next page of results" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6647">
+                                                                        <rect key="frame" x="660" y="0.0" width="25" height="25"/>
+                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                                                        <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSRightFacingTriangleTemplate" imagePosition="only" alignment="center" alternateImage="NSRightFacingTriangleTemplate" inset="2" id="6648">
+                                                                            <behavior key="behavior" lightByContents="YES"/>
+                                                                            <font key="font" metaFont="system"/>
+                                                                        </buttonCell>
+                                                                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <connections>
+                                                                            <action selector="navigatePaginationFromButton:" target="67" id="6666"/>
                                                                         </connections>
                                                                     </button>
                                                                 </subviews>
@@ -1169,7 +1174,7 @@
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="kdv-Wp-s5h">
                                                                             <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
-                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
@@ -4950,9 +4955,11 @@ Gw
         <image name="NSApplicationIcon" width="32" height="32"/>
         <image name="NSGoLeftTemplate" width="10" height="14"/>
         <image name="NSGoRightTemplate" width="10" height="14"/>
+        <image name="NSLeftFacingTriangleTemplate" width="10" height="14"/>
         <image name="NSQuickLookTemplate" width="21" height="13"/>
         <image name="NSRefreshTemplate" width="14" height="16"/>
         <image name="NSRemoveTemplate" width="14" height="4"/>
+        <image name="NSRightFacingTriangleTemplate" width="10" height="14"/>
         <image name="NSSmartBadgeTemplate" width="14" height="14"/>
         <image name="button_actionTemplate" width="18" height="10"/>
         <image name="button_addTemplate" width="10" height="10"/>
@@ -4963,13 +4970,10 @@ Gw
         <image name="button_edit_mode_selectedTemplate" width="10" height="10"/>
         <image name="button_filterTemplate" width="11" height="10"/>
         <image name="button_filter_activeTemplate" width="11" height="10"/>
-        <image name="button_leftTemplate" width="7" height="10"/>
-        <image name="button_paginationTemplate" width="18" height="10"/>
         <image name="button_pane_hideTemplate" width="10" height="10"/>
         <image name="button_pane_showTemplate" width="10" height="10"/>
         <image name="button_refreshTemplate" width="9" height="10"/>
         <image name="button_removeTemplate" width="10" height="10"/>
-        <image name="button_rightTemplate" width="7" height="10"/>
         <image name="grabber-horizontal" width="10" height="8"/>
     </resources>
 </document>
