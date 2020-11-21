@@ -10,6 +10,6 @@ jobs:
     - name: Checkout the Git repository
       uses: actions/checkout@v2
     - name: Build and run tests
-      run: ./build.sh tests
+      run: ./Scripts/build.sh tests
       env:
         DEVELOPER_DIR: '/Applications/Xcode_12.2.app/Contents/Developer'
