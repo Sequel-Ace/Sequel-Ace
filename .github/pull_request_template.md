@@ -1,32 +1,24 @@
 <!--
 Thanks for sending a pull request! Please make sure you click the link above to view the contribution guidelines, then fill out the blanks below.
+
+Please use one of these hashtags for your PR title:
+- #added - Used for new features and things that have been added into the project
+- #fixed - Used for bugfixes
+- #changed - Used for PRs changing current or existing features
+- #removed - Used for PRs removing existing features
+- #infra - Used for PRs that are (usually) not product work
 -->
 
-What does this implement/fix? Explain your changes.
----------------------------------------------------
-…
+## Changes:
+- 
 
-Does this close any currently open issues?
-------------------------------------------
-…
+## Closes following issues:
+- 
 
-
-Any relevant logs, error output, etc?
--------------------------------------
-<!--
-If the logs is quite long, please paste to https://ghostbin.com/ and insert the link here.
--->
-
-Any other comments?
--------------------
-…
-
-Where has this been tested?
+## Tested:
 ---------------------------
-**Devices/Simulators:** …
+**Devices/Simulators:** 
 
-**macOS Version:** …
+**macOS Version:** 
 
-**Sequel-Ace Version:** …
-
-
+**XCode version:** 
