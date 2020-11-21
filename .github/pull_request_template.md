@@ -16,9 +16,12 @@ Please use one of these hashtags for your PR title:
 - 
 
 ## Tested:
----------------------------
-**Devices/Simulators:** 
+- [] iMac / MacBook
+- macOS version: 
+- XCode version:
 
-**macOS Version:** 
+## Screenshots:
 
-**XCode version:** 
+
+## Additional notes:
+
