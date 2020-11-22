@@ -1124,7 +1124,6 @@
 			NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
 			NSRect closeRect = [currentCell closeButtonRectForFrame:cellFrame];
 			[currentCell setHighlighted:NSMouseInRect(mousePoint, cellFrame, [self isFlipped])];
-			[currentCell setCloseButtonOver:NSMouseInRect(mousePoint, closeRect, [self isFlipped])];
 		}
         
         if (_showAddTabButton) {
@@ -1154,7 +1153,6 @@
                 NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
                 NSRect closeRect = [currentCell closeButtonRectForFrame:cellFrame];
                 [currentCell setHighlighted:NSMouseInRect(mousePoint, cellFrame, [self isFlipped])];
-                [currentCell setCloseButtonOver:NSMouseInRect(mousePoint, closeRect, [self isFlipped])];
 			}
 		}
         
@@ -1211,8 +1209,6 @@
         [self removeTrackingRect:[cell closeButtonTrackingTag]];
         tag = [self addTrackingRect:closeRect owner:cell userData:nil assumeInside:mouseInCloseRect];
         [cell setCloseButtonTrackingTag:tag];
-        
-        [cell setCloseButtonOver:mouseInCloseRect];
     }
     
     //set the tooltip tracking rect
@@ -1296,19 +1292,12 @@
 			![self disableTabClose] && 
 			![cell isCloseButtonSuppressed] &&
 			([self allowsBackgroundTabClosing] || [[cell representedObject] isEqualTo:[tabView selectedTabViewItem]] || [theEvent modifierFlags] & NSEventModifierFlagCommand)) {
-            [cell setCloseButtonOver:NO];
-            [cell setCloseButtonPressed:YES];
 			_closeClicked = YES;
 		}
 		else if ([theEvent clickCount] == 2) {
-			[cell setCloseButtonOver:NO];
-			
 			[_doubleClickTarget performSelector:_doubleClickAction withObject:cell];
-        } else {
-            [cell setCloseButtonPressed:NO];
-			if (_selectsTabsOnMouseDown) {
-				[self performSelector:@selector(tabClick:) withObject:cell];
-			}
+        } else if (_selectsTabsOnMouseDown) {
+			[self performSelector:@selector(tabClick:) withObject:cell];
         }
         [self setNeedsDisplay:YES];
     } else {
@@ -1362,7 +1351,6 @@
 		
 		if (_closeClicked && NSMouseInRect(trackingStartPoint, iconRect, [self isFlipped]) &&
 				([self allowsBackgroundTabClosing] || [[cell representedObject] isEqualTo:[tabView selectedTabViewItem]])) {
-			[cell setCloseButtonPressed:NSMouseInRect(currentPoint, iconRect, [self isFlipped])];
 			[self setNeedsDisplay:YES];
 			return;
 		}
@@ -1399,7 +1387,7 @@
 			NSPoint trackingStartPoint = [self convertPoint:[[self lastMouseDownEvent] locationInWindow] fromView:nil];
 			NSRect iconRect = [mouseDownCell closeButtonRectForFrame:mouseDownCellFrame];
 			
-			if ((NSMouseInRect(mousePt, iconRect,[self isFlipped])) && ![self disableTabClose] && ![cell isCloseButtonSuppressed] && [mouseDownCell closeButtonPressed]) {
+			if ((NSMouseInRect(mousePt, iconRect,[self isFlipped])) && ![self disableTabClose] && ![cell isCloseButtonSuppressed]) {
 				if (([[NSApp currentEvent] modifierFlags] & NSEventModifierFlagOption) != 0) {
 					//If the user is holding Option, close all other tabs
 					NSEnumerator	*enumerator = [[[self cells] copy] objectEnumerator];
@@ -1409,10 +1397,6 @@
 						if (otherCell != cell)
 							[self performSelector:@selector(closeTabClick:) withObject:otherCell];
 					}
-					
-					//Fix the close button for the clicked tab not to be pressed
-					[cell setCloseButtonPressed:NO];
-					
 				} else {
 					//Otherwise, close this tab
 					[self performSelector:@selector(closeTabClick:) withObject:cell];
@@ -1420,14 +1404,12 @@
 
 			} else if (NSMouseInRect(mousePt, mouseDownCellFrame, [self isFlipped]) &&
 					   (!NSMouseInRect(trackingStartPoint, [cell closeButtonRectForFrame:cellFrame], [self isFlipped]) || ![self allowsBackgroundTabClosing] || [self disableTabClose])) {
-				[mouseDownCell setCloseButtonPressed:NO];
 				// If -[self selectsTabsOnMouseDown] is TRUE, we already performed tabClick: on mouseDown.
 				if (![self selectsTabsOnMouseDown]) {
 					[self performSelector:@selector(tabClick:) withObject:cell];
 				}
 
 			} else {
-				[mouseDownCell setCloseButtonPressed:NO];
 				[self performSelector:@selector(tabNothing:) withObject:cell];
 			}
 		}
@@ -1577,12 +1559,9 @@
     
     if ([[self delegate] respondsToSelector:@selector(tabView:shouldCloseTabViewItem:)]) {
         if (![[self delegate] tabView:tabView shouldCloseTabViewItem:item]) {
-            // fix mouse downed close button
-            [sender setCloseButtonPressed:NO];
             return;
         }
     }
-	
     
 	[tabView removeTabViewItem:item];
 }

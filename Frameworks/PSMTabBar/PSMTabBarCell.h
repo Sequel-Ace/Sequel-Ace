@@ -23,8 +23,6 @@
     NSInteger                 _tabState;
     NSTrackingRectTag   _closeButtonTrackingTag;    // left side tracking, if dragging
     NSTrackingRectTag   _cellTrackingTag;           // right side tracking, if dragging
-    BOOL                _closeButtonOver;
-    BOOL                _closeButtonPressed;
     PSMProgressIndicator *_indicator;
     BOOL                _isInOverflowMenu;
     BOOL                _hasCloseButton;
@@ -60,10 +58,6 @@
 - (NSProgressIndicator *)indicator;
 - (BOOL)isInOverflowMenu;
 - (void)setIsInOverflowMenu:(BOOL)value;
-- (BOOL)closeButtonPressed;
-- (void)setCloseButtonPressed:(BOOL)value;
-- (BOOL)closeButtonOver;
-- (void)setCloseButtonOver:(BOOL)value;
 - (BOOL)hasCloseButton;
 - (void)setHasCloseButton:(BOOL)set;
 - (void)setCloseButtonSuppressed:(BOOL)suppress;

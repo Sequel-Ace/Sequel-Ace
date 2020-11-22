@@ -28,8 +28,6 @@
 @interface PSMSequelProTabStyle : NSObject <PSMTabStyle>
 {	
     NSImage *sequelProCloseButton;
-    NSImage *sequelProCloseButtonDown;
-    NSImage *sequelProCloseButtonOver;
     NSImage *sequelProCloseDirtyButton;
     NSImage *sequelProCloseDirtyButtonDown;
     NSImage *sequelProCloseDirtyButtonOver;
