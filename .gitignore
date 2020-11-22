@@ -24,3 +24,4 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 fastlane/build_folder
 fastlane/.env
+prebuild.log
