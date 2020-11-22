@@ -171,6 +171,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		clientView     = (NSTextView*)[self clientView];
 
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange:) name:NSTextStorageDidProcessEditingNotification object:[clientView textStorage]];
+		lineIndices = nil;
 	}
 
 }
@@ -181,6 +182,12 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 {
 
 	if(!clientView) return;
+
+	// Invalidate the line indices only if text view was changed in length but not if the font was changed.
+	// They will be recalculated and recached on demand.
+	if ([[clientView textStorage] editedMask] != 1) {
+		lineIndices = nil;
+	}
 
 	[self setNeedsDisplayInRect:[self bounds]];
 
@@ -263,17 +270,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 - (void)drawHashMarksAndLabelsInRect:(NSRect)aRect
 {
-	[super drawHashMarksAndLabelsInRect:aRect];
 	NSRect bounds = [self bounds];
-
-	// if (backgroundColor != nil)
-	// {
-	// 	[backgroundColor set];
-	// 	NSRectFill(bounds);
-	// 
-	// 	[[NSColor colorWithCalibratedWhite:0.58 alpha:1.0] set];
-	// 	[NSBezierPath strokeLineFromPoint:NSMakePoint(NSMaxX(bounds) - 0.5, NSMinY(bounds)) toPoint:NSMakePoint(NSMaxX(bounds) - 0.5, NSMaxY(bounds))];
-	// }
 
 	if ([clientView isKindOfClass:[NSTextView class]])
 	{
