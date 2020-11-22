@@ -365,7 +365,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Disable pagination
 	[paginationPreviousButton setEnabled:NO];
 	[paginationButton setEnabled:NO];
-	[paginationButton setTitle:@""];
 	[paginationNextButton setEnabled:NO];
 
 	// Disable table action buttons
@@ -1443,12 +1442,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	
 	if(makeVisible) {
 		[paginationButton setState:NSOnState];
-		[paginationButton setImage:[NSImage imageNamed:@"button_actionTemplate"]];
 		[paginationViewController makeInputFirstResponder];
 	}
 	else {
 		[paginationButton setState:NSOffState];
-		[paginationButton setImage:[NSImage imageNamed:@"button_paginationTemplate"]];
 		// TODO This is only relevant in 10.6 legacy mode.
 		// When using a modern NSPopover, the view controller's parent window is an _NSPopoverWindow,
 		// not the SP window and we don't care what the first responder in the popover is.

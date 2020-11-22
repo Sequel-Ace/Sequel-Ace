@@ -99,7 +99,7 @@
                                             </textFieldCell>
                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         </tableColumn>
-                                        <tableColumn identifier="message" editable="NO" width="289" minWidth="50" maxWidth="3.4028234663852886e+38" id="wyq-H4-GHT">
+                                        <tableColumn identifier="message" editable="NO" width="260" minWidth="50" maxWidth="3.4028234663852886e+38" id="wyq-H4-GHT">
                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Query">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -137,18 +137,19 @@
                         </tableHeaderView>
                     </scrollView>
                     <button toolTip="Clear Console" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="73">
-                        <rect key="frame" x="35" y="4" width="25" height="25"/>
+                        <rect key="frame" x="40" y="0.0" width="25" height="25"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSStopProgressFreestandingTemplate" imagePosition="only" alignment="center" alternateImage="NSStopProgressFreestandingTemplate" state="on" inset="2" id="74">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <connections>
                             <action selector="clearConsole:" target="-2" id="75"/>
                         </connections>
                     </button>
                     <popUpButton fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="77" userLabel="Gear Menu Button">
-                        <rect key="frame" x="0.0" y="4" width="35" height="25"/>
+                        <rect key="frame" x="0.0" y="0.0" width="35" height="25"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <popUpButtonCell key="cell" type="smallSquare" bezelStyle="smallSquare" imagePosition="right" alignment="center" lineBreakMode="truncatingTail" inset="2" pullsDown="YES" selectedItem="80" id="78">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -211,6 +212,7 @@
                                 </items>
                             </menu>
                         </popUpButtonCell>
+                        <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                     </popUpButton>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="108">
                         <rect key="frame" x="66" y="4" width="326" height="25"/>
