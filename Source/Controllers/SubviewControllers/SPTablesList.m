@@ -2124,41 +2124,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 #pragma mark -
-#pragma mark SplitView Delegate Methods
-
-/**
- * Prevent the table info pane from being resized manually, by making the splitter
- * not-selectable.
- */
-- (NSRect)splitView:(NSSplitView *)splitView effectiveRect:(NSRect)proposedEffectiveRect forDrawnRect:(NSRect)drawnRect ofDividerAtIndex:(NSInteger)dividerIndex
-{
-	if (splitView == (NSSplitView *)tableListSplitView || splitView == (NSSplitView *)tableListFilterSplitView) {
-		return NSZeroRect;
-	}
-
-	return proposedEffectiveRect;
-}
-
-/**
- * Never show the divider bar for the table list filter split view.
- */
-- (BOOL)splitView:(NSSplitView *)splitView shouldHideDividerAtIndex:(NSInteger)dividerIndex
-{
-	if (splitView == (NSSplitView *)tableListFilterSplitView) {
-		return YES;
-	}
-
-	// Because both the info pane split view and filter view split view use this class
-	// as a delegate, we now have to duplicate some logic in SPSplitView to match the
-	// default behaviour - thanks to the override above.
-	if (splitView == (NSSplitView *)tableListSplitView) {
-		return [tableListSplitView isSubviewCollapsed:[[tableListSplitView subviews] objectAtIndex:1]];
-	}
-
-	return NO;
-}
-
-#pragma mark -
 #pragma mark Private API
 
 /**
