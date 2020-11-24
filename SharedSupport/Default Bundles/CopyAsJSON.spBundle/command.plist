@@ -114,10 +114,23 @@ Version 1.0</string>
 		<key>modifierFlags</key>
 		<integer>262144</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
 	<string>Copy as JSON</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQCBIABAAAUUNRY9IfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>none</string>
 	<key>scope</key>
@@ -126,7 +139,5 @@ Version 1.0</string>
 	<string>Copies the selected rows excluding any BLOB data JSON formatted into the pasteboard</string>
 	<key>uuid</key>
 	<string>CBB8B7A7-5AB9-4F4C-A404-D99CA9521337</string>
-	<key>isDefaultBundle</key>
-	<true/>
 </dict>
 </plist>

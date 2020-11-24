@@ -101,10 +101,23 @@ Version 1.0</string>
 		<key>modifierFlags</key>
 		<integer>1835008</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@o</string>
 	<key>name</key>
 	<string>Open selected table with…</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQHxIAHAAAUU9Rb9IfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>showastexttooltip</string>
 	<key>scope</key>
@@ -113,7 +126,5 @@ Version 1.0</string>
 	<string>Open selected table </string>
 	<key>uuid</key>
 	<string>8F406B0A-23A4-4436-A348-E248A61BA59C</string>
-	<key>isDefaultBundle</key>
-	<true/>
 </dict>
 </plist>

@@ -1119,6 +1119,17 @@ echo trim(SqlFormatter::format($sql, false));</string>
 	<string>^~@t</string>
 	<key>name</key>
 	<string>Format SQL</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQERIAHAAAUVRRdNIfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>replaceselection</string>
 	<key>scope</key>

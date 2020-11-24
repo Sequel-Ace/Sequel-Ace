@@ -54,10 +54,23 @@ Version 1.0</string>
 		<key>modifierFlags</key>
 		<integer>1572864</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>~@j</string>
 	<key>name</key>
 	<string>Toggle JSON Format</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQJhIAGAAAUUpRatIfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>replaceselection</string>
 	<key>scope</key>
@@ -66,7 +79,5 @@ Version 1.0</string>
 	<string>Serialize or pretty print JSON data</string>
 	<key>uuid</key>
 	<string>87FD8A4F-90AA-4020-9E0B-8CDD05764D08</string>
-	<key>isDefaultBundle</key>
-	<true/>
 </dict>
 </plist>

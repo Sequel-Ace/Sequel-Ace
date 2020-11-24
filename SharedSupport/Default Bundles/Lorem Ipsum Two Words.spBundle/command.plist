@@ -25,17 +25,28 @@ print "Lorem Ipsum"</string>
 		<key>modifierFlags</key>
 		<integer>393216</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^$T</string>
 	<key>name</key>
 	<string>Two Words</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQERIABgAAUVRRdNIfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>insertastext</string>
 	<key>scope</key>
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>8F858F4D-9DCC-488A-B01C-D9F7FA32FE32</string>
-	<key>isDefaultBundle</key>
-	<true/>
 </dict>
 </plist>

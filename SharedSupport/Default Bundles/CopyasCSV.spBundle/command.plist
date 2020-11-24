@@ -87,10 +87,23 @@ print "\n";
 	<string>Copies the selected rows to clipboard as CSV separating data by semi-colon</string>
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^c</string>
 	<key>name</key>
 	<string>Copy as CSV</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQCBIABAAAUQNRY9IfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>none</string>
 	<key>scope</key>
@@ -101,7 +114,5 @@ print "\n";
 	<string>none</string>
 	<key>uuid</key>
 	<string>E24C4537-0AAB-4C17-B5F9-C5054CADA77C</string>
-	<key>isDefaultBundle</key>
-	<true/>
 </dict>
 </plist>

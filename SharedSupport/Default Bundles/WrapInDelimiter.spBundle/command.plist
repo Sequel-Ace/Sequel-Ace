@@ -36,10 +36,23 @@ Version 1.0</string>
 		<key>modifierFlags</key>
 		<integer>1835008</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@w</string>
 	<key>name</key>
 	<string>Wrap query/selection in DELIMITER</string>
+	<key>newShortcut</key>
+	<data>
+	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS
+	AAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRyb290gAGoCwwZGhscHR5VJG51bGzWDQ4P
+	EBESExQVFhcYXW1vZGlmaWVyRmxhZ3NfEBtjaGFyYWN0ZXJzSWdub3JpbmdNb2RpZmll
+	cnNWJGNsYXNzWmNoYXJhY3RlcnNXa2V5Q29kZVd2ZXJzaW9ugASABoAHgAWAA4ACVDMw
+	MDAQDRIAHAAAUVdRd9IfICEiWiRjbGFzc25hbWVYJGNsYXNzZXNaU1JTaG9ydGN1dKIh
+	I1hOU09iamVjdAAIABEAGgAkACkAMgA3AEkATABRAFMAXABiAG8AfQCbAKIArQC1AL0A
+	vwDBAMMAxQDHAMkAzgDQANUA1wDZAN4A6QDyAP0BAAAAAAAAAAIBAAAAAAAAACQAAAAA
+	AAAAAAAAAAAAAAEJ
+	</data>
 	<key>output</key>
 	<string>insertassnippet</string>
 	<key>scope</key>
@@ -48,7 +61,5 @@ Version 1.0</string>
 	<string>Wrap the current query or selection in DELIMITER ;;</string>
 	<key>uuid</key>
 	<string>A67BDE10-0A76-45C2-98DB-B35AC731E8DA</string>
-	<key>isDefaultBundle</key>
-	<true/>
 </dict>
 </plist>
