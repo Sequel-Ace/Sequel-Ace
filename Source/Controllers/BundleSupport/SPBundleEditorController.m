@@ -63,6 +63,7 @@
 - (void)_metaSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
 @property (readwrite, strong) NSFileManager *fileManager;
+@property (readwrite, strong) SRShortcutValidator *shortcutValidator;
 
 @end
 
@@ -70,7 +71,7 @@
 
 @implementation SPBundleEditorController
 
-@synthesize fileManager;
+@synthesize fileManager, shortcutValidator;
 
 - (instancetype)init
 {
@@ -96,11 +97,20 @@
 	[splitView setMinSize:588.f ofSubviewAtIndex:1];
 
 	// Set up the shortcut recorder control
-	[keyEquivalentField setAnimates:YES];
-	[keyEquivalentField setStyle:SRGreyStyle];
-	[keyEquivalentField setAllowedFlags:ShortcutRecorderAllFlags];
-	[keyEquivalentField setRequiredFlags:ShortcutRecorderEmptyFlags];
-	[keyEquivalentField setAllowsKeyOnly:NO escapeKeysRecord:NO];
+	[keyEquivalentField setAllowedModifierFlags:SRCocoaModifierFlagsMask requiredModifierFlags:0 allowsEmptyModifierFlags:NO];
+	keyEquivalentField.allowsEscapeToCancelRecording = YES;
+	shortcutValidator = [[SRShortcutValidator alloc] initWithDelegate:self];
+
+	keyEquivalentField.delegate = self;
+
+	// doesn't work
+	keyEquivalentField.font = [NSFont systemFontOfSize:6];
+
+	SRRecorderControlStyleResourceLoader *loader = SRRecorderControlStyle.resourceLoader;
+
+	NSDictionary *dict = [loader infoForStyle:keyEquivalentField.style];
+
+	SPLog(@"style dict = %@", dict);
 
 	// Init all needed variables; popup menus (with the chance for localization); and set
 	// defaults
@@ -259,8 +269,6 @@
 	[anItem setTag:kDataTableScopeArrayIndex];
 	[inputGeneralScopePopUpMenu addItem:anItem];
 	[scopePopupButton setMenu:inputGeneralScopePopUpMenu];
-
-	[keyEquivalentField setCanCaptureGlobalHotKeys:YES];
 
 	[commandBundleTreeController setSortDescriptors:[NSArray arrayWithObjects:sortDescriptor, nil]];
 
@@ -970,9 +978,19 @@
 
 	// Remove a given old command.plist file
 	[fileManager removeItemAtPath:cmdFilePath error:nil];
-	[saveDict writeToFile:cmdFilePath atomically:YES];
 
-	return YES;
+	NSError *err = nil;
+
+	BOOL ret = NO;
+
+	if (@available(macOS 10.13, *)) {
+		ret = [saveDict writeToURL:[NSURL fileURLWithPath:cmdFilePath] error:&err];
+		SPLog(@"Save bundle error: %@", err.localizedDescription);
+		return ret;
+	} else {
+		ret = [saveDict writeToFile:cmdFilePath atomically:YES];
+		return ret;
+	}
 }
 
 /**
@@ -1113,50 +1131,65 @@
 }
 
 #pragma mark -
-#pragma mark SRRecorderControl delegate
+#pragma mark SRShortcutValidator delegate
 
-- (BOOL) shortcutValidator:(SRValidator *)validator isKeyCode:(NSInteger)keyCode andFlagsTaken:(NSUInteger)flags reason:(NSString **)aReason;
-{
-    return YES;
-}
-
-- (BOOL)shortcutRecorderCell:(SRRecorderCell *)aRecorderCell isKeyCode:(NSInteger)keyCode andFlagsTaken:(NSUInteger)flags reason:(NSString **)aReason
-{
+- (BOOL)shortcutValidatorShouldCheckMenu:(SRShortcutValidator *)aValidator{
 	return YES;
 }
 
-- (void)shortcutRecorder:(SRRecorderControl *)aRecorder keyComboDidChange:(KeyCombo)newKeyCombo
-{
+- (BOOL)shortcutValidatorShouldCheckSystemShortcuts:(SRShortcutValidator *)aValidator{
+	return YES;
+}
+
+#pragma mark -
+#pragma mark SRRecorderControl delegate
+
+- (void)recorderControlDidEndRecording:(SRRecorderControl *)aControl{
+
+	SPLog(@"recorderControlDidEndRecording: %@", aControl.description);
 
 	if([commandsOutlineView selectedRow] < 0) return;
 
-	// Transform KeyCombo struct to KeyBinding.dict format for NSMenuItems
-	NSMutableString *keyEq = [NSMutableString string];
+	if(aControl.objectValue && [aControl.objectValue isMemberOfClass:SRShortcut.class]){
 
-	NSString *theChar = @"";
+		SPLog(@"aControl.objectValue: %@", aControl.objectValue);
 
-	if([aRecorder objectValue])
-		theChar =[[[aRecorder objectValue] objectForKey:@"characters"] lowercaseString];
-	else
-		theChar =[[aRecorder keyCharsIgnoringModifiers] lowercaseString];
-	[keyEq setString:@""];
-	if(newKeyCombo.code > -1) {
-		if(newKeyCombo.flags & NSEventModifierFlagControl)
-			[keyEq appendString:@"^"];
-		if(newKeyCombo.flags & NSEventModifierFlagOption)
-			[keyEq appendString:@"~"];
-		if(newKeyCombo.flags & NSEventModifierFlagShift) {
-			[keyEq appendString:@"$"];
-			theChar = [theChar uppercaseString];
-		}
-		if(newKeyCombo.flags & NSEventModifierFlagCommand)
-			[keyEq appendString:@"@"];
-		if(theChar)
-			[keyEq appendString:theChar];
+		NSString *tmpStr = [SRKeyBindingTransformer.sharedTransformer reverseTransformedValue:aControl.objectValue];
+
+		SPLog(@"tmpStr %@", tmpStr);
+
+		[[self _currentSelectedObject] setObject:tmpStr forKey:SPBundleFileKeyEquivalentKey];
 	}
-	[[self _currentSelectedObject] setObject:keyEq forKey:SPBundleFileKeyEquivalentKey];
-
 }
+
+- (void)recorderControlDidBeginRecording:(SRRecorderControl *)aControl{
+	SPLog(@"recorderControlDidBeginRecording");
+}
+
+- (BOOL)recorderControl:(SRRecorderControl *)aControl canRecordShortcut:(SRShortcut *)aShortcut{
+
+	NSError *error = nil;
+	BOOL isValid = [shortcutValidator validateShortcut:aShortcut error:&error];
+
+	if (!isValid)
+	{
+		if (aControl.window)
+		{
+			[aControl presentError:error
+					 modalForWindow:aControl.window
+						   delegate:nil
+				 didPresentSelector:NULL
+						contextInfo:NULL];
+		}
+		else
+			[aControl presentError:error];
+	}
+	SPLog(@"canRecordShortcut isValid: %d", isValid);
+
+	return isValid;
+}
+
+
 
 #pragma mark -
 #pragma mark TableView delegates

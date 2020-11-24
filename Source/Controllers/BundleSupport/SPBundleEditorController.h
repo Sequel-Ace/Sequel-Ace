@@ -35,7 +35,7 @@
 @class SPOutlineView;
 @class SPBundleCommandTextView;
 
-@interface SPBundleEditorController : NSWindowController 
+@interface SPBundleEditorController : NSWindowController <SRShortcutValidatorDelegate, SRRecorderControlDelegate>
 {
 	IBOutlet SPBundleCommandTextView *commandTextView;
 	IBOutlet SPOutlineView *commandsOutlineView;

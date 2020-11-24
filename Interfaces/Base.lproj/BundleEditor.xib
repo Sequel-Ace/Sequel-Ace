@@ -51,7 +51,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="341" y="207" width="900" height="550"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <value key="minSize" type="size" width="730" height="494"/>
             <view key="contentView" id="522">
                 <rect key="frame" x="0.0" y="0.0" width="900" height="550"/>
@@ -315,16 +315,17 @@
                                         <rect key="frame" x="127" y="434" width="157" height="22"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                         <string key="toolTip">Click to record a shortcut for the Bundle command (Please note, not every shortcut will work due to global or Sequel Ace key bindings)</string>
-                                        <actionCell key="cell" controlSize="mini" alignment="left" id="824" customClass="SRRecorderCell">
-                                            <font key="font" metaFont="miniSystem"/>
-                                        </actionCell>
                                         <connections>
                                             <binding destination="982" name="enabled" keyPath="selection.disabled" id="1199">
                                                 <dictionary key="options">
                                                     <string key="NSValueTransformerName">NSNegateBoolean</string>
                                                 </dictionary>
                                             </binding>
-                                            <binding destination="982" name="value" keyPath="selection.internalKeyEquivalent" id="990"/>
+                                            <binding destination="982" name="value" keyPath="selection.newShortcut" id="pAX-f2-LE1">
+                                                <dictionary key="options">
+                                                    <string key="NSValueTransformerName">NSKeyedUnarchiveFromData</string>
+                                                </dictionary>
+                                            </binding>
                                             <outlet property="delegate" destination="-2" id="851"/>
                                         </connections>
                                     </control>
@@ -619,12 +620,13 @@ CA
                     </connections>
                 </menuItem>
             </items>
+            <point key="canvasLocation" x="-56" y="-265"/>
         </menu>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" visibleAtLaunch="NO" animationBehavior="default" id="1101" userLabel="Undelete Default Bundles Sheet" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES" utility="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="140" y="260" width="341" height="198"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <value key="minSize" type="size" width="341" height="198"/>
             <view key="contentView" id="1102">
                 <rect key="frame" x="0.0" y="0.0" width="341" height="198"/>
@@ -634,11 +636,11 @@ CA
                         <rect key="frame" x="-1" y="60" width="343" height="139"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="NAc-yU-wEX">
-                            <rect key="frame" x="1" y="1" width="341" height="137"/>
+                            <rect key="frame" x="1" y="0.0" width="341" height="138"/>
                             <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" headerView="1118" id="1106">
-                                    <rect key="frame" x="0.0" y="0.0" width="341" height="120"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="341" height="121"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="3" height="2"/>
                                     <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -728,7 +730,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="266" width="297" height="244"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
             <value key="minSize" type="size" width="297" height="244"/>
             <view key="contentView" id="1133">
                 <rect key="frame" x="0.0" y="0.0" width="297" height="244"/>
@@ -835,9 +837,9 @@ DQ
         </window>
     </objects>
     <resources>
-        <image name="NSActionTemplate" width="15" height="15"/>
-        <image name="NSAddTemplate" width="14" height="13"/>
-        <image name="NSRemoveTemplate" width="14" height="4"/>
+        <image name="NSActionTemplate" width="14" height="14"/>
+        <image name="NSAddTemplate" width="11" height="11"/>
+        <image name="NSRemoveTemplate" width="11" height="11"/>
         <image name="button_bar_handleTemplate" width="6" height="10"/>
     </resources>
 </document>
