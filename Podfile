@@ -10,6 +10,9 @@ platform :osx, '10.12'
 
 # end
 
+# had to add this as ShortcutRecorder also creates Assets.car
+install! 'cocoapods', :disable_input_output_paths => true
+
 target 'Sequel Ace' do
   # Comment the next line if you don't want to use dynamic frameworks
   # use_frameworks!
@@ -18,7 +21,7 @@ target 'Sequel Ace' do
   pod 'SwiftLint', '~> 0.40'
   pod 'FirebaseCore'
   pod 'Firebase/Crashlytics'
-
+  pod 'ShortcutRecorder', '~> 3.3.0'
 end
 
 # target 'Sequel Ace QLGenerator' do
@@ -70,6 +73,16 @@ post_install do |installer_representation|
         # Only build active arch
         config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
       end
+
+      # ShortcutRecorder sets a weird PRODUCT_BUNDLE_IDENTIFIER
+      # change to ours
+      if target.name == "ShortcutRecorder"
+        xcconfig_path = config.base_configuration_reference.real_path
+        xcconfig = File.read(xcconfig_path)
+        xcconfig_mod = xcconfig.gsub(/com.kulakov.ShortcutRecorder/, "com.sequel-ace.sequel-ace")
+        File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
+        config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.sequel-ace.sequel-ace'
+      end
       
       # just in case pods messes this up
       # set symbols correctly
@@ -80,7 +93,7 @@ post_install do |installer_representation|
       end
     end
   end
-    
+
     
   require 'fileutils'
   
@@ -100,7 +113,6 @@ post_install do |installer_representation|
     end
   end
 
-  
   # a minimal ruby version of sed (doesn't work with regexes)
   def justLikeSed(file, text_to_replace, text_to_put_in_place)
       text = File.read(file)
@@ -114,4 +126,69 @@ post_install do |installer_representation|
     justLikeSed(filename , '-framework "CoreTelephony" ' , '')
   end
 
+  # ShortcutRecorder sets a weird PRODUCT_BUNDLE_IDENTIFIER
+  # change to ours
+  SRCommonFileName='Pods/ShortcutRecorder/Sources/ShortcutRecorder/SRCommon.m'
+
+  puts "chmod +w: Pods/ShortcutRecorder/Sources/ShortcutRecorder/SRCommon.m"
+
+  if system("chmod +w Pods/ShortcutRecorder/Sources/ShortcutRecorder/SRCommon.m")
+    puts "chmod success"
+  else
+    puts "chmod failed"
+  end
+
+  puts "Replacing 'com.kulakov.ShortcutRecorder' with 'com.sequel-ace.sequel-ace'"
+
+  justLikeSed(SRCommonFileName, 'com.kulakov.ShortcutRecorder', 'com.sequel-ace.sequel-ace')
+
+  # ShortcutRecorder has loads of resources that we don't need
+  # remove them
+  puts "Removing uneeded resources"
+
+  resourcesShellFileName='Pods/Target Support Files/Pods-Sequel Ace/Pods-Sequel Ace-resources.sh'
+
+  justLikeSed(resourcesShellFileName, 'install_resource "${PODS_ROOT}/ShortcutRecorder/ATTRIBUTION.md"', '')
+  justLikeSed(resourcesShellFileName, 'install_resource "${PODS_ROOT}/ShortcutRecorder/LICENSE.txt"', '')
+
+  arr = ['ca', 'cs', 'de', 'el', 'es', 'fr', 'it', 'ja', 'ko', 'nb', 'nl', 'pl', 'pt-BR', 'pt', 'ro', 'ru', 'sk', 'sv', 'th', 'zh-Hans', 'zh-Hant']
+
+  arr.each do |lang|
+    search = 'install_resource "${PODS_ROOT}/ShortcutRecorder/Sources/ShortcutRecorder/Resources/' + lang + '.lproj"'
+    justLikeSed(resourcesShellFileName, search, '')
+  end
+
+  # ShortcutRecorder sets default font to 13
+  # we want 11, so change it here
+  # There must be a way to do this in code, but
+  # I haven't figured it out yet
+  srMojaveInfoFile='Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-mojave-info.dataset/info.json'
+
+  puts "chmod +w: Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-mojave-info.dataset/info.json"
+
+  if system("chmod +w Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-mojave-info.dataset/info.json")
+    puts "chmod success"
+  else
+    puts "chmod failed"
+  end
+
+  puts "Replacing '13.0' with '11.0'"
+
+  justLikeSed(srMojaveInfoFile, '13.0', '11.0')
+
+  srYosemiteInfoFile='Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-yosemite-info.dataset/info.json'
+
+  puts "chmod +w: Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-yosemite-info.dataset/info.json"
+
+  if system("chmod +w Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-yosemite-info.dataset/info.json")
+    puts "chmod success"
+  else
+    puts "chmod failed"
+  end
+
+  puts "Replacing '13.0' with '11.0'"
+
+  justLikeSed(srYosemiteInfoFile, '13.0', '11.0')
+
 end
+
