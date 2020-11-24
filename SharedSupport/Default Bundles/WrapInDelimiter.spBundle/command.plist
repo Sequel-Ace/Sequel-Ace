@@ -40,6 +40,8 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@w</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Wrap query/selection in DELIMITER</string>
 	<key>newShortcut</key>

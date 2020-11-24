@@ -43,6 +43,8 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 	<true/>
 	<key>keyEquivalent</key>
 	<string>$@D</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Deserialize PHP</string>
 	<key>newShortcut</key>

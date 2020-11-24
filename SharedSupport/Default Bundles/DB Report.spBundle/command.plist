@@ -160,6 +160,8 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@a</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Database Report</string>
 	<key>newShortcut</key>

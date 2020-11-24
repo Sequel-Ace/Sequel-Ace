@@ -41,5 +41,7 @@ proc.communicate(input=out_value)
 	<string>0314E554-3CDB-49D2-93FC-A28231AC9BB9</string>
 	<key>isDefaultBundle</key>
 	<true/>
+	<key>migratedToNewShortcut</key>
+	<true/>
 </dict>
 </plist>

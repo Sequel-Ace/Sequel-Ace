@@ -91,6 +91,8 @@ print "\n";
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^c</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Copy as CSV</string>
 	<key>newShortcut</key>

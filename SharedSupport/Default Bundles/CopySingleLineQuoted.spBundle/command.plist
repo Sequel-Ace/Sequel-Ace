@@ -72,5 +72,7 @@ Version 1.0
 	<string>CDAC825A-AE80-4544-9DBB-8E68A5C540D0</string>
 	<key>isDefaultBundle</key>
 	<true/>
+	<key>migratedToNewShortcut</key>
+	<true/>
 </dict>
 </plist>

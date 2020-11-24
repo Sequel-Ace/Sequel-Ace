@@ -27,6 +27,8 @@ print "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mi lacus
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^$P</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Paragraph</string>
 	<key>newShortcut</key>

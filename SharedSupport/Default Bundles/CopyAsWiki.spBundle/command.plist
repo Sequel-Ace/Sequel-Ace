@@ -97,6 +97,8 @@ print "\n";
 	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Copy as Wiki</string>
 	<key>newShortcut</key>

@@ -29,6 +29,8 @@ print "Lorem Ipsum"</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^$T</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Two Words</string>
 	<key>newShortcut</key>

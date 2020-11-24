@@ -58,6 +58,8 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>~@j</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Toggle JSON Format</string>
 	<key>newShortcut</key>

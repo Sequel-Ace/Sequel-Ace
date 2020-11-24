@@ -105,6 +105,8 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@o</string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Open selected table with…</string>
 	<key>newShortcut</key>

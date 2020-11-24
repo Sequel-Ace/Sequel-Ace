@@ -43,5 +43,7 @@ UPDATE ... WHERE id IN (1,2,3,4)</string>
 	<string>3C9F6E07-DF65-44D3-B0F2-8220E9BE009C</string>
 	<key>isDefaultBundle</key>
 	<true/>
+	<key>migratedToNewShortcut</key>
+	<true/>
 </dict>
 </plist>

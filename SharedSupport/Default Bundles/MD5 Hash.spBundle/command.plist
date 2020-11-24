@@ -37,5 +37,7 @@ print hash
 	<string>8CAA33B3-D168-47FC-A9BE-EA5A8576E380</string>
 	<key>isDefaultBundle</key>
 	<true/>
+	<key>migratedToNewShortcut</key>
+	<true/>
 </dict>
 </plist>

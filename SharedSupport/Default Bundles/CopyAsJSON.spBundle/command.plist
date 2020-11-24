@@ -118,6 +118,8 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
+	<key>migratedToNewShortcut</key>
+	<true/>
 	<key>name</key>
 	<string>Copy as JSON</string>
 	<key>newShortcut</key>
