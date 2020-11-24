@@ -97,6 +97,7 @@ NSString *SPSSHConfigFile                        = @"ssh_config";
 // Folder names
 NSString *SPThemesSupportFolder                  = @"Themes";
 NSString *SPBundleSupportFolder                  = @"Bundles";
+NSString *SPBundleSupportBackupFolder            = @"Bundles/Backup";
 NSString *SPDataSupportFolder                    = @"Data";
 
 // Table filter
@@ -403,6 +404,7 @@ NSString *SPBundleFileDefaultBundleWasModifiedKey           = @"defaultBundleWas
 NSString *SPBundleInternLabelKey                            = @"label";
 NSString *SPBundleInternPathToFileKey                       = @"path";
 NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
+NSString *SPBundleNewShortcutKey                            = @"newShortcut";
 
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
