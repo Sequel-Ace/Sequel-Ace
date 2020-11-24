@@ -53,6 +53,9 @@
 #import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
 #import "SPFunctions.h"
+#import "SPBundleFunctions.h"
+
+#import <ShortcutRecorder/ShortcutRecorder.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -76,7 +79,7 @@
 @synthesize fileManager;
 @synthesize alreadyBeeped;
 @synthesize badBundles;
-
+@synthesize backupBundles;
 #pragma mark -
 #pragma mark Initialisation
 
@@ -104,6 +107,7 @@
 		
 		alreadyBeeped = [[NSMutableDictionary alloc] init];
 		badBundles = [[NSMutableArray alloc] init];
+		backupBundles = [[NSMutableArray alloc] init];
 
 		//Create runtime directiories
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
@@ -1580,14 +1584,15 @@
 	BOOL processDefaultBundles = NO;
 
 	NSArray *deletedDefaultBundles;
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
-	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey])
-		deletedDefaultBundles = [[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey];
+	if([defaults objectForKey:SPBundleDeletedDefaultBundlesKey])
+		deletedDefaultBundles = [defaults objectForKey:SPBundleDeletedDefaultBundlesKey];
 	else
 		deletedDefaultBundles = @[];
 
 	NSMutableString *infoAboutUpdatedDefaultBundles = [NSMutableString string];
-	BOOL doBundleUpdate = ([[NSUserDefaults standardUserDefaults] objectForKey:@"doBundleUpdate"]) ? YES : NO;
+	BOOL doBundleUpdate = ([defaults objectForKey:@"doBundleUpdate"]) ? YES : NO;
 
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
@@ -1604,6 +1609,7 @@
 					foundInstalledBundles = YES;
 
 					NSString *infoPath = [NSString stringWithFormat:@"%@/%@/%@", bundlePath, bundle, SPBundleFileName];
+					NSString *bundlePath2 = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundle.stringByDeletingPathExtension, SPUserBundleFileExtension];
 					NSDictionary *cmdData = nil;
 					{
 						NSError *readError = nil;
@@ -1616,7 +1622,18 @@
 																				 format:NULL
 																				  error:&readError];
 						}
-						
+
+						// JCS Note: this attempts to migrate bundles
+						// to the new shortcut format, it won't touch default bundles
+						// as they are already migrated or have no shortcut
+						if(SPMigateBundleToNewFormat(cmdData, bundlePath2)){
+							SPLog(@"Migrated %@", bundlePath2);
+							[self removeBundle:bundle withBackup:YES];
+							[self renameBundle:bundle];
+							[badBundles removeObject:bundle]; // remove adds the bundle to this array
+							[backupBundles addObject:bundle];
+						}
+
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							if(![alreadyBeeped objectForKey:bundle]){
@@ -1644,6 +1661,8 @@
 						if([cmdData objectForKey:SPBundleFileUUIDKey] && [(NSString *)[cmdData objectForKey:SPBundleFileUUIDKey] length]) {
 
 							if(processDefaultBundles) {
+
+								SPLog(@"processDefaultBundles");
 
 								// Skip deleted default Bundles
 								BOOL bundleWasDeleted = NO;
@@ -1769,7 +1788,6 @@
 									infoPath = [NSString stringWithString:newInfoPath];
 
 									defaultBundleWasUpdated = YES;
-
 								}
 
 								if(!defaultBundleWasUpdated) continue;
@@ -1814,26 +1832,42 @@
 									([[cmdData objectForKey:SPBundleFileOutputActionKey] isEqualToString:SPBundleOutputActionShowAsHTML])?[cmdData objectForKey:SPBundleFileUUIDKey]:@""]];
 						}
 
-						// Register key equivalent
-						if(cmdData != nil && [cmdData objectForKey:SPBundleFileKeyEquivalentKey] && [(NSString *)[cmdData objectForKey:SPBundleFileKeyEquivalentKey] length]) {
+						// Register key equivalent using new shortcuts
+						if(cmdData != nil && [cmdData objectForKey:SPBundleNewShortcutKey]){
 
-							NSString *theKey = [cmdData objectForKey:SPBundleFileKeyEquivalentKey];
-							NSString *theChar = [theKey substringFromIndex:[theKey length]-1];
-							NSString *theMods = [theKey substringToIndex:[theKey length]-1];
-							NSEventModifierFlags mask = 0;
-							if([theMods rangeOfString:@"^"].length) mask = mask | NSEventModifierFlagControl;
-							if([theMods rangeOfString:@"@"].length) mask = mask | NSEventModifierFlagCommand;
-							if([theMods rangeOfString:@"~"].length) mask = mask | NSEventModifierFlagOption;
-							if([theMods rangeOfString:@"$"].length) mask = mask | NSEventModifierFlagShift;
+							SPLog(@"Register key equivalent using new shortcut for: %@", [cmdData objectForKey:SPBundleFileNameKey]);
+
+							SRShortcut *newShortcut = nil;
+
+							if (@available(macOS 10.13, *)) {
+								newShortcut = [NSKeyedUnarchiver unarchivedObjectOfClass:SRShortcut.class fromData:[cmdData objectForKey:SPBundleNewShortcutKey] error:&error];
+							}
+							else {
+								// Fallback on earlier versions
+								newShortcut = [NSKeyedUnarchiver unarchiveObjectWithData:[cmdData objectForKey:SPBundleNewShortcutKey]];
+							}
+
+							NSString *tmpStr = [SRKeyBindingTransformer.sharedTransformer reverseTransformedValue:newShortcut];
+
+							[aDict removeObjectForKey:SPBundleInternKeyEquivalentKey];
+							[aDict setObject:@[newShortcut.charactersIgnoringModifiers, @(newShortcut.modifierFlags)] forKey:SPBundleInternKeyEquivalentKey];
+
+							if(tmpStr && tmpStr.length){
+								SPLog(@"key %@", tmpStr);
+								[aDict setObject:tmpStr forKey:@"key"];
+							}
 
 							NSString *theUUID = [cmdData objectForKey:SPBundleFileUUIDKey] ?: @"";
 							NSString *theTooltip = [cmdData objectForKey:SPBundleFileTooltipKey] ?: @"";
 							NSString *theFilename = [cmdData objectForKey:SPBundleFileNameKey] ?: @"";
 
-							if(![[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]]) {
-								[[bundleKeyEquivalents objectForKey:scope] setObject:[NSMutableArray array] forKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]];
+							[[bundleKeyEquivalents objectForKey:scope] removeObjectForKey:tmpStr];
+
+							if(![[bundleKeyEquivalents objectForKey:scope] objectForKey:tmpStr]) {
+								[[bundleKeyEquivalents objectForKey:scope] setObject:[NSMutableArray array] forKey:tmpStr];
 							}
-							NSMutableArray *bundleKeysForKey = [[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]] ?: [NSMutableArray array];
+
+							NSMutableArray *bundleKeysForKey = [[bundleKeyEquivalents objectForKey:scope] objectForKey:tmpStr] ?: [NSMutableArray array];
 							for (NSDictionary *keyInfo in bundleKeysForKey) {
 								if([keyInfo objectForKey:@"uuid"] == [cmdData objectForKey:SPBundleFileUUIDKey]) {
 									[bundleKeysForKey removeObject:keyInfo];
@@ -1846,20 +1880,66 @@
 														  theUUID, @"uuid",
 														  nil];
 							[bundleKeysForKey addObject: newBundleKey];
-							[[bundleKeyEquivalents objectForKey:scope] setObject:bundleKeysForKey forKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]];
+							[[bundleKeyEquivalents objectForKey:scope] setObject:bundleKeysForKey forKey:tmpStr];
+						}
+						else{
+							// Register key equivalent using old method
+							if(cmdData != nil && [cmdData objectForKey:SPBundleFileKeyEquivalentKey] && [(NSString *)[cmdData objectForKey:SPBundleFileKeyEquivalentKey] length]) {
 
-							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
+								SPLog(@"Register key equivalent using old method for: %@", [cmdData objectForKey:SPBundleFileNameKey]);
+
+								NSString *theKey = [cmdData objectForKey:SPBundleFileKeyEquivalentKey];
+								NSString *theChar = [theKey substringFromIndex:[theKey length]-1];
+								NSString *theMods = [theKey substringToIndex:[theKey length]-1];
+								NSEventModifierFlags mask = 0;
+								if([theMods rangeOfString:@"^"].length) mask = mask | NSEventModifierFlagControl;
+								if([theMods rangeOfString:@"@"].length) mask = mask | NSEventModifierFlagCommand;
+								if([theMods rangeOfString:@"~"].length) mask = mask | NSEventModifierFlagOption;
+								if([theMods rangeOfString:@"$"].length) mask = mask | NSEventModifierFlagShift;
+#warning duplicate code 
+								// TODO: some duplicated code here
+								NSString *theUUID = [cmdData objectForKey:SPBundleFileUUIDKey] ?: @"";
+								NSString *theTooltip = [cmdData objectForKey:SPBundleFileTooltipKey] ?: @"";
+								NSString *theFilename = [cmdData objectForKey:SPBundleFileNameKey] ?: @"";
+
+								if(![[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]]) {
+									[[bundleKeyEquivalents objectForKey:scope] setObject:[NSMutableArray array] forKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]];
+								}
+
+								NSMutableArray *bundleKeysForKey = [[bundleKeyEquivalents objectForKey:scope] objectForKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]] ?: [NSMutableArray array];
+								for (NSDictionary *keyInfo in bundleKeysForKey) {
+									if([keyInfo objectForKey:@"uuid"] == [cmdData objectForKey:SPBundleFileUUIDKey]) {
+										[bundleKeysForKey removeObject:keyInfo];
+									}
+								}
+								NSDictionary *newBundleKey = [NSDictionary dictionaryWithObjectsAndKeys:
+															  infoPath ?: @"", @"path",
+															  theFilename, @"title",
+															  theTooltip, @"tooltip",
+															  theUUID, @"uuid",
+															  nil];
+								[bundleKeysForKey addObject: newBundleKey];
+								[[bundleKeyEquivalents objectForKey:scope] setObject:bundleKeysForKey forKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]];
+
+								[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
+
+								SPLog(@"aDict %@", aDict);
+							}
 						}
 
-						
+						if(![aDict objectForKey:@"key"]) {
+							if([cmdData objectForKey:SPBundleFileKeyEquivalentKey] && [(NSString *)[cmdData objectForKey:SPBundleFileKeyEquivalentKey] length]){
+								[aDict setObject:[cmdData objectForKey:SPBundleFileKeyEquivalentKey] forKey:@"key"];
+							}
+						}
+
 						if([cmdData objectForKey:SPBundleFileTooltipKey] && [(NSString *)[cmdData objectForKey:SPBundleFileTooltipKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileTooltipKey] forKey:SPBundleFileTooltipKey];
 
 						if([cmdData objectForKey:SPBundleFileCategoryKey] && [(NSString *)[cmdData objectForKey:SPBundleFileCategoryKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileCategoryKey] forKey:SPBundleFileCategoryKey];
 
-						if([cmdData objectForKey:SPBundleFileKeyEquivalentKey] && [(NSString *)[cmdData objectForKey:SPBundleFileKeyEquivalentKey] length])
-							[aDict setObject:[cmdData objectForKey:SPBundleFileKeyEquivalentKey] forKey:@"key"];
+
 						// add UUID so we can check for it
 						if([cmdData objectForKey:SPBundleFileUUIDKey] && [(NSString *)[cmdData objectForKey:SPBundleFileUUIDKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileUUIDKey] forKey:SPBundleFileUUIDKey];
@@ -1894,6 +1974,14 @@
 	}
 	if(doBundleUpdate) {
 		[[NSUserDefaults standardUserDefaults] removeObjectForKey:@"doBundleUpdate"];
+	}
+
+	// Inform user about bundles that were migrated and backed up
+	if(backupBundles.count > 0) {
+		NSString *backedUpBundlesString = [[backupBundles valueForKey:@"description"] componentsJoinedByString:@"\n"];
+		NSString *backupPath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportBackupFolder createIfNotExists:NO error:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"User Bundles Migration", @"User Bundles Migration") message:[NSString stringWithFormat:NSLocalizedString(@"The following User Bundles were migrated:\n\n%@\n\nA backup was saved in %@.", @"The following User Bundles were migrated:\n\n%@\n\nA backup was saved in %@."), backedUpBundlesString, backupPath] callback:nil];
+		[backupBundles removeAllObjects];
 	}
 
 	// Inform user about default Bundle updates which were modified by the user and re-run Reload Bundles
@@ -2004,8 +2092,42 @@
 
 }
 
+- (void)renameBundle:(NSString*)bundle{
+
+	NSString *bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder error:nil];
+
+	NSString *theNewPath = [NSString stringWithFormat:@"%@/%@", bundlePath, bundle];
+
+	SPLog(@"the path %@", theNewPath);
+
+	NSMutableString *theOriginalPath = [theNewPath mutableCopy];
+
+	[theOriginalPath replaceOccurrencesOfString:@".spBundle" withString:@".2.spBundle" options:NSBackwardsSearch range: NSMakeRange(0, theOriginalPath.length)];
+
+	SPLog(@"the theOriginalPath %@", theOriginalPath);
+
+	if(![fileManager fileExistsAtPath:theOriginalPath isDirectory:nil]) {
+		SPLog(@"file does not exist %@", theOriginalPath);
+		return;
+	}
+	else{
+		NSError *err = nil;
+		if([fileManager moveItemAtPath:theOriginalPath toPath:theNewPath error:&err]){
+			SPLog(@"rename suceeded for %@", bundle);
+		}
+		else{
+			SPLog(@"ERROR rename failed for: %@", bundle);
+			SPLog(@"ERROR: %@", err.localizedDescription);
+		}
+	}
+}
+
 - (void)removeBundle:(NSString*)bundle{
-	
+	[self removeBundle:bundle withBackup:NO];
+}
+
+- (void)removeBundle:(NSString*)bundle withBackup:(BOOL)backup{
+
 	NSString *bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder error:nil];
 	
 	NSString *thePath = [NSString stringWithFormat:@"%@/%@", bundlePath, bundle];
@@ -2018,11 +2140,33 @@
 	}
 
 	NSError *error = nil;
+	if(backup == YES){
+
+		NSString *backupPath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportBackupFolder createIfNotExists:YES error:&error];
+
+		backupPath = [NSString stringWithFormat:@"%@/%@", backupPath, bundle];
+
+		if(error != nil) {
+			SPLog(@"Dir could not be created: %@. Error: %@", backupPath, error.localizedDescription);
+			return;
+		}
+
+		NSError *err = nil;
+		if([fileManager copyItemAtPath:thePath toPath:backupPath error:&err]){
+			SPLog(@"backup suceeded for %@", bundle);
+		}
+		else{
+			SPLog(@"ERROR backup failed for: %@", bundle);
+			SPLog(@"ERROR: %@", err.localizedDescription);
+		}
+	}
+
+	error = nil;
 
 	[fileManager removeItemAtPath:thePath error:&error];
 
 	if(error != nil) {
-		SPLog(@"file could not be deleted: %@", thePath);
+		SPLog(@"file could not be deleted: %@. Error: %@", thePath, error.localizedDescription);
 		return;
 	}
 

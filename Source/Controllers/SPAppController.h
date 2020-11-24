@@ -64,9 +64,12 @@
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
 @property (readwrite, strong) NSMutableDictionary *alreadyBeeped;
 @property (readwrite, strong) NSMutableArray<NSString *> *badBundles;
+@property (readwrite, strong) NSMutableArray<NSString *> *backupBundles;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
+- (void)removeBundle:(NSString*)bundle withBackup:(BOOL)backup;
 - (void)removeBundle:(NSString*)bundle;
+- (void)renameBundle:(NSString*)bundle;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;
