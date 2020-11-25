@@ -174,7 +174,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.3.1</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -197,7 +197,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>2118</string>
+	<string>2119</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
@@ -206,44 +206,22 @@
 	<string>10.10</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
 		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>www.apple.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.3</string>
-				<key>NSRequiresCertificateTransparency</key>
-				<false/>
-			</dict>
 			<key>github.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.3</string>
-				<key>NSRequiresCertificateTransparency</key>
-				<false/>
-			</dict>
-			<key>www.w3.org</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
 				<key>NSIncludeSubdomains</key>
 				<true/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.3</string>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -251,10 +229,10 @@
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.3</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -262,10 +240,10 @@
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.2</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
@@ -273,10 +251,32 @@
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<key>NSIncludeSubdomains</key>
-				<true/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.2</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
+				<key>NSRequiresCertificateTransparency</key>
+				<false/>
+			</dict>
+			<key>www.apple.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.3</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
+				<key>NSRequiresCertificateTransparency</key>
+				<false/>
+			</dict>
+			<key>www.w3.org</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.3</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
