@@ -103,21 +103,11 @@
 
 	keyEquivalentField.delegate = self;
 
-	// doesn't work
-//	keyEquivalentField.font = [NSFont systemFontOfSize:6];
-
 	// this switches off all the funky autolayout that the recorder adds.
 	keyEquivalentField.translatesAutoresizingMaskIntoConstraints = YES;
 
-//	SRRecorderControlStyleResourceLoader *loader = SRRecorderControlStyle.resourceLoader;
-//
-//	NSDictionary *dict = [loader infoForStyle:keyEquivalentField.style];
-//
-//	SPLog(@"style dict = %@", dict);
-
 	// Init all needed variables; popup menus (with the chance for localization); and set
 	// defaults
-
 	bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:NO error:nil];
 
 	touchedBundleArray = [[NSMutableArray alloc] initWithCapacity:1];
