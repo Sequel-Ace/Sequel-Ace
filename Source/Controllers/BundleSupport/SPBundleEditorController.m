@@ -104,13 +104,16 @@
 	keyEquivalentField.delegate = self;
 
 	// doesn't work
-	keyEquivalentField.font = [NSFont systemFontOfSize:6];
+//	keyEquivalentField.font = [NSFont systemFontOfSize:6];
 
-	SRRecorderControlStyleResourceLoader *loader = SRRecorderControlStyle.resourceLoader;
+	// this switches off all the funky autolayout that the recorder adds.
+	keyEquivalentField.translatesAutoresizingMaskIntoConstraints = YES;
 
-	NSDictionary *dict = [loader infoForStyle:keyEquivalentField.style];
-
-	SPLog(@"style dict = %@", dict);
+//	SRRecorderControlStyleResourceLoader *loader = SRRecorderControlStyle.resourceLoader;
+//
+//	NSDictionary *dict = [loader infoForStyle:keyEquivalentField.style];
+//
+//	SPLog(@"style dict = %@", dict);
 
 	// Init all needed variables; popup menus (with the chance for localization); and set
 	// defaults
