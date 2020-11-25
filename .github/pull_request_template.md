@@ -10,18 +10,24 @@ Please use one of these hashtags for your PR title:
 -->
 
 ## Changes:
-- 
+-
 
 ## Closes following issues:
-- 
+-
 
 ## Tested:
-- [] iMac / MacBook
-- macOS version: 
+- Processors:
+  - [ ] Intel
+  - [ ] Apple Silicon
+- macOS versions:
+  - [ ] 10.12
+  - [ ] 10.13
+  - [ ] 10.14
+  - [ ] 10.15
+  - [ ] 11.0
 - Xcode version:
 
 ## Screenshots:
 
 
 ## Additional notes:
-
