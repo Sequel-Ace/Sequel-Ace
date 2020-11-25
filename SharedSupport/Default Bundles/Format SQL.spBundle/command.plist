@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>neokio</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Format</string>
 	<key>command</key>
@@ -1117,8 +1119,6 @@ echo trim(SqlFormatter::format($sql, false));</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@t</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Format SQL</string>
 	<key>newShortcut</key>

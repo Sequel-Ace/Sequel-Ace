@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Abhi Beckert</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Hash</string>
 	<key>command</key>
@@ -25,6 +27,8 @@ print hash
 	<string>selectedtext</string>
 	<key>input_fallback</key>
 	<string>entirecontent</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
@@ -35,9 +39,5 @@ print hash
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>8CAA33B3-D168-47FC-A9BE-EA5A8576E380</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>migratedToNewShortcut</key>
-	<true/>
 </dict>
 </plist>

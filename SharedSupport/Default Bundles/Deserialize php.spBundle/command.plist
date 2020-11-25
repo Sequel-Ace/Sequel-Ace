@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Andrew Fulton</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Format</string>
 	<key>command</key>
@@ -25,7 +27,7 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 ?&gt;
 &lt;/pre&gt;</string>
 	<key>contact</key>
-	<string>ns@zbaxvv.pbz</string>
+	<string>af@monkii.com</string>
 	<key>description</key>
 	<string>Deserializes those PHP objects that drupal loves so much.</string>
 	<key>input</key>
@@ -43,8 +45,6 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 	<true/>
 	<key>keyEquivalent</key>
 	<string>$@D</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Deserialize PHP</string>
 	<key>newShortcut</key>

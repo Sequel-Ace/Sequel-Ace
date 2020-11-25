@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Open</string>
 	<key>command</key>
@@ -87,7 +89,7 @@ rm -f "$SP_QUERY_FILE"
 rm -f "$SP_QUERY_RESULT_STATUS_FILE"
 </string>
 	<key>contact</key>
-	<string>znvy@ovovxb.qr</string>
+	<string>mail@bibiko.de</string>
 	<key>description</key>
 	<string>If one table is selected in the Table List it will write the table data CSV formatted at "~/Desktop/sp_dataxxxxx.csv" to disk (xxxxx := timestamp) and asks for the application with which the data should be opened.
 
@@ -105,8 +107,6 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@o</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Open selected table with…</string>
 	<key>newShortcut</key>

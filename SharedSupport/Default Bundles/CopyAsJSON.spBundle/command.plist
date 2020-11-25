@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -98,7 +100,7 @@ print "\t]\n}";
 
 ' | __CF_USER_TEXT_ENCODING=$UID:0x8000100:0x8000100 pbcopy</string>
 	<key>contact</key>
-	<string>znvy@ovovxb.qr</string>
+	<string>mail@bibiko.de</string>
 	<key>description</key>
 	<string>Copies the selected rows excluding any BLOB data in a data table JSON formatted into the pasteboard.
 
@@ -118,8 +120,6 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Copy as JSON</string>
 	<key>newShortcut</key>

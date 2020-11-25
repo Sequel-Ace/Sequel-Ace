@@ -405,7 +405,7 @@ NSString *SPBundleInternLabelKey                            = @"label";
 NSString *SPBundleInternPathToFileKey                       = @"path";
 NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
 NSString *SPBundleNewShortcutKey                            = @"newShortcut";
-NSString *SPBundleMigratedToNewShortcut                     = @"migratedToNewShortcut";
+NSString *SPBundleVersionKey                                = @"bundleVersion";
 
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";

@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Query Editor</string>
 	<key>command</key>
@@ -40,8 +42,6 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@w</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Wrap query/selection in DELIMITER</string>
 	<key>newShortcut</key>

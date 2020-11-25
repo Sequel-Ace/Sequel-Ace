@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Liviu Tudor</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -81,11 +83,13 @@ while($rowData) {
 print "&lt;/table&gt;\n"; 
 ' | __CF_USER_TEXT_ENCODING=$UID:0x8000100:0x8000100 pbcopy</string>
 	<key>contact</key>
-	<string>yvivh.ghqbe@tznvy.pbz</string>
+	<string>liviu.tudor@gmail.com</string>
 	<key>description</key>
 	<string>Copies the selected rows to clipboard as html</string>
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
@@ -100,9 +104,5 @@ print "&lt;/table&gt;\n";
 	<string>none</string>
 	<key>uuid</key>
 	<string>31FD6D95-CED5-4870-9A19-5A1396216C37</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>migratedToNewShortcut</key>
-	<true/>
 </dict>
 </plist>

@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Liviu Tudor</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -82,7 +84,7 @@ while($rowData) {
 print "\n";
 ' | __CF_USER_TEXT_ENCODING=$UID:0x8000100:0x8000100 pbcopy</string>
 	<key>contact</key>
-	<string>yvivh.ghqbe@tznvy.pbz</string>
+	<string>liviu.tudor@gmail.com</string>
 	<key>description</key>
 	<string>Copies the selected rows to clipboard as CSV separating data by semi-colon</string>
 	<key>input</key>
@@ -91,8 +93,6 @@ print "\n";
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^c</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Copy as CSV</string>
 	<key>newShortcut</key>

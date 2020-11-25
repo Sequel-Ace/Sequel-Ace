@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Boris Guéry</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Lorem Ipsum</string>
 	<key>command</key>
@@ -11,7 +13,7 @@
 
 print "Lorem Ipsum"</string>
 	<key>contact</key>
-	<string>threl.o@tznvy.pbz</string>
+	<string>guery.b@gmail.com</string>
 	<key>description</key>
 	<string>Insert Lorem Ipsum. Best suited for VARCHAR type.</string>
 	<key>input</key>
@@ -29,8 +31,6 @@ print "Lorem Ipsum"</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^$T</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Two Words</string>
 	<key>newShortcut</key>

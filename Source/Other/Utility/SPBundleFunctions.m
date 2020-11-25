@@ -28,7 +28,11 @@ BOOL SPMigateBundleToNewFormat(NSDictionary * cmdData, NSString *bundleFilePath)
 		return NO;
 	}
 
-	if([cmdData objectForKey:SPBundleMigratedToNewShortcut]){
+	NSNumber *defaultNewBundleVersion = @(1);
+	int bundleVersion = [[cmdData objectForKey:SPBundleVersionKey] intValue];
+
+	// version 1 bundles are the new shortcut versions
+	if(bundleVersion > 0){
 		SPLog(@"Already migrated: %@", (bundleFilePath.lastPathComponent).stringByDeletingPathExtension);
 		return NO;
 	}
@@ -112,7 +116,7 @@ BOOL SPMigateBundleToNewFormat(NSDictionary * cmdData, NSString *bundleFilePath)
 			NSData *tmp = [NSKeyedArchiver archivedDataWithRootObject:newShortcut];
 
 			[cmdDataMut setObject:tmp forKey:SPBundleNewShortcutKey];
-			[cmdDataMut setObject:@YES forKey:SPBundleMigratedToNewShortcut];
+			[cmdDataMut setObject:defaultNewBundleVersion forKey:SPBundleVersionKey];
 
 			if(![bundleEditorController saveBundle:cmdDataMut atPath:newPath]){
 				SPLog(@"save failed for %@", newPath);
@@ -142,7 +146,7 @@ BOOL SPMigateBundleToNewFormat(NSDictionary * cmdData, NSString *bundleFilePath)
 			NSData *tmp = [NSKeyedArchiver archivedDataWithRootObject:newShortcut];
 
 			[cmdDataMut setObject:tmp forKey:SPBundleNewShortcutKey];
-			[cmdDataMut setObject:@YES forKey:SPBundleMigratedToNewShortcut];
+			[cmdDataMut setObject:defaultNewBundleVersion forKey:SPBundleVersionKey];
 
 			if(![bundleEditorController saveBundle:cmdDataMut atPath:newPath]){
 				SPLog(@"save failed for %@", newPath);

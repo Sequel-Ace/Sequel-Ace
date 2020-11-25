@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Format</string>
 	<key>command</key>
@@ -58,8 +60,6 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>~@j</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Toggle JSON Format</string>
 	<key>newShortcut</key>

@@ -596,7 +596,7 @@ extern NSString *SPBundleTaskCopyBlobFileDirectory;
 extern NSString *SPBundleTaskTableMetaDataFilePath;
 extern NSString *SPBundleNewShortcutKey;
 extern NSString *SPBundleSupportBackupFolder;
-extern NSString *SPBundleMigratedToNewShortcut;
+extern NSString *SPBundleVersionKey;
 
 extern NSString *SPBundleShellVariableInputFilePath;
 extern NSString *SPBundleShellVariableOutputFilePath;

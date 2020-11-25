@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>1</integer>
 	<key>category</key>
 	<string>Report</string>
 	<key>command</key>
@@ -142,7 +144,7 @@ IFS="$OLDIFS"
 echo "&lt;/body&gt;&lt;/html&gt;"
 </string>
 	<key>contact</key>
-	<string>znvy@ovovxb.qr</string>
+	<string>mail@bibiko.de</string>
 	<key>description</key>
 	<string>Display a report about all databases of the current connection including the possibility to select a database or table via hyperlink.
 
@@ -160,8 +162,6 @@ Version 1.0</string>
 	<true/>
 	<key>keyEquivalent</key>
 	<string>^~@a</string>
-	<key>migratedToNewShortcut</key>
-	<true/>
 	<key>name</key>
 	<string>Database Report</string>
 	<key>newShortcut</key>
