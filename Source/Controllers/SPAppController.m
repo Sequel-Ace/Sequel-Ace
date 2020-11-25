@@ -1619,10 +1619,10 @@
 						
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							if(![alreadyBeeped objectForKey:bundle]){
 								NSBeep();
 								[alreadyBeeped setObject:@YES forKey:bundle];
-								continue;
 							}
 							else{
 								SPLog(@"already beeped for %@", bundle);
@@ -1630,6 +1630,7 @@
 							
 							// remove the dodgy bundle
 							[self removeBundle:bundle];
+							continue;
 						}
 					}
 
