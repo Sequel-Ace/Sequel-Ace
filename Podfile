@@ -162,6 +162,17 @@ post_install do |installer_representation|
     justLikeSed(resourcesShellFileName, search, '')
   end
 
+  # ShortcutRecorder has loads of resources that we don't need
+  # remove all the yosemite assets as we don't support it anymore
+  Dir.glob('**/sr-yosemite*.imageset') do |dirname|
+    puts "dirname: " + dirname
+    FileUtils.remove_dir(dirname)
+  end
+  Dir.glob('**/sr-yosemite*.dataset') do |dirname|
+    puts "dirname: " + dirname
+    FileUtils.remove_dir(dirname)
+  end
+
   # ShortcutRecorder sets default font to 13
   # we want 11, so change it here
   # There must be a way to do this in code, but
@@ -179,20 +190,6 @@ post_install do |installer_representation|
   puts "Replacing '13.0' with '11.0'"
 
   justLikeSed(srMojaveInfoFile, '13.0', '11.0')
-
-  srYosemiteInfoFile='Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-yosemite-info.dataset/info.json'
-
-  puts "chmod +w: Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-yosemite-info.dataset/info.json"
-
-  if system("chmod +w Pods/ShortcutRecorder/Sources/ShortcutRecorder/Resources/Images.xcassets/sr-yosemite-info.dataset/info.json")
-    puts "chmod success"
-  else
-    puts "chmod failed"
-  end
-
-  puts "Replacing '13.0' with '11.0'"
-
-  justLikeSed(srYosemiteInfoFile, '13.0', '11.0')
 
 end
 
