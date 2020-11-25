@@ -2396,8 +2396,6 @@ set_input:
 {
 	NSMutableString *string = [NSMutableString string];
 
-	NSDateFormatter *dateFormatter = NSDateFormatter.mediumStyleFormatter;
-
 	// Walk through the token field, appending token replacements or strings
 	NSArray *representedFilenameParts = [exportCustomFilenameTokenField objectValue];
 
@@ -2418,10 +2416,7 @@ set_input:
 				[string appendStringOrNil:table];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameDateTokenName]) {
-				[dateFormatter setDateStyle:NSDateFormatterShortStyle];
-				[dateFormatter setTimeStyle:NSDateFormatterNoStyle];
-				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
-
+				[string appendString:[NSDateFormatter.shortStyleNoTimeFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameYearTokenName]) {
 				[string appendString:[[NSDate date] stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
@@ -2433,9 +2428,7 @@ set_input:
 				[string appendString:[[NSDate date] stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileNameTimeTokenName]) {
-				[dateFormatter setDateStyle:NSDateFormatterNoStyle];
-				[dateFormatter setTimeStyle:NSDateFormatterShortStyle];
-				[string appendString:[dateFormatter stringFromDate:[NSDate date]]];
+				[string appendString:[NSDateFormatter.shortStyleNoDateFormatter stringFromDate:[NSDate date]]];
 			}
 			else if ([tokenContent isEqualToString:SPFileName24HourTimeTokenName]) {
 				[string appendString:[[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
