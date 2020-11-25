@@ -63,6 +63,9 @@ post_install do |installer_representation|
 
   installer_representation.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
+
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = 10.12
+
       # let Xcode decide what archs are built
       # this is an Xcode settings recommendation
       config.build_settings.delete('ARCHS')
@@ -82,6 +85,7 @@ post_install do |installer_representation|
         xcconfig_mod = xcconfig.gsub(/com.kulakov.ShortcutRecorder/, "com.sequel-ace.sequel-ace")
         File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
         config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.sequel-ace.sequel-ace'
+        config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)', '-Wno-deprecated-declarations']
       end
       
       # just in case pods messes this up
