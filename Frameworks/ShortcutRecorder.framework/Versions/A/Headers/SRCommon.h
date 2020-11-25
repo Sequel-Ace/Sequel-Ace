@@ -174,7 +174,7 @@ FOUNDATION_STATIC_INLINE BOOL SRIsSpecialKey(NSInteger keyCode) {
 #pragma mark Additions
 
 @interface NSAlert( SRAdditions )
-+ (NSAlert *) alertWithNonRecoverableError:(NSError *)error;
++ (NSAlert *) newAlertWithNonRecoverableError:(NSError *)error;
 @end
 
 #pragma mark -
