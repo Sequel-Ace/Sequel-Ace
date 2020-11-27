@@ -2585,7 +2585,7 @@ retry:
 		[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
 		[textStore removeAttribute:kLEXToken range:textRange];
 
-		NSMutableAttributedStringAddAttributeValueRange(textStore, NSForegroundColorAttributeName, otherTextColor, textRange);
+		[textStore addAttribute:NSForegroundColorAttributeName value:otherTextColor range:textRange];
 	}
 }
 /**
