@@ -1773,6 +1773,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)removeRowSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
+
+
 	NSMutableIndexSet *selectedRows = [NSMutableIndexSet indexSet];
 	NSString *wherePart;
 	NSInteger i, errors;
@@ -1781,6 +1783,39 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
+
+	BOOL __block retCode = YES;
+
+	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
+	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
+
+	SPLog(@"queryWarningEnabled = %d", queryWarningEnabled);
+	SPLog(@"queryWarningEnabledSuppressed = %d", queryWarningEnabledSuppressed);
+
+	if (returnCode == NSAlertDefaultReturn && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
+		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")]
+													message:@"Double checking as you have 'Show warning before executing a query' set in Preferences"
+											 suppressionKey:SPQueryWarningEnabledSuppressed
+										 primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+									   primaryButtonHandler:^{
+			SPLog(@"User clicked Yes, exec queries");
+			retCode = YES;
+		}
+										cancelButtonHandler:^{
+			SPLog(@"Cancel pressed");
+			self->isEditingRow = NO;
+			self->currentlyEditingRow = -1;
+			// reload
+			[self loadTableValues];
+			retCode = NO;
+		}];
+
+	}
+
+	if(retCode == NO){
+		SPLog(@"Cancel pressed returning without deleting rows");
+		return;
+	}
 
 	if ( [(__bridge NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
 		if ( returnCode == NSAlertDefaultReturn ) {
