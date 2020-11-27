@@ -159,9 +159,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// disabled to get the current text range in textView safer
 	[[self layoutManager] setBackgroundLayoutEnabled:NO];
 
-	// add NSViewBoundsDidChangeNotification to scrollView
-	[scrollView setPostsBoundsChangedNotifications:YES];
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(boundsDidChangeNotification:) name:NSViewBoundsDidChangeNotification object:[scrollView contentView]];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(scrollViewDidEndLiveScrollNotification:) name:NSScrollViewDidEndLiveScrollNotification object:scrollView];
+
 
 	{
 		struct csItem {
@@ -3153,12 +3152,7 @@ retry:
 #pragma mark -
 #pragma mark delegates
 
-/**
- * Scrollview delegate after the textView's view port was changed.
- * Manily used to update the syntax highlighting for a large text size and line numbering rendering.
- */
-- (void)boundsDidChangeNotification:(NSNotification *)notification
-{
+- (void)scrollViewDidEndLiveScrollNotification:(NSNotification *)notification {
 	// Invoke syntax highlighting if text view port was changed for large text
 	if(startListeningToBoundChanges && [[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
 	{
