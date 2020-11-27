@@ -198,7 +198,7 @@
 	NSRange curRange = [self selectedRange];
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
-	[self insertText:[[[self string] substringWithRange:selRange] uppercaseString]];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[[self string] substringWithRange:selRange] uppercaseString]]];
 	[self setSelectedRange:curRange];
 }
 
@@ -210,7 +210,7 @@
 	NSRange curRange = [self selectedRange];
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
-	[self insertText:[[[self string] substringWithRange:selRange] lowercaseString]];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[[self string] substringWithRange:selRange] lowercaseString]]];
 	[self setSelectedRange:curRange];
 }
 
@@ -222,7 +222,7 @@
 	NSRange curRange = [self selectedRange];
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
-	[self insertText:[[[self string] substringWithRange:selRange] capitalizedString]];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[[self string] substringWithRange:selRange] capitalizedString]]];
 	[self setSelectedRange:curRange];
 }
 
@@ -235,7 +235,7 @@
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
 	NSString* convString = [[[self string] substringWithRange:selRange] decomposedStringWithCanonicalMapping];
-	[self insertText:convString];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:convString]];
 	
 	// correct range for combining characters
 	if(curRange.length)
@@ -257,7 +257,7 @@
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
 	NSString* convString = [[[self string] substringWithRange:selRange] decomposedStringWithCompatibilityMapping];
-	[self insertText:convString];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:convString]];
 	
 	// correct range for combining characters
 	if(curRange.length)
@@ -279,7 +279,7 @@
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
 	NSString* convString = [[[self string] substringWithRange:selRange] precomposedStringWithCanonicalMapping];
-	[self insertText:convString];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:convString]];
 	
 	// correct range for combining characters
 	if(curRange.length)
@@ -302,7 +302,8 @@
 	NSArray* chars;
 	chars = [convString componentsSeparatedByCharactersInSet:[NSCharacterSet nonBaseCharacterSet]];
 	NSString* cleanString = [chars componentsJoinedByString:@""];
-	[self insertText:cleanString];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:convString]];
+
 	if(curRange.length)
 		[self setSelectedRange:NSMakeRange(selRange.location, [cleanString length])];
 	else
@@ -323,7 +324,7 @@
 	NSRange selRange = (curRange.length) ? curRange : [self getRangeForCurrentWord];
 	[self setSelectedRange:selRange];
 	NSString* convString = [[[self string] substringWithRange:selRange] precomposedStringWithCompatibilityMapping];
-	[self insertText:convString];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:convString]];
 	
 	// correct range for combining characters
 	if(curRange.length)
@@ -387,7 +388,7 @@
 			[reversedStr appendString:
 				[NSString stringWithFormat:@"%C", [[self string] characterAtIndex:--len+workingRange.location]]];
 
-		[self insertText:reversedStr];
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:reversedStr]];
 		[self setSelectedRange:curRange];
 	}
 }
@@ -397,12 +398,11 @@
  */
 - (IBAction)insertNULLvalue:(id)sender
 {
-	id prefs = [NSUserDefaults standardUserDefaults];
-	if ([self respondsToSelector:@selector(insertText:)]) {
-		if([prefs stringForKey:SPNullValue] && [[prefs stringForKey:SPNullValue] length])
-			[self insertText:[prefs objectForKey:SPNullValue]];
-		else
-			[self insertText:@"NULL"];
+	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+	if ([prefs stringForKey:SPNullValue] && [[prefs stringForKey:SPNullValue] length]) {
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[prefs objectForKey:SPNullValue]]];
+	} else {
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@"NULL"]];
 	}
 }
 
@@ -423,12 +423,12 @@
 			lastLine = YES;
 		}
 		[self setSelectedRange:lineRange];
-		[self insertText:@""];
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 		[self setSelectedRange:insertPoint];
-		[self insertText:currentLine];
-		if(lastLine) {
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:currentLine]];
+		if (lastLine) {
 			[self setSelectedRange:NSMakeRange([[self string] length]-1,1)];
-			[self insertText:@""];
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 			
 		}
 		if(currentSelection.length)
@@ -445,19 +445,19 @@
 
 	NSRange currentSelection = [self selectedRange];
 	NSRange lineRange = [[self string] lineRangeForRange:currentSelection];
-	if(NSMaxRange(lineRange) < [[self string] length]) {
+	if (NSMaxRange(lineRange) < [[self string] length]) {
 		NSRange afterLineRange = [[self string] lineRangeForRange:NSMakeRange(NSMaxRange(lineRange), 0)];
 		NSRange insertPoint = NSMakeRange(lineRange.location + afterLineRange.length, 0);
 		NSString *currentLine = [[self string] substringWithRange:lineRange];
 		[self setSelectedRange:lineRange];
-		[self insertText:@""];
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 		[self setSelectedRange:insertPoint];
 		if([[self string] characterAtIndex:insertPoint.location-1] != '\n') {
-			[self insertText:@"\n"];
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
 			insertPoint.location++;
 			currentLine = [currentLine substringToIndex:[currentLine length]-1];
 		}
-		[self insertText:currentLine];
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:currentLine]];
 		if(currentSelection.length)
 			insertPoint.length+=[currentLine length];
 		[self setSelectedRange:insertPoint];
@@ -741,7 +741,7 @@
 				if([self isEditable]) {
 
 					if([action isEqualToString:SPBundleOutputActionInsertAsText]) {
-						[self insertText:output];
+						[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:output]];
 					}
 
 					else if([action isEqualToString:SPBundleOutputActionInsertAsSnippet]) {
@@ -754,7 +754,7 @@
 					else if([action isEqualToString:SPBundleOutputActionReplaceContent]) {
 						if([[self string] length])
 							[self setSelectedRange:NSMakeRange(0, [[self string] length])];
-						[self insertText:output];
+						[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:output]];
 					}
 
 					else if([action isEqualToString:SPBundleOutputActionReplaceSelection]) {

@@ -103,7 +103,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableWhereClause setAutohelp:NO];
 	[filterTableWhereClause setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
 	[filterTableWhereClause setCompletionWasReinvokedAutomatically:NO];
-	[filterTableWhereClause insertText:@""];
+	[filterTableWhereClause.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 	[filterTableWhereClause didChangeText];
 
 	[[filterTableView window] makeFirstResponder:filterTableView];
@@ -434,7 +434,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 				}
 				else {
 					[filterTableWhereClause setString:@""];
-					[filterTableWhereClause insertText:@""];
+					[filterTableWhereClause.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 					[filterTableWhereClause scrollRangeToVisible:NSMakeRange(0, 0)];
 
 					// If live search is set perform filtering
@@ -541,7 +541,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableWhereClause setString:[clause length] > 3 ? [clause substringToIndex:([clause length] - 4)] : @""];
 
 	// Update syntax highlighting and uppercasing
-	[filterTableWhereClause insertText:@""];
+	[filterTableWhereClause.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 	[filterTableWhereClause scrollRangeToVisible:NSMakeRange(0, 0)];
 
 	// If live search is set perform filtering
