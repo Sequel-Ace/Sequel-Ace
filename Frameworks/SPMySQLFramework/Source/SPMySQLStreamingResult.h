@@ -39,9 +39,6 @@
 
 	// Counts and memory length tracking
 	NSUInteger downloadedRowCount;
-
-	IMP isConnectedPtr;
-	SEL isConnectedSelector;
 }
 
 @property (readonly, assign) BOOL dataDownloaded;
