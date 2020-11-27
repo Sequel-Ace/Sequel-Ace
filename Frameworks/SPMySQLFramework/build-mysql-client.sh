@@ -47,7 +47,7 @@ CLEAN='NO'
 MIN_OS_X_VERSION='11.0'
 ARCHITECTURES='-arch arm64 -arch x86_64'
 
-CONFIGURE_OPTIONS='-DBUILD_CONFIG=mysql_release -DENABLED_LOCAL_INFILE=1 -DWITH_SSL=bundled -DWITH_MYSQLD_LDFLAGS="-all-static --disable-shared" -DWITHOUT_SERVER=1 -DWITH_ZLIB=system -DWITH_UNIT_TESTS=0'
+CONFIGURE_OPTIONS='-B build_folder -DDOWNLOAD_BOOST=1 -DWITH_BOOST=boost_directory -DBUILD_CONFIG=mysql_release -DENABLED_LOCAL_INFILE=1 -DWITH_SSL=/usr/local/opt/openssl -DWITH_MYSQLD_LDFLAGS="-all-static --disable-shared" -DWITHOUT_SERVER=1 -DWITH_ZLIB=system -DWITH_UNIT_TESTS=0'
 OUTPUT_DIR='SPMySQLFiles.build'
 
 ESC=`printf '\033'`
@@ -193,6 +193,8 @@ else
 	echo "$ESC[1;31mConfigure failed. Exiting...$ESC[0m"
 	exit 1
 fi
+
+cd "build_folder"
 
 if [ "x${DEBUG}" == 'xYES' ]
 then
