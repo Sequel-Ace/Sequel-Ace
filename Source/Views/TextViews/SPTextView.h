@@ -64,7 +64,6 @@ typedef struct {
 	BOOL autohelpEnabled;
 	NoodleLineNumberView *lineNumberView;
 	
-	BOOL startListeningToBoundChanges;
 	BOOL textBufferSizeIncreased;
 
 	NSString *showMySQLHelpFor;

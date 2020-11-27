@@ -130,7 +130,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	autouppercaseKeywordsEnabled = NO;
 	autohelpEnabled = NO;
 	delBackwardsWasPressed = NO;
-	startListeningToBoundChanges = NO;
 	textBufferSizeIncreased = NO;
 	snippetControlCounter = -1;
 	mirroredCounter = -1;
@@ -2593,13 +2592,11 @@ retry:
  * (The main bottleneck is the [NSTextStorage addAttribute:value:range:] method - the parsing itself is really fast!)
  * Some sample code from Andrew Choi ( http://members.shaw.ca/akochoi-old/blog/2003/11-09/index.html#3 ) has been reused.
  */
-- (void)doSyntaxHighlighting
-{
-	if (![self enableSyntaxHighlighting])
-	{
+- (void)doSyntaxHighlighting {
+
+	if (![self enableSyntaxHighlighting]) {
 		// the point of disabling syntax highlighting is to get the min input lag
 		[self removeSyntaxHighlighting];
-
 		return;
 	}
 
@@ -3154,7 +3151,7 @@ retry:
 
 - (void)scrollViewDidEndLiveScrollNotification:(NSNotification *)notification {
 	// Invoke syntax highlighting if text view port was changed for large text
-	if(startListeningToBoundChanges && [[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
+	if([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
 	{
 		[NSObject cancelPreviousPerformRequestsWithTarget:self 
 									selector:@selector(doSyntaxHighlighting) 
@@ -3266,9 +3263,6 @@ retry:
 		[customQueryInstance setTextViewWasChanged:NO];
 		textBufferSizeIncreased = NO;
 	}
-
-	startListeningToBoundChanges = YES;
-
 }
 
 /**
