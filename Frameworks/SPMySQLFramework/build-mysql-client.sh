@@ -169,8 +169,8 @@ CONFIGURE_OPTIONS="${CONFIGURE_OPTIONS} -DCMAKE_OSX_SYSROOT='${SDK_PATH}' -DCMAK
 # -isysroot ${SDK_PATH} -mmacosx-version-min=${MIN_OS_X_VERSION}
 
 # C/C++ compiler flags
-export CFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer -fno-exceptions"
-export CXXFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer -felide-constructors -fno-exceptions -fno-rtti"
+export CFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer" # -fno-exceptions
+export CXXFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer -felide-constructors -fno-rtti" # -fno-exceptions
 
 echo "$ESC[1mConfiguring MySQL source...$ESC[0m"
 
