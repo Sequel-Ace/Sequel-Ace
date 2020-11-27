@@ -19,7 +19,7 @@
 			<string>Sequel Ace Connection</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
-				<string>spf </string>
+				<string>spf</string>
 			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
