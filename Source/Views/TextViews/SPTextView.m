@@ -3417,7 +3417,6 @@ retry:
  */
 - (void)insertFileContentOfFile:(NSString *)aPath
 {
-	
 	NSError *err = nil;
 	NSStringEncoding enc;
 	NSString *content = nil;
@@ -3462,17 +3461,16 @@ retry:
 			content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 
 		if (content) {
-			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
+			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 		if (content) {
-			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
+			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
 			return;
 		}
 	}
-
 	NSLog(@"%@ ‘%@’.", NSLocalizedString(@"Couldn't read the file content of", @"Couldn't read the file content of"), aPath);
 }
 
