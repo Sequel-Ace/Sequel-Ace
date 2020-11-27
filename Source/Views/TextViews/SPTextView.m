@@ -237,8 +237,7 @@ retry:
 /**
  * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
  */
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
-{
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
 	if ([keyPath isEqualToString:SPCustomQueryEditorBackgroundColor]) {
 		NSColor *backgroundColor = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 		[self setQueryEditorBackgroundColor:backgroundColor];
@@ -263,36 +262,43 @@ retry:
 	} else if ([keyPath isEqualToString:SPCustomQueryEnableSyntaxHighlighting]) {
 	    [self setEnableSyntaxHighlighting:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
 	    [self setNeedsDisplayInRect:[self bounds]];
-		[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
-    } else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
+		[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+	} else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
 		[self setCommentColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorQuoteColor]) {
 		[self setQuoteColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorSQLKeywordColor]) {
 		[self setKeywordColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorBacktickColor]) {
 		[self setBacktickColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorNumericColor]) {
 		[self setNumericColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorVariableColor]) {
 		[self setVariableColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTextColor]) {
 		[self setOtherTextColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setTextColor:[self otherTextColor]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
 	} else if ([keyPath isEqualToString:SPCustomQueryAutoUppercaseKeywords]) {
@@ -1026,7 +1032,7 @@ retry:
 	NSRange r = NSMakeRange(0, [[self string] length]);
 
 	// Remove all colors before printing for large text buffer
-	if(r.length > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+	if (r.length > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
 		// Cancel all doSyntaxHighlighting requests
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doSyntaxHighlightingWithForce:) object:nil];
 		[[self textStorage] removeAttribute:NSForegroundColorAttributeName range:r];
