@@ -2599,12 +2599,14 @@ retry:
 		[self removeSyntaxHighlighting];
 		return;
 	}
-
+	
 	NSTextStorage *textStore = [self textStorage];
-	NSString *selfstr        = [self string];
-	NSUInteger strlength     = [selfstr length];
+	NSString *selfstr = [self string];
+	NSUInteger strlength = [selfstr length];
 
-	if(strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING) return;
+	if (strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING) {
+		return;
+	}
 
 	NSRange textRange;
 
@@ -2613,8 +2615,7 @@ retry:
 	// The approach is to take the middle position of the current view port
 	// and highlight only ±SP_SYNTAX_HILITE_BIAS of that middle position
 	// considering of line starts resp. ends
-	if(strlength > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-	{
+	if (strlength > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
 
 		// Get the text range currently displayed in the view port
 		NSRect visibleRect = [[[self enclosingScrollView] contentView] documentVisibleRect];
@@ -2633,50 +2634,54 @@ retry:
 			end = strlength;
 		} else {
 			while(end < strlength && lengthChecker > 0) {
-				if(CFStringGetCharacterAtIndex((CFStringRef)selfstr, end)=='\n')
+				if (CFStringGetCharacterAtIndex((CFStringRef)selfstr, end)=='\n') {
 					break;
+				}
 				end++;
 				lengthChecker--;
 			}
 		}
-		if(lengthChecker <= 0)
+		if (lengthChecker <= 0) {
 			end = curPos + SP_SYNTAX_HILITE_BIAS;
+		}
 
 		// get the first line to parse due to SP_SYNTAX_HILITE_BIAS
 		// but look for only SP_SYNTAX_HILITE_BIAS chars backwards
 		NSUInteger start, start_temp;
-		if(end <= (SP_SYNTAX_HILITE_BIAS*2))
+		if (end <= (SP_SYNTAX_HILITE_BIAS*2)) {
 		 	start = 0;
-		else
+		} else {
 		 	start = end - (SP_SYNTAX_HILITE_BIAS*2);
+		}
 
 		start_temp = start;
 		lengthChecker = SP_SYNTAX_HILITE_BIAS;
-		if (start > 0)
+		if (start > 0) {
 			while(start>0 && lengthChecker > 0) {
-				if(CFStringGetCharacterAtIndex((CFStringRef)selfstr, start)=='\n')
+				if (CFStringGetCharacterAtIndex((CFStringRef)selfstr, start)=='\n') {
 					break;
+				}
 				start--;
 				lengthChecker--;
 			}
-		if(lengthChecker <= 0)
+		}
+		if (lengthChecker <= 0) {
 			start = start_temp;
+		}
 
 		textRange = NSMakeRange(start, end-start);
 
 		// only to be sure that nothing went wrongly
 		textRange = NSIntersectionRange(textRange, NSMakeRange(0, [textStore length])); 
 
-		if (!textRange.length)
+		if (!textRange.length) {
 			return;
-
+		}
 	} else {
 		// If text size is less SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING
 		// process syntax highlighting for the entire text view buffer
 		textRange = NSMakeRange(0,strlength);
 	}
-
-	// [textStore beginEditing];
 
 	NSColor *tokenColor;
 
@@ -2697,7 +2702,7 @@ retry:
 	BOOL allowToCheckForUpperCase;
 	
 	// now loop through all the tokens
-	while ((token=yylex())){
+	while ((token=yylex())) {
 
 		allowToCheckForUpperCase = YES;
 		
@@ -2757,10 +2762,9 @@ retry:
 		{
 	
 			NSString* curTokenString = [selfstr substringWithRange:tokenRange];	
-			if(![(NSString*)NSMutableAttributedStringAttributeAtIndex(textStore, kSQLkeyword,tokenEnd+1,nil) length])
-			{
+			if(![(NSString*)NSMutableAttributedStringAttributeAtIndex(textStore, kSQLkeyword,tokenEnd+1,nil) length]) {
 				NSString *curTokenStringUP = [curTokenString uppercaseString];
-				if(![curTokenString isEqualToString:curTokenStringUP]) {
+				if (![curTokenString isEqualToString:curTokenStringUP]) {
 					// Register it for undo works only partly for now, at least the uppercased keyword will be selected
 					[self shouldChangeTextInRange:tokenRange replacementString:curTokenStringUP];
 					[self replaceCharactersInRange:tokenRange withString:curTokenStringUP];
@@ -2775,35 +2779,29 @@ retry:
 		// Add an attribute to be used in the auto-pairing (keyDown:)
 		// to disable auto-pairing if caret is inside of any token found by lex.
 		// For discussion: maybe change it later (only for quotes not keywords?)
-		if(!allowToCheckForUpperCase && token < 6)
+		if (!allowToCheckForUpperCase && token < 6) {
 			NSMutableAttributedStringAddAttributeValueRange(textStore, kLEXToken, kLEXTokenValue, tokenRange);
+		}
 		
 		// Mark each SQL keyword for auto-uppercasing and do it for the next textStorageDidProcessEditing: event.
 		// Performing it one token later allows words which start as reserved keywords to be entered.
-		if(token == SPT_RESERVED_WORD)
+		if (token == SPT_RESERVED_WORD) {
 			NSMutableAttributedStringAddAttributeValueRange(textStore, kSQLkeyword, kValue, tokenRange);
-		
-		// Add an attribute to be used to distinguish quotes from keywords etc.
-		// used e.g. in completion suggestions
-		else if(token < 4)
+		} else if (token < 4) { // Add an attribute to be used to distinguish quotes from keywords etc. used e.g. in completion suggestions
 			NSMutableAttributedStringAddAttributeValueRange(textStore, kQuote, kQuoteValue, tokenRange);
+		}
 		
 		//distinguish backtick quoted word for completion
 		// else if(token == SPT_BACKTICK_QUOTED_TEXT)
 		// 	NSMutableAttributedStringAddAttributeValueRange(textStore, kBTQuote, kBTQuoteValue, tokenRange);
-
 	}
-
-	// [textStore endEditing];
 
 	self.syntaxHighlightingApplied = YES;
 
 	[self setNeedsDisplayInRect:[self bounds]];
-
 }
 
-- (void) setTabStops
-{
+- (void)setTabStops {
 	NSFont *tvFont = [self font];
 	NSInteger i;
 	NSTextTab *aTab;
@@ -3176,28 +3174,27 @@ retry:
 	}
 
 	// Cancel autocompletion trigger
-	if([prefs boolForKey:SPCustomQueryAutoComplete])
-		[NSObject cancelPreviousPerformRequestsWithTarget:self
-								selector:@selector(doAutoCompletion)
-								object:nil];
+	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doAutoCompletion) object:nil];
+	}
 
 	// Cancel calling doSyntaxHighlighting for large text
-	if ([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-		[NSObject cancelPreviousPerformRequestsWithTarget:self
-								selector:@selector(doSyntaxHighlighting)
-								object:nil];
+	if ([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doSyntaxHighlighting) object:nil];
+	}
 
 	// Start autohelp only if the user really changed the text (not e.g. for setting a background color)
-	if ([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask != 1) {
+	if ([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask == NSTextStorageEditedCharacters) {
 		[self performSelector:@selector(autoHelp) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoHelpDelay] doubleValue]];
 	}
 
 	// Start autocompletion if enabled
-	if ([[NSApp keyWindow] firstResponder] == self && [prefs boolForKey:SPCustomQueryAutoComplete] && !completionIsOpen && editedMask != 1 && [textStorage changeInLength] == 1)
+	if ([[NSApp keyWindow] firstResponder] == self && [prefs boolForKey:SPCustomQueryAutoComplete] && !completionIsOpen && editedMask != 1 && delta == 1) {
 		[self performSelector:@selector(doAutoCompletion) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoCompleteDelay] doubleValue]];
+	}
 
 	// Do syntax highlighting/re-calculate snippet ranges only if the user really changed the text
-	if (editedMask != 1) {
+	if (editedMask == NSTextStorageEditedCharacters) {
 
 		[customQueryInstance setTextViewWasChanged:YES];
 
@@ -3208,15 +3205,15 @@ retry:
 			NSInteger currentSnippetLocation = currentSnippetRef->location;
 			NSInteger currentSnippetMaxRange = currentSnippetRef->location + currentSnippetRef->length;
 			NSInteger i;
-			for(i=0; i<snippetControlMax; i++) {
-				if(snippetControlArray[i].location > -1
+			for (i=0; i<snippetControlMax; i++) {
+				if (snippetControlArray[i].location > -1
 					&& i != currentSnippetIndex
 					&& snippetControlArray[i].location >= currentSnippetLocation
 					&& snippetControlArray[i].location <= currentSnippetMaxRange
 					&& snippetControlArray[i].location + snippetControlArray[i].length >= currentSnippetLocation
 					&& snippetControlArray[i].location + snippetControlArray[i].length <= currentSnippetMaxRange
 					) {
-						snippetControlArray[i] = (SnippetControlInfo){-1, -1, -1};
+					snippetControlArray[i] = (SnippetControlInfo){-1, -1, -1};
 				}
 			}
 
@@ -3225,15 +3222,15 @@ retry:
 			// Adjust length change to current snippet
 			currentSnippetRef->length += delta;
 			// If length < 0 break snippet input
-			if(currentSnippetRef->length < 0) {
+			if (currentSnippetRef->length < 0) {
 				[self endSnippetSession];
 			} else {
 				// Adjust start position of snippets after caret position
-				for(i=0; i<=snippetControlMax; i++) {
-					if(snippetControlArray[i].location > -1 && i != currentSnippetIndex) {
-						if(editStartPosition < snippetControlArray[i].location) {
+				for (i=0; i<=snippetControlMax; i++) {
+					if (snippetControlArray[i].location > -1 && i != currentSnippetIndex) {
+						if (editStartPosition < snippetControlArray[i].location) {
 							snippetControlArray[i].location += delta;
-						} else if(editStartPosition >= snippetControlArray[i].location && editStartPosition <= snippetControlArray[i].location + snippetControlArray[i].length) {
+						} else if (editStartPosition >= snippetControlArray[i].location && editStartPosition <= snippetControlArray[i].location + snippetControlArray[i].length) {
 							snippetControlArray[i].length += delta;
 						}
 					}
@@ -3247,7 +3244,7 @@ retry:
 					}
 			}
 
-			if(mirroredCounter > -1 && snippetControlCounter > -1) {
+			if (mirroredCounter > -1 && snippetControlCounter > -1) {
 				[self performSelector:@selector(processMirroredSnippets) withObject:nil afterDelay:0.0];
 			}
 		}
