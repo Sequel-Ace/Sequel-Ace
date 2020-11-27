@@ -158,9 +158,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// disabled to get the current text range in textView safer
 	[[self layoutManager] setBackgroundLayoutEnabled:NO];
 
-//	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(scrollViewDidEndLiveScrollNotification:) name:NSScrollViewDidEndLiveScrollNotification object:scrollView];
-
-
 	{
 		struct csItem {
 			NSString *p;
@@ -324,7 +321,7 @@ retry:
 	{
 		// Only parse for words if text size is less than 1MB
 		NSInteger selfLength = [[self string] length];
-		if ([[self string] length] < 1000000) {
+		if (selfLength < 10000) {
 			NSMutableSet *uniqueArray = [NSMutableSet setWithCapacity:5];
 
 			for(id w in [[self textStorage] words])
@@ -2331,6 +2328,13 @@ retry:
 	[super keyDown:theEvent];
 }
 
+- (void)paste:(id)sender {
+	[super paste:sender];
+
+	// CMD+V - paste
+	[self doSyntaxHighlightingWithForce:YES];
+}
+
 /**
  * The following moveWord... routines are needed to be able to recognize a db schema à la
  * db.table.field as ONE word while navigating and selecting by the keyboard
@@ -3141,22 +3145,6 @@ retry:
 #pragma mark -
 #pragma mark delegates
 
-//- (void)scrollViewDidEndLiveScrollNotification:(NSNotification *)notification {
-//	// Invoke syntax highlighting if text view port was changed for large text
-//	if([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-//	{
-//		[NSObject cancelPreviousPerformRequestsWithTarget:self
-//												 selector:@selector(doSyntaxHighlightingWithEditedRange:)
-//									object:nil];
-//
-//		if (![[self textStorage] changeInLength])
-//			[self performSelector:@selector(doSyntaxHighlightingWithEditedRange:) withObject:nil afterDelay:0.4];
-//	}
-//	// else
-//	// 	[scrollView displayRect:[scrollView visibleRect]];
-//
-//}
-
 /**
  *  Performs syntax highlighting, re-init autohelp, and re-calculation of snippets after a text change
  */
@@ -3315,7 +3303,7 @@ retry:
 			if(filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
 				if ([filesize unsignedLongValue] > 1000000) {
-					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
+					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data? The import can freeze the app for couple of seconds.", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
 					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:message primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
 						[self insertFileContentOfFile:filepath];
 					} cancelButtonHandler:nil];

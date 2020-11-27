@@ -960,8 +960,12 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 		// Restore the text selection location, and clearly mark the autosuggested text
 		[theView setSelectedRange:NSMakeRange(currentSelectionPosition, 0)];
-		NSMutableAttributedStringAddAttributeValueRange([theView textStorage], NSForegroundColorAttributeName, [[theView otherTextColor] colorWithAlphaComponent:0.3f], NSMakeRange(currentSelectionPosition, [toInsert length]));
-		NSMutableAttributedStringAddAttributeValueRange([theView textStorage], SPAutoCompletePlaceholderName, SPAutoCompletePlaceholderVal, NSMakeRange(currentSelectionPosition, [toInsert length]));
+
+		NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
+		[attributes setValue:[[theView otherTextColor] colorWithAlphaComponent:0.3f] forKey:NSForegroundColorAttributeName];
+		[attributes setValue:SPAutoCompletePlaceholderVal forKey:SPAutoCompletePlaceholderName];
+
+		[theView.textStorage addAttributes:attributes range:NSMakeRange(currentSelectionPosition, [toInsert length])];
 
 		[self checkSpaceForAllowedCharacter];
 	}
