@@ -1792,12 +1792,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	SPLog(@"queryWarningEnabled = %d", queryWarningEnabled);
 	SPLog(@"queryWarningEnabledSuppressed = %d", queryWarningEnabledSuppressed);
 
-
 	if (returnCode == NSAlertDefaultReturn && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
 		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")]
 													message:@"Double checking as you have 'Show warning before executing a query' set in Preferences"
-												suppression:YES
-												 defaultKey: SPQueryWarningEnabledSuppressed
+											 suppressionKey:SPQueryWarningEnabledSuppressed
 										 primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
 									   primaryButtonHandler:^{
 			SPLog(@"User clicked Yes, exec queries");
