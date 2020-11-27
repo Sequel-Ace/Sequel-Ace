@@ -954,7 +954,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 		theParseRange.length += [toInsert length];
 
 		[theView breakUndoCoalescing];
-		[theView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[toInsert lowercaseString]]];
+		[theView.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[toInsert lowercaseString]] atIndex:currentSelectionPosition];
 
 		autocompletePlaceholderWasInserted = YES;
 
