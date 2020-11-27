@@ -695,7 +695,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			[contentFilterNameTextField setStringValue:newName];
 		} else {
 			NSBeep();
-			[editor insertText:SP_NAME_REQUIRED_PLACEHOLDER_STRING];
+			[editor.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:SP_NAME_REQUIRED_PLACEHOLDER_STRING]];
 			[editor setSelectedRange:NSMakeRange(0,[SP_NAME_REQUIRED_PLACEHOLDER_STRING length])];
 			[contentFilterNameTextField setStringValue:SP_NAME_REQUIRED_PLACEHOLDER_STRING];
 		}

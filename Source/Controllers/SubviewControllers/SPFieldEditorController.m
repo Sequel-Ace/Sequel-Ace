@@ -1301,8 +1301,8 @@ typedef enum {
 				}
 				
 				[SPTooltip showWithObject:tooltip];
-												
-				[textView insertText:[replacementString substringToIndex:(NSUInteger)maxTextLength - textLength +[textView selectedRange].length]];
+
+				[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)maxTextLength - textLength +[textView selectedRange].length]]];
 			}
 			
 			maxTextLength = originalMaxTextLength;

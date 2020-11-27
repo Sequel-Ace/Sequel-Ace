@@ -1208,7 +1208,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			for (NSString *eachFieldName in primaryKeyFields) {
 				[queryParts addObject:[NSString stringWithFormat:@"%@ = %@", [eachFieldName backtickQuotedString], [eachFieldName backtickQuotedString]]];
 			}
-			[onupdateTextView insertText:[queryParts componentsJoinedByString:@" AND "]];
+			[onupdateTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[queryParts componentsJoinedByString:@" AND "]]];
 			[onupdateTextView setBackgroundColor:[NSColor lightGrayColor]];
 			[onupdateTextView setEditable:NO];
 		} else {
@@ -1218,7 +1218,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			BOOL oldEditableState = [onupdateTextView isEditable];
 			[onupdateTextView setEditable:YES];
 			[onupdateTextView setSelectedRange:NSMakeRange(0,[[onupdateTextView string] length])];
-			[onupdateTextView insertText:@""];
+			[onupdateTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 			[onupdateTextView setEditable:oldEditableState];
 		}
 	}

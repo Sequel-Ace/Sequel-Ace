@@ -185,9 +185,8 @@
 		[self setSelectedRange:NSMakeRange(characterIndex,0)];
 
 		// Check if user pressed  ⌘ while dragging for inserting only the file path
-		if([sender draggingSourceOperationMask] == 4)
-		{
-			[self insertText:filepath];
+		if ([sender draggingSourceOperationMask] == 4) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:filepath]];
 			return YES;
 		}
 
@@ -312,18 +311,14 @@
 		else
 			content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 
-		if(content)
-		{
-			[self insertText:content];
-			[self insertText:@""]; // Invoke keyword uppercasing
+		if (content) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
-		if(content)
-		{
-			[self insertText:content];
-			[self insertText:@""]; // Invoke keyword uppercasing
+		if (content) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
 			return;
 		}
 	}

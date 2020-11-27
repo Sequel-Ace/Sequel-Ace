@@ -246,7 +246,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Invoke textStorageDidProcessEditing: for syntax highlighting and auto-uppercase
 	// and preserve the selection
 	[textView setSelectedRange:NSMakeRange(selectedRange.location, 0)];
-	[textView insertText:@""];
+	[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 
 	// Inserting empty text may have cancelled a partial accent - range check before
 	// restoring the selection.
@@ -319,7 +319,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if(replaceContent) {
 			[textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
 			[textView breakUndoCoalescing];
-			[textView insertText:@""];
+			[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
 		}
 
 		// The actual query strings have been already stored as tooltip
@@ -344,7 +344,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if(replaceContent)
 			[textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
 
-		[textView insertText:[[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:[queryHistoryButton indexOfSelectedItem]-7]];
+		[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:[queryHistoryButton indexOfSelectedItem]-7]]];
 	}
 }
 
@@ -371,7 +371,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[textView breakUndoCoalescing];
 			NSString *historyString = [[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:currentHistoryOffsetIndex];
 			NSRange rangeOfInsertedString = NSMakeRange([textView selectedRange].location, [historyString length]);
-			[textView insertText:historyString];
+			[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:historyString]];
 			[textView setSelectedRange:rangeOfInsertedString];
 		} else {
 			currentHistoryOffsetIndex--;
@@ -388,7 +388,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			[textView breakUndoCoalescing];
 			NSString *historyString = [[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:currentHistoryOffsetIndex];
 			NSRange rangeOfInsertedString = NSMakeRange([textView selectedRange].location, [historyString length]);
-			[textView insertText:historyString];
+			[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:historyString]];
 			[textView setSelectedRange:rangeOfInsertedString];
 		} else {
 			currentHistoryOffsetIndex++;
@@ -1314,7 +1314,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// Replace current query/selection by (un)commented string
 	[textView setSelectedRange:workingRange];
-	[textView insertText:n];
+	[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:n]];
 
 	// If commenting out locate the caret just after the first /* to allow to enter
 	// something like /*!400000 or similar
@@ -1371,7 +1371,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// The caret will be placed at the beginning of the next line if present to
 		// allow a fast (un)commenting of lines
 		[textView setSelectedRange:lineRange];
-		[textView insertText:n];
+		[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:n]];
 	}
 }
 
@@ -2952,7 +2952,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		[queryFavoritesButton removeItemAtIndex:[queryFavoritesButton numberOfItems]-1];
 
 	// Build document-based list
-	NSString *tblDocName = [[[fileURL absoluteString] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] lastPathComponent];
+	NSString *tblDocName = [[[fileURL absoluteString] stringByRemovingPercentEncoding] lastPathComponent];
 	{
 		NSMenuItem *headerMenuItem = [[NSMenuItem alloc] initWithTitle:tblDocName action:NULL keyEquivalent:@""];
 		[headerMenuItem setTag:SP_FAVORITE_HEADER_MENUITEM_TAG];

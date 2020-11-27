@@ -621,7 +621,7 @@ retry:
 	[self doCompletionByUsingSpellChecker:NO fuzzyMode:completionFuzzyMode autoCompleteMode:NO];
 }
 
-- (void) doCompletionByUsingSpellChecker:(BOOL)isDictMode fuzzyMode:(BOOL)fuzzySearch autoCompleteMode:(BOOL)autoCompleteMode
+- (void)doCompletionByUsingSpellChecker:(BOOL)isDictMode fuzzyMode:(BOOL)fuzzySearch autoCompleteMode:(BOOL)autoCompleteMode
 {
 
 	// Cancel autocompletion trigger
@@ -825,7 +825,7 @@ retry:
 
 	// Check for table name aliases
 	NSString *alias = nil;
-	if(dbBrowseMode && tableDocumentInstance && customQueryInstance) {
+	if (dbBrowseMode && tableDocumentInstance && customQueryInstance) {
 		NSString *theDb = (dbName == nil) ? [NSString stringWithString:currentDb] : [NSString stringWithString:dbName];
 		NSString *connectionID = [tableDocumentInstance connectionID];
 		NSString *conID = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, theDb];
@@ -1081,7 +1081,7 @@ retry:
 	NSString *selString = [[self string] substringWithRange:currentRange];
 
 	// Replace the current selection with the selected string wrapped in prefix and suffix
-	[self insertText:[NSString stringWithFormat:@"%@%@%@", prefix, selString, suffix]];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@%@%@", prefix, selString, suffix]]];
 	
 	// Re-select original selection
 	NSRange innerSelectionRange = NSMakeRange(currentRange.location+1, [selString length]);
@@ -1912,7 +1912,7 @@ retry:
 
 		// Registering for undo
 		[self breakUndoCoalescing];
-		[self insertText:snip];
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:snip]];
 
 		// If autopair is enabled check whether snip begins with ( and ends with ), if so mark ) as pair-linked
 		if (
@@ -2054,7 +2054,7 @@ retry:
 /**
  * Handle some keyDown events and perform autopairing functionality (if enabled).
  */
-- (void) keyDown:(NSEvent *)theEvent
+- (void)keyDown:(NSEvent *)theEvent
 {
 
 	if([prefs boolForKey:SPCustomQueryUpdateAutoHelp]) {// restart autoHelp timer
@@ -2333,7 +2333,6 @@ retry:
 	[self breakUndoCoalescing];
 	// The default action is to perform the normal key-down action.
 	[super keyDown:theEvent];
-	
 }
 
 /**
@@ -2446,9 +2445,9 @@ retry:
 		// Replicate the indentation on the previous line if one was found.
 		if (indentString) {
 			if (lineCursorLocation < [indentString length]) {
-				[self insertText:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]];
+				[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]]];
 			} else {
-				[self insertText:indentString];
+				[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:indentString]];
 			}
 		}
 
@@ -2861,7 +2860,7 @@ retry:
 
 		// Draw textview's background since due to the snippet highlighting we're responsible for it.
 		[[self queryEditorBackgroundColor] setFill];
-		NSRectFillUsingOperation(rect, NSCompositeSourceOver);
+		NSRectFillUsingOperation(rect, NSCompositingOperationSourceOver);
 
 		if([[self delegate] isKindOfClass:[SPCustomQuery class]]) {
 
@@ -2875,7 +2874,7 @@ retry:
 																		  inTextContainer: [self textContainer]
 																				rectCount: &rectCount ];
 				[[self queryHiliteColor] setFill];
-				NSRectFillListUsingOperation(queryRects, rectCount, NSCompositeSourceOver);
+				NSRectFillListUsingOperation(queryRects, rectCount, NSCompositingOperationSourceOver);
 			}
 
 			// Highlight snippets coming from the Query Favorite text macro
@@ -3178,39 +3177,36 @@ retry:
 /**
  *  Performs syntax highlighting, re-init autohelp, and re-calculation of snippets after a text change
  */
-- (void)textStorageDidProcessEditing:(NSNotification *)notification
-{
-
-	NSTextStorage *textStore = [notification object];
+- (void)textStorage:(NSTextStorage *)textStorage didProcessEditing:(NSTextStorageEditActions)editedMask range:(NSRange)editedRange changeInLength:(NSInteger)delta {
 
 	// Make sure that the notification is from the correct textStorage object
-	if (textStore!=[self textStorage]) return;
+	if (textStorage != [self textStorage]) {
+		return;
+	}
 
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete])
 		[NSObject cancelPreviousPerformRequestsWithTarget:self
-								selector:@selector(doAutoCompletion) 
+								selector:@selector(doAutoCompletion)
 								object:nil];
 
 	// Cancel calling doSyntaxHighlighting for large text
-	if([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-		[NSObject cancelPreviousPerformRequestsWithTarget:self 
-								selector:@selector(doSyntaxHighlighting) 
+	if ([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
+		[NSObject cancelPreviousPerformRequestsWithTarget:self
+								selector:@selector(doSyntaxHighlighting)
 								object:nil];
 
-	NSInteger editedMask = [textStore editedMask];
-
 	// Start autohelp only if the user really changed the text (not e.g. for setting a background color)
-	if([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask != 1) {
+	if ([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask != 1) {
 		[self performSelector:@selector(autoHelp) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoHelpDelay] doubleValue]];
 	}
 
 	// Start autocompletion if enabled
-	if([[NSApp keyWindow] firstResponder] == self && [prefs boolForKey:SPCustomQueryAutoComplete] && !completionIsOpen && editedMask != 1 && [textStore changeInLength] == 1)
+	if ([[NSApp keyWindow] firstResponder] == self && [prefs boolForKey:SPCustomQueryAutoComplete] && !completionIsOpen && editedMask != 1 && [textStorage changeInLength] == 1)
 		[self performSelector:@selector(doAutoCompletion) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoCompleteDelay] doubleValue]];
 
 	// Do syntax highlighting/re-calculate snippet ranges only if the user really changed the text
-	if(editedMask != 1) {
+	if (editedMask != 1) {
 
 		[customQueryInstance setTextViewWasChanged:YES];
 
@@ -3233,11 +3229,10 @@ retry:
 				}
 			}
 
-			NSInteger editStartPosition = [textStore editedRange].location;
-			NSUInteger changeInLength = [textStore changeInLength];
+			NSInteger editStartPosition = editedRange.location;
 
 			// Adjust length change to current snippet
-			currentSnippetRef->length += changeInLength;
+			currentSnippetRef->length += delta;
 			// If length < 0 break snippet input
 			if(currentSnippetRef->length < 0) {
 				[self endSnippetSession];
@@ -3246,9 +3241,9 @@ retry:
 				for(i=0; i<=snippetControlMax; i++) {
 					if(snippetControlArray[i].location > -1 && i != currentSnippetIndex) {
 						if(editStartPosition < snippetControlArray[i].location) {
-							snippetControlArray[i].location += changeInLength;
+							snippetControlArray[i].location += delta;
 						} else if(editStartPosition >= snippetControlArray[i].location && editStartPosition <= snippetControlArray[i].location + snippetControlArray[i].length) {
-							snippetControlArray[i].length += changeInLength;
+							snippetControlArray[i].length += delta;
 						}
 					}
 				}
@@ -3256,7 +3251,7 @@ retry:
 				if(mirroredCounter > -1)
 					for(i=0; i<=mirroredCounter; i++) {
 						if(editStartPosition < snippetMirroredControlArray[i].location) {
-							snippetMirroredControlArray[i].location += changeInLength;
+							snippetMirroredControlArray[i].location += delta;
 						}
 					}
 			}
@@ -3264,15 +3259,13 @@ retry:
 			if(mirroredCounter > -1 && snippetControlCounter > -1) {
 				[self performSelector:@selector(processMirroredSnippets) withObject:nil afterDelay:0.0];
 			}
-
-			
 		}
-		if([textStore changeInLength] > 0)
+		if(delta > 0)
 			textBufferSizeIncreased = YES;
 		else
 			textBufferSizeIncreased = NO;
 
-		if([textStore changeInLength] < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
+		if(delta < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
 			[self doSyntaxHighlighting];
 
 	} else {
@@ -3329,7 +3322,7 @@ retry:
 		// Check if user pressed  ⌘ while dragging for inserting only the file path
 		if([sender draggingSourceOperationMask] == 4)
 		{
-			[self insertText:filepath];
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:filepath]];
 			return YES;
 		}
 
@@ -3387,7 +3380,7 @@ retry:
 			[dragString appendString:[[aPath componentsSeparatedByString:SPUniqueSchemaDelimiter] componentsJoinedByPeriodAndBacktickQuoted]];
 		}
 		[self breakUndoCoalescing];
-		[self insertText:dragString];
+		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:dragString]];
 		return YES;
 	}
 
@@ -3468,18 +3461,14 @@ retry:
 		else
 			content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 
-		if(content)
-		{
-			[self insertText:content];
-			// [self insertText:@""]; // Invoke keyword uppercasing
+		if (content) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
-		if(content)
-		{
-			[self insertText:content];
-			// [self insertText:@""]; // Invoke keyword uppercasing
+		if (content) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
 			return;
 		}
 	}

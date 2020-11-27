@@ -1798,7 +1798,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 	[createTableSyntaxTextView setEditable:YES];
 	[createTableSyntaxTextView setString:@""];
-	[createTableSyntaxTextView insertText:createSyntax];
+	[createTableSyntaxTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:createSyntax]];
 	[createTableSyntaxTextView setEditable:NO];
 
 	[createTableSyntaxWindow makeFirstResponder:createTableSyntaxTextField];
@@ -3660,7 +3660,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)updateTitlebarStatusVisibilityForcingHide:(BOOL)forceHide
 {
 	BOOL newIsVisible = !forceHide;
-	if (newIsVisible && [parentWindow styleMask] & NSFullScreenWindowMask) newIsVisible = NO;
+	if (newIsVisible && [parentWindow styleMask] & NSWindowStyleMaskFullScreen) newIsVisible = NO;
 	if (newIsVisible && [parentWindowController selectedTableDocument] != self) newIsVisible = NO;
 	if (newIsVisible == windowTitleStatusViewIsVisible) return;
 
@@ -4962,7 +4962,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if([params count] > 1) {
 			id firstResponder = [parentWindow firstResponder];
 			if([firstResponder isKindOfClass:[NSTextView class]]) {
-				[firstResponder insertText:[params objectAtIndex:1]];
+				[((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[params objectAtIndex:1]]];
 				return;
 			}
 			NSBeep();
@@ -4974,8 +4974,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if([params count] > 1) {
 			id firstResponder = [parentWindow firstResponder];
 			if([firstResponder isKindOfClass:[NSTextView class]]) {
-				[firstResponder setSelectedRange:NSMakeRange(0, [[firstResponder string] length])];
-				[firstResponder insertText:[params objectAtIndex:1]];
+				[(NSTextView *)firstResponder setSelectedRange:NSMakeRange(0, [[firstResponder string] length])];
+				[((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[params objectAtIndex:1]]];
 				return;
 			}
 			NSBeep();

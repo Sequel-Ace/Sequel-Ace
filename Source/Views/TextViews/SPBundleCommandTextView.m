@@ -299,7 +299,7 @@
 	// The caret will be placed at the beginning of the next line if present to
 	// allow a fast (un)commenting of lines
 	[self setSelectedRange:lineRange];
-	[self insertText:n];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:n]];
 
 	// Try to create an undo group
 	if ([[self delegate] respondsToSelector:@selector(setWasCutPaste)]) {
@@ -466,7 +466,7 @@
 	[self breakUndoCoalescing];
 
 	// Replace the current selection with the selected string wrapped in prefix and suffix
-	[self insertText:replaceString];
+	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:replaceString]];
 
 	// Re-select original selection
 	NSRange innerSelectionRange = NSMakeRange(currentRange.location+1, [selString length]);
@@ -574,9 +574,9 @@
 		// Replicate the indentation on the previous line if one was found.
 		if (indentString) {
 			if (lineCursorLocation < [indentString length]) {
-				[self insertText:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]];
+				[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]]];
 			} else {
-				[self insertText:indentString];
+				[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:indentString]];
 			}
 		}
 
@@ -623,7 +623,7 @@
 
 		// Check if user pressed  ⌘ while dragging for inserting only the file path
 		if ([sender draggingSourceOperationMask] == 4) {
-			[self insertText:filepath];
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:filepath]];
 			return YES;
 		}
 
@@ -750,16 +750,14 @@
 		else
 			content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 
-		if(content)
-		{
-			[self insertText:content];
+		if (content) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
-		if(content)
-		{
-			[self insertText:content];
+		if (content) {
+			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:content]];
 			return;
 		}
 	}

@@ -617,15 +617,14 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 }
 
 /**
- * JavaScript window.system.insertText(text) function
- * to insert text into the first responder
+ * JavaScript window.system.insertText(text) function to insert text into the first responder
  */
 - (void)insertText:(NSString*)text
 {
 	id firstResponder = [[NSApp keyWindow] firstResponder];
 
 	if ([firstResponder isKindOfClass:[NSTextView class]]) {
-		[firstResponder insertText:text];
+		[((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:text]];
 		return;
 	}
 
