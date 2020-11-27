@@ -2573,10 +2573,8 @@ retry:
 
 }
 
-- (void)removeSyntaxHighlighting
-{
-	if (self.syntaxHighlightingApplied)
-	{
+- (void)removeSyntaxHighlighting {
+	if (self.syntaxHighlightingApplied) {
 		self.syntaxHighlightingApplied = NO;
 
 		NSTextStorage *textStore = [self textStorage];
@@ -2588,11 +2586,9 @@ retry:
 		[textStore addAttribute:NSForegroundColorAttributeName value:otherTextColor range:textRange];
 	}
 }
+
 /**
  * Syntax Highlighting.
- *  
- * (The main bottleneck is the [NSTextStorage addAttribute:value:range:] method - the parsing itself is really fast!)
- * Some sample code from Andrew Choi ( http://members.shaw.ca/akochoi-old/blog/2003/11-09/index.html#3 ) has been reused.
  */
 - (void)doSyntaxHighlightingWithForce:(BOOL)forced {
 
