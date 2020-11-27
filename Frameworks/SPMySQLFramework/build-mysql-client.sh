@@ -220,6 +220,8 @@ fi
 
 echo "$ESC[1mPutting together files for distribution...$ESC[0m"
 
+cd ..
+
 # Create the appropriate directories
 if [ ! -d "$OUTPUT_DIR" ]
 then
@@ -252,7 +254,7 @@ then
 fi
 
 # Copy the library
-cp 'archive_output_directory/libmysqlclient.a' "${OUTPUT_DIR}/lib/"
+cp 'build_folder/archive_output_directory/libmysqlclient.a' "${OUTPUT_DIR}/lib/"
 
 if [ ! $? -eq 0 ]
 then
