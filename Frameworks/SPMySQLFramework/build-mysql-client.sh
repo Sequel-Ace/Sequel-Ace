@@ -44,10 +44,10 @@ DEBUG='NO'
 CLEAN='NO'
 
 # Configuration
-MIN_OS_X_VERSION='10.6'
-ARCHITECTURES='-arch x86_64'
+MIN_OS_X_VERSION='11.0'
+ARCHITECTURES='-arch arm64 -arch x86_64'
 
-CONFIGURE_OPTIONS='-DBUILD_CONFIG=mysql_release -DENABLED_LOCAL_INFILE=1 -DWITH_SSL=bundled -DWITH_MYSQLD_LDFLAGS="-all-static --disable-shared" -DWITHOUT_SERVER=1 -DWITH_ZLIB=system -DWITH_UNIT_TESTS=0'
+CONFIGURE_OPTIONS='-B build_folder -DDOWNLOAD_BOOST=1 -DWITH_BOOST=boost_directory -DBUILD_CONFIG=mysql_release -DENABLED_LOCAL_INFILE=1 -DWITH_SSL=/usr/local/opt/openssl -DWITH_MYSQLD_LDFLAGS="-all-static --disable-shared" -DWITHOUT_SERVER=1 -DWITH_ZLIB=system -DWITH_UNIT_TESTS=0'
 OUTPUT_DIR='SPMySQLFiles.build'
 
 ESC=`printf '\033'`
@@ -163,14 +163,14 @@ then
 fi
 
 # For CMake 3.0+ use CMAKE_OSX_SYSROOT and CMAKE_OSX_DEPLOYMENT_TARGET to set SDK path and minimum version
-CONFIGURE_OPTIONS="${CONFIGURE_OPTIONS} -DCMAKE_OSX_SYSROOT='${SDK_PATH}' -DCMAKE_OSX_DEPLOYMENT_TARGET=${MIN_OS_X_VERSION}"
+CONFIGURE_OPTIONS="${CONFIGURE_OPTIONS} -DCMAKE_OSX_SYSROOT='${SDK_PATH}' -DCMAKE_OSX_DEPLOYMENT_TARGET=10.12"
 
 # For CMake 2 add these parameters to the CFLAGS/CXXFLAGS:
 # -isysroot ${SDK_PATH} -mmacosx-version-min=${MIN_OS_X_VERSION}
 
 # C/C++ compiler flags
-export CFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer -fno-exceptions"
-export CXXFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer -felide-constructors -fno-exceptions -fno-rtti"
+export CFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer" # -fno-exceptions
+export CXXFLAGS="${ARCHITECTURES} -O3 -fno-omit-frame-pointer -felide-constructors -fno-rtti" # -fno-exceptions
 
 echo "$ESC[1mConfiguring MySQL source...$ESC[0m"
 
@@ -193,6 +193,8 @@ else
 	echo "$ESC[1;31mConfigure failed. Exiting...$ESC[0m"
 	exit 1
 fi
+
+cd "build_folder"
 
 if [ "x${DEBUG}" == 'xYES' ]
 then
@@ -217,6 +219,8 @@ else
 fi
 
 echo "$ESC[1mPutting together files for distribution...$ESC[0m"
+
+cd ..
 
 # Create the appropriate directories
 if [ ! -d "$OUTPUT_DIR" ]
@@ -250,7 +254,7 @@ then
 fi
 
 # Copy the library
-cp 'archive_output_directory/libmysqlclient.a' "${OUTPUT_DIR}/lib/"
+cp 'build_folder/archive_output_directory/libmysqlclient.a' "${OUTPUT_DIR}/lib/"
 
 if [ ! $? -eq 0 ]
 then
