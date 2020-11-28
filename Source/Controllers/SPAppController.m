@@ -429,27 +429,31 @@
 			if ([filesize unsignedLongValue] > 1000000)
 			{
 				NSAlert *alert = [[NSAlert alloc] init];
+				[alert setAlertStyle:NSAlertStyleWarning];
+				[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
+				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"), [NSString stringForByteSize:[filesize longLongValue]]]];
+				[alert setHelpAnchor:filePath];
+
+
+				// Order of buttons matters! first button has "firstButtonReturn" return value from runModal
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 				[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 
 				// Show 'Import' button only if there's a connection available
-				if ([self frontDocument])
+				if ([self frontDocument]) {
 					[alert addButtonWithTitle:NSLocalizedString(@"Import", @"import button")];
-
-				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"),
-										   [NSString stringForByteSize:[filesize longLongValue]]]];
-
-				[alert setHelpAnchor:filePath];
-				[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-				[alert setAlertStyle:NSAlertStyleWarning];
+				}
 
 				NSUInteger returnCode = [alert runModal];
-
-				if (returnCode == NSAlertSecondButtonReturn || returnCode == NSAlertOtherReturn) return; // Cancel
-				else if (returnCode == NSAlertThirdButtonReturn) {   // Import
-					// begin import process
-					[[frontDocument tableDumpInstance] startSQLImportProcessWithFile:filePath];
-					return;
+				switch (returnCode) {
+					case NSAlertSecondButtonReturn: // Cancel
+						return;
+					case NSAlertThirdButtonReturn: { // Import
+						[[frontDocument tableDumpInstance] startSQLImportProcessWithFile:filePath];
+						return;
+					}
+					default: // Ok - just proceed
+						break;
 				}
 			}
 		}
