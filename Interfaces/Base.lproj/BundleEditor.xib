@@ -70,7 +70,7 @@
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <clipView key="contentView" drawsBackground="NO" id="SvP-QH-EgG">
                                             <rect key="frame" x="1" y="1" width="140" height="523"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <outlineView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" multipleSelection="NO" emptySelection="NO" autosaveName="SPBundleEditorOutlineView" rowHeight="20" indentationPerLevel="14" autoresizesOutlineColumn="YES" outlineTableColumn="967" id="965" customClass="SPOutlineView">
                                                     <rect key="frame" x="0.0" y="0.0" width="140" height="523"/>
@@ -201,7 +201,7 @@
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <clipView key="contentView" drawsBackground="NO" id="p0q-lB-EBP">
                                             <rect key="frame" x="1" y="1" width="715" height="287"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <textView drawsBackground="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" usesFontPanel="YES" findStyle="panel" allowsUndo="YES" allowsNonContiguousLayout="YES" id="1217" customClass="SPBundleCommandTextView">
                                                     <rect key="frame" x="0.0" y="0.0" width="715" height="287"/>
@@ -635,7 +635,7 @@ CA
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="NAc-yU-wEX">
                             <rect key="frame" x="1" y="1" width="341" height="137"/>
-                            <autoresizingMask key="autoresizingMask"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" headerView="1118" id="1106">
                                     <rect key="frame" x="0.0" y="0.0" width="341" height="120"/>
@@ -673,7 +673,7 @@ CA
                             <rect key="frame" x="224" y="17" width="15" height="102"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
-                        <tableHeaderView key="headerView" id="1118">
+                        <tableHeaderView key="headerView" wantsLayer="YES" id="1118">
                             <rect key="frame" x="0.0" y="0.0" width="341" height="17"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </tableHeaderView>
@@ -712,6 +712,7 @@ Gw
                 <outlet property="delegate" destination="-2" id="1126"/>
                 <outlet property="initialFirstResponder" destination="1106" id="1127"/>
             </connections>
+            <point key="canvasLocation" x="-352" y="-338"/>
         </window>
         <treeController childrenKeyPath="_children_" id="982">
             <declaredKeys>

@@ -115,9 +115,7 @@
 /* Initialisation and teardown */
 #pragma mark -
 
-- (id) init;
-- (id) initWithString:(NSString *)aString;
-- (id) initWithContentsOfFile:(NSString *)path encoding:(NSStringEncoding)enc error:(NSError **)error;
-- (void) dealloc;
+- (instancetype)initWithString:(NSString *)aString;
+- (instancetype)initWithContentsOfFile:(NSString *)path encoding:(NSStringEncoding)enc error:(NSError **)error;
 
 @end
