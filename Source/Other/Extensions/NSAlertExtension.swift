@@ -35,6 +35,46 @@ import AppKit
 		}
 	}
 
+	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message, and showsSuppressionButton
+	/// - Parameters:
+	///   - title: String for title of the alert
+	///   - message: String for informative message
+	///   - suppressionKey: String key to set in user defaults
+	///   - primaryButtonTitle: String for main confirm button
+	///   - primaryButtonHandler: Optional block that's invoked when user hits primary button or Enter
+	///   - cancelButtonHandler: Optional block that's invoked when user hits cancel button or Escape
+	/// - Returns: Nothing
+	static func createDefaultAlertWithSuppression(title: String,
+												  message: String,
+												  suppressionKey: String? = nil,
+												  primaryButtonTitle: String,
+												  primaryButtonHandler: (() -> ())? = nil,
+												  cancelButtonHandler: (() -> ())? = nil) {
+		let alert = NSAlert()
+		alert.messageText = title
+		alert.informativeText = message
+
+		if suppressionKey != nil {
+			alert.showsSuppressionButton = true
+		}
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		alert.addButton(withTitle: primaryButtonTitle)
+		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+
+		if alert.runModal() == .alertFirstButtonReturn {
+			primaryButtonHandler?()
+		} else {
+			cancelButtonHandler?()
+		}
+
+		// if they check the box, set the bool
+		if let suppressionButton = alert.suppressionButton, let suppressionKey = suppressionKey,
+		   suppressionButton.state == .on {
+			UserDefaults.standard.set(true, forKey: suppressionKey)
+		}
+	}
+
+
 	/// Creates an alert with primary colored OK button that triggers callback
 	/// - Parameters:
 	///   - title: String for title of the alert
@@ -62,11 +102,11 @@ import AppKit
 	///   - cancelButtonHandler: Optional block that's invoked when user hits cancel button or Escape
 	/// - Returns: Nothing
 	static func createAccessoryAlert(title: String,
-								   message: String,
-								   accessoryView: NSView,
-								   primaryButtonTitle: String,
-								   primaryButtonHandler: (() -> ())? = nil,
-								   cancelButtonHandler: (() -> ())? = nil) {
+									 message: String,
+									 accessoryView: NSView,
+									 primaryButtonTitle: String,
+									 primaryButtonHandler: (() -> ())? = nil,
+									 cancelButtonHandler: (() -> ())? = nil) {
 		let alert = NSAlert()
 		alert.messageText = title
 		alert.informativeText = message
@@ -89,9 +129,9 @@ import AppKit
 	///   - callback: Optional block that's invoked when user hits OK button
 	/// - Returns: Nothing
 	static func createAccessoryWarningAlert(title: String,
-								   message: String,
-								   accessoryView: NSView,
-								   callback: (() -> ())? = nil) {
+											message: String,
+											accessoryView: NSView,
+											callback: (() -> ())? = nil) {
 		let alert = NSAlert()
 		alert.alertStyle = .critical
 		alert.messageText = title
