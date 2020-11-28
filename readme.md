@@ -28,6 +28,18 @@ To install an unoffical community maintained [Homebrew](https://brew.sh) [Cask](
 brew cask install sequel-ace
 ```
 
+## Building locally
+
+To run Sequel Ace locally from XCode, please:
+- download `.zip` archive of this repo / clone locally
+- make sure you have `Bundler` installed [more info](https://bundler.io)
+- open `Terminal` and `cd` to the project folder
+- run `bundle install` to install CocoaPods and dependencies
+- run `bundle exec pod install --repo-update` to install CocoaPods and dependencies
+- open `sequel-ace.xcworkspace` and run `Sequel Ace Local Testing` schema
+
+If you encounter any issue, let us know by creating a new Issue.
+
 ## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
