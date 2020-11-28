@@ -64,7 +64,6 @@ typedef struct {
 	BOOL autohelpEnabled;
 	NoodleLineNumberView *lineNumberView;
 	
-	BOOL startListeningToBoundChanges;
 	BOOL textBufferSizeIncreased;
 
 	NSString *showMySQLHelpFor;
@@ -166,7 +165,5 @@ typedef struct {
 - (void)insertFileContentOfFile:(NSString *)aPath;
 
 - (BOOL)isSnippetMode;
-
-- (void)boundsDidChangeNotification:(NSNotification *)notification;
 
 @end

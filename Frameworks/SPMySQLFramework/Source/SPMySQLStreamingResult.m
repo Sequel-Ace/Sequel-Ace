@@ -77,10 +77,6 @@
 		dataDownloaded = NO;
 		connectionUnlocked = NO;
 
-		// Cache the isConnected selector and pointer for fast connection checks
-		isConnectedSelector = @selector(isConnected);
-		isConnectedPtr = [parentConnection methodForSelector:isConnectedSelector];
-
 		// Default to returning rows as arrays
 		defaultRowReturnType = SPMySQLResultRowAsArray;
 	}
@@ -157,7 +153,7 @@
 	id theRow = nil;
 
 	// Ensure that the connection is still up before performing a row fetch
-	if ((*isConnectedPtr)(parentConnection, isConnectedSelector)) {
+	if ([parentConnection isConnected]) {
 		// The core of result fetching in streaming mode is still based around mysql_fetch_row,
 		// so use the super to perform normal processing.
 		theRow = [super getRowAsType:theType];

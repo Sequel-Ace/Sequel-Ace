@@ -31,6 +31,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPDatabaseStructure;
+@class SPTextView;
 
 @interface SPNarrowDownCompletion : NSWindow <NSTableViewDelegate, NSTableViewDataSource>
 {
@@ -66,7 +67,7 @@
 
 	NSUInteger timeCounter;
 
-	id theView;
+	SPTextView *theView;
 
 	NSInteger maxWindowWidth;
 	NSInteger spaceCounter;
@@ -84,7 +85,7 @@
             caseSensitive:(BOOL)isCaseSensitive
                 charRange:(NSRange)initRange
                parseRange:(NSRange)parseRange
-                   inView:(id)aView
+                   inView:(SPTextView *)aView
                  dictMode:(BOOL)mode
            tabTriggerMode:(BOOL)tabTriggerMode
               fuzzySearch:(BOOL)fuzzySearch

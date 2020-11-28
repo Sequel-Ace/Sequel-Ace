@@ -220,7 +220,7 @@
 	_currentFilePanel = [NSOpenPanel openPanel];
 	[_currentFilePanel setTitle:@"Choose ssh config"];
 	[_currentFilePanel setCanChooseFiles:YES];
-	[_currentFilePanel setCanChooseDirectories:NO];
+	[_currentFilePanel setCanChooseDirectories:YES];
 	[_currentFilePanel setAllowsMultipleSelection:YES];
 	[_currentFilePanel setAccessoryView:hiddenFileView];
 	[_currentFilePanel setResolvesAliases:NO];
