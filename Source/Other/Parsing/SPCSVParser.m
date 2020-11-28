@@ -613,23 +613,24 @@
  */
 #pragma mark -
 
-- (id) init {
-	if ((self = [super init])) {
+- (instancetype)init {
+	if (self = [super init]) {
 		csvString = [[NSMutableString alloc] init];
 		[self _initialiseCSVParserDefaults];
 	}
 	return self;
 }
-- (id) initWithString:(NSString *)aString
-{
-	if ((self = [super init])) {
+
+- (instancetype)initWithString:(NSString *)aString {
+	if (self = [super init]) {
 		csvString = [[NSMutableString alloc] initWithString:aString];
 		[self _initialiseCSVParserDefaults];
 	}
 	return self;
 }
-- (id) initWithContentsOfFile:(NSString *)path encoding:(NSStringEncoding)encoding error:(NSError **)error {
-	if ((self = [super init])) {
+
+- (instancetype)initWithContentsOfFile:(NSString *)path encoding:(NSStringEncoding)encoding error:(NSError **)error {
+	if (self = [super init]) {
 		csvString = [[NSMutableString alloc] initWithContentsOfFile:path encoding:encoding error:error];
 		[self _initialiseCSVParserDefaults];
 	}
