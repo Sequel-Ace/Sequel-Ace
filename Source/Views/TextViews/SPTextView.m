@@ -74,7 +74,7 @@
 #define SP_CQ_COPY_AS_RTF_MENU_ITEM_TAG          1001
 #define SP_CQ_SELECT_CURRENT_QUERY_MENU_ITEM_TAG 1002
 
-#define SP_SYNTAX_HILITE_BIAS 2000
+#define SP_SYNTAX_HILITE_BIAS 1000
 #define SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING 20000000
 
 #pragma mark -
@@ -158,9 +158,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// disabled to get the current text range in textView safer
 	[[self layoutManager] setBackgroundLayoutEnabled:NO];
 
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(scrollViewDidEndLiveScrollNotification:) name:NSScrollViewDidEndLiveScrollNotification object:scrollView];
-
-
 	{
 		struct csItem {
 			NSString *p;
@@ -240,8 +237,7 @@ retry:
 /**
  * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
  */
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
-{
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
 	if ([keyPath isEqualToString:SPCustomQueryEditorBackgroundColor]) {
 		NSColor *backgroundColor = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
 		[self setQueryEditorBackgroundColor:backgroundColor];
@@ -266,36 +262,43 @@ retry:
 	} else if ([keyPath isEqualToString:SPCustomQueryEnableSyntaxHighlighting]) {
 	    [self setEnableSyntaxHighlighting:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
 	    [self setNeedsDisplayInRect:[self bounds]];
-	    [self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
-    } else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
+		[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+	} else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
 		[self setCommentColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorQuoteColor]) {
 		[self setQuoteColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorSQLKeywordColor]) {
 		[self setKeywordColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorBacktickColor]) {
 		[self setBacktickColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorNumericColor]) {
 		[self setNumericColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorVariableColor]) {
 		[self setVariableColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTextColor]) {
 		[self setOtherTextColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setTextColor:[self otherTextColor]];
-		if([[self string] length]<100000 && [self isEditable])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.1];
+		if ([self isEditable]) {
+			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
 	} else if ([keyPath isEqualToString:SPCustomQueryAutoUppercaseKeywords]) {
@@ -323,8 +326,8 @@ retry:
 	if(!dbBrowseMode)
 	{
 		// Only parse for words if text size is less than 1MB
-		if([[self string] length] && [[self string] length]<1000000)
-		{
+		NSInteger selfLength = [[self string] length];
+		if (selfLength < 10000) {
 			NSMutableSet *uniqueArray = [NSMutableSet setWithCapacity:5];
 
 			for(id w in [[self textStorage] words])
@@ -1029,11 +1032,9 @@ retry:
 	NSRange r = NSMakeRange(0, [[self string] length]);
 
 	// Remove all colors before printing for large text buffer
-	if(r.length > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+	if (r.length > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
 		// Cancel all doSyntaxHighlighting requests
-		[NSObject cancelPreviousPerformRequestsWithTarget:self 
-									selector:@selector(doSyntaxHighlighting) 
-									object:nil];
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doSyntaxHighlightingWithForce:) object:nil];
 		[[self textStorage] removeAttribute:NSForegroundColorAttributeName range:r];
 		[[self textStorage] removeAttribute:kLEXToken range:r];
 		[[self textStorage] ensureAttributesAreFixedInRange:r];
@@ -1052,7 +1053,7 @@ retry:
 - (void)printOperationDidRun:(NSPrintOperation *)printOperation  success:(BOOL)success  contextInfo:(void *)contextInfo
 {
 	// Refresh syntax highlighting
-	[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.01];
+	[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.01];
 }
 
 /**
@@ -2333,6 +2334,13 @@ retry:
 	[super keyDown:theEvent];
 }
 
+- (void)paste:(id)sender {
+	[super paste:sender];
+
+	// CMD+V - paste
+	[self doSyntaxHighlightingWithForce:YES];
+}
+
 /**
  * The following moveWord... routines are needed to be able to recognize a db schema à la
  * db.table.field as ONE word while navigating and selecting by the keyboard
@@ -2571,10 +2579,8 @@ retry:
 
 }
 
-- (void)removeSyntaxHighlighting
-{
-	if (self.syntaxHighlightingApplied)
-	{
+- (void)removeSyntaxHighlighting {
+	if (self.syntaxHighlightingApplied) {
 		self.syntaxHighlightingApplied = NO;
 
 		NSTextStorage *textStore = [self textStorage];
@@ -2583,16 +2589,14 @@ retry:
 		[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
 		[textStore removeAttribute:kLEXToken range:textRange];
 
-		NSMutableAttributedStringAddAttributeValueRange(textStore, NSForegroundColorAttributeName, otherTextColor, textRange);
+		[textStore addAttribute:NSForegroundColorAttributeName value:otherTextColor range:textRange];
 	}
 }
+
 /**
  * Syntax Highlighting.
- *  
- * (The main bottleneck is the [NSTextStorage addAttribute:value:range:] method - the parsing itself is really fast!)
- * Some sample code from Andrew Choi ( http://members.shaw.ca/akochoi-old/blog/2003/11-09/index.html#3 ) has been reused.
  */
-- (void)doSyntaxHighlighting {
+- (void)doSyntaxHighlightingWithForce:(BOOL)forced {
 
 	if (![self enableSyntaxHighlighting]) {
 		// the point of disabling syntax highlighting is to get the min input lag
@@ -2604,7 +2608,7 @@ retry:
 	NSString *selfstr = [self string];
 	NSUInteger strlength = [selfstr length];
 
-	if (strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING) {
+	if (strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING && !forced) {
 		return;
 	}
 
@@ -2615,7 +2619,7 @@ retry:
 	// The approach is to take the middle position of the current view port
 	// and highlight only ±SP_SYNTAX_HILITE_BIAS of that middle position
 	// considering of line starts resp. ends
-	if (strlength > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+	if (strlength > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING && !forced) {
 
 		// Get the text range currently displayed in the view port
 		NSRect visibleRect = [[[self enclosingScrollView] contentView] documentVisibleRect];
@@ -2772,28 +2776,24 @@ retry:
 			}
 		}
 
-		NSMutableAttributedStringAddAttributeValueRange(textStore, NSForegroundColorAttributeName, tokenColor, tokenRange);
-		
-		// if(!allowToCheckForUpperCase) continue;
+		NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
+		[attributes setValue:tokenColor forKey:NSForegroundColorAttributeName];
 		
 		// Add an attribute to be used in the auto-pairing (keyDown:)
 		// to disable auto-pairing if caret is inside of any token found by lex.
 		// For discussion: maybe change it later (only for quotes not keywords?)
 		if (!allowToCheckForUpperCase && token < 6) {
-			NSMutableAttributedStringAddAttributeValueRange(textStore, kLEXToken, kLEXTokenValue, tokenRange);
+			[attributes setValue:kLEXTokenValue forKey:kLEXToken];
 		}
 		
 		// Mark each SQL keyword for auto-uppercasing and do it for the next textStorageDidProcessEditing: event.
 		// Performing it one token later allows words which start as reserved keywords to be entered.
 		if (token == SPT_RESERVED_WORD) {
-			NSMutableAttributedStringAddAttributeValueRange(textStore, kSQLkeyword, kValue, tokenRange);
+			[attributes setValue:kValue forKey:kSQLkeyword];
 		} else if (token < 4) { // Add an attribute to be used to distinguish quotes from keywords etc. used e.g. in completion suggestions
-			NSMutableAttributedStringAddAttributeValueRange(textStore, kQuote, kQuoteValue, tokenRange);
+			[attributes setValue:kQuoteValue forKey:kQuote];
 		}
-		
-		//distinguish backtick quoted word for completion
-		// else if(token == SPT_BACKTICK_QUOTED_TEXT)
-		// 	NSMutableAttributedStringAddAttributeValueRange(textStore, kBTQuote, kBTQuoteValue, tokenRange);
+		[textStore addAttributes:attributes range:tokenRange];
 	}
 
 	self.syntaxHighlightingApplied = YES;
@@ -3147,22 +3147,6 @@ retry:
 #pragma mark -
 #pragma mark delegates
 
-- (void)scrollViewDidEndLiveScrollNotification:(NSNotification *)notification {
-	// Invoke syntax highlighting if text view port was changed for large text
-	if([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-	{
-		[NSObject cancelPreviousPerformRequestsWithTarget:self 
-									selector:@selector(doSyntaxHighlighting) 
-									object:nil];
-		
-		if(![[self textStorage] changeInLength])
-			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.4];
-	}
-	// else
-	// 	[scrollView displayRect:[scrollView visibleRect]];
-
-}
-
 /**
  *  Performs syntax highlighting, re-init autohelp, and re-calculation of snippets after a text change
  */
@@ -3180,11 +3164,11 @@ retry:
 
 	// Cancel calling doSyntaxHighlighting for large text
 	if ([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
-		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doSyntaxHighlighting) object:nil];
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doSyntaxHighlightingWithForce:) object:nil];
 	}
 
 	// Start autohelp only if the user really changed the text (not e.g. for setting a background color)
-	if ([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask == NSTextStorageEditedCharacters) {
+	if ([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask != 1) {
 		[self performSelector:@selector(autoHelp) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoHelpDelay] doubleValue]];
 	}
 
@@ -3194,7 +3178,7 @@ retry:
 	}
 
 	// Do syntax highlighting/re-calculate snippet ranges only if the user really changed the text
-	if (editedMask == NSTextStorageEditedCharacters) {
+	if (editedMask != 1) {
 
 		[customQueryInstance setTextViewWasChanged:YES];
 
@@ -3253,8 +3237,9 @@ retry:
 		else
 			textBufferSizeIncreased = NO;
 
-		if(delta < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-			[self doSyntaxHighlighting];
+		if (delta < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+			[self doSyntaxHighlightingWithForce:NO];
+		}
 
 	} else {
 		[customQueryInstance setTextViewWasChanged:NO];
@@ -3320,7 +3305,7 @@ retry:
 			if(filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
 				if ([filesize unsignedLongValue] > 1000000) {
-					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
+					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data? The import can freeze the app for couple of seconds.", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
 					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:message primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
 						[self insertFileContentOfFile:filepath];
 					} cancelButtonHandler:nil];
@@ -3447,12 +3432,14 @@ retry:
 
 		if (content) {
 			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+			[self doSyntaxHighlightingWithForce:YES];
 			return;
 		}
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 		if (content) {
 			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+			[self doSyntaxHighlightingWithForce:YES];
 			return;
 		}
 	}
