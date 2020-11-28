@@ -87,9 +87,8 @@ static const NSInteger kBlobAsImageFile = 4;
  * Check if current edited cell represents a class other than a normal NSString
  * like pop-up menus for enum or set
  */
-- (BOOL)isCellComplex
-{
-	return (![[self preparedCellAtColumn:[self editedColumn] row:[self editedRow]] isKindOfClass:[SPTextAndLinkCell class]]);
+- (BOOL)isCellComplex {
+	return (![[self viewAtColumn:[self editedColumn] row:[self editedRow] makeIfNecessary:NO] isKindOfClass:[SPTextAndLinkCell class]]);
 }
 
 #pragma mark -

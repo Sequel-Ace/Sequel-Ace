@@ -93,11 +93,8 @@
 #include <libkern/OSAtomic.h>
 
 // Constants
-static NSString *SPCopyDatabaseAction = @"SPCopyDatabase";
-static NSString *SPConfirmCopyDatabaseAction = @"SPConfirmCopyDatabase";
 static NSString *SPRenameDatabaseAction = @"SPRenameDatabase";
 static NSString *SPAlterDatabaseAction = @"SPAlterDatabase";
-static NSString *SPSaveDocumentPreferences = @"SPSaveDocumentPreferences";
 static NSString *SPNewDatabaseDetails = @"SPNewDatabaseDetails";
 static NSString *SPNewDatabaseName = @"SPNewDatabaseName";
 static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
@@ -806,29 +803,27 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Inform the user that we don't support copying objects other than tables and ask them if they'd like to proceed
 	if ([tablesListInstance hasNonTableObjects]) {
-		[SPAlertSheets beginWaitingAlertSheetWithTitle:NSLocalizedString(@"Only Partially Supported", @"partial copy database support message")
-		                                 defaultButton:NSLocalizedString(@"Continue", "continue button")
-		                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-		                                   otherButton:nil
-		                                    alertStyle:NSAlertStyleWarning
-		                                     docWindow:parentWindow
-		                                 modalDelegate:self
-		                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-										   contextInfo:(__bridge void *)(SPConfirmCopyDatabaseAction)
-		                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]
-		                                    returnCode:&confirmCopyDatabaseReturnCode];
+		NSAlert *alert = [[NSAlert alloc] init];
+		[alert setMessageText:NSLocalizedString(@"Only Partially Supported", @"partial copy database support message")];
+		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]];
 
-		if (confirmCopyDatabaseReturnCode == NSAlertAlternateReturn) return;
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		[alert addButtonWithTitle:NSLocalizedString(@"Continue", "continue button")];
+		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+
+		if ([alert runModal] == NSAlertSecondButtonReturn) {
+			return;
+		}
 	}
 
 	[databaseCopyNameField setStringValue:selectedDatabase];
 	[copyDatabaseMessageField setStringValue:selectedDatabase];
 
-	[NSApp beginSheet:databaseCopySheet
-	   modalForWindow:parentWindow
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPCopyDatabaseAction)];
+	[parentWindow beginSheet:databaseCopySheet completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self _copyDatabase];
+		}
+	}];
 }
 
 /**
@@ -922,6 +917,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		NULL,
 		NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message")
 	);
+
+	
 }
 
 - (void)shutdownAlertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
@@ -956,17 +953,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Alert sheet method. Invoked when an alert sheet is dismissed.
  */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Those that are just setting a return code and don't need to order out the sheet. See SPAlertSheets+beginWaitingAlertSheetWithTitle:
-	if ([contextInfo isEqualToString:SPSaveDocumentPreferences]) {
-		saveDocPrefSheetStatus = returnCode;
-		return;
-	}
-	else if ([contextInfo isEqualToString:SPConfirmCopyDatabaseAction]) {
-		confirmCopyDatabaseReturnCode = returnCode;
-		return;
-	}
+- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo {
 
 	// Order out current sheet to suppress overlapping of sheets
 	if ([sheet respondsToSelector:@selector(orderOut:)]) {
@@ -994,11 +981,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			else {
 				[chooseDatabaseButton selectItemAtIndex:0];
 			}
-		}
-	}
-	else if ([contextInfo isEqualToString:SPCopyDatabaseAction]) {
-		if (returnCode == NSModalResponseOK) {
-			[self _copyDatabase];
 		}
 	}
 	else if ([contextInfo isEqualToString:SPRenameDatabaseAction]) {
@@ -3092,19 +3074,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			}
 			
 			if(![spf count] || error) {
-				[SPAlertSheets beginWaitingAlertSheetWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")
-				                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-				                               alternateButton:NSLocalizedString(@"Ignore", @"ignore button")
-				                                   otherButton:nil
-				                                    alertStyle:NSAlertStyleCritical
-				                                     docWindow:parentWindow
-				                                 modalDelegate:self
-				                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-				                                   contextInfo:(__bridge void *)SPSaveDocumentPreferences
-				                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Connection data file “%@” couldn't be read. Please try to save the document under a different name.\n\nDetails: %@", @"message error while reading connection data file and suggesting to save it under a differnet name"), [fileName lastPathComponent], [error localizedDescription]]
-				                                    returnCode:&saveDocPrefSheetStatus];
+				NSAlert *alert = [[NSAlert alloc] init];
+				[alert setMessageText:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")];
+				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Connection data file “%@” couldn't be read. Please try to save the document under a different name.\n\nDetails: %@", @"message error while reading connection data file and suggesting to save it under a differnet name"), [fileName lastPathComponent], [error localizedDescription]]];
 
-				return saveDocPrefSheetStatus == NSAlertAlternateReturn;
+				// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+				[alert addButtonWithTitle:NSLocalizedString(@"Ignore", @"ignore button")];
+
+				return [alert runModal] == NSAlertSecondButtonReturn;
 			}
 		}
 

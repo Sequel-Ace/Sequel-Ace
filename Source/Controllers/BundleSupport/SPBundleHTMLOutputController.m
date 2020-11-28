@@ -455,8 +455,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 #pragma mark -
 #pragma mark JS support
 
-- (void)webView:(WebView *)sender runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame
-{
+- (void)webView:(WebView *)sender runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame {
 	NSAlert *alert = [[NSAlert alloc] init];
 	[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 	[alert setInformativeText:(message)?:@""];
@@ -464,17 +463,19 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	[alert runModal];
 }
 
-- (BOOL)webView:(WebView *)sender runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame
-{
+- (BOOL)webView:(WebView *)sender runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WebFrame *)frame {
 	NSAlert *alert = [[NSAlert alloc] init];
-	[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-	[alert setInformativeText:(message)?:@""];
+	[alert setInformativeText:(message) ? : @""];
 	[alert setMessageText:@"JavaScript"];
 
-	NSUInteger returnCode = [alert runModal];
+	// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+	[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 
-	if(returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) return YES;
+	NSUInteger returnCode = [alert runModal];
+	if (returnCode == NSAlertFirstButtonReturn) {
+		return YES;
+	}
 	return NO;
 }
 

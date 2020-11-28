@@ -201,50 +201,42 @@
 	NSRect accessoryViewRect = [importFromClipboardAccessoryView frame];
 	[importView setFrame:NSMakeRect(0, 0, accessoryViewRect.size.width, accessoryViewRect.size.height)];
 
-	[NSApp beginSheet:importFromClipboardSheet
-	   modalForWindow:[tableDocumentInstance parentWindow]
-	    modalDelegate:self
-	   didEndSelector:@selector(importFromClipboardSheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:nil];
-}
+	[tableDocumentInstance.parentWindow beginSheet:importFromClipboardSheet completionHandler:^(NSModalResponse returnCode) {
+		// Reset the interface and store prefs
+		[self->importFromClipboardTextView setString:@""];
+		[self->prefs setObject:[[self->importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
 
-/**
- * Callback when the import from clipback sheet is closed
- */
-- (void)importFromClipboardSheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Reset the interface and store prefs
-	[importFromClipboardTextView setString:@""];
-	[prefs setObject:[[importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
+		// Check if the user canceled
+		if (returnCode != NSModalResponseOK) {
+			return;
+		}
 
-	// Check if the user canceled
-	if (returnCode != NSModalResponseOK)
-		return;
+		// Reset progress cancelled from any previous runs
+		self->progressCancelled = NO;
 
-	// Reset progress cancelled from any previous runs
-	progressCancelled = NO;
-	
-	NSString *importFileName = [NSString stringWithFormat:@"%@%@",
-								SPImportClipboardTempFileNamePrefix,
-								[[NSDate date] stringWithFormat:@"HHmmss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
-		
-	// Write clipboard content to temp file using the connection encoding
-	NSStringEncoding encoding;
-	if ([[[importFormatPopup selectedItem] title] isEqualToString:@"SQL"])
-		encoding = NSUTF8StringEncoding;
-	else
-		encoding = [mySQLConnection stringEncoding];
+		NSString *importFileName = [NSString stringWithFormat:@"%@%@", SPImportClipboardTempFileNamePrefix, [[NSDate date] stringWithFormat:@"HHmmss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]]];
 
-	if(![[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] writeToFile:importFileName atomically:NO encoding:encoding error:nil]) {
-		NSBeep();
-		NSLog(@"Couldn't write clipboard content to temporary file.");
-		return;
-	}
+		// Write clipboard content to temp file using the connection encoding
+		NSStringEncoding encoding;
+		if ([[[self->importFormatPopup selectedItem] title] isEqualToString:@"SQL"]) {
+			encoding = NSUTF8StringEncoding;
+		} else {
+			encoding = [self->mySQLConnection stringEncoding];
+		}
 
-	if (importFileName == nil) return;
+		if (![[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] writeToFile:importFileName atomically:NO encoding:encoding error:nil]) {
+			NSBeep();
+			NSLog(@"Couldn't write clipboard content to temporary file.");
+			return;
+		}
 
-	// Begin import process
-	[self _startBackgroundImportTaskForFilename:importFileName];
+		if (importFileName == nil) {
+			return;
+		}
+
+		// Begin import process
+		[self _startBackgroundImportTaskForFilename:importFileName];
+	}];
 }
 
 /**
@@ -315,33 +307,15 @@
 		if (importFileName == nil) return;
 		
 		// Check to see if current connection has existing tables, if so warn
-		if([[self->tablesListInstance tables] count] > 1 && [[[self->importFormatPopup selectedItem] title] isEqualToString:@"SQL"]){
-			SPBeginAlertSheet(NSLocalizedString(@"The current database already has existing tables, importing may overwrite data. Are you sure you want to continue?", @"title of warning when trying to import data when tables already exist"),
-							  NSLocalizedString(@"Yes, continue anyway", @"Yes, continue anyway"),	// Main button
-							  NSLocalizedString(@"Cancel import", @"Cancel import"),	// Alternate button
-							  nil,	// Other button
-							  [self->tableDocumentInstance parentWindow],	// Window to attach to
-							  self,	// Modal delegate
-							  @selector(importOverwriteWarningSheetDidEnd:returnCode:contextInfo:),	// Did end selector
-							  (__bridge void *)(importFileName),	// Contextual info for selectors
-							  NSLocalizedString(@"The chosen import file can potentially overwrite existing data. You should use caution when proceeding with the import.", @"message of warning when trying to import data when tables already exist."));
-
+		if ([[self->tablesListInstance tables] count] > 1 && [[[self->importFormatPopup selectedItem] title] isEqualToString:@"SQL"]) {
+			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"The current database already has existing tables, importing may overwrite data. Are you sure you want to continue?", @"title of warning when trying to import data when tables already exist") message:NSLocalizedString(@"The chosen import file can potentially overwrite existing data. You should use caution when proceeding with the import.", @"message of warning when trying to import data when tables already exist.") primaryButtonTitle:NSLocalizedString(@"Yes, continue anyway", @"Yes, continue anyway") primaryButtonHandler:^{
+				[self _startBackgroundImportTaskForFilename:importFileName];
+			} cancelButtonHandler:nil];
 			return;
 		}
 		
 		[self _startBackgroundImportTaskForFilename:importFileName];
 	}];
-}
-
-/**
- * Alert sheet callback method - invoked when the error sheet is closed.
- */
-- (void)importOverwriteWarningSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(NSString *)importFileName
-{
-	if (returnCode == NSAlertDefaultReturn && importFileName != nil) {
-		// Begin the import process
-		[self _startBackgroundImportTaskForFilename:importFileName];
-	};
 }
 
 /**
@@ -594,22 +568,24 @@
 				// if the error is about utf8mb4 not being supported by the server display a more helpful message.
 				// Note: the same error will occur when doing CREATE TABLE... with utf8mb4.
 				if([mySQLConnection lastErrorID] == 1115 /* ER_UNKNOWN_CHARACTER_SET */ && [[mySQLConnection lastErrorMessage] rangeOfString:@"utf8mb4" options:NSCaseInsensitiveSearch].location != NSNotFound && [query rangeOfString:@"SET NAMES" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-					if(!ignoreCharsetError) {
+					if (!ignoreCharsetError) {
 						__block NSInteger charsetErrorSheetReturnCode;
 
 						SPMainQSync(^{
-							NSAlert *charsetErrorAlert = [NSAlert alertWithMessageText:NSLocalizedString(@"Incompatible encoding in SQL file", @"sql import error message")
-							                                             defaultButton:NSLocalizedString(@"Import Anyway", @"sql import : charset error alert : continue button")
-							                                           alternateButton:NSLocalizedString(@"Cancel Import", @"sql import : charset error alert : cancel button")
-							                                               otherButton:nil
-							                                 informativeTextWithFormat:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
-							[charsetErrorAlert setAlertStyle:NSAlertStyleWarning];
+							NSAlert *charsetErrorAlert = [[NSAlert alloc] init];
+							[charsetErrorAlert setMessageText:NSLocalizedString(@"Incompatible encoding in SQL file", @"sql import error message")];
+							[charsetErrorAlert setInformativeText:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
+
+							// Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
+							[charsetErrorAlert addButtonWithTitle:NSLocalizedString(@"Import Anyway", @"sql import : charset error alert : continue button")];
+							[charsetErrorAlert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+
 							charsetErrorSheetReturnCode = [charsetErrorAlert runModal];
 						});
 
 						switch (charsetErrorSheetReturnCode) {
 							// don't display the message a second time
-							case NSAlertDefaultReturn:
+							case NSAlertFirstButtonReturn:
 								ignoreCharsetError = YES;
 								break;
 							// Otherwise, stop
@@ -625,25 +601,25 @@
 					__block NSInteger sqlImportErrorSheetReturnCode;
 
 					SPMainQSync(^{
-						NSAlert *sqlErrorAlert = [NSAlert alertWithMessageText:NSLocalizedString(@"An error occurred while importing SQL", @"sql import error message")
-						                                         defaultButton:NSLocalizedString(@"Continue", @"continue button")
-						                                       alternateButton:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")
-						                                           otherButton:NSLocalizedString(@"Stop", @"stop button")
-						                             informativeTextWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]];
-						[sqlErrorAlert setAlertStyle:NSAlertStyleWarning];
+						NSAlert *sqlErrorAlert = [[NSAlert alloc] init];
+						[sqlErrorAlert setMessageText:NSLocalizedString(@"An error occurred while importing SQL", @"sql import error message")];
+						[sqlErrorAlert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]]];
+
+						// Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
+						[sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
+						[sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")];
+						[sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
+
 						sqlImportErrorSheetReturnCode = [sqlErrorAlert runModal];
 					});
 
 					switch (sqlImportErrorSheetReturnCode) {
-						// On "continue", no additional action is required
-						case NSAlertDefaultReturn:
+						case NSAlertFirstButtonReturn: // On "continue", no additional action is required
 							break;
-						// Ignore all future errors if asked to
-						case NSAlertAlternateReturn:
+						case NSAlertSecondButtonReturn: // Ignore all future errors if asked to
 							ignoreSQLErrors = YES;
 							break;
-						// Otherwise, stop
-						default:
+						default: // Otherwise, stop
 							[errors appendString:NSLocalizedString(@"Import cancelled!\n", @"import cancelled message")];
 							progressCancelled = YES;
 					}

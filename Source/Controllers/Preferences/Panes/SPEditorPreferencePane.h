@@ -64,7 +64,6 @@
 	
 	NSString *themePath;
 	NSArray *editThemeListItems;
-	NSInteger checkForUnsavedThemeSheetStatus;
 }
 
 - (IBAction)showCustomQueryFontPanel:(id)sender;

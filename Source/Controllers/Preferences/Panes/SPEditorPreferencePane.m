@@ -196,13 +196,23 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[enterNameAlertField setHidden:YES];
 	[enterNameInputField setStringValue:@""];
 	[enterNameLabel setStringValue:NSLocalizedString(@"Theme Name:", @"theme name label")];
-	
-	[NSApp beginSheet:enterNameWindow
-	   modalForWindow:[[self view] window]
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPSaveColorScheme)];
-	
+
+	[[self.view window] beginSheet:enterNameWindow completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			if (![self->fileManager fileExistsAtPath:self->themePath isDirectory:nil]) {
+				NSError *error = nil;
+				if (![self->fileManager createDirectoryAtPath:self->themePath withIntermediateDirectories:YES attributes:nil error:&error]) {
+					SPLog(@"Failed to create directory '%@'. error=%@", self->themePath, error);
+					NSBeep();
+					return;
+				}
+			}
+			[self _saveColorThemeAtPath:[NSString stringWithFormat:@"%@/%@.%@", self->themePath, [self->enterNameInputField stringValue], SPColorThemeFileExtension]];
+			[self updateColorSchemeSelectionMenu];
+			[self->prefs setObject:[self->enterNameInputField stringValue] forKey:SPCustomQueryEditorThemeName];
+			[self updateDisplayColorThemeName];
+		}
+	}];
 }
 
 - (IBAction)duplicateTheme:(id)sender
@@ -317,21 +327,14 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 /**
  * Opens the theme liste sheet.
  */
-- (IBAction)editThemeList:(id)sender
-{
+- (IBAction)editThemeList:(id)sender {
 	[[NSColorPanel sharedColorPanel] close];
-	
-	
-	
+
 	editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 	
 	[editThemeListTable reloadData];
-	
-	[NSApp beginSheet:editThemeListWindow
-	   modalForWindow:[[self view] window]
-	    modalDelegate:self
-	   didEndSelector:nil
-	      contextInfo:nil];
+
+	[[self.view window] beginSheet:editThemeListWindow completionHandler:nil];
 }
 
 #pragma mark -
@@ -487,46 +490,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (NSFontPanelModeMask)validModesForFontPanel:(NSFontPanel *)fontPanel
 {
 	return (NSFontPanelSizeModeMask | NSFontPanelCollectionModeMask);
-}
-
-#pragma mark -
-#pragma mark Sheet callbacks
-
-- (void)checkForUnsavedThemeDidEndSheet:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	checkForUnsavedThemeSheetStatus = returnCode;
-}
-
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)]) {
-		[sheet orderOut:nil];
-	}
-	else if ([sheet respondsToSelector:@selector(window)]) {
-		[[sheet window] orderOut:nil];
-	}
-	
-	if ([contextInfo isEqualToString:SPSaveColorScheme]) {
-		if (returnCode == NSModalResponseOK) {
-			
-			if (![fileManager fileExistsAtPath:themePath isDirectory:nil]) {
-				NSError *error = nil;
-				if (![fileManager createDirectoryAtPath:themePath withIntermediateDirectories:YES attributes:nil error:&error]) {
-					SPLog(@"Failed to create directory '%@'. error=%@", themePath, error);
-					NSBeep();
-					return;
-				}
-			}
-			
-			[self _saveColorThemeAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [enterNameInputField stringValue], SPColorThemeFileExtension]];
-			[self updateColorSchemeSelectionMenu];
-			
-			[prefs setObject:[enterNameInputField stringValue] forKey:SPCustomQueryEditorThemeName];
-			
-			[self updateDisplayColorThemeName];
-		}
-	}
 }
 
 #pragma mark -
@@ -745,20 +708,16 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![prefs objectForKey:SPCustomQueryEditorThemeName] || [[[prefs objectForKey:SPCustomQueryEditorThemeName] lowercaseString] isEqualToString:SPCustomColorSchemeNameLC]) {
 		
 		[[NSColorPanel sharedColorPanel] close];
+
+		NSAlert *alert = [[NSAlert alloc] init];
+		[alert setMessageText:NSLocalizedString(@"Unsaved Theme", @"unsaved theme message")];
+		[alert setInformativeText:NSLocalizedString(@"The current color theme is unsaved. Do you want to proceed without saving it?", @"unsaved theme informative message")];
+
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		[alert addButtonWithTitle:NSLocalizedString(@"Proceed", @"proceed button")];
+		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 		
-		[SPAlertSheets beginWaitingAlertSheetWithTitle:NSLocalizedString(@"Unsaved Theme", @"unsaved theme message")
-		                                 defaultButton:NSLocalizedString(@"Proceed", @"proceed button")
-		                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-		                                   otherButton:nil
-		                                    alertStyle:NSAlertStyleWarning
-		                                     docWindow:[[self view] window]
-		                                 modalDelegate:self
-		                                didEndSelector:@selector(checkForUnsavedThemeDidEndSheet:returnCode:contextInfo:)
-		                                   contextInfo:nil
-		                                      infoText:NSLocalizedString(@"The current color theme is unsaved. Do you want to proceed without saving it?", @"unsaved theme informative message")
-		                                    returnCode:&checkForUnsavedThemeSheetStatus];
-		
-		return (checkForUnsavedThemeSheetStatus == NSAlertDefaultReturn);
+		return [alert runModal] == NSAlertFirstButtonReturn;
 	}
 	
 	[[NSColorPanel sharedColorPanel] close];

@@ -287,28 +287,30 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 /**
  * Removes a filter
  */
-- (IBAction)removeContentFilter:(id)sender
-{
+- (IBAction)removeContentFilter:(id)sender {
 
 	// Complete editing in the window
 	[[self window] makeFirstResponder:nil];
 
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Remove selected content filters?", @"remove selected content filters message")
-									 defaultButton:NSLocalizedString(@"Remove", @"remove button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected content filters? This action cannot be undone.", @"remove all selected content filters informative message")];
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Remove selected content filters?", @"remove selected content filters message") message:NSLocalizedString(@"Are you sure you want to remove all selected content filters? This action cannot be undone.", @"remove all selected content filters informative message") primaryButtonTitle:NSLocalizedString(@"Remove", @"remove button") primaryButtonHandler:^{
+		NSIndexSet *indexes = [self->contentFilterTableView selectedRowIndexes];
 
-	[alert setAlertStyle:NSAlertStyleCritical];
+		[indexes enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
+			[self->contentFilters removeObjectAtIndex:currentIndex];
+		}];
 
-	NSArray *buttons = [alert buttons];
+		if ([self->contentFilters count] == 2) {
+			[self->contentFilterNameTextField setStringValue:@""];
+		}
 
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"r"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
+		[self->contentFilterArrayController rearrangeObjects];
+		[self->contentFilterTableView reloadData];
 
-	[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"removeSelectedFilters"];
+		// Set focus to filter list to avoid an unstable state
+		[[self window] makeFirstResponder:self->contentFilterTableView];
+
+		[self->removeButton setEnabled:([self->contentFilterTableView numberOfSelectedRows] > 0)];
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -771,34 +773,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 #pragma mark -
 #pragma mark Other
-
-/**
- * Sheet did end method for removing content filters
- */
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if ([contextInfo isEqualToString:@"removeSelectedFilters"]) {
-		if (returnCode == NSAlertDefaultReturn) {
-			NSIndexSet *indexes = [contentFilterTableView selectedRowIndexes];
-
-			[indexes enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
-				[contentFilters removeObjectAtIndex:currentIndex];
-			}];
-
-			if ([contentFilters count] == 2) {
-				[contentFilterNameTextField setStringValue:@""];
-			}
-		
-			[contentFilterArrayController rearrangeObjects];
-			[contentFilterTableView reloadData];
-
-			// Set focus to filter list to avoid an unstable state
-			[[self window] makeFirstResponder:contentFilterTableView];
-
-			[removeButton setEnabled:([contentFilterTableView numberOfSelectedRows] > 0)];
-		}
-	}
-}
 
 /**
  * Import panel did end method.

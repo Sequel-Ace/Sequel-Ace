@@ -30,18 +30,6 @@
 
 @interface SPAlertSheets : NSObject
 
-+ (void)beginWaitingAlertSheetWithTitle:(NSString *)title
-                          defaultButton:(NSString *)defaultButton
-                        alternateButton:(NSString *)alternateButton
-                            otherButton:(NSString *)otherButton
-                             alertStyle:(NSAlertStyle)alertStyle
-                              docWindow:(NSWindow *)docWindow
-                          modalDelegate:(id)modalDelegate
-                         didEndSelector:(SEL)didEndSelector
-                            contextInfo:(void *)contextInfo
-                               infoText:(NSString *)infoText
-                             returnCode:(NSInteger *)returnCode;
-
 @end
 
 void SPBeginAlertSheet(
