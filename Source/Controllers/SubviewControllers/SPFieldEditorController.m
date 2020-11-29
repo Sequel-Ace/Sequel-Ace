@@ -279,7 +279,7 @@ typedef enum {
 	else {
 		usedSheet = editSheet;
 
-		NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+		NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont systemFontSize]];
 		// Based on user preferences, either use:
 		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
 		// 2. The font used for the tablew view (GlobalResultTableFont, per the "MySQL Content Font" preference option);
@@ -473,8 +473,6 @@ typedef enum {
 			// Set focus
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
 		}
-		
-		
 
 		editSheetWillBeInitialized = NO;
 
