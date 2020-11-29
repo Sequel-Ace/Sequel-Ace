@@ -57,6 +57,7 @@ static NSUInteger SPMessageTruncateCharacterLength = 256;
 - (BOOL)_messageMatchesCurrentFilters:(NSString *)message;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases;
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database;
+NSInteger intSort(id num1, id num2, void *context);
 
 @property (readwrite, strong) SQLiteHistoryManager *_SQLiteHistoryManager ;
 

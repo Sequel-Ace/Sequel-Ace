@@ -76,7 +76,6 @@ extern NSString *SPTableViewDatabaseColumnID;
 
 + (SPQueryController *)sharedQueryController;
 - (instancetype)init NS_UNAVAILABLE;
-NSInteger intSort(id num1, id num2, void *context);
 
 /**
  * Calls -sqlStringForForRowIndexes: with the current selection and 
