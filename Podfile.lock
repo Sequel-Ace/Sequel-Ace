@@ -47,6 +47,7 @@ DEPENDENCIES:
   - Firebase/Crashlytics
   - FirebaseCore
   - FMDB (from `https://github.com/ccgus/fmdb.git`, tag `2.7.7`)
+  - SwiftLint (~> 0.40)
 
 SPEC REPOS:
   trunk:
@@ -84,6 +85,6 @@ SPEC CHECKSUMS:
   PromisesObjC: 8c196f5a328c2cba3e74624585467a557dcb482f
   SwiftLint: c585ebd615d9520d7fbdbe151f527977b0534f1e
 
-PODFILE CHECKSUM: c7c1d6e4a99d19c04fd8a0d678ea50246147f3b3
+PODFILE CHECKSUM: cb141358d6084035183f646adbf23ea8b6ae6d6b
 
 COCOAPODS: 1.10.0

@@ -63,6 +63,7 @@ post_install do |installer_representation|
       # let Xcode decide what archs are built
       # this is an Xcode settings recommendation
       config.build_settings.delete('ARCHS')
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = 10.12
       if config.name == "Release" or config.name == "Distribution"
         # Build all archs
         config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
@@ -78,11 +79,6 @@ post_install do |installer_representation|
       else
         config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
       end
-      
-      if target.name == "FMDB"
-        config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)', '-Wno-unguarded-availability']
-      end
-      
     end
   end
     
