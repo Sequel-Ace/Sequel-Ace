@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPIndexesController.h"
-#import "SPAlertSheets.h"
 #import "SPServerSupport.h"
 #import "SPTableData.h"
 #import "SPDatabaseDocument.h"

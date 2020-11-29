@@ -33,7 +33,6 @@
 #import "SPTablesList.h"
 #import "SPTableData.h"
 #import "SPTableView.h"
-#import "SPAlertSheets.h"
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
 
@@ -55,7 +54,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_updateAvailableTableColumns;
-- (void)addAlertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
 @end
 

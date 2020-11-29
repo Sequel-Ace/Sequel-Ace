@@ -44,7 +44,6 @@
 #import "SPTooltip.h"
 #import "RegexKitLite.h"
 #import "SPDataStorage.h"
-#import "SPAlertSheets.h"
 #import "SPHistoryController.h"
 #import "SPGeometryDataView.h"
 #import "SPTextView.h"
@@ -2455,23 +2454,18 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		currentlyEditingRow = -1;
 
 		return YES;
-	}
-	// Report errors which have occurred
-	else {
-		SPBeginAlertSheet(
-			NSLocalizedString(@"Unable to write row", @"Unable to write row error"),
-			NSLocalizedString(@"Edit row", @"Edit row button"),
-			NSLocalizedString(@"Discard changes", @"discard changes button"),
-			nil,
-			[tableDocumentInstance parentWindow],
-			self,
-			@selector(addRowErrorSheetDidEnd:returnCode:contextInfo:),
-			NULL,
-			[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]]
-		);
+	} else { // Report errors which have occurred
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
+			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
+			[self->tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[self->tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
+			[self->tableContentView reloadData];
+		} secondaryButtonHandler:^{
+			// Discard changes selected
+			[self cancelRowEditing];
+			[self->tableContentView reloadData];
+		}];
 		return NO;
 	}
-
 }
 
 /**
@@ -2659,28 +2653,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	SPLog(@"returnCode = %d", returnCode);
 	return returnCode;
 
-}
-
-/**
- * Handle the user decision as a result of an addRow error.
- */
-- (void)addRowErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	[[alert window] orderOut:nil];
-
-	// Edit row selected - reselect the row, and start editing.
-	if ( returnCode == NSAlertDefaultReturn ) {
-		[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
-
-	} 
-	else {
-	// Discard changes selected
-		[self cancelRowEditing];
-	}
-	
-	[tableContentView reloadData];
 }
 
 /**

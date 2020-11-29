@@ -33,7 +33,6 @@
 #import "SPSSHTunnel.h"
 #import "RegexKitLite.h"
 #import "SPKeychain.h"
-#import "SPAlertSheets.h"
 #import "SPThreadAdditions.h"
 #import "SPOSInfo.h"
 

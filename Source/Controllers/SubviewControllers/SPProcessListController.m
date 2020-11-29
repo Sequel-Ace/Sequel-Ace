@@ -30,7 +30,6 @@
 
 #import "SPProcessListController.h"
 #import "SPDatabaseDocument.h"
-#import "SPAlertSheets.h"
 #import "SPAppController.h"
 #import "SPDataCellFormatter.h"
 #import "SPThreadAdditions.h"

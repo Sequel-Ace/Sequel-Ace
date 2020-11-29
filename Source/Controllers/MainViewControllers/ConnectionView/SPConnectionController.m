@@ -34,7 +34,6 @@
 #import "SPPreferenceController.h"
 #import "ImageAndTextCell.h"
 #import "RegexKitLite.h"
-#import "SPAlertSheets.h"
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
 #import "SPTableTextFieldCell.h"

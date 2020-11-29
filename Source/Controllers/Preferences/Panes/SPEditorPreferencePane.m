@@ -31,7 +31,6 @@
 #import "SPEditorPreferencePane.h"
 #import "SPPreferenceController.h"
 #import "SPColorWellCell.h"
-#import "SPAlertSheets.h"
 #import "SPCategoryAdditions.h"
 #import "SPFunctions.h"
 

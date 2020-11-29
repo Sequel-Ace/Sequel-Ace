@@ -30,7 +30,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPKeychain.h"
-#import "SPAlertSheets.h"
 #import "SPOSInfo.h"
 
 #import <Security/Security.h>

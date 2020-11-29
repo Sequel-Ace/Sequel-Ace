@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPBundleHTMLOutputController.h"
-#import "SPAlertSheets.h"
 #import "SPPrintAccessory.h"
 #import "SPAppController.h"
 #import "SPBundleCommandRunner.h"

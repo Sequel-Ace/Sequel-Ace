@@ -55,7 +55,6 @@
 #import "YRKSpinningProgressIndicator.h"
 #import "SPProcessListController.h"
 #import "SPServerVariablesController.h"
-#import "SPAlertSheets.h"
 #import "SPLogger.h"
 #import "SPDatabaseCopy.h"
 #import "SPTableCopy.h"
@@ -903,35 +902,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[processListController displayProcessListWindow];
 }
 
-- (IBAction)shutdownServer:(id)sender
-{
-	// confirm user action
-	SPBeginAlertSheet(
-		NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title"),
-		NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button"),
-		NSLocalizedString(@"Cancel", @"shutdown server : confirmation dialog : cancel button"),
-		nil,
-		parentWindow,
-		self,
-		@selector(shutdownAlertDidEnd:returnCode:contextInfo:),
-		NULL,
-		NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message")
-	);
-
-	
-}
-
-- (void)shutdownAlertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	if(returnCode != NSAlertDefaultReturn) return; //cancelled by user
-	
-	if(![mySQLConnection serverShutdown]) {
-		if([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[mySQLConnection lastErrorMessage]] callback:nil];
+- (IBAction)shutdownServer:(id)sender {
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title") message:NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message") primaryButtonTitle:NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button") primaryButtonHandler:^{
+		if (![self->mySQLConnection serverShutdown]) {
+			if ([self->mySQLConnection isConnected]) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[self->mySQLConnection lastErrorMessage]] callback:nil];
+			}
 		}
-	}
-	// shutdown successful.
-	// Until s.o. has a good UI idea, do nothing. Sequel Ace should figure out the connection loss soon enough
+	} cancelButtonHandler:nil];
 }
 
 /**

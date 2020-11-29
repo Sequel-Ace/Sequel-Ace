@@ -33,7 +33,6 @@
 #import "SPTableData.h"
 #import "SPTableContent.h"
 #import "SPExportFile.h"
-#import "SPAlertSheets.h"
 #import "SPExportFileNameTokenObject.h"
 #import "SPDatabaseDocument.h"
 #import "SPThreadAdditions.h"
@@ -913,16 +912,7 @@ set_input:
 
 - (void)tableListChangedAlertDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-	// Perform the export ignoring the new tables
-	if (returnCode == NSModalResponseOK) {
-		
-		// Initialize the export after a short delay to give the alert a chance to close 
-		[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
-	}
-	else {
-		// Cancel the export and redisplay the export dialog after a short delay
-		[self performSelector:@selector(export:) withObject:self afterDelay:0.5];		
-	}
+
 }
 
 /**
@@ -1043,12 +1033,13 @@ set_input:
 		
 	if (j > i) {
 		NSUInteger diff = j - i;
-		
-		SPBeginAlertSheet(NSLocalizedString(@"The list of tables has changed", @"table list change alert message"), 
-						  NSLocalizedString(@"Continue", @"continue button"), 
-						  NSLocalizedString(@"Cancel", @"cancel button"), nil, [tableDocumentInstance parentWindow], self, 
-						  @selector(tableListChangedAlertDidEnd:returnCode:contextInfo:), NULL,
-						  [NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), (unsigned long)diff]);
+		[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"The list of tables has changed", @"table list change alert message") message:[NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), (unsigned long)diff] primaryButtonTitle:NSLocalizedString(@"Continue", @"continue button") primaryButtonHandler:^{
+			// Initialize the export after a short delay to give the alert a chance to close
+			[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
+		} cancelButtonHandler:^{
+			// Cancel the export and redisplay the export dialog after a short delay
+			[self performSelector:@selector(export:) withObject:self afterDelay:0.5];
+		}];
 	}
 	else {
 		[self initializeExportUsingSelectedOptions];

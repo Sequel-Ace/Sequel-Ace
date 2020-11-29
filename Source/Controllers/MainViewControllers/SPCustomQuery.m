@@ -43,7 +43,6 @@
 #import "SPQueryController.h"
 #import "SPEncodingPopupAccessory.h"
 #import "SPDataStorage.h"
-#import "SPAlertSheets.h"
 #import "SPCopyTable.h"
 #import "SPGeometryDataView.h"
 #import "SPSplitView.h"

@@ -239,7 +239,6 @@
 		582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 582F02301370B52600B30621 /* SPExportFileNameTokenObject.m */; };
 		583A278E23F06F1000FBE97B /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 583A278D23F06F1000FBE97B /* Colors.xcassets */; };
 		583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 583CA21412EC8B2200C9E763 /* SPWindow.m */; };
-		584095191107CB6600260CFD /* SPAlertSheets.m in Sources */ = {isa = PBXBuildFile; fileRef = 584095181107CB6600260CFD /* SPAlertSheets.m */; };
 		5841423F0F97E11000A34B47 /* NoodleLineNumberView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5841423E0F97E11000A34B47 /* NoodleLineNumberView.m */; };
 		584192A1101E57BB0089807F /* NSMutableArray-MultipleSort.m in Sources */ = {isa = PBXBuildFile; fileRef = 584192A0101E57BB0089807F /* NSMutableArray-MultipleSort.m */; };
 		5843DA6C161FA35600EAA6D1 /* key-icon-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 5843DA68161FA35600EAA6D1 /* key-icon-alternate.png */; };
@@ -301,7 +300,6 @@
 		58C4BA1716781A93004068AB /* SequelProTabDirty_Rollover@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1216781A93004068AB /* SequelProTabDirty_Rollover@2x.png */; };
 		58C4BA1816781A93004068AB /* SequelProTabDirty@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1316781A93004068AB /* SequelProTabDirty@2x.png */; };
 		58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 58C56EF40F438E120035701E /* SPDataCellFormatter.m */; };
-		58C61CFA11960312003BAA5D /* SPAlertSheets.m in Sources */ = {isa = PBXBuildFile; fileRef = 584095181107CB6600260CFD /* SPAlertSheets.m */; };
 		58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */; };
 		58CDB3400FCE13EF00F8ACA3 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5EAC0FC0EC87FF900CC579C /* Security.framework */; };
 		58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */; };
@@ -876,8 +874,6 @@
 		583A278D23F06F1000FBE97B /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		583CA21312EC8B2200C9E763 /* SPWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPWindow.h; sourceTree = "<group>"; };
 		583CA21412EC8B2200C9E763 /* SPWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPWindow.m; sourceTree = "<group>"; };
-		584094CC1107BD0500260CFD /* SPAlertSheets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPAlertSheets.h; sourceTree = "<group>"; };
-		584095181107CB6600260CFD /* SPAlertSheets.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPAlertSheets.m; sourceTree = "<group>"; };
 		5841423D0F97E11000A34B47 /* NoodleLineNumberView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoodleLineNumberView.h; sourceTree = "<group>"; };
 		5841423E0F97E11000A34B47 /* NoodleLineNumberView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NoodleLineNumberView.m; sourceTree = "<group>"; };
 		5841929F101E57BB0089807F /* NSMutableArray-MultipleSort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMutableArray-MultipleSort.h"; sourceTree = "<group>"; };
@@ -1840,8 +1836,6 @@
 				583CA21412EC8B2200C9E763 /* SPWindow.m */,
 				17E6417E0EF01FA8001BC333 /* SPImageView.h */,
 				17E6417F0EF01FA8001BC333 /* SPImageView.m */,
-				584094CC1107BD0500260CFD /* SPAlertSheets.h */,
-				584095181107CB6600260CFD /* SPAlertSheets.m */,
 				1798F19C15501892004B0AB8 /* SPFlippedView.h */,
 				1798F19D15501892004B0AB8 /* SPFlippedView.m */,
 				58DF9F7115AB8509003B4330 /* SPSplitView.h */,
@@ -2979,7 +2973,6 @@
 				586F457B0FDB269E00B428D7 /* RegexKitLite.m in Sources */,
 				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
 				58CDB3420FCE142500F8ACA3 /* SPKeychain.m in Sources */,
-				58C61CFA11960312003BAA5D /* SPAlertSheets.m in Sources */,
 				584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3075,7 +3068,6 @@
 				17CC97F310B4ABE90034CD7A /* SPAboutController.m in Sources */,
 				51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */,
 				5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */,
-				584095191107CB6600260CFD /* SPAlertSheets.m in Sources */,
 				29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */,
 				BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,

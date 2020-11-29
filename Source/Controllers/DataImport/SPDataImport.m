@@ -39,7 +39,6 @@
 #import "SPCSVParser.h"
 #import "SPTableData.h"
 #import "RegexKitLite.h"
-#import "SPAlertSheets.h"
 #import "SPFieldMapperController.h"
 #import "SPFileHandle.h"
 #import "SPEncodingPopupAccessory.h"

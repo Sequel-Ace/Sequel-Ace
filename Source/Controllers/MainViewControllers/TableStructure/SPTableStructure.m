@@ -38,7 +38,6 @@
 #import "SPTableView.h"
 #import "SPDatabaseData.h"
 #import "SPSQLParser.h"
-#import "SPAlertSheets.h"
 #import "SPIndexesController.h"
 #import "RegexKitLite.h"
 #import "SPTableFieldValidation.h"
