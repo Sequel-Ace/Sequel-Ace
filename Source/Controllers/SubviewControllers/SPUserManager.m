@@ -34,7 +34,6 @@
 #import "ImageAndTextCell.h"
 #import "SPConnectionController.h"
 #import "SPServerSupport.h"
-#import "SPAlertSheets.h"
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
 

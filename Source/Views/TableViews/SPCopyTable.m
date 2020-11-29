@@ -38,7 +38,6 @@
 #import "SPDataStorage.h"
 #import "SPTextAndLinkCell.h"
 #import "SPTooltip.h"
-#import "SPAlertSheets.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPGeometryDataView.h"
 #import "SPBundleEditorController.h"
@@ -87,8 +86,8 @@ static const NSInteger kBlobAsImageFile = 4;
  * Check if current edited cell represents a class other than a normal NSString
  * like pop-up menus for enum or set
  */
-- (BOOL)isCellComplex
-{
+- (BOOL)isCellComplex {
+	// TODO: using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
 	return (![[self preparedCellAtColumn:[self editedColumn] row:[self editedRow]] isKindOfClass:[SPTextAndLinkCell class]]);
 }
 

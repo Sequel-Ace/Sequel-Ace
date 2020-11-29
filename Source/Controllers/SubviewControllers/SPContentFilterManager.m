@@ -287,28 +287,30 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 /**
  * Removes a filter
  */
-- (IBAction)removeContentFilter:(id)sender
-{
+- (IBAction)removeContentFilter:(id)sender {
 
 	// Complete editing in the window
 	[[self window] makeFirstResponder:nil];
 
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Remove selected content filters?", @"remove selected content filters message")
-									 defaultButton:NSLocalizedString(@"Remove", @"remove button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected content filters? This action cannot be undone.", @"remove all selected content filters informative message")];
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Remove selected content filters?", @"remove selected content filters message") message:NSLocalizedString(@"Are you sure you want to remove all selected content filters? This action cannot be undone.", @"remove all selected content filters informative message") primaryButtonTitle:NSLocalizedString(@"Remove", @"remove button") primaryButtonHandler:^{
+		NSIndexSet *indexes = [self->contentFilterTableView selectedRowIndexes];
 
-	[alert setAlertStyle:NSAlertStyleCritical];
+		[indexes enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
+			[self->contentFilters removeObjectAtIndex:currentIndex];
+		}];
 
-	NSArray *buttons = [alert buttons];
+		if ([self->contentFilters count] == 2) {
+			[self->contentFilterNameTextField setStringValue:@""];
+		}
 
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"r"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
+		[self->contentFilterArrayController rearrangeObjects];
+		[self->contentFilterTableView reloadData];
 
-	[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"removeSelectedFilters"];
+		// Set focus to filter list to avoid an unstable state
+		[[self window] makeFirstResponder:self->contentFilterTableView];
+
+		[self->removeButton setEnabled:([self->contentFilterTableView numberOfSelectedRows] > 0)];
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -333,9 +335,43 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	[panel setCanSelectHiddenExtension:YES];
 	[panel setCanCreateDirectories:YES];
 
-	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode)
-	{
-		[self savePanelDidEnd:panel returnCode:returnCode contextInfo:SPExportFilterAction];
+	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			// Build a SPF with format = "content filters"
+			NSMutableDictionary *spfdata = [NSMutableDictionary dictionary];
+			NSMutableDictionary *cfdata = [NSMutableDictionary dictionary];
+			NSMutableArray *filterData = [NSMutableArray array];
+
+			[spfdata setObject:@1 forKey:SPFVersionKey];
+			[spfdata setObject:SPFContentFiltersContentType forKey:SPFFormatKey];
+			[spfdata setObject:@NO forKey:@"encrypted"];
+
+			NSIndexSet *indexes = [self->contentFilterTableView selectedRowIndexes];
+
+			// Get selected items and preserve the order
+			NSUInteger i;
+			for (i = 1; i < [self->contentFilters count]; i++) {
+				if ([indexes containsIndex:i]) {
+					[filterData addObject:[self->contentFilters objectAtIndex:i]];
+				}
+			}
+
+			[cfdata setObject:filterData forKey:self->filterType];
+			[spfdata setObject:cfdata forKey:SPContentFilters];
+
+			NSError *error = nil;
+			NSData *plist = [NSPropertyListSerialization dataWithPropertyList:spfdata format:NSPropertyListXMLFormat_v1_0 options:0 error:&error];
+
+			if (error) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting content filter data", @"Content filters could not be converted to plist upon export - message title (ContentFilterManager)") message:[error localizedDescription] callback:nil];
+				return;
+			}
+
+			[plist writeToURL:[panel URL] options:NSAtomicWrite error:&error];
+			if (error) {
+				[[NSAlert alertWithError:error] runModal];
+			}
+		}
 	}];
 }
 
@@ -773,34 +809,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 #pragma mark Other
 
 /**
- * Sheet did end method for removing content filters
- */
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if ([contextInfo isEqualToString:@"removeSelectedFilters"]) {
-		if (returnCode == NSAlertDefaultReturn) {
-			NSIndexSet *indexes = [contentFilterTableView selectedRowIndexes];
-
-			[indexes enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
-				[contentFilters removeObjectAtIndex:currentIndex];
-			}];
-
-			if ([contentFilters count] == 2) {
-				[contentFilterNameTextField setStringValue:@""];
-			}
-		
-			[contentFilterArrayController rearrangeObjects];
-			[contentFilterTableView reloadData];
-
-			// Set focus to filter list to avoid an unstable state
-			[[self window] makeFirstResponder:contentFilterTableView];
-
-			[removeButton setEnabled:([contentFilterTableView numberOfSelectedRows] > 0)];
-		}
-	}
-}
-
-/**
  * Import panel did end method.
  */
 - (void)importPanelDidEnd:(NSOpenPanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
@@ -827,14 +835,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				}
 				
 				if(!spf || error) {
-					NSAlert *alert = [NSAlert alertWithMessageText:SP_FILE_PARSER_ERROR_TITLE_STRING
-													 defaultButton:NSLocalizedString(@"OK", @"OK button")
-												   alternateButton:nil
-													   otherButton:nil
-										 informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [error localizedDescription]];
-					
-					[alert setAlertStyle:NSAlertStyleCritical];
-					[alert runModal];
+					[NSAlert createWarningAlertWithTitle:SP_FILE_PARSER_ERROR_TITLE_STRING message:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [error localizedDescription]] callback:nil];
 					return;
 				}
 			}
@@ -866,73 +867,11 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				[contentFilterTableView selectRowIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(insertionIndexStart, insertionIndexEnd - insertionIndexStart)] byExtendingSelection:NO];
 				[contentFilterTableView scrollRowToVisible:insertionIndexEnd];
 			} else {
-				NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithString:SP_FILE_PARSER_ERROR_TITLE_STRING]
-												 defaultButton:NSLocalizedString(@"OK", @"OK button")
-											   alternateButton:nil
-												  otherButton:nil
-									informativeTextWithFormat:NSLocalizedString(@"No content filters found.", @"No content filters were found in file to import (ContentFilterManager)")];
-
-				[alert setAlertStyle:NSInformationalAlertStyle];
-				[alert runModal];
+				[NSAlert createWarningAlertWithTitle:SP_FILE_PARSER_ERROR_TITLE_STRING message:NSLocalizedString(@"No content filters found.", @"No content filters were found in file to import (ContentFilterManager)") callback:nil];
 				return;
 			}
 		}
 	}
 }
-
-/**
- * Save panel did end method.
- */
-- (void)savePanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if([contextInfo isEqualToString:SPExportFilterAction]) {
-		if (returnCode == NSModalResponseOK) {
-
-			// Build a SPF with format = "content filters"
-			NSMutableDictionary *spfdata = [NSMutableDictionary dictionary];
-			NSMutableDictionary *cfdata = [NSMutableDictionary dictionary];
-			NSMutableArray *filterData = [NSMutableArray array];
-
-			[spfdata setObject:@1 forKey:SPFVersionKey];
-			[spfdata setObject:SPFContentFiltersContentType forKey:SPFFormatKey];
-			[spfdata setObject:@NO forKey:@"encrypted"];
-
-			NSIndexSet *indexes = [contentFilterTableView selectedRowIndexes];
-
-			// Get selected items and preserve the order
-			NSUInteger i;
-			for (i=1; i<[contentFilters count]; i++)
-				if([indexes containsIndex:i])
-					[filterData addObject:[contentFilters objectAtIndex:i]];
-
-			[cfdata setObject:filterData forKey:filterType];
-			[spfdata setObject:cfdata forKey:SPContentFilters];
-
-			NSError *error = nil;
-			NSData *plist = [NSPropertyListSerialization dataWithPropertyList:spfdata
-			                                                           format:NSPropertyListXMLFormat_v1_0
-			                                                          options:0
-			                                                            error:&error];
-
-			if(error) {
-				NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while converting content filter data", @"Content filters could not be converted to plist upon export - message title (ContentFilterManager)")
-				                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-				                               alternateButton:nil
-				                                   otherButton:nil
-				                     informativeTextWithFormat:@"%@", [error localizedDescription]];
-
-				[alert setAlertStyle:NSAlertStyleCritical];
-				[alert runModal];
-				return;
-			}
-
-			[plist writeToURL:[panel URL] options:NSAtomicWrite error:&error];
-			if (error) [[NSAlert alertWithError:error] runModal];
-		}
-	}
-}
-
-#pragma mark -
-
 
 @end

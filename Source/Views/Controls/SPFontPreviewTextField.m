@@ -50,7 +50,7 @@
 	// Set up a paragraph style for display, setting bounds and display settings
 	NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new];
 	
-	[paragraphStyle setAlignment:NSNaturalTextAlignment];
+	[paragraphStyle setAlignment:NSTextAlignmentNatural];
 	[paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];
 	[paragraphStyle setMaximumLineHeight:NSHeight([self bounds]) + [theFont descender]];
 

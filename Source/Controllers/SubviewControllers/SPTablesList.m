@@ -42,7 +42,6 @@
 #import "SPTableTextFieldCell.h"
 #import "RegexKitLite.h"
 #import "SPDatabaseData.h"
-#import "SPAlertSheets.h"
 #import "SPNavigatorController.h"
 #import "SPHistoryController.h"
 #import "SPServerSupport.h"
@@ -58,14 +57,6 @@
 #import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
-
-// Constants
-//
-// Actions
-static NSString *SPAddNewTable    = @"SPAddNewTable";
-static NSString *SPRemoveTable    = @"SPRemoveTable";
-static NSString *SPTruncateTable  = @"SPTruncateTable";
-static NSString *SPDuplicateTable = @"SPDuplicateTable";
 
 // New table
 static NSString *SPNewTableName         = @"SPNewTableName";
@@ -415,11 +406,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Set the focus to the name field
 	[tableSheet makeFirstResponder:tableNameField];
 
-	[NSApp beginSheet:tableSheet
-	   modalForWindow:[tableDocumentInstance parentWindow]
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPAddNewTable)];
+	[[tableDocumentInstance parentWindow] beginSheet:tableSheet completionHandler:^(NSModalResponse returnCode) {
+		[self->addTableCharsetHelper setEnabled:NO];
+		if (returnCode == NSModalResponseOK) {
+			[self _addTable];
+		}
+	}];
 }
 
 - (IBAction)tableEncodingButtonChanged:(id)sender
@@ -504,22 +496,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 /**
  * Invoked when user hits the remove button alert sheet to ask user if he really wants to delete the table.
  */
-- (IBAction)removeTable:(id)sender
-{
-	if (![tablesListView numberOfSelectedRows]) return;
+- (IBAction)removeTable:(id)sender {
+	if (![tablesListView numberOfSelectedRows]) {
+		return;
+	}
 
 	[[tableDocumentInstance parentWindow] endEditingFor:nil];
 
-	NSAlert *alert = [NSAlert alertWithMessageText:@"" defaultButton:NSLocalizedString(@"Delete", @"delete button") alternateButton:NSLocalizedString(@"Cancel", @"cancel button") otherButton:nil informativeTextWithFormat:@""];
-
-	[alert setAlertStyle:NSAlertStyleCritical];
-
-	NSArray *buttons = [alert buttons];
-
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
+	NSString *alertTitle = @"";
+	NSString *alertInformativeText = @"";
 
 	NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 
@@ -529,26 +514,21 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] == 1) {
 		if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeView) {
 			tblTypes = NSLocalizedString(@"view", @"view");
-		}
-		else if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeTable) {
+		} else if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeTable) {
 			tblTypes = NSLocalizedString(@"table", @"table");
-		}
-		else if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeProc) {
+		} else if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeProc) {
 			tblTypes = NSLocalizedString(@"procedure", @"procedure");
-		}
-		else if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeFunc) {
+		} else if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeFunc) {
 			tblTypes = NSLocalizedString(@"function", @"function");
 		}
 
-		[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Delete %@ '%@'?", @"delete table/view message"), tblTypes, [filteredTables objectAtIndex:[tablesListView selectedRow]]]];
-		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the %@ '%@'? This operation cannot be undone.", @"delete table/view informative message"), tblTypes, [filteredTables objectAtIndex:[tablesListView selectedRow]]]];
-	}
-	else {
+		alertTitle = [NSString stringWithFormat:NSLocalizedString(@"Delete %@ '%@'?", @"delete table/view message"), tblTypes, [filteredTables objectAtIndex:[tablesListView selectedRow]]];
+		alertInformativeText = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the %@ '%@'? This operation cannot be undone.", @"delete table/view informative message"), tblTypes, [filteredTables objectAtIndex:[tablesListView selectedRow]]];
+	} else {
 		BOOL areTableTypeEqual = YES;
 		NSInteger lastType = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
 		
-		while (currentIndex != NSNotFound)
-		{
+		while (currentIndex != NSNotFound) {
 			if ([[filteredTableTypes objectAtIndex:currentIndex] integerValue] != lastType) {
 				areTableTypeEqual = NO;
 				break;
@@ -557,8 +537,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			currentIndex = [indexes indexLessThanIndex:currentIndex];
 		}
 		
-		if (areTableTypeEqual)
-		{
+		if (areTableTypeEqual) {
 			switch (lastType) {
 				case SPTableTypeTable:
 					tblTypes = NSLocalizedString(@"tables", @"tables");
@@ -574,29 +553,30 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 					break;
 			}
 
-		} 
-		else {
+		} else {
 			tblTypes = NSLocalizedString(@"items", @"items");
 		}
 
-		[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Delete selected %@?", @"delete tables/views message"), tblTypes]];
-		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected %@? This operation cannot be undone.", @"delete tables/views informative message"), tblTypes]];
+		alertTitle = [NSString stringWithFormat:NSLocalizedString(@"Delete selected %@?", @"delete tables/views message"), tblTypes];
+		alertInformativeText = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected %@? This operation cannot be undone.", @"delete tables/views informative message"), tblTypes];
 	}
-	
-	NSButton *button = [alert suppressionButton];
-	
-	[button setTitle:NSLocalizedString(@"Force delete (disables integrity checks)", @"force table deletion button text")];
-	[button setToolTip:NSLocalizedString(@"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.", @"force table deltion button text tooltip")];
-	[button setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-	
-	[[button cell] setControlSize:NSControlSizeSmall];
-	
+	NSAlert *alert = [[NSAlert alloc] init];
+	[alert setMessageText:alertTitle];
+	[alert setInformativeText:alertInformativeText];
+
+	// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+	[alert addButtonWithTitle:NSLocalizedString(@"Delete", @"delete button")];
+	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+	[alert setAlertStyle:NSAlertStyleCritical];
+
+	[alert.suppressionButton setTitle:NSLocalizedString(@"Force delete (disables integrity checks)", @"force table deletion button text")];
+	[alert.suppressionButton setToolTip:NSLocalizedString(@"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.", @"force table deltion button text tooltip")];
 	[alert setShowsSuppressionButton:YES];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
-					  modalDelegate:self 
-					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) 
-						contextInfo:(__bridge void * _Nullable)(SPRemoveTable)];
+	NSInteger alertReturnCode = [alert runModal];
+	if (alertReturnCode == NSAlertFirstButtonReturn) {
+		[self _removeTable:[[alert suppressionButton] state] == NSOnState];
+	}
 }
 
 /**
@@ -638,11 +618,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[copyTableButton setEnabled:[self isTableNameValid:[copyTableNameField stringValue] forType:[self tableType]]];
 
-	[NSApp beginSheet:copyTableSheet
-	   modalForWindow:[tableDocumentInstance parentWindow]
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)SPDuplicateTable];
+	[[tableDocumentInstance parentWindow] beginSheet:copyTableSheet completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self _copyTable];
+		}
+	}];
 }
 
 /**
@@ -665,38 +645,27 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 /**
  * Truncates the currently selected table(s).
  */
-- (IBAction)truncateTable:(id)sender
-{
-	if (![tablesListView numberOfSelectedRows])
+- (IBAction)truncateTable:(id)sender {
+	if (![tablesListView numberOfSelectedRows]) {
 		return;
+	}
 
 	[[tableDocumentInstance parentWindow] endEditingFor:nil];
 
-	NSAlert *alert = [NSAlert alertWithMessageText:@""
-									 defaultButton:NSLocalizedString(@"Truncate", @"truncate button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:@""];
-
-	[alert setAlertStyle:NSAlertStyleCritical];
-
-	NSArray *buttons = [alert buttons];
-
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"t"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-
+	NSString *alertTitle = @"";
+	NSString *alertInformativeText = @"";
 	if ([tablesListView numberOfSelectedRows] == 1) {
-		[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Truncate table '%@'?", @"truncate table message"), [filteredTables objectAtIndex:[tablesListView selectedRow]]]];
-		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone.", @"truncate table informative message"), [filteredTables objectAtIndex:[tablesListView selectedRow]]]];
+		alertTitle = [NSString stringWithFormat:NSLocalizedString(@"Truncate table '%@'?", @"truncate table message"), [filteredTables objectAtIndex:[tablesListView selectedRow]]];
+		alertInformativeText = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone.", @"truncate table informative message"), [filteredTables objectAtIndex:[tablesListView selectedRow]]];
 	}
 	else {
-		[alert setMessageText:NSLocalizedString(@"Truncate selected tables?", @"truncate tables message")];
-		[alert setInformativeText:NSLocalizedString(@"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.", @"truncate tables informative message")];
+		alertTitle = NSLocalizedString(@"Truncate selected tables?", @"truncate tables message");
+		alertInformativeText = NSLocalizedString(@"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.", @"truncate tables informative message");
 	}
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(SPTruncateTable)];
+	[NSAlert createDefaultAlertWithTitle:alertTitle message:alertInformativeText primaryButtonTitle:NSLocalizedString(@"Truncate", @"truncate button") primaryButtonHandler:^{
+		[self _truncateTable];
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -745,45 +714,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[tableListSplitView toggleCollapse:sender];
 
 	[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
-}
-
-#pragma mark -
-#pragma mark Alert sheet methods
-
-/**
- * Method for alert sheets.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)]) {
-		[sheet orderOut:nil];
-	}
-	else if ([sheet respondsToSelector:@selector(window)]) {
-		[[sheet window] orderOut:nil];
-	}
-
-	if ([contextInfo isEqualToString:SPRemoveTable]) {
-		if (returnCode == NSAlertDefaultReturn) {
-			[self _removeTable:[[(NSAlert *)sheet suppressionButton] state] == NSOnState];
-		}
-	}
-	else if ([contextInfo isEqualToString:SPTruncateTable]) {
-		if (returnCode == NSAlertDefaultReturn) {
-			[self _truncateTable];
-		}
-	}
-	else if ([contextInfo isEqualToString:SPAddNewTable]) {
-		[addTableCharsetHelper setEnabled:NO];
-		if (returnCode == NSModalResponseOK) {
-			[self _addTable];
-		}
-	}
-	else if ([contextInfo isEqualToString:SPDuplicateTable]) {
-		if (returnCode == NSModalResponseOK) {
-			[self _copyTable];
-		}
-	}
 }
 
 #pragma mark -
@@ -1607,12 +1537,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 
 	if (![self isTableNameValid:newTableName forType:selectedTableType ignoringSelectedTable:YES]) {
-		// Table has invalid name
-		// Since we trimmed whitespace and checked for empty string, this means there is already a table with that name
-		SPBeginAlertSheet(NSLocalizedString(@"Error", @"error"), 
-				NSLocalizedString(@"OK", @"OK button"), nil, nil, [tableDocumentInstance parentWindow], self,
-				@selector(sheetDidEnd:returnCode:contextInfo:), NULL,
-				[NSString stringWithFormat: NSLocalizedString(@"The name '%@' is already used.", @"message when trying to rename a table/view/proc/etc to an already used name"), newTableName]);
+		// Table has invalid name, and since we trimmed whitespace and checked for empty string, this means there is already a table with that name
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat: NSLocalizedString(@"The name '%@' is already used.", @"message when trying to rename a table/view/proc/etc to an already used name"), newTableName] callback:nil];
 		return;
 	}
 
@@ -1629,8 +1555,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		selectedTableName = [[NSString alloc] initWithString:newTableName];
 
 		// if the 'table' is a view or a table, ensure data is reloaded
-		if (selectedTableType == SPTableTypeTable || selectedTableType == SPTableTypeView)
-		{
+		if (selectedTableType == SPTableTypeTable || selectedTableType == SPTableTypeView) {
 			[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
 		}
 	}
@@ -1889,15 +1814,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		[mySQLConnection queryString:query];
 		if ([mySQLConnection queryErrored]) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while importing table", @"error while importing table message")
-											 defaultButton:NSLocalizedString(@"OK", @"OK button")
-										   alternateButton:nil
-											   otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"),
-									query, [mySQLConnection lastErrorMessage]];
-
-			[alert setAlertStyle:NSAlertStyleCritical];
-			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"truncateTableError"];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"), query, [mySQLConnection lastErrorMessage]] callback:nil];
 			return NO;
 		}
 		[self updateTables:nil];
@@ -2143,8 +2060,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[mySQLConnection queryString:@"SET FOREIGN_KEY_CHECKS = 0"];
 	}
 
-	while (currentIndex != NSNotFound)
-	{
+	while (currentIndex != NSNotFound) {
 		NSString *objectIdentifier = @"";
 		NSString *databaseObject = [[filteredTables objectAtIndex:currentIndex] backtickQuotedString];
 		NSInteger objectType = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
@@ -2187,8 +2103,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-			} 
-			else {
+			} else {
 				[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
 				[alert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
 			}
@@ -2198,8 +2113,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			// Try to provide a more helpful message
 			if ([databaseError rangeOfString:@"a foreign key constraint fails" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@", 
-												@"message of panel when an item cannot be deleted including informative message about using force deletion");
+				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@", @"message of panel when an item cannot be deleted including informative message about using force deletion");
 			}
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
@@ -2207,14 +2121,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[alert setAlertStyle:NSAlertStyleWarning];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
-				[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:nil contextInfo:nil];
-				
+				[alert runModal];
 				currentIndex = NSNotFound;
-			}
-			else {
+			} else {
 				NSInteger choice = [alert runModal];
 				
-				currentIndex = (choice == NSAlertFirstButtonReturn || choice == NSAlertAlternateReturn) ? [indexes indexLessThanIndex:currentIndex] : NSNotFound;
+				currentIndex = (choice == NSAlertFirstButtonReturn) ? [indexes indexLessThanIndex:currentIndex] : NSNotFound;
 			}
 		}
 	}

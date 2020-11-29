@@ -415,14 +415,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[mySQLConnection queryString:createString];
 
 			if ([mySQLConnection queryErrored]) {
-				NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error adding new column", @"error adding new column message")
-												 defaultButton:NSLocalizedString(@"OK", @"OK button")
-											   alternateButton:nil
-												   otherButton:nil
-									 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]];
-
-				[alert setAlertStyle:NSAlertStyleCritical];
-				[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]] callback:nil];
 				return;
 			} else {
 				[toBeEditedRowIndexes removeIndex:currentIndex];
@@ -466,14 +459,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[mySQLConnection queryString:createString];
 
 		if ([mySQLConnection queryErrored]) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error adding new table", @"error adding new table message")
-											 defaultButton:NSLocalizedString(@"OK", @"OK button")
-										   alternateButton:nil
-											   otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]];
-
-			[alert setAlertStyle:NSAlertStyleCritical];
-			[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]] callback:nil];
 			return;
 		}
 
@@ -1041,11 +1027,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[newTableInfoEncodingPopup selectItemWithTitle:[prefs objectForKey:SPLastImportIntoNewTableEncoding]];
 	}
 
-	[NSApp beginSheet:newTableInfoWindow
-	   modalForWindow:[self window]
-		modalDelegate:self
-	   didEndSelector:nil
-		  contextInfo:nil];
+	[[self window] beginSheet:newTableInfoWindow completionHandler:nil];
 }
 
 #pragma mark -
@@ -1088,10 +1070,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-	[NSApp beginSheet:globalValuesSheet
-		modalForWindow:[self window]
-		modalDelegate:self
-		didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:nil];
+	[[self window] beginSheet:globalValuesSheet completionHandler:^(NSModalResponse returnCode) {
+		self->addGlobalSheetIsOpen = NO;
+	}];
 
 	[self addGlobalValue:nil];
 }
@@ -1335,15 +1316,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[advancedUpdateView setAutoresizingMask:updateViewMask];
 	[advancedInsertView setAutoresizingMask:insertViewMask];
 	[advancedBox setAutoresizingMask:NSViewNotSizable|NSViewWidthSizable|NSViewMaxYMargin|NSViewMaxXMargin|NSViewMinXMargin];
-}
-
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	if ([sheet respondsToSelector:@selector(orderOut:)]) [sheet orderOut:nil];
-
-	if (sheet == globalValuesSheet) {
-		addGlobalSheetIsOpen = NO;
-	}
 }
 
 - (void)matchHeaderNames

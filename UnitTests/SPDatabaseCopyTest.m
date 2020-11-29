@@ -33,7 +33,6 @@
 #import <OCMock/OCMock.h>
 #import <SenTestingKit/SenTestingKit.h>
 
-#import "SPAlertSheets.h"
 #import "SPDatabaseCopy.h"
 #import "SPTableCopy.h"
 #import "SPLogger.h"

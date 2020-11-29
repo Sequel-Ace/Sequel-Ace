@@ -33,7 +33,6 @@
 #import "SPSSHTunnel.h"
 #import "RegexKitLite.h"
 #import "SPKeychain.h"
-#import "SPAlertSheets.h"
 #import "SPThreadAdditions.h"
 #import "SPOSInfo.h"
 
@@ -684,12 +683,7 @@ static unsigned short getRandomPort(void);
 	[sshQuestionDialog setFrame:windowFrameRect display:NO];
 
 	//show the question window
-	[NSApp beginSheet:sshQuestionDialog
-	   modalForWindow:parentWindow
-	    modalDelegate:nil
-	   didEndSelector:NULL
-	      contextInfo:NULL];
-	[parentWindow makeKeyAndOrderFront:self];
+	[parentWindow beginSheet:sshQuestionDialog completionHandler:nil];
 }
 
 /*
@@ -761,12 +755,7 @@ static unsigned short getRandomPort(void);
 	windowFrameRect.size.height = ((queryTextSize.height < 40)?40:queryTextSize.height) + 140 + ([sshPasswordDialog isSheet]?0:22);
 	
 	[sshPasswordDialog setFrame:windowFrameRect display:NO];
-	[NSApp beginSheet:sshPasswordDialog
-	   modalForWindow:parentWindow
-	    modalDelegate:nil
-	   didEndSelector:NULL
-	      contextInfo:NULL];
-	[parentWindow makeKeyAndOrderFront:self];
+	[parentWindow beginSheet:sshPasswordDialog completionHandler:nil];
 }
  
 /*

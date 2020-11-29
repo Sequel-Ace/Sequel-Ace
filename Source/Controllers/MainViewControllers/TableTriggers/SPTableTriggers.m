@@ -33,7 +33,6 @@
 #import "SPTablesList.h"
 #import "SPTableData.h"
 #import "SPTableView.h"
-#import "SPAlertSheets.h"
 #import "SPServerSupport.h"
 
 #import <SPMySQL/SPMySQL.h>
@@ -69,7 +68,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 - (void)_toggleConfirmAddTriggerButtonEnabled;
 - (void)_refreshTriggerDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_openTriggerSheet;
-- (void)_reopenTriggerSheet:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (void)_addPreferenceObservers;
 - (void)_removePreferenceObservers;
 
@@ -212,12 +210,10 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		[connection queryString:queryDelete];
 		
 		if ([connection queryErrored]) {
-			SPBeginAlertSheet(NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message"),
-							  NSLocalizedString(@"OK", @"OK button"),
-							  nil, nil, [NSApp mainWindow], self, @selector(_reopenTriggerSheet:returnCode:contextInfo:), NULL,
-							  [NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"),
-							   [connection lastErrorMessage]]);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:^{
+
+				[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
+			}];
 			return;
 		}
 	}
@@ -279,12 +275,9 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 			// or will it interfere with the one above?
 			[connection queryString:query];
 		}
-
-		SPBeginAlertSheet(NSLocalizedString(@"Error creating trigger", @"error creating trigger message"),
-						  NSLocalizedString(@"OK", @"OK button"),
-						  nil, nil, [NSApp mainWindow], self, @selector(_reopenTriggerSheet:returnCode:contextInfo:), NULL,
-						  [NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\nMySQL said: %@", @"error creating trigger informative message"),
-						   createTriggerError]);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating trigger", @"error creating trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\nMySQL said: %@", @"error creating trigger informative message"), createTriggerError] callback:^{
+			[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
+		}];
 	}
 
 	[self _refreshTriggerDataForcingCacheRefresh:YES];
