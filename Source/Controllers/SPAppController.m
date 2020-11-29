@@ -157,17 +157,19 @@
  * Called when need to switch application appearance - on startup and when userDefaults changed
  */
 - (void)switchAppearance {
-	if (@available(macOS 10.14, *)) {
-		NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
-
-		if (appearance == 1) {
-			NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-		} else if (appearance == 2) {
-			NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-		} else {
-			NSApp.appearance = nil;
+	SPMainQSync(^{
+		if (@available(macOS 10.14, *)) {
+			NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
+			
+			if (appearance == 1) {
+				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+			} else if (appearance == 2) {
+				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+			} else {
+				NSApp.appearance = nil;
+			}
 		}
-	}
+	});
 }
 
 /**

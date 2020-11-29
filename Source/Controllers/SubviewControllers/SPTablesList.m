@@ -52,6 +52,7 @@
 #import "SPFunctions.h"
 #import "SPCharsetCollationHelper.h"
 #import "SPConstants.h"
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -2313,7 +2314,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		else {
 			// Error while creating new table
 
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];
+			SPMainQSync(^{
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [self->mySQLConnection lastErrorMessage]] callback:nil];
+			});
 
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
