@@ -34,7 +34,6 @@
 #import "SPPreferenceController.h"
 #import "ImageAndTextCell.h"
 #import "RegexKitLite.h"
-#import "SPAlertSheets.h"
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
 #import "SPTableTextFieldCell.h"
@@ -1132,43 +1131,20 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSString *informativeMessage = @"";
 		
 		if (![node isGroup]) {
-			message            = [NSString stringWithFormat:NSLocalizedString(@"Delete favorite '%@'?", @"delete database message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
+			message = [NSString stringWithFormat:NSLocalizedString(@"Delete favorite '%@'?", @"delete database message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
 			informativeMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the favorite '%@'? This operation cannot be undone.", @"delete database informative message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
-		}
-		else if ([[node childNodes] count] > 0) {
-			message            = [NSString stringWithFormat:NSLocalizedString(@"Delete group '%@'?", @"delete database message"), [[node representedObject] nodeName]];
+		} else if ([[node childNodes] count] > 0) {
+			message = [NSString stringWithFormat:NSLocalizedString(@"Delete group '%@'?", @"delete database message"), [[node representedObject] nodeName]];
 			informativeMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone.", @"delete database informative message"), [[node representedObject] nodeName]];
-		}
-		else {
+		} else {
 			suppressWarning = YES;
 		}
 		
 		if (!suppressWarning) {
-			
-			NSAlert *alert = [[NSAlert alloc] init];
-			
-			// jamesstout notes
-			// Alerts should be created with the -init method and setting properties. - NSAlert.h L132
-			alert.messageText = message;
-			alert.informativeText = [NSString stringWithFormat:@"%@", informativeMessage];
-			[alert addButtonWithTitle:NSLocalizedString(@"Delete", @"delete button")]; // first button is delete
-			[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")]; // second is cancel
-			
-			NSArray *buttons = [alert buttons];
-			
-			// Change the alert's cancel button to have the key equivalent of return
-			[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-			[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-			[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-			
-			[alert setAlertStyle:NSAlertStyleCritical];
-			
-			[alert beginSheetModalForWindow:[dbDocument parentWindow]
-			                  modalDelegate:self
-			                 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-								contextInfo:(__bridge void * _Nullable)(SPRemoveNode)];
-		}
-		else {
+			[NSAlert createDefaultAlertWithTitle:message message:informativeMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+				[self _removeNode:[self selectedFavoriteNode]];
+			} cancelButtonHandler:nil];
+		} else {
 			[self _removeNode:node];
 		}
 	}
@@ -1345,36 +1321,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 
 		[self reRequestSecureAccess];
-	}
-}
-
-#pragma mark -
-#pragma mark Sheet methods
-
-/**
- * Called when the user dismisses the remove node sheet.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Remove the current favorite/group node
-	if ([contextInfo isEqualToString:SPRemoveNode]) {
-		if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) {
-			[self _removeNode:[self selectedFavoriteNode]];
-		}
-	}
-}
-
-/**
- * Alert sheet callback method - invoked when the error sheet is closed.
- */
-- (void)localhostErrorSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	if (returnCode == NSAlertAlternateReturn) {
-		[self setType:SPSocketConnection];
-		[self setHost:@""];
-	} 
-	else {
-		[self setHost:@"127.0.0.1"];
 	}
 }
 
@@ -1611,23 +1557,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * Check the host field and ensure it isn't set to 'localhost' for non-socket connections.
  */
-- (BOOL)_checkHost
-{
+- (BOOL)_checkHost {
 	if ([self type] != SPSSHTunnelConnection && [self type] != SPSocketConnection && [[self host] isEqualToString:@"localhost"]) {
-		SPBeginAlertSheet(
-			NSLocalizedString(@"You have entered 'localhost' for a non-socket connection", @"title of error when using 'localhost' for a network connection"),
-			NSLocalizedString(@"Use 127.0.0.1", @"Use 127.0.0.1 button"), // Main button
-			NSLocalizedString(@"Connect via socket", @"Connect via socket button"), // Alternate button
-			nil, // Other button
-			[dbDocument parentWindow], // Window to attach to
-			self, // Modal delegate
-			@selector(localhostErrorSheetDidEnd:returnCode:contextInfo:), // Did end selector
-			NULL, // Contextual info for selectors
-			NSLocalizedString(@"To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'.", @"message of error when using 'localhost' for a network connection")
-		);
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"You have entered 'localhost' for a non-socket connection", @"title of error when using 'localhost' for a network connection") message:NSLocalizedString(@"To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'.", @"message of error when using 'localhost' for a network connection") primaryButtonTitle:NSLocalizedString(@"Use 127.0.0.1", @"Use 127.0.0.1 button") secondaryButtonTitle:NSLocalizedString(@"Connect via socket", @"Connect via socket button") primaryButtonHandler:^{
+			[self setHost:@"127.0.0.1"];
+		} secondaryButtonHandler:^{
+			[self setType:SPSocketConnection];
+			[self setHost:@""];
+		}];
 		return NO;
 	}
-	
 	return YES;
 }
 
@@ -1635,12 +1574,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * Sorts the connection favorites based on the selected criteria.
  */
 
-- (void)_sortFavorites
-{
+- (void)_sortFavorites {
 	NSString *sortKey = SPFavoriteNameKey;
-
-	switch (currentSortItem)
-	{
+	switch (currentSortItem) {
 		case SPFavoritesSortNameItem:
 			sortKey = SPFavoriteNameKey;
 			break;
@@ -1661,9 +1597,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	NSArray *preSortSelection = [self selectedFavoriteNodes];
 
 	[self _sortTreeNode:[[favoritesRoot childNodes] objectAtIndex:0] usingKey:sortKey];
-
 	[favoritesController saveFavorites];
-	 
 	[self _reloadFavoritesViewData];
 
 	// Update the selection to account for sorted favourites
@@ -1672,7 +1606,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[restoredSelection addIndex:[favoritesOutlineView rowForItem:eachNode]];
 	}
 	[favoritesOutlineView selectRowIndexes:restoredSelection byExtendingSelection:NO];
-
 	[[NSNotificationCenter defaultCenter] postNotificationName:SPConnectionFavoritesChangedNotification object:self];
 }
 
@@ -1682,8 +1615,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * @param node The tree node to sort
  * @param key  The sort key to sort by
  */
-- (void)_sortTreeNode:(SPTreeNode *)node usingKey:(NSString *)key
-{	
+- (void)_sortTreeNode:(SPTreeNode *)node usingKey:(NSString *)key {
 	NSMutableArray *nodes = [[node mutableChildNodes] mutableCopy];
 	
 	// If this node only has one child and it's not another group node, don't bother proceeding
@@ -2510,46 +2442,37 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Only display the connection error message if there is a window visible
 	if ([[dbDocument parentWindow] isVisible]) {
-		SPBeginAlertSheet(theTitle, NSLocalizedString(@"OK", @"OK button"), (errorDetail) ? NSLocalizedString(@"Show Detail", @"Show detail button") : nil, (isSSHTunnelBindError) ? NSLocalizedString(@"Use Standard Connection", @"use standard connection button") : nil, [dbDocument parentWindow], self, @selector(connectionFailureSheetDidEnd:returnCode:contextInfo:), @"connect", theErrorMessage);
+		NSAlert *alert = [[NSAlert alloc] init];
+		[alert setMessageText:theTitle];
+		[alert setInformativeText:errorDetail];
+		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+		if (isSSHTunnelBindError) {
+			[alert addButtonWithTitle:NSLocalizedString(@"Use Standard Connection", @"use standard connection button")];
+		}
+		NSModalResponse returnCode = [alert runModal];
+		if (returnCode == NSAlertSecondButtonReturn) { // OK button
+			// Extract the local port number that SSH attempted to bind to from the debug output
+			NSString *tunnelPort = [[[errorDetailText string] componentsMatchedByRegex:@"LOCALHOST:([0-9]+)" capture:1L] lastObject];
+
+			// Change the connection type to standard TCP/IP
+			[self setType:SPTCPIPConnection];
+
+			// Change connection details
+			[self setPort:tunnelPort];
+			[self setHost:SPLocalhostAddress];
+
+			// Change to standard TCP/IP connection view
+			[self resizeTabViewToConnectionType:SPTCPIPConnection animating:YES];
+
+			// Initiate the connection after a half second delay to give the connection view a chance to resize
+			[self performSelector:@selector(initiateConnection:) withObject:self afterDelay:0.5];
+		}
+
+		// we're not connecting anymore, it failed.
+		isConnecting = NO;
+		// update tab and window title
+		[dbDocument updateWindowTitle:self];
 	}
-}
-
-/**
- * Alert sheet callback method - invoked when an error sheet is closed.
- */
-- (void)connectionFailureSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) {
-		[errorDetailText setFont:[NSFont userFontOfSize:12]];
-		[errorDetailText setAlignment:NSTextAlignmentLeft];
-		[errorDetailWindow makeKeyAndOrderFront:self];
-	}
-
-	// Currently only SSH port bind errors offer a 3rd option in the error dialog, but if this ever changes
-	// this will definitely need to be updated.
-	else if (returnCode == NSAlertSecondButtonReturn || returnCode == NSAlertOtherReturn) {
-
-		// Extract the local port number that SSH attempted to bind to from the debug output
-		NSString *tunnelPort = [[[errorDetailText string] componentsMatchedByRegex:@"LOCALHOST:([0-9]+)" capture:1L] lastObject];
-
-		// Change the connection type to standard TCP/IP
-		[self setType:SPTCPIPConnection];
-
-		// Change connection details
-		[self setPort:tunnelPort];
-		[self setHost:SPLocalhostAddress];
-
-		// Change to standard TCP/IP connection view
-		[self resizeTabViewToConnectionType:SPTCPIPConnection animating:YES];
-
-		// Initiate the connection after a half second delay to give the connection view a chance to resize
-		[self performSelector:@selector(initiateConnection:) withObject:self afterDelay:0.5];
-	}
-	
-	// we're not connecting anymore, it failed.
-	isConnecting = NO;
-	// update tab and window title
-	[dbDocument updateWindowTitle:self];
 }
 
 #pragma mark - SPConnectionHandlerPrivateAPI
@@ -3833,19 +3756,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * Called by the favorites exporter when the export completes.
  */
-- (void)favoritesExportCompletedWithError:(NSError *)error
-{
+- (void)favoritesExportCompletedWithError:(NSError *)error {
 	if (error) {
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Favorites export error", @"favorites export error message")
-		                                 defaultButton:NSLocalizedString(@"OK", @"OK")
-		                               alternateButton:nil
-		                                   otherButton:nil
-		                     informativeTextWithFormat:NSLocalizedString(@"The following error occurred during the export process:\n\n%@", @"favorites export error informative message"), [error localizedDescription]];
-
-		[alert beginSheetModalForWindow:[dbDocument parentWindow]
-		                  modalDelegate:self
-		                 didEndSelector:NULL
-		                    contextInfo:NULL];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Favorites export error", @"favorites export error message") message:[NSString stringWithFormat:NSLocalizedString(@"The following error occurred during the export process:\n\n%@", @"favorites export error informative message"), [error localizedDescription]] callback:nil];
 	}
 }
 

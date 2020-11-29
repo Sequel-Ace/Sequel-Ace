@@ -43,7 +43,6 @@
 #import "SPQueryController.h"
 #import "SPEncodingPopupAccessory.h"
 #import "SPDataStorage.h"
-#import "SPAlertSheets.h"
 #import "SPCopyTable.h"
 #import "SPGeometryDataView.h"
 #import "SPSplitView.h"
@@ -273,12 +272,38 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			return;
 		}
 
-		if ([tableDocumentInstance isUntitled]) [saveQueryFavoriteGlobal setState:NSOnState];
-		[NSApp beginSheet:queryFavoritesSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-			modalDelegate:self
-		   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-			  contextInfo:@"addSelectionToNewQueryFavorite"];
+		if ([tableDocumentInstance isUntitled]) {
+			[saveQueryFavoriteGlobal setState:NSOnState];
+		}
+		[[tableDocumentInstance parentWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
+			if (returnCode == NSModalResponseOK) {
+
+				// Add the new query favorite directly the user's preferences here instead of asking the manager to do it
+				// as it may not have been fully initialized yet.
+				NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
+
+				// What should be saved
+				NSString *queryToBeAddded;
+				if ([self->textView selectedRange].length) { // First check for a selection
+					queryToBeAddded = [[self->textView string] substringWithRange:[self->textView selectedRange]];
+				} else if (self->currentQueryRange.length) { // then for a current query
+					queryToBeAddded = [[self->textView string] substringWithRange:self->currentQueryRange];
+				} else { // otherwise take the entire string
+					queryToBeAddded = [self->textView string];
+				}
+
+				if ([self->saveQueryFavoriteGlobal state] == NSOnState) {
+					[favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
+
+					[self->prefs setObject:favorites forKey:SPQueryFavorites];
+				} else {
+					[[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
+				}
+				[self->saveQueryFavoriteGlobal setState:NSOffState];
+				[self queryFavoritesHaveBeenUpdated:nil];
+				[self->queryFavoriteNameTextField setStringValue:@""];
+			}
+		}];
 
 	}
 	if ([queryFavoritesButton indexOfSelectedItem] == 2) {
@@ -289,25 +314,38 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			return;
 		}
 
-		if ([tableDocumentInstance isUntitled]) [saveQueryFavoriteGlobal setState:NSOnState];
-		[NSApp beginSheet:queryFavoritesSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-			modalDelegate:self
-		   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-			  contextInfo:@"addAllToNewQueryFavorite"];
-	}
-	else if ([queryFavoritesButton indexOfSelectedItem] == 3) {
+		if ([tableDocumentInstance isUntitled]) {
+			[saveQueryFavoriteGlobal setState:NSOnState];
+		}
+		[[tableDocumentInstance parentWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
+			if (returnCode == NSModalResponseOK) {
+
+				// Add the new query favorite directly the user's preferences here instead of asking the manager to do it
+				// as it may not have been fully initialized yet.
+				NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
+
+				// What should be saved
+				NSString *queryToBeAddded = [self->textView string];
+
+				if ([self->saveQueryFavoriteGlobal state] == NSOnState) {
+					[favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
+
+					[self->prefs setObject:favorites forKey:SPQueryFavorites];
+				} else {
+					[[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
+				}
+				[self->saveQueryFavoriteGlobal setState:NSOffState];
+				[self queryFavoritesHaveBeenUpdated:nil];
+				[self->queryFavoriteNameTextField setStringValue:@""];
+			}
+		}];
+	} else if ([queryFavoritesButton indexOfSelectedItem] == 3) {
 
 		favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
 
 		// Open query favorite manager
-		[NSApp beginSheet:[favoritesManager window]
-		   modalForWindow:[tableDocumentInstance parentWindow]
-			modalDelegate:favoritesManager
-		   didEndSelector:nil
-			  contextInfo:nil];
-	}
-	else if ([queryFavoritesButton indexOfSelectedItem] > 5) {
+		[[tableDocumentInstance parentWindow] beginSheet:[favoritesManager window] completionHandler:nil];
+	} else if ([queryFavoritesButton indexOfSelectedItem] > 5) {
 		// Choose favorite
 		BOOL replaceContent = [prefs boolForKey:SPQueryFavoriteReplacesContent];
 
@@ -511,34 +549,19 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 /**
  * 'Clear History' menu item - clear query history
  */
-- (IBAction)clearQueryHistory:(id)sender
-{
+- (IBAction)clearQueryHistory:(id)sender {
 	NSString *infoString;
 
-	if ([tableDocumentInstance isUntitled])
+	if ([tableDocumentInstance isUntitled]) {
 		infoString = NSLocalizedString(@"Are you sure you want to clear the global history list? This action cannot be undone.", @"clear global history list informative message");
-	else
+	} else {
 		infoString = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to clear the history list for “%@”? This action cannot be undone.", @"clear history list for “%@” informative message"), [tableDocumentInstance displayName]];
+	}
 
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Clear History?", @"clear history message")
-									 defaultButton:NSLocalizedString(@"Clear", @"clear button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:@"%@", infoString];
-
-	[alert setAlertStyle:NSAlertStyleCritical];
-
-	NSArray *buttons = [alert buttons];
-
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"r"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow]
-					  modalDelegate:self
-					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:@"clearHistory"];
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Clear History?", @"clear history message") message:infoString primaryButtonTitle:NSLocalizedString(@"Clear", @"clear button") primaryButtonHandler:^{
+		// Remove items in the query controller
+		[[SPQueryController sharedQueryController] replaceHistoryByArray:[NSMutableArray array] forFileURL:[self->tableDocumentInstance fileURL]];
+	} cancelButtonHandler:nil];
 }
 
 /* *
@@ -833,12 +856,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 				if ( queryCount > 1 ) {
 					if(firstErrorOccuredInQuery == -1) firstErrorOccuredInQuery = i+1;
 
-					if(!suppressErrorSheet)
-					{
+					if(!suppressErrorSheet) {
 						// Update error text for the user
-						[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"),
-						                     (long)(i+1),
-						                     errorString];
+						[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(i+1), errorString];
 						[[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 						[[errorText onMainThread] setString:errors];
 
@@ -846,27 +866,27 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 						if (![mySQLConnection lastQueryWasCancelled]) {
 
 							[tableDocumentInstance setTaskIndicatorShouldAnimate:NO];
-							[SPAlertSheets beginWaitingAlertSheetWithTitle:NSLocalizedString(@"MySQL Error", @"mysql error message")
-							                                 defaultButton:NSLocalizedString(@"Run All", @"run all button")
-							                               alternateButton:NSLocalizedString(@"Continue", @"continue button")
-							                                   otherButton:NSLocalizedString(@"Stop", @"stop button")
-							                                    alertStyle:NSAlertStyleWarning
-							                                     docWindow:[tableDocumentInstance parentWindow]
-							                                 modalDelegate:self
-							                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-							                                   contextInfo:@"runAllContinueStopSheet"
-							                                      infoText:[mySQLConnection lastErrorMessage]
-							                                    returnCode:&runAllContinueStopSheetReturnCode];
+
+							NSAlert *alert = [[NSAlert alloc] init];
+							[alert setMessageText:NSLocalizedString(@"MySQL Error", @"mysql error message")];
+							[alert setInformativeText:[mySQLConnection lastErrorMessage]];
+
+							// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+							[alert addButtonWithTitle:NSLocalizedString(@"Run All", @"run all button")];
+							[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
+							[alert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
+
+							NSInteger alertReturnCode = [alert runModal];
 
 							[tableDocumentInstance setTaskIndicatorShouldAnimate:YES];
 
-							switch (runAllContinueStopSheetReturnCode) {
-								case NSAlertDefaultReturn:
+							switch (alertReturnCode) {
+								case NSAlertFirstButtonReturn:
 									suppressErrorSheet = YES;
-								case NSAlertAlternateReturn:
+								case NSAlertSecondButtonReturn:
 									break;
 								default:
-									if(i < queryCount-1) {
+									if (i < queryCount-1) {
 										// output that message only if it was not the last one
 										[errors appendString:NSLocalizedString(@"Execution stopped!\n", @"execution stopped message")];
 									}
@@ -884,10 +904,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			} else {
 				// Check if table/db list needs an update
 				// The regex is a compromise between speed and usefullness. TODO: further improvements are needed
-				if(!tableListNeedsReload && [query isMatchedByRegex:@"(?i)^\\s*\\b(create|alter|drop|rename)\\b\\s+."]) {
+				if (!tableListNeedsReload && [query isMatchedByRegex:@"(?i)^\\s*\\b(create|alter|drop|rename)\\b\\s+."]) {
 					tableListNeedsReload = YES;
 				}
-				if(!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]){
+				if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
 					databaseWasChanged = YES;
 				}
 			}
@@ -3098,69 +3118,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	} else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
 		self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
 	}
-}
-
-/**
- * Called when the save query favorite/clear history sheet is dismissed.
- */
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if ([contextInfo isEqualToString:@"runAllContinueStopSheet"]) {
-		runAllContinueStopSheetReturnCode = returnCode;
-		return;
-	}
-
-	if ([contextInfo isEqualToString:@"clearHistory"]) {
-		if (returnCode == NSModalResponseOK) {
-			// Remove items in the query controller
-			[[SPQueryController sharedQueryController] replaceHistoryByArray:[NSMutableArray array] forFileURL:[tableDocumentInstance fileURL]];
-		}
-		return;
-	}
-
-	if ([contextInfo isEqualToString:@"addAllToNewQueryFavorite"] || [contextInfo isEqualToString:@"addSelectionToNewQueryFavorite"]) {
-		if (returnCode == NSModalResponseOK) {
-
-			// Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-			// as it may not have been fully initialized yet.
-			NSMutableArray *favorites = [NSMutableArray arrayWithArray:[prefs objectForKey:SPQueryFavorites]];
-
-			// What should be saved
-			NSString *queryToBeAddded;
-
-			if([contextInfo isEqualToString:@"addSelectionToNewQueryFavorite"]) {
-				// First check for a selection
-				if([textView selectedRange].length)
-					queryToBeAddded = [[textView string] substringWithRange:[textView selectedRange]];
-				// then for a current query
-				else if(currentQueryRange.length)
-					queryToBeAddded = [[textView string] substringWithRange:currentQueryRange];
-				// otherwise take the entire string
-				else
-					queryToBeAddded = [textView string];
-			} else {
-				queryToBeAddded = [textView string];
-			}
-
-			if([saveQueryFavoriteGlobal state] == NSOnState) {
-				[favorites addObject:[NSMutableDictionary dictionaryWithObjects:
-					[NSArray arrayWithObjects:[queryFavoriteNameTextField stringValue], queryToBeAddded, nil]
-							forKeys:@[@"name", @"query"]]];
-
-				[prefs setObject:favorites forKey:SPQueryFavorites];
-			} else {
-				[[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects:
-					[NSArray arrayWithObjects:[queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil]
-						forKeys:@[@"name", @"query"]] forFileURL:[tableDocumentInstance fileURL]];
-			}
-
-			[saveQueryFavoriteGlobal setState:NSOffState];
-
-			[self queryFavoritesHaveBeenUpdated:nil];
-		}
-	}
-
-	[queryFavoriteNameTextField setStringValue:@""];
 }
 
 /**

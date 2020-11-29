@@ -128,9 +128,13 @@
  */
 - (id)performSelector:(SEL)theSelector withObject:(id)theObject
 {
-	if ([super respondsToSelector:theSelector]) return [super performSelector:theSelector withObject:theObject];
+	if ([super respondsToSelector:theSelector]) {
+		return [super performSelector:theSelector withObject:theObject];
+	}
 
-	if (![trampolineObject respondsToSelector:theSelector]) [self doesNotRecognizeSelector:theSelector];
+	if (![trampolineObject respondsToSelector:theSelector]) {
+		[self doesNotRecognizeSelector:theSelector];
+	}
 
 	// Retain the trampolined object, and the argument object, while performing calls
 	[trampolineObject performSelectorOnMainThread:theSelector withObject:theObject waitUntilDone:YES];

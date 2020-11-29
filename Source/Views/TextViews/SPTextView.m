@@ -36,7 +36,6 @@
 #import "SPTooltip.h"
 #import "SPTablesList.h"
 #import "SPNavigatorController.h"
-#import "SPAlertSheets.h"
 #import "RegexKitLite.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPAppController.h"

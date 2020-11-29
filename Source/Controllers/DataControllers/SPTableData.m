@@ -32,7 +32,6 @@
 #import "SPSQLParser.h"
 #import "SPDatabaseDocument.h"
 #import "SPTablesList.h"
-#import "SPAlertSheets.h"
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
 

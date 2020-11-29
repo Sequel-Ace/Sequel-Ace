@@ -70,11 +70,10 @@
     [self drawInteriorWithFrame:cellFrame inView:controlView];
 }
 
-- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
-{
+- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
     NSString* textContent = [self stringValue];
     NSMutableParagraphStyle* rectangleStyle = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
-    [rectangleStyle setAlignment:NSCenterTextAlignment];
+    [rectangleStyle setAlignment:NSTextAlignmentCenter];
 
     NSMutableDictionary *rectangleFontAttributes = [NSMutableDictionary dictionaryWithDictionary:[self attributes]];
     [rectangleFontAttributes setObject:rectangleStyle forKey:NSParagraphStyleAttributeName];

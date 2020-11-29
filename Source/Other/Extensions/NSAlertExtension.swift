@@ -74,6 +74,34 @@ import AppKit
 		}
 	}
 
+	/// Creates an alert with primary colored button (also accepts "Enter" key) and secondary colored button (also accepts escape key), main title and informative subtitle message.
+	/// - Parameters:
+	///   - title: String for title of the alert
+	///   - message: String for informative message
+	///   - primaryButtonTitle: String for main button
+	///   - secondaryButtonTitle: String for secondary button
+	///   - primaryButtonHandler: Optional block that's invoked when user hits primary button or Enter
+	///   - secondaryButtonHandler: Optional block that's invoked when user hits cancel button or Escape
+	/// - Returns: Nothing
+	static func createAlert(title: String,
+							message: String,
+							primaryButtonTitle: String,
+							secondaryButtonTitle: String,
+							primaryButtonHandler: (() -> ())? = nil,
+							secondaryButtonHandler: (() -> ())? = nil) {
+		let alert = NSAlert()
+		alert.messageText = title
+		alert.informativeText = message
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		alert.addButton(withTitle: primaryButtonTitle)
+		alert.addButton(withTitle: secondaryButtonTitle)
+		if alert.runModal() == .alertFirstButtonReturn {
+			primaryButtonHandler?()
+		} else {
+			secondaryButtonHandler?()
+		}
+	}
+
 
 	/// Creates an alert with primary colored OK button that triggers callback
 	/// - Parameters:

@@ -62,7 +62,7 @@
 
 	// Draw the actual color as rect
 	[(NSColor*) [self objectValue] set];
-	NSRectFillUsingOperation(NSInsetRect (rect, insetFactor, insetFactor), NSCompositeSourceOver);
+	NSRectFillUsingOperation(NSInsetRect (rect, insetFactor, insetFactor), NSCompositingOperationSourceOver);
 }
 
 @end

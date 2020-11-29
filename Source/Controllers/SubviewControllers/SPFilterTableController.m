@@ -223,9 +223,10 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]];
 }
 
-- (IBAction)filterTable:(id)sender
-{
-	if(target && action) [target performSelector:action withObject:self];
+- (IBAction)filterTable:(id)sender {
+	if (target && action && [target respondsToSelector:action]) {
+		[target performSelector:action withObject:self];
+	}
 }
 
 /**
@@ -324,49 +325,39 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 	[filterTableSetDefaultOperatorValue setStringValue:[prefs objectForKey:SPFilterTableDefaultOperator]];
 
-	[NSApp beginSheet:filterTableSetDefaultOperatorSheet
-	   modalForWindow:[self window]
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPTableFilterSetDefaultOperator)];
-}
+	[self.window beginSheet:filterTableSetDefaultOperatorSheet completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			NSString *newOperator = [self->filterTableSetDefaultOperatorValue stringValue];
+			self->filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:newOperator];
+			[self->prefs setObject:newOperator forKey:SPFilterTableDefaultOperator];
 
-/**
- * Close an open sheet.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	[sheet orderOut:self];
-
-	if([contextInfo isEqualToString:SPTableFilterSetDefaultOperator]) {
-		if(returnCode) {
-			NSString *newOperator = [filterTableSetDefaultOperatorValue stringValue];
-			filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:newOperator];
-			[prefs setObject:newOperator forKey:SPFilterTableDefaultOperator];
-
-			if(![newOperator isMatchedByRegex:@"(?i)like\\s+['\"]%@%['\"]\\s*"]) {
-				if(![prefs objectForKey:SPFilterTableDefaultOperatorLastItems])
-					[prefs setObject:[NSMutableArray array] forKey:SPFilterTableDefaultOperatorLastItems];
+			if (![newOperator isMatchedByRegex:@"(?i)like\\s+['\"]%@%['\"]\\s*"]) {
+				if (![self->prefs objectForKey:SPFilterTableDefaultOperatorLastItems])
+					[self->prefs setObject:[NSMutableArray array] forKey:SPFilterTableDefaultOperatorLastItems];
 
 				NSMutableArray *lastItems = [NSMutableArray array];
-				[lastItems setArray:[prefs objectForKey:SPFilterTableDefaultOperatorLastItems]];
+				[lastItems setArray:[self->prefs objectForKey:SPFilterTableDefaultOperatorLastItems]];
 
-				if([lastItems containsObject:newOperator])
+				if ([lastItems containsObject:newOperator]) {
 					[lastItems removeObject:newOperator];
-				if([lastItems count] > 0)
+				}
+				if ([lastItems count] > 0) {
 					[lastItems insertObject:newOperator atIndex:0];
-				else
+				} else {
 					[lastItems addObject:newOperator];
+				}
 				// Remember only the last 15 items
-				if([lastItems count] > 15)
-					while([lastItems count] > 15)
-						[filterTableSetDefaultOperatorValue removeItemAtIndex:[lastItems count]-1];
+				if([lastItems count] > 15) {
+					while([lastItems count] > 15) {
+						[self->filterTableSetDefaultOperatorValue removeItemAtIndex:[lastItems count]-1];
+					}
+				}
 
-				[prefs setObject:lastItems forKey:SPFilterTableDefaultOperatorLastItems];
+				[self->prefs setObject:lastItems forKey:SPFilterTableDefaultOperatorLastItems];
 			}
 			[self updateFilterTableClause:nil];
 		}
-	}
+	}];
 }
 
 /**

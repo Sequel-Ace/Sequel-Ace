@@ -1122,7 +1122,6 @@
 			
 			//highlight the cell if the mouse is over it
 			NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
-			NSRect closeRect = [currentCell closeButtonRectForFrame:cellFrame];
 			[currentCell setHighlighted:NSMouseInRect(mousePoint, cellFrame, [self isFlipped])];
 		}
         
@@ -1151,7 +1150,6 @@
                 
                 //highlight the cell if the mouse is over it
                 NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
-                NSRect closeRect = [currentCell closeButtonRectForFrame:cellFrame];
                 [currentCell setHighlighted:NSMouseInRect(mousePoint, cellFrame, [self isFlipped])];
 			}
 		}
@@ -2045,8 +2043,7 @@
     return nil;
 }
 
-- (PSMTabBarCell *)lastVisibleTab
-{
+- (PSMTabBarCell *)lastVisibleTab {
     NSInteger i, cellCount = [_cells count];
     for (i = 0; i < cellCount; i++) {
         if ([[_cells objectAtIndex:i] isInOverflowMenu]) {
@@ -2056,8 +2053,7 @@
     return [_cells objectAtIndex:(cellCount - 1)];
 }
 
-- (NSUInteger)numberOfVisibleTabs
-{
+- (NSUInteger)numberOfVisibleTabs {
     NSUInteger i, cellCount = 0;
 	PSMTabBarCell *nextCell;
 	
@@ -2074,46 +2070,6 @@
     }
 	
     return cellCount;
-}
-
-#pragma mark -
-#pragma mark Accessibility
-
--(BOOL)isAccessibilityEnabled {
-	return YES;
-}
-
-// TODO: jcs - this is hardly ever called with any meaningful values, won't fix for the moment - 2020-10-22
-- (id)accessibilityAttributeValue:(NSString *)attribute {
-	id attributeValue = nil;
-	if ([attribute isEqualToString: NSAccessibilityRoleAttribute]) {
-		attributeValue = NSAccessibilityGroupRole;
-	} else if ([attribute isEqualToString: NSAccessibilityChildrenAttribute]) {
-		attributeValue = NSAccessibilityUnignoredChildren(_cells);
-	} else {
-		attributeValue = [super accessibilityAttributeValue:attribute];
-	}
-	return attributeValue;
-}
-
-- (id)accessibilityHitTest:(NSPoint)point {
-	id hitTestResult = self;
-	
-	NSEnumerator *enumerator = [_cells objectEnumerator];
-	PSMTabBarCell *cell = nil;
-	PSMTabBarCell *highlightedCell = nil;
-	
-	while (!highlightedCell && (cell = [enumerator nextObject])) {
-		if ([cell isHighlighted]) {
-			highlightedCell = cell;
-		}
-	}
-	
-	if (highlightedCell) {
-		hitTestResult = [highlightedCell accessibilityHitTest:point];
-	}
-	
-	return hitTestResult;
 }
 
 @end

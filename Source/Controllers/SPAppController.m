@@ -41,7 +41,6 @@
 #import "SPBundleEditorController.h"
 #import "SPTooltip.h"
 #import "SPBundleHTMLOutputController.h"
-#import "SPAlertSheets.h"
 #import "SPChooseMenuItemDialog.h"
 #import "SPCustomQuery.h"
 #import "SPFavoritesController.h"
