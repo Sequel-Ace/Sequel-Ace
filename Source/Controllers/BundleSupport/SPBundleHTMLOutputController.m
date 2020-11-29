@@ -32,6 +32,7 @@
 #import "SPPrintAccessory.h"
 #import "SPAppController.h"
 #import "SPBundleCommandRunner.h"
+#import "SPPrintUtility.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -231,57 +232,10 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	}
 }
 
-- (IBAction)printDocument:(id)sender
-{
-#warning duplicate code with -[SPDatabaseDocument webView:didFinishLoadForFrame:]
-	NSPrintInfo *printInfo = [NSPrintInfo sharedPrintInfo];
+- (IBAction)printDocument:(id)sender {
+	NSPrintOperation *op = [SPPrintUtility preparePrintOperationWithView:[[[webView mainFrame] frameView] documentView] printView:webView];
 
-	NSSize paperSize = [printInfo paperSize];
-	NSRect printableRect = [printInfo imageablePageBounds];
-
-	// Calculate page margins
-	CGFloat marginL = printableRect.origin.x;
-	CGFloat marginR = paperSize.width - (printableRect.origin.x + printableRect.size.width);
-	CGFloat marginB = printableRect.origin.y;
-	CGFloat marginT = paperSize.height - (printableRect.origin.y + printableRect.size.height);
-
-	// Make sure margins are symetric and positive
-	CGFloat marginLR = MAX(0, MAX(marginL, marginR));
-	CGFloat marginTB = MAX(0, MAX(marginT, marginB));
-
-	// Set the margins
-	[printInfo setLeftMargin:marginLR];
-	[printInfo setRightMargin:marginLR];
-	[printInfo setTopMargin:marginTB];
-	[printInfo setBottomMargin:marginTB];
-
-	[printInfo setHorizontalPagination:NSFitPagination];
-	[printInfo setVerticalPagination:NSFitPagination];
-	[printInfo setVerticallyCentered:NO];
-
-	NSPrintOperation *op = [NSPrintOperation printOperationWithView:[[[webView mainFrame] frameView] documentView] printInfo:printInfo];
-
-	// do not try to use webkit from a background thread!
-	[op setCanSpawnSeparateThread:NO];
-
-	// Add the ability to select the orientation to print panel
-	NSPrintPanel *printPanel = [op printPanel];
-
-	[printPanel setOptions:[printPanel options] + NSPrintPanelShowsOrientation + NSPrintPanelShowsScaling + NSPrintPanelShowsPaperSize];
-
-	[op setPrintPanel:printPanel];
-
-	SPPrintAccessory *printAccessory = [[SPPrintAccessory alloc] initWithNibName:@"PrintAccessory" bundle:nil];
-
-	[printAccessory setPrintView:webView];
-	[printPanel addAccessoryController:printAccessory];
-
-	[[NSPageLayout pageLayout] addAccessoryController:printAccessory];
-
-	[op runOperationModalForWindow:[self window]
-		delegate:self
-		didRunSelector:nil
-		contextInfo:nil];
+	[op runOperationModalForWindow:[self window] delegate:self didRunSelector:nil contextInfo:nil];
 }
 
 - (void)showSourceCode

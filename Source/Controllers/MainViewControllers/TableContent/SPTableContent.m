@@ -1709,27 +1709,16 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Asks the user if they really want to delete the selected rows
  */
-- (IBAction)removeRow:(id)sender
-{
+- (IBAction)removeRow:(id)sender {
 	// cancel editing (maybe this is not the ideal method -- see xcode docs for that method)
 	[[tableDocumentInstance parentWindow] endEditingFor:nil];
 
 	if (![tableContentView numberOfSelectedRows]) return;
 
-	NSAlert *alert = [NSAlert alertWithMessageText:@""
-	                                 defaultButton:NSLocalizedString(@"Delete", @"delete button")
-	                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-	                                   otherButton:nil
-	                     informativeTextWithFormat:@""];
-
+	NSAlert *alert = [[NSAlert alloc] init];
+	[alert addButtonWithTitle:NSLocalizedString(@"Delete", @"delete button")];
+	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 	[alert setAlertStyle:NSAlertStyleCritical];
-
-	NSArray *buttons = [alert buttons];
-
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 
 	[alert setShowsSuppressionButton:NO];
 	[[alert suppressionButton] setState:NSOffState];
@@ -1761,18 +1750,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone.", @"delete rows informative message"), (long)[tableContentView numberOfSelectedRows]]];
 	}
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow]
-	                  modalDelegate:self
-	                 didEndSelector:@selector(removeRowSheetDidEnd:returnCode:contextInfo:)
-						contextInfo:(__bridge void * _Nullable)(contextInfo)];
-}
-
-/**
- * Perform the requested row deletion action.
- */
-- (void)removeRowSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-
+	NSModalResponse alertReturnCode = [alert runModal];
 
 	NSMutableIndexSet *selectedRows = [NSMutableIndexSet indexSet];
 	NSString *wherePart;
@@ -1780,27 +1758,16 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	BOOL consoleUpdateStatus;
 	BOOL reloadAfterRemovingRow = [prefs boolForKey:SPReloadAfterRemovingRow];
 
-	// Order out current sheet to suppress overlapping of sheets
-	[[alert window] orderOut:nil];
-
 	BOOL __block retCode = YES;
 
 	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
 	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
 
-	SPLog(@"queryWarningEnabled = %d", queryWarningEnabled);
-	SPLog(@"queryWarningEnabledSuppressed = %d", queryWarningEnabledSuppressed);
-
-	if (returnCode == NSAlertDefaultReturn && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
-		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")]
-													message:@"Double checking as you have 'Show warning before executing a query' set in Preferences"
-											 suppressionKey:SPQueryWarningEnabledSuppressed
-										 primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
-									   primaryButtonHandler:^{
+	if (alertReturnCode == NSModalResponseOK && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
+		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")] message:@"Double checking as you have 'Show warning before executing a query' set in Preferences" suppressionKey:SPQueryWarningEnabledSuppressed primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed") primaryButtonHandler:^{
 			SPLog(@"User clicked Yes, exec queries");
 			retCode = YES;
-		}
-										cancelButtonHandler:^{
+		} cancelButtonHandler:^{
 			SPLog(@"Cancel pressed");
 			self->isEditingRow = NO;
 			self->currentlyEditingRow = -1;
@@ -1808,16 +1775,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[self loadTableValues];
 			retCode = NO;
 		}];
-
 	}
 
-	if(retCode == NO){
+	if (retCode == NO) {
 		SPLog(@"Cancel pressed returning without deleting rows");
 		return;
 	}
 
-	if ( [(__bridge NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
-		if ( returnCode == NSAlertDefaultReturn ) {
+	if ([contextInfo isEqualToString:@"removeallrows"]) {
+		if (alertReturnCode == NSModalResponseOK) {
 
 			// Check if the user is currently editing a row, and revert to ensure a somewhat
 			// consistent state if deletion fails.
@@ -1831,7 +1797,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				[self updateCountText];
 
 				// Reset auto increment if suppression button was ticked
-				if([[alert suppressionButton] state] == NSOnState) {
+				if ([[alert suppressionButton] state] == NSOnState) {
 					[tableSourceInstance setAutoIncrementTo:@1];
 					[prefs setBool:YES forKey:SPResetAutoIncrementAfterDeletionOfAllRows];
 				} else {
@@ -1849,8 +1815,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					afterDelay:0.3];
 			}
 		}
-	} else if ( [(__bridge NSString*)contextInfo isEqualToString:@"removerow"] ) {
-		if ( returnCode == NSAlertDefaultReturn ) {
+	} else if ([contextInfo isEqualToString:@"removerow"] ) {
+		if (alertReturnCode == NSModalResponseOK) {
 			[selectedRows addIndexes:[tableContentView selectedRowIndexes]];
 
 			//check if the user is currently editing a row

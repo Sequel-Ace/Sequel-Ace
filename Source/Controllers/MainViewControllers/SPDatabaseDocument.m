@@ -84,6 +84,7 @@
 #import "SPHelpViewerController.h"
 #import "PSMTabBarController.h"
 #import "PSMTabBarControl.h"
+#import "SPPrintUtility.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -6586,52 +6587,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * WebView delegate method.
  */
-- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame
-{
-	// Because we need the webFrame loaded (for preview), we've moved the actual printing here
-	NSPrintInfo *printInfo = [NSPrintInfo sharedPrintInfo];
+- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame {
 
-	NSSize paperSize = [printInfo paperSize];
-	NSRect printableRect = [printInfo imageablePageBounds];
 
-	// Calculate page margins
-	CGFloat marginL = printableRect.origin.x;
-	CGFloat marginR = paperSize.width - (printableRect.origin.x + printableRect.size.width);
-	CGFloat marginB = printableRect.origin.y;
-	CGFloat marginT = paperSize.height - (printableRect.origin.y + printableRect.size.height);
-
-	// Make sure margins are symetric and positive
-	CGFloat marginLR = MAX(0, MAX(marginL, marginR));
-	CGFloat marginTB = MAX(0, MAX(marginT, marginB));
-
-	// Set the margins
-	[printInfo setLeftMargin:marginLR];
-	[printInfo setRightMargin:marginLR];
-	[printInfo setTopMargin:marginTB];
-	[printInfo setBottomMargin:marginTB];
-
-	[printInfo setHorizontalPagination:NSFitPagination];
-	[printInfo setVerticalPagination:NSAutoPagination];
-	[printInfo setVerticallyCentered:NO];
-
-	NSPrintOperation *op = [NSPrintOperation printOperationWithView:[[[printWebView mainFrame] frameView] documentView] printInfo:printInfo];
-
-	// do not try to use webkit from a background thread!
-	[op setCanSpawnSeparateThread:NO];
-
-	// Add the ability to select the orientation to print panel
-	NSPrintPanel *printPanel = [op printPanel];
-
-	[printPanel setOptions:[printPanel options] + NSPrintPanelShowsOrientation + NSPrintPanelShowsScaling + NSPrintPanelShowsPaperSize];
-
-	SPPrintAccessory *printAccessory = [[SPPrintAccessory alloc] initWithNibName:@"PrintAccessory" bundle:nil];
-
-	[printAccessory setPrintView:printWebView];
-	[printPanel addAccessoryController:printAccessory];
-
-	[[NSPageLayout pageLayout] addAccessoryController:printAccessory];
-
-	[op setPrintPanel:printPanel];
+	NSPrintOperation *op = [SPPrintUtility preparePrintOperationWithView:[[[printWebView mainFrame] frameView] documentView] printView:printWebView];
 
 	/* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
 	 * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
@@ -6645,10 +6604,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	 */
 	if ([self isWorking]) [self endTask];
 
-	[op runOperationModalForWindow:[self parentWindow]
-	                      delegate:self
-	                didRunSelector:nil
-	                   contextInfo:nil];
+	[op runOperationModalForWindow:[self parentWindow] delegate:self didRunSelector:nil contextInfo:nil];
 }
 
 /**

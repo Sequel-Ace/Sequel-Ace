@@ -30,7 +30,7 @@
 
 #import "SPDatabaseData.h"
 #import "SPServerSupport.h"
-#import "SPDatabaseCharacterSets.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -132,19 +132,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			
 			// If that failed, get the list of collations from the hard-coded list
 			if (![collations count]) {
-				const SPDatabaseCharSets *c = SPGetDatabaseCharacterSets();
-#warning This probably won't work as intended. See my comment in getDatabaseCollationsForEncoding:
-				do {
-					[collations addObject:@{
-						@"ID"                 : @(c->nr),
-						@"CHARACTER_SET_NAME" : [NSString stringWithCString:c->name encoding:NSUTF8StringEncoding],
-						@"COLLATION_NAME"     : [NSString stringWithCString:c->collation encoding:NSUTF8StringEncoding],
-						// description is not present in information_schema.collations
-					}];
-					
-					++c;
-				} 
-				while (c->nr != 0);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations", @"Unable to get database collations") callback:nil];
 			}
 		}
 			
@@ -188,22 +176,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 
 			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
 			if (![characterSetCollations count]) {
-				const SPDatabaseCharSets *c = SPGetDatabaseCharacterSets();
-#warning I don't think this will work. The hardcoded list is supposed to be used with pre 4.1 mysql servers, \
-         which don't have information_schema or SHOW COLLATION. But before 4.1 there were no real collations and \
-         even the charsets had different names (e.g. charset "latin1_de" which now is "latin1" + "latin1_german2_ci")
-				do {
-					NSString *charSet = [NSString stringWithCString:c->name encoding:NSUTF8StringEncoding];
-
-					if ([charSet isEqualToString:characterSetEncoding]) {
-						[characterSetCollations addObject:@{
-							@"COLLATION_NAME" : [NSString stringWithCString:c->collation encoding:NSUTF8StringEncoding]
-						}];
-					}
-
-					++c;
-				} 
-				while (c->nr != 0);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations for given encoding", @"Unable to get database collations for given encoding") callback:nil];
 			}
 
 			if ([characterSetCollations count]) {
@@ -234,7 +207,6 @@ copy_return:
 		if ((defaultCollationForCharacterSet == nil) || (![characterSetEncoding isEqualToString:encoding])) {
 			NSArray *cols = [self getDatabaseCollationsForEncoding:encoding]; //will clear stored encoding and collation if neccesary
 			for (NSDictionary *collation in cols) {
-#warning This won't work for the hardcoded list (see above)
 				if([[[collation objectForKey:@"IS_DEFAULT"] lowercaseString] isEqualToString:@"yes"]) {
 					defaultCollationForCharacterSet = [[NSString alloc] initWithString:[collation objectForKey:@"COLLATION_NAME"]];
 					break;
@@ -383,17 +355,7 @@ copy_return:
 
 			// If that failed, get the list of character set encodings from the hard-coded list
 			if (![characterSetEncodings count]) {			
-				const SPDatabaseCharSets *c = SPGetDatabaseCharacterSets();
-#warning This probably won't work as intended. See my comment in getDatabaseCollationsForEncoding:
-				do {
-					[characterSetEncodings addObject:@{
-						@"CHARACTER_SET_NAME" : [NSString stringWithCString:c->name encoding:NSUTF8StringEncoding],
-						@"DESCRIPTION"        : [NSString stringWithCString:c->description encoding:NSUTF8StringEncoding]
-					}];
-
-					++c;
-				} 
-				while (c->nr != 0);
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database character set encodings", @"Unable to get database character set encodings") callback:nil];
 			}
 		}
 			
