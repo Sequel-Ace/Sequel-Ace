@@ -121,8 +121,8 @@ typedef enum {
 		NSMutableArray *qlTypesItems = [[NSMutableArray alloc] init];
 		NSError *readError = nil;
 
-		NSString *filePath = [NSBundle pathForResource:@"EditorQuickLookTypes.plist"
-												ofType:nil
+		NSString *filePath = [NSBundle pathForResource:@"EditorQuickLookTypes"
+												ofType:@"plist"
 										   inDirectory:[[NSBundle mainBundle] bundlePath]];
 		
 		NSData *defaultTypeData = [NSData dataWithContentsOfFile:filePath

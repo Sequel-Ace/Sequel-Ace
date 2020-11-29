@@ -247,9 +247,7 @@
 			// When quote characters are encountered walk to the end of the quoted string.
 			case CHAR_SQUOTE:
 			case CHAR_DQUOTE:
-			case CHAR_BTICK:
-			{
-#warning duplicate code with -endIndexOfStringQuotedByCharacter:startingIndex:
+			case CHAR_BTICK: {
 				NSUInteger innerStringIndex;
 				for (innerStringIndex = currentStringIndex + 1; innerStringIndex < stringLength; innerStringIndex++) {
 					unichar innerCharacter = CFStringGetCharacterAtIndex((CFStringRef) queryString, innerStringIndex);
@@ -826,7 +824,7 @@
  * into account the various forms of SQL escaping.
  * A method intended for use by the functions above.
  */
-- (NSUInteger) endIndexOfStringQuotedByCharacter:(unichar)quoteCharacter startingAtIndex:(NSInteger)startIndex
+- (NSUInteger)endIndexOfStringQuotedByCharacter:(unichar)quoteCharacter startingAtIndex:(NSInteger)startIndex
 {
 	NSInteger stringLength = [string length];
 
