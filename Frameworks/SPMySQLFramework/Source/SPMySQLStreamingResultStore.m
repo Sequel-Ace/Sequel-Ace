@@ -681,7 +681,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 		// Loop through the rows until the end of the data is reached - indicated via a NULL
 		while (
-			(*isConnectedPtr)(parentConnection, isConnectedSelector)
+			([parentConnection isConnected])
 				&& (theRow = mysql_fetch_row(resultSet))
 			) {
 			// If the load has been cancelled, skip any processing - we're only interested

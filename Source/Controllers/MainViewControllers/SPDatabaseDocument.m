@@ -1798,7 +1798,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		
 	[createTableSyntaxTextView setEditable:YES];
 	[createTableSyntaxTextView setString:@""];
-	[createTableSyntaxTextView insertText:createSyntax];
+	[createTableSyntaxTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:createSyntax]];
 	[createTableSyntaxTextView setEditable:NO];
 
 	[createTableSyntaxWindow makeFirstResponder:createTableSyntaxTextField];
@@ -3657,7 +3657,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (void)updateTitlebarStatusVisibilityForcingHide:(BOOL)forceHide
 {
 	BOOL newIsVisible = !forceHide;
-	if (newIsVisible && [parentWindow styleMask] & NSFullScreenWindowMask) newIsVisible = NO;
+	if (newIsVisible && [parentWindow styleMask] & NSWindowStyleMaskFullScreen) newIsVisible = NO;
 	if (newIsVisible && [parentWindowController selectedTableDocument] != self) newIsVisible = NO;
 	if (newIsVisible == windowTitleStatusViewIsVisible) return;
 
@@ -3711,8 +3711,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// set up toolbar properties
 	[mainToolbar setAllowsUserCustomization:YES];
 	[mainToolbar setAutosavesConfiguration:YES];
-	[mainToolbar setShowsBaselineSeparator:NO];
-	[mainToolbar setDisplayMode:NSToolbarDisplayModeIconAndLabel];
 
 	// set ourself as the delegate
 	[mainToolbar setDelegate:self];
@@ -3760,7 +3758,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setToolTip:NSLocalizedString(@"Show the console which shows all MySQL commands performed by Sequel Ace", @"tooltip for toolbar item for show console")];
 
 		[toolbarItem setLabel:NSLocalizedString(@"Console", @"Console")];
-		[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
+		}
 
 		//set up the target action
 		[toolbarItem setTarget:self];
@@ -3772,7 +3774,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Clear Console", @"toolbar item for clear console")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Clear the console which shows all MySQL commands performed by Sequel Ace", @"tooltip for toolbar item for clear console")];
-		[toolbarItem setImage:[NSImage imageNamed:@"clearconsole"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"clearconsole"]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(clearConsole:)];
@@ -3782,7 +3788,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Edit Table Structure", @"toolbar item label for switching to the Table Structure tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Structure tab", @"tooltip for toolbar item for switching to the Table Structure tab")];
-		[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-structure"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"scale.3d" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-structure"]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(viewStructure:)];
@@ -3792,7 +3802,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Browse & Edit Table Content", @"toolbar item label for switching to the Table Content tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Content tab", @"tooltip for toolbar item for switching to the Table Content tab")];
-		[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-browse"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.justify" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-browse"]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(viewContent:)];
@@ -3802,7 +3816,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Run Custom Query", @"toolbar item label for switching to the Run Query tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the Run Query tab", @"tooltip for toolbar item for switching to the Run Query tab")];
-		[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-sql"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"terminal" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-sql"]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(viewQuery:)];
@@ -3812,7 +3830,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Table Info", @"toolbar item label for switching to the Table Info tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Info tab", @"tooltip for toolbar item for switching to the Table Info tab")];
-		[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-info"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"info.circle" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:NSImageNameInfo]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(viewStatus:)];
@@ -3822,7 +3844,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Table Relations", @"toolbar item label for switching to the Table Relations tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Relations tab", @"tooltip for toolbar item for switching to the Table Relations tab")];
-		[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-relations"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"arrow.2.squarepath" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-relations"]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(viewRelations:)];
@@ -3832,7 +3858,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Table Triggers", @"toolbar item label for switching to the Table Triggers tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Triggers tab", @"tooltip for toolbar item for switching to the Table Triggers tab")];
-		[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-triggers"]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"bolt.circle" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-triggers"]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(viewTriggers:)];
@@ -3842,7 +3872,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setPaletteLabel:NSLocalizedString(@"Users", @"toolbar item label for switching to the User Manager tab")];
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Switch to the User Manager tab", @"tooltip for toolbar item for switching to the User Manager tab")];
-		[toolbarItem setImage:[NSImage imageNamed:NSImageNameEveryone]];
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"person.3" accessibilityDescription:nil]];
+		} else {
+			[toolbarItem setImage:[NSImage imageNamed:NSImageNameUserGroup]];
+		}
 		//set up the target action
 		[toolbarItem setTarget:self];
 		[toolbarItem setAction:@selector(showUserManager:)];
@@ -3904,15 +3938,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar*)toolbar
 {
 	return @[
-		SPMainToolbarDatabaseSelection,
 		SPMainToolbarTableStructure,
 		SPMainToolbarTableContent,
 		SPMainToolbarTableRelations,
 		SPMainToolbarTableTriggers,
 		SPMainToolbarTableInfo,
 		SPMainToolbarCustomQuery,
-		NSToolbarFlexibleSpaceItemIdentifier,
+		NSToolbarSpaceItemIdentifier,
 		SPMainToolbarHistoryNavigation,
+		NSToolbarSpaceItemIdentifier,
 		SPMainToolbarUserManager,
 		SPMainToolbarShowConsole
 	];
@@ -3946,10 +3980,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	// Show console item
 	if ([identifier isEqualToString:SPMainToolbarShowConsole]) {
 		NSWindow *queryWindow = [[SPQueryController sharedQueryController] window];
-		if ([queryWindow isVisible]) {
-			[toolbarItem setImage:[NSImage imageNamed:@"showconsole"]];
+
+		if (@available(macOS 11.0, *)) {
+			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil]];
 		} else {
-			[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
+			if ([queryWindow isVisible]) {
+				[toolbarItem setImage:[NSImage imageNamed:@"showconsole"]];
+			} else {
+				[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
+			}
 		}
 		if ([queryWindow isKeyWindow]) {
 			return NO;
@@ -4920,7 +4959,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if([params count] > 1) {
 			id firstResponder = [parentWindow firstResponder];
 			if([firstResponder isKindOfClass:[NSTextView class]]) {
-				[firstResponder insertText:[params objectAtIndex:1]];
+				[((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[params objectAtIndex:1]]];
 				return;
 			}
 			NSBeep();
@@ -4932,8 +4971,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if([params count] > 1) {
 			id firstResponder = [parentWindow firstResponder];
 			if([firstResponder isKindOfClass:[NSTextView class]]) {
-				[firstResponder setSelectedRange:NSMakeRange(0, [[firstResponder string] length])];
-				[firstResponder insertText:[params objectAtIndex:1]];
+				[(NSTextView *)firstResponder setSelectedRange:NSMakeRange(0, [[firstResponder string] length])];
+				[((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[params objectAtIndex:1]]];
 				return;
 			}
 			NSBeep();

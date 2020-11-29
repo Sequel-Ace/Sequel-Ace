@@ -35,6 +35,8 @@
 #import "SPSplitView.h"
 #import "SPAppController.h"
 
+#import "sequel-ace-Swift.h"
+
 #define kBundleNameKey @"bundleName"
 #define kChildrenKey @"_children_"
 #define kInputFieldScopeArrayIndex 0
@@ -60,7 +62,6 @@
 - (NSUInteger)_arrangedScopeIndexForScopeIndex:(NSUInteger)scopeIndex;
 - (NSUInteger)_scopeIndexForArrangedScopeIndex:(NSUInteger)scopeIndex;
 - (NSUInteger)_arrangedCategoryIndexForScopeIndex:(NSUInteger)scopeIndex andCategory:(NSString*)category;
-- (void)_metaSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
 @property (readwrite, strong) NSFileManager *fileManager;
 
@@ -647,8 +648,9 @@
 						forKeys:@[kBundleNameKey, SPBundleFileNameKey, SPBundleFileCommandKey, SPBundleFileScopeKey, SPBundleFileCategoryKey, SPBundleFileUUIDKey]];
 	}
 
-	if(![touchedBundleArray containsObject:[bundle objectForKey:kBundleNameKey]])
+	if (![touchedBundleArray containsObject:[bundle objectForKey:kBundleNameKey]]) {
 		[touchedBundleArray addObject:[bundle objectForKey:kBundleNameKey]];
+	}
 
 	[commandBundleTreeController insertObject:bundle atArrangedObjectIndexPath:currentIndexPath];
 
@@ -657,7 +659,7 @@
 
 	[commandsOutlineView scrollRowToVisible:[commandsOutlineView selectedRow]];
 
-	[removeButton setEnabled:([[commandBundleTreeController selectedObjects] count] == 1 && ![[[commandBundleTreeController selectedObjects] objectAtIndex:0] objectForKey:kChildrenKey])];
+	[removeButton setEnabled:([[commandBundleTreeController selectedObjects] count] == 1 && ![[[commandBundleTreeController selectedObjects] firstObject] objectForKey:kChildrenKey])];
 	[addButton setEnabled:([[commandBundleTreeController selectionIndexPath] length] > 1)];
 
 	[self _updateBundleDataView];
@@ -669,31 +671,60 @@
 /**
  * Remove the selected bundle but before ask for confirmation
  */
-- (IBAction)removeCommandBundle:(id)sender
-{
-
+- (IBAction)removeCommandBundle:(id)sender {
 	[commandsOutlineView abortEditing];
-	
-	NSAlert *alert = [[NSAlert alloc] init];
-	
-	// jamesstout notes
-	// Alerts should be created with the -init method and setting properties. - NSAlert.h L132
-	alert.messageText = NSLocalizedString(@"Remove selected Bundle?", @"Bundle Editor : Remove-Bundle: remove dialog title") ;
-	alert.informativeText = NSLocalizedString(@"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?", @"Bundle Editor : Remove-Bundle: remove dialog message");
-	[alert addButtonWithTitle:NSLocalizedString(@"Remove", @"Bundle Editor : Remove-Bundle: remove button")]; // first button is delete
-	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Bundle Editor : Remove-Bundle: cancel button")]; // second is cancel
-	
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"r"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-	
-	[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"removeSelectedBundles"];
 
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Remove selected Bundle?", @"Bundle Editor : Remove-Bundle: remove dialog title")
+								 message:NSLocalizedString(@"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?", @"Bundle Editor : Remove-Bundle: remove dialog message")
+					  primaryButtonTitle:NSLocalizedString(@"Remove", @"Bundle Editor : Remove-Bundle: remove button")
+					primaryButtonHandler:^{
+
+		NSArray *selObjects = [self->commandBundleTreeController selectedObjects];
+		NSArray *selIndexPaths = [self->commandBundleTreeController selectionIndexPaths];
+		BOOL deletionSuccessfully = YES;
+
+		for (id obj in selObjects) {
+
+			// Move already installed Bundles to Trash
+			NSString *bundleName = [obj objectForKey:kBundleNameKey];
+			NSString *thePath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleName, SPUserBundleFileExtension];
+			if ([self->fileManager fileExistsAtPath:thePath isDirectory:nil]) {
+				NSError *error = nil;
+
+				// Use a AppleScript script since NSWorkspace performFileOperation or NSFileManager moveItemAtPath
+				// have problems probably due access rights.
+				[self->fileManager removeItemAtPath:thePath error:&error];
+
+				if (error != nil) {
+					[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Bundle Editor : Trash-Bundle(s)-Error : error dialog title"), thePath] message:[NSString stringWithFormat:@"%@", [error localizedDescription]] callback:nil];
+
+					deletionSuccessfully = NO;
+					break;
+				}
+				if ([obj objectForKey:SPBundleFileIsDefaultBundleKey]) {
+					[self->deletedDefaultBundles addObject:[NSArray arrayWithObjects:[obj objectForKey:SPBundleFileUUIDKey], [obj objectForKey:SPBundleFileNameKey], nil]];
+					[[NSUserDefaults standardUserDefaults] setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
+				}
+				[self->commandsOutlineView reloadData];
+			}
+		}
+
+		if (deletionSuccessfully) {
+			[self->commandBundleTreeController removeObjectsAtArrangedObjectIndexPaths:selIndexPaths];
+			[self->commandBundleTreeController rearrangeObjects];
+		}
+
+		[self reloadBundles:self];
+
+		[self->commandBundleTreeController setSelectionIndexPath:[[selIndexPaths objectAtIndex:0] indexPathByRemovingLastIndex]];
+		[self->commandsOutlineView expandItem:[self _currentSelectedNode] expandChildren:NO];
+
+		// Set focus to table view to avoid an unstable state
+		[[self window] makeFirstResponder:self->commandsOutlineView];
+
+		[self->removeButton setEnabled:([[self->commandBundleTreeController selectedObjects] count] == 1 && ![[[self->commandBundleTreeController selectedObjects] firstObject] objectForKey:kChildrenKey])];
+		[self->addButton setEnabled:([[self->commandBundleTreeController selectionIndexPath] length] > 1)];
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -799,11 +830,30 @@
 - (IBAction)undeleteDefaultBundles:(id)sender
 {
 	[undeleteTableView reloadData];
-	[NSApp beginSheet:undeleteSheet
-	   modalForWindow:[self window] 
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:@"undeleteSelectedDefaultBundles"];
+	[self.window beginSheet:undeleteSheet completionHandler:^(NSModalResponse returnCode) {
+		// these return values do not apply to an NSAlert created via +alertWithMessageText:defaultButton:alternateButton:otherButton:informativeTextWithFormat
+		if (returnCode == 1) {
+
+			NSIndexSet *selectedRows = [self->undeleteTableView selectedRowIndexes];
+
+			if (![selectedRows count]) {
+				return;
+			}
+
+			NSUInteger rowIndex;
+			NSMutableArray *stillUndeletedBundles = [NSMutableArray array];
+			for (rowIndex = 0; rowIndex < [self->deletedDefaultBundles count]; rowIndex++) {
+				if(![selectedRows containsIndex:rowIndex])
+					[stillUndeletedBundles addObject:[self->deletedDefaultBundles objectAtIndex:rowIndex]];
+			}
+			[self->deletedDefaultBundles setArray:stillUndeletedBundles];
+			[self->undeleteTableView reloadData];
+			[[NSUserDefaults standardUserDefaults] setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
+			[[NSUserDefaults standardUserDefaults] synchronize];
+			[SPAppDelegate reloadBundles:nil];
+			[self reloadBundles:self];
+		}
+	}];
 }
 
 - (IBAction)closeUndeleteDefaultBundlesSheet:(id)sender
@@ -819,11 +869,9 @@
 
 - (IBAction)displayBundleMetaInfo:(id)sender
 {
-	[NSApp beginSheet:metaInfoSheet
-	   modalForWindow:[self window]
-		modalDelegate:self
-	   didEndSelector:@selector(_metaSheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:nil];
+	[self.window beginSheet:metaInfoSheet completionHandler:^(NSModalResponse returnCode) {
+			[self _updateBundleMetaSummary];
+	}];
 }
 
 - (IBAction)closeSheet:(id)sender
@@ -973,108 +1021,6 @@
 	[saveDict writeToFile:cmdFilePath atomically:YES];
 
 	return YES;
-}
-
-/**
- * Sheet did end method
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)])
-		[sheet orderOut:nil];
-	else if ([sheet respondsToSelector:@selector(window)])
-		[[sheet window] orderOut:nil];
-
-	if([contextInfo isEqualToString:@"removeSelectedBundles"]) {
-		if (returnCode == (NSInteger)NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) { // this is an NSModalResponse as instatiated via NSAlert init,
-																// for some reason it must be cast to NSInteger
-			
-			NSArray *selObjects = [commandBundleTreeController selectedObjects];
-			NSArray *selIndexPaths = [commandBundleTreeController selectionIndexPaths];
-			BOOL deletionSuccessfully = YES;
-
-			for(id obj in selObjects) {
-
-				// Move already installed Bundles to Trash
-				NSString *bundleName = [obj objectForKey:kBundleNameKey];
-				NSString *thePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleName, SPUserBundleFileExtension];
-				if([fileManager fileExistsAtPath:thePath isDirectory:nil]) {
-					NSError *error = nil;
-
-					// Use a AppleScript script since NSWorkspace performFileOperation or NSFileManager moveItemAtPath 
-					// have problems probably due access rights.
-					[fileManager removeItemAtPath:thePath error:&error];
-					
-					if(error != nil) {
-						
-						NSAlert *alert = [[NSAlert alloc] init];
-						
-						// jamesstout notes
-						// Alerts should be created with the -init method and setting properties. - NSAlert.h L132
-						alert.messageText = [NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Bundle Editor : Trash-Bundle(s)-Error : error dialog title"), thePath];
-						alert.informativeText = [NSString stringWithFormat:@"%@", [error localizedDescription]];
-						[alert addButtonWithTitle:NSLocalizedString(@"OK", @"Bundle Editor : Trash-Bundle(s)-Error : OK button")]; // first button is OK
-						
-						[alert setAlertStyle:NSAlertStyleCritical];
-						[alert runModal];
-						deletionSuccessfully = NO;
-						break;
-					}
-					if([obj objectForKey:SPBundleFileIsDefaultBundleKey]) {
-						[deletedDefaultBundles addObject:[NSArray arrayWithObjects:[obj objectForKey:SPBundleFileUUIDKey], [obj objectForKey:SPBundleFileNameKey], nil]];
-						[[NSUserDefaults standardUserDefaults] setObject:deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
-					}
-					[commandsOutlineView reloadData];
-				}
-			}
-
-			if(deletionSuccessfully) {
-				[commandBundleTreeController removeObjectsAtArrangedObjectIndexPaths:selIndexPaths];
-				[commandBundleTreeController rearrangeObjects];
-			}
-
-			[self reloadBundles:self];
-
-			[commandBundleTreeController setSelectionIndexPath:[[selIndexPaths objectAtIndex:0] indexPathByRemovingLastIndex]];
-			[commandsOutlineView expandItem:[self _currentSelectedNode] expandChildren:NO];
-
-			// Set focus to table view to avoid an unstable state
-			[[self window] makeFirstResponder:commandsOutlineView];
-
-			[removeButton setEnabled:([[commandBundleTreeController selectedObjects] count] == 1 && ![[[commandBundleTreeController selectedObjects] objectAtIndex:0] objectForKey:kChildrenKey])];
-			[addButton setEnabled:([[commandBundleTreeController selectionIndexPath] length] > 1)];
-
-		}
-	}
-	else if([contextInfo isEqualToString:@"undeleteSelectedDefaultBundles"]) {
-		if(returnCode == 1) { //  these return values do not apply to an NSAlert created via
-								// +alertWithMessageText:defaultButton:alternateButton:otherButton:informativeTextWithFormat,
-
-			NSIndexSet *selectedRows = [undeleteTableView selectedRowIndexes];
-
-			if(![selectedRows count]) return;
-
-			NSUInteger rowIndex;
-			NSMutableArray *stillUndeletedBundles = [NSMutableArray array];
-			for(rowIndex = 0; rowIndex < [deletedDefaultBundles count]; rowIndex++) {
-				if(![selectedRows containsIndex:rowIndex])
-					[stillUndeletedBundles addObject:[deletedDefaultBundles objectAtIndex:rowIndex]];
-			}
-			[deletedDefaultBundles setArray:stillUndeletedBundles];
-			[undeleteTableView reloadData];
-			[[NSUserDefaults standardUserDefaults] setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
-			[SPAppDelegate reloadBundles:nil];
-			[self reloadBundles:self];
-
-		}
-	}
-	else {
-		NSBeep();
-		NSLog(@"%s: unhandled case! (contextInfo=%p)",__func__,contextInfo);
-	}
-
 }
 
 - (BOOL)cancelRowEditing
@@ -2079,13 +2025,6 @@
 	}
 
 	return returnIndex;
-}
-
-- (void)_metaSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	[sheet makeFirstResponder:nil];
-	
-	[self _updateBundleMetaSummary];
 }
 
 @end

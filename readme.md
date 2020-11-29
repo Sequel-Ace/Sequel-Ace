@@ -28,6 +28,18 @@ To install an unoffical community maintained [Homebrew](https://brew.sh) [Cask](
 brew cask install sequel-ace
 ```
 
+## Building locally
+
+To run Sequel Ace locally from XCode, please:
+- download `.zip` archive of this repo / clone locally
+- make sure you have `Bundler` installed ([more info](https://bundler.io))
+- open `Terminal` and `cd` to the project folder
+- run `bundle install` to install CocoaPods and dependencies
+- run `bundle exec pod install --repo-update` to install CocoaPods and dependencies
+- open `sequel-ace.xcworkspace` and run `Sequel Ace Local Testing` schema
+
+If you encounter any issue, let us know by creating a new Issue.
+
 ## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
@@ -47,7 +59,7 @@ Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects
 - **MySQL:** >= 5.6
 - **MariaDB:** >= 10.0
 
-_Note: An [older version of Sequel Ace (version 2.3)](https://github.com/sequel-ace/sequel-ace/releases) is available to download for macOS versions 10.10 and 10.11, however support is limited and we encourage upgrading to the latest macOS and Sequel Ace._
+_Note: An [older version of Sequel Ace (version 2.3.1)](https://github.com/sequel-ace/sequel-ace/releases) is available to download for macOS versions 10.10 and 10.11, however support is limited and we encourage upgrading to the latest macOS and Sequel Ace._
 
 ## License
 

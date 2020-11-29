@@ -365,7 +365,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Disable pagination
 	[paginationPreviousButton setEnabled:NO];
 	[paginationButton setEnabled:NO];
-	[paginationButton setTitle:@""];
 	[paginationNextButton setEnabled:NO];
 
 	// Disable table action buttons
@@ -1443,12 +1442,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	
 	if(makeVisible) {
 		[paginationButton setState:NSOnState];
-		[paginationButton setImage:[NSImage imageNamed:@"button_actionTemplate"]];
 		[paginationViewController makeInputFirstResponder];
 	}
 	else {
 		[paginationButton setState:NSOffState];
-		[paginationButton setImage:[NSImage imageNamed:@"button_paginationTemplate"]];
 		// TODO This is only relevant in 10.6 legacy mode.
 		// When using a modern NSPopover, the view controller's parent window is an _NSPopoverWindow,
 		// not the SP window and we don't care what the first responder in the popover is.
@@ -1776,6 +1773,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)removeRowSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
+
+
 	NSMutableIndexSet *selectedRows = [NSMutableIndexSet indexSet];
 	NSString *wherePart;
 	NSInteger i, errors;
@@ -1784,6 +1783,39 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Order out current sheet to suppress overlapping of sheets
 	[[alert window] orderOut:nil];
+
+	BOOL __block retCode = YES;
+
+	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
+	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
+
+	SPLog(@"queryWarningEnabled = %d", queryWarningEnabled);
+	SPLog(@"queryWarningEnabledSuppressed = %d", queryWarningEnabledSuppressed);
+
+	if (returnCode == NSAlertDefaultReturn && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
+		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")]
+													message:@"Double checking as you have 'Show warning before executing a query' set in Preferences"
+											 suppressionKey:SPQueryWarningEnabledSuppressed
+										 primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+									   primaryButtonHandler:^{
+			SPLog(@"User clicked Yes, exec queries");
+			retCode = YES;
+		}
+										cancelButtonHandler:^{
+			SPLog(@"Cancel pressed");
+			self->isEditingRow = NO;
+			self->currentlyEditingRow = -1;
+			// reload
+			[self loadTableValues];
+			retCode = NO;
+		}];
+
+	}
+
+	if(retCode == NO){
+		SPLog(@"Cancel pressed returning without deleting rows");
+		return;
+	}
 
 	if ( [(__bridge NSString*)contextInfo isEqualToString:@"removeallrows"] ) {
 		if ( returnCode == NSAlertDefaultReturn ) {
@@ -4353,12 +4385,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 
+		NSDictionary *displayOptions = nil;
+
+		if([aCell isMemberOfClass:[SPTextAndLinkCell class]] == YES){
+			displayOptions = @{ @"fontsize" : @(((SPTextAndLinkCell*) aCell).font.pointSize),
+								@"fontname" : ((SPTextAndLinkCell*) aCell).font.fontName };
+		}
+
 		// Show the cell string value as tooltip (including line breaks and tabs)
 		// by using the cell's font
 		[SPTooltip showWithObject:[aCell stringValue]
 		               atLocation:pos
 		                   ofType:@"text"
-		           displayOptions:nil];
+		           displayOptions:displayOptions];
 
 		return @"";
 	}

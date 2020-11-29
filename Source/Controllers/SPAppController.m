@@ -158,17 +158,19 @@
  * Called when need to switch application appearance - on startup and when userDefaults changed
  */
 - (void)switchAppearance {
-	if (@available(macOS 10.14, *)) {
-		NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
-
-		if (appearance == 1) {
-			NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-		} else if (appearance == 2) {
-			NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-		} else {
-			NSApp.appearance = nil;
+	SPMainQSync(^{
+		if (@available(macOS 10.14, *)) {
+			NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
+			
+			if (appearance == 1) {
+				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+			} else if (appearance == 2) {
+				NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+			} else {
+				NSApp.appearance = nil;
+			}
 		}
-	}
+	});
 }
 
 /**
@@ -209,6 +211,7 @@
 	// cannot be set higher than FIRLoggerLevelNotice
 	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
 #endif
+	
 	
 	// init SQLite query history	
 	SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
@@ -431,27 +434,31 @@
 			if ([filesize unsignedLongValue] > 1000000)
 			{
 				NSAlert *alert = [[NSAlert alloc] init];
+				[alert setAlertStyle:NSAlertStyleWarning];
+				[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
+				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"), [NSString stringForByteSize:[filesize longLongValue]]]];
+				[alert setHelpAnchor:filePath];
+
+
+				// Order of buttons matters! first button has "firstButtonReturn" return value from runModal
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 				[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 
 				// Show 'Import' button only if there's a connection available
-				if ([self frontDocument])
+				if ([self frontDocument]) {
 					[alert addButtonWithTitle:NSLocalizedString(@"Import", @"import button")];
-
-				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"),
-										   [NSString stringForByteSize:[filesize longLongValue]]]];
-
-				[alert setHelpAnchor:filePath];
-				[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-				[alert setAlertStyle:NSAlertStyleWarning];
+				}
 
 				NSUInteger returnCode = [alert runModal];
-
-				if (returnCode == NSAlertSecondButtonReturn || returnCode == NSAlertOtherReturn) return; // Cancel
-				else if (returnCode == NSAlertThirdButtonReturn) {   // Import
-					// begin import process
-					[[frontDocument tableDumpInstance] startSQLImportProcessWithFile:filePath];
-					return;
+				switch (returnCode) {
+					case NSAlertSecondButtonReturn: // Cancel
+						return;
+					case NSAlertThirdButtonReturn: { // Import
+						[[frontDocument tableDumpInstance] startSQLImportProcessWithFile:filePath];
+						return;
+					}
+					default: // Ok - just proceed
+						break;
 				}
 			}
 		}
@@ -1621,10 +1628,10 @@
 
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							if(![alreadyBeeped objectForKey:bundle]){
 							NSBeep();
 								[alreadyBeeped setObject:@YES forKey:bundle];
-							continue;
 							}
 							else{
 								SPLog(@"already beeped for %@", bundle);
@@ -1632,6 +1639,7 @@
 							
 							// remove the dodgy bundle
 							[self removeBundle:bundle];
+							continue;
 						}
 					}
 
@@ -1852,7 +1860,7 @@
 
 							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
 						}
-
+						
 
 						if([cmdData objectForKey:SPBundleFileTooltipKey] && [(NSString *)[cmdData objectForKey:SPBundleFileTooltipKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileTooltipKey] forKey:SPBundleFileTooltipKey];

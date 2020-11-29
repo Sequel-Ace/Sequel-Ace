@@ -202,7 +202,11 @@ static NSString *SPDatabaseImage = @"database-small";
 
 - (NSImage *)preferencePaneIcon
 {
-	return [NSImage imageNamed:@"toolbar-preferences-general"];
+	if (@available(macOS 11.0, *)) {
+		return [NSImage imageWithSystemSymbolName:@"gear" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:NSImageNamePreferencesGeneral];
+	}
 }
 
 - (NSString *)preferencePaneName

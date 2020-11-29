@@ -684,7 +684,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_killProcessQueryWithId:(long long)processId
 {
 	// Kill the query
-	[connection queryString:[NSString stringWithFormat:@"KILL QUERY %lld", processId]];
+	if ([[connection serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+		[connection queryString:[NSString stringWithFormat:@"KILL TIDB QUERY %lld", processId]];
+	}
+	else {
+		[connection queryString:[NSString stringWithFormat:@"KILL QUERY %lld", processId]];
+	}
 	
 	// Check for errors
 	if ([connection queryErrored]) {
@@ -701,7 +706,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_killProcessConnectionWithId:(long long)processId
 {
 	// Kill the connection
-	[connection queryString:[NSString stringWithFormat:@"KILL CONNECTION %lld", processId]];
+	if ([[connection serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+		[connection queryString:[NSString stringWithFormat:@"KILL TIDB CONNECTION %lld", processId]];
+	}
+	else {
+		[connection queryString:[NSString stringWithFormat:@"KILL CONNECTION %lld", processId]];
+	}
 	
 	// Check for errors
 	if ([connection queryErrored]) {

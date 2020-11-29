@@ -62,7 +62,11 @@
 }
 
 - (NSImage *)preferencePaneIcon {
-	return [NSImage imageNamed:NSImageNameFolder];
+	if (@available(macOS 11.0, *)) {
+		return [NSImage imageWithSystemSymbolName:@"folder" accessibilityDescription:nil];
+	} else {
+		return [NSImage imageNamed:NSImageNameFolder];
+	}
 }
 
 - (NSString *)preferencePaneIdentifier {
@@ -216,7 +220,7 @@
 	_currentFilePanel = [NSOpenPanel openPanel];
 	[_currentFilePanel setTitle:@"Choose ssh config"];
 	[_currentFilePanel setCanChooseFiles:YES];
-	[_currentFilePanel setCanChooseDirectories:NO];
+	[_currentFilePanel setCanChooseDirectories:YES];
 	[_currentFilePanel setAllowsMultipleSelection:YES];
 	[_currentFilePanel setAccessoryView:hiddenFileView];
 	[_currentFilePanel setResolvesAliases:NO];

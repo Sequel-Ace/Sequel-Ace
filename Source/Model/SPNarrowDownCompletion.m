@@ -201,24 +201,24 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	[theView performSelector:@selector(refreshCompletion) withObject:nil afterDelay:0.0];
 }
 
-- (id)      initWithItems:(NSArray *)someSuggestions
-             alreadyTyped:(NSString *)aUserString
-             staticPrefix:(NSString *)aStaticPrefix
- additionalWordCharacters:(NSString *)someAdditionalWordCharacters
-            caseSensitive:(BOOL)isCaseSensitive
-                charRange:(NSRange)initRange
-               parseRange:(NSRange)parseRange
-                   inView:(id)aView
-                 dictMode:(BOOL)mode
-           tabTriggerMode:(BOOL)tabTriggerMode
-              fuzzySearch:(BOOL)fuzzySearch
-             backtickMode:(NSInteger)theBackTickMode
-               selectedDb:(NSString *)selectedDb
-           caretMovedLeft:(BOOL)caretMovedLeft
-             autoComplete:(BOOL)autoComplete
-                oneColumn:(BOOL)oneColumn
-                    alias:(NSString *)anAlias
- withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
+- (id)initWithItems:(NSArray *)someSuggestions
+	   alreadyTyped:(NSString *)aUserString
+	   staticPrefix:(NSString *)aStaticPrefix
+additionalWordCharacters:(NSString *)someAdditionalWordCharacters
+	  caseSensitive:(BOOL)isCaseSensitive
+		  charRange:(NSRange)initRange
+		 parseRange:(NSRange)parseRange
+			 inView:(SPTextView *)aView
+		   dictMode:(BOOL)mode
+	 tabTriggerMode:(BOOL)tabTriggerMode
+		fuzzySearch:(BOOL)fuzzySearch
+	   backtickMode:(NSInteger)theBackTickMode
+		 selectedDb:(NSString *)selectedDb
+	 caretMovedLeft:(BOOL)caretMovedLeft
+	   autoComplete:(BOOL)autoComplete
+		  oneColumn:(BOOL)oneColumn
+			  alias:(NSString *)anAlias
+withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 {
 	if ((self = [self init]))
 	{
@@ -954,14 +954,18 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		theParseRange.length += [toInsert length];
 
 		[theView breakUndoCoalescing];
-		[theView insertText:[toInsert lowercaseString]];
+		[theView.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[toInsert lowercaseString]] atIndex:currentSelectionPosition];
 
 		autocompletePlaceholderWasInserted = YES;
 
 		// Restore the text selection location, and clearly mark the autosuggested text
 		[theView setSelectedRange:NSMakeRange(currentSelectionPosition, 0)];
-		NSMutableAttributedStringAddAttributeValueRange([theView textStorage], NSForegroundColorAttributeName, [[theView otherTextColor] colorWithAlphaComponent:0.3f], NSMakeRange(currentSelectionPosition, [toInsert length]));
-		NSMutableAttributedStringAddAttributeValueRange([theView textStorage], SPAutoCompletePlaceholderName, SPAutoCompletePlaceholderVal, NSMakeRange(currentSelectionPosition, [toInsert length]));
+
+		NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
+		[attributes setValue:[[theView otherTextColor] colorWithAlphaComponent:0.3f] forKey:NSForegroundColorAttributeName];
+		[attributes setValue:SPAutoCompletePlaceholderVal forKey:SPAutoCompletePlaceholderName];
+
+		[theView.textStorage addAttributes:attributes range:NSMakeRange(currentSelectionPosition, [toInsert length])];
 
 		[self checkSpaceForAllowedCharacter];
 	}
@@ -981,7 +985,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		else {
 			[theView setSelectedRange:theCharRange];
 		}
-		[theView insertText:originalFilterString];
+		[theView insertText:originalFilterString replacementRange:theCharRange];
 	} else {
 		NSRange attributeResultRange = NSMakeRange(0, 0);
 		NSUInteger scanPosition = 0;
@@ -1054,7 +1058,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	}
 
 	[theView breakUndoCoalescing];
-	[theView insertText:aString];
+	[theView insertText:aString replacementRange:theCharRange];
 
 	// If completion string contains backticks move caret out of the backticks
 	if(backtickMode && !triggerMode) {
@@ -1120,7 +1124,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 	// Pressing CTRL while inserting an item the suggestion list keeps open
 	// to allow to add more field/table names comma separated
 	if([selectedItem objectForKey:@"isRef"] && [[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagControl)) {
-		[theView insertText:@", "];
+		[theView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@", "]];
 		theCharRange = [theView selectedRange];
 		theParseRange = [theView selectedRange];
 		commaInsertionMode = YES;

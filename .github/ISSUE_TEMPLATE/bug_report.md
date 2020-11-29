@@ -8,6 +8,7 @@ about: Create a report to help us improve
 
 - Sequel Ace Version:
 - macOS Version:
+- Processor Type (Intel/Apple):
 - MySQL Version:
 
 **Description**

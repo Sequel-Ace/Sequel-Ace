@@ -331,7 +331,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 		// Loop through the rows until the end of the data is reached - indicated via a NULL
 		while (
-			(*isConnectedPtr)(parentConnection, isConnectedSelector)
+			([parentConnection isConnected])
 				&& (theRow = mysql_fetch_row(resultSet))
 			) {
 			// Retrieve the lengths of the returned data

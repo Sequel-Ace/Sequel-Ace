@@ -1,32 +1,33 @@
 <!--
 Thanks for sending a pull request! Please make sure you click the link above to view the contribution guidelines, then fill out the blanks below.
+
+Please use one of these hashtags for your PR title:
+- #added - Used for new features and things that have been added into the project
+- #fixed - Used for bugfixes
+- #changed - Used for PRs changing current or existing features
+- #removed - Used for PRs removing existing features
+- #infra - Used for PRs that are (usually) not product work
 -->
 
-What does this implement/fix? Explain your changes.
----------------------------------------------------
-…
+## Changes:
+-
 
-Does this close any currently open issues?
-------------------------------------------
-…
+## Closes following issues:
+-
 
+## Tested:
+- Processors:
+  - [ ] Intel
+  - [ ] Apple Silicon
+- macOS versions:
+  - [ ] 10.12
+  - [ ] 10.13
+  - [ ] 10.14
+  - [ ] 10.15
+  - [ ] 11.0
+- Xcode version:
 
-Any relevant logs, error output, etc?
--------------------------------------
-<!--
-If the logs is quite long, please paste to https://ghostbin.com/ and insert the link here.
--->
-
-Any other comments?
--------------------
-…
-
-Where has this been tested?
----------------------------
-**Devices/Simulators:** …
-
-**macOS Version:** …
-
-**Sequel-Ace Version:** …
+## Screenshots:
 
 
+## Additional notes:

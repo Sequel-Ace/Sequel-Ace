@@ -594,6 +594,7 @@ extern NSString *SPBundleTaskOutputFilePath;
 extern NSString *SPBundleTaskScriptCommandFilePath;
 extern NSString *SPBundleTaskCopyBlobFileDirectory;
 extern NSString *SPBundleTaskTableMetaDataFilePath;
+extern NSString *SPQueryWarningEnabledSuppressed;
 
 extern NSString *SPBundleShellVariableInputFilePath;
 extern NSString *SPBundleShellVariableOutputFilePath;

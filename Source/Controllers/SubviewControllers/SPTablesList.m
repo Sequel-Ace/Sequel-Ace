@@ -53,6 +53,7 @@
 #import "SPFunctions.h"
 #import "SPCharsetCollationHelper.h"
 #import "SPConstants.h"
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -227,11 +228,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Select the table list for the current database.  On MySQL versions after 5 this will include
 		// views; on MySQL versions >= 5.0.02 select the "full" list to also select the table type column.
-//		theResult = [mySQLConnection queryString:@"SHOW /*!50002 FULL*/ TABLES"];
-		theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
+		if ([prefs boolForKey:SPDisplayCommentsInTablesList]) {
+			theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
+		} else {
+			theResult = [mySQLConnection queryString:@"SHOW TABLES"];
+		}
 		[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
 		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
-		if ([theResult numberOfFields] == 1) {
+		if ([theResult numberOfFields] == 1 && [[theResult getRow] isKindOfClass:[NSArray class]]) {
 			for (NSArray *eachRow in theResult) {
 				[tables addObject:[eachRow objectAtIndex:0]];
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
@@ -244,6 +248,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				id tableName = [eachRow objectForKey:@"Name"];
 				if (tableName == nil || [tableName isNSNull]) {
 					tableName = [eachRow objectForKey:@"NAME"];
+				}
+				if ((tableName == nil || [tableName isNSNull]) && eachRow.allValues.count == 1) {
+					tableName = [eachRow.allValues firstObject];
 				}
 				if (tableName == nil || [tableName isNSNull]) {
 					tableName = @"...";
@@ -2118,41 +2125,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 #pragma mark -
-#pragma mark SplitView Delegate Methods
-
-/**
- * Prevent the table info pane from being resized manually, by making the splitter
- * not-selectable.
- */
-- (NSRect)splitView:(NSSplitView *)splitView effectiveRect:(NSRect)proposedEffectiveRect forDrawnRect:(NSRect)drawnRect ofDividerAtIndex:(NSInteger)dividerIndex
-{
-	if (splitView == (NSSplitView *)tableListSplitView || splitView == (NSSplitView *)tableListFilterSplitView) {
-		return NSZeroRect;
-	}
-
-	return proposedEffectiveRect;
-}
-
-/**
- * Never show the divider bar for the table list filter split view.
- */
-- (BOOL)splitView:(NSSplitView *)splitView shouldHideDividerAtIndex:(NSInteger)dividerIndex
-{
-	if (splitView == (NSSplitView *)tableListFilterSplitView) {
-		return YES;
-	}
-
-	// Because both the info pane split view and filter view split view use this class
-	// as a delegate, we now have to duplicate some logic in SPSplitView to match the
-	// default behaviour - thanks to the override above.
-	if (splitView == (NSSplitView *)tableListSplitView) {
-		return [tableListSplitView isSubviewCollapsed:[[tableListSplitView subviews] objectAtIndex:1]];
-	}
-
-	return NO;
-}
-
-#pragma mark -
 #pragma mark Private API
 
 /**
@@ -2425,7 +2397,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		else {
 			// Error while creating new table
 
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];
+			SPMainQSync(^{
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [self->mySQLConnection lastErrorMessage]] callback:nil];
+			});
 
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 

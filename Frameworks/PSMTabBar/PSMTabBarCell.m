@@ -26,8 +26,6 @@
         _customControlView = controlView;
         _closeButtonTrackingTag = 0;
         _cellTrackingTag = 0;
-        _closeButtonOver = NO;
-        _closeButtonPressed = NO;
         _indicator = [[PSMProgressIndicator alloc] initWithFrame:NSMakeRect(0.0f,0.0f,kPSMTabBarIndicatorWidth,kPSMTabBarIndicatorWidth)];
         [_indicator setStyle:NSProgressIndicatorSpinningStyle];
         [_indicator setAutoresizingMask:NSViewMinYMargin];
@@ -60,8 +58,6 @@
         [self setFrame:frame];
         _closeButtonTrackingTag = 0;
         _cellTrackingTag = 0;
-        _closeButtonOver = NO;
-        _closeButtonPressed = NO;
         _indicator = nil;
         _hasCloseButton = YES;
         _isCloseButtonSuppressed = NO;
@@ -184,26 +180,6 @@
 			[[[self customControlView] delegate] tabView:[self customControlView] tabViewItem:[self representedObject] isInOverflowMenu:_isInOverflowMenu];
 		}
 	}
-}
-
-- (BOOL)closeButtonPressed
-{
-    return _closeButtonPressed;
-}
-
-- (void)setCloseButtonPressed:(BOOL)value
-{
-    _closeButtonPressed = value;
-}
-
-- (BOOL)closeButtonOver
-{
-    return (_closeButtonOver && ([_customControlView allowsBackgroundTabClosing] || ([self tabState] & PSMTab_SelectedMask) || [[NSApp currentEvent] modifierFlags] & NSEventModifierFlagCommand));
-}
-
-- (void)setCloseButtonOver:(BOOL)value
-{
-    _closeButtonOver = value;
 }
 
 - (BOOL)hasCloseButton
@@ -369,10 +345,6 @@
 
 - (void)mouseEntered:(NSEvent *)theEvent
 {
-    // check for which tag
-    if ([theEvent trackingNumber] == _closeButtonTrackingTag) {
-        _closeButtonOver = YES;
-    }
     if ([theEvent trackingNumber] == _cellTrackingTag) {
         [self setHighlighted:YES];
 		[_customControlView setNeedsDisplay:NO];
@@ -388,10 +360,6 @@
 
 - (void)mouseExited:(NSEvent *)theEvent
 {
-    // check for which tag
-    if ([theEvent trackingNumber] == _closeButtonTrackingTag) {
-        _closeButtonOver = NO;
-    }
 	
     if ([theEvent trackingNumber] == _cellTrackingTag) {
         [self setHighlighted:NO];
@@ -458,8 +426,6 @@
         [aCoder encodeInteger:_tabState forKey:@"tabState"];
         [aCoder encodeInteger:_closeButtonTrackingTag forKey:@"closeButtonTrackingTag"];
         [aCoder encodeInteger:_cellTrackingTag forKey:@"cellTrackingTag"];
-        [aCoder encodeBool:_closeButtonOver forKey:@"closeButtonOver"];
-        [aCoder encodeBool:_closeButtonPressed forKey:@"closeButtonPressed"];
         [aCoder encodeObject:_indicator forKey:@"indicator"];
         [aCoder encodeBool:_isInOverflowMenu forKey:@"isInOverflowMenu"];
         [aCoder encodeBool:_hasCloseButton forKey:@"hasCloseButton"];
@@ -482,8 +448,6 @@
             _tabState = [aDecoder decodeIntegerForKey:@"tabState"];
             _closeButtonTrackingTag = [aDecoder decodeIntegerForKey:@"closeButtonTrackingTag"];
             _cellTrackingTag = [aDecoder decodeIntegerForKey:@"cellTrackingTag"];
-            _closeButtonOver = [aDecoder decodeBoolForKey:@"closeButtonOver"];
-            _closeButtonPressed = [aDecoder decodeBoolForKey:@"closeButtonPressed"];
             _indicator = [aDecoder decodeObjectForKey:@"indicator"];
             _isInOverflowMenu = [aDecoder decodeBoolForKey:@"isInOverflowMenu"];
             _hasCloseButton = [aDecoder decodeBoolForKey:@"hasCloseButton"];

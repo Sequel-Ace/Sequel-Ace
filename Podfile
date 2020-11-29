@@ -10,16 +10,12 @@ platform :osx, '10.12'
 
 # end
 
-# inhibit warning on > 1.9.3
-if Gem::Version.new(Pod::VERSION) > Gem::Version.new('1.9.3')
-  install! 'cocoapods', :warn_for_unused_master_specs_repo => false
-end
-
 target 'Sequel Ace' do
   # Comment the next line if you don't want to use dynamic frameworks
   # use_frameworks!
 
   # Pods for Sequel Ace
+  pod 'SwiftLint', '~> 0.40'
   pod 'FirebaseCore'
   pod 'Firebase/Crashlytics'
   pod 'FMDB', :git => 'https://github.com/ccgus/fmdb.git', :tag => '2.7.7' #2.7.7 is not published to the specs repo yet, only 2.7.5, so targeting the tag.

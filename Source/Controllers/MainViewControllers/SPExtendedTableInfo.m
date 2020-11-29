@@ -277,7 +277,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 			if (createViewSyntax) {
 				[tableCreateSyntaxTextView shouldChangeTextInRange:NSMakeRange(0, 0) replacementString:createViewSyntax];
-				[tableCreateSyntaxTextView insertText:createViewSyntax];
+				[tableCreateSyntaxTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:createViewSyntax]];
 				[tableCreateSyntaxTextView didChangeText];
 				[tableCreateSyntaxTextView setEditable:NO];
 			}
@@ -421,7 +421,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	[tableCreateSyntaxTextView shouldChangeTextInRange:NSMakeRange(0, 0) replacementString:[tableDataInstance tableCreateSyntax]];
 	
 	if ([tableDataInstance tableCreateSyntax]) {
-		[tableCreateSyntaxTextView insertText:[[tableDataInstance tableCreateSyntax] stringByAppendingString:@";"]];
+		[tableCreateSyntaxTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[tableDataInstance tableCreateSyntax] stringByAppendingString:@";"]]];
 	}
 	
 	[tableCreateSyntaxTextView didChangeText];

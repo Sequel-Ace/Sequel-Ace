@@ -439,7 +439,7 @@
 		placeholder = [NSString stringWithFormat:@"${%lld:%@}", (long long)snippetNumber, placeholder];
 	}
 
-	[favoriteQueryTextView insertText:placeholder];
+	[favoriteQueryTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:placeholder]];
 }
 
 /**

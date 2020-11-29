@@ -53,9 +53,11 @@
     if ( (self = [super init]) ) {
 		NSBundle *bundle = [PSMTabBarControl bundle];
 
-        sequelProCloseButton = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabClose"]];
-        sequelProCloseButtonDown = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabClose_Pressed"]];
-        sequelProCloseButtonOver = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabClose_Rollover"]];
+		if (@available(macOS 11.0, *)) {
+			sequelProCloseButton = [NSImage imageWithSystemSymbolName:@"xmark.circle" accessibilityDescription:nil];
+		} else {
+			sequelProCloseButton = [NSImage imageNamed:NSImageNameStopProgressTemplate];
+		}
 
         sequelProCloseDirtyButton = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabDirty"]];
         sequelProCloseDirtyButtonDown = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabDirty_Pressed"]];
@@ -164,7 +166,7 @@
     NSRect result;
     result.size = [sequelProCloseButton size];
     result.origin.x = cellFrame.origin.x + MARGIN_X;
-    result.origin.y = cellFrame.origin.y + MARGIN_Y + 2.0f;
+    result.origin.y = cellFrame.origin.y + MARGIN_Y;
     
     return result;
 }
@@ -492,9 +494,6 @@
         NSImage *closeButton = nil;
 
         closeButton = [cell isEdited] ? sequelProCloseDirtyButton : sequelProCloseButton;
-		
-        if ([cell closeButtonOver]) closeButton = [cell isEdited] ? sequelProCloseDirtyButtonOver : sequelProCloseButtonOver;
-        if ([cell closeButtonPressed]) closeButton = [cell isEdited] ? sequelProCloseDirtyButtonDown : sequelProCloseButtonDown;
 
 		// Slightly darken background tabs on mouse over
 		if ([cell state] == NSOffState) {
