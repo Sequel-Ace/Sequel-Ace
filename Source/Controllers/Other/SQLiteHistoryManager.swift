@@ -32,7 +32,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
-
         var tmpPath: String = ""
         // error handle
         do {
@@ -91,10 +90,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                 os_log("schemaVersion < 1, creating database", log: self.log, type: .info)
 
                 let createTableSQL = "CREATE TABLE QueryHistory ("
-                    + "    id           INTEGER PRIMARY KEY,"
                     + "    query        TEXT NOT NULL,"
-                    + "    createdTime  REAL NOT NULL,"
-                    + "    modifiedTime REAL)"
+                    + "    createdTime  REAL NOT NULL)"
 
                 do {
                     try db.executeUpdate(createTableSQL, values: nil)
@@ -161,10 +158,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
-                let rs = try db.executeQuery("SELECT id, query FROM QueryHistory order by createdTime", values: nil)
+				// select by _rowid_ desc to get latest first
+                let rs = try db.executeQuery("SELECT rowid, query FROM QueryHistory order by _rowid_ desc", values: nil)
 
                 while rs.next() {
-                    queryHist[rs.longLongInt(forColumn: "id")] = rs.string(forColumn: "query")
+					queryHist[rs.longLongInt(forColumn: "rowid")] = rs.string(forColumn: "query")
                 }
                 rs.close()
             } catch {
@@ -206,7 +204,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Migrates existing query history in the prefs plist to the SQLite db.
     private func migrateQueriesFromPrefs() {
-        guard prefs.object(forKey: SPQueryHistory) != nil  else {
+        guard prefs.object(forKey: SPQueryHistory) != nil else {
             os_log("no query history?", log: log, type: .error)
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
@@ -215,22 +213,30 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-        let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
+		var queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
-        for query in queryHistoryArray where !query.isEmpty {
-            os_log("query: %@", log: log, type: .debug, query)
+		// we want to reverse the array from prefs
+		// prefs is stored by created date asc
+		// we want to insert in the opposite order
+		// so that drop down displays by latest created 
+		queryHistoryArray.reverse()
+		
+		for query in queryHistoryArray where !query.isEmpty {
+			os_log("query: [%@]", log: log, type: .debug, query)
 
-            let newKeyValue = primaryKeyValueForNewRow
+			let newDate = Date()
+
+			os_log("date: %@", log: log, type: .debug, newDate as CVarArg)
 
             queue.inDatabase { db in
                 db.traceExecution = traceExecution
                 do {
-                    try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
-                                         values: [newKeyValue, query, Date()])
+                    try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (query, createdTime) VALUES (?, ?)",
+										 values: [query.trimmedString, newDate])
                 } catch {
                     logDBError(error)
                 }
-                queryHist[newKeyValue] = query
+				queryHist[db.lastInsertRowId] = query
             }
         }
         // JCS note: at the moment I'm not deleting the queryHistory key from prefs
@@ -238,6 +244,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         os_log("migrated prefs query hist to db", log: log, type: .info)
         migratedPrefsToDB = true
         prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
+		reloadQueryHistory()
 
     }
 
@@ -245,45 +252,28 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - Parameters:
     ///   - newHist: Array of Strings - the Strings being the new history to update
     /// - Returns: Nothing
-    @objc func updateQueryHistory(newHist: [String]) {
-        os_log("updateQueryHistory", log: log, type: .debug)
+	@objc func updateQueryHistory(newHist: [String]) {
+		os_log("updateQueryHistory", log: log, type: .debug)
 
-        for query in newHist where !query.isEmpty {
-            let idForExistingRow = idForQueryAlreadyInDB(query: query)
+		for query in newHist where !query.isEmpty {
 
-            // not sure we need this
-            // if it's already in the db, do we need to know the modified time?
-            // could just skip
-            if idForExistingRow > 0 {
-                queue.inDatabase { db in
-                    db.traceExecution = traceExecution
-                    do {
-                        try db.executeUpdate("UPDATE QueryHistory set modifiedTime = ? where id = ?", values: [Date(), idForExistingRow])
-                    } catch {
-                        logDBError(error)
-                    }
-                }
-            } else {
-                // if this is not unique then it's going to break
-                // we could check, but max 100 items ... probability of clash is low.
-                let newKeyValue = primaryKeyValueForNewRow
+			let newDate = Date()
 
-                queue.inDatabase { db in
-                    db.traceExecution = traceExecution
-                    do {
-                        try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (id, query, createdTime) VALUES (?, ?, ?)",
-                                             values: [newKeyValue, query, Date()])
-                    } catch {
-                        logDBError(error)
-                    }
-                }
-                queryHist[newKeyValue] = query
-            }
+			queue.inDatabase { db in
+				db.traceExecution = traceExecution
+				do {
+					try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (query, createdTime) VALUES (?, ?)",
+										 values: [query.trimmedString, newDate])
+				} catch {
+					logDBError(error)
+				}
 
-        }
-        getDBsize()
-        queue.close()
-    }
+				queryHist[db.lastInsertRowId] = query
+			}
+		}
+		getDBsize()
+		queue.close()
+	}
 
     /// Deletes all query history from the db
     @objc func deleteQueryHistory() {
@@ -319,30 +309,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         queue.close()
     }
 
-    /// Looks up an ID for a query .. probably not fast....
-    /// - Parameters:
-    ///   - query: String - the query to search for
-    /// - Returns: Int64 - the ID of the row
-    private func idForQueryAlreadyInDB(query: String) -> Int64 {
-        var idForExistingRow: Int64 = 0
-
-        queue.inDatabase { db in
-            db.traceExecution = traceExecution
-            do {
-                let rs = try db.executeQuery("SELECT id FROM QueryHistory where query = ?", values: [query])
-                while rs.next() {
-                    idForExistingRow = rs.longLongInt(forColumn: "id")
-                }
-                rs.close()
-            } catch {
-                logDBError(error)
-            }
-        }
-        queue.close()
-
-        return idForExistingRow
-    }
-
     /// Handles db fails
     /// - Parameters:
 	///   - error: the thrown Error
@@ -359,11 +325,5 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     func logDBError(_ error: Error) {
         Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
         os_log("Query failed: %@", log: log, type: .error, error.localizedDescription)
-    }
-
-    /// Creates a new random Int64 ID
-    /// - Returns: Int64 - new ID for the row
-    private var primaryKeyValueForNewRow : Int64 {
-        return Int64.random(in: 0 ... 1_000_000_000_000_000_000)
     }
 }
