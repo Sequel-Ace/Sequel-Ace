@@ -753,6 +753,20 @@ static SPQueryController *sharedQueryController = nil;
 
 #pragma mark - SPQueryDocumentsController
 
+NSInteger intSort(id num1, id num2, void *context)
+{
+	// JCS not: I want descending, so I've swapped the return values
+	// from the ifs
+	int v1 = [num1 intValue];
+	int v2 = [num2 intValue];
+	if (v1 < v2)
+		return NSOrderedDescending;
+	else if (v1 > v2)
+		return NSOrderedAscending;
+	else
+		return NSOrderedSame;
+}
+
 - (NSURL *)registerDocumentWithFileURL:(NSURL *)fileURL andContextInfo:(NSMutableDictionary *)contextInfo
 {
 	// Register a new untiled document and return its URL
@@ -768,7 +782,17 @@ static SPQueryController *sharedQueryController = nil;
 		// Set the global history coming from the Prefs as default if available
 		if (![historyContainer safeObjectForKey:[newURL absoluteString]]) {
 			if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
-				[historyContainer safeSetObject:_SQLiteHistoryManager.queryHist.allValues forKey:[newURL absoluteString]];
+
+				// we want the values, sorted by the reverse of the key order
+				// remember allKey specifies no order, so we need to sort.
+				NSArray *sortedKeys = [[_SQLiteHistoryManager.queryHist allKeys] sortedArrayUsingFunction:intSort context:NULL];
+
+				NSMutableArray *sortedValues = [NSMutableArray array];
+				for (NSNumber *key in sortedKeys){
+					[sortedValues addObject: [_SQLiteHistoryManager.queryHist objectForKey:key]];
+				}
+
+				[historyContainer safeSetObject:sortedValues forKey:[newURL absoluteString]];
 			}
 			else{
 				if ([prefs objectForKey:SPQueryHistory]) {
