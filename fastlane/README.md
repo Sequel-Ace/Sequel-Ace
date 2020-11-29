@@ -21,6 +21,11 @@ or alternatively using `brew install fastlane`
 fastlane mac generate_changelog
 ```
 Creates new branch changelog, generates changelog, creates a PR.
+### mac generate_changelog_locally
+```
+fastlane mac generate_changelog_locally
+```
+Generates changelog only.
 ### mac increment_build
 ```
 fastlane mac increment_build
