@@ -266,45 +266,28 @@
 	// Complete editing in the window
 	[[self window] makeFirstResponder:[self window]];
 
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Remove selected query favorites?", @"remove selected query favorites message") 
-									 defaultButton:NSLocalizedString(@"Remove", @"remove button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected query favorites? This action cannot be undone.", @"remove all selected query favorites informative message")];
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Remove selected query favorites?", @"remove selected query favorites message") message:NSLocalizedString(@"Are you sure you want to remove all selected query favorites? This action cannot be undone.", @"remove all selected query favorites informative message") primaryButtonTitle:NSLocalizedString(@"Remove", @"remove button") primaryButtonHandler:^{
+		NSIndexSet *indexes = [self->favoritesTableView selectedRowIndexes];
 
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"r"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-	
-	[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"removeSelectedFavorites"];
+		[indexes enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
+			[self->favorites removeObjectAtIndex:currentIndex];
+		}];
+
+		[self->favoritesArrayController rearrangeObjects];
+		[self->favoritesTableView reloadData];
+
+		// Set focus to favorite list to avoid an unstable state
+		[[self window] makeFirstResponder:self->favoritesTableView];
+
+		[self->removeButton setEnabled:([self->favoritesTableView numberOfSelectedRows] > 0)];
+	} cancelButtonHandler:nil];
 }
 
 /**
  * Removes all query favorites
  */
-- (IBAction)removeAllQueryFavorites:(id)sender
-{
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Remove all query favorites?", @"remove all query favorites message") 
-									 defaultButton:NSLocalizedString(@"Remove All", @"remove all button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all of your saved query favorites? This action cannot be undone.", @"remove all query favorites informative message")];
-
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"r"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-	
-	[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"removeAllFavorites"];
+- (IBAction)removeAllQueryFavorites:(id)sender {
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Remove all query favorites?", @"remove all query favorites message") message:NSLocalizedString(@"Are you sure you want to remove all of your saved query favorites? This action cannot be undone.", @"remove all query favorites informative message") primaryButtonTitle:NSLocalizedString(@"Remove All", @"remove all button") primaryButtonHandler:nil cancelButtonHandler:nil];
 }
 
 /**
@@ -361,8 +344,7 @@
 
 	[panel setAllowedFileTypes:@[SPFileExtensionDefault, SPFileExtensionSQL]];
 
-	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode)
-	{
+	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
 		[self importPanelDidEnd:panel returnCode:returnCode contextInfo:NULL];
 	}];
 }
@@ -768,41 +750,9 @@
 #pragma mark Other
 
 /**
- * Sheet did end method
- */
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Is disabled - do we need that?
-	// if ([contextInfo isEqualToString:@"removeAllFavorites"]) {
-	// 	if (returnCode == NSAlertAlternateReturn) {
-	// 		[favorites removeObjects:[queryFavoritesController arrangedObjects]];
-	// 	}
-	// }
-	if([contextInfo isEqualToString:@"removeSelectedFavorites"]) {
-		if (returnCode == NSAlertDefaultReturn) {
-			NSIndexSet *indexes = [favoritesTableView selectedRowIndexes];
-
-			[indexes enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
-				[favorites removeObjectAtIndex:currentIndex];
-			}];
-
-			[favoritesArrayController rearrangeObjects];
-			[favoritesTableView reloadData];
-
-			// Set focus to favorite list to avoid an unstable state
-			[[self window] makeFirstResponder:favoritesTableView];
-
-			[removeButton setEnabled:([favoritesTableView numberOfSelectedRows] > 0)];
-		}
-	}
-}
-
-/**
  * Import panel did end method.
  */
-- (void)importPanelDidEnd:(NSOpenPanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-
+- (void)importPanelDidEnd:(NSOpenPanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo {
 	if (returnCode == NSModalResponseOK) {
 
 		NSString *filename = [[[panel URLs] objectAtIndex:0] path];
@@ -822,14 +772,7 @@
 			}
 			
 			if(!spf || readError) {
-				NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while reading data file", @"error while reading data file")
-												 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-											   alternateButton:nil 
-												   otherButton:nil
-									 informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [readError localizedDescription]];
-
-				[alert setAlertStyle:NSAlertStyleCritical];
-				[alert runModal];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading data file", @"error while reading data file") message:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [readError localizedDescription]] callback:nil];
 				return;
 			}
 
@@ -860,14 +803,7 @@
 				[favoritesTableView selectRowIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(insertionIndexStart, insertionIndexEnd - insertionIndexStart)] byExtendingSelection:NO];
 				[favoritesTableView scrollRowToVisible:insertionIndexEnd];
 			} else {
-				NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithString:NSLocalizedString(@"Error while reading data file", @"error while reading data file")]
-												 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-											   alternateButton:nil 
-												  otherButton:nil 
-									informativeTextWithFormat:NSLocalizedString(@"No query favorites found.", @"error that no query favorites found")];
-
-				[alert setAlertStyle:NSAlertStyleInformational];
-				[alert runModal];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading data file", @"error while reading data file") message:NSLocalizedString(@"No query favorites found.", @"error that no query favorites found") callback:nil];
 				return;
 			}
 		}
@@ -877,10 +813,8 @@
 /**
  * Save panel did end method.
  */
-- (void)savePanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-
-	if([contextInfo isEqualToString:@"saveQuery"]) {
+- (void)savePanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo {
+	if ([contextInfo isEqualToString:@"saveQuery"]) {
 		if (returnCode == NSModalResponseOK) {
 			NSError *error = nil;
 		
@@ -891,8 +825,7 @@
 		
 			if (error) [[NSAlert alertWithError:error] runModal];
 		}
-	}
-	else if([contextInfo isEqualToString:@"exportFavorites"]) {
+	} else if([contextInfo isEqualToString:@"exportFavorites"]) {
 		if (returnCode == NSModalResponseOK) {
 
 			// Build a SPF with format = "query favorites"
@@ -921,15 +854,8 @@
 																	  options:0
 																		error:&error];
 
-			if(error) {
-				NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Error while converting query favorite data", @"error while converting query favorite data")
-												 defaultButton:NSLocalizedString(@"OK", @"OK button") 
-											   alternateButton:nil 
-												   otherButton:nil
-									 informativeTextWithFormat:@"%@", [error localizedDescription]];
-
-				[alert setAlertStyle:NSAlertStyleCritical];
-				[alert runModal];
+			if (error) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting query favorite data", @"error while converting query favorite data") message:[error localizedDescription] callback:nil];
 				return;
 			}
 

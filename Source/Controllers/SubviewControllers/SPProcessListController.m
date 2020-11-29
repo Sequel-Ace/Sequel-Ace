@@ -264,71 +264,29 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 /**
  * Kills the currently selected process' query.
  */
-- (IBAction)killProcessQuery:(id)sender
-{
+- (IBAction)killProcessQuery:(id)sender {
 	// No process selected. Interface validation should prevent this.
 	if ([processListTableView numberOfSelectedRows] != 1) return;
 	
 	long long processId = [[[processesFiltered objectAtIndex:[processListTableView selectedRow]] valueForKey:@"Id"] longLongValue];
-		
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Kill query?", @"kill query message")
-									 defaultButton:NSLocalizedString(@"Kill", @"kill button") 
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button") 
-									   otherButton:nil 
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.", @"kill query informative message"), processId];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"k"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-	
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
-	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
-	// so we must remember the ACTUAL processId we prompt the user to kill.
-	NSDictionary *userInfo = @{SPKillModeKey: SPKillProcessQueryMode, SPKillIdKey: @(processId)};
-	[alert beginSheetModalForWindow:[self window]
-					  modalDelegate:self
-					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:(__bridge void * _Nullable)(userInfo)];
+
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Kill query?", @"kill query message") message:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.", @"kill query informative message"), processId] primaryButtonTitle:NSLocalizedString(@"Kill", @"kill button") primaryButtonHandler:^{
+		[self _killProcessQueryWithId:processId];
+	} cancelButtonHandler:nil];
 }
 
 /**
  * Kills the currently selected proceess' connection.
  */
-- (IBAction)killProcessConnection:(id)sender
-{
+- (IBAction)killProcessConnection:(id)sender {
 	// No process selected. Interface validation should prevent this.
 	if ([processListTableView numberOfSelectedRows] != 1) return;
 	
 	long long processId = [[[processesFiltered objectAtIndex:[processListTableView selectedRow]] valueForKey:@"Id"] longLongValue];
-	
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Kill connection?", @"kill connection message")
-									 defaultButton:NSLocalizedString(@"Kill", @"kill button") 
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button") 
-									   otherButton:nil 
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.", @"kill connection informative message"), processId];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"k"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-	
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
-	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
-	// so we must remember the ACTUAL processId we prompt the user to kill.
-	NSDictionary *userInfo = @{SPKillModeKey: SPKillProcessConnectionMode, SPKillIdKey: @(processId)};
-	[alert beginSheetModalForWindow:[self window]
-					  modalDelegate:self
-					 didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						contextInfo:(__bridge void * _Nullable)(userInfo)];
+
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Kill connection?", @"kill connection message") message:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.", @"kill connection informative message"), processId] primaryButtonTitle:NSLocalizedString(@"Kill", @"kill button") primaryButtonHandler:^{
+		[self _killProcessConnectionWithId:processId];
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -376,12 +334,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (IBAction)setCustomAutoRefreshInterval:(id)sender
 {
 	[customIntervalTextField setStringValue:[prefs stringForKey:SPProcessListAutoRrefreshInterval]];
-	
-	[NSApp beginSheet:customIntervalWindow
-	   modalForWindow:[self window]
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:NULL];
+
+	[[self window] beginSheet:customIntervalWindow completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self _startAutoRefreshTimerWithInterval:[self->customIntervalTextField integerValue]];
+		}
+	}];
 }
 
 #pragma mark -
@@ -398,41 +356,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[self refreshProcessList:self];
 	 
 	[self showWindow:self];
-}
-
-/**
- * Invoked when the kill alerts are dismissed. Decide what to do based on the user's decision.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)]) {
-		[sheet orderOut:nil];
-	}
-	else if ([sheet respondsToSelector:@selector(window)]) {
-		[[sheet window] orderOut:nil];
-	}
-
-	if (sheet == customIntervalWindow) {
-		if (returnCode == NSAlertDefaultReturn) [self _startAutoRefreshTimerWithInterval:[customIntervalTextField integerValue]];
-	}
-	else {
-		NSDictionary *userInfo = (__bridge NSDictionary *)contextInfo; //we retained it during the beginSheet… call because Cocoa does not do memory management on void *.
-		if (returnCode == NSAlertDefaultReturn) {
-			long long processId = [[userInfo objectForKey:SPKillIdKey] longLongValue];
-			
-			NSString *mode = [userInfo objectForKey:SPKillModeKey];
-			if ([mode isEqualToString:SPKillProcessQueryMode]) {
-				[self _killProcessQueryWithId:processId];
-			}
-			else if ([mode isEqualToString:SPKillProcessConnectionMode]) {
-				[self _killProcessConnectionWithId:processId];
-			}
-			else {
-				[NSException raise:NSInternalInconsistencyException format:@"%s: Unhandled branch for mode=%@", __PRETTY_FUNCTION__, mode];
-			}
-		}
-	}
 }
 
 /**

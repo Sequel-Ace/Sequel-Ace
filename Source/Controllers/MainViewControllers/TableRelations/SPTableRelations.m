@@ -40,8 +40,6 @@
 
 #import "sequel-ace-Swift.h"
 
-static NSString *SPRemoveRelation = @"SPRemoveRelation";
-
 static NSString *SPRelationNameKey       = @"name";
 static NSString *SPRelationColumnsKey    = @"columns";
 static NSString *SPRelationFKDatabaseKey = @"fk_database";
@@ -297,26 +295,29 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 /**
  * Removes the selected relations.
  */
-- (IBAction)removeRelation:(id)sender
-{
+- (IBAction)removeRelation:(id)sender {
 	if ([relationsTableView numberOfSelectedRows] > 0) {
 
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Delete relation", @"delete relation message") 
-										 defaultButton:NSLocalizedString(@"Delete", @"delete button") 
-									   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-										   otherButton:nil 
-							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected relations? This action cannot be undone.", @"delete selected relation informative message")];
+		[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Delete relation", @"delete relation message") message:NSLocalizedString(@"Are you sure you want to delete the selected relations? This action cannot be undone.", @"delete selected relation informative message") primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+			NSString *thisTable = [self->tablesListInstance tableName];
+			NSIndexSet *selectedSet = [self->relationsTableView selectedRowIndexes];
 
-		[alert setAlertStyle:NSAlertStyleCritical];
+			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
+				NSString *relationName = [[self->relationData objectAtIndex:row] objectForKey:SPRelationNameKey];
+				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [thisTable backtickQuotedString], [relationName backtickQuotedString]];
 
-		NSArray *buttons = [alert buttons];
+				[self->connection queryString:query];
 
-		// Change the alert's cancel button to have the key equivalent of return
-		[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-		[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-		[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
+				if ([self->connection queryErrored]) {
 
-		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:(__bridge void * _Nullable)(SPRemoveRelation)];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nMySQL said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage]] callback:nil];
+					// Abort loop
+					*stop = YES;
+				}
+			}];
+
+			[self _refreshRelationDataForcingCacheRefresh:YES];
+		} cancelButtonHandler:nil];
 	}
 }
 
@@ -450,37 +451,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	
 	return data; 
-}
-
-/**
- * NSAlert didEnd method.
- */
-- (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if ([contextInfo isEqualToString:SPRemoveRelation]) {
-
-		if (returnCode == NSAlertDefaultReturn) {
-
-			NSString *thisTable = [tablesListInstance tableName];
-			NSIndexSet *selectedSet = [relationsTableView selectedRowIndexes];
-
-			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
-				NSString *relationName = [[relationData objectAtIndex:row] objectForKey:SPRelationNameKey];
-				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [thisTable backtickQuotedString], [relationName backtickQuotedString]];
-
-				[connection queryString:query];
-
-				if ([connection queryErrored]) {
-
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nMySQL said: %@", @"error deleting relation informative message"), [connection lastErrorMessage]] callback:nil];
-					// Abort loop
-					*stop = YES;
-				}
-			}];
-
-			[self _refreshRelationDataForcingCacheRefresh:YES];
-		}
-	} 
 }
 
 /**

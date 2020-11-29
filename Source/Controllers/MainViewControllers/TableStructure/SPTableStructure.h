@@ -117,7 +117,6 @@
 - (IBAction)duplicateField:(id)sender;
 - (IBAction)removeField:(id)sender;
 - (IBAction)resetAutoIncrement:(id)sender;
-- (void)resetAutoincrementSheetDidEnd:(NSWindow *)theSheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (void)takeAutoIncrementFrom:(NSTextField *)field;
 - (IBAction)showOptimizedFieldType:(id)sender;
 - (IBAction)toggleColumnView:(NSMenuItem *)sender;

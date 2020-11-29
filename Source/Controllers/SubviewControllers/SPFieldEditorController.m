@@ -271,12 +271,10 @@ typedef enum {
 		[self updateBitSheet];
 
 		usedSheet = bitSheet;
-
-		[NSApp beginSheet:usedSheet 
-		   modalForWindow:theWindow 
-			modalDelegate:self 
-		   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) 
-			  contextInfo:nil];
+		[theWindow beginSheet:usedSheet completionHandler:^(NSModalResponse returnCode) {
+			// Remember spell cheecker status
+			[self->prefs setBool:[self->editTextView isContinuousSpellCheckingEnabled] forKey:SPBlobTextEditorSpellCheckingEnabled];
+		}];
 	} 
 	else {
 		usedSheet = editSheet;
@@ -355,12 +353,11 @@ typedef enum {
 					(sheet.size.width > screen.width) ? screen.width : sheet.size.width, 
 					(sheet.size.height > screen.height) ? screen.height - 100 : sheet.size.height)
 					display:YES];
-							
-		[NSApp beginSheet:usedSheet 
-		   modalForWindow:theWindow 
-			modalDelegate:self 
-		   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) 
-			  contextInfo:nil];
+
+		[theWindow beginSheet:usedSheet completionHandler:^(NSModalResponse returnCode) {
+			// Remember spell cheecker status
+			[self->prefs setBool:[self->editTextView isContinuousSpellCheckingEnabled] forKey:SPBlobTextEditorSpellCheckingEnabled];
+		}];
 
 		[editSheetProgressBar startAnimation:self];
 
@@ -591,12 +588,6 @@ typedef enum {
 	{
 		[self savePanelDidEnd:panel returnCode:returnCode contextInfo:nil];
 	}];
-}
-
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Remember spell cheecker status
-	[prefs setBool:[editTextView isContinuousSpellCheckingEnabled] forKey:SPBlobTextEditorSpellCheckingEnabled];
 }
 
 /**

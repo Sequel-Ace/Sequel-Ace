@@ -200,7 +200,7 @@
 	NSRect accessoryViewRect = [importFromClipboardAccessoryView frame];
 	[importView setFrame:NSMakeRect(0, 0, accessoryViewRect.size.width, accessoryViewRect.size.height)];
 
-	[tableDocumentInstance.parentWindow beginSheet:importFromClipboardSheet completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindow] beginSheet:importFromClipboardSheet completionHandler:^(NSModalResponse returnCode) {
 		// Reset the interface and store prefs
 		[self->importFromClipboardTextView setString:@""];
 		[self->prefs setObject:[[self->importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];

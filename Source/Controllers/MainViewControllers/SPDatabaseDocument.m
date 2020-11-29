@@ -89,16 +89,14 @@
 
 #import <SPMySQL/SPMySQL.h>
 
-#include <libkern/OSAtomic.h>
+#include <stdatomic.h>
 
 // Constants
-static NSString *SPRenameDatabaseAction = @"SPRenameDatabase";
-static NSString *SPAlterDatabaseAction = @"SPAlterDatabase";
 static NSString *SPNewDatabaseDetails = @"SPNewDatabaseDetails";
 static NSString *SPNewDatabaseName = @"SPNewDatabaseName";
 static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
-static int64_t SPDatabaseDocumentInstanceCounter = 0;
+static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @interface SPDatabaseDocument ()
 
@@ -155,7 +153,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (instancetype)init
 {
 	if ((self = [super init])) {
-		instanceId = OSAtomicIncrement64(&SPDatabaseDocumentInstanceCounter);
+		instanceId = atomic_fetch_add(&SPDatabaseDocumentInstanceCounter, 1);
 
 		_mainNibLoaded = NO;
 		_isConnected = NO;
@@ -693,19 +691,30 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[addDatabaseCharsetHelper setDefaultCollation:defaultCollation];
 	[addDatabaseCharsetHelper setEnabled:YES];
 
-	[NSApp beginSheet:databaseSheet
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:@"addDatabase"];
+	[parentWindow beginSheet:databaseSheet completionHandler:^(NSModalResponse returnCode) {
+		[self->addDatabaseCharsetHelper setEnabled:NO];
+
+		if (returnCode == NSModalResponseOK) {
+			[self _addDatabase];
+
+			// Query the structure of all databases in the background (mainly for completion)
+			[self->databaseStructureRetrieval queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
+		} else {
+			// Reset chooseDatabaseButton
+			if ([[self database] length]) {
+				[self->chooseDatabaseButton selectItemWithTitle:[self database]];
+			} else {
+				[self->chooseDatabaseButton selectItemAtIndex:0];
+			}
+		}
+	}];
 }
 
 /**
  * Show UI for the ALTER DATABASE statement
  * @warning Make sure this method is only called on mysql 4.1+ servers!
  */
-- (IBAction)alterDatabase:(id)sender
-{
+- (IBAction)alterDatabase:(id)sender {
 	//once the database is created the charset and collation are written
 	//to the db.opt file regardless if they were explicity given or not.
 	//So there is no longer a "Default" option.
@@ -721,11 +730,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[alterDatabaseCharsetHelper setSelectedCollation:currentCollation];
 	[alterDatabaseCharsetHelper setEnabled:YES];
 
-	[NSApp beginSheet:databaseAlterSheet
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPAlterDatabaseAction)];
+	[parentWindow beginSheet:databaseAlterSheet completionHandler:^(NSModalResponse returnCode) {
+
+		[self->alterDatabaseCharsetHelper setEnabled:NO];
+		if (returnCode == NSModalResponseOK) {
+			[self _alterDatabase];
+		}
+	}];
 }
 
 - (IBAction)compareDatabase:(id)sender
@@ -842,11 +853,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[databaseRenameNameField setStringValue:selectedDatabase];
 	[renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
-	[NSApp beginSheet:databaseRenameSheet
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPRenameDatabaseAction)];
+	[parentWindow beginSheet:databaseRenameSheet completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self _renameDatabase];
+		}
+	}];
 }
 
 /**
@@ -926,52 +937,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (NSArray *)allSystemDatabaseNames
 {
 	return allSystemDatabases;
-}
-
-/**
- * Alert sheet method. Invoked when an alert sheet is dismissed.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo {
-
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)]) {
-		[sheet orderOut:nil];
-	}
-	else if ([sheet respondsToSelector:@selector(window)]) {
-		[[sheet window] orderOut:nil];
-	}
-
-	// Add a new database
-	if ([contextInfo isEqualToString:@"addDatabase"]) {
-		[addDatabaseCharsetHelper setEnabled:NO];
-
-		if (returnCode == NSModalResponseOK) {
-			[self _addDatabase];
-
-			// Query the structure of all databases in the background (mainly for completion)
-			[databaseStructureRetrieval queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
-		}
-		else {
-			// Reset chooseDatabaseButton
-			if ([[self database] length]) {
-				[chooseDatabaseButton selectItemWithTitle:[self database]];
-			}
-			else {
-				[chooseDatabaseButton selectItemAtIndex:0];
-			}
-		}
-	}
-	else if ([contextInfo isEqualToString:SPRenameDatabaseAction]) {
-		if (returnCode == NSModalResponseOK) {
-			[self _renameDatabase];
-		}
-	}
-	else if ([contextInfo isEqualToString:SPAlterDatabaseAction]) {
-		[alterDatabaseCharsetHelper setEnabled:NO];
-		if (returnCode == NSModalResponseOK) {
-			[self _alterDatabase];
-		}
-	}
 }
 
 /**
@@ -1764,11 +1729,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[createTableSyntaxWindow makeFirstResponder:createTableSyntaxTextField];
 
 	// Show variables sheet
-	[NSApp beginSheet:createTableSyntaxWindow
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:nil
-	      contextInfo:nil];
+	[parentWindow beginSheet:createTableSyntaxWindow completionHandler:nil];
 
 }
 
@@ -4587,8 +4548,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[inputTextWindowSecureTextField setStringValue:@""];
 			[inputTextWindowSecureTextField selectText:nil];
 
-			[NSApp beginSheet:inputTextWindow modalForWindow:parentWindow modalDelegate:self didEndSelector:nil contextInfo:nil];
-
+			[parentWindow beginSheet:inputTextWindow completionHandler:nil];
 			// wait for encryption password
 			NSModalSession session = [NSApp beginModalSessionForWindow:inputTextWindow];
 			for (;;) {
@@ -6566,7 +6526,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self makeKeyDocument];
 
 		// Display the connection error dialog and wait for the return code
-		[NSApp beginSheet:connectionErrorDialog modalForWindow:[self parentWindow] modalDelegate:nil didEndSelector:NULL contextInfo:NULL];
+		[self.parentWindow beginSheet:connectionErrorDialog completionHandler:nil];
 		connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
 
 		[NSApp endSheet:connectionErrorDialog];

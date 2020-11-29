@@ -275,7 +275,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if ([tableDocumentInstance isUntitled]) {
 			[saveQueryFavoriteGlobal setState:NSOnState];
 		}
-		[tableDocumentInstance.parentWindow beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
+		[[tableDocumentInstance parentWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
 			if (returnCode == NSModalResponseOK) {
 
 				// Add the new query favorite directly the user's preferences here instead of asking the manager to do it
@@ -317,7 +317,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if ([tableDocumentInstance isUntitled]) {
 			[saveQueryFavoriteGlobal setState:NSOnState];
 		}
-		[tableDocumentInstance.parentWindow beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
+		[[tableDocumentInstance parentWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
 			if (returnCode == NSModalResponseOK) {
 
 				// Add the new query favorite directly the user's preferences here instead of asking the manager to do it
@@ -347,7 +347,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
 
 		// Open query favorite manager
-		[tableDocumentInstance.parentWindow beginSheet:[favoritesManager window] completionHandler:nil];
+		[[tableDocumentInstance parentWindow] beginSheet:[favoritesManager window] completionHandler:nil];
 	} else if ([queryFavoritesButton indexOfSelectedItem] > 5) {
 		// Choose favorite
 		BOOL replaceContent = [prefs boolForKey:SPQueryFavoriteReplacesContent];

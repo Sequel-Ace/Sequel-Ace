@@ -224,11 +224,73 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	[indexKeyBlockSizeTextField setEnabled:[[dbDocument serverSupport] supportsIndexKeyBlockSize]];
 
 	// Begin the sheet
-	[NSApp beginSheet:[self window]
-	   modalForWindow:[dbDocument parentWindow]
-		modalDelegate:self
-	   didEndSelector:@selector(addIndexSheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:nil];
+	[[dbDocument parentWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self->dbDocument startTaskWithDescription:NSLocalizedString(@"Adding index...", @"adding index task status message")];
+
+			NSUInteger i, j;
+			NSMutableDictionary *indexDetails = [NSMutableDictionary dictionary];
+
+			// Loop the indexed fields array and remove duplicates
+			NSArray *copy = [self->indexedFields copy];
+
+			for (i = ([copy count] - 1); i > 0; i--)
+			{
+				NSString *field = [[copy objectAtIndex:i] objectForKey:@"name"];
+
+				for (j = 0; j < i; j++)
+				{
+					if ([[[copy objectAtIndex:j] objectForKey:@"name"] isEqualToString:field]) {
+						[self->indexedFields removeObjectAtIndex:i];
+					}
+				}
+			}
+
+			// In the event that we removed duplicate columns reload the table view to ensure that the next time
+			// it is open we don't cause the table view to ask for rows that no longer exist.
+			[self->indexedColumnsTableView reloadData];
+
+			[indexDetails setObject:self->indexedFields forKey:SPNewIndexIndexedColumns];
+			[indexDetails setObject:[self->indexNameTextField stringValue] forKey:SPNewIndexIndexName];
+
+			switch ([[self->indexTypePopUpButton selectedItem] tag])
+			{
+				case SPPrimaryKeyMenuTag:
+					[indexDetails setObject:@"PRIMARY KEY" forKey:SPNewIndexIndexType];
+					break;
+				case SPIndexMenuTag:
+					[indexDetails setObject:@"INDEX" forKey:SPNewIndexIndexType];
+					break;
+				case SPUniqueMenuTag:
+					[indexDetails setObject:@"UNIQUE" forKey:SPNewIndexIndexType];
+					break;
+				case SPFullTextMenuTag:
+					[indexDetails setObject:@"FULLTEXT" forKey:SPNewIndexIndexType];
+					break;
+				case SPSpatialMenuTag:
+					[indexDetails setObject:@"SPATIAL" forKey:SPNewIndexIndexType];
+					break;
+			}
+
+			// If there is a key block size set it means the database version supports it
+			if ([[self->indexKeyBlockSizeTextField stringValue] length]) {
+				[indexDetails setObject:[NSNumber numberWithInteger:[self->indexKeyBlockSizeTextField integerValue]] forKey:SPNewIndexKeyBlockSize];
+			}
+
+			if (([self->indexStorageTypePopUpButton indexOfSelectedItem] > 0) && ([[self->indexTypePopUpButton selectedItem] tag] != SPSpatialMenuTag)) {
+				[indexDetails setObject:[self->indexStorageTypePopUpButton titleOfSelectedItem] forKey:SPNewIndexStorageType];
+			}
+
+			if ([NSThread isMainThread]) {
+				[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index creation thread", self->dbDocument) target:self selector:@selector(_addIndexUsingDetails:) object:indexDetails];
+
+				[self->dbDocument enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") callbackObject:self callbackFunction:NULL];
+			}
+			else {
+				[self _addIndexUsingDetails:indexDetails];
+			}
+		}
+	}];
 
 	// Because there is only one indexed column initially, disable the remove button
 	[removeIndexedColumnButton setEnabled:NO];
@@ -252,25 +314,17 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	if(![keyName length]) return; //safeguard for the contextInfo array creation below
 
-	NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Delete index '%@'?", @"delete index message"), keyName]
-									 defaultButton:NSLocalizedString(@"Delete", @"delete button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the index '%@'? This action cannot be undone.", @"delete index informative message"), keyName];
+	[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Delete index '%@'?", @"delete index message"), keyName] message:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the index '%@'? This action cannot be undone.", @"delete index informative message"), keyName] primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+		[self->dbDocument startTaskWithDescription:NSLocalizedString(@"Removing index...", @"removing index task status message")];
 
-	[alert setAlertStyle:NSAlertStyleCritical];
+		if ([NSThread isMainThread]) {
+			[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index removal thread", self->dbDocument) target:self selector:@selector(_removeIndexUsingDetails:) object:@{@"Key_name" : keyName}];
 
-	NSArray *buttons = [alert buttons];
-
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-
-	[alert beginSheetModalForWindow:[dbDocument parentWindow]
-					  modalDelegate:self
-					 didEndSelector:@selector(removeIndexSheetDidEnd:returnCode:contextInfo:)
-						contextInfo:(__bridge void * _Nullable)(@{@"Key_name" : keyName})];
+			[self->dbDocument enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") callbackObject:self callbackFunction:NULL];
+		} else {
+			[self _removeIndexUsingDetails:@{@"Key_name" : keyName}];
+		}
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -538,105 +592,6 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 #pragma mark -
 #pragma mark Other methods
-
-/**
- * Process the new index sheet closing, adding the index if appropriate
- */
-- (void)addIndexSheetDidEnd:(NSWindow *)theSheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	[theSheet orderOut:nil];
-
-	if (returnCode == NSModalResponseOK) {
-		[dbDocument startTaskWithDescription:NSLocalizedString(@"Adding index...", @"adding index task status message")];
-
-		NSUInteger i, j;
-		NSMutableDictionary *indexDetails = [NSMutableDictionary dictionary];
-
-		// Loop the indexed fields array and remove duplicates
-		NSArray *copy = [indexedFields copy];
-
-		for (i = ([copy count] - 1); i > 0; i--)
-		{
-			NSString *field = [[copy objectAtIndex:i] objectForKey:@"name"];
-
-			for (j = 0; j < i; j++)
-			{
-				if ([[[copy objectAtIndex:j] objectForKey:@"name"] isEqualToString:field]) {
-					[indexedFields removeObjectAtIndex:i];
-				}
-			}
-		}
-
-		
-
-		// In the event that we removed duplicate columns reload the table view to ensure that the next time
-		// it is open we don't cause the table view to ask for rows that no longer exist.
-		[indexedColumnsTableView reloadData];
-
-		[indexDetails setObject:indexedFields forKey:SPNewIndexIndexedColumns];
-		[indexDetails setObject:[indexNameTextField stringValue] forKey:SPNewIndexIndexName];
-
-		switch ([[indexTypePopUpButton selectedItem] tag]) 
-		{
-			case SPPrimaryKeyMenuTag:
-				[indexDetails setObject:@"PRIMARY KEY" forKey:SPNewIndexIndexType];
-				break;
-			case SPIndexMenuTag:
-				[indexDetails setObject:@"INDEX" forKey:SPNewIndexIndexType];
-				break;
-			case SPUniqueMenuTag:
-				[indexDetails setObject:@"UNIQUE" forKey:SPNewIndexIndexType];
-				break;
-			case SPFullTextMenuTag:
-				[indexDetails setObject:@"FULLTEXT" forKey:SPNewIndexIndexType];
-				break;
-			case SPSpatialMenuTag:
-				[indexDetails setObject:@"SPATIAL" forKey:SPNewIndexIndexType];
-				break;
-		}
-
-		// If there is a key block size set it means the database version supports it
-		if ([[indexKeyBlockSizeTextField stringValue] length]) {
-			[indexDetails setObject:[NSNumber numberWithInteger:[indexKeyBlockSizeTextField integerValue]] forKey:SPNewIndexKeyBlockSize];
-		}
-
-		if (([indexStorageTypePopUpButton indexOfSelectedItem] > 0) && ([[indexTypePopUpButton selectedItem] tag] != SPSpatialMenuTag)) {
-			[indexDetails setObject:[indexStorageTypePopUpButton titleOfSelectedItem] forKey:SPNewIndexStorageType];
-		}
-
-		if ([NSThread isMainThread]) {
-			[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index creation thread", dbDocument) target:self selector:@selector(_addIndexUsingDetails:) object:indexDetails];
-
-			[dbDocument enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") callbackObject:self callbackFunction:NULL];
-		}
-		else {
-			[self _addIndexUsingDetails:indexDetails];
-		}
-	}
-}
-
-/**
- * Process the remove index sheet closing, performing the delete if the user
- * confirmed the action.
- */
-- (void)removeIndexSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	[[alert window] orderOut:nil];
-
-	if (returnCode == NSAlertDefaultReturn) {
-		[dbDocument startTaskWithDescription:NSLocalizedString(@"Removing index...", @"removing index task status message")];
-
-		if ([NSThread isMainThread]) {
-			[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index removal thread", dbDocument) target:self selector:@selector(_removeIndexUsingDetails:) object:(__bridge id)(contextInfo)];
-
-			[dbDocument enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") callbackObject:self callbackFunction:NULL];
-		}
-		else {
-			[self _removeIndexUsingDetails:(__bridge NSDictionary *)(contextInfo)];
-		}
-	}
-}
 
 /**
  * This method is called as part of Key Value Observing which is used to watch for preference changes which effect the interface.
@@ -980,30 +935,22 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		constraintName = [fkInfo objectForKey:@"name"];
 	}
 	
-	if(!constraintName) {
+	if (!constraintName) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
 		return;
 	}
-	
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553 : title")
-									 defaultButton:NSLocalizedString(@"Delete Both", @"table structure : indexes : delete index : error 1553 : delete index and FK button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.", @"table structure : indexes : delete index : error 1553 : description"), constraintName, keyName];
-	
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
-	
-	[alert beginSheetModalForWindow:[dbDocument parentWindow]
-	                  modalDelegate:self
-	                 didEndSelector:@selector(removeIndexSheetDidEnd:returnCode:contextInfo:)
-						contextInfo:(__bridge void * _Nullable)(@{@"Key_name" : keyName, @"ForeignKey": constraintName})];
+
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553 : title") message:[NSString stringWithFormat:NSLocalizedString(@"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.", @"table structure : indexes : delete index : error 1553 : description"), constraintName, keyName] primaryButtonTitle:NSLocalizedString(@"Delete Both", @"table structure : indexes : delete index : error 1553 : delete index and FK button") primaryButtonHandler:^{
+		[self->dbDocument startTaskWithDescription:NSLocalizedString(@"Removing index...", @"removing index task status message")];
+
+		if ([NSThread isMainThread]) {
+			[NSThread detachNewThreadWithName:SPCtxt(@"SPIndexesController index removal thread", self->dbDocument) target:self selector:@selector(_removeIndexUsingDetails:) object:@{@"Key_name" : keyName, @"ForeignKey": constraintName}];
+
+			[self->dbDocument enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button") callbackObject:self callbackFunction:NULL];
+		} else {
+			[self _removeIndexUsingDetails:@{@"Key_name" : keyName, @"ForeignKey": constraintName}];
+		}
+	} cancelButtonHandler:nil];
 }
 
 /**

@@ -87,7 +87,8 @@ static const NSInteger kBlobAsImageFile = 4;
  * like pop-up menus for enum or set
  */
 - (BOOL)isCellComplex {
-	return (![[self viewAtColumn:[self editedColumn] row:[self editedRow] makeIfNecessary:NO] isKindOfClass:[SPTextAndLinkCell class]]);
+	// TODO: using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
+	return (![[self preparedCellAtColumn:[self editedColumn] row:[self editedRow]] isKindOfClass:[SPTextAndLinkCell class]]);
 }
 
 #pragma mark -

@@ -406,7 +406,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Set the focus to the name field
 	[tableSheet makeFirstResponder:tableNameField];
 
-	[tableDocumentInstance.parentWindow beginSheet:tableSheet completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindow] beginSheet:tableSheet completionHandler:^(NSModalResponse returnCode) {
 		[self->addTableCharsetHelper setEnabled:NO];
 		if (returnCode == NSModalResponseOK) {
 			[self _addTable];
@@ -618,7 +618,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[copyTableButton setEnabled:[self isTableNameValid:[copyTableNameField stringValue] forType:[self tableType]]];
 
-	[tableDocumentInstance.parentWindow beginSheet:copyTableSheet completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindow] beginSheet:copyTableSheet completionHandler:^(NSModalResponse returnCode) {
 		if (returnCode == NSModalResponseOK) {
 			[self _copyTable];
 		}
@@ -2060,8 +2060,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[mySQLConnection queryString:@"SET FOREIGN_KEY_CHECKS = 0"];
 	}
 
-	while (currentIndex != NSNotFound)
-	{
+	while (currentIndex != NSNotFound) {
 		NSString *objectIdentifier = @"";
 		NSString *databaseObject = [[filteredTables objectAtIndex:currentIndex] backtickQuotedString];
 		NSInteger objectType = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
@@ -2104,8 +2103,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-			} 
-			else {
+			} else {
 				[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
 				[alert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
 			}
@@ -2115,8 +2113,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			// Try to provide a more helpful message
 			if ([databaseError rangeOfString:@"a foreign key constraint fails" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@", 
-												@"message of panel when an item cannot be deleted including informative message about using force deletion");
+				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@", @"message of panel when an item cannot be deleted including informative message about using force deletion");
 			}
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
@@ -2124,14 +2121,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[alert setAlertStyle:NSAlertStyleWarning];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
-				[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:nil contextInfo:nil];
-				
+				[alert runModal];
 				currentIndex = NSNotFound;
-			}
-			else {
+			} else {
 				NSInteger choice = [alert runModal];
 				
-				currentIndex = (choice == NSAlertFirstButtonReturn || choice == NSAlertAlternateReturn) ? [indexes indexLessThanIndex:currentIndex] : NSNotFound;
+				currentIndex = (choice == NSAlertFirstButtonReturn) ? [indexes indexLessThanIndex:currentIndex] : NSNotFound;
 			}
 		}
 	}
