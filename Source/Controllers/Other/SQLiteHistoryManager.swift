@@ -198,7 +198,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             }
         }
         queue.close()
-        os_log("JIMMY db size = %@", log: log, type: .debug, NSNumber(value: dbSize))
         os_log("JIMMY db size2 = %@", log: log, type: .debug, dbSizeHumanReadable)
     }
 
@@ -213,15 +212,13 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-		var queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
+		let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
 		// we want to reverse the array from prefs
 		// prefs is stored by created date asc
 		// we want to insert in the opposite order
-		// so that drop down displays by latest created 
-		queryHistoryArray.reverse()
-		
-		for query in queryHistoryArray where !query.isEmpty {
+		// so that drop down displays by latest created
+		for query in queryHistoryArray.reversed() where query.isNotEmpty {
 			os_log("query: [%@]", log: log, type: .debug, query)
 
 			let newDate = Date()
@@ -255,7 +252,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 	@objc func updateQueryHistory(newHist: [String]) {
 		os_log("updateQueryHistory", log: log, type: .debug)
 
-		for query in newHist where !query.isEmpty {
+		for query in newHist where query.isNotEmpty {
 
 			let newDate = Date()
 
