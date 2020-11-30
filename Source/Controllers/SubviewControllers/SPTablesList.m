@@ -222,7 +222,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		if ([prefs boolForKey:SPDisplayCommentsInTablesList]) {
 			theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
 		} else {
-			theResult = [mySQLConnection queryString:@"SHOW TABLES"];
+			theResult = [mySQLConnection queryString:@"SHOW FULL TABLES"];
 		}
 		[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
 		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
@@ -234,14 +234,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		} else {
 			for (NSDictionary *eachRow in theResult) {
 
+				NSMutableDictionary *mutableRow = [eachRow mutableCopy];
+				NSString *tableType = [mutableRow objectForKey:@"Table_type"];
+				[mutableRow removeObjectForKey:@"Table_type"];
+
 				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
 				// return NSNull, thus catch that case for safety reasons
-				id tableName = [eachRow objectForKey:@"Name"];
+				id tableName = [mutableRow objectForKey:@"Name"];
 				if (tableName == nil || [tableName isNSNull]) {
-					tableName = [eachRow objectForKey:@"NAME"];
+					tableName = [mutableRow objectForKey:@"NAME"];
 				}
-				if ((tableName == nil || [tableName isNSNull]) && eachRow.allValues.count == 1) {
-					tableName = [eachRow.allValues firstObject];
+				if ((tableName == nil || [tableName isNSNull]) && mutableRow.allValues.count == 1) {
+					tableName = [mutableRow.allValues firstObject];
 				}
 				if (tableName == nil || [tableName isNSNull]) {
 					tableName = @"...";
@@ -249,16 +253,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tables addObject:tableName];
 				
 				// comments is usefull
-				id tableComment = [eachRow objectForKey:@"Comment"];
+				id tableComment = [mutableRow objectForKey:@"Comment"];
 				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = [eachRow objectForKey:@"COMMENT"];
+					tableComment = [mutableRow objectForKey:@"COMMENT"];
 				}
 				if (tableComment == nil || [tableComment isNSNull]) {
 					tableComment = @"";
 				}
 				[tableComments setValue:tableComment forKey:tableName];
 
-				if ([@"VIEW" isEqualToString:tableComment]) {
+				if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
 					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
 					tableListContainsViews = YES;
 				} else {
