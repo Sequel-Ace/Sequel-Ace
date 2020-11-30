@@ -153,13 +153,14 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Loads the query history from the SQLite database.
     private func loadQueryHistory() {
-        os_log("loading Query History", log: log, type: .debug)
+
+		os_log("loading Query History. SPCustomQueryMaxHistoryItems: %i", log: self.log, type: .debug, prefs.integer(forKey: SPCustomQueryMaxHistoryItems))
 
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
-				// select by _rowid_ desc to get latest first
-                let rs = try db.executeQuery("SELECT rowid, query FROM QueryHistory order by _rowid_ desc", values: nil)
+				// select by _rowid_ desc to get latest first, limit to max pref
+                let rs = try db.executeQuery("SELECT rowid, query FROM QueryHistory order by _rowid_ desc LIMIT (?)", values: [prefs.integer(forKey: SPCustomQueryMaxHistoryItems)])
 
                 while rs.next() {
 					queryHist[rs.longLongInt(forColumn: "rowid")] = rs.string(forColumn: "query")
@@ -252,6 +253,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 	@objc func updateQueryHistory(newHist: [String]) {
 		os_log("updateQueryHistory", log: log, type: .debug)
 
+		// dont delete any history, keep it all?
 		for query in newHist where query.isNotEmpty {
 
 			let newDate = Date()
