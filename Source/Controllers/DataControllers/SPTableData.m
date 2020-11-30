@@ -34,6 +34,7 @@
 #import "SPTablesList.h"
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -830,8 +831,12 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"),[mySQLConnection lastErrorMessage]] callback:nil];
-			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+			SPMainQSync(^{
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"),[self->mySQLConnection lastErrorMessage]] callback:nil];
+			});
+			if (changeEncoding) {
+				[mySQLConnection restoreStoredEncoding];
+			}
 		}
 		return nil;
 	}
