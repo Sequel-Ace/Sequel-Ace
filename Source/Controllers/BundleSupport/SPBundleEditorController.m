@@ -34,6 +34,7 @@
 #import "SPBundleCommandTextView.h"
 #import "SPSplitView.h"
 #import "SPAppController.h"
+#import "SPNSMutableDictionaryAdditions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -532,6 +533,7 @@
 	}
 
 	// Duplicate a selected Bundle if sender == self
+	// JCS - when duplicating, we'll save as version 2
 	if (sender == self) {
 		NSDictionary *currentDict = [self _currentSelectedObject];
 		bundle = [NSMutableDictionary dictionaryWithDictionary:currentDict];
@@ -540,8 +542,8 @@
 
 		NSString *bundleFileName = [bundle objectForKey:kBundleNameKey];
 		NSString *newFileName = [NSString stringWithFormat:@"%@_Copy", [bundle objectForKey:kBundleNameKey]];
-		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtension];
-		NSString *newBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newFileName, SPUserBundleFileExtension];
+		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtensionV2];
+		NSString *newBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newFileName, SPUserBundleFileExtensionV2];
 
 		BOOL isDir;
 		BOOL copyingWasSuccessful = YES;
@@ -553,7 +555,7 @@
 		if(!copyingWasSuccessful) {
 			// try again with new name
 			newFileName = [NSString stringWithFormat:@"%@_%ld", newFileName, (long)(random() % 35000)];
-			newBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newFileName, SPUserBundleFileExtension];
+			newBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newFileName, SPUserBundleFileExtensionV2];
 			if([fileManager fileExistsAtPath:possibleExisitingBundleFilePath isDirectory:&isDir] && isDir) {
 				if([fileManager copyItemAtPath:possibleExisitingBundleFilePath toPath:newBundleFilePath error:nil])
 					copyingWasSuccessful = YES;
@@ -578,6 +580,9 @@
 
 		}
 		[bundle setObject:newFileName forKey:kBundleNameKey];
+
+		// set/update SPBundleVersion
+		[bundle setObject:[NSNumber numberWithLong:SPBundleCurrentVersion] forKey:SPBundleVersionKey];
 
 		[self saveBundle:bundle atPath:nil];
 
@@ -644,8 +649,8 @@
 		}
 		if(category == nil) category = @"";
 
-		bundle = [NSMutableDictionary dictionaryWithObjects:[NSArray arrayWithObjects:NSLocalizedString(@"New Bundle",@"Bundle Editor : Default name for new bundle in the list on the left"), NSLocalizedString(@"New Name",@"Bundle Editor : Default name for a new bundle in the menu"), @"", scope, category, newUUID, nil] 
-						forKeys:@[kBundleNameKey, SPBundleFileNameKey, SPBundleFileCommandKey, SPBundleFileScopeKey, SPBundleFileCategoryKey, SPBundleFileUUIDKey]];
+		bundle = [NSMutableDictionary dictionaryWithObjects:@[NSLocalizedString(@"New Bundle",@"Bundle Editor : Default name for new bundle in the list on the left"), NSLocalizedString(@"New Name",@"Bundle Editor : Default name for a new bundle in the menu"), @"", scope, category, newUUID, [NSNumber numberWithLong:SPBundleCurrentVersion]]
+						forKeys:@[kBundleNameKey, SPBundleFileNameKey, SPBundleFileCommandKey, SPBundleFileScopeKey, SPBundleFileCategoryKey, SPBundleFileUUIDKey, SPBundleVersionKey]];
 	}
 
 	if (![touchedBundleArray containsObject:[bundle objectForKey:kBundleNameKey]]) {
@@ -687,16 +692,19 @@
 
 			// Move already installed Bundles to Trash
 			NSString *bundleName = [obj objectForKey:kBundleNameKey];
+			NSString *theNewPath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleName, SPUserBundleFileExtensionV2];
 			NSString *thePath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleName, SPUserBundleFileExtension];
-			if ([self->fileManager fileExistsAtPath:thePath isDirectory:nil]) {
+			if ([self->fileManager fileExistsAtPath:theNewPath isDirectory:nil] || [self->fileManager fileExistsAtPath:thePath isDirectory:nil] ) {
 				NSError *error = nil;
+				NSError *error2 = nil;
 
 				// Use a AppleScript script since NSWorkspace performFileOperation or NSFileManager moveItemAtPath
 				// have problems probably due access rights.
-				[self->fileManager removeItemAtPath:thePath error:&error];
+				[self->fileManager removeItemAtPath:theNewPath error:&error];
+				if (error != nil) [self->fileManager removeItemAtPath:thePath error:&error2];
 
-				if (error != nil) {
-					[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Bundle Editor : Trash-Bundle(s)-Error : error dialog title"), thePath] message:[NSString stringWithFormat:@"%@", [error localizedDescription]] callback:nil];
+				if (error != nil && error2 != nil ) {
+					[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Bundle Editor : Trash-Bundle(s)-Error : error dialog title"), theNewPath] message:[NSString stringWithFormat:@"%@", [error localizedDescription]] callback:nil];
 
 					deletionSuccessfully = NO;
 					break;
@@ -734,8 +742,23 @@
 {
 	if ([commandsOutlineView numberOfSelectedRows] != 1) return;
 
-	[[NSWorkspace sharedWorkspace] selectFile:[NSString stringWithFormat:@"%@/%@.%@/%@", 
-		bundlePath, [[self _currentSelectedObject] objectForKey:kBundleNameKey], SPUserBundleFileExtension, SPBundleFileName] inFileViewerRootedAtPath:@""];
+	if([[NSWorkspace sharedWorkspace] selectFile:[NSString
+												  stringWithFormat:@"%@/%@.%@/%@",
+												  bundlePath,
+												  [[self _currentSelectedObject] objectForKey:kBundleNameKey],
+												  SPUserBundleFileExtensionV2,
+												  SPBundleFileName]
+						inFileViewerRootedAtPath:@""] == NO){
+
+		[[NSWorkspace sharedWorkspace] selectFile:[NSString
+													  stringWithFormat:@"%@/%@.%@/%@",
+													  bundlePath,
+													  [[self _currentSelectedObject] objectForKey:kBundleNameKey],
+													  SPUserBundleFileExtension,
+													  SPBundleFileName]
+						 inFileViewerRootedAtPath:@""];
+
+	}
 }
 
 /**
@@ -745,7 +768,7 @@
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	[panel setAllowedFileTypes:@[SPUserBundleFileExtension]];
+	[panel setAllowedFileTypes:@[SPUserBundleFileExtensionV2, SPUserBundleFileExtension]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
@@ -763,7 +786,7 @@
 		id aBundle = [self _currentSelectedObject];
 		
 		NSString *bundleFileName = [aBundle objectForKey:kBundleNameKey];
-		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleFileName, SPUserBundleFileExtension];
+		NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", self->bundlePath, bundleFileName, SPUserBundleFileExtensionV2];
 		NSAssert(possibleExisitingBundleFilePath != nil, @"source bundle path must be non-nil!");
 		
 		NSString *savePath = [[panel URL] path];
@@ -961,9 +984,19 @@
 		if(![bundle objectForKey:kBundleNameKey] || ![[bundle objectForKey:kBundleNameKey] length]) {
 			return NO;
 		}
-		if(!bundlePath)
+		if(!bundlePath){
 			bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:nil];
-		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], SPUserBundleFileExtension];
+		}
+
+		// if this is nil, then it's a version 1 bundle
+		NSNumber *bundleVersion = [bundle safeObjectForKey:SPBundleVersionKey];
+
+		SPLog(@"bundleVersion = %@", bundleVersion);
+
+		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], (bundleVersion.intValue > 1) ? SPUserBundleFileExtensionV2 : SPUserBundleFileExtension];
+
+		SPLog(@"aPath = %@", aPath);
+
 	}
 
 	// Create spBundle folder if it doesn't exist
@@ -973,7 +1006,8 @@
 		isDir = YES;
 		isNewBundle = YES;
 	}
-	
+
+
 	// If aPath exists but it's not a folder bail out
 	if(!isDir) return NO;
 
@@ -1318,8 +1352,8 @@
 
 			if(oldBundleName && newBundleName && [newBundleName length] && ![newBundleName rangeOfString:@"/"].length) {
 
-				NSString *oldName = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, oldBundleName, SPUserBundleFileExtension];
-				NSString *newName = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newBundleName, SPUserBundleFileExtension];
+				NSString *oldName = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, oldBundleName, SPUserBundleFileExtensionV2];
+				NSString *newName = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, newBundleName, SPUserBundleFileExtensionV2];
 	
 				BOOL isDir;
 				// Check for renaming
@@ -1445,9 +1479,9 @@
 
 	NSDictionary *bundleDict = [[items objectAtIndex:0] representedObject];
 	NSString *bundleFileName = [bundleDict objectForKey:kBundleNameKey];
-	NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtension];
+	NSString *possibleExisitingBundleFilePath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleFileName, SPUserBundleFileExtensionV2];
 
-	draggedFilePath = [NSString stringWithFormat:@"%@/%@.%@", [NSFileManager temporaryDirectory], bundleFileName, SPUserBundleFileExtension];
+	draggedFilePath = [NSString stringWithFormat:@"%@/%@.%@", [NSFileManager temporaryDirectory], bundleFileName, SPUserBundleFileExtensionV2];
 
 	BOOL isDir;
 
@@ -1592,7 +1626,10 @@
 		NSArray *foundBundles = [fileManager contentsOfDirectoryAtPath:bundlePath error:&error];
 		if (foundBundles && [foundBundles count]) {
 			for(NSString* bundle in foundBundles) {
-				if(![[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtension lowercaseString]]) continue;
+				if([[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtension lowercaseString]] == NO && [[[bundle pathExtension] lowercaseString] isEqualToString:[SPUserBundleFileExtensionV2 lowercaseString]] == NO){
+
+						continue;
+				}
 
 				NSDictionary *cmdData = nil;
 				NSError *readError = nil;
