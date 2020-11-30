@@ -38,7 +38,6 @@
 #import "SPTableView.h"
 #import "SPDatabaseData.h"
 #import "SPSQLParser.h"
-#import "SPAlertSheets.h"
 #import "SPIndexesController.h"
 #import "RegexKitLite.h"
 #import "SPTableFieldValidation.h"
@@ -110,7 +109,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 @interface SPTableStructure ()
 
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
 - (void)_removeFieldAndForeignKey:(NSNumber *)removeForeignKey;
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
 
@@ -308,18 +306,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 		
 		if ([mySQLConnection isConnected]) {
-
-			[[NSAlert alertWithMessageText:message 
-							 defaultButton:@"OK" 
-						   alternateButton:nil 
-							   otherButton:nil 
-				 informativeTextWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [mySQLConnection lastErrorMessage]]
-				  beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
-							 modalDelegate:self 
-							didEndSelector:NULL 
-							   contextInfo:NULL];
+			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [mySQLConnection lastErrorMessage]] callback:nil];
 		}
-
 		return;
 	}
 
@@ -332,16 +320,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (!type || [type isNSNull] || ![type length]) {
 		type = NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
 	}
-
-	[[NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"]] 
-					 defaultButton:@"OK" 
-				   alternateButton:nil 
-					   otherButton:nil 
-		 informativeTextWithFormat:@"%@", type]
-		  beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
-					 modalDelegate:self 
-					didEndSelector:NULL 
-					   contextInfo:NULL];
+	[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"]] message:type callback:nil];
 
 }
 
@@ -484,8 +463,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Resets the auto increment value of a table.
  */
-- (IBAction)resetAutoIncrement:(id)sender
-{
+- (IBAction)resetAutoIncrement:(id)sender {
 	if ([sender tag] == 1) {
 
 		[resetAutoIncrementLine setHidden:YES];
@@ -494,35 +472,19 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[resetAutoIncrementLine setHidden:NO];
 		}
 
-		// Begin the sheet
-		[NSApp beginSheet:resetAutoIncrementSheet
-		   modalForWindow:[tableDocumentInstance parentWindow]
-			modalDelegate:self
-		   didEndSelector:@selector(resetAutoincrementSheetDidEnd:returnCode:contextInfo:)
-			  contextInfo:nil];
+		[[tableDocumentInstance parentWindow] beginSheet:resetAutoIncrementSheet completionHandler:^(NSModalResponse returnCode) {
+			if (returnCode == NSAlertFirstButtonReturn) {
+				[self takeAutoIncrementFrom:self->resetAutoIncrementValue];
+			}
+		}];
 
 		[resetAutoIncrementValue setStringValue:@"1"];
-	}
-	else if ([sender tag] == 2) {
+	} else if ([sender tag] == 2) {
 		[self setAutoIncrementTo:@1];
 	}
 }
 
-/**
- * Process the autoincrement sheet closing, resetting if the user confirmed the action.
- */
-- (void)resetAutoincrementSheetDidEnd:(NSWindow *)theSheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Order out current sheet to suppress overlapping of sheets
-	[theSheet orderOut:nil];
-
-	if (returnCode == NSAlertDefaultReturn) {
-		[self takeAutoIncrementFrom:resetAutoIncrementValue];
-	}
-}
-
-- (void)takeAutoIncrementFrom:(NSTextField *)field
-{
+- (void)takeAutoIncrementFrom:(NSTextField *)field {
 	id obj = [field objectValue];
 
 	//nil is handled by -setAutoIncrementTo:
@@ -1043,41 +1005,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 #pragma mark -
 #pragma mark Alert sheet methods
-
-/**
- * Called whenever a sheet is dismissed.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)])
-		[sheet orderOut:nil];
-	else if ([sheet respondsToSelector:@selector(window)])
-		[[sheet window] orderOut:nil];
-
-	if(contextInfo && [contextInfo isEqualToString:@"autoincrementindex"]) {
-		if (returnCode) {
-			switch ([[chooseKeyButton selectedItem] tag]) {
-				case SPPrimaryKeyMenuTag:
-					autoIncrementIndex = @"PRIMARY KEY";
-					break;
-				case SPIndexMenuTag:
-					autoIncrementIndex = @"INDEX";
-					break;
-				case SPUniqueMenuTag:
-					autoIncrementIndex = @"UNIQUE";
-					break;
-			}
-		} else {
-			autoIncrementIndex = nil;
-			if([tableSourceView selectedRow] > -1 && [extraFieldSuggestions count])
-				[[tableFields objectAtIndex:[tableSourceView selectedRow]] setObject:[extraFieldSuggestions objectAtIndex:0] forKey:@"Extra"];
-			[tableSourceView reloadData];
-			isCurrentExtraAutoIncrement = NO;
-		}
-	}
-}
 
 - (void)addRowSheetPrimaryAction {
 
@@ -1827,14 +1754,29 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				// Asks the user to add an index to query if AUTO_INCREMENT is set and field isn't indexed
 				if ((![currentRow objectForKey:@"Key"] || [[currentRow objectForKey:@"Key"] isEqualToString:@""])) {
 					[chooseKeyButton selectItemWithTag:SPPrimaryKeyMenuTag];
-
-					[NSApp beginSheet:keySheet
-					   modalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self
-					   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-						  contextInfo:@"autoincrementindex" ];
+					[[tableDocumentInstance parentWindow] beginSheet:keySheet completionHandler:^(NSModalResponse returnCode) {
+						if (returnCode) {
+							switch ([[self->chooseKeyButton selectedItem] tag]) {
+								case SPPrimaryKeyMenuTag:
+									self->autoIncrementIndex = @"PRIMARY KEY";
+									break;
+								case SPIndexMenuTag:
+									self->autoIncrementIndex = @"INDEX";
+									break;
+								case SPUniqueMenuTag:
+									self->autoIncrementIndex = @"UNIQUE";
+									break;
+							}
+						} else {
+							self->autoIncrementIndex = nil;
+							if([self->tableSourceView selectedRow] > -1 && [self->extraFieldSuggestions count])
+								[[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] setObject:[self->extraFieldSuggestions objectAtIndex:0] forKey:@"Extra"];
+							[self->tableSourceView reloadData];
+							self->isCurrentExtraAutoIncrement = NO;
+						}
+					}];
 				}
-			}
-			else {
+			} else {
 				autoIncrementIndex = nil;
 			}
 

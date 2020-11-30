@@ -55,7 +55,6 @@
 #import "YRKSpinningProgressIndicator.h"
 #import "SPProcessListController.h"
 #import "SPServerVariablesController.h"
-#import "SPAlertSheets.h"
 #import "SPLogger.h"
 #import "SPDatabaseCopy.h"
 #import "SPTableCopy.h"
@@ -85,24 +84,20 @@
 #import "SPHelpViewerController.h"
 #import "PSMTabBarController.h"
 #import "PSMTabBarControl.h"
+#import "SPPrintUtility.h"
 
 #import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
-#include <libkern/OSAtomic.h>
+#include <stdatomic.h>
 
 // Constants
-static NSString *SPCopyDatabaseAction = @"SPCopyDatabase";
-static NSString *SPConfirmCopyDatabaseAction = @"SPConfirmCopyDatabase";
-static NSString *SPRenameDatabaseAction = @"SPRenameDatabase";
-static NSString *SPAlterDatabaseAction = @"SPAlterDatabase";
-static NSString *SPSaveDocumentPreferences = @"SPSaveDocumentPreferences";
 static NSString *SPNewDatabaseDetails = @"SPNewDatabaseDetails";
 static NSString *SPNewDatabaseName = @"SPNewDatabaseName";
 static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
-static int64_t SPDatabaseDocumentInstanceCounter = 0;
+static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @interface SPDatabaseDocument ()
 
@@ -159,7 +154,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (instancetype)init
 {
 	if ((self = [super init])) {
-		instanceId = OSAtomicIncrement64(&SPDatabaseDocumentInstanceCounter);
+		instanceId = atomic_fetch_add(&SPDatabaseDocumentInstanceCounter, 1);
 
 		_mainNibLoaded = NO;
 		_isConnected = NO;
@@ -697,19 +692,30 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[addDatabaseCharsetHelper setDefaultCollation:defaultCollation];
 	[addDatabaseCharsetHelper setEnabled:YES];
 
-	[NSApp beginSheet:databaseSheet
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-	      contextInfo:@"addDatabase"];
+	[parentWindow beginSheet:databaseSheet completionHandler:^(NSModalResponse returnCode) {
+		[self->addDatabaseCharsetHelper setEnabled:NO];
+
+		if (returnCode == NSModalResponseOK) {
+			[self _addDatabase];
+
+			// Query the structure of all databases in the background (mainly for completion)
+			[self->databaseStructureRetrieval queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
+		} else {
+			// Reset chooseDatabaseButton
+			if ([[self database] length]) {
+				[self->chooseDatabaseButton selectItemWithTitle:[self database]];
+			} else {
+				[self->chooseDatabaseButton selectItemAtIndex:0];
+			}
+		}
+	}];
 }
 
 /**
  * Show UI for the ALTER DATABASE statement
  * @warning Make sure this method is only called on mysql 4.1+ servers!
  */
-- (IBAction)alterDatabase:(id)sender
-{
+- (IBAction)alterDatabase:(id)sender {
 	//once the database is created the charset and collation are written
 	//to the db.opt file regardless if they were explicity given or not.
 	//So there is no longer a "Default" option.
@@ -725,11 +731,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[alterDatabaseCharsetHelper setSelectedCollation:currentCollation];
 	[alterDatabaseCharsetHelper setEnabled:YES];
 
-	[NSApp beginSheet:databaseAlterSheet
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPAlterDatabaseAction)];
+	[parentWindow beginSheet:databaseAlterSheet completionHandler:^(NSModalResponse returnCode) {
+
+		[self->alterDatabaseCharsetHelper setEnabled:NO];
+		if (returnCode == NSModalResponseOK) {
+			[self _alterDatabase];
+		}
+	}];
 }
 
 - (IBAction)compareDatabase:(id)sender
@@ -806,29 +814,27 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	// Inform the user that we don't support copying objects other than tables and ask them if they'd like to proceed
 	if ([tablesListInstance hasNonTableObjects]) {
-		[SPAlertSheets beginWaitingAlertSheetWithTitle:NSLocalizedString(@"Only Partially Supported", @"partial copy database support message")
-		                                 defaultButton:NSLocalizedString(@"Continue", "continue button")
-		                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-		                                   otherButton:nil
-		                                    alertStyle:NSAlertStyleWarning
-		                                     docWindow:parentWindow
-		                                 modalDelegate:self
-		                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-										   contextInfo:(__bridge void *)(SPConfirmCopyDatabaseAction)
-		                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]
-		                                    returnCode:&confirmCopyDatabaseReturnCode];
+		NSAlert *alert = [[NSAlert alloc] init];
+		[alert setMessageText:NSLocalizedString(@"Only Partially Supported", @"partial copy database support message")];
+		[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]];
 
-		if (confirmCopyDatabaseReturnCode == NSAlertAlternateReturn) return;
+		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+		[alert addButtonWithTitle:NSLocalizedString(@"Continue", "continue button")];
+		[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+
+		if ([alert runModal] == NSAlertSecondButtonReturn) {
+			return;
+		}
 	}
 
 	[databaseCopyNameField setStringValue:selectedDatabase];
 	[copyDatabaseMessageField setStringValue:selectedDatabase];
 
-	[NSApp beginSheet:databaseCopySheet
-	   modalForWindow:parentWindow
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPCopyDatabaseAction)];
+	[parentWindow beginSheet:databaseCopySheet completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self _copyDatabase];
+		}
+	}];
 }
 
 /**
@@ -848,11 +854,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[databaseRenameNameField setStringValue:selectedDatabase];
 	[renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
-	[NSApp beginSheet:databaseRenameSheet
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:(__bridge void * _Null_unspecified)(SPRenameDatabaseAction)];
+	[parentWindow beginSheet:databaseRenameSheet completionHandler:^(NSModalResponse returnCode) {
+		if (returnCode == NSModalResponseOK) {
+			[self _renameDatabase];
+		}
+	}];
 }
 
 /**
@@ -908,33 +914,14 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[processListController displayProcessListWindow];
 }
 
-- (IBAction)shutdownServer:(id)sender
-{
-	// confirm user action
-	SPBeginAlertSheet(
-		NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title"),
-		NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button"),
-		NSLocalizedString(@"Cancel", @"shutdown server : confirmation dialog : cancel button"),
-		nil,
-		parentWindow,
-		self,
-		@selector(shutdownAlertDidEnd:returnCode:contextInfo:),
-		NULL,
-		NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message")
-	);
-}
-
-- (void)shutdownAlertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	if(returnCode != NSAlertDefaultReturn) return; //cancelled by user
-	
-	if(![mySQLConnection serverShutdown]) {
-		if([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[mySQLConnection lastErrorMessage]] callback:nil];
+- (IBAction)shutdownServer:(id)sender {
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title") message:NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message") primaryButtonTitle:NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button") primaryButtonHandler:^{
+		if (![self->mySQLConnection serverShutdown]) {
+			if ([self->mySQLConnection isConnected]) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[self->mySQLConnection lastErrorMessage]] callback:nil];
+			}
 		}
-	}
-	// shutdown successful.
-	// Until s.o. has a good UI idea, do nothing. Sequel Ace should figure out the connection loss soon enough
+	} cancelButtonHandler:nil];
 }
 
 /**
@@ -951,67 +938,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 - (NSArray *)allSystemDatabaseNames
 {
 	return allSystemDatabases;
-}
-
-/**
- * Alert sheet method. Invoked when an alert sheet is dismissed.
- */
-- (void)sheetDidEnd:(id)sheet returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	// Those that are just setting a return code and don't need to order out the sheet. See SPAlertSheets+beginWaitingAlertSheetWithTitle:
-	if ([contextInfo isEqualToString:SPSaveDocumentPreferences]) {
-		saveDocPrefSheetStatus = returnCode;
-		return;
-	}
-	else if ([contextInfo isEqualToString:SPConfirmCopyDatabaseAction]) {
-		confirmCopyDatabaseReturnCode = returnCode;
-		return;
-	}
-
-	// Order out current sheet to suppress overlapping of sheets
-	if ([sheet respondsToSelector:@selector(orderOut:)]) {
-		[sheet orderOut:nil];
-	}
-	else if ([sheet respondsToSelector:@selector(window)]) {
-		[[sheet window] orderOut:nil];
-	}
-
-	// Add a new database
-	if ([contextInfo isEqualToString:@"addDatabase"]) {
-		[addDatabaseCharsetHelper setEnabled:NO];
-
-		if (returnCode == NSModalResponseOK) {
-			[self _addDatabase];
-
-			// Query the structure of all databases in the background (mainly for completion)
-			[databaseStructureRetrieval queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
-		}
-		else {
-			// Reset chooseDatabaseButton
-			if ([[self database] length]) {
-				[chooseDatabaseButton selectItemWithTitle:[self database]];
-			}
-			else {
-				[chooseDatabaseButton selectItemAtIndex:0];
-			}
-		}
-	}
-	else if ([contextInfo isEqualToString:SPCopyDatabaseAction]) {
-		if (returnCode == NSModalResponseOK) {
-			[self _copyDatabase];
-		}
-	}
-	else if ([contextInfo isEqualToString:SPRenameDatabaseAction]) {
-		if (returnCode == NSModalResponseOK) {
-			[self _renameDatabase];
-		}
-	}
-	else if ([contextInfo isEqualToString:SPAlterDatabaseAction]) {
-		[alterDatabaseCharsetHelper setEnabled:NO];
-		if (returnCode == NSModalResponseOK) {
-			[self _alterDatabase];
-		}
-	}
 }
 
 /**
@@ -1804,11 +1730,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[createTableSyntaxWindow makeFirstResponder:createTableSyntaxTextField];
 
 	// Show variables sheet
-	[NSApp beginSheet:createTableSyntaxWindow
-	   modalForWindow:parentWindow
-	    modalDelegate:self
-	   didEndSelector:nil
-	      contextInfo:nil];
+	[parentWindow beginSheet:createTableSyntaxWindow completionHandler:nil];
 
 }
 
@@ -3092,19 +3014,15 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			}
 			
 			if(![spf count] || error) {
-				[SPAlertSheets beginWaitingAlertSheetWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")
-				                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
-				                               alternateButton:NSLocalizedString(@"Ignore", @"ignore button")
-				                                   otherButton:nil
-				                                    alertStyle:NSAlertStyleCritical
-				                                     docWindow:parentWindow
-				                                 modalDelegate:self
-				                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-				                                   contextInfo:(__bridge void *)SPSaveDocumentPreferences
-				                                      infoText:[NSString stringWithFormat:NSLocalizedString(@"Connection data file “%@” couldn't be read. Please try to save the document under a different name.\n\nDetails: %@", @"message error while reading connection data file and suggesting to save it under a differnet name"), [fileName lastPathComponent], [error localizedDescription]]
-				                                    returnCode:&saveDocPrefSheetStatus];
+				NSAlert *alert = [[NSAlert alloc] init];
+				[alert setMessageText:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")];
+				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Connection data file “%@” couldn't be read. Please try to save the document under a different name.\n\nDetails: %@", @"message error while reading connection data file and suggesting to save it under a differnet name"), [fileName lastPathComponent], [error localizedDescription]]];
 
-				return saveDocPrefSheetStatus == NSAlertAlternateReturn;
+				// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+				[alert addButtonWithTitle:NSLocalizedString(@"Ignore", @"ignore button")];
+
+				return [alert runModal] == NSAlertSecondButtonReturn;
 			}
 		}
 
@@ -4631,8 +4549,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[inputTextWindowSecureTextField setStringValue:@""];
 			[inputTextWindowSecureTextField selectText:nil];
 
-			[NSApp beginSheet:inputTextWindow modalForWindow:parentWindow modalDelegate:self didEndSelector:nil contextInfo:nil];
-
+			[parentWindow beginSheet:inputTextWindow completionHandler:nil];
 			// wait for encryption password
 			NSModalSession session = [NSApp beginModalSessionForWindow:inputTextWindow];
 			for (;;) {
@@ -6610,7 +6527,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[self makeKeyDocument];
 
 		// Display the connection error dialog and wait for the return code
-		[NSApp beginSheet:connectionErrorDialog modalForWindow:[self parentWindow] modalDelegate:nil didEndSelector:NULL contextInfo:NULL];
+		[self.parentWindow beginSheet:connectionErrorDialog completionHandler:nil];
 		connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
 
 		[NSApp endSheet:connectionErrorDialog];
@@ -6670,52 +6587,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 /**
  * WebView delegate method.
  */
-- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame
-{
-	// Because we need the webFrame loaded (for preview), we've moved the actual printing here
-	NSPrintInfo *printInfo = [NSPrintInfo sharedPrintInfo];
+- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame {
 
-	NSSize paperSize = [printInfo paperSize];
-	NSRect printableRect = [printInfo imageablePageBounds];
 
-	// Calculate page margins
-	CGFloat marginL = printableRect.origin.x;
-	CGFloat marginR = paperSize.width - (printableRect.origin.x + printableRect.size.width);
-	CGFloat marginB = printableRect.origin.y;
-	CGFloat marginT = paperSize.height - (printableRect.origin.y + printableRect.size.height);
-
-	// Make sure margins are symetric and positive
-	CGFloat marginLR = MAX(0, MAX(marginL, marginR));
-	CGFloat marginTB = MAX(0, MAX(marginT, marginB));
-
-	// Set the margins
-	[printInfo setLeftMargin:marginLR];
-	[printInfo setRightMargin:marginLR];
-	[printInfo setTopMargin:marginTB];
-	[printInfo setBottomMargin:marginTB];
-
-	[printInfo setHorizontalPagination:NSFitPagination];
-	[printInfo setVerticalPagination:NSAutoPagination];
-	[printInfo setVerticallyCentered:NO];
-
-	NSPrintOperation *op = [NSPrintOperation printOperationWithView:[[[printWebView mainFrame] frameView] documentView] printInfo:printInfo];
-
-	// do not try to use webkit from a background thread!
-	[op setCanSpawnSeparateThread:NO];
-
-	// Add the ability to select the orientation to print panel
-	NSPrintPanel *printPanel = [op printPanel];
-
-	[printPanel setOptions:[printPanel options] + NSPrintPanelShowsOrientation + NSPrintPanelShowsScaling + NSPrintPanelShowsPaperSize];
-
-	SPPrintAccessory *printAccessory = [[SPPrintAccessory alloc] initWithNibName:@"PrintAccessory" bundle:nil];
-
-	[printAccessory setPrintView:printWebView];
-	[printPanel addAccessoryController:printAccessory];
-
-	[[NSPageLayout pageLayout] addAccessoryController:printAccessory];
-
-	[op setPrintPanel:printPanel];
+	NSPrintOperation *op = [SPPrintUtility preparePrintOperationWithView:[[[printWebView mainFrame] frameView] documentView] printView:printWebView];
 
 	/* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
 	 * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
@@ -6729,10 +6604,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	 */
 	if ([self isWorking]) [self endTask];
 
-	[op runOperationModalForWindow:[self parentWindow]
-	                      delegate:self
-	                didRunSelector:nil
-	                   contextInfo:nil];
+	[op runOperationModalForWindow:[self parentWindow] delegate:self didRunSelector:nil contextInfo:nil];
 }
 
 /**

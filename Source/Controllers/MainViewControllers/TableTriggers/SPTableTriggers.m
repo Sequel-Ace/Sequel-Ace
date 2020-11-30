@@ -33,7 +33,6 @@
 #import "SPTablesList.h"
 #import "SPTableData.h"
 #import "SPTableView.h"
-#import "SPAlertSheets.h"
 #import "SPServerSupport.h"
 
 #import <SPMySQL/SPMySQL.h>
@@ -69,7 +68,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 - (void)_toggleConfirmAddTriggerButtonEnabled;
 - (void)_refreshTriggerDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_openTriggerSheet;
-- (void)_reopenTriggerSheet:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (void)_addPreferenceObservers;
 - (void)_removePreferenceObservers;
 
@@ -212,12 +210,10 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		[connection queryString:queryDelete];
 		
 		if ([connection queryErrored]) {
-			SPBeginAlertSheet(NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message"),
-							  NSLocalizedString(@"OK", @"OK button"),
-							  nil, nil, [NSApp mainWindow], self, @selector(_reopenTriggerSheet:returnCode:contextInfo:), NULL,
-							  [NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"),
-							   [connection lastErrorMessage]]);
-			
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:^{
+
+				[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
+			}];
 			return;
 		}
 	}
@@ -279,12 +275,9 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 			// or will it interfere with the one above?
 			[connection queryString:query];
 		}
-
-		SPBeginAlertSheet(NSLocalizedString(@"Error creating trigger", @"error creating trigger message"),
-						  NSLocalizedString(@"OK", @"OK button"),
-						  nil, nil, [NSApp mainWindow], self, @selector(_reopenTriggerSheet:returnCode:contextInfo:), NULL,
-						  [NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\nMySQL said: %@", @"error creating trigger informative message"),
-						   createTriggerError]);
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating trigger", @"error creating trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\nMySQL said: %@", @"error creating trigger informative message"), createTriggerError] callback:^{
+			[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
+		}];
 	}
 
 	[self _refreshTriggerDataForcingCacheRefresh:YES];
@@ -310,26 +303,28 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 /**
  * Removes the selected trigger.
  */
-- (IBAction)removeTrigger:(id)sender
-{
+- (IBAction)removeTrigger:(id)sender {
 	if ([triggersTableView numberOfSelectedRows] > 0) {
+		[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Delete trigger", @"delete trigger message") message:NSLocalizedString(@"Are you sure you want to delete the selected triggers? This action cannot be undone.", @"delete selected trigger informative message") primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 
-		NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Delete trigger", @"delete trigger message")
-										 defaultButton:NSLocalizedString(@"Delete", @"delete button")
-									   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-										   otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected triggers? This action cannot be undone.", @"delete selected trigger informative message")];
+			NSString *database = [self->tableDocumentInstance database];
+			NSIndexSet *selectedSet = [self->triggersTableView selectedRowIndexes];
 
-		[alert setAlertStyle:NSAlertStyleCritical];
+			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
+				NSString *triggerName = [[self->triggerData objectAtIndex:row] objectForKey:SPTriggerName];
+				NSString *query = [NSString stringWithFormat:@"DROP TRIGGER %@.%@", [database backtickQuotedString], [triggerName backtickQuotedString]];
 
-		NSArray *buttons = [alert buttons];
+				[self->connection queryString:query];
 
-		// Change the alert's cancel button to have the key equivalent of return
-		[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-		[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-		[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
+				if ([self->connection queryErrored]) {
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [self->connection lastErrorMessage]] callback:nil];
+					// Abort loop
+					*stop = YES;
+				}
+			}];
 
-		[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:@"removeTrigger"];
+			[self _refreshTriggerDataForcingCacheRefresh:YES];
+		} cancelButtonHandler:nil];
 	}
 }
 
@@ -402,37 +397,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 #pragma mark -
 #pragma mark Other
-
-/**
- * NSAlert didEnd method.
- */
-- (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
-{
-	if ([contextInfo isEqualToString:@"removeTrigger"]) {
-
-		if (returnCode == NSAlertDefaultReturn) {
-
-			NSString *database = [tableDocumentInstance database];
-			NSIndexSet *selectedSet = [triggersTableView selectedRowIndexes];
-
-			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
-				NSString *triggerName = [[triggerData objectAtIndex:row] objectForKey:SPTriggerName];
-				NSString *query = [NSString stringWithFormat:@"DROP TRIGGER %@.%@", [database backtickQuotedString], [triggerName backtickQuotedString]];
-
-				[connection queryString:query];
-
-				if ([connection queryErrored]) {
-					[[alert window] orderOut:self];
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:nil];
-					// Abort loop
-					*stop = YES;
-				}
-			}];
-
-			[self _refreshTriggerDataForcingCacheRefresh:YES];
-		}
-	}
-}
 
 /**
  * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
@@ -606,13 +570,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 /**
  * Open the add or edit trigger sheet.
  */
-- (void)_openTriggerSheet
-{
-	[NSApp beginSheet:addTriggerPanel
-	   modalForWindow:[tableDocumentInstance parentWindow]
-		modalDelegate:self
-	   didEndSelector:nil
-		  contextInfo:nil];
+- (void)_openTriggerSheet {
+	[[tableDocumentInstance parentWindow] beginSheet:addTriggerPanel completionHandler:nil];
 }
 
 /**

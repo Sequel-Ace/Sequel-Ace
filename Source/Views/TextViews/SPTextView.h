@@ -146,7 +146,6 @@ typedef struct {
 - (void) selectLineNumber:(NSUInteger)lineNumber ignoreLeadingNewLines:(BOOL)ignLeadingNewLines;
 - (NSUInteger) getLineNumberForCharacterIndex:(NSUInteger)anIndex;
 - (void) autoHelp;
-- (void) doSyntaxHighlighting;
 - (NSBezierPath*)roundedBezierPathAroundRange:(NSRange)aRange;
 - (void) setConnection:(SPMySQLConnection *)theConnection withVersion:(NSInteger)majorVersion;
 - (void) doCompletionByUsingSpellChecker:(BOOL)isDictMode fuzzyMode:(BOOL)fuzzySearch autoCompleteMode:(BOOL)autoCompleteMode;

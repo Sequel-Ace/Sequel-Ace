@@ -12,7 +12,6 @@
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
 		11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */ = {isa = PBXBuildFile; fileRef = 11C2109D1180E70800758039 /* SPDatabaseRename.m */; };
 		171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 171312CD109D23C700FB465F /* SPTableTextFieldCell.m */; };
-		17148565125F5FF500321285 /* SPDatabaseCharacterSets.m in Sources */ = {isa = PBXBuildFile; fileRef = 17148564125F5FF500321285 /* SPDatabaseCharacterSets.m */; };
 		1717F9DB1558114D0065C036 /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11D44DEF118F5887002AA43C /* OCMock.framework */; };
 		1717FA401558313A0065C036 /* RegexKitLite.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8AB0F909194002A3258 /* RegexKitLite.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		1717FA43155831600065C036 /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
@@ -193,6 +192,8 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50EAB5B81A8FBB08008F627A /* SPOSInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EAB5B71A8FBB08008F627A /* SPOSInfo.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
+		517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */ = {isa = PBXBuildFile; fileRef = 5174122F2573E10C00EB6935 /* SPPrintUtility.m */; };
+		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
@@ -239,7 +240,6 @@
 		582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 582F02301370B52600B30621 /* SPExportFileNameTokenObject.m */; };
 		583A278E23F06F1000FBE97B /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 583A278D23F06F1000FBE97B /* Colors.xcassets */; };
 		583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 583CA21412EC8B2200C9E763 /* SPWindow.m */; };
-		584095191107CB6600260CFD /* SPAlertSheets.m in Sources */ = {isa = PBXBuildFile; fileRef = 584095181107CB6600260CFD /* SPAlertSheets.m */; };
 		5841423F0F97E11000A34B47 /* NoodleLineNumberView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5841423E0F97E11000A34B47 /* NoodleLineNumberView.m */; };
 		584192A1101E57BB0089807F /* NSMutableArray-MultipleSort.m in Sources */ = {isa = PBXBuildFile; fileRef = 584192A0101E57BB0089807F /* NSMutableArray-MultipleSort.m */; };
 		5843DA6C161FA35600EAA6D1 /* key-icon-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 5843DA68161FA35600EAA6D1 /* key-icon-alternate.png */; };
@@ -301,7 +301,6 @@
 		58C4BA1716781A93004068AB /* SequelProTabDirty_Rollover@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1216781A93004068AB /* SequelProTabDirty_Rollover@2x.png */; };
 		58C4BA1816781A93004068AB /* SequelProTabDirty@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1316781A93004068AB /* SequelProTabDirty@2x.png */; };
 		58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 58C56EF40F438E120035701E /* SPDataCellFormatter.m */; };
-		58C61CFA11960312003BAA5D /* SPAlertSheets.m in Sources */ = {isa = PBXBuildFile; fileRef = 584095181107CB6600260CFD /* SPAlertSheets.m */; };
 		58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */; };
 		58CDB3400FCE13EF00F8ACA3 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5EAC0FC0EC87FF900CC579C /* Security.framework */; };
 		58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */; };
@@ -568,8 +567,6 @@
 		11D44DEF118F5887002AA43C /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Frameworks/OCMock.framework; sourceTree = "<group>"; };
 		171312CC109D23C700FB465F /* SPTableTextFieldCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableTextFieldCell.h; sourceTree = "<group>"; };
 		171312CD109D23C700FB465F /* SPTableTextFieldCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableTextFieldCell.m; sourceTree = "<group>"; };
-		17148563125F5FF500321285 /* SPDatabaseCharacterSets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDatabaseCharacterSets.h; sourceTree = "<group>"; };
-		17148564125F5FF500321285 /* SPDatabaseCharacterSets.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseCharacterSets.m; sourceTree = "<group>"; };
 		171C398D16BD634600209EC6 /* SPDatabaseContentViewDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDatabaseContentViewDelegate.h; sourceTree = "<group>"; };
 		17292441107AC41000B21980 /* SPXMLExporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPXMLExporter.h; sourceTree = "<group>"; };
 		17292442107AC41000B21980 /* SPXMLExporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPXMLExporter.m; sourceTree = "<group>"; };
@@ -829,6 +826,9 @@
 		50EAB5B61A8FBB08008F627A /* SPOSInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPOSInfo.h; sourceTree = "<group>"; };
 		50EAB5B71A8FBB08008F627A /* SPOSInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPOSInfo.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
+		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
+		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
+		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
@@ -876,8 +876,6 @@
 		583A278D23F06F1000FBE97B /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		583CA21312EC8B2200C9E763 /* SPWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPWindow.h; sourceTree = "<group>"; };
 		583CA21412EC8B2200C9E763 /* SPWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPWindow.m; sourceTree = "<group>"; };
-		584094CC1107BD0500260CFD /* SPAlertSheets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPAlertSheets.h; sourceTree = "<group>"; };
-		584095181107CB6600260CFD /* SPAlertSheets.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPAlertSheets.m; sourceTree = "<group>"; };
 		5841423D0F97E11000A34B47 /* NoodleLineNumberView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoodleLineNumberView.h; sourceTree = "<group>"; };
 		5841423E0F97E11000A34B47 /* NoodleLineNumberView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NoodleLineNumberView.m; sourceTree = "<group>"; };
 		5841929F101E57BB0089807F /* NSMutableArray-MultipleSort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMutableArray-MultipleSort.h"; sourceTree = "<group>"; };
@@ -1486,8 +1484,6 @@
 				17A20AC5124F9B110095CEFB /* SPServerSupport.m */,
 				17D3C66C128AD4710047709F /* SPFavoritesController.h */,
 				17D3C66D128AD4710047709F /* SPFavoritesController.m */,
-				17148563125F5FF500321285 /* SPDatabaseCharacterSets.h */,
-				17148564125F5FF500321285 /* SPDatabaseCharacterSets.m */,
 				584D87901514101E00F24774 /* SPDatabaseStructure.h */,
 				584D87911514101E00F24774 /* SPDatabaseStructure.m */,
 			);
@@ -1529,6 +1525,7 @@
 		1740F8370FC306C900CF3699 /* Plists */ = {
 			isa = PBXGroup;
 			children = (
+				517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */,
 				1A47996E2543343A00D29E6E /* GoogleService-Info.plist */,
 				17E641F60EF02088001BC333 /* Info.plist */,
 				96B0A1532493F43B007BB270 /* TunnelAssistant-Info.plist */,
@@ -1840,8 +1837,6 @@
 				583CA21412EC8B2200C9E763 /* SPWindow.m */,
 				17E6417E0EF01FA8001BC333 /* SPImageView.h */,
 				17E6417F0EF01FA8001BC333 /* SPImageView.m */,
-				584094CC1107BD0500260CFD /* SPAlertSheets.h */,
-				584095181107CB6600260CFD /* SPAlertSheets.m */,
 				1798F19C15501892004B0AB8 /* SPFlippedView.h */,
 				1798F19D15501892004B0AB8 /* SPFlippedView.m */,
 				58DF9F7115AB8509003B4330 /* SPSplitView.h */,
@@ -2216,6 +2211,8 @@
 				5089B0251BE714E300E226CD /* SPIdMenu.h */,
 				5089B0261BE714E300E226CD /* SPIdMenu.m */,
 				50A77DA61E8EB903007466BC /* SPCompatibility.h */,
+				5174122E2573E10C00EB6935 /* SPPrintUtility.h */,
+				5174122F2573E10C00EB6935 /* SPPrintUtility.m */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -2832,6 +2829,7 @@
 				50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */,
 				8831EFBD2240159E00D10172 /* button_pane_hideTemplate.pdf in Resources */,
 				BAE25E0120B32BDA00DD9A40 /* HelpViewer.xib in Resources */,
+				517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
 				582E944A168374C1003459FD /* field-small-square.png in Resources */,
@@ -2979,7 +2977,6 @@
 				586F457B0FDB269E00B428D7 /* RegexKitLite.m in Sources */,
 				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
 				58CDB3420FCE142500F8ACA3 /* SPKeychain.m in Sources */,
-				58C61CFA11960312003BAA5D /* SPAlertSheets.m in Sources */,
 				584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3070,12 +3067,12 @@
 				173284EA1088FEDE0062E892 /* SPConstants.m in Sources */,
 				171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */,
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
+				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
 				5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */,
 				17CC97F310B4ABE90034CD7A /* SPAboutController.m in Sources */,
 				51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */,
 				5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */,
-				584095191107CB6600260CFD /* SPAlertSheets.m in Sources */,
 				29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */,
 				BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
@@ -3104,7 +3101,6 @@
 				BC32F242121D66260067305E /* SPFileManagerAdditions.m in Sources */,
 				17A20AC6124F9B110095CEFB /* SPServerSupport.m in Sources */,
 				BC2898F3125F4488001B50E1 /* SPGeometryDataView.m in Sources */,
-				17148565125F5FF500321285 /* SPDatabaseCharacterSets.m in Sources */,
 				17D38F701279E23A00672B13 /* SPTableFieldValidation.m in Sources */,
 				17D390C8127B65AF00672B13 /* SPGeneralPreferencePane.m in Sources */,
 				1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */,
@@ -3481,7 +3477,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
@@ -3518,7 +3514,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
@@ -3553,7 +3549,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(inherited)",
@@ -3608,7 +3604,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -3665,7 +3661,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3726,10 +3722,10 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 3000;
+				DYLIB_CURRENT_VERSION = 3001;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
@@ -3750,10 +3746,10 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 3000;
+				DYLIB_CURRENT_VERSION = 3001;
 				FRAMEWORK_VERSION = A;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3773,10 +3769,10 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 3000;
+				DYLIB_CURRENT_VERSION = 3001;
 				FRAMEWORK_VERSION = A;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3797,7 +3793,7 @@
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3825,7 +3821,7 @@
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3852,7 +3848,7 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3881,7 +3877,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3918,7 +3914,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3954,7 +3950,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4008,7 +4004,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -4067,7 +4063,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4129,7 +4125,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
@@ -4166,7 +4162,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4198,10 +4194,10 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 3000;
+				DYLIB_CURRENT_VERSION = 3001;
 				FRAMEWORK_VERSION = A;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -4221,7 +4217,7 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -4254,7 +4250,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4324,7 +4320,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -4407,7 +4403,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -4486,7 +4482,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3000;
+				CURRENT_PROJECT_VERSION = 3001;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;

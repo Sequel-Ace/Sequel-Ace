@@ -238,7 +238,7 @@
 	// Don't modify anything if we're in the process of restoring an old history state
 	if (modifyingState) return;
 
-#warning Basically all of those next calls do stuff that must be done on the main thread (AND en block in order to be consistent). This needs to be refactored!
+	// TODO: Basically all of those next calls do stuff that must be done on the main thread (AND en block in order to be consistent). This needs to be refactored!
 	// Work out the current document details
 	NSString *theDatabase = [theDocument database];
 	NSString *theTable = [theDocument table];

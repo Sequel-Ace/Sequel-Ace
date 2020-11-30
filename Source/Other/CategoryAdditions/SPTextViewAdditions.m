@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import "SPAlertSheets.h"
 #import "SPTooltip.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPCustomQuery.h"

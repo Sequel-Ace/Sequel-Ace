@@ -35,7 +35,6 @@
 #import "SPDatabaseData.h"
 #import "SPDatabaseDocument.h"
 #import "SPTablesList.h"
-#import "SPAlertSheets.h"
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
 #import "sequel-ace-Swift.h"
@@ -123,31 +122,17 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[self _changeCurrentTableTypeFrom:currentType to:newType];
 		return;
 	}
-
-	NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Change table type", @"change table type message")
-									 defaultButton:NSLocalizedString(@"Change", @"change button")
-								   alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
-									   otherButton:nil
-						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.", @"change table type informative message"), newType];
-	
-	[alert setAlertStyle:NSAlertStyleCritical];
-	
-	NSArray *buttons = [alert buttons];
-	
-	// Change the alert's cancel button to have the key equivalent of return
-	[[buttons objectAtIndex:0] setKeyEquivalent:@"d"];
-	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
 	NSMutableDictionary *dataDict = [[NSMutableDictionary alloc] initWithCapacity:2];
-	
 	[dataDict setObject:currentType forKey:SPUpdateTableTypeCurrentType];
 	[dataDict setObject:newType forKey:SPUpdateTableTypeNewType];
-	
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] 
-					  modalDelegate:self 
-					 didEndSelector:@selector(confirmChangeTableTypeDidEnd:returnCode:contextInfo:) 
-						contextInfo:(__bridge void * _Nullable)(dataDict)];
+
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Change table type", @"change table type message") message:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.", @"change table type informative message"), newType] primaryButtonTitle:NSLocalizedString(@"Change", @"change button") primaryButtonHandler:^{
+		[self _changeCurrentTableTypeFrom:[dataDict objectForKey:SPUpdateTableTypeCurrentType]
+									   to:[dataDict objectForKey:SPUpdateTableTypeNewType]];
+	} cancelButtonHandler:^{
+		[self->tableTypePopUpButton selectItemWithTitle:[dataDict objectForKey:SPUpdateTableTypeCurrentType]];
+	}];
 }
 
 /**
@@ -565,22 +550,6 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	}
 }
 
-/**
- * Called when the user dismisses the change table type confirmation dialog.
- */
-- (void)confirmChangeTableTypeDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(NSDictionary *)contextInfo
-{
-	[[alert window] orderOut:self];
-	
-	if (returnCode == NSAlertDefaultReturn) {
-		[self _changeCurrentTableTypeFrom:[contextInfo objectForKey:SPUpdateTableTypeCurrentType] 
-									   to:[contextInfo objectForKey:SPUpdateTableTypeNewType]];
-	}
-	else {
-		[tableTypePopUpButton selectItemWithTitle:[contextInfo objectForKey:SPUpdateTableTypeCurrentType]];
-	}
-}
-
 #pragma mark -
 #pragma mark Task interaction
 
@@ -690,8 +659,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
-			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDate dateWithNaturalLanguageString:value]];
 			// 2020-06-30 14:14:11 is one example
+			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDateFormatter.naturalLanguageFormatter dateFromString:value]];
 		}
 		// Format numbers
 		else if ([key isEqualToString:SPMySQLRowsField] ||

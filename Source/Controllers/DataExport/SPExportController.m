@@ -33,7 +33,6 @@
 #import "SPTableData.h"
 #import "SPTableContent.h"
 #import "SPExportFile.h"
-#import "SPAlertSheets.h"
 #import "SPExportFileNameTokenObject.h"
 #import "SPDatabaseDocument.h"
 #import "SPThreadAdditions.h"
@@ -157,7 +156,6 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 
 #pragma mark - Shared Private
 
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 - (void)_hideExportProgress;
 
 @end
@@ -339,12 +337,27 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[self _switchTab];
 	[self _updateExportAdvancedOptionsLabel];
 	[self setExportInput:source];
-	
-	[NSApp beginSheet:[self window]
-	   modalForWindow:[tableDocumentInstance parentWindow]
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:nil];
+
+	[[tableDocumentInstance parentWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
+		// Perform the export
+		if (returnCode == NSModalResponseOK) {
+
+			[self->prefs setObject:[self currentSettingsAsDictionary] forKey:SPLastExportSettings];
+
+			// If we are about to perform a table export, cache the current number of tables within the list,
+			// refresh the list and then compare the numbers to accommodate situations where new tables are
+			// added by external applications.
+			if ((self->exportSource == SPTableExport) && (self->exportType != SPDotExport)) {
+
+				// Give the export sheet a chance to close
+				[self performSelector:@selector(_checkForDatabaseChanges) withObject:nil afterDelay:0.5];
+			}
+			else {
+				// Initialize the export after a short delay to give the alert a chance to close
+				[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
+			}
+		}
+	}];
 }
 
 /**
@@ -356,12 +369,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 {
 	[errorsTextView setString:@""];
 	[errorsTextView setString:errors];
-	
-	[NSApp beginSheet:errorsWindow 
-	   modalForWindow:[tableDocumentInstance parentWindow] 
-		modalDelegate:self 
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) 
-		  contextInfo:nil];
+
+	[[tableDocumentInstance parentWindow] beginSheet:errorsWindow completionHandler:nil];
 }
 
 /**
@@ -901,43 +910,9 @@ set_input:
 #pragma mark -
 #pragma mark Other 
 
-/**
- * Invoked when the user dismisses the export dialog. Starts the export process if required.
- */
-- (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	// Perform the export
-	if (returnCode == NSModalResponseOK) {
-		
-		[prefs setObject:[self currentSettingsAsDictionary] forKey:SPLastExportSettings];
-
-		// If we are about to perform a table export, cache the current number of tables within the list, 
-		// refresh the list and then compare the numbers to accommodate situations where new tables are
-		// added by external applications.
-		if ((exportSource == SPTableExport) && (exportType != SPDotExport)) {
-			
-			// Give the export sheet a chance to close
-			[self performSelector:@selector(_checkForDatabaseChanges) withObject:nil afterDelay:0.5];
-		}
-		else {
-			// Initialize the export after a short delay to give the alert a chance to close 
-			[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
-		}
-	}
-}
-
 - (void)tableListChangedAlertDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-	// Perform the export ignoring the new tables
-	if (returnCode == NSModalResponseOK) {
-		
-		// Initialize the export after a short delay to give the alert a chance to close 
-		[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
-	}
-	else {
-		// Cancel the export and redisplay the export dialog after a short delay
-		[self performSelector:@selector(export:) withObject:self afterDelay:0.5];		
-	}
+
 }
 
 /**
@@ -1058,12 +1033,13 @@ set_input:
 		
 	if (j > i) {
 		NSUInteger diff = j - i;
-		
-		SPBeginAlertSheet(NSLocalizedString(@"The list of tables has changed", @"table list change alert message"), 
-						  NSLocalizedString(@"Continue", @"continue button"), 
-						  NSLocalizedString(@"Cancel", @"cancel button"), nil, [tableDocumentInstance parentWindow], self, 
-						  @selector(tableListChangedAlertDidEnd:returnCode:contextInfo:), NULL,
-						  [NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), (unsigned long)diff]);
+		[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"The list of tables has changed", @"table list change alert message") message:[NSString stringWithFormat:NSLocalizedString(@"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?", @"table list change alert informative message"), (unsigned long)diff] primaryButtonTitle:NSLocalizedString(@"Continue", @"continue button") primaryButtonHandler:^{
+			// Initialize the export after a short delay to give the alert a chance to close
+			[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
+		} cancelButtonHandler:^{
+			// Cancel the export and redisplay the export dialog after a short delay
+			[self performSelector:@selector(export:) withObject:self afterDelay:0.5];
+		}];
 	}
 	else {
 		[self initializeExportUsingSelectedOptions];
@@ -1268,11 +1244,7 @@ set_input:
 
 	// If it's not already displayed, open the progress sheet
 	if (![exportProgressWindow isVisible]) {
-		[NSApp beginSheet:exportProgressWindow
-		   modalForWindow:[tableDocumentInstance parentWindow]
-			modalDelegate:self
-		   didEndSelector:nil
-			  contextInfo:nil];
+		[[tableDocumentInstance parentWindow] beginSheet:exportProgressWindow completionHandler:nil];
 	}
 
 	// cache the current connection encoding so the exporter can do what it wants.
@@ -1447,11 +1419,7 @@ set_input:
 	[exportProgressIndicator setUsesThreadedAnimation:YES];
 
 	// Open the progress sheet
-	[NSApp beginSheet:exportProgressWindow
-	   modalForWindow:[tableDocumentInstance parentWindow]
-		modalDelegate:self
-	   didEndSelector:nil
-		  contextInfo:nil];
+	[[tableDocumentInstance parentWindow] beginSheet:exportProgressWindow completionHandler:nil];
 
 	// CSV export
 	if (exportType == SPCSVExport) {
@@ -2051,16 +2019,7 @@ set_input:
 
 	[self _hideExportProgress];
 
-	[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:CFBridgingRetain(files)];
-}
-
-/**
- * NSAlert didEnd method.
- */
-- (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-	
-	NSArray *files = (NSArray *)CFBridgingRelease(contextInfo); // TODO: check if this leaks, it shouldn't
+	NSInteger returnCode = [alert runModal];
 
 	// Ignore the files that exist and remove the associated exporters
 	if (returnCode == SPExportErrorSkipErrorFiles) {
@@ -2135,13 +2094,8 @@ set_input:
 /**
  * Re-open the export sheet without resetting the interface - for use on error.
  */
-- (void)_reopenExportSheet
-{
-	[NSApp beginSheet:[self window]
-	   modalForWindow:[tableDocumentInstance parentWindow]
-		modalDelegate:self
-	   didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
-		  contextInfo:nil];
+- (void)_reopenExportSheet {
+	[[tableDocumentInstance parentWindow] beginSheet:self.window completionHandler:nil];
 }
 
 #pragma mark - SPExportFilenameUtilities

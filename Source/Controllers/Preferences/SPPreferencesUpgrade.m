@@ -33,6 +33,7 @@
 #import "SPFavoritesController.h"
 #import "SPTreeNode.h"
 #import "SPFavoriteNode.h"
+#import "sequel-ace-Swift.h"
 
 @implementation SPPreferencesUpgrade
 
@@ -83,40 +84,24 @@ void SPApplyRevisionChanges(void)
 /**
  * Displays important release notes for a new revision.
  */
-+ (void)showPostMigrationReleaseNotes:(NSArray *)releaseNotes
-{
-	if (![releaseNotes count]) return;
++ (void)showPostMigrationReleaseNotes:(NSArray *)releaseNotes {
+	if (![releaseNotes count]) {
+		return;
+	}
 
-	NSString *introText;
+	NSString *introText = @"";
 	
 	if ([releaseNotes count] == 1) {
 		introText = NSLocalizedString(@"We've made a few changes but we thought you should know about one particularly important one:", "Important release notes informational text, single change");	
-	} 
-	else {
+	} else {
 		introText = NSLocalizedString(@"We've made a few changes but we thought you should know about some particularly important ones:", "Important release notes informational text, multiple changes");
 	}
 
-	// Create a *modal* alert to show the release notes
-	NSAlert *noteAlert = [[NSAlert alloc] init];
-	
-	[noteAlert setAlertStyle:NSInformationalAlertStyle];
-	[noteAlert setAccessoryView:[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 450, 1)]];
-	[noteAlert setMessageText:NSLocalizedString(@"Thanks for updating Sequel Ace!", @"Release notes dialog title thanking user for upgrade")];
-	[noteAlert addButtonWithTitle:NSLocalizedString(@"Continue", @"Continue button title")];
-	[noteAlert addButtonWithTitle:NSLocalizedString(@"View full release notes", @"Release notes button title")];
-	[noteAlert setInformativeText:[NSString stringWithFormat:@"%@\n\n • %@", introText, [releaseNotes componentsJoinedByString:@"\n\n • "]]];
-
-	// Show the dialog
-	NSInteger returnCode = [noteAlert runModal];
-
-	// Show releae notes if desired
-	if (returnCode == NSAlertSecondButtonReturn || returnCode == NSAlertOtherReturn) {
-
+	[NSAlert createAlertWithTitle:NSLocalizedString(@"Thanks for updating Sequel Ace!", @"Release notes dialog title thanking user for upgrade") message:[NSString stringWithFormat:@"%@\n\n • %@", introText, [releaseNotes componentsJoinedByString:@"\n\n • "]] primaryButtonTitle:NSLocalizedString(@"Continue", @"Continue button title") secondaryButtonTitle:NSLocalizedString(@"View full release notes", @"Release notes button title") primaryButtonHandler:nil secondaryButtonHandler:^{
 		// Work out whether to link to the normal site or the nightly list
 		NSString *releaseNotesLink = @"https://github.com/Sequel-Ace/Sequel-Ace/releases";
-
 		[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:releaseNotesLink]];
-	}
+	}];
 }
 
 @end

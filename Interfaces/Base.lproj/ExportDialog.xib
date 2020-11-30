@@ -288,6 +288,7 @@ Gw
                     </imageView>
                 </subviews>
             </view>
+            <point key="canvasLocation" x="-426" y="581"/>
         </window>
         <window title="Error" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="441" userLabel="Error Sheet">
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
@@ -313,7 +314,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="kbp-v6-xrL">
                             <rect key="frame" x="1" y="1" width="363" height="178"/>
-                            <autoresizingMask key="autoresizingMask"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" id="451">
                                     <rect key="frame" x="0.0" y="0.0" width="363" height="178"/>
@@ -338,9 +339,9 @@ Gw
                     <button focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="445">
                         <rect key="frame" x="301" y="13" width="89" height="28"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES"/>
-                        <buttonCell key="cell" type="push" title="Close" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" focusRingType="none" inset="2" id="448">
+                        <buttonCell key="cell" type="push" title="Close" bezelStyle="rounded" alignment="center" borderStyle="border" focusRingType="none" inset="2" id="448">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="message" size="11"/>
+                            <font key="font" metaFont="system"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
 DQ
 </string>
@@ -366,6 +367,7 @@ Gw
                 <outlet property="delegate" destination="-2" id="455"/>
                 <outlet property="initialFirstResponder" destination="445" id="453"/>
             </connections>
+            <point key="canvasLocation" x="48" y="631"/>
         </window>
         <customView id="1086" userLabel="Exporter View">
             <rect key="frame" x="0.0" y="0.0" width="730" height="378"/>
@@ -1032,7 +1034,7 @@ Gw
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                     <clipView key="contentView" id="tJ1-mx-cYK">
                         <rect key="frame" x="1" y="1" width="412" height="237"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" headerView="1226" id="1229">
                                 <rect key="frame" x="0.0" y="0.0" width="412" height="220"/>
@@ -1041,7 +1043,7 @@ Gw
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn identifier="tables" editable="NO" width="326" minWidth="10" maxWidth="1000" id="1233">
+                                    <tableColumn identifier="tables" editable="NO" width="297" minWidth="10" maxWidth="1000" id="1233">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Table">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>

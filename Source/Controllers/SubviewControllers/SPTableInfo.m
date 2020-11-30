@@ -465,20 +465,16 @@
 #pragma mark -
 #pragma mark Private API
 
-- (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate
-{
+- (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate {
 	// Convert our string date from the result to an NSDate
-	NSDate *updateDate = [NSDate dateWithNaturalLanguageString:mysqlDate];
-
+	NSDate *updateDate = [NSDateFormatter.naturalLanguageFormatter dateFromString:mysqlDate];
 	return [NSDateFormatter.shortStyleNoTimeFormatter stringFromDate:updateDate];
 }
 
 #pragma mark -
 
-- (void)dealloc
-{
+- (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-
 }
 
 @end

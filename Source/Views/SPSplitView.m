@@ -219,7 +219,7 @@
 		// If collapsing, ensure the original view is wrapped in a helper view to avoid
 		// animation resizes of the contained view.  (Uncollapses will already be wrapped.)
 		if (![viewToAnimate isMemberOfClass:[SPSplitViewHelperView class]]) { 
-			[[SPSplitViewHelperView alloc] initReplacingView:viewToAnimate inVerticalSplitView:[self isVertical]];
+			__unused SPSplitViewHelperView *helperView = [[SPSplitViewHelperView alloc] initReplacingView:viewToAnimate inVerticalSplitView:[self isVertical]];
 			viewToAnimate = [[self subviews] objectAtIndex:collapsibleSubviewIndex];
 		}
 

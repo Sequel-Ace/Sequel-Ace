@@ -195,7 +195,6 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (IBAction)addRow:(id)sender;
 - (IBAction)duplicateRow:(id)sender;
 - (IBAction)removeRow:(id)sender;
-- (void)removeRowSheetDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
 // Filter Table
 - (IBAction)showFilterTable:(id)sender;

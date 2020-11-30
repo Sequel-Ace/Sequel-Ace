@@ -34,7 +34,6 @@
 #import "ImageAndTextCell.h"
 #import "SPConnectionController.h"
 #import "SPServerSupport.h"
-#import "SPAlertSheets.h"
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
 
@@ -1734,64 +1733,40 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[availableTableView deselectAll:nil];
 }
 
-- (BOOL)selectionShouldChangeInOutlineView:(NSOutlineView *)olv
-{
-	if ([[treeController selectedObjects] count] > 0)
-	{
-		id selectedObject = [[treeController selectedObjects] objectAtIndex:0];
-
+- (BOOL)selectionShouldChangeInOutlineView:(NSOutlineView *)olv {
+	id selectedObject = [[treeController selectedObjects] firstObject];
+	if (selectedObject) {
 		// Check parents
-		if ([selectedObject valueForKey:@"parent"] == nil)
-		{
+		if ([selectedObject valueForKey:@"parent"] == nil) {
 			NSString *name = [selectedObject valueForKey:@"user"];
 			NSArray *results = [self _fetchUserWithUserName:name];
 
 			if ([results count] > 1) {
-				NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Duplicate User", @"duplicate user message")
-												 defaultButton:NSLocalizedString(@"OK", @"OK button")
-											   alternateButton:nil
-												   otherButton:nil
-									 informativeTextWithFormat:NSLocalizedString(@"A user with the name '%@' already exists", @"duplicate user informative message"), name];
-				[alert runModal];
-
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Duplicate User", @"duplicate user message") message:[NSString stringWithFormat:NSLocalizedString(@"A user with the name '%@' already exists", @"duplicate user informative message"), name] callback:nil];
 				return NO;
 			}
-		}
-		else
-		{
+		} else {
 			NSArray *children = [selectedObject valueForKeyPath:@"parent.children"];
 			NSString *host = [selectedObject valueForKey:@"host"];
 
-			for (NSManagedObject *child in children)
-			{
-				if (![selectedObject isEqual:child] && [[child valueForKey:@"host"] isEqualToString:host])
-				{
-					NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Duplicate Host", @"duplicate host message")
-													 defaultButton:NSLocalizedString(@"OK", @"OK button")
-												   alternateButton:nil
-													   otherButton:nil
-										 informativeTextWithFormat:NSLocalizedString(@"A user with the host '%@' already exists", @"duplicate host informative message"), host];
-
-					[alert runModal];
-
+			for (NSManagedObject *child in children) {
+				if (![selectedObject isEqual:child] && [[child valueForKey:@"host"] isEqualToString:host]) {
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Duplicate Host", @"duplicate host message") message:[NSString stringWithFormat:NSLocalizedString(@"A user with the host '%@' already exists", @"duplicate host informative message"), host] callback:nil];
 					return NO;
 				}
 			}
 		}
 	}
-
 	return YES;
 }
 
 #pragma mark - SPUserManagerDataSource
 
-- (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
-{
+- (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView {
 	return [schemas count];
 }
 
-- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
-{
+- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex {
 	NSString *databaseName = [schemas objectAtIndex:rowIndex];
 	if ([databaseName isEqualToString:@""]) {
 		databaseName = NSLocalizedString(@"All Databases", @"All databases placeholder");
@@ -1803,8 +1778,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 #pragma mark -
 
-- (void)dealloc
-{	
+- (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 

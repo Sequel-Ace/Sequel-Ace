@@ -31,6 +31,7 @@
 #import "SPEditSheetTextView.h"
 #import "SPTextViewAdditions.h"
 #import "SPFieldEditorController.h"
+#import "sequel-ace-Swift.h"
 
 @implementation SPEditSheetTextView
 
@@ -160,18 +161,18 @@
  * Insert the content of a dragged file path or if ⌘ is pressed
  * while dragging insert the file path
  */
-- (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
-{
+- (BOOL)performDragOperation:(id <NSDraggingInfo>)sender {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
+	if ([[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"]) {
 		return [super performDragOperation:sender];
+	}
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
+	if ([[pboard types] containsObject:NSFilenamesPboardType]) {
 		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
 
 		// Only one file path is allowed
-		if([files count] > 1) {
+		if ([files count] > 1) {
 			NSLog(@"%@", NSLocalizedString(@"Only one dragged item allowed.",@"Only one dragged item allowed."));
 			return YES;
 		}
@@ -193,50 +194,25 @@
 		// Check size and NSFileType
 		NSDictionary *attr = [[NSFileManager defaultManager] attributesOfItemAtPath:filepath error:nil];
 		
-		if(attr)
-		{
+		if(attr) {
 			NSNumber *filesize = [attr objectForKey:NSFileSize];
 			NSString *filetype = [attr objectForKey:NSFileType];
-			
-			if(filetype == NSFileTypeRegular && filesize)
-			{
+			if (filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
-				if([filesize unsignedLongValue] > 1000000)
-				{
-					NSAlert *alert = [[NSAlert alloc] init];
-					[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-					[alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-					[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"),
-						[NSString stringForByteSize:[filesize longLongValue]]]];
-					[alert setHelpAnchor:filepath];
-					[alert setMessageText:NSLocalizedString(@"Warning", @"warning")];
-					[alert setAlertStyle:NSAlertStyleWarning];
-					[alert beginSheetModalForWindow:[self window] 
-						modalDelegate:self 
-						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
-						contextInfo:nil];
-					
-				} else
+				if ([filesize unsignedLongValue] > 1000000) {
+					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]] primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
+						[self insertFileContentOfFile:filepath];
+					} cancelButtonHandler:nil];
+				} else {
 					[self insertFileContentOfFile:filepath];
+				}
 			}
 		}
 		return YES;
-	} 
-
+	}
 	return [super performDragOperation:sender];
 }
 
-/*
- * Confirmation sheetDidEnd method
- */
-- (void)dragAlertSheetDidEnd:(NSAlert *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
-{
-
-	[[sheet window] orderOut:nil];
-	if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn)
-		[self insertFileContentOfFile:[sheet helpAnchor]];
-
-}
 /*
  * Convert a NSPoint, usually the mouse location, to
  * a character index of the text view.

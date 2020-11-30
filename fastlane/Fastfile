@@ -53,6 +53,13 @@ platform :mac do
       )
    end
 
+   desc "Generates changelog only."
+   lane :generate_changelog_locally do |options|
+
+      version = get_version_number(xcodeproj: PROJECT_NAME, target: TARGET_NAME)
+      sh "../Scripts/generate-changelog.sh #{version}"
+   end
+
    desc "Increase build number"
    lane :increment_build do |options|
       # Bump build number
