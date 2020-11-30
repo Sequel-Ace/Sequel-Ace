@@ -2826,7 +2826,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (!historyItemWasJustInserted)
 		currentHistoryOffsetIndex = -1;
 
-	[self.bracketHighlighter bracketHighlight:caretPosition -1 inRange:currentQueryRange];
+	if (currentQueryRange.length < 1000) {
+		[self.bracketHighlighter bracketHighlight:caretPosition -1 inRange:currentQueryRange];
+	}
 
 	// Update the text of the contextual run current/previous/selection button and menu item
 	[self updateContextualRunInterface];
