@@ -46,7 +46,7 @@ PODS:
 DEPENDENCIES:
   - Firebase/Crashlytics
   - FirebaseCore
-  - FMDB (from `https://github.com/jamesstout/fmdb.git`, branch `update_podspec`)
+  - FMDB (from `https://github.com/ccgus/fmdb.git`, commit `3e5efdf6690cf7dce0a914c370507deee8740d33`)
   - SwiftLint (~> 0.40)
 
 SPEC REPOS:
@@ -64,13 +64,13 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   FMDB:
-    :branch: update_podspec
-    :git: https://github.com/jamesstout/fmdb.git
+    :commit: 3e5efdf6690cf7dce0a914c370507deee8740d33
+    :git: https://github.com/ccgus/fmdb.git
 
 CHECKOUT OPTIONS:
   FMDB:
-    :commit: 9611e8922d85034c76049f7995a8039270709c28
-    :git: https://github.com/jamesstout/fmdb.git
+    :commit: 3e5efdf6690cf7dce0a914c370507deee8740d33
+    :git: https://github.com/ccgus/fmdb.git
 
 SPEC CHECKSUMS:
   Firebase: 78e8dd2e39d653de6270432ad84fe8b59f7bf4e8
@@ -85,6 +85,6 @@ SPEC CHECKSUMS:
   PromisesObjC: 8c196f5a328c2cba3e74624585467a557dcb482f
   SwiftLint: c585ebd615d9520d7fbdbe151f527977b0534f1e
 
-PODFILE CHECKSUM: 0026abb8154cf47232fd607549b67b82ab34700d
+PODFILE CHECKSUM: 5d766c1b3fd430569fe3e2b0b3241f43c9a1cb4c
 
 COCOAPODS: 1.10.0
