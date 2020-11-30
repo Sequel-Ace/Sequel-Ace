@@ -705,6 +705,34 @@
 		}
 	}
 
+	SPLog(@"cmdData %@", cmdData);
+
+	// first lets check if it's a legacy bundle
+	if([newPath containsString:SPUserBundleFileExtension] == YES){
+
+		NSString *migratedPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [filePath lastPathComponent].stringByDeletingPathExtension, SPUserBundleFileExtensionV2];
+
+		// if yes, we need to rename
+		if (![fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
+			if (![fileManager moveItemAtPath:filePath toPath:migratedPath error:nil]) {
+				NSBeep();
+				SPLog(@"Couldn't move “%@” to “%@”", filePath, migratedPath);
+				return;
+			}
+			else{
+				// we need to add the bundle version
+				NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
+
+				NSMutableDictionary *saveDict = [[NSMutableDictionary alloc] initWithCapacity:cmdData.count+1];
+				[saveDict addEntriesFromDictionary:cmdData];
+				[saveDict setObject:[NSNumber numberWithLong:SPBundleCurrentVersion] forKey:SPBundleVersionKey];
+
+				[fileManager removeItemAtPath:infoPath error:nil];
+				[saveDict writeToFile:infoPath atomically:YES];
+			}
+		}
+	}
+
 	NSMutableArray *filesContainingLegacyString = [NSMutableArray array];
 
 	// enumerate dir
