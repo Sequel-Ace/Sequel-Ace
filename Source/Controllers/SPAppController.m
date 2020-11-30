@@ -394,12 +394,12 @@
 		else if ([fileExt isEqualToString:[SPColorThemeFileExtension lowercaseString]]) {
 			[self openColorThemeFileAtPath:filePath];
 		}
-		else if ([fileExt isEqualToString:[SPUserBundleFileExtension lowercaseString]]) {
+		else if ([fileExt isEqualToString:[SPUserBundleFileExtension lowercaseString]] || [fileExt isEqualToString:[SPUserBundleFileExtensionV2 lowercaseString]]) {
 			[self openUserBundleAtPath:filePath];
 		}
 		else {
 			NSBeep();
-			SPLog(@"Only files with the extensions ‘%@’, ‘%@’, ‘%@’ or ‘%@’ are allowed.", SPFileExtensionDefault, SPBundleFileExtension, SPColorThemeFileExtension, SPFileExtensionSQL);
+			SPLog(@"Only files with the extensions ‘%@’, ‘%@’, ‘%@’, ‘%@’, ‘%@’ or ‘%@’ are allowed.", SPFileExtensionDefault, SPBundleFileExtension, SPUserBundleFileExtensionV2, SPUserBundleFileExtension, SPColorThemeFileExtension, SPFileExtensionSQL);
 		}
 	}
 }
@@ -1666,7 +1666,10 @@
 			if (foundBundles && foundBundles.count && error == nil) {
 
 				for(NSString* bundle in foundBundles) {
-					if(![bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtension.lowercaseString]) continue;
+					if([bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtension.lowercaseString] == NO && [bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtensionV2.lowercaseString] == NO){
+
+						continue;
+					}
 
 					foundInstalledBundles = YES;
 
@@ -1761,7 +1764,7 @@
 											SPLog(@"default bundle WAS modified, duplicate, change UUID and rename menu item");
 
 											// Duplicate Bundle, change the UUID and rename the menu label
-											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtension length] - 1)], (long)(random() % 35000), SPUserBundleFileExtension];
+											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtensionV2 length] - 1)], (long)(random() % 35000), SPUserBundleFileExtensionV2];
 											if(![fileManager copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
 												SPLog(@"Couldn't copy “%@” to update it", bundle);
 												NSBeep();
