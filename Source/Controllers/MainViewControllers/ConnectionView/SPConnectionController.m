@@ -2444,7 +2444,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if ([[dbDocument parentWindow] isVisible]) {
 		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:theTitle];
-		[alert setInformativeText:errorDetail];
+		if (errorDetail) {
+			[alert setInformativeText:errorDetail];
+		}
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		if (isSSHTunnelBindError) {
 			[alert addButtonWithTitle:NSLocalizedString(@"Use Standard Connection", @"use standard connection button")];
