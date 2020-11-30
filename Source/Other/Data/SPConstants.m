@@ -406,7 +406,7 @@ NSString *SPBundleInternLabelKey                            = @"label";
 NSString *SPBundleInternPathToFileKey                       = @"path";
 NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
-const long SPBundleCurrentVersion 	 						= 2;
+const long SPBundleCurrentVersion                           = 2;
 
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
