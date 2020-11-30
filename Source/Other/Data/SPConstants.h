@@ -272,6 +272,8 @@ extern NSString *SPFileExtensionSQL;
 extern NSString *SPBundleFileExtension;
 extern NSString *SPColorThemeFileExtension;
 extern NSString *SPUserBundleFileExtension;
+extern NSString *SPUserBundleFileExtensionV2;
+extern NSString *SPBundleVersionKey;
 
 // File names
 extern NSString *SPFavoritesDataFile;
@@ -641,6 +643,7 @@ extern NSString *SPBundleShellVariableAllProcedures;
 extern NSString *SPBundleShellVariableAllFunctions;
 extern NSString *SPBundleShellVariableAllViews;
 extern NSString *SPBundleShellVariableAllTables;
+extern const long SPBundleCurrentVersion;
 
 extern NSString *SPCurrentTimestampPattern;
 

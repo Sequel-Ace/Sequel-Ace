@@ -397,12 +397,12 @@
 		else if ([fileExt isEqualToString:[SPColorThemeFileExtension lowercaseString]]) {
 			[self openColorThemeFileAtPath:filePath];
 		}
-		else if ([fileExt isEqualToString:[SPUserBundleFileExtension lowercaseString]]) {
+		else if ([fileExt isEqualToString:[SPUserBundleFileExtension lowercaseString]] || [fileExt isEqualToString:[SPUserBundleFileExtensionV2 lowercaseString]]) {
 			[self openUserBundleAtPath:filePath];
 		}
 		else {
 			NSBeep();
-			SPLog(@"Only files with the extensions ‘%@’, ‘%@’, ‘%@’ or ‘%@’ are allowed.", SPFileExtensionDefault, SPBundleFileExtension, SPColorThemeFileExtension, SPFileExtensionSQL);
+			SPLog(@"Only files with the extensions ‘%@’, ‘%@’, ‘%@’, ‘%@’, ‘%@’ or ‘%@’ are allowed.", SPFileExtensionDefault, SPBundleFileExtension, SPUserBundleFileExtensionV2, SPUserBundleFileExtension, SPColorThemeFileExtension, SPFileExtensionSQL);
 		}
 	}
 }
@@ -706,6 +706,68 @@
 			}
 			return;
 		}
+	}
+
+	NSMutableArray *filesContainingLegacyString = [NSMutableArray array];
+
+	// enumerate dir
+	NSDirectoryEnumerator *enumerator = [fileManager
+										 enumeratorAtURL:[NSURL fileURLWithPath:filePath]
+										 includingPropertiesForKeys:@[NSURLIsRegularFileKey]
+										 options:NSDirectoryEnumerationSkipsHiddenFiles
+										 errorHandler:nil];
+
+	// check each file for legacy sequelpro string
+	for (NSURL *fileURL in enumerator) {
+		// Read the contents of the file into a string.
+		NSError *error = nil;
+		NSString *fileContentsString = [NSString stringWithContentsOfURL:fileURL
+																encoding:NSUTF8StringEncoding
+																   error:&error];
+
+		// Make sure that the file has been read, log an error if it hasn't.
+		if (!fileContentsString) {
+			SPLog(@"Error reading file");
+			continue;
+		}
+
+		// the string to search for
+		NSString *sequelpro = @"sequelpro";
+
+		// Search the file contents for the given string, put the results into an NSRange structure
+		NSRange result = [fileContentsString rangeOfString:sequelpro];
+
+		// -rangeOfString returns the location of the string NSRange.location or NSNotFound.
+		if (result.location == NSNotFound) {
+			SPLog(@"sequelpro NOT found in file: %@", fileURL.absoluteString);
+		}
+		else{
+			SPLog(@"sequelpro found in file: %@", fileURL.absoluteString);
+			SPLog(@"match: %@", [fileContentsString substringWithRange:result]);
+			SPLog(@"result: %lu, %lu", result.location, result.length);
+			[filesContainingLegacyString addObject:fileURL.absoluteString.lastPathComponent];
+		}
+	}
+
+	BOOL __block retCode = YES;
+
+	if(filesContainingLegacyString.count > 0){
+		NSString *filesString = [[filesContainingLegacyString valueForKey:@"description"] componentsJoinedByString:@"\n"];
+
+		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"‘%@’ Bundle contains legacy components", @"Bundle contains legacy components"), filePath.lastPathComponent]
+									 message:[NSString stringWithFormat:NSLocalizedString(@"In these files:\n\n%@\n\nDo you still want to install the bundle?", @"Do you want to install the bundle?"), filesString]
+						  primaryButtonTitle:NSLocalizedString(@"Install", @"Install")
+						primaryButtonHandler:^{
+			SPLog(@"Continue, install");
+		} 				cancelButtonHandler:^{
+			SPLog(@"ABORT install");
+			retCode = NO;
+		}];
+	}
+
+	if(retCode == NO){
+		SPLog(@"Cancel pressed returning without installing");
+		return;
 	}
 
 	// Check for installed UUIDs
@@ -1607,7 +1669,10 @@
 			if (foundBundles && foundBundles.count && error == nil) {
 
 				for(NSString* bundle in foundBundles) {
-					if(![bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtension.lowercaseString]) continue;
+					if([bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtension.lowercaseString] == NO && [bundle.pathExtension.lowercaseString isEqualToString:SPUserBundleFileExtensionV2.lowercaseString] == NO){
+
+						continue;
+					}
 
 					foundInstalledBundles = YES;
 
@@ -1702,7 +1767,7 @@
 											SPLog(@"default bundle WAS modified, duplicate, change UUID and rename menu item");
 
 											// Duplicate Bundle, change the UUID and rename the menu label
-											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtension length] - 1)], (long)(random() % 35000), SPUserBundleFileExtension];
+											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtensionV2 length] - 1)], (long)(random() % 35000), SPUserBundleFileExtensionV2];
 											if(![fileManager copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
 												SPLog(@"Couldn't copy “%@” to update it", bundle);
 												NSBeep();
