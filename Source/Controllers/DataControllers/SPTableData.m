@@ -831,8 +831,9 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
+			NSString *lastErrorMessage = [mySQLConnection lastErrorMessage];
 			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"),[self->mySQLConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), lastErrorMessage] callback:nil];
 			});
 			if (changeEncoding) {
 				[mySQLConnection restoreStoredEncoding];
