@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>author</key>
+	<string>David Buxton</string>
+	<key>category</key>
+	<string>Copy</string>
+	<key>command</key>
+	<string>#!/usr/bin/python2.7
+
+import os
+import subprocess
+import sys
+
+# Force pasteboard to treat this text as UTF-8 encoded.
+os.environ['LANG'] = 'en_US.UTF-8'
+
+rows = [line.strip().split('\t') for line in sys.stdin]
+longest = [max(len(v) for v in col) for col in zip(*rows)]
+out_rows = [' | '.join(v.ljust(l) for l, v in zip(longest, row)) + ' |' for row in rows]
+out_rows.insert(1, '|'.join('-' * (l + 2) for l in longest)[1:] + '|')
+out_value = '\n'.join(out_rows)
+
+proc = subprocess.Popen(['/usr/bin/pbcopy'], stdin=subprocess.PIPE)
+proc.communicate(input=out_value)
+</string>
+	<key>contact</key>
+	<string>qnivq@tnfznex6.pbz</string>
+	<key>description</key>
+	<string>Generates a text table in Markdown format. The text is sent to the pasteboard.</string>
+	<key>input</key>
+	<string>selectedtablerowsastab</string>
+	<key>name</key>
+	<string>Copy as Markdown</string>
+	<key>scope</key>
+	<string>datatable</string>
+	<key>tooltip</key>
+	<string>Copy as Markdown</string>
+	<key>uuid</key>
+	<string>0314E554-3CDB-49D2-93FC-A28231AC9BB9</string>
+	<key>isDefaultBundle</key>
+	<true/>
+	<key>bundleVersion</key>
+	<integer>2</integer>
+</dict>
+</plist>

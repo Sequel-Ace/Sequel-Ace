@@ -65,6 +65,8 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
+				<string>saBundle</string>
+				<string>sabundle</string>
 				<string>spBundle</string>
 				<string>spbundle</string>
 			</array>
@@ -84,7 +86,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.sequel-ace.sequel-ace.spbundle</string>
+				<string>com.sequel-ace.sequel-ace.sabundle</string>
 				<string>com.sequel-ace.sequel-ace.spbundle</string>
 			</array>
 			<key>LSTypeIsPackage</key>
@@ -379,6 +381,35 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>spfs</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Sequel Ace Bundle</string>
+			<key>UTTypeIconFile</key>
+			<string></string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBackgroundName</key>
+				<string></string>
+				<key>UTTypeIconBadgeName</key>
+				<string>Document_icon</string>
+				<key>UTTypeIconText</key>
+				<string>SPBUNDLE</string>
+			</dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.sequel-ace.sequel-ace.sabundle</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>saBundle</string>
+					<string>sabundle</string>
 				</array>
 			</dict>
 		</dict>
