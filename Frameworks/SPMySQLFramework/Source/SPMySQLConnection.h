@@ -118,7 +118,6 @@
 
 	// Query cancellation details
 	BOOL lastQueryWasCancelled;
-	BOOL lastQueryWasCancelledUsingReconnect;
 
 	// Timing details
 	uint64_t lastConnectionUsedTime;

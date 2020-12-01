@@ -79,6 +79,7 @@ NSString *SPBundleFileExtension                  = @"spfs";
 NSString *SPFileExtensionSQL                     = @"sql";
 NSString *SPColorThemeFileExtension              = @"spTheme";
 NSString *SPUserBundleFileExtension              = @"spBundle";
+NSString *SPUserBundleFileExtensionV2            = @"saBundle";
 
 // SPF File types
 NSString *SPFExportSettingsContentType           = @"export settings";
@@ -404,6 +405,8 @@ NSString *SPBundleFileDefaultBundleWasModifiedKey           = @"defaultBundleWas
 NSString *SPBundleInternLabelKey                            = @"label";
 NSString *SPBundleInternPathToFileKey                       = @"path";
 NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
+NSString *SPBundleVersionKey                                = @"bundleVersion";
+const long SPBundleCurrentVersion 	 						= 2;
 
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
