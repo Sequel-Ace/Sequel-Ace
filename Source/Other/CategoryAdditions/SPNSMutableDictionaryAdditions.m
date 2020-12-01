@@ -10,6 +10,8 @@
 
 @implementation NSMutableDictionary (SPNSMutableDictionaryAdditions)
 
+#pragma mark -
+#pragma mark NSMutableDictionary methods
 
 - (void)safeSetObject:(id)obj forKey:(id)key {
 	if (obj != nil & key != nil) {
@@ -32,5 +34,19 @@
 	}
 }
 
+@end
+
+@implementation NSDictionary (SPNSDictionaryAdditions)
+
+#pragma mark -
+#pragma mark NSDictionary method
+
+- (id)safeObjectForKey:(id)key {
+	id object = [self objectForKey:key];
+	if (object != nil && object == [NSNull null]) {
+		return nil;
+	}
+	return object;
+}
 
 @end

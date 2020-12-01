@@ -60,7 +60,6 @@
 
 // Query cancellation
 - (void)cancelCurrentQuery;
-- (BOOL)lastQueryWasCancelledUsingReconnect;
 
 @end
 

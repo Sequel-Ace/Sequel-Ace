@@ -233,7 +233,6 @@
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
-	lastQueryWasCancelledUsingReconnect = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -565,15 +564,14 @@
 	// If the new connection was successfully set up, use it to run a KILL command.
 	if (killerConnection) {
 		NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
-		BOOL killQuerySupported = [self serverVersionIsGreaterThanOrEqualTo:5 minorVersion:0 releaseVersion:0];
 
 		// Build the kill query
 		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
 		if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
 			[killQuery appendString:@" TIDB"];
+            NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
 		}
-		if (killQuerySupported) [killQuery appendString:@" QUERY"];
-		[killQuery appendFormat:@" %lu", mySQLConnection->thread_id];
+		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
 
 		// Convert to a C string
 		NSUInteger killQueryCStringLength;
@@ -587,24 +585,14 @@
 
 		// If the kill query succeeded, the active query was cancelled.
 		if (killQueryStatus == 0) {
-
-			// On MySQL < 5, the entire connection will have been reset.  Ensure it's
-			// restored.
-			if (!killQuerySupported) {
-				[self checkConnection];
-				lastQueryWasCancelledUsingReconnect = YES;
-			} else {
-				lastQueryWasCancelledUsingReconnect = NO;
-			}
-
 			// Ensure the tracking bool is re-set to cover encompassed queries and return
 			lastQueryWasCancelled = YES;
 			return;
 		} else {
-			NSLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d)", killQueryStatus);
+            NSLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
 		}
 	} else if (!userTriggeredDisconnect) {
-		NSLog(@"SPMySQL Framework: query cancellation failed because connection failed");
+        NSLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
 	}
 
 	// A full reconnect is required at this point to force a cancellation.  As the
@@ -626,18 +614,6 @@
 
 	// Reset tracking bools to cover encompassed queries
 	lastQueryWasCancelled = YES;
-	lastQueryWasCancelledUsingReconnect = YES;
-}
-
-/**
- * If the last query was cancelled, returns whether that query cancellation
- * required the connection to be reset or whether the query was successfully
- * cancelled leaving the connection intact.
- * If the last query was not cancelled, this will return NO.
- */
-- (BOOL)lastQueryWasCancelledUsingReconnect
-{
-	return lastQueryWasCancelledUsingReconnect;
 }
 
 @end

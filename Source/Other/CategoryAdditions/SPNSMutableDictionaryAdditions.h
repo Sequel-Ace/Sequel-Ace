@@ -19,4 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@interface NSDictionary (SPNSDictionaryAdditions)
+
+/*If obj or key are nil, does nothing. No exception thrown.*/
+- (id)safeObjectForKey:(id)key;
+
+@end
+
 NS_ASSUME_NONNULL_END
