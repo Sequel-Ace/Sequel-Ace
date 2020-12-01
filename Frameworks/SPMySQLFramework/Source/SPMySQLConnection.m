@@ -193,7 +193,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 		// Start with empty cancellation details
 		lastQueryWasCancelled = NO;
-		lastQueryWasCancelledUsingReconnect = NO;
 
 		// Empty or reset the timing variables
 		lastConnectionUsedTime = 0;
