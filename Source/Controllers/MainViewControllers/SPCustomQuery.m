@@ -1723,6 +1723,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[textView setString:query];
 	[textView didChangeText];
 	[textView scrollRangeToVisible:NSMakeRange([query length], 0)];
+	[textView doSyntaxHighlightingWithForce:YES];
 }
 
 #pragma mark -
