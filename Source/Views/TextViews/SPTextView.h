@@ -165,4 +165,6 @@ typedef struct {
 
 - (BOOL)isSnippetMode;
 
+- (void)doSyntaxHighlightingWithForce:(BOOL)forced;
+
 @end

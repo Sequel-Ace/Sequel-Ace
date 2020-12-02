@@ -2440,17 +2440,27 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[[(id)delegate onMainThread] connectionControllerConnectAttemptFailed:self];
 	}
 
+	NSString *errorMessage = errorDetail ? : @"";
+	if (theErrorMessage) {
+		errorMessage = [errorMessage stringByAppendingString:@"\n"];
+		errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
+	}
+	if (rawErrorText) {
+		errorMessage = [errorMessage stringByAppendingString:@"\n"];
+		errorMessage = [errorMessage stringByAppendingString:rawErrorText];
+	}
+
 	// Only display the connection error message if there is a window visible
 	if ([[dbDocument parentWindow] isVisible]) {
 		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:theTitle];
-		[alert setInformativeText:errorDetail];
+		[alert setInformativeText:errorMessage];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		if (isSSHTunnelBindError) {
 			[alert addButtonWithTitle:NSLocalizedString(@"Use Standard Connection", @"use standard connection button")];
 		}
 		NSModalResponse returnCode = [alert runModal];
-		if (returnCode == NSAlertSecondButtonReturn) { // OK button
+		if (returnCode == NSAlertSecondButtonReturn) {
 			// Extract the local port number that SSH attempted to bind to from the debug output
 			NSString *tunnelPort = [[[errorDetailText string] componentsMatchedByRegex:@"LOCALHOST:([0-9]+)" capture:1L] lastObject];
 

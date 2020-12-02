@@ -849,12 +849,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 				NSString *errorString;
 				if ([mySQLConnection lastQueryWasCancelled]) {
-					if ([mySQLConnection lastQueryWasCancelledUsingReconnect]){
-						errorString = NSLocalizedString(@"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset.", @"Query cancel by resetting connection error");
-					}
-					else {
-						errorString = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
-					}
+					errorString = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 				} else {
 					errorString = [mySQLConnection lastErrorMessage];
 
@@ -1728,6 +1723,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[textView setString:query];
 	[textView didChangeText];
 	[textView scrollRangeToVisible:NSMakeRange([query length], 0)];
+	[textView doSyntaxHighlightingWithForce:YES];
 }
 
 #pragma mark -
@@ -2826,7 +2822,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (!historyItemWasJustInserted)
 		currentHistoryOffsetIndex = -1;
 
-	[self.bracketHighlighter bracketHighlight:caretPosition -1 inRange:currentQueryRange];
+	if (currentQueryRange.length < 1000) {
+		[self.bracketHighlighter bracketHighlight:caretPosition -1 inRange:currentQueryRange];
+	}
 
 	// Update the text of the contextual run current/previous/selection button and menu item
 	[self updateContextualRunInterface];
