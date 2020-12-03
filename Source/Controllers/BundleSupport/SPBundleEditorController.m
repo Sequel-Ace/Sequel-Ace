@@ -1052,7 +1052,15 @@
 
 	// Remove a given old command.plist file
 	[fileManager removeItemAtPath:cmdFilePath error:nil];
-	[saveDict writeToFile:cmdFilePath atomically:YES];
+	NSError *error = nil;
+
+	if (@available(macOS 10.13, *)) {
+		[saveDict writeToURL:[NSURL fileURLWithPath:cmdFilePath] error:&error];
+		if(error) SPLog(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
+
+	} else {
+		[saveDict writeToFile:cmdFilePath atomically:YES];
+	}
 
 	return YES;
 }
