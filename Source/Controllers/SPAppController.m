@@ -217,7 +217,7 @@
 	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
 #endif
 	
-	
+
 	NSDictionary *spfDict = nil;
 	NSArray *args = [[NSProcessInfo processInfo] arguments];
 	if (args.count == 5) {
@@ -678,6 +678,7 @@
 		if (![fileManager createDirectoryAtPath:bundlePath withIntermediateDirectories:YES attributes:nil error:nil]) {
 			NSBeep();
 			SPLog(@"Couldn't create folder “%@”", bundlePath);
+			CLS_LOG(@"Couldn't create folder “%@”", bundlePath);
 			return;
 		}
 	}
@@ -699,7 +700,8 @@
 		}
 
 		if (!cmdData || error) {
-			NSLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
+			SPLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
+			CLS_LOG(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
 			[self doOrDoNotBeep:filePath];
 			return;
 		}
@@ -751,7 +753,7 @@
 	}
 
 	if(retCode == NO){
-		SPLog(@"Cancel pressed returning without installing");
+		SPLog(@"Cancel pressed, returning without installing");
 		return;
 	}
 
@@ -1596,6 +1598,7 @@
 - (NSMutableDictionary*)findLegacyStrings:(NSString *)filePath{
 	
 	SPLog(@"findLegacyStrings for %@", filePath);
+	CLS_LOG(@"findLegacyStrings for %@", filePath);
 
 	NSMutableArray *filesContainingLegacyStringArr = [NSMutableArray array];
 	NSMutableDictionary *filesContainingLegacyString = [NSMutableDictionary dictionary];
@@ -1617,7 +1620,8 @@
 
 		// Make sure that the file has been read, log an error if it hasn't.
 		if (!fileContentsString) {
-			SPLog(@"Error reading file");
+			SPLog(@"Error reading file: %@", fileURL.absoluteString);
+			CLS_LOG(@"Error reading file: %@", fileURL.absoluteString);
 			continue;
 		}
 
@@ -1671,6 +1675,7 @@
 		[tmpStr writeToURL:url atomically:NO encoding:NSUTF8StringEncoding error:&err];
 		
 		if(err){
+			CLS_LOG(@"failed to write new str to %@. Error: %@", url.absoluteString, err.localizedDescription);
 			SPLog(@"failed to write new str to %@. Error: %@", url.absoluteString, err.localizedDescription);
 		}
 	}
@@ -1681,6 +1686,7 @@
 - (void)renameLegacyBundles{
 
 	SPLog(@"renameLegacyBundles");
+	CLS_LOG(@"renameLegacyBundles");
 
 	[bundleItems enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray *obj, BOOL *stop1) {
 		[obj enumerateObjectsUsingBlock:^(id obj2, NSUInteger idx, BOOL *stop){
@@ -1711,6 +1717,7 @@
 
 					if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
 						SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
+						CLS_LOG(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
 
 						[self doOrDoNotBeep:legacyPath];
 					}
@@ -1739,6 +1746,7 @@
 
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							CLS_LOG(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							[self doOrDoNotBeep:infoPath];
 
@@ -1757,13 +1765,17 @@
 
 							if(readError) {
 								SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+								CLS_LOG(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
 								[self doOrDoNotBeep:infoPath];
 							}
 							else{
 								if (@available(macOS 10.13, *)) {
 									readError = nil;
 									[saveDict writeToURL:[NSURL fileURLWithPath:infoPath] error:&readError];
-									if(readError) SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+									if(readError){
+										SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+										CLS_LOG(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+									}
 								} else {
 									[saveDict writeToFile:infoPath atomically:YES];
 								}
@@ -1895,6 +1907,7 @@
 						
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							CLS_LOG(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							[self doOrDoNotBeep:bundle];
 							
@@ -1952,6 +1965,7 @@
 
 											if(!cmdDataOld || readError) {
 												SPLog(@"“%@” file couldn't be read. (error=%@)", oldBundlePath, readError.localizedDescription);
+												CLS_LOG(@"“%@” file couldn't be read. (error=%@)", oldBundlePath, readError.localizedDescription);
 //												NSBeep();
 //												continue;
 											}
@@ -1974,6 +1988,7 @@
 											}
 											if(![fileManager copyItemAtPath:correctedOldBundle toPath:duplicatedBundle error:&anError]) {
 												SPLog(@"“%@” file couldn't be copied to update it. (error=%@)", bundle, anError.localizedDescription);
+												CLS_LOG(@"“%@” file couldn't be copied to update it. (error=%@)", bundle, anError.localizedDescription);
 												NSBeep();
 												continue;
 											}
@@ -1997,6 +2012,7 @@
 
 												if (![dupData count] || readError) {
 													SPLog(@"“%@” file couldn't be read. (error=%@)", duplicatedBundleCommand, readError.localizedDescription);
+													CLS_LOG(@"“%@” file couldn't be read. (error=%@)", duplicatedBundleCommand, readError.localizedDescription);
 													NSBeep();
 													continue;
 												}
@@ -2005,11 +2021,22 @@
 											NSString *orgName = [dupData objectForKey:SPBundleFileNameKey];
 											[dupData setObject:[NSString stringWithFormat:@"%@ (user)", orgName] forKey:SPBundleFileNameKey];
 											[dupData removeObjectForKey:SPBundleFileIsDefaultBundleKey];
-											[dupData writeToFile:duplicatedBundleCommand atomically:YES];
+
+											if (@available(macOS 10.13, *)) {
+												NSError *err = nil;
+												[dupData writeToURL:[NSURL fileURLWithPath:duplicatedBundleCommand] error:&err];
+												if(err){
+													SPLog(@"Could not delete %@. Error: %@", duplicatedBundleCommand, err.localizedDescription);
+													CLS_LOG(@"Could not delete %@. Error: %@", duplicatedBundleCommand, err.localizedDescription);
+												}
+											} else {
+												[dupData writeToFile:duplicatedBundleCommand atomically:YES];
+											}
 
 											error = nil;
 											if(![fileManager removeItemAtPath:correctedOldBundle error:&error]) {
 												SPLog(@"“%@” removeItemAtPath. (error=%@)", correctedOldBundle, error.localizedDescription);
+												CLS_LOG(@"“%@” removeItemAtPath. (error=%@)", correctedOldBundle, error.localizedDescription);
 												[fileManager removeItemAtPath:oldBundlePath error:&error];
 											}
 											else{
@@ -2026,6 +2053,7 @@
 											// If no modifications are done simply remove the old one
 											if(![fileManager removeItemAtPath:oldBundle error:nil] && ![fileManager removeItemAtPath:oldBundlePath.stringByDeletingLastPathComponent error:nil]) {
 												SPLog(@"Couldn't remove “%@” to update it", bundle);
+												CLS_LOG(@"Couldn't remove “%@” to update it", bundle);
 												NSBeep();
 												continue;
 											}
@@ -2049,6 +2077,7 @@
 									if(error != nil) {
 										NSBeep();
 										SPLog(@"Default Bundle “%@” couldn't be copied to '%@'", bundle, newInfoPath);
+										CLS_LOG(@"Default Bundle “%@” couldn't be copied to '%@'", bundle, newInfoPath);
 										continue;
 									}
 									infoPath = [NSString stringWithString:newInfoPath];
@@ -2067,6 +2096,7 @@
 
 						} else {
 							SPLog(@"No UUID for %@", bundle);
+							CLS_LOG(@"No UUID for %@", bundle);
 							NSBeep();
 							continue;
 						}
@@ -2305,6 +2335,7 @@
 	
 	if(![fileManager fileExistsAtPath:thePath isDirectory:nil]) {
 		SPLog(@"file does not exist %@", thePath);
+		CLS_LOG(@"file does not exist %@", thePath);
 		return;
 	}
 
@@ -2314,6 +2345,7 @@
 
 	if(error != nil) {
 		SPLog(@"file could not be deleted: %@", thePath);
+		CLS_LOG(@"file could not be deleted: %@", thePath);
 		return;
 	}
 
