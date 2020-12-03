@@ -67,6 +67,7 @@
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
 - (void)removeBundle:(NSString*)bundle;
+- (void)doOrDoNotBeep:(NSString*)key;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;

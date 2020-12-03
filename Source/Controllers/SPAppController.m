@@ -64,8 +64,12 @@
 - (void)openSessionBundleAtPath:(NSString *)filePath;
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
 - (void)openUserBundleAtPath:(NSString *)filePath;
+- (NSMutableDictionary*)findLegacyStrings:(NSString *)filePath;
+- (void)renameLegacyBundles;
+- (void)replaceLegacyString:(NSMutableDictionary*)filesContainingLegacyString;
 
 @property (readwrite, strong) NSFileManager *fileManager;
+@property (readwrite, strong) NSMutableArray *migratedLegacyBundles;
 
 @end
 
@@ -75,6 +79,7 @@
 @synthesize fileManager;
 @synthesize alreadyBeeped;
 @synthesize badBundles;
+@synthesize migratedLegacyBundles;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -103,6 +108,7 @@
 		
 		alreadyBeeped = [[NSMutableDictionary alloc] init];
 		badBundles = [[NSMutableArray alloc] init];
+		migratedLegacyBundles = [[NSMutableArray alloc] init];
 
 		//Create runtime directiories
 		[fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
@@ -694,96 +700,50 @@
 
 		if (!cmdData || error) {
 			NSLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
-			if(![alreadyBeeped objectForKey:filePath]){
-				NSBeep();
-				[alreadyBeeped setObject:@YES forKey:filePath];
-			}
-			else{
-				SPLog(@"already beeped for %@", filePath);
-			}
+			[self doOrDoNotBeep:filePath];
 			return;
 		}
 	}
 
 	SPLog(@"cmdData %@", cmdData);
+	
 
 	// first lets check if it's a legacy bundle
-	if([newPath containsString:SPUserBundleFileExtension] == YES){
+	// don't need this, at the end of this func we call reload bundles
+	// which will migrate legacy bundles
 
-		NSString *migratedPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [filePath lastPathComponent].stringByDeletingPathExtension, SPUserBundleFileExtensionV2];
 
-		// if yes, we need to rename
-		if (![fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
-			if (![fileManager moveItemAtPath:filePath toPath:migratedPath error:nil]) {
-				NSBeep();
-				SPLog(@"Couldn't move “%@” to “%@”", filePath, migratedPath);
-				return;
-			}
-			else{
-				// we need to add the bundle version
-				NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
-
-				NSMutableDictionary *saveDict = [[NSMutableDictionary alloc] initWithCapacity:cmdData.count+1];
-				[saveDict addEntriesFromDictionary:cmdData];
-				[saveDict setObject:[NSNumber numberWithLong:SPBundleCurrentVersion] forKey:SPBundleVersionKey];
-
-				[fileManager removeItemAtPath:infoPath error:nil];
-				[saveDict writeToFile:infoPath atomically:YES];
-			}
-		}
-	}
-
-	NSMutableArray *filesContainingLegacyString = [NSMutableArray array];
-
-	// enumerate dir
-	NSDirectoryEnumerator *enumerator = [fileManager
-										 enumeratorAtURL:[NSURL fileURLWithPath:filePath]
-										 includingPropertiesForKeys:@[NSURLIsRegularFileKey]
-										 options:NSDirectoryEnumerationSkipsHiddenFiles
-										 errorHandler:nil];
-
-	// check each file for legacy sequelpro string
-	for (NSURL *fileURL in enumerator) {
-		// Read the contents of the file into a string.
-		NSError *error = nil;
-		NSString *fileContentsString = [NSString stringWithContentsOfURL:fileURL
-																encoding:NSUTF8StringEncoding
-																   error:&error];
-
-		// Make sure that the file has been read, log an error if it hasn't.
-		if (!fileContentsString) {
-			SPLog(@"Error reading file");
-			continue;
-		}
-
-		// the string to search for
-		NSString *sequelpro = @"sequelpro";
-
-		// Search the file contents for the given string, put the results into an NSRange structure
-		NSRange result = [fileContentsString rangeOfString:sequelpro];
-
-		// -rangeOfString returns the location of the string NSRange.location or NSNotFound.
-		if (result.location == NSNotFound) {
-			SPLog(@"sequelpro NOT found in file: %@", fileURL.absoluteString);
-		}
-		else{
-			SPLog(@"sequelpro found in file: %@", fileURL.absoluteString);
-			SPLog(@"match: %@", [fileContentsString substringWithRange:result]);
-			SPLog(@"result: %lu, %lu", result.location, result.length);
-			[filesContainingLegacyString addObject:fileURL.absoluteString.lastPathComponent];
-		}
-	}
+	// check for legacy strings
+	NSMutableDictionary *filesContainingLegacyString = [self findLegacyStrings:filePath];
 
 	BOOL __block retCode = YES;
 
 	if(filesContainingLegacyString.count > 0){
-		NSString *filesString = [[filesContainingLegacyString valueForKey:@"description"] componentsJoinedByString:@"\n"];
+
+		SPLog(@"filesContainingLegacyString: %@", filesContainingLegacyString.allKeys);
+		
+		NSArray *filePathArr = [filesContainingLegacyString.allKeys valueForKey:@"description"];
+		
+		NSMutableArray *affectedFiles = [NSMutableArray array];
+		
+		for(NSString *filePath2 in filePathArr){
+			[affectedFiles safeAddObject:filePath2.lastPathComponent];
+		}
+
+		NSString *filesString = [affectedFiles componentsJoinedByString:@"\n"];
 
 		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"‘%@’ Bundle contains legacy components", @"Bundle contains legacy components"), filePath.lastPathComponent]
-									 message:[NSString stringWithFormat:NSLocalizedString(@"In these files:\n\n%@\n\nDo you still want to install the bundle?", @"Do you want to install the bundle?"), filesString]
+									 message:[NSString stringWithFormat:NSLocalizedString(@"In these files:\n\n%@\n\nDo you still want to install the bundle and have Sequel Ace replace the legacy strings?", @"Do you want to install the bundle?"), filesString]
 						  primaryButtonTitle:NSLocalizedString(@"Install", @"Install")
 						primaryButtonHandler:^{
 			SPLog(@"Continue, install");
+			// filesContainingLegacyString:
+			// key = file URL
+			// val = dict - key:@file = bundle filename
+			//				key:@newstr = string for file with legacy str replaced.
+			
+			[self replaceLegacyString:filesContainingLegacyString];
+
 		} 				cancelButtonHandler:^{
 			SPLog(@"ABORT install");
 			retCode = NO;
@@ -839,7 +799,7 @@
 			}
 		}
 
-		// Update Bundels' menu
+		// Update Bundle's menu
 		[self reloadBundles:self];
 
 	}
@@ -1632,6 +1592,224 @@
 	[bundleHTMLOutputController removeObject:controller];
 }
 
+#pragma mark - legacy string methods
+- (NSMutableDictionary*)findLegacyStrings:(NSString *)filePath{
+	
+	SPLog(@"findLegacyStrings for %@", filePath);
+
+	NSMutableArray *filesContainingLegacyStringArr = [NSMutableArray array];
+	NSMutableDictionary *filesContainingLegacyString = [NSMutableDictionary dictionary];
+
+	// enumerate dir
+	NSDirectoryEnumerator *enumerator = [fileManager
+										 enumeratorAtURL:[NSURL fileURLWithPath:filePath]
+										 includingPropertiesForKeys:@[NSURLIsRegularFileKey]
+										 options:NSDirectoryEnumerationSkipsHiddenFiles
+										 errorHandler:nil];
+
+	// check each file for legacy sequelpro string
+	for (NSURL *fileURL in enumerator) {
+		// Read the contents of the file into a string.
+		NSError *error = nil;
+		NSString *fileContentsString = [NSString stringWithContentsOfURL:fileURL
+																encoding:NSUTF8StringEncoding
+																   error:&error];
+
+		// Make sure that the file has been read, log an error if it hasn't.
+		if (!fileContentsString) {
+			SPLog(@"Error reading file");
+			continue;
+		}
+
+		// Search the file contents for the given string, put the results into an NSRange structure
+		NSRange result = [fileContentsString rangeOfString:SPBundleLegacyAppSchema];
+
+		// -rangeOfString returns the location of the string NSRange.location or NSNotFound.
+		if (result.location == NSNotFound) {
+			SPLog(@"sequelpro NOT found in file: %@", fileURL.absoluteString);
+		}
+		else{
+			SPLog(@"sequelpro found in file: %@", fileURL.absoluteString);
+			SPLog(@"match: %@", [fileContentsString substringWithRange:result]);
+			SPLog(@"result: %lu, %lu", result.location, result.length);
+
+			[filesContainingLegacyStringArr addObject:fileURL.absoluteString.lastPathComponent];
+
+			// replace and save in case they want to proceed
+			NSString *str = [fileContentsString stringByReplacingOccurrencesOfString:SPBundleLegacyAppSchema withString:SPBundleAppSchema];
+
+			NSDictionary *tmpDict = @{ @"file" : fileURL.absoluteString.lastPathComponent, @"newString" : str };
+
+			[filesContainingLegacyString safeSetObject:tmpDict forKey:fileURL];
+		}
+	}
+	
+	return filesContainingLegacyString;
+
+}
+
+- (void)replaceLegacyString:(NSMutableDictionary*)filesContainingLegacyString{
+	// filesContainingLegacyString:
+	// key = file URL
+	// val = dict - key:@file = bundle filename
+	//				key:@newstr = string for file with legacy str replaced.
+	
+	SPLog(@"replaceLegacyString");
+
+	for(NSURL *url in filesContainingLegacyString.allKeys){
+		
+		SPLog(@"Writing new str to %@", url.absoluteString);
+
+		NSDictionary *tmpDict = [filesContainingLegacyString safeObjectForKey:url];
+		
+		NSString *tmpStr = [tmpDict safeObjectForKey:@"newString"];
+		
+		SPLog(@"tmpDict: %@", tmpDict);
+		SPLog(@"tmpStr: %@", tmpStr);
+
+		NSError *err = nil;
+		[tmpStr writeToURL:url atomically:NO encoding:NSUTF8StringEncoding error:&err];
+		
+		if(err){
+			SPLog(@"failed to write new str to %@. Error: %@", url.absoluteString, err.localizedDescription);
+		}
+	}
+	
+}
+
+#pragma mark - legacy bundle rename
+- (void)renameLegacyBundles{
+
+	SPLog(@"renameLegacyBundles");
+
+	[bundleItems enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray *obj, BOOL *stop1) {
+		[obj enumerateObjectsUsingBlock:^(id obj2, NSUInteger idx, BOOL *stop){
+//			SPLog(@"obj2 = %@",obj2);
+
+			NSString *path = obj2[SPBundleInternPathToFileKey];
+
+//			SPLog(@"path = %@",path);
+
+			if([path containsString:SPUserBundleFileExtension] == YES){
+
+				NSString *legacyPath = path.stringByDeletingLastPathComponent;
+
+				NSMutableString *migratedPath = [[NSMutableString alloc] initWithCapacity:path.stringByDeletingLastPathComponent.length];
+				[migratedPath setString:[path.stringByDeletingLastPathComponent dropSuffixWithSuffix:SPUserBundleFileExtension]];
+				[migratedPath appendString:SPUserBundleFileExtensionV2];
+				NSString *bundlePath = migratedPath.lastPathComponent;
+
+
+				SPLog(@"migratedPath %@", migratedPath);
+				SPLog(@"legacyPath %@", legacyPath);
+				SPLog(@"bundlePath %@", bundlePath);
+
+				NSError *error = nil;
+
+				if (![fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
+					SPLog(@"File DOES NOT YET exist at “%@”", migratedPath);
+
+					if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
+						SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
+
+						[self doOrDoNotBeep:legacyPath];
+					}
+					else{
+						SPLog(@"File renamed successfully “%@”", migratedPath);
+						[self->migratedLegacyBundles safeAddObject:migratedPath];
+
+						// we need to add the new bundle version
+						NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
+
+						SPLog(@"infoPath %@", infoPath);
+
+						// so load up the plist
+						NSDictionary *cmdData = nil;
+
+						NSError *readError = nil;
+
+						NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSDataReadingUncached error:&readError];
+
+						if(pData && !readError) {
+							cmdData = [NSPropertyListSerialization propertyListWithData:pData
+																				options:NSPropertyListImmutable
+																				 format:NULL
+																				  error:&readError];
+						}
+
+						if(!cmdData || readError) {
+							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
+							[self doOrDoNotBeep:infoPath];
+
+							// remove the dodgy bundle
+							[self removeBundle:migratedPath.lastPathComponent];
+
+						}
+						else{
+							NSMutableDictionary *saveDict = [[NSMutableDictionary alloc] initWithCapacity:cmdData.count+1];
+							[saveDict addEntriesFromDictionary:cmdData];
+							[saveDict setObject:[NSNumber numberWithLong:SPBundleCurrentVersion] forKey:SPBundleVersionKey];
+
+							readError = nil;
+
+							[fileManager removeItemAtPath:infoPath error:&readError];
+
+							if(readError) {
+								SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+								[self doOrDoNotBeep:infoPath];
+							}
+							else{
+								if (@available(macOS 10.13, *)) {
+									readError = nil;
+									[saveDict writeToURL:[NSURL fileURLWithPath:infoPath] error:&readError];
+									if(readError) SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+								} else {
+									[saveDict writeToFile:infoPath atomically:YES];
+								}
+							}
+						}
+					}
+				}
+				else{
+					SPLog(@"File exists at path: %@", migratedPath);
+				}
+			}
+			else{
+				SPLog(@"Already migrated: %@", path);
+			}
+		}];
+	}];
+	
+	// check for legacy strings?
+	if(migratedLegacyBundles.count > 0){
+		
+		SPLog(@"migratedLegacyBundles: %@", migratedLegacyBundles);
+		
+		NSMutableDictionary *filesContainingLegacyString = [NSMutableDictionary dictionary];
+		
+		for(NSString *filePath in migratedLegacyBundles){
+			filesContainingLegacyString = [self findLegacyStrings:filePath];
+			if(filesContainingLegacyString.count > 0){
+				[self replaceLegacyString:filesContainingLegacyString];
+			}
+		}
+	}
+}
+
+- (void)doOrDoNotBeep:(NSString*)key{
+
+	if(![alreadyBeeped safeObjectForKey:key]){
+		SPLog(@"Beeping for %@", key);
+		NSBeep();
+		[alreadyBeeped safeSetObject:@YES forKey:key];
+	}
+	else{
+		SPLog(@"already beeped for %@", key);
+	}
+}
+
+
 - (IBAction)reloadBundles:(id)sender
 {
 
@@ -1687,7 +1865,7 @@
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
 
-			SPLog(@"processing path: %@",bundlePath );
+			SPLog(@"processing installed bundle at path: %@",bundlePath );
 
 			NSError *error = nil;
 			NSArray *foundBundles = [fileManager contentsOfDirectoryAtPath:bundlePath error:&error];
@@ -1718,13 +1896,7 @@
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
-							if(![alreadyBeeped objectForKey:bundle]){
-								NSBeep();
-								[alreadyBeeped setObject:@YES forKey:bundle];
-							}
-							else{
-								SPLog(@"already beeped for %@", bundle);
-							}
+							[self doOrDoNotBeep:bundle];
 							
 							// remove the dodgy bundle
 							[self removeBundle:bundle];
@@ -1793,8 +1965,15 @@
 
 											// Duplicate Bundle, change the UUID and rename the menu label
 											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], [bundle substringToIndex:([bundle length] - [SPUserBundleFileExtensionV2 length] - 1)], (long)(random() % 35000), SPUserBundleFileExtensionV2];
-											if(![fileManager copyItemAtPath:oldBundle toPath:duplicatedBundle error:nil]) {
-												SPLog(@"Couldn't copy “%@” to update it", bundle);
+											NSError *anError = nil;
+
+											NSMutableString *correctedOldBundle = [[NSMutableString alloc] initWithCapacity:oldBundle.length];
+											if([oldBundle hasSuffixWithSuffix:SPUserBundleFileExtensionV2 caseSensitive:YES]){
+												[correctedOldBundle setString:[oldBundle dropSuffixWithSuffix:SPUserBundleFileExtensionV2]];
+												[correctedOldBundle appendString:SPUserBundleFileExtension];
+											}
+											if(![fileManager copyItemAtPath:correctedOldBundle toPath:duplicatedBundle error:&anError]) {
+												SPLog(@"“%@” file couldn't be copied to update it. (error=%@)", bundle, anError.localizedDescription);
 												NSBeep();
 												continue;
 											}
@@ -1829,8 +2008,12 @@
 											[dupData writeToFile:duplicatedBundleCommand atomically:YES];
 
 											error = nil;
-											if(![fileManager removeItemAtPath:oldBundle error:&error]) {
+											if(![fileManager removeItemAtPath:correctedOldBundle error:&error]) {
+												SPLog(@"“%@” removeItemAtPath. (error=%@)", correctedOldBundle, error.localizedDescription);
 												[fileManager removeItemAtPath:oldBundlePath error:&error];
+											}
+											else{
+												SPLog(@"removedItemAtPath: %@\n%@\n", correctedOldBundle, oldBundlePath);
 											}
 
 											if(error != nil) {
@@ -1841,10 +2024,13 @@
 										} else {
 											SPLog(@"default bundle not modified, delete and ....");
 											// If no modifications are done simply remove the old one
-											if(![fileManager removeItemAtPath:oldBundle error:nil] && ![fileManager removeItemAtPath:oldBundlePath error:nil]) {
+											if(![fileManager removeItemAtPath:oldBundle error:nil] && ![fileManager removeItemAtPath:oldBundlePath.stringByDeletingLastPathComponent error:nil]) {
 												SPLog(@"Couldn't remove “%@” to update it", bundle);
 												NSBeep();
 												continue;
+											}
+											else{
+												SPLog(@"removedItemAtPath: %@", oldBundle);
 											}
 
 										}
@@ -1939,10 +2125,10 @@
 								}
 							}
 							NSDictionary *newBundleKey = [NSDictionary dictionaryWithObjectsAndKeys:
-														  infoPath ?: @"", @"path",
-														  theFilename, @"title",
-														  theTooltip, @"tooltip",
-														  theUUID, @"uuid",
+														  infoPath ?: @"", SPBundleInternPathToFileKey,
+														  theFilename, SPBundleFileTitleKey,
+														  theTooltip, SPBundleFileTooltipKey,
+														  theUUID, SPBundleFileUUIDKey,
 														  nil];
 							[bundleKeysForKey addObject: newBundleKey];
 							[[bundleKeyEquivalents objectForKey:scope] setObject:bundleKeysForKey forKey:[cmdData objectForKey:SPBundleFileKeyEquivalentKey]];
@@ -1991,6 +2177,10 @@
 		}
 		processDefaultBundles = YES;
 	}
+	// JCS: Not sure where to do this
+	//
+	[self renameLegacyBundles];
+	
 	if(doBundleUpdate) {
 		[[NSUserDefaults standardUserDefaults] removeObjectForKey:@"doBundleUpdate"];
 	}
@@ -2001,6 +2191,8 @@
 		[self reloadBundles:nil];
 		return;
 	}
+
+
 
 	// === Rebuild Bundles main menu item ===
 
