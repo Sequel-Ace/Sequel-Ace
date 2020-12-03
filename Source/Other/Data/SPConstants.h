@@ -274,6 +274,7 @@ extern NSString *SPColorThemeFileExtension;
 extern NSString *SPUserBundleFileExtension;
 extern NSString *SPUserBundleFileExtensionV2;
 extern NSString *SPBundleVersionKey;
+extern NSString *SPBundleFileTitleKey;
 
 // File names
 extern NSString *SPFavoritesDataFile;
@@ -597,6 +598,8 @@ extern NSString *SPBundleTaskScriptCommandFilePath;
 extern NSString *SPBundleTaskCopyBlobFileDirectory;
 extern NSString *SPBundleTaskTableMetaDataFilePath;
 extern NSString *SPQueryWarningEnabledSuppressed;
+extern NSString *SPBundleLegacyAppSchema;
+extern NSString *SPBundleAppSchema;
 
 extern NSString *SPBundleShellVariableInputFilePath;
 extern NSString *SPBundleShellVariableOutputFilePath;
