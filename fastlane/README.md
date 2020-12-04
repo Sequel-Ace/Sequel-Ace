@@ -31,6 +31,11 @@ Generates changelog only.
 fastlane mac increment_build
 ```
 Increase build number
+### mac update_strings
+```
+fastlane mac update_strings
+```
+Builds Sequel Ace strings target, uploads strings to Crowdin, builds them, downloads them and commits to git
 
 ----
 

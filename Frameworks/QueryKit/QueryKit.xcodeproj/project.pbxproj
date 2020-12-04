@@ -365,10 +365,6 @@
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
-				de,
-				fr,
-				ja,
-				Base,
 			);
 			mainGroup = 0867D691FE84028FC02AAC07 /* QueryKit */;
 			productRefGroup = 034768DFFF38A50411DB9C8B /* Products */;

@@ -615,10 +615,6 @@
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
-				fr,
-				ja,
-				Base,
-				de,
 			);
 			mainGroup = 0867D691FE84028FC02AAC07 /* SPMySQLFramework */;
 			productRefGroup = 034768DFFF38A50411DB9C8B /* Products */;

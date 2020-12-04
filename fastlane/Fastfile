@@ -66,4 +66,22 @@ platform :mac do
       increment_build_number(xcodeproj: PROJECT_NAME)
       commit_version_bump(xcodeproj: PROJECT_NAME)
    end
+
+   desc "Builds Sequel Ace strings target, uploads strings to Crowdin, builds them, downloads them and commits to git"
+   lane :update_strings do |options|
+      build_mac_app(
+         workspace: WORKSPACE_NAME,
+         scheme: "Update Strings",
+         configuration: "Debug",
+         silent: true,
+         skip_package_pkg: true,
+         skip_archive: true
+      )
+
+      # Commit strings updates
+      #repo_clean = `git status --porcelain`.empty?
+      #if !repo_clean
+      #   sh "git add -A && git commit -m 'Update strings'"
+      #end
+   end
 end
