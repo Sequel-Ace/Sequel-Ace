@@ -12,8 +12,7 @@ import Foundation
 
 	private var storage = NSTextStorage()
 
-	// MARK: NSTextStorage Primitive Methods
-	// https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/TextStorageLayer/Tasks/Subclassing.html
+	// MARK: - Required overrides for NSTextStorage
 
 	override var string: String {
 		return storage.string
@@ -36,6 +35,8 @@ import Foundation
 		edited(.editedAttributes, range: range, changeInLength: 0)
 		endEditing()
 	}
+
+	// MARK: - DOuble click functionality
 
 	override func doubleClick(at location: Int) -> NSRange {
 
