@@ -2611,16 +2611,6 @@
 #pragma mark - SPAppleScriptSupport
 
 /**
- * Is needed to interact with AppleScript for set/get internal SP variables
- */
-- (BOOL)application:(NSApplication *)sender delegateHandlesKey:(NSString *)key
-{
-	SPLog(@"Not yet implemented: %@", key);
-
-	return NO;
-}
-
-/**
  * AppleScript call to get the available documents.
  */
 - (NSArray *)orderedDocuments
