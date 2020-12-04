@@ -81,22 +81,22 @@
                             <autoresizingMask key="autoresizingMask" heightSizable="YES"/>
                             <subviews>
                                 <splitView fixedFrame="YES" autosaveName="DbViewInfoPanelSplit" translatesAutoresizingMaskIntoConstraints="NO" id="6032" customClass="SPSplitView">
-                                    <rect key="frame" x="0.0" y="0.0" width="214" height="549"/>
+                                    <rect key="frame" x="0.0" y="25" width="214" height="524"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <view fixedFrame="YES" id="6033">
-                                            <rect key="frame" x="0.0" y="0.0" width="214" height="354"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="214" height="338"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <subviews>
                                                 <scrollView wantsLayer="YES" focusRingType="none" fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="27" horizontalPageScroll="10" verticalLineScroll="27" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="21">
-                                                    <rect key="frame" x="0.0" y="0.0" width="214" height="324"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="214" height="308"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <clipView key="contentView" drawsBackground="NO" id="4mY-w1-Z6f">
-                                                        <rect key="frame" x="0.0" y="0.0" width="214" height="324"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="214" height="308"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
                                                             <tableView identifier="TablesListTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveColumns="NO" rowHeight="25" id="22" customClass="SPTableView">
-                                                                <rect key="frame" x="0.0" y="0.0" width="214" height="324"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="214" height="308"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="3" height="2"/>
                                                                 <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -137,7 +137,7 @@
                                                     </scroller>
                                                 </scrollView>
                                                 <searchField wantsLayer="YES" verticalHuggingPriority="750" id="6278">
-                                                    <rect key="frame" x="5" y="329" width="204" height="22"/>
+                                                    <rect key="frame" x="5" y="313" width="204" height="22"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                     <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" id="6279">
                                                         <font key="font" metaFont="system"/>
@@ -153,18 +153,18 @@
                                             </subviews>
                                         </view>
                                         <view fixedFrame="YES" id="6034" userLabel="Table Info / Activities View">
-                                            <rect key="frame" x="0.0" y="363" width="214" height="186"/>
+                                            <rect key="frame" x="0.0" y="347" width="214" height="177"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <subviews>
                                                 <scrollView focusRingType="none" fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="47" horizontalPageScroll="10" verticalLineScroll="47" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7691" userLabel="Scroll View (Activities Table View)">
-                                                    <rect key="frame" x="-1" y="0.0" width="216" height="186"/>
+                                                    <rect key="frame" x="-1" y="0.0" width="216" height="177"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Gh3-hf-w7K">
-                                                        <rect key="frame" x="0.0" y="0.0" width="216" height="186"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="216" height="177"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" selectionHighlightStyle="sourceList" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="45" id="7692" userLabel="Table View (Activities)">
-                                                                <rect key="frame" x="0.0" y="0.0" width="216" height="186"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="216" height="177"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="3" height="2"/>
                                                                 <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -189,7 +189,7 @@
                                                                 </connections>
                                                             </tableView>
                                                         </subviews>
-                                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                                        <nil key="backgroundColor"/>
                                                     </clipView>
                                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" controlSize="small" horizontal="YES" id="7694">
                                                         <rect key="frame" x="-100" y="-100" width="141" height="11"/>
@@ -201,14 +201,14 @@
                                                     </scroller>
                                                 </scrollView>
                                                 <scrollView focusRingType="none" fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4481" userLabel="Scroll View (Table Info Table View)">
-                                                    <rect key="frame" x="0.0" y="0.0" width="214" height="186"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="214" height="177"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="sYg-2H-T9j">
-                                                        <rect key="frame" x="0.0" y="0.0" width="214" height="186"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="214" height="177"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="sequential" selectionHighlightStyle="sourceList" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" id="4484">
-                                                                <rect key="frame" x="0.0" y="0.0" width="214" height="186"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="214" height="177"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="3" height="2"/>
                                                                 <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
