@@ -879,36 +879,6 @@
 		517E44F6257A90E700ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		517E44FB257A94C400ED333B /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
-		517E455E257A971600ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "Interfaces/es-ES.lproj/AboutPanel.xib"; sourceTree = "<group>"; };
-		517E455F257A971600ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/BundleEditor.xib"; sourceTree = "<group>"; };
-		517E4560257A971600ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/BundleHTMLOutput.xib"; sourceTree = "<group>"; };
-		517E4561257A971600ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "Interfaces/es-ES.lproj/ConnectionErrorDialog.xib"; sourceTree = "<group>"; };
-		517E4562257A971600ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/ConnectionView.xib"; sourceTree = "<group>"; };
-		517E4563257A971600ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/Console.xib"; sourceTree = "<group>"; };
-		517E4564257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/ContentFilterManager.xib"; sourceTree = "<group>"; };
-		517E4565257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/ContentPaginationView.xib"; sourceTree = "<group>"; };
-		517E4566257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "Interfaces/es-ES.lproj/DatabaseProcessList.xib"; sourceTree = "<group>"; };
-		517E4567257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "Interfaces/es-ES.lproj/DatabaseServerVariables.xib"; sourceTree = "<group>"; };
-		517E4568257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/DataMigrationDialog.xib"; sourceTree = "<group>"; };
-		517E4569257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/DBView.xib"; sourceTree = "<group>"; };
-		517E456A257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/EncodingPopupView.xib"; sourceTree = "<group>"; };
-		517E456B257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/ExportDialog.xib"; sourceTree = "<group>"; };
-		517E456C257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/FieldEditorSheet.xib"; sourceTree = "<group>"; };
-		517E456D257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/GotoDatabaseDialog.xib"; sourceTree = "<group>"; };
-		517E456E257A971700ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/ImportAccessory.xib"; sourceTree = "<group>"; };
-		517E456F257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "Interfaces/es-ES.lproj/IndexesView.xib"; sourceTree = "<group>"; };
-		517E4570257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/MainMenu.xib"; sourceTree = "<group>"; };
-		517E4571257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/MainWindow.xib"; sourceTree = "<group>"; };
-		517E4572257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/Navigator.xib"; sourceTree = "<group>"; };
-		517E4573257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/Preferences.xib"; sourceTree = "<group>"; };
-		517E4574257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/PrintAccessory.xib"; sourceTree = "<group>"; };
-		517E4575257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "Interfaces/es-ES.lproj/ProgressIndicatorLayer.xib"; sourceTree = "<group>"; };
-		517E4576257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/QueryFavoriteManager.xib"; sourceTree = "<group>"; };
-		517E4577257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/SaveSPFAccessory.xib"; sourceTree = "<group>"; };
-		517E4578257A971800ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/SSHQuestionDialog.xib"; sourceTree = "<group>"; };
-		517E4579257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/UserManagerView.xib"; sourceTree = "<group>"; };
-		517E457A257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/FilterTableWindow.xib"; sourceTree = "<group>"; };
-		517E457B257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/HelpViewer.xib"; sourceTree = "<group>"; };
 		517E457C257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-ES"; path = "es-ES.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		517E457D257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/MainMenu.xib"; sourceTree = "<group>"; };
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
@@ -3286,7 +3256,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4470257A8B6100ED333B /* en */,
-				517E4576257A971800ED333B /* es-ES */,
 			);
 			name = QueryFavoriteManager.xib;
 			sourceTree = "<group>";
@@ -3295,7 +3264,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E446A257A8B6000ED333B /* en */,
-				517E4566257A971700ED333B /* es-ES */,
 			);
 			name = DatabaseProcessList.xib;
 			path = ..;
@@ -3305,7 +3273,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4464257A8B5F00ED333B /* en */,
-				517E4570257A971800ED333B /* es-ES */,
 			);
 			name = MainMenu.xib;
 			sourceTree = "<group>";
@@ -3314,7 +3281,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E446D257A8B6000ED333B /* en */,
-				517E4567257A971700ED333B /* es-ES */,
 			);
 			name = DatabaseServerVariables.xib;
 			path = ..;
@@ -3324,7 +3290,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4460257A8B5F00ED333B /* en */,
-				517E456F257A971800ED333B /* es-ES */,
 			);
 			name = IndexesView.xib;
 			path = ..;
@@ -3334,7 +3299,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4459257A8AFC00ED333B /* en */,
-				517E455E257A971600ED333B /* es-ES */,
 			);
 			name = AboutPanel.xib;
 			path = ..;
@@ -3353,7 +3317,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E446B257A8B6000ED333B /* en */,
-				517E4569257A971700ED333B /* es-ES */,
 			);
 			name = DBView.xib;
 			sourceTree = "<group>";
@@ -3362,7 +3325,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E446F257A8B6100ED333B /* en */,
-				517E4579257A971900ED333B /* es-ES */,
 			);
 			name = UserManagerView.xib;
 			sourceTree = "<group>";
@@ -3371,7 +3333,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4474257A8B6100ED333B /* en */,
-				517E456D257A971700ED333B /* es-ES */,
 			);
 			name = GotoDatabaseDialog.xib;
 			sourceTree = "<group>";
@@ -3389,7 +3350,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E445A257A8B3100ED333B /* en */,
-				517E4561257A971600ED333B /* es-ES */,
 			);
 			name = ConnectionErrorDialog.xib;
 			path = ..;
@@ -3399,7 +3359,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E445D257A8B4B00ED333B /* en */,
-				517E4562257A971600ED333B /* es-ES */,
 			);
 			name = ConnectionView.xib;
 			sourceTree = "<group>";
@@ -3408,7 +3367,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E446C257A8B6000ED333B /* en */,
-				517E4575257A971800ED333B /* es-ES */,
 			);
 			name = ProgressIndicatorLayer.xib;
 			path = ..;
@@ -3418,7 +3376,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4466257A8B6000ED333B /* en */,
-				517E4571257A971800ED333B /* es-ES */,
 			);
 			name = MainWindow.xib;
 			sourceTree = "<group>";
@@ -3427,7 +3384,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4463257A8B5F00ED333B /* en */,
-				517E4565257A971700ED333B /* es-ES */,
 			);
 			name = ContentPaginationView.xib;
 			sourceTree = "<group>";
@@ -3436,7 +3392,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E445E257A8B5000ED333B /* en */,
-				517E4563257A971600ED333B /* es-ES */,
 			);
 			name = Console.xib;
 			sourceTree = "<group>";
@@ -3445,7 +3400,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4468257A8B6000ED333B /* en */,
-				517E4573257A971800ED333B /* es-ES */,
 			);
 			name = Preferences.xib;
 			sourceTree = "<group>";
@@ -3454,7 +3408,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4475257A8B6100ED333B /* en */,
-				517E4578257A971800ED333B /* es-ES */,
 			);
 			name = SSHQuestionDialog.xib;
 			sourceTree = "<group>";
@@ -3463,7 +3416,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4469257A8B6000ED333B /* en */,
-				517E4574257A971800ED333B /* es-ES */,
 			);
 			name = PrintAccessory.xib;
 			sourceTree = "<group>";
@@ -3472,7 +3424,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E446E257A8B6100ED333B /* en */,
-				517E456B257A971700ED333B /* es-ES */,
 			);
 			name = ExportDialog.xib;
 			sourceTree = "<group>";
@@ -3481,7 +3432,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4462257A8B5F00ED333B /* en */,
-				517E457A257A971900ED333B /* es-ES */,
 			);
 			name = FilterTableWindow.xib;
 			sourceTree = "<group>";
@@ -3490,7 +3440,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E445F257A8B5F00ED333B /* en */,
-				517E457B257A971900ED333B /* es-ES */,
 			);
 			name = HelpViewer.xib;
 			sourceTree = "<group>";
@@ -3499,7 +3448,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4471257A8B6100ED333B /* en */,
-				517E4568257A971700ED333B /* es-ES */,
 			);
 			name = DataMigrationDialog.xib;
 			sourceTree = "<group>";
@@ -3508,7 +3456,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4476257A8B6100ED333B /* en */,
-				517E456E257A971700ED333B /* es-ES */,
 			);
 			name = ImportAccessory.xib;
 			sourceTree = "<group>";
@@ -3517,7 +3464,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4461257A8B5F00ED333B /* en */,
-				517E4564257A971700ED333B /* es-ES */,
 			);
 			name = ContentFilterManager.xib;
 			sourceTree = "<group>";
@@ -3526,7 +3472,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E445C257A8B3F00ED333B /* en */,
-				517E4560257A971600ED333B /* es-ES */,
 			);
 			name = BundleHTMLOutput.xib;
 			sourceTree = "<group>";
@@ -3535,7 +3480,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4465257A8B6000ED333B /* en */,
-				517E456A257A971700ED333B /* es-ES */,
 			);
 			name = EncodingPopupView.xib;
 			sourceTree = "<group>";
@@ -3544,7 +3488,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4467257A8B6000ED333B /* en */,
-				517E4572257A971800ED333B /* es-ES */,
 			);
 			name = Navigator.xib;
 			sourceTree = "<group>";
@@ -3553,7 +3496,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4472257A8B6100ED333B /* en */,
-				517E456C257A971700ED333B /* es-ES */,
 			);
 			name = FieldEditorSheet.xib;
 			sourceTree = "<group>";
@@ -3562,7 +3504,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E445B257A8B3600ED333B /* en */,
-				517E455F257A971600ED333B /* es-ES */,
 			);
 			name = BundleEditor.xib;
 			sourceTree = "<group>";
@@ -3571,7 +3512,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				517E4473257A8B6100ED333B /* en */,
-				517E4577257A971800ED333B /* es-ES */,
 			);
 			name = SaveSPFAccessory.xib;
 			sourceTree = "<group>";
