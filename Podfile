@@ -16,8 +16,6 @@ target 'Sequel Ace' do
 
   # Pods for Sequel Ace
   pod 'SwiftLint', '~> 0.40'
-  pod 'FirebaseCore'
-  pod 'Firebase/Crashlytics'
   pod 'FMDB', :git => 'https://github.com/ccgus/fmdb.git', :commit => '3e5efdf6690cf7dce0a914c370507deee8740d33' #2.7.7 is not published to the specs repo yet, only 2.7.5, so targeting the tag.
 end
 
