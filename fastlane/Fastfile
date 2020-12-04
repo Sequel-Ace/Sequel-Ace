@@ -71,7 +71,7 @@ platform :mac do
    lane :update_strings do |options|
       build_mac_app(
          workspace: WORKSPACE_NAME,
-         scheme: "Update strings",
+         scheme: "Update Strings",
          configuration: "Debug",
          silent: true,
          skip_package_pkg: true,

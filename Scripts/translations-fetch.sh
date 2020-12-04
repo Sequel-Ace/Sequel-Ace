@@ -5,7 +5,10 @@
 
 # Crowdin Keys
 PROJECT_IDENTIFIER="sequel-ace"
-PROJECT_KEY="ed18a4af75ae024ede41105223f93bd4"
+
+# Load project key from .env file
+PROJECT_KEY=$(grep CROWDIN_PROJECT_KEY "../fastlane/.env" | cut -d '=' -f2)
+echo $PROJECT_KEY
 
 # Local Vars
 OUTPUT_DIR=""
