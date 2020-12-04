@@ -2625,7 +2625,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		if (![prefs stringForKey:@"lastSqlFileName"]) {
 			[prefs setObject:@"" forKey:@"lastSqlFileName"];
-			[prefs synchronize];
 		}
 
 		filename = [prefs stringForKey:@"lastSqlFileName"];
@@ -2634,7 +2633,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		// If no lastSqlFileEncoding in prefs set it to UTF-8
 		if (![prefs integerForKey:SPLastSQLFileEncoding]) {
 			[prefs setInteger:4 forKey:SPLastSQLFileEncoding];
-			[prefs synchronize];
 		}
 
 		[encodingPopUp setEnabled:YES];
@@ -2790,7 +2788,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 			[prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
 			[prefs setObject:[fileName lastPathComponent] forKey:@"lastSqlFileName"];
-			[prefs synchronize];
 
 			NSString *content = [NSString stringWithString:[[[customQueryInstance valueForKeyPath:@"textView"] textStorage] string]];
 			[content writeToFile:fileName

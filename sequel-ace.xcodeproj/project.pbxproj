@@ -116,6 +116,7 @@
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
+		1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */; };
 		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
 		1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
 		1AB068AA24A355CC00E2AAC2 /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */; };
@@ -730,6 +731,7 @@
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
+		1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteHistoryManager.swift; sourceTree = "<group>"; };
 		1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-crlf.pem"; sourceTree = "<group>"; };
 		1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-end.pem"; sourceTree = "<group>"; };
 		1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-lf.pem"; sourceTree = "<group>"; };
@@ -1498,6 +1500,7 @@
 				589235301020C1230011DE00 /* SPHistoryController.m */,
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
 				5806B76311A991EC00813A88 /* SPDocumentController.m */,
+				1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -3125,6 +3128,7 @@
 				BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */,
 				BC0ED3DA12A9196C00088461 /* SPChooseMenuItemDialog.m in Sources */,
 				583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */,
+				1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */,
 				582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */,
 				500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */,
 				584D878B15140FEB00F24774 /* SPObjectAdditions.m in Sources */,

@@ -212,6 +212,9 @@
 #endif
 	
 	
+	// init SQLite query history	
+	SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
+
 	NSDictionary *spfDict = nil;
 	NSArray *args = [[NSProcessInfo processInfo] arguments];
 	if (args.count == 5) {
@@ -695,7 +698,7 @@
 		if (!cmdData || error) {
 			NSLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
 			if(![alreadyBeeped objectForKey:filePath]){
-				NSBeep();
+			NSBeep();
 				[alreadyBeeped setObject:@YES forKey:filePath];
 			}
 			else{
@@ -1686,12 +1689,12 @@
 																				 format:NULL
 																				  error:&readError];
 						}
-						
+
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							if(![alreadyBeeped objectForKey:bundle]){
-								NSBeep();
+							NSBeep();
 								[alreadyBeeped setObject:@YES forKey:bundle];
 							}
 							else{
@@ -1921,8 +1924,8 @@
 
 							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
 						}
-
 						
+
 						if([cmdData objectForKey:SPBundleFileTooltipKey] && [(NSString *)[cmdData objectForKey:SPBundleFileTooltipKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileTooltipKey] forKey:SPBundleFileTooltipKey];
 
@@ -2259,6 +2262,8 @@
 {
 	BOOL shouldSaveFavorites = NO;
 
+	[SQLiteHistoryManager.sharedInstance execSQLiteVacuum];
+	
 	if (lastBundleBlobFilesDirectory != nil) {
 		[fileManager removeItemAtPath:lastBundleBlobFilesDirectory error:nil];
 	}

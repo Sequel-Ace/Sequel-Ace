@@ -764,9 +764,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	NSMutableDictionary *scheme = [NSMutableDictionary dictionary];
 	NSMutableDictionary *mainsettings = [NSMutableDictionary dictionary];
 	NSMutableArray *settings = [NSMutableArray array];
-		
-	[prefs synchronize];
-	
+			
 	NSColor *aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]];
 	[mainsettings setObject:[aColor rgbHexString] forKey:@"background"];
 	

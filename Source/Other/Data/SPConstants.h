@@ -659,6 +659,9 @@ typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 	SPBundleRedirectActionLastCode             = 208
 };
 
+extern NSString *SPMigratedQueriesFromPrefs;
+extern NSString *SPTraceSQLiteExecutions;
+
 // URL scheme
 extern NSString *SPURLSchemeQueryInputPathHeader;
 extern NSString *SPURLSchemeQueryResultPathHeader;
@@ -679,6 +682,7 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 
 #define user_defaults_get_bool(key)         [[NSUserDefaults standardUserDefaults] boolForKey:key]
 #define user_defaults_get_bool_ud(key, ud)  [ud boolForKey:key]
+#define user_defaults_set_bool(key, b, ud)  [ud setBool:b forKey:key]
 
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
 
