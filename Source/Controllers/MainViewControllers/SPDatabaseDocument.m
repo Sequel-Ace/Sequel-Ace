@@ -5572,7 +5572,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		[self endTask];
 
 		if (!success) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to copy database", @"unable to copy database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to copy the database '%@' to '%@'.", @"unable to copy database message informative message"), [databaseDetails[SPNewDatabaseDetails] databaseName], newDatabaseName] callback:nil];
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to copy database", @"unable to copy database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to copy the database '%@' to '%@'.", @"unable to copy database message informative message"), [databaseDetails[SPNewDatabaseDetails] databaseName], newDatabaseName] callback:nil];
+			});
 		}
 	}
 }
