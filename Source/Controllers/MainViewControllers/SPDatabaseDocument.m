@@ -3856,6 +3856,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar*)toolbar
 {
 	return @[
+		SPMainToolbarDatabaseSelection,
+		NSToolbarSpaceItemIdentifier,
 		SPMainToolbarTableStructure,
 		SPMainToolbarTableContent,
 		SPMainToolbarTableRelations,

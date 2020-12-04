@@ -845,8 +845,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		[[tableContentView onMainThread] selectRowIndexes:selectionSet byExtendingSelection:NO];
-		// Scroll to selection (if needed)
-		[[tableContentView onMainThread] scrollRowToVisible:[[tableContentView onMainThread] selectedRow]];
+
+		if (sortCol) {
+			[[tableContentView onMainThread] scrollColumnToVisible:[sortCol integerValue]];
+		}
 
 		tableRowsSelectable = previousTableRowsSelectable;
 	}
@@ -4093,10 +4095,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			                 isEditable:isFieldEditable
 			                 withWindow:[tableDocumentInstance parentWindow]
 			                     sender:self
-			                contextInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInteger:rowIndex], @"rowIndex",
-			                                                                       [NSNumber numberWithInteger:editedColumn], @"columnIndex",
-			                                                                       [NSNumber numberWithBool:isFieldEditable], @"isFieldEditable",
-			                                                                       nil]];
+			                contextInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInteger:rowIndex], @"rowIndex", [NSNumber numberWithInteger:editedColumn], @"columnIndex", [NSNumber numberWithBool:isFieldEditable], @"isFieldEditable", nil]];
 
 			return NO;
 		}
