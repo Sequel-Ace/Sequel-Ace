@@ -21,8 +21,7 @@ import Foundation
 	}
 
 	/// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
-	/// We are looking for, se below
-
+	/// We are looking for, see below
 //	<key>CFBundleURLTypes</key>
 //		<array>
 //			<dict>
@@ -45,31 +44,11 @@ import Foundation
 //			</dict>
 //		</array>
 	public var saURLScheme: String? {
-
-		if let info = self.infoDictionary { // Dict
-			if let urlTypes = info["CFBundleURLTypes"] {
-				if let URLTypesArr = urlTypes as? Array<Any> { // Array of Dicts
-					for entry in URLTypesArr{
-						let URLTypeDict = (entry as! [String:Any]) // Dict
-						if (URLTypeDict["CFBundleURLName"] as! String) == "Sequel Ace URL scheme" {
-							if let URLSchemesArr = URLTypeDict["CFBundleURLSchemes"] as? Array<Any> { // Array
-								if let firstElement = URLSchemesArr.first{
-									return (firstElement as! String).trimmedString + "://"
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return nil
-	}
-
-	public var saURLScheme2: String? {
 		guard let bundleURLTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
 			return nil
 		}
-		return bundleURLTypes.first { $0["CFBundleURLName"] as? String == "Sequel Ace URL scheme" }?.values.first as? String
 
+		let expectedDictionary = bundleURLTypes.first { $0["CFBundleURLName"] as? String == "Sequel Ace URL scheme" }
+		return ((expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first!.trimmedString)! + "://"
 	}
 }
