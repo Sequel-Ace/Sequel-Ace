@@ -157,7 +157,6 @@
 		51515AAA25712540009E8B58 /* mysqld_error.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
 		51515AAB25712540009E8B58 /* errmsg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = errmsg.h; sourceTree = "<group>"; };
 		51515AD4257125C0009E8B58 /* udf_registration_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = udf_registration_types.h; sourceTree = "<group>"; };
-		517E4477257A8BCC00ED333B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		580A331C14D75CF7000D6933 /* SPMySQLGeometryData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLGeometryData.h; path = Source/SPMySQLGeometryData.h; sourceTree = "<group>"; };
 		580A331D14D75CF7000D6933 /* SPMySQLGeometryData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLGeometryData.m; path = Source/SPMySQLGeometryData.m; sourceTree = "<group>"; };
 		583C734917A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLStreamingResultStoreDelegate.h; path = Source/SPMySQLStreamingResultStoreDelegate.h; sourceTree = "<group>"; };
@@ -744,7 +743,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				514D74A824B9FD2A00C08E48 /* en */,
-				517E4477257A8BCC00ED333B /* es */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
