@@ -465,6 +465,7 @@ NSString *SPBundleShellVariableSelectedTextRange            = @"SP_SELECTED_TEXT
 NSString *SPBundleShellVariableUsedQueryForTable            = @"SP_USED_QUERY_FOR_TABLE";
 NSString *SPMigratedQueriesFromPrefs                        = @"SPMigratedQueriesFromPrefs";
 NSString *SPTraceSQLiteExecutions                           = @"SPTraceSQLiteExecutions";
+NSString *SPBundleShellVariableAppCallbackURL               = @"SP_APP_CALLBACK_URL";
 
 
 #define OWS @"\\s*" /* optional whitespace */

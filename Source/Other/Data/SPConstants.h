@@ -646,6 +646,7 @@ extern NSString *SPBundleShellVariableAllProcedures;
 extern NSString *SPBundleShellVariableAllFunctions;
 extern NSString *SPBundleShellVariableAllViews;
 extern NSString *SPBundleShellVariableAllTables;
+extern NSString *SPBundleShellVariableAppCallbackURL;
 extern const long SPBundleCurrentVersion;
 
 extern NSString *SPCurrentTimestampPattern;

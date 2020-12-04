@@ -153,6 +153,8 @@
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionShowAsHTML] forKey:SPBundleShellVariableExitShowAsHTML];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionShowAsTextTooltip] forKey:SPBundleShellVariableExitShowAsTextTooltip];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionShowAsHTMLTooltip] forKey:SPBundleShellVariableExitShowAsHTMLTooltip];
+	[theEnv setObject:[NSBundle mainBundle].saURLScheme forKey:SPBundleShellVariableAppCallbackURL];
+
 
 	// Create and set an unique process ID for each SPDatabaseDocument which has to passed
 	// for each sequelace:// scheme command as user to be able to identify the url scheme command.
