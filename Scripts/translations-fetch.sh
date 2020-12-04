@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# iOS Crowdin Translation fetch script
+# Crowdin Translation fetch script
 # By Jakub Kaspar 12/04/2020
 
 # Crowdin Keys
@@ -21,7 +21,7 @@ while getopts 'mbsho:' opt; do
   esac
 done
 
-#Validate that output directory is actually a directory
+# Validate that output directory is actually a directory
 if [[ -d $OUTPUT_DIR ]]; then
   echo "Output directory to update strings is $OUTPUT_DIR"
 else
@@ -38,13 +38,13 @@ echo "Fetching strings..."
 
 ################ Begin Download ###############
 
-#First, generate latest translations if necessary
+# First, generate latest translations if necessary
 echo "Generating latest strings"
 curl -ss https://api.crowdin.com/api/project/"$PROJECT_IDENTIFIER"/export?key="$PROJECT_KEY" > temp.txt
 rm temp.txt
 echo "Generation successful"
 
-#Then download latest strings
+# Then download latest strings
 mkdir _data
 cd _data
 echo "Downloading Latest Strings..."
@@ -56,29 +56,29 @@ echo "Unzip complete, parsing"
 
 ################ Begin Parsing ################
 
-#Delete all the files we don't care about
+# Delete all the files we don't care about
 find . -not -name "$MODE_FILENAME" -delete
 
-#Delete all the directories we don't have translations for
+# Delete all the directories we don't have translations for
 find . -type d -empty -delete
 
-#Rename all the files
+# Rename all the files
 for f in */"$MODE_FILENAME"; do mv "$f" "$(dirname "$f")/Localizable.strings"; done
 
-#Rename all the directories
+# Rename all the directories
 for f in */; do mv "$f" "${f%/}.lproj"; done
 
 echo "Parsing complete, copying over to folder $OUTPUT_DIR"
 
 for CURRENT_DIR in */ ; do
 
-  #This will hold the name that we want the language to be
+  # This will hold the name that we want the language to be
   TARGET_DIR=$CURRENT_DIR
 
   DIRECTORY="${OUTPUT_DIR}${TARGET_DIR}"
 
   if [ -d "$DIRECTORY" ]; then
-    echo "Updating langauge for code: $TARGET_DIR"
+    echo "Updating language for code: $TARGET_DIR"
     cp -f "${CURRENT_DIR}Localizable.strings" "${DIRECTORY}Localizable.strings"
   else
     echo "error: New language detected for code: $TARGET_DIR MAKE SURE TO UPDATE BUILD SETTINGS"
