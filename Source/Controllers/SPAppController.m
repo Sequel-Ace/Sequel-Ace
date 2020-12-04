@@ -217,6 +217,9 @@
 	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
 #endif
 	
+	
+	// init SQLite query history	
+	SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
 
 	NSDictionary *spfDict = nil;
 	NSArray *args = [[NSProcessInfo processInfo] arguments];
@@ -1904,7 +1907,7 @@
 																				 format:NULL
 																				  error:&readError];
 						}
-						
+
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							CLS_LOG(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
@@ -2165,8 +2168,8 @@
 
 							[aDict setObject:[NSArray arrayWithObjects:theChar, [NSNumber numberWithInteger:mask], nil] forKey:SPBundleInternKeyEquivalentKey];
 						}
-
 						
+
 						if([cmdData objectForKey:SPBundleFileTooltipKey] && [(NSString *)[cmdData objectForKey:SPBundleFileTooltipKey] length])
 							[aDict setObject:[cmdData objectForKey:SPBundleFileTooltipKey] forKey:SPBundleFileTooltipKey];
 
@@ -2511,6 +2514,8 @@
 {
 	BOOL shouldSaveFavorites = NO;
 
+	[SQLiteHistoryManager.sharedInstance execSQLiteVacuum];
+	
 	if (lastBundleBlobFilesDirectory != nil) {
 		[fileManager removeItemAtPath:lastBundleBlobFilesDirectory error:nil];
 	}

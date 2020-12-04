@@ -415,7 +415,6 @@
 - (void)setupToolbar;
 - (NSString *)selectedToolbarItemIdentifier;
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
-- (void)updateChooseDatabaseToolbarItemWidth;
 
 // Tab methods
 - (void)makeKeyDocument;

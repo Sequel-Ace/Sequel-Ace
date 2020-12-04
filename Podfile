@@ -16,9 +16,7 @@ target 'Sequel Ace' do
 
   # Pods for Sequel Ace
   pod 'SwiftLint', '~> 0.40'
-  pod 'FirebaseCore'
-  pod 'Firebase/Crashlytics'
-
+  pod 'FMDB', :git => 'https://github.com/ccgus/fmdb.git', :commit => '3e5efdf6690cf7dce0a914c370507deee8740d33' #2.7.7 is not published to the specs repo yet, only 2.7.5, so targeting the tag.
 end
 
 # target 'Sequel Ace QLGenerator' do
@@ -57,7 +55,6 @@ end
 # and output to License.rtf
 
 post_install do |installer_representation|
-
   installer_representation.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       # let Xcode decide what archs are built
@@ -80,8 +77,7 @@ post_install do |installer_representation|
       end
     end
   end
-    
-    
+
   require 'fileutils'
   
   unless FileUtils.identical?("Pods/Target Support Files/Pods-Sequel Ace/Pods-Sequel Ace-acknowledgements.markdown", "Resources/Pods-Sequel Ace-acknowledgements.markdown")

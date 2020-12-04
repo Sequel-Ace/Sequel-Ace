@@ -69,3 +69,6 @@ NSUInteger SPIntS2U(NSInteger i);
  * @see -[SPObjectAdditions unboxNull]
  */
 id SPBoxNil(id object);
+
+void executeOnBackgroundThread(void (^block)(void));
+void executeOnBackgroundThreadSync(void (^block)(void));

@@ -2625,7 +2625,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		if (![prefs stringForKey:@"lastSqlFileName"]) {
 			[prefs setObject:@"" forKey:@"lastSqlFileName"];
-			[prefs synchronize];
 		}
 
 		filename = [prefs stringForKey:@"lastSqlFileName"];
@@ -2634,7 +2633,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		// If no lastSqlFileEncoding in prefs set it to UTF-8
 		if (![prefs integerForKey:SPLastSQLFileEncoding]) {
 			[prefs setInteger:4 forKey:SPLastSQLFileEncoding];
-			[prefs synchronize];
 		}
 
 		[encodingPopUp setEnabled:YES];
@@ -2790,7 +2788,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 			[prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
 			[prefs setObject:[fileName lastPathComponent] forKey:@"lastSqlFileName"];
-			[prefs synchronize];
 
 			NSString *content = [NSString stringWithString:[[[customQueryInstance valueForKeyPath:@"textView"] textStorage] string]];
 			[content writeToFile:fileName
@@ -3659,8 +3656,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		[toolbarItem setLabel:NSLocalizedString(@"Select Database", @"toolbar item for selecting a db")];
 		[toolbarItem setPaletteLabel:[toolbarItem label]];
 		[toolbarItem setView:chooseDatabaseButton];
-		[toolbarItem setMinSize:NSMakeSize(200,26)];
-		[toolbarItem setMaxSize:NSMakeSize(200,32)];
 		[chooseDatabaseButton setTarget:self];
 		[chooseDatabaseButton setAction:@selector(chooseDatabase:)];
 		[chooseDatabaseButton setEnabled:(_isConnected && !_isWorkingLevel)];
@@ -3816,7 +3811,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	
 	if([[toAdd itemIdentifier] isEqualToString:SPMainToolbarDatabaseSelection]) {
 		chooseDatabaseToolbarItem = toAdd;
-		[self updateChooseDatabaseToolbarItemWidth];
 	}
 }
 
@@ -5418,7 +5412,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification
 {
-	[self updateChooseDatabaseToolbarItemWidth];
 	if (initComplete) {
 		allowSplitViewResizing = YES;
 		[connectionController updateSplitViewSize];
@@ -5440,30 +5433,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		return proposedMaximumPosition - 505;
 	}
 	return proposedMaximumPosition;
-}
-
-- (void)updateChooseDatabaseToolbarItemWidth
-{
-	// make sure the toolbar item is actually in the toolbar
-	if (!chooseDatabaseToolbarItem) return;
-
-	// grab the width of the left pane
-	CGFloat leftPaneWidth = [[[contentViewSplitter subviews] objectAtIndex:0] frame].size.width;
-
-	// subtract some pixels to allow for misc stuff
-	if (@available(macOS 10.14, *)) {
-		leftPaneWidth -= 9;
-	} else {
-		leftPaneWidth -= 12;
-	}
-
-	// make sure it's not too small or to big
-	if (leftPaneWidth < 130) leftPaneWidth = 130;
-	if (leftPaneWidth > 360) leftPaneWidth = 360;
-
-	// apply the size
-	[chooseDatabaseToolbarItem setMinSize:NSMakeSize(leftPaneWidth, 26)];
-	[chooseDatabaseToolbarItem setMaxSize:NSMakeSize(leftPaneWidth, 32)];
 }
 
 #pragma mark -
