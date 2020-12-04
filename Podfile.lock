@@ -1,65 +1,15 @@
 PODS:
-  - Firebase/CoreOnly (7.1.0):
-    - FirebaseCore (= 7.1.0)
-  - Firebase/Crashlytics (7.1.0):
-    - Firebase/CoreOnly
-    - FirebaseCrashlytics (~> 7.1.0)
-  - FirebaseCore (7.1.0):
-    - FirebaseCoreDiagnostics (~> 7.0)
-    - GoogleUtilities/Environment (~> 7.0)
-    - GoogleUtilities/Logger (~> 7.0)
-  - FirebaseCoreDiagnostics (7.1.0):
-    - GoogleDataTransport (~> 8.0)
-    - GoogleUtilities/Environment (~> 7.0)
-    - GoogleUtilities/Logger (~> 7.0)
-    - nanopb (~> 2.30906.0)
-  - FirebaseCrashlytics (7.1.0):
-    - FirebaseCore (~> 7.0)
-    - FirebaseInstallations (~> 7.0)
-    - GoogleDataTransport (~> 8.0)
-    - nanopb (~> 2.30906.0)
-    - PromisesObjC (~> 1.2)
-  - FirebaseInstallations (7.1.0):
-    - FirebaseCore (~> 7.0)
-    - GoogleUtilities/Environment (~> 7.0)
-    - GoogleUtilities/UserDefaults (~> 7.0)
-    - PromisesObjC (~> 1.2)
   - FMDB (2.7.7):
     - FMDB/standard (= 2.7.7)
   - FMDB/standard (2.7.7)
-  - GoogleDataTransport (8.0.1):
-    - nanopb (~> 2.30906.0)
-  - GoogleUtilities/Environment (7.1.1):
-    - PromisesObjC (~> 1.2)
-  - GoogleUtilities/Logger (7.1.1):
-    - GoogleUtilities/Environment
-  - GoogleUtilities/UserDefaults (7.1.1):
-    - GoogleUtilities/Logger
-  - nanopb (2.30906.0):
-    - nanopb/decode (= 2.30906.0)
-    - nanopb/encode (= 2.30906.0)
-  - nanopb/decode (2.30906.0)
-  - nanopb/encode (2.30906.0)
-  - PromisesObjC (1.2.11)
   - SwiftLint (0.41.0)
 
 DEPENDENCIES:
-  - Firebase/Crashlytics
-  - FirebaseCore
   - FMDB (from `https://github.com/ccgus/fmdb.git`, commit `3e5efdf6690cf7dce0a914c370507deee8740d33`)
   - SwiftLint (~> 0.40)
 
 SPEC REPOS:
   trunk:
-    - Firebase
-    - FirebaseCore
-    - FirebaseCoreDiagnostics
-    - FirebaseCrashlytics
-    - FirebaseInstallations
-    - GoogleDataTransport
-    - GoogleUtilities
-    - nanopb
-    - PromisesObjC
     - SwiftLint
 
 EXTERNAL SOURCES:
@@ -73,18 +23,9 @@ CHECKOUT OPTIONS:
     :git: https://github.com/ccgus/fmdb.git
 
 SPEC CHECKSUMS:
-  Firebase: 78e8dd2e39d653de6270432ad84fe8b59f7bf4e8
-  FirebaseCore: 20046127eef0fcb8fa25df7fc12f7b97d4e48611
-  FirebaseCoreDiagnostics: 872cdb9b749b23346dddd5c1014d1babd2257de3
-  FirebaseCrashlytics: c722e4ca283272eb90eb5bc245fdc6588e2f22c2
-  FirebaseInstallations: 3de38553e86171b5f81d83cdeef63473d37bfdb0
   FMDB: 06661689d1bab3cfdf45be7d1e42557893546f48
-  GoogleDataTransport: e4085e6762f36a6141738f46b0153473ce57fb18
-  GoogleUtilities: 3dc4ff0d5e4840e2fa8eef0889620e8c33d4218c
-  nanopb: 1bf24dd71191072e120b83dd02d08f3da0d65e53
-  PromisesObjC: 8c196f5a328c2cba3e74624585467a557dcb482f
   SwiftLint: c585ebd615d9520d7fbdbe151f527977b0534f1e
 
-PODFILE CHECKSUM: 5d766c1b3fd430569fe3e2b0b3241f43c9a1cb4c
+PODFILE CHECKSUM: 76e1d029a01024013a228895d62e20011c780068
 
 COCOAPODS: 1.10.0
