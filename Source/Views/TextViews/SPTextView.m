@@ -116,6 +116,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 - (void) awakeFromNib
 {
+	[[self layoutManager] replaceTextStorage:[[SPTextStorage alloc] init]];
 	prefs = [NSUserDefaults standardUserDefaults];
 	[self setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 
