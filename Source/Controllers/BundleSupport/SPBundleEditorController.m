@@ -35,6 +35,7 @@
 #import "SPSplitView.h"
 #import "SPAppController.h"
 #import "SPNSMutableDictionaryAdditions.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -65,6 +66,7 @@
 - (NSUInteger)_arrangedCategoryIndexForScopeIndex:(NSUInteger)scopeIndex andCategory:(NSString*)category;
 
 @property (readwrite, strong) NSFileManager *fileManager;
+@property (readwrite, strong) NSUserDefaults *prefs;
 
 @end
 
@@ -72,7 +74,7 @@
 
 @implementation SPBundleEditorController
 
-@synthesize fileManager;
+@synthesize fileManager, prefs;
 
 - (instancetype)init
 {
@@ -84,6 +86,7 @@
 		isTableCellEditing = NO;
 		deletedDefaultBundles = [[NSMutableArray alloc] initWithCapacity:1];
 		fileManager = [NSFileManager defaultManager];
+		prefs = [NSUserDefaults standardUserDefaults];
 
 	}
 	
@@ -313,8 +316,8 @@
 			SPBundleShellVariableUsedQueryForTable
 	];
 
-	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]) {
-		[deletedDefaultBundles setArray:[[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]];
+	if([prefs objectForKey:SPBundleDeletedDefaultBundlesKey]) {
+		[deletedDefaultBundles setArray:[prefs objectForKey:SPBundleDeletedDefaultBundlesKey]];
 	}
 
 	[self _initTree];
@@ -711,7 +714,7 @@
 				}
 				if ([obj objectForKey:SPBundleFileIsDefaultBundleKey]) {
 					[self->deletedDefaultBundles addObject:[NSArray arrayWithObjects:[obj objectForKey:SPBundleFileUUIDKey], [obj objectForKey:SPBundleFileNameKey], nil]];
-					[[NSUserDefaults standardUserDefaults] setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
+					[prefs setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
 				}
 				[self->commandsOutlineView reloadData];
 			}
@@ -871,9 +874,8 @@
 			}
 			[self->deletedDefaultBundles setArray:stillUndeletedBundles];
 			[self->undeleteTableView reloadData];
-			[[NSUserDefaults standardUserDefaults] setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
-			[[NSUserDefaults standardUserDefaults] synchronize];
-			[SPAppDelegate reloadBundles:nil];
+			[self->prefs setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
+			[_SPBundleManager reloadBundles:nil];
 			[self reloadBundles:self];
 		}
 	}];
@@ -964,7 +966,7 @@
 			[[self window] performClose:self];
 	}
 
-	[SPAppDelegate reloadBundles:self];
+	[_SPBundleManager reloadBundles:self];
 
 }
 
@@ -1658,9 +1660,9 @@
 				if(!cmdData || readError) {
 					SPLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError.localizedDescription);
 										
-					if(![SPAppDelegate.alreadyBeeped objectForKey:bundle]){
+					if(![_SPBundleManager.alreadyBeeped objectForKey:bundle]){
 						NSBeep();
-						[SPAppDelegate.alreadyBeeped setObject:@YES forKey:bundle];
+						[_SPBundleManager.alreadyBeeped setObject:@YES forKey:bundle];
 					}
 				}
 				else {

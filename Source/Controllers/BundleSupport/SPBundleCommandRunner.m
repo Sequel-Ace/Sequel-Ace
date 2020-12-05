@@ -144,7 +144,7 @@
 	[theEnv setDictionary:shellEnvironment];
 
 	[theEnv setObject:[NSImage imageNamed:@"AppIconImage"] forKey:SPBundleShellVariableIconFile];
-	[theEnv setObject:[NSString stringWithFormat:@"%@/Contents/Resources", [[NSBundle mainBundle] bundlePath]] forKey:SPBundleShellVariableAppResourcesDirectory];
+	[theEnv setObject:[NSBundle mainBundle].resourcePath forKey:SPBundleShellVariableAppResourcesDirectory];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionNone] forKey:SPBundleShellVariableExitNone];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionReplaceSection] forKey:SPBundleShellVariableExitReplaceSelection];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionReplaceContent] forKey:SPBundleShellVariableExitReplaceContent];

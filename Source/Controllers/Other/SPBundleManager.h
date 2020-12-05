@@ -11,6 +11,8 @@
 
 @import Firebase;
 
+@class SPBundleEditorController;
+
 @interface SPBundleManager : NSObject
 
 @property (readwrite, strong) NSMutableDictionary *alreadyBeeped;
@@ -21,12 +23,18 @@
 @property (readwrite, strong) NSMutableArray *bundleHTMLOutputController;
 @property (readwrite, strong) NSMutableDictionary *bundleKeyEquivalents;
 @property (readwrite, strong) NSMutableDictionary *installedBundleUUIDs;
+@property (readwrite, assign) BOOL foundInstalledBundles;
 
-
++ (SPBundleManager *)sharedSPBundleManager;
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;
 - (void)removeBundle:(NSString*)bundle;
 - (void)doOrDoNotBeep:(NSString*)key;
+- (IBAction)reloadBundles:(id)sender;
+- (IBAction)executeBundleItemForApp:(id)sender;
+- (IBAction)openBundleEditor:(id)sender;
+- (void)openUserBundleAtPath:(NSString *)filePath;
 
 - (void)replaceLegacyString:(NSMutableDictionary*)filesContainingLegacyString;
 - (NSMutableDictionary*)findLegacyStrings:(NSString *)filePath;

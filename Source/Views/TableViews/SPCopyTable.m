@@ -45,6 +45,7 @@
 #import "SPTablesList.h"
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseContentViewDelegate.h"
+#import "SPBundleManager.h"
 
 #import <SPMySQL/SPMySQL.h>
 #import "pthread.h"
@@ -912,7 +913,7 @@ static const NSInteger kBlobAsImageFile = 4;
 
 	if(![[self delegate] isKindOfClass:[SPCustomQuery class]] && ![[self delegate] isKindOfClass:[SPTableContent class]]) return menu;
 
-	[SPAppDelegate reloadBundles:self];
+	[_SPBundleManager reloadBundles:self];
 
 	// Remove 'Bundles' sub menu and separator
 	NSMenuItem *bItem = [menu itemWithTag:10000000];
@@ -922,8 +923,8 @@ static const NSInteger kBlobAsImageFile = 4;
 		[menu removeItem:bItem];
 	}
 
-	NSArray *bundleCategories = [SPAppDelegate bundleCategoriesForScope:SPBundleScopeDataTable];
-	NSArray *bundleItems = [SPAppDelegate bundleItemsForScope:SPBundleScopeDataTable];
+	NSArray *bundleCategories = [_SPBundleManager bundleCategoriesForScope:SPBundleScopeDataTable];
+	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
 
 	// Add 'Bundles' sub menu
 	if(bundleItems && [bundleItems count]) {
@@ -1256,7 +1257,7 @@ static const NSInteger kBlobAsImageFile = 4;
 {
 	NSInteger idx = [sender tag] - 1000000;
 	NSString *infoPath = nil;
-	NSArray *bundleItems = [SPAppDelegate bundleItemsForScope:SPBundleScopeDataTable];
+	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
@@ -1516,7 +1517,7 @@ static const NSInteger kBlobAsImageFile = 4;
 						SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
 						[bundleController setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
 						[bundleController displayHTMLContent:output withOptions:nil];
-						[SPAppDelegate addHTMLOutputController:bundleController];
+						[_SPBundleManager addHTMLOutputController:bundleController];
 					}
 				}
 			}

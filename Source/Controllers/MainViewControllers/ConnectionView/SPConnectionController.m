@@ -55,6 +55,7 @@
 #import "SPColorSelectorView.h"
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
+#import "SPBundleManager.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -3012,7 +3013,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 					}
 				}
 				if(error == nil){
-					[SPAppDelegate addHTMLOutputController:bundleController];
+					[_SPBundleManager addHTMLOutputController:bundleController];
 				}
 				// set straight away, or wait for them to close the window?
 				//[prefs setBool:YES forKey:SPConnectionShownSocketHelp];

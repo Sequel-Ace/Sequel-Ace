@@ -37,6 +37,7 @@
 #import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 #import "SPBundleCommandRunner.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -505,7 +506,7 @@
 
 	NSInteger idx = [sender tag] - 1000000;
 	NSString *infoPath = nil;
-	NSArray *bundleItems = [SPAppDelegate bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeInputField];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
@@ -733,7 +734,7 @@
 						SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
 						[c setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
 						[c displayHTMLContent:output withOptions:nil];
-						[SPAppDelegate addHTMLOutputController:c];
+						[_SPBundleManager addHTMLOutputController:c];
 					}
 				}
 
@@ -793,10 +794,10 @@
 
 	if ([[[(SPWindowController *)[[SPAppDelegate frontDocumentWindow] delegate] selectedTableDocument] connectionID] isEqualToString:@"_"]) return menu;
 
-	[SPAppDelegate reloadBundles:self];
+	[_SPBundleManager reloadBundles:self];
 
-	NSArray *bundleCategories = [SPAppDelegate bundleCategoriesForScope:SPBundleScopeInputField];
-	NSArray *bundleItems = [SPAppDelegate bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleCategories = [_SPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeInputField];
 
 	// Add 'Bundles' sub menu
 	if(bundleItems && [bundleItems count]) {

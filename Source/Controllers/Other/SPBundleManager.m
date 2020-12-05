@@ -16,6 +16,8 @@
 #import "SPChooseMenuItemDialog.h"
 #import "SPTextView.h"
 #import "SPCopyTable.h"
+#import "SPBundleEditorController.h"
+#import "SPDatabaseDocument.h"
 
 
 #import "sequel-ace-Swift.h"
@@ -39,7 +41,12 @@ What do we want this to do?
 
 */
 
-@interface SPBundleManager ()
+@interface SPBundleManager (){
+
+	SPBundleEditorController *bundleEditorController;
+}
+
+
 
 
 @property (readwrite, strong) NSFileManager *fileManager;
@@ -53,7 +60,7 @@ What do we want this to do?
 
 @synthesize fileManager;
 @synthesize alreadyBeeped;
-@synthesize badBundles;
+@synthesize badBundles, foundInstalledBundles;
 @synthesize migratedLegacyBundles;
 @synthesize bundleItems, bundleTriggers, bundleCategories, bundleUsedScopes, bundleKeyEquivalents, bundleHTMLOutputController, installedBundleUUIDs;
 
@@ -350,6 +357,13 @@ static SPBundleManager *sharedSPBundleManager = nil;
 	[badBundles addObject:bundle];
 }
 
+- (IBAction)openBundleEditor:(id)sender
+{
+	if (!bundleEditorController) bundleEditorController = [[SPBundleEditorController alloc] init];
+
+	[bundleEditorController showWindow:[NSApp mainWindow]];
+}
+
 - (IBAction)reloadBundles:(id)sender
 {
 
@@ -357,11 +371,13 @@ static SPBundleManager *sharedSPBundleManager = nil;
 	// Keep the visible windows.
 	for (id c in bundleHTMLOutputController) {
 		if (![[c window] isVisible]) {
-			[[c window] performClose:self];
+			[[c window] performClose:SPAppDelegate];
 		}
 	}
 
-	BOOL foundInstalledBundles = NO;
+	foundInstalledBundles = NO;
+
+	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 
 	[bundleItems removeAllObjects];
 	[bundleUsedScopes removeAllObjects];
@@ -370,18 +386,14 @@ static SPBundleManager *sharedSPBundleManager = nil;
 	[bundleKeyEquivalents removeAllObjects];
 	[installedBundleUUIDs removeAllObjects];
 
-	// Get main menu "Bundles"'s submenu
-	NSMenu *menu = [[[NSApp mainMenu] itemWithTag:SPMainMenuBundles] submenu];
 
-	// Clean menu
-	[menu removeAllItems];
 
 	// Set up the bundle search paths
 	// First process all in Application Support folder installed ones then Default ones
 	NSError *appPathError = nil;
 	NSArray *bundlePaths = [NSArray arrayWithObjects:
 		[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:&appPathError],
-		[NSString stringWithFormat:@"%@/Default Bundles", [[NSBundle mainBundle] sharedSupportPath]],
+		[NSString stringWithFormat:@"%@/Default Bundles", NSBundle.mainBundle.sharedSupportPath],
 		nil];
 
 	// If ~/Library/Application Path/Sequel Ace/Bundles couldn't be created bail
@@ -394,13 +406,13 @@ static SPBundleManager *sharedSPBundleManager = nil;
 
 	NSArray *deletedDefaultBundles;
 
-	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey])
-		deletedDefaultBundles = [[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey];
+	if([prefs objectForKey:SPBundleDeletedDefaultBundlesKey])
+		deletedDefaultBundles = [prefs objectForKey:SPBundleDeletedDefaultBundlesKey];
 	else
 		deletedDefaultBundles = @[];
 
 	NSMutableString *infoAboutUpdatedDefaultBundles = [NSMutableString string];
-	BOOL doBundleUpdate = ([[NSUserDefaults standardUserDefaults] objectForKey:@"doBundleUpdate"]) ? YES : NO;
+	BOOL doBundleUpdate = ([prefs objectForKey:@"doBundleUpdate"]) ? YES : NO;
 
 	for(NSString* bundlePath in bundlePaths) {
 		if([bundlePath length]) {
@@ -751,106 +763,9 @@ static SPBundleManager *sharedSPBundleManager = nil;
 	}
 
 
+	[SPAppDelegate rebuildMenus];
 
-	// === Rebuild Bundles main menu item ===
-
-	// Add default menu items
-	NSMenuItem *anItem;
-	anItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bundle Editor", @"bundle editor menu item label") action:@selector(openBundleEditor:) keyEquivalent:@"b"];
-	[anItem setKeyEquivalentModifierMask:(NSEventModifierFlagCommand|NSEventModifierFlagOption|NSEventModifierFlagControl)];
-	[menu addItem:anItem];
-	anItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Reload Bundles", @"reload bundles menu item label") action:@selector(reloadBundles:) keyEquivalent:@""];
-	[menu addItem:anItem];
-
-	// Bail out if no Bundle was installed
-	if (!foundInstalledBundles) return;
-
-	// Add installed Bundles
-	// For each scope add a submenu but not for the last one (should be General always)
-	[menu addItem:[NSMenuItem separatorItem]];
-	[menu setAutoenablesItems:YES];
-	NSArray *scopes = @[SPBundleScopeInputField, SPBundleScopeDataTable, SPBundleScopeGeneral];
-	NSArray *scopeTitles = @[
-			NSLocalizedString(@"Input Field", @"input field menu item label"),
-			NSLocalizedString(@"Data Table", @"data table menu item label"),
-			NSLocalizedString(@"General", @"general menu item label")
-	];
-
-	NSUInteger k = 0;
-	BOOL bundleOtherThanGeneralFound = NO;
-	for(NSString* scope in scopes) {
-
-		NSArray *scopeBundleCategories = [self bundleCategoriesForScope:scope];
-		NSArray *scopeBundleItems = [self bundleItemsForScope:scope];
-
-		if(![scopeBundleItems count]) {
-			k++;
-			continue;
-		}
-
-		NSMenu *bundleMenu = nil;
-		NSMenuItem *bundleSubMenuItem = nil;
-
-		// Add last scope (General) not as submenu
-		if(k < [scopes count]-1) {
-			bundleMenu = [[NSMenu alloc] init];
-			[bundleMenu setAutoenablesItems:YES];
-			bundleSubMenuItem = [[NSMenuItem alloc] initWithTitle:[scopeTitles objectAtIndex:k] action:nil keyEquivalent:@""];
-			[bundleSubMenuItem setTag:10000000];
-
-			[menu addItem:bundleSubMenuItem];
-			[menu setSubmenu:bundleMenu forItem:bundleSubMenuItem];
-
-		} else {
-			bundleMenu = menu;
-			if(bundleOtherThanGeneralFound)
-				[menu addItem:[NSMenuItem separatorItem]];
-		}
-
-		// Add found Category submenus
-		NSMutableArray *categorySubMenus = [NSMutableArray array];
-		NSMutableArray *categoryMenus = [NSMutableArray array];
-		if([scopeBundleCategories count]) {
-			for(NSString* title in scopeBundleCategories) {
-				[categorySubMenus addObject:[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""]];
-				[categoryMenus addObject:[[NSMenu alloc] init]];
-				[bundleMenu addItem:[categorySubMenus lastObject]];
-				[bundleMenu setSubmenu:[categoryMenus lastObject] forItem:[categorySubMenus lastObject]];
-			}
-		}
-
-		NSInteger i = 0;
-		for(NSDictionary *item in scopeBundleItems) {
-
-			NSString *keyEq;
-			if([item objectForKey:SPBundleFileKeyEquivalentKey])
-				keyEq = [[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:0];
-			else
-				keyEq = @"";
-
-			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(bundleCommandDispatcher:) keyEquivalent:keyEq];
-			bundleOtherThanGeneralFound = YES;
-			if([keyEq length])
-				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
-
-			if([item objectForKey:SPBundleFileTooltipKey])
-				[mItem setToolTip:[item objectForKey:SPBundleFileTooltipKey]];
-
-			[mItem setTag:1000000 + i++];
-			[mItem setRepresentedObject:[NSDictionary dictionaryWithObjectsAndKeys:
-				scope, @"scope",
-				([item objectForKey:@"key"])?:@"", @"key", nil]];
-
-			if([item objectForKey:SPBundleFileCategoryKey]) {
-				[[categoryMenus objectAtIndex:[scopeBundleCategories indexOfObject:[item objectForKey:SPBundleFileCategoryKey]]] addItem:mItem];
-			} else {
-				[bundleMenu addItem:mItem];
-			}
-		}
-
-		k++;
-	}
-
+	
 }
 
 /**
@@ -1128,6 +1043,157 @@ static SPBundleManager *sharedSPBundleManager = nil;
 		}
 	});
 }
+
+- (void)openUserBundleAtPath:(NSString *)filePath
+{
+
+	NSString *bundlePath = [fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder error:nil];
+
+	if (!bundlePath) return;
+
+	if (![fileManager fileExistsAtPath:bundlePath isDirectory:nil]) {
+		if (![fileManager createDirectoryAtPath:bundlePath withIntermediateDirectories:YES attributes:nil error:nil]) {
+			NSBeep();
+			SPLog(@"Couldn't create folder “%@”", bundlePath);
+			CLS_LOG(@"Couldn't create folder “%@”", bundlePath);
+			return;
+		}
+	}
+
+	NSString *newPath = [NSString stringWithFormat:@"%@/%@", bundlePath, [filePath lastPathComponent]];
+
+	NSDictionary *cmdData = nil;
+	{
+		NSError *error = nil;
+
+		NSString *infoPath = [NSString stringWithFormat:@"%@/%@", filePath, SPBundleFileName];
+		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
+
+		if(pData && !error) {
+			cmdData = [NSPropertyListSerialization propertyListWithData:pData
+																 options:NSPropertyListImmutable
+																  format:NULL
+																   error:&error];
+		}
+
+		if (!cmdData || error) {
+			SPLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
+			CLS_LOG(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
+			[self doOrDoNotBeep:filePath];
+			return;
+		}
+	}
+
+	SPLog(@"cmdData %@", cmdData);
+
+
+	// first lets check if it's a legacy bundle
+	// don't need this, at the end of this func we call reload bundles
+	// which will migrate legacy bundles
+
+
+	// check for legacy strings
+	NSMutableDictionary *filesContainingLegacyString = [self findLegacyStrings:filePath];
+
+	BOOL __block retCode = YES;
+
+	if(filesContainingLegacyString.count > 0){
+
+		SPLog(@"filesContainingLegacyString: %@", filesContainingLegacyString.allKeys);
+
+		NSArray *filePathArr = [filesContainingLegacyString.allKeys valueForKey:@"description"];
+
+		NSMutableArray *affectedFiles = [NSMutableArray array];
+
+		for(NSString *filePath2 in filePathArr){
+			[affectedFiles safeAddObject:filePath2.lastPathComponent];
+		}
+
+		NSString *filesString = [affectedFiles componentsJoinedByString:@"\n"];
+
+		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"‘%@’ Bundle contains legacy components", @"Bundle contains legacy components"), filePath.lastPathComponent]
+									 message:[NSString stringWithFormat:NSLocalizedString(@"In these files:\n\n%@\n\nDo you still want to install the bundle and have Sequel Ace replace the legacy strings?", @"Do you want to install the bundle?"), filesString]
+						  primaryButtonTitle:NSLocalizedString(@"Install", @"Install")
+						primaryButtonHandler:^{
+			SPLog(@"Continue, install");
+			// filesContainingLegacyString:
+			// key = file URL
+			// val = dict - key:@file = bundle filename
+			//				key:@newstr = string for file with legacy str replaced.
+
+			[self replaceLegacyString:filesContainingLegacyString];
+
+		} 				cancelButtonHandler:^{
+			SPLog(@"ABORT install");
+			retCode = NO;
+		}];
+	}
+
+	if(retCode == NO){
+		SPLog(@"Cancel pressed, returning without installing");
+		return;
+	}
+
+	// Check for installed UUIDs
+	if (![cmdData objectForKey:SPBundleFileUUIDKey]) {
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while installing Bundle", @"") message:[NSString stringWithFormat:NSLocalizedString(@"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.", @"Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file"), [filePath lastPathComponent]] callback:nil];
+		return;
+	}
+
+	// Reload Bundles if Sequel Ace didn't run
+	if (![installedBundleUUIDs count]) {
+		[self reloadBundles:self];
+	}
+
+	if ([[installedBundleUUIDs allKeys] containsObject:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
+		[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Installing Bundle", @"Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title")]
+									 message:[NSString stringWithFormat:NSLocalizedString(@"A Bundle ‘%@’ is already installed. Do you want to update it?", @"Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message"), [[installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"name"]]
+						  primaryButtonTitle:NSLocalizedString(@"Update", @"Open Files : Bundle : Already-Installed : Update button") primaryButtonHandler:^{
+			NSError *error = nil;
+			NSString *removePath = [[[self->installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"] substringToIndex:([(NSString *)[[self->installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]] objectForKey:@"path"] length]-[SPBundleFileName length]-1)];
+			[self->fileManager removeItemAtPath:removePath error:&error];
+
+			if (error != nil) {
+				[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while moving “%@” to Trash.", @"Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version."), removePath] message:[error localizedDescription] callback:nil];
+				return;
+			}
+		} cancelButtonHandler:^{
+			return;
+		}];
+	}
+
+	if (![fileManager fileExistsAtPath:newPath isDirectory:nil]) {
+		if (![fileManager moveItemAtPath:filePath toPath:newPath error:nil]) {
+			NSBeep();
+			SPLog(@"Couldn't move “%@” to “%@”", filePath, newPath);
+			return;
+		}
+
+		// Update Bundle Editor if it was already initialized
+		for (NSWindow *win in [NSApp windows])
+		{
+			if ([[win delegate] class] == [SPBundleEditorController class]) {
+				[((SPBundleEditorController *)[win delegate]) reloadBundles:nil];
+				break;
+			}
+		}
+
+		// Update Bundle's menu
+		[self reloadBundles:self];
+
+	}
+	else {
+		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while installing Bundle", @"Open Files : Bundle : Install-Error : error dialog title")] message:[NSString stringWithFormat:NSLocalizedString(@"The Bundle ‘%@’ already exists.", @"Open Files : Bundle : Install-Error : Destination path already exists error dialog message"), [filePath lastPathComponent]] callback:nil];
+	}
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	
+
+	return YES;
+}
+
 
 - (NSArray *)bundleCategoriesForScope:(NSString*)scope
 {

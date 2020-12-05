@@ -47,6 +47,7 @@
 #import "SPSyntaxParser.h"
 #import "SPHelpViewerClient.h"
 #import "SPTableData.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -3018,7 +3019,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[[menu itemAtIndex:6] setHidden:YES];
 	}
 
-	[SPAppDelegate reloadBundles:self];
+	[_SPBundleManager reloadBundles:self];
 
 	// Remove 'Bundles' sub menu and separator
 	NSMenuItem *bItem = [menu itemWithTag:10000000];
@@ -3028,8 +3029,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[menu removeItem:bItem];
 	}
 
-	NSArray *bundleCategories = [SPAppDelegate bundleCategoriesForScope:SPBundleScopeInputField];
-	NSArray *bundleItems = [SPAppDelegate bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleCategories = [_SPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeInputField];
 
 	// Add 'Bundles' sub menu for custom query editor only so far if bundles with scope 'editor' were found
 	if(customQueryInstance && bundleItems && [bundleItems count]) {
