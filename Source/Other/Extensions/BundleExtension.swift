@@ -49,6 +49,7 @@ import Foundation
 		}
 
 		let expectedDictionary = bundleURLTypes.first { $0["CFBundleURLName"] as? String == "Sequel Ace URL scheme" }
-		return ((expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first!.trimmedString)! + "://"
+		return [(expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first?.trimmedString,"://"].compactMap { $0 }.joined(separator: "")
+
 	}
 }
