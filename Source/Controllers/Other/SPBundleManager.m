@@ -423,10 +423,12 @@ static SPBundleManager *sharedSPBundleManager = nil;
 
 	NSArray *deletedDefaultBundles;
 
-	if([prefs objectForKey:SPBundleDeletedDefaultBundlesKey])
+	if([prefs objectForKey:SPBundleDeletedDefaultBundlesKey]){
 		deletedDefaultBundles = [prefs objectForKey:SPBundleDeletedDefaultBundlesKey];
-	else
+	}
+	else{
 		deletedDefaultBundles = @[];
+	}
 
 	NSMutableString *infoAboutUpdatedDefaultBundles = [NSMutableString string];
 	BOOL doBundleUpdate = ([prefs objectForKey:@"doBundleUpdate"]) ? YES : NO;
