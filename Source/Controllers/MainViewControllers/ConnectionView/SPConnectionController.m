@@ -2608,13 +2608,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[favoriteCell setLabelColor:bgColor];
 		}
 	}
-
-	// If a favourite item is being edited, draw the text in bold to show state
-	if (isEditingConnection && ![node isGroup] && [outlineView rowForItem:item] == [outlineView selectedRow]) {
-		NSMutableAttributedString *editedCellString = [[cell attributedStringValue] mutableCopy];
-		[editedCellString addAttribute:NSForegroundColorAttributeName value:[NSColor colorWithDeviceWhite:0.25f alpha:1.f] range:NSMakeRange(0, [editedCellString length])];
-		[cell setAttributedStringValue:editedCellString];
-	}
 }
 
 - (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
