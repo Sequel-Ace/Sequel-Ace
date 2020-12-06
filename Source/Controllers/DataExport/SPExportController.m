@@ -3157,10 +3157,13 @@ set_input:
 			NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
 			
 			if(dict2[tmpStr] != nil){
+
+				BOOL bookmarkDataIsStale;
+
 				self.userChosenDirectory = [NSURL URLByResolvingBookmarkData:dict2[tmpStr]
 																	 options:NSURLBookmarkResolutionWithSecurityScope
 															   relativeToURL:nil
-														 bookmarkDataIsStale:nil
+														 bookmarkDataIsStale:&bookmarkDataIsStale
 																	   error:&error];
 				*stop = YES;
 			}

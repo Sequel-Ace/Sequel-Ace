@@ -3372,16 +3372,22 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
 			
 			NSError *error = nil;
+
+			BOOL bookmarkDataIsStale;
 			
 			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
 													  options:NSURLBookmarkResolutionWithSecurityScope
 												relativeToURL:nil
-										  bookmarkDataIsStale:nil
+										  bookmarkDataIsStale:&bookmarkDataIsStale
 														error:&error];
 			
 			if(!error){
 				[tmpURL startAccessingSecurityScopedResource];
 				[resolvedBookmarks addObject:tmpURL];
+			}
+			else if(bookmarkDataIsStale == YES){
+				SPLog("The bookmark is outdated and needs to be regenerated - %@", key);
+//								_ = saveBookmarkForSelectedURL()
 			}
 			else{
 				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);

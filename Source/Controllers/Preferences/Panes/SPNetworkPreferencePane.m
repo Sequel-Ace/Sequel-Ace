@@ -125,11 +125,12 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
 			
 			NSError *error = nil;
+			BOOL bookmarkDataIsStale;
 			
 			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
 													  options:NSURLBookmarkResolutionWithSecurityScope
 												relativeToURL:nil
-										  bookmarkDataIsStale:nil
+										  bookmarkDataIsStale:&bookmarkDataIsStale
 														error:&error];
 			
 			if(!error){
