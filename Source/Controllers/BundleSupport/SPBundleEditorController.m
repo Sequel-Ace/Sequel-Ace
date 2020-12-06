@@ -980,10 +980,12 @@
 	BOOL isDir = NO;
 	BOOL isNewBundle = NO;
 
+	NSString *bundleName = [bundle safeObjectForKey:kBundleNameKey];
+
 	// If passed aPath is nil construct the path from bundle's bundleName.
 	// aPath is mainly used for dragging a bundle from table view.
 	if(aPath == nil) {
-		if(![bundle objectForKey:kBundleNameKey] || ![[bundle objectForKey:kBundleNameKey] length]) {
+		if(!bundleName || !bundleName.length) {
 			return NO;
 		}
 		if(!bundlePath){
@@ -991,11 +993,18 @@
 		}
 
 		// if this is nil, then it's a version 1 bundle
+		// we should get any V1 bundles
+		// should we force igration here?
 		NSNumber *bundleVersion = [bundle safeObjectForKey:SPBundleVersionKey];
+
+		if(bundleVersion.longValue < SPBundleCurrentVersion){
+			SPLog(@"Got v1 bundle! : %@", bundleName);
+			CLS_LOG(@"Got v1 bundle! : %@", bundleName);
+		}
 
 		SPLog(@"bundleVersion = %@", bundleVersion);
 
-		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], (bundleVersion.intValue > 1) ? SPUserBundleFileExtensionV2 : SPUserBundleFileExtension];
+		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleName, (bundleVersion.intValue > 1) ? SPUserBundleFileExtensionV2 : SPUserBundleFileExtension];
 
 		SPLog(@"aPath = %@", aPath);
 
@@ -1659,11 +1668,7 @@
 				
 				if(!cmdData || readError) {
 					SPLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError.localizedDescription);
-										
-					if(![_SPBundleManager.alreadyBeeped objectForKey:bundle]){
-						NSBeep();
-						[_SPBundleManager.alreadyBeeped setObject:@YES forKey:bundle];
-					}
+					[_SPBundleManager doOrDoNotBeep:bundle];
 				}
 				else {
 					if([cmdData objectForKey:SPBundleFileNameKey] && [[cmdData objectForKey:SPBundleFileNameKey] length] && [cmdData objectForKey:SPBundleFileScopeKey])
