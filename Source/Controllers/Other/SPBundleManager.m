@@ -196,15 +196,18 @@ static SPBundleManager *sharedSPBundleManager = nil;
 	SPLog(@"renameLegacyBundles");
 	CLS_LOG(@"renameLegacyBundles");
 
-	[bundleItems enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray *obj, BOOL *stop1) {
+	// if we find any legacy bundles we'll need to change the dict, so take a copy
+	NSMutableDictionary *bundleItemsCopy = [bundleItems mutableCopy];
+
+	[bundleItemsCopy enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray *obj, BOOL *stop1) {
 		[obj enumerateObjectsUsingBlock:^(id obj2, NSUInteger idx, BOOL *stop){
-//			SPLog(@"obj2 = %@",obj2);
 
 			NSString *path = obj2[SPBundleInternPathToFileKey];
 
-//			SPLog(@"path = %@",path);
-
 			if([path containsString:SPUserBundleFileExtension] == YES){
+
+				SPLog(@"key: %@", key);
+				SPLog(@"obj2 = %@",obj2);
 
 				NSString *legacyPath = path.stringByDeletingLastPathComponent;
 
@@ -212,7 +215,6 @@ static SPBundleManager *sharedSPBundleManager = nil;
 				[migratedPath setString:[path.stringByDeletingLastPathComponent dropSuffixWithSuffix:SPUserBundleFileExtension]];
 				[migratedPath appendString:SPUserBundleFileExtensionV2];
 				NSString *bundlePath = migratedPath.lastPathComponent;
-
 
 				SPLog(@"migratedPath %@", migratedPath);
 				SPLog(@"legacyPath %@", legacyPath);
@@ -226,11 +228,11 @@ static SPBundleManager *sharedSPBundleManager = nil;
 					if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
 						SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
 						CLS_LOG(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
-
 						[self doOrDoNotBeep:legacyPath];
 					}
 					else{
 						SPLog(@"File renamed successfully “%@”", migratedPath);
+						
 						[self->migratedLegacyBundles safeAddObject:migratedPath];
 
 						// we need to add the new bundle version
@@ -284,6 +286,12 @@ static SPBundleManager *sharedSPBundleManager = nil;
 										SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
 										CLS_LOG(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
 									}
+									else{
+										SPLog(@"Successfully migrated: %@", migratedPath);
+										// update the command path in the dict
+										obj2[@"path"] = infoPath;
+
+									}
 								} else {
 									[saveDict writeToFile:infoPath atomically:YES];
 								}
@@ -300,6 +308,15 @@ static SPBundleManager *sharedSPBundleManager = nil;
 			}
 		}];
 	}];
+
+	// I think these shoul dbe the same... but in case
+	if([bundleItems isEqualToDictionary:bundleItemsCopy]){
+		SPLog(@"THE SAME!");
+	}
+	else{
+		SPLog(@"DIFF!");
+		[bundleItems setDictionary:bundleItemsCopy];
+	}
 
 	// check for legacy strings?
 	if(migratedLegacyBundles.count > 0){
@@ -1187,10 +1204,9 @@ static SPBundleManager *sharedSPBundleManager = nil;
 	}
 }
 
+// dont think this is called
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	
-
 	return YES;
 }
 
