@@ -425,6 +425,7 @@ extern NSString *SPFileName24HourTimeTokenName;
 extern NSString *SPFileNameFavoriteTokenName;
 extern NSString *SPFileNameTableTokenName;
 extern NSString *SPSecureBookmarks;
+extern NSString *SPSecureBookmarkOptions;
 
 // Misc
 extern NSString *SPContentFilters;
@@ -660,7 +661,7 @@ typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 };
 
 extern NSString *SPMigratedQueriesFromPrefs;
-extern NSString *SPMigratedBookmarksToNewFormat;
+extern NSString *SPCreatedBookmarksOptions;
 extern NSString *SPTraceSQLiteExecutions;
 
 // URL scheme

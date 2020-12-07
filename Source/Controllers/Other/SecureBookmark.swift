@@ -29,7 +29,7 @@ import Foundation
 struct SecureBookmark: Encodable, Decodable {
 	
 	let id: String
-	let bookmarkData: Data
+	let bookmarkData: String
 	let options: UInt
 }
 

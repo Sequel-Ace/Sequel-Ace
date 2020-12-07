@@ -118,6 +118,8 @@
 		1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2711CE2539D9B10066ED58 /* SPReachability.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */ = {isa = PBXBuildFile; fileRef = 1A2711E72539E2BB0066ED58 /* local-connection.html */; };
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
+		1A416A7A257E3582005A902B /* DataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A416A79257E3582005A902B /* DataExtension.swift */; };
+		1A416A7B257E3582005A902B /* DataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A416A79257E3582005A902B /* DataExtension.swift */; };
 		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
@@ -738,6 +740,7 @@
 		1A2711CD2539D9B10066ED58 /* SPReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPReachability.h; sourceTree = "<group>"; };
 		1A2711CE2539D9B10066ED58 /* SPReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReachability.m; sourceTree = "<group>"; };
 		1A2711E72539E2BB0066ED58 /* local-connection.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "local-connection.html"; sourceTree = "<group>"; };
+		1A416A79257E3582005A902B /* DataExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExtension.swift; sourceTree = "<group>"; };
 		1A47996E2543343A00D29E6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Plists/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
 		1A479B19254375D200D29E6E /* Pods-Sequel Ace-acknowledgements.markdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "Pods-Sequel Ace-acknowledgements.markdown"; sourceTree = "<group>"; };
@@ -2295,6 +2298,7 @@
 				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
 				1A94988D25516057000BC793 /* DateExtension.swift */,
 				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
+				1A416A79257E3582005A902B /* DataExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3004,6 +3008,7 @@
 				50EA92641AB23EAD008D3C4F /* SPDatabaseCopy.m in Sources */,
 				1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */,
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
+				1A416A7B257E3582005A902B /* DataExtension.swift in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
@@ -3159,6 +3164,7 @@
 				11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */,
 				58A8A79111A036C000B95749 /* SPWindowController.m in Sources */,
 				1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */,
+				1A416A7A257E3582005A902B /* DataExtension.swift in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
 				173C837211AAD26E00B8B084 /* SPExportUtilities.m in Sources */,
 				51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */,

@@ -220,7 +220,7 @@ NSString *SPCSVFieldImportMappingAlignment       = @"CSVFieldImportMappingAlignm
 NSString *SPImportClipboardTempFileNamePrefix    = @"~/tmp/_SP_ClipBoard_Import_File_";
 NSString *SPLastExportSettings                   = @"LastExportSettings";
 NSString *SPSecureBookmarks      	             = @"SPSecureBookmarks";
-
+NSString *SPSecureBookmarkOptions                = @"SPSecureBookmarkOptions";
 // Export filename tokens
 NSString *SPFileNameDatabaseTokenName            = @"database";
 NSString *SPFileNameHostTokenName                = @"host";
@@ -408,7 +408,7 @@ NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
 const long SPBundleCurrentVersion 	 						= 2;
 
-NSString *SPMigratedBookmarksToNewFormat					= @"MigratedBookmarksToNewFormat";
+NSString *SPCreatedBookmarksOptions					        = @"CreatedBookmarksOptions";
 
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
