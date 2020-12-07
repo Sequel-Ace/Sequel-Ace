@@ -463,42 +463,50 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
 		NSError *err=nil;
 		
-		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
+		SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
 		
-			NSLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
-			
-			// a bit of duplicated code here,
-			// same code is in the export controler
-			//TODO: put this in a utility/helper class
-			BOOL __block beenHereBefore = NO;
-			
-			// have we been here before?
-			[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-				
-				if(dict[self->keySelectionPanel.URL.absoluteString] != nil){
-					NSLog(@"beenHereBefore: %@", dict[self->keySelectionPanel.URL.absoluteString]);
-					beenHereBefore = YES;
-					*stop = YES;
-				}
-			}];
-			
-			if(beenHereBefore == NO){
-				// create a bookmark
-				NSError *error = nil;
-				// this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-				NSData *tmpAppScopedBookmark = [self->keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
-																							   | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
-															   includingResourceValuesForKeys:nil
-																				relativeToURL:nil
-																						error:&error];
-				// save to prefs
-				if(tmpAppScopedBookmark && !error) {
-					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
-					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-				}
-			}
-			
+		if([sharedSecureBookmarkManager addBookMarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+
+			SPLog(@"addBookMarkForUrl success");
+
 		}
+		
+//		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
+//
+//			NSLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
+//
+//			// a bit of duplicated code here,
+//			// same code is in the export controler
+//			//TODO: put this in a utility/helper class
+//			BOOL __block beenHereBefore = NO;
+//
+//			// have we been here before?
+//			[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+//
+//				if(dict[self->keySelectionPanel.URL.absoluteString] != nil){
+//					NSLog(@"beenHereBefore: %@", dict[self->keySelectionPanel.URL.absoluteString]);
+//					beenHereBefore = YES;
+//					*stop = YES;
+//				}
+//			}];
+//
+//			if(beenHereBefore == NO){
+//				// create a bookmark
+//				NSError *error = nil;
+//				// this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
+//				NSData *tmpAppScopedBookmark = [self->keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+//																							   | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
+//															   includingResourceValuesForKeys:nil
+//																				relativeToURL:nil
+//																						error:&error];
+//				// save to prefs
+//				if(tmpAppScopedBookmark && !error) {
+//					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
+//					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
+//				}
+//			}
+//
+//		}
 		// SSH key file selection
 		if (sender == self->sshSSHKeyButton) {
 			if (returnCode == NSModalResponseCancel) {

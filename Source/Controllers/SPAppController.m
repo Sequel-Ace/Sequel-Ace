@@ -118,6 +118,9 @@
 		}
 
 		[NSApp setDelegate:self];
+		
+		SecureBookmarkManager __unused *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
+
 	}
 
 	return self;

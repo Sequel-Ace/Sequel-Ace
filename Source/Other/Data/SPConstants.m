@@ -408,6 +408,8 @@ NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
 const long SPBundleCurrentVersion 	 						= 2;
 
+NSString *SPMigratedBookmarksToNewFormat					= @"MigratedBookmarksToNewFormat";
+
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
 NSString *SPBundleTaskOutputFilePath                        = @"~/tmp/SP_BUNDLE_OUTPUT";
