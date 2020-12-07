@@ -21,7 +21,7 @@ if [ "$FORMAT" -eq "1" ]; then
 	print json_encode(json_decode($jsonData));
 	')
   	if [ "$DATA" == "null" ]; then
-		echo "&lt;font&gt;An error occured while serializing JSON data!&lt;/font&gt;"
+		echo "&lt;font&gt;An error occurred while serializing JSON data!&lt;/font&gt;"
 		exit $SP_BUNDLE_EXIT_SHOW_AS_HTML_TOOLTIP
   	fi
 

@@ -971,7 +971,7 @@
 	// Check for any errors, only displaying them if the connection hasn't been terminated
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 		pthread_mutex_unlock(&dataProcessingLock);
@@ -1014,7 +1014,7 @@
 			}
 			else {
 				//FIXME that error should really show only when trying to view the table content, but we don't even try to load that if Rows==NULL
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Querying row count failed", @"table status : row count query failed : error title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to determine the number of rows for “%@”.\nMySQL said: %@ (%lu)", @"table status : row count query failed : error message"),[tableListInstance tableName],[mySQLConnection lastErrorMessage],[mySQLConnection lastErrorID]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Querying row count failed", @"table status : row count query failed : error title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to determine the number of rows for “%@”.\nMySQL said: %@ (%lu)", @"table status : row count query failed : error message"),[tableListInstance tableName],[mySQLConnection lastErrorMessage],[mySQLConnection lastErrorID]] callback:nil];
 			}
 		}
 

@@ -132,7 +132,7 @@
 			NSAlert *alert = [[NSAlert alloc] init];
 			alert.alertStyle = NSAlertStyleCritical;
 			alert.messageText = NSLocalizedString(@"Error adding password to Keychain", @"error adding password to keychain message");
-			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error adding password to keychain informative message"), status];
+			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error adding password to keychain informative message"), status];
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 			[alert runModal];
 		}
@@ -283,7 +283,7 @@
 		NSAlert *alert = [[NSAlert alloc] init];
 		alert.alertStyle = NSAlertStyleCritical;
 		alert.messageText = NSLocalizedString(@"Error retrieving Keychain item to edit", @"error finding keychain item to edit message");
-		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error finding keychain item to edit informative message"), status];
+		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error finding keychain item to edit informative message"), status];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		[alert runModal];
 		return;
@@ -317,7 +317,7 @@
 		NSAlert *alert = [[NSAlert alloc] init];
 		alert.alertStyle = NSAlertStyleCritical;
 		alert.messageText = NSLocalizedString(@"Error updating Keychain item", @"error updating keychain item message");
-		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error updating keychain item informative message"), status];
+		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error updating keychain item informative message"), status];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		[alert runModal];
 	}

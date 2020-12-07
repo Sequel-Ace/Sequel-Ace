@@ -808,7 +808,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to add index", @"add index error message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to add the index.\n\nMySQL said: %@", @"add index error informative message"), [connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to add index", @"add index error message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the index.\n\nMySQL said: %@", @"add index error informative message"), [connection lastErrorMessage]] callback:nil];
 				}
 				else {
 					[tableData resetAllData];
@@ -879,7 +879,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 
 				[errorDictionary setObject:NSLocalizedString(@"Unable to delete index", @"error deleting index message") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to delete the index.\n\nMySQL said: %@", @"error deleting index informative message"), [connection lastErrorMessage]] forKey:@"message"];
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the index.\n\nMySQL said: %@", @"error deleting index informative message"), [connection lastErrorMessage]] forKey:@"message"];
 
 				[[tableStructure onMainThread] showErrorSheetWith:errorDictionary];
 			}
