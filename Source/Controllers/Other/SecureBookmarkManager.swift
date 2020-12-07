@@ -143,7 +143,7 @@ handle bookmarkDataIsStale
 //					 re-installed, the app's preferences .plist file was deleted, etc.
 					if bookmarkDataIsStale {
 						os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
-						if regenerateBookmarkFor(url: urlForBookmark, options: bookmarkOptionsForKey) == true {
+						if regenerateBookmarkFor(url: URL(fileURLWithPath: key), options: bookmarkOptionsForKey) == true {
 							os_log("Stale bookmark regenerated: key = %@", log: log, type: .error, key)
 							bookmarks.remove(at: index) //
 						}
