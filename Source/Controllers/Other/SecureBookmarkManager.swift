@@ -60,8 +60,8 @@ handle bookmarkDataIsStale
 		
 		reRequestSecureAccessToBookmarks()
 		
-		os_log("resolvedBookmarks = %@", log: log, type: .info, resolvedBookmarks)
-		os_log("staleBookmarks = %@", log: log, type: .info, staleBookmarks)
+//		os_log("resolvedBookmarks = %@", log: log, type: .info, resolvedBookmarks)
+//		os_log("staleBookmarks = %@", log: log, type: .info, staleBookmarks)
 
 		
 	}
@@ -79,32 +79,61 @@ handle bookmarkDataIsStale
 			bookmarks.removeAll()
 			return
 		}
-		
+
+
+
 		os_log("bookmarks = %@", log: log, type: .info, bookmarks)
 		
 		let bmCopy = bookmarks
+
+		var indiciesToRemove : [Int] = []
 		
 		for (index, bookmarkDict) in bmCopy.enumerated(){
 						
 			print("Found \(bookmarkDict) at position \(index)")
-			
+
 			for (key, urlData) in bookmarkDict {
-				
+
+				do {
+					let tmpBM : SecureBookmark = SecureBookmark(id: key, bookmarkData: urlData, options: URL.BookmarkCreationOptions.withSecurityScope.rawValue)
+
+					let plist = try PropertyListEncoder().encode(tmpBM)
+
+					os_log("JIMMY key = %@", log: log, type: .info, plist as CVarArg)
+
+
+				} catch {
+					print(error)
+				}
+				let d2Str = urlData.hexEncodedString()
+
+				let d2Data = NSKeyedArchiver.archivedData(withRootObject: urlData)
+
 				os_log("JIMMY key = %@", log: log, type: .info, key)
 				
-				let tmpBM : SecureBookmark = SecureBookmark(id: key, bookmarkData: urlData, options: URL.BookmarkCreationOptions.withSecurityScope.rawValue)
-				
-				bookmarks.remove(at: index) //
-				
-				let encoder = JSONEncoder()
-				
+//				let tmpBM : SecureBookmark = SecureBookmark(id: key, bookmarkData: urlData, options: URL.BookmarkCreationOptions.withSecurityScope.rawValue)
+
+				let json = """
+				{
+					"id" : "\(key)",
+					"bookmarkData" : "\(d2Str)",
+					"options" : \(URL.BookmarkCreationOptions.withSecurityScope.rawValue)
+				}
+				"""
+
+				let jsonData = json.data(using: .utf8)!
+
+//				let tmpBM : SecureBookmark = SecureBookmark(id: url.absoluteString, bookmarkData: bookmarkData, options: options)
+
+//				let encoder = JSONEncoder()
+
 				do {
-					let data = try encoder.encode(tmpBM)
-					
-					
-					let tmpDict = [key : data]
+//					let data = try encoder.encode(json)
+					//
+					let tmpDict = [key : jsonData]
 					bookmarks.append(tmpDict)
-					
+					indiciesToRemove.append(index)
+
 				}
 				catch{
 					os_log("Error regenerateBookmarkFor: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
@@ -113,14 +142,24 @@ handle bookmarkDataIsStale
 			}
 			
 		}
-		os_log("migrated prefs query hist to db", log: log, type: .info)
+		os_log("migrated bookmarks to new format", log: log, type: .info)
 		migratedToNewFormat = true
 		prefs.set(true, forKey: SPMigratedBookmarksToNewFormat)
+
+		for indexToRemove in indiciesToRemove.reversed(){
+			print(indexToRemove)
+			bookmarks.remove(at: indexToRemove)
+		}
+
+		prefs.set(bookmarks, forKey: SPSecureBookmarks2)
 	}
 	
 	/// reRequestSecureAccessToBookmarks
 	@objc public func reRequestSecureAccessToBookmarks() {
-		
+
+		//		re-read
+		bookmarks = prefs.array(forKey: SPSecureBookmarks2) as? [[String: Data]] ?? [["": Data()]]
+
 		let bmCopy = bookmarks
 		
 		for (index, bookmarkDict) in bmCopy.enumerated(){
@@ -134,17 +173,16 @@ handle bookmarkDataIsStale
 				
 				do {
 					
-					let decoder = JSONDecoder()
 
-					let dec = try? decoder.decode(SecureBookmark.self, from: urlData)
+					let blogPost: SecureBookmark = try! JSONDecoder().decode(SecureBookmark.self, from: urlData)
 					
 					var bookmarkDataIsStale = false
 
-					let urlForBookmark = try URL(resolvingBookmarkData: dec!.bookmarkData , options: URL.BookmarkResolutionOptions(rawValue: dec!.options), relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+					let urlForBookmark = try URL(resolvingBookmarkData: blogPost.bookmarkData , options: URL.BookmarkResolutionOptions(rawValue: blogPost.options), relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 					
-					// a bookmark might be "stale" because the app hasn't been used
-					// in many months, macOS has been upgraded, the app was
-					// re-installed, the app's preferences .plist file was deleted, etc.
+//					 a bookmark might be "stale" because the app hasn't been used
+//					 in many months, macOS has been upgraded, the app was
+//					 re-installed, the app's preferences .plist file was deleted, etc.
 					if bookmarkDataIsStale {
 						os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
 						if regenerateBookmarkFor(url: urlForBookmark) == true {
@@ -225,20 +263,23 @@ handle bookmarkDataIsStale
 			do {
 							
 				let bookmarkData = try url.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
-				
-				let tmpBM : SecureBookmark = SecureBookmark(id: url.absoluteString, bookmarkData: bookmarkData, options: options)
+
+
+				let json = """
+				{
+					"id": \(url.absoluteString),
+					"bookmarkData": \(bookmarkData),
+					"options": \(options)
+				}
+				"""
+
+//				let tmpBM : SecureBookmark = SecureBookmark(id: url.absoluteString, bookmarkData: bookmarkData, options: options)
 				
 				let encoder = JSONEncoder()
 				
-				let data = try encoder.encode(tmpBM)
+				let data = try encoder.encode(json)
 				
-				let decoder = JSONDecoder()
 
-				let dec = try? decoder.decode(SecureBookmark.self, from: data)
-
-				
-				let optStr = String(format: "%u", options)
-				
 				let tmpDict = [url.absoluteString : data]
 				bookmarks.append(tmpDict)
 				prefs.set(bookmarks, forKey: SPSecureBookmarks)
