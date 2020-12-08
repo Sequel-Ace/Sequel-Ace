@@ -993,8 +993,8 @@
 		}
 
 		// if this is nil, then it's a version 1 bundle
-		// we should get any V1 bundles
-		// should we force igration here?
+		// we should NOT get any V1 bundles, but just in case...
+		// should we force migration here?
 		NSNumber *bundleVersion = [bundle safeObjectForKey:SPBundleVersionKey];
 
 		if(bundleVersion.longValue < SPBundleCurrentVersion){
