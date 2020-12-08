@@ -615,7 +615,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	// Check for errors
 	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill query", @"error killing query message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill query", @"error killing query message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
 	}
 	
 	// Refresh the process list
@@ -637,7 +637,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	// Check for errors
 	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill connection", @"error killing connection message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while attempting to kill connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill connection", @"error killing connection message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
 	}
 	
 	// Refresh the process list

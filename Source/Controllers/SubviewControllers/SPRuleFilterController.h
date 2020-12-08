@@ -95,8 +95,8 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * @param isBINARY Indicates that the filter should use the BINARY qualifier for ignoring
  *                 collations during search.
  * @param err      Upon return contains and object describing why the SQL conversion failed,
- *                 if it failed or nil, if no errors occured.
- * @return         The SQL filter string. Will always be non-null unless an error occured.
+ *                 if it failed or nil, if no errors occurred.
+ * @return         The SQL filter string. Will always be non-null unless an error occurred.
  *                 Can be an empty string (if no filters exist or all are disabled)!
  *
  * MUST BE CALLED ON THE UI THREAD!
