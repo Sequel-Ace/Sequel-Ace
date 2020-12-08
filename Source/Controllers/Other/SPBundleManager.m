@@ -41,14 +41,9 @@ What do we want this to do?
 
 */
 
-@interface SPBundleManager (){
+@interface SPBundleManager()
 
-	SPBundleEditorController *bundleEditorController;
-}
-
-
-
-
+@property (readwrite, strong) SPBundleEditorController *bundleEditorController;
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) NSMutableArray *migratedLegacyBundles;
 @property (readwrite, strong) NSMutableArray<NSString *> *badBundles;
@@ -58,7 +53,7 @@ What do we want this to do?
 
 @implementation SPBundleManager
 
-@synthesize fileManager;
+@synthesize fileManager, bundleEditorController;
 @synthesize alreadyBeeped;
 @synthesize badBundles, foundInstalledBundles;
 @synthesize migratedLegacyBundles;
