@@ -875,7 +875,7 @@
 			[self->deletedDefaultBundles setArray:stillUndeletedBundles];
 			[self->undeleteTableView reloadData];
 			[self->prefs setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
-			[_SPBundleManager reloadBundles:nil];
+			[SPBundleManager.sharedSPBundleManager reloadBundles:nil];
 			[self reloadBundles:self];
 		}
 	}];
@@ -966,7 +966,7 @@
 			[[self window] performClose:self];
 	}
 
-	[_SPBundleManager reloadBundles:self];
+	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
 
 }
 
@@ -1668,7 +1668,7 @@
 				
 				if(!cmdData || readError) {
 					SPLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError.localizedDescription);
-					[_SPBundleManager doOrDoNotBeep:bundle];
+					[SPBundleManager.sharedSPBundleManager doOrDoNotBeep:bundle];
 				}
 				else {
 					if([cmdData objectForKey:SPBundleFileNameKey] && [[cmdData objectForKey:SPBundleFileNameKey] length] && [cmdData objectForKey:SPBundleFileScopeKey])

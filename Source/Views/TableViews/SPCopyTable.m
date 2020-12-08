@@ -913,7 +913,7 @@ static const NSInteger kBlobAsImageFile = 4;
 
 	if(![[self delegate] isKindOfClass:[SPCustomQuery class]] && ![[self delegate] isKindOfClass:[SPTableContent class]]) return menu;
 
-	[_SPBundleManager reloadBundles:self];
+	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
 
 	// Remove 'Bundles' sub menu and separator
 	NSMenuItem *bItem = [menu itemWithTag:10000000];
@@ -923,8 +923,8 @@ static const NSInteger kBlobAsImageFile = 4;
 		[menu removeItem:bItem];
 	}
 
-	NSArray *bundleCategories = [_SPBundleManager bundleCategoriesForScope:SPBundleScopeDataTable];
-	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
+	NSArray *bundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:SPBundleScopeDataTable];
+	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
 
 	// Add 'Bundles' sub menu
 	if(bundleItems && [bundleItems count]) {
@@ -1257,7 +1257,7 @@ static const NSInteger kBlobAsImageFile = 4;
 {
 	NSInteger idx = [sender tag] - 1000000;
 	NSString *infoPath = nil;
-	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
+	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
@@ -1517,7 +1517,7 @@ static const NSInteger kBlobAsImageFile = 4;
 						SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
 						[bundleController setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
 						[bundleController displayHTMLContent:output withOptions:nil];
-						[_SPBundleManager addHTMLOutputController:bundleController];
+						[SPBundleManager.sharedSPBundleManager addHTMLOutputController:bundleController];
 					}
 				}
 			}

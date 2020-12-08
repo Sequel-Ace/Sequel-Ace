@@ -2596,7 +2596,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Check our notification object is our table content view
 	if ([aNotification object] != customQueryView) return;
 
-	NSArray *triggeredCommands = [_SPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
+	NSArray *triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
 		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
@@ -2621,7 +2621,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if(!stopTrigger) {
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 			if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-				[_SPBundleManager executeBundleItemForApp:aMenuItem];
+				[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 			}
 			else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 				if([[[firstResponder class] description] isEqualToString:@"SPCopyTable"])

@@ -506,7 +506,7 @@
 
 	NSInteger idx = [sender tag] - 1000000;
 	NSString *infoPath = nil;
-	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeInputField];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
@@ -734,7 +734,7 @@
 						SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
 						[c setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
 						[c displayHTMLContent:output withOptions:nil];
-						[_SPBundleManager addHTMLOutputController:c];
+						[SPBundleManager.sharedSPBundleManager addHTMLOutputController:c];
 					}
 				}
 
@@ -794,10 +794,10 @@
 
 	if ([[[(SPWindowController *)[[SPAppDelegate frontDocumentWindow] delegate] selectedTableDocument] connectionID] isEqualToString:@"_"]) return menu;
 
-	[_SPBundleManager reloadBundles:self];
+	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
 
-	NSArray *bundleCategories = [_SPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
-	NSArray *bundleItems = [_SPBundleManager bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeInputField];
 
 	// Add 'Bundles' sub menu
 	if(bundleItems && [bundleItems count]) {

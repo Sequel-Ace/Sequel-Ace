@@ -689,7 +689,6 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 #define user_defaults_set_bool(key, b, ud)  [ud setBool:b forKey:key]
 
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
-#define _SPBundleManager SPBundleManager.sharedSPBundleManager
 
 // Stolen from Stack Overflow: http://stackoverflow.com/questions/969130
 #ifdef DEBUG

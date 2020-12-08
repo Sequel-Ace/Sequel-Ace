@@ -1641,15 +1641,15 @@
 }
 
 - (IBAction)reloadBundles:(id)sender{
-	[_SPBundleManager reloadBundles:sender];
+	[SPBundleManager.sharedSPBundleManager reloadBundles:sender];
 }
 
 - (IBAction)openBundleEditor:(id)sender{
-	[_SPBundleManager openBundleEditor:sender];
+	[SPBundleManager.sharedSPBundleManager openBundleEditor:sender];
 }
 
 - (IBAction)bundleCommandDispatcher:(id)sender{
-	[_SPBundleManager bundleCommandDispatcher:sender];
+	[SPBundleManager.sharedSPBundleManager bundleCommandDispatcher:sender];
 }
 
 - (void)rebuildMenus{
@@ -1672,7 +1672,7 @@
 	[menu addItem:anItem];
 
 	// Bail out if no Bundle was installed
-	if (!_SPBundleManager.foundInstalledBundles) return;
+	if (!SPBundleManager.sharedSPBundleManager.foundInstalledBundles) return;
 
 	// Add installed Bundles
 	// For each scope add a submenu but not for the last one (should be General always)
@@ -1689,8 +1689,8 @@
 	BOOL bundleOtherThanGeneralFound = NO;
 	for(NSString* scope in scopes) {
 
-		NSArray *scopeBundleCategories = [_SPBundleManager bundleCategoriesForScope:scope];
-		NSArray *scopeBundleItems = [_SPBundleManager bundleItemsForScope:scope];
+		NSArray *scopeBundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:scope];
+		NSArray *scopeBundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:scope];
 
 		if(![scopeBundleItems count]) {
 			k++;
