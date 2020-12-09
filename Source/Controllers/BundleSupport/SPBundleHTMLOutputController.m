@@ -33,6 +33,7 @@
 #import "SPAppController.h"
 #import "SPBundleCommandRunner.h"
 #import "SPPrintUtility.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -246,7 +247,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 	[c displayHTMLContent:[NSString stringWithFormat:@"<pre>%@</pre>", [sourceCode HTMLEscapeString]] withOptions:nil];
 
-	[SPAppDelegate addHTMLOutputController:c];
+	[SPBundleManager.sharedSPBundleManager addHTMLOutputController:c];
 }
 
 - (void)saveDocument
@@ -293,7 +294,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	windowUUID = @"";
 	docUUID = @"";
 
-	[SPAppDelegate removeHTMLOutputController:self];
+	[SPBundleManager.sharedSPBundleManager removeHTMLOutputController:self];
 }
 
 #pragma mark -
@@ -326,7 +327,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	if(request != nil) {
 		SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
 		[c displayURLString:[[request URL] absoluteString] withOptions:nil];
-		[SPAppDelegate addHTMLOutputController:c];
+		[SPBundleManager.sharedSPBundleManager addHTMLOutputController:c];
 		return [c webView];
 	}
 	return nil;

@@ -114,7 +114,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
 	// Collapse the pane if the last state was collapsed
-	if ([[[NSUserDefaults standardUserDefaults] objectForKey:SPTableInformationPanelCollapsed] boolValue]) {
+	if ([[prefs objectForKey:SPTableInformationPanelCollapsed] boolValue]) {
 		[tableListSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
 	}
 	
@@ -604,7 +604,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	{
 		case SPTableTypeTable:
 			tableType = NSLocalizedString(@"table", @"table");
-			[copyTableContentSwitch setState:[[[NSUserDefaults standardUserDefaults] objectForKey:SPCopyContentOnTableCopy] boolValue]];
+			[copyTableContentSwitch setState:[[prefs objectForKey:SPCopyContentOnTableCopy] boolValue]];
 			break;
 		case SPTableTypeView:
 			tableType = NSLocalizedString(@"view", @"view");
@@ -717,7 +717,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[tableListSplitView toggleCollapse:sender];
 
-	[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
+	[prefs setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
 }
 
 #pragma mark -

@@ -41,20 +41,11 @@
 {
 	SPAboutController *aboutController;
 	SPPreferenceController *prefsController;
-	SPBundleEditorController *bundleEditorController;
 
 	id encodingPopUp;
 
 	NSURL *_sessionURL;
 	NSMutableDictionary *_spfSessionDocData;
-
-	NSMutableDictionary *bundleItems;
-	NSMutableDictionary *bundleCategories;
-	NSMutableDictionary *bundleTriggers;
-	NSMutableArray *bundleUsedScopes;
-	NSMutableArray *bundleHTMLOutputController;
-	NSMutableDictionary *bundleKeyEquivalents;
-	NSMutableDictionary *installedBundleUUIDs;
 
 	NSMutableArray *runningActivitiesArray;
 
@@ -62,11 +53,7 @@
 }
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
-@property (readwrite, strong) NSMutableDictionary *alreadyBeeped;
-@property (readwrite, strong) NSMutableArray<NSString *> *badBundles;
 
-- (IBAction)bundleCommandDispatcher:(id)sender;
-- (void)removeBundle:(NSString*)bundle;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;
@@ -75,14 +62,17 @@
 
 // Services menu methods
 - (void)doPerformQueryService:(NSPasteboard *)pboard userData:(NSString *)data error:(NSString **)error;
+- (void)rebuildMenus;
+- (IBAction)reloadBundles:(id)sender;
+- (IBAction)openBundleEditor:(id)sender;
+- (IBAction)bundleCommandDispatcher:(id)sender;
+
 
 // Menu methods
 - (IBAction)visitWebsite:(id)sender;
 - (IBAction)visitHelpWebsite:(id)sender;
 - (IBAction)visitFAQWebsite:(id)sender;
 - (IBAction)viewKeyboardShortcuts:(id)sender;
-- (IBAction)openBundleEditor:(id)sender;
-- (IBAction)reloadBundles:(id)sender;
 
 // Getters
 - (SPPreferenceController *)preferenceController;
@@ -95,10 +85,7 @@
 - (void)setSpfSessionDocData:(NSDictionary *)data;
 
 // Others
-- (NSArray *)bundleCategoriesForScope:(NSString *)scope;
-- (NSArray *)bundleItemsForScope:(NSString *)scope;
-- (NSArray *)bundleCommandsForTrigger:(NSString *)trigger;
-- (NSDictionary *)bundleKeyEquivalentsForScope:(NSString *)scope;
+
 - (void)registerActivity:(NSDictionary *)commandDict;
 - (void)removeRegisteredActivity:(NSInteger)pid;
 - (NSArray *)runningActivities;
@@ -108,11 +95,8 @@
 - (void)handleEventWithURL:(NSURL *)url;
 - (NSString*)doSQLSyntaxHighlightForString:(NSString *)sqlText cssLike:(BOOL)cssLike;
 
-- (IBAction)executeBundleItemForApp:(id)sender;
 - (NSDictionary *)shellEnvironmentForDocument:(NSString *)docUUID;
 
-- (void)addHTMLOutputController:(id)controller;
-- (void)removeHTMLOutputController:(id)controller;
 
 #pragma mark - SPAppleScriptSupport
 

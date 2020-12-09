@@ -35,6 +35,7 @@
 #import "SPSplitView.h"
 #import "SPAppController.h"
 #import "SPNSMutableDictionaryAdditions.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -65,6 +66,7 @@
 - (NSUInteger)_arrangedCategoryIndexForScopeIndex:(NSUInteger)scopeIndex andCategory:(NSString*)category;
 
 @property (readwrite, strong) NSFileManager *fileManager;
+@property (readwrite, strong) NSUserDefaults *prefs;
 
 @end
 
@@ -72,7 +74,7 @@
 
 @implementation SPBundleEditorController
 
-@synthesize fileManager;
+@synthesize fileManager, prefs;
 
 - (instancetype)init
 {
@@ -84,6 +86,7 @@
 		isTableCellEditing = NO;
 		deletedDefaultBundles = [[NSMutableArray alloc] initWithCapacity:1];
 		fileManager = [NSFileManager defaultManager];
+		prefs = [NSUserDefaults standardUserDefaults];
 
 	}
 	
@@ -313,8 +316,8 @@
 			SPBundleShellVariableUsedQueryForTable
 	];
 
-	if([[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]) {
-		[deletedDefaultBundles setArray:[[NSUserDefaults standardUserDefaults] objectForKey:SPBundleDeletedDefaultBundlesKey]];
+	if([prefs objectForKey:SPBundleDeletedDefaultBundlesKey]) {
+		[deletedDefaultBundles setArray:[prefs objectForKey:SPBundleDeletedDefaultBundlesKey]];
 	}
 
 	[self _initTree];
@@ -711,7 +714,7 @@
 				}
 				if ([obj objectForKey:SPBundleFileIsDefaultBundleKey]) {
 					[self->deletedDefaultBundles addObject:[NSArray arrayWithObjects:[obj objectForKey:SPBundleFileUUIDKey], [obj objectForKey:SPBundleFileNameKey], nil]];
-					[[NSUserDefaults standardUserDefaults] setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
+					[prefs setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
 				}
 				[self->commandsOutlineView reloadData];
 			}
@@ -871,9 +874,8 @@
 			}
 			[self->deletedDefaultBundles setArray:stillUndeletedBundles];
 			[self->undeleteTableView reloadData];
-			[[NSUserDefaults standardUserDefaults] setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
-			[[NSUserDefaults standardUserDefaults] synchronize];
-			[SPAppDelegate reloadBundles:nil];
+			[self->prefs setObject:stillUndeletedBundles forKey:SPBundleDeletedDefaultBundlesKey];
+			[SPBundleManager.sharedSPBundleManager reloadBundles:nil];
 			[self reloadBundles:self];
 		}
 	}];
@@ -964,7 +966,7 @@
 			[[self window] performClose:self];
 	}
 
-	[SPAppDelegate reloadBundles:self];
+	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
 
 }
 
@@ -978,10 +980,12 @@
 	BOOL isDir = NO;
 	BOOL isNewBundle = NO;
 
+	NSString *bundleName = [bundle safeObjectForKey:kBundleNameKey];
+
 	// If passed aPath is nil construct the path from bundle's bundleName.
 	// aPath is mainly used for dragging a bundle from table view.
 	if(aPath == nil) {
-		if(![bundle objectForKey:kBundleNameKey] || ![[bundle objectForKey:kBundleNameKey] length]) {
+		if(!bundleName || !bundleName.length) {
 			return NO;
 		}
 		if(!bundlePath){
@@ -989,11 +993,18 @@
 		}
 
 		// if this is nil, then it's a version 1 bundle
+		// we should NOT get any V1 bundles, but just in case...
+		// should we force migration here?
 		NSNumber *bundleVersion = [bundle safeObjectForKey:SPBundleVersionKey];
+
+		if(bundleVersion.longValue < SPBundleCurrentVersion){
+			SPLog(@"Got v1 bundle! : %@", bundleName);
+			CLS_LOG(@"Got v1 bundle! : %@", bundleName);
+		}
 
 		SPLog(@"bundleVersion = %@", bundleVersion);
 
-		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, [bundle objectForKey:kBundleNameKey], (bundleVersion.intValue > 1) ? SPUserBundleFileExtensionV2 : SPUserBundleFileExtension];
+		aPath = [NSString stringWithFormat:@"%@/%@.%@", bundlePath, bundleName, (bundleVersion.intValue > 1) ? SPUserBundleFileExtensionV2 : SPUserBundleFileExtension];
 
 		SPLog(@"aPath = %@", aPath);
 
@@ -1052,7 +1063,18 @@
 
 	// Remove a given old command.plist file
 	[fileManager removeItemAtPath:cmdFilePath error:nil];
-	[saveDict writeToFile:cmdFilePath atomically:YES];
+	NSError *error = nil;
+
+	if (@available(macOS 10.13, *)) {
+		[saveDict writeToURL:[NSURL fileURLWithPath:cmdFilePath] error:&error];
+		if(error){
+			SPLog(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
+			CLS_LOG(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
+		}
+
+	} else {
+		[saveDict writeToFile:cmdFilePath atomically:YES];
+	}
 
 	return YES;
 }
@@ -1646,11 +1668,7 @@
 				
 				if(!cmdData || readError) {
 					SPLog(@"“%@/%@” file couldn't be read. (error=%@)", bundle, SPBundleFileName, readError.localizedDescription);
-										
-					if(![SPAppDelegate.alreadyBeeped objectForKey:bundle]){
-						NSBeep();
-						[SPAppDelegate.alreadyBeeped setObject:@YES forKey:bundle];
-					}
+					[SPBundleManager.sharedSPBundleManager doOrDoNotBeep:bundle];
 				}
 				else {
 					if([cmdData objectForKey:SPBundleFileNameKey] && [[cmdData objectForKey:SPBundleFileNameKey] length] && [cmdData objectForKey:SPBundleFileScopeKey])

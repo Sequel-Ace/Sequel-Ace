@@ -55,6 +55,7 @@
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
+#import "SPBundleManager.h"
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
@@ -668,7 +669,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)performQueries:(NSArray *)queries withCallback:(SEL)customQueryCallbackMethod;
 {
 	// check for new flag, if set to no, just exec queries
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled] == NO) {
+	if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
 		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
 		return;
 	}
@@ -2595,7 +2596,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Check our notification object is our table content view
 	if ([aNotification object] != customQueryView) return;
 
-	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
+	NSArray *triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
 		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
@@ -2620,7 +2621,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if(!stopTrigger) {
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 			if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-				[[SPAppDelegate onMainThread] executeBundleItemForApp:aMenuItem];
+				[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 			}
 			else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 				if([[[firstResponder class] description] isEqualToString:@"SPCopyTable"])

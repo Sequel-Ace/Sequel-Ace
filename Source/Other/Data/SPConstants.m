@@ -38,7 +38,7 @@
 	
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		tableViewType = [@{
+		tableViewType = @{
 			@"source"		: @(SPTableViewStructure),
 			@"content"		: @(SPTableViewContent),
 			@"customQuery"	: @(SPTableViewCustomQuery),
@@ -46,7 +46,7 @@
 			@"relations"	: @(SPTableViewRelations),
 			@"triggers"		: @(SPTableViewTriggers),
 			@"SPTableViewInvalid": @(NSNotFound)
-		} copy]; // TODO: won't need this copy under ARC
+		};
 	});
 	
 	return tableViewType[self].integerValue;
@@ -397,6 +397,7 @@ NSString *SPBundleFileDisabledKey                           = @"disabled";
 NSString *SPBundleFileAuthorKey                             = @"author";
 NSString *SPBundleFileContactKey                            = @"contact";
 NSString *SPBundleFileUUIDKey                               = @"uuid";
+NSString *SPBundleFileTitleKey                              = @"title";
 NSString *SPBundleFileDescriptionKey                        = @"description";
 NSString *SPBundleFileTriggerKey                            = @"trigger";
 NSString *SPBundleFileWithBlobKey                           = @"withblob";
@@ -405,8 +406,10 @@ NSString *SPBundleFileDefaultBundleWasModifiedKey           = @"defaultBundleWas
 NSString *SPBundleInternLabelKey                            = @"label";
 NSString *SPBundleInternPathToFileKey                       = @"path";
 NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
+NSString *SPBundleAppSchema                                 = @"sequelace";
+NSString *SPBundleLegacyAppSchema                           = @"sequelpro";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
-const long SPBundleCurrentVersion 	 						= 2;
+const long SPBundleCurrentVersion                           = 2;
 
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
@@ -462,6 +465,7 @@ NSString *SPBundleShellVariableSelectedTextRange            = @"SP_SELECTED_TEXT
 NSString *SPBundleShellVariableUsedQueryForTable            = @"SP_USED_QUERY_FOR_TABLE";
 NSString *SPMigratedQueriesFromPrefs                        = @"SPMigratedQueriesFromPrefs";
 NSString *SPTraceSQLiteExecutions                           = @"SPTraceSQLiteExecutions";
+NSString *SPBundleShellVariableAppCallbackURL               = @"SP_APP_CALLBACK_URL";
 
 
 #define OWS @"\\s*" /* optional whitespace */

@@ -113,6 +113,7 @@
 		17F90E481210B42700274C98 /* SPExportFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F90E471210B42700274C98 /* SPExportFile.m */; };
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
+		1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A199629257A624200F5B0F1 /* BundleExtension.swift */; };
 		1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2711CE2539D9B10066ED58 /* SPReachability.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
@@ -128,6 +129,7 @@
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */; };
+		1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */; };
 		1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */; };
 		1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */; };
 		1AB068AA24A355CC00E2AAC2 /* client-cert-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */; };
@@ -730,6 +732,7 @@
 		17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFontPreviewTextField.m; sourceTree = "<group>"; };
 		1A071B8B254D983700246912 /* SPNSMutableDictionaryAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPNSMutableDictionaryAdditions.h; sourceTree = "<group>"; };
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
+		1A199629257A624200F5B0F1 /* BundleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleExtension.swift; sourceTree = "<group>"; };
 		1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatterExtension.swift; sourceTree = "<group>"; };
 		1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatterExtension.swift; sourceTree = "<group>"; };
 		1A1EE986255131560056FECD /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
@@ -745,6 +748,8 @@
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
 		1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteHistoryManager.swift; sourceTree = "<group>"; };
+		1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPBundleManager.m; sourceTree = "<group>"; };
+		1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPBundleManager.h; sourceTree = "<group>"; };
 		1AB0688F24A355B500E2AAC2 /* client-cert-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-crlf.pem"; sourceTree = "<group>"; };
 		1AB0689024A355B500E2AAC2 /* client-cert-bad-end.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-bad-end.pem"; sourceTree = "<group>"; };
 		1AB0689124A355B500E2AAC2 /* client-cert-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-cert-lf.pem"; sourceTree = "<group>"; };
@@ -1523,6 +1528,8 @@
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
 				5806B76311A991EC00813A88 /* SPDocumentController.m */,
 				1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */,
+				1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */,
+				1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -2289,6 +2296,7 @@
 				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
 				1A94988D25516057000BC793 /* DateExtension.swift */,
 				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
+				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3054,6 +3062,7 @@
 			files = (
 				11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */,
 				17E641460EF01EB5001BC333 /* main.m in Sources */,
+				1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */,
 				17E641560EF01EF6001BC333 /* SPCustomQuery.m in Sources */,
 				17E641570EF01EF6001BC333 /* SPAppController.m in Sources */,
 				507FF1121BBCC57600104523 /* SPFunctions.m in Sources */,
@@ -3110,6 +3119,7 @@
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
+				1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */,
 				4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */,
 				4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */,
 				4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */,

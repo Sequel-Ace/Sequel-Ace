@@ -85,6 +85,7 @@
 #import "PSMTabBarController.h"
 #import "PSMTabBarControl.h"
 #import "SPPrintUtility.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -5798,7 +5799,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	NSArray __block *triggeredCommands = nil;
 	
 	dispatch_sync(dispatch_get_main_queue(), ^{
-		triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionDatabaseChanged];
+		triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionDatabaseChanged];
 	});
 
 	
@@ -5832,7 +5833,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		if(!stopTrigger) {
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 			if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-				[[SPAppDelegate onMainThread] executeBundleItemForApp:aMenuItem];
+				[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 			}
 			else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 				if ([[[firstResponder class] description] isEqualToString:@"SPCopyTable"]) {
@@ -6307,7 +6308,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 			// If encoding is set to Autodetect, update the connection character set encoding to utf8mb4
 			// This allows us to receive data encoded in various charsets as UTF-8 characters.
-			if ([[[NSUserDefaults standardUserDefaults] objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
+			if ([[prefs objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
 				if (![@"utf8mb4" isEqualToString:previousEncoding]) {
 					[self setConnectionEncoding:@"utf8mb4" reloadingViews:NO];
 					changeEncoding = NO;
@@ -6382,7 +6383,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		NSArray __block *triggeredCommands = nil;
 		
 		dispatch_sync(dispatch_get_main_queue(), ^{
-			triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableChanged];
+			triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableChanged];
 		});
 		
 		for(NSString* cmdPath in triggeredCommands)
@@ -6410,7 +6411,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			if(!stopTrigger) {
 				id firstResponder = [[NSApp keyWindow] firstResponder];
 				if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-					[[SPAppDelegate onMainThread] executeBundleItemForApp:aMenuItem];
+					[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 				}
 				else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 					if([[[firstResponder class] description] isEqualToString:@"SPCopyTable"])
