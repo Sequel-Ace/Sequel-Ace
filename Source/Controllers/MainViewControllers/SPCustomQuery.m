@@ -1015,7 +1015,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			// Perform the notification for query completion
 			NSUserNotification *notification = [[NSUserNotification alloc] init];
 			notification.title = @"Query Finished";
-			notification.informativeText=[NSString stringWithFormat:[[errorText onMainThread] string]];
+			notification.informativeText=[NSString stringWithFormat:@"%@", [[errorText onMainThread] string]];
 			notification.soundName = NSUserNotificationDefaultSoundName;
 
 			[defaultUNC deliverNotification:notification];
@@ -1045,7 +1045,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// Query finished notification
 		NSUserNotification *notification = [[NSUserNotification alloc] init];
 		notification.title = @"Query Finished";
-		notification.informativeText=[NSString stringWithFormat:[[errorText onMainThread] string]];
+		notification.informativeText=[NSString stringWithFormat:@"%@", [[errorText onMainThread] string]];
 		notification.soundName = NSUserNotificationDefaultSoundName;
 
 		[defaultUNC deliverNotification:notification];

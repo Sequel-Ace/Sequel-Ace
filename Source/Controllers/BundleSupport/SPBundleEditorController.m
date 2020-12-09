@@ -714,7 +714,7 @@
 				}
 				if ([obj objectForKey:SPBundleFileIsDefaultBundleKey]) {
 					[self->deletedDefaultBundles addObject:[NSArray arrayWithObjects:[obj objectForKey:SPBundleFileUUIDKey], [obj objectForKey:SPBundleFileNameKey], nil]];
-					[prefs setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
+					[self->prefs setObject:self->deletedDefaultBundles forKey:SPBundleDeletedDefaultBundlesKey];
 				}
 				[self->commandsOutlineView reloadData];
 			}
