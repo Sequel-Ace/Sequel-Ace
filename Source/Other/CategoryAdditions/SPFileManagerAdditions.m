@@ -30,6 +30,8 @@
 
 #import "SPFileManagerAdditions.h"
 #import "SPFileHandle.h"
+@import Firebase;
+
 
 enum
 {
@@ -85,6 +87,9 @@ static NSString *DirectoryLocationDomain = @"DirectoryLocationDomain";
 					code:DirectoryLocationErrorNoPathFound
 					userInfo:userInfo];
 		}
+		SPLog(@"NSApplicationSupportDirectory not found : %@",[*errorOut localizedDescription]);
+		CLS_LOG(@"NSApplicationSupportDirectory not found : %@",[*errorOut localizedDescription]);
+
 		return nil;
 	}
 
@@ -122,6 +127,9 @@ static NSString *DirectoryLocationDomain = @"DirectoryLocationDomain";
 						code:DirectoryLocationErrorFileExistsAtLocation
 						userInfo:userInfo];
 			}
+			SPLog(@"DirectoryLocationErrorFileExistsAtLocation: %@",[*errorOut localizedDescription]);
+			CLS_LOG(@"DirectoryLocationErrorFileExistsAtLocation: %@",[*errorOut localizedDescription]);
+
 			return nil;
 		}
 
@@ -133,6 +141,8 @@ static NSString *DirectoryLocationDomain = @"DirectoryLocationDomain";
 				if (errorOut) {
 					*errorOut = error;
 				}
+				SPLog(@"Problem creating directory - %@ : %@",resolvedPath, [error localizedDescription]);
+				CLS_LOG(@"Problem creating directory - %@ : %@",resolvedPath, [error localizedDescription]);
 				return nil;
 			}
 		} else {
@@ -145,7 +155,8 @@ static NSString *DirectoryLocationDomain = @"DirectoryLocationDomain";
 	
 	if (!resolvedPath) {
 		NSBeep();
-		NSLog(@"Unable to find or create application support directory:\n%@", error);
+		SPLog(@"Unable to find or create application support directory: %@",[error localizedDescription]);
+		CLS_LOG(@"Unable to find or create application support directory: %@",[error localizedDescription]);
 	}
 	
 	

@@ -30,6 +30,8 @@
 
 #import "SPNetworkPreferencePane.h"
 #import "sequel-ace-Swift.h"
+@import Firebase;
+
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
@@ -57,6 +59,10 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){
 			[bookmarks setArray:o];
+		}
+		else{
+			SPLog(@"Could not load SPSecureBookmarks from prefs");
+			CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
 		}
 		
 		[self reRequestSecureAccess];
@@ -138,9 +144,13 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			}
 			else{
 				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+				CLS_LOG(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
 			}
 		}];
 	}];
+
+	SPLog(@"resolvedBookmarks - %@",resolvedBookmarks);
+	CLS_LOG(@"resolvedBookmarks - %@",resolvedBookmarks);
 }
 
 #pragma mark -
@@ -356,7 +366,15 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
 						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
+					else{
+						SPLog(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
+						CLS_LOG(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
+					}
 				}
+			}
+			else{
+				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
+				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
 			}
 			
 			// set the config path to the first selected file
