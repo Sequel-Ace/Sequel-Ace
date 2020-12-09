@@ -326,27 +326,33 @@
 /**
  * Retrieve the keychain item name for a supplied name and id.
  */
-- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId
-{
+- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
+	if (!favoriteName || !favoriteId) {
+		return nil;
+	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
-	return [NSString stringWithFormat:@"Sequel Ace : %@ (%lld)", favoriteName ? favoriteName: @"", [favoriteId longLongValue]];
+	return [NSString stringWithFormat:@"Sequel Ace : %@ (%lld)", favoriteName, [favoriteId longLongValue]];
 }
 
 /**
  * Retrieve the keychain item account for a supplied user, host, and database - which can be nil.
  */
-- (NSString *)accountForUser:(NSString *)user host:(NSString *)host database:(NSString *)database
-{
-	return [NSString stringWithFormat:@"%@@%@/%@", user ? user : @"", host ? host : @"", database ? database : @""];
+- (NSString *)accountForUser:(NSString *)user host:(NSString *)host database:(NSString *)database {
+	if (!user || !host) {
+		return nil;
+	}
+	return [NSString stringWithFormat:@"%@@%@/%@", user, host, database ? database : @""];
 }
 
 /**
  * Retrieve the keychain SSH item name for a supplied name and id.
  */
-- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId
-{
+- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
+	if (!favoriteName || !favoriteId) {
+		return nil;
+	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
-	return [NSString stringWithFormat:@"Sequel Ace SSHTunnel : %@ (%lld)", favoriteName ? favoriteName: @"", [favoriteId longLongValue]];
+	return [NSString stringWithFormat:@"Sequel Ace SSHTunnel : %@ (%lld)", favoriteName, [favoriteId longLongValue]];
 }
 
 /**
