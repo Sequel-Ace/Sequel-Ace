@@ -1755,6 +1755,20 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	NSModalResponse alertReturnCode = [alert runModal];
 
+	SPLog(@"alertReturnCode: %li", (long)alertReturnCode);
+
+//	* These are additional NSModalResponse values used by NSAlert's -runModal and -beginSheetModalForWindow:completionHandler:.
+//	 By default, NSAlert return values are position dependent, with this mapping:
+//	 first (rightmost) button = NSAlertFirstButtonReturn
+//	 second button = NSAlertSecondButtonReturn
+//	 third button = NSAlertThirdButtonReturn
+//
+//	static const NSModalResponse NSAlertFirstButtonReturn = 1000;
+//	static const NSModalResponse NSAlertSecondButtonReturn = 1001;
+
+	// so Delete = 1000 = NSAlertFirstButtonReturn
+	// so Cancel = 1001 = NSAlertSecondButtonReturn
+
 	NSMutableIndexSet *selectedRows = [NSMutableIndexSet indexSet];
 	NSString *wherePart;
 	NSInteger i, errors;
@@ -1766,7 +1780,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
 	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
 
-	if (alertReturnCode == NSModalResponseOK && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
+	if (alertReturnCode == NSAlertFirstButtonReturn && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
 		[NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")] message:@"Double checking as you have 'Show warning before executing a query' set in Preferences" suppressionKey:SPQueryWarningEnabledSuppressed primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed") primaryButtonHandler:^{
 			SPLog(@"User clicked Yes, exec queries");
 			retCode = YES;
@@ -1779,6 +1793,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			retCode = NO;
 		}];
 	}
+	else if (alertReturnCode == NSAlertFirstButtonReturn){
+		retCode = YES;
+	}
+	else{
+		retCode = NO;
+	}
 
 	if (retCode == NO) {
 		SPLog(@"Cancel pressed returning without deleting rows");
@@ -1786,7 +1806,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	if ([contextInfo isEqualToString:@"removeallrows"]) {
-		if (alertReturnCode == NSModalResponseOK) {
+		if (alertReturnCode == NSAlertFirstButtonReturn) {
 
 			// Check if the user is currently editing a row, and revert to ensure a somewhat
 			// consistent state if deletion fails.
@@ -1819,7 +1839,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 	} else if ([contextInfo isEqualToString:@"removerow"] ) {
-		if (alertReturnCode == NSModalResponseOK) {
+		if (alertReturnCode == NSAlertFirstButtonReturn) {
 			[selectedRows addIndexes:[tableContentView selectedRowIndexes]];
 
 			//check if the user is currently editing a row
