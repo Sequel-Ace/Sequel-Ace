@@ -6537,7 +6537,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Close the connection - should be performed on the main thread.
  */
-- (void) closeAndDisconnect
+- (void)closeAndDisconnect
 {
 	NSWindow *theParentWindow = [self parentWindow];
 
