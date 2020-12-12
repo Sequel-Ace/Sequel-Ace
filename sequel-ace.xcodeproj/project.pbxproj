@@ -125,8 +125,8 @@
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A8B53572584520800526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A8B53682584552F00526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53672584552F00526DED /* SPURLAdditions.m */; };
-		1A8B536D2584567C00526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A8B53732584573500526DED /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8B53722584573500526DED /* FirebaseCrashlytics */; };
+		1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A94988E25516057000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
@@ -3001,7 +3001,7 @@
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
-				1A8B536D2584567C00526DED /* SPURLAdditions.m in Sources */,
+				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
