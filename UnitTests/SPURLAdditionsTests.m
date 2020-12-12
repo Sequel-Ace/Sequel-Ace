@@ -8,11 +8,11 @@
 
 #import <XCTest/XCTest.h>
 
-@interface SPURLAdditions : XCTestCase
+@interface SPURLAdditionsTests : XCTestCase
 
 @end
 
-@implementation SPURLAdditions
+@implementation SPURLAdditionsTests
 
 
 - (void)testExample {

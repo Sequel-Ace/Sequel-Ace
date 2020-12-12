@@ -113,6 +113,7 @@
 		17F90E481210B42700274C98 /* SPExportFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F90E471210B42700274C98 /* SPExportFile.m */; };
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
+		1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53672584552F00526DED /* SPURLAdditionsTests.m */; };
 		1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A199629257A624200F5B0F1 /* BundleExtension.swift */; };
 		1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
@@ -124,7 +125,6 @@
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A8B53572584520800526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
-		1A8B53682584552F00526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53672584552F00526DED /* SPURLAdditions.m */; };
 		1A8B53732584573500526DED /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8B53722584573500526DED /* FirebaseCrashlytics */; };
 		1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A94988E25516057000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
@@ -751,7 +751,7 @@
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
 		1A8B53552584520800526DED /* SPURLAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPURLAdditions.h; sourceTree = "<group>"; };
 		1A8B53562584520800526DED /* SPURLAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditions.m; sourceTree = "<group>"; };
-		1A8B53672584552F00526DED /* SPURLAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditions.m; sourceTree = "<group>"; };
+		1A8B53672584552F00526DED /* SPURLAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditionsTests.m; sourceTree = "<group>"; };
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
 		1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteHistoryManager.swift; sourceTree = "<group>"; };
@@ -1771,7 +1771,7 @@
 				1798F1C2155018D4004B0AB8 /* SPMutableArrayAdditionsTests.m */,
 				502D21F51BA50710000D4CE7 /* SPDataAdditionsTests.m */,
 				1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */,
-				1A8B53672584552F00526DED /* SPURLAdditions.m */,
+				1A8B53672584552F00526DED /* SPURLAdditionsTests.m */,
 			);
 			name = "Category Additions";
 			sourceTree = "<group>";
@@ -3003,6 +3003,7 @@
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
+				1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
@@ -3022,7 +3023,6 @@
 				1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */,
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
-				1A8B53682584552F00526DED /* SPURLAdditions.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
