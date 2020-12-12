@@ -31,6 +31,7 @@
 #import "SPFunctions.h"
 #import <Security/SecRandom.h>
 #import "SPOSInfo.h"
+#import <objc/runtime.h>
 
 void SPMainQSync(void (^block)(void))
 {
@@ -113,4 +114,18 @@ id SPBoxNil(id object)
 	if(object == nil) return [NSNull null];
 	
 	return object;
+}
+
+void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement)
+{
+	Method a = class_getInstanceMethod(c, original);
+	Method b = class_getInstanceMethod(c, replacement);
+	if (class_addMethod(c, original, method_getImplementation(b), method_getTypeEncoding(b)))
+	{
+		class_replaceMethod(c, replacement, method_getImplementation(a), method_getTypeEncoding(a));
+	}
+	else
+	{
+		method_exchangeImplementations(a, b);
+	}
 }
