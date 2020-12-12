@@ -498,7 +498,7 @@
  * Go through the tabs in this window, and ask the database connection view
  * in each one if it can be closed, returning YES only if all can be closed.
  */
-- (BOOL)windowShouldClose:(id)sender
+- (BOOL)windowShouldClose:(NSWindow *)sender
 {
 	for (NSTabViewItem *eachItem in [tabView tabViewItems])
 	{
@@ -512,7 +512,7 @@
 		[SPAppDelegate setSessionURL:nil];
 		[SPAppDelegate setSpfSessionDocData:nil];
 	}
-
+	[sender setReleasedWhenClosed:YES];
 	return YES;
 }
 
@@ -521,7 +521,6 @@
  */
 - (void)windowWillClose:(NSNotification *)notification
 {
-	self.selectedTableDocument = nil;
 	for (NSTabViewItem *eachItem in [tabView tabViewItems])
 	{
 		[tabView removeTabViewItem:eachItem];
