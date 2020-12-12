@@ -118,8 +118,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSString *connectionSSHKeychainItemName;
 	NSString *connectionSSHKeychainItemAccount;
 
-	NSMutableArray *nibObjectsToRelease;
-
 	IBOutlet NSView *connectionView;
 	IBOutlet SPSplitView *connectionSplitView;
 	IBOutlet NSScrollView *connectionDetailsScrollView;

@@ -521,7 +521,6 @@
  */
 - (void)windowWillClose:(NSNotification *)notification
 {
-	[self.selectedTableDocument setParentWindow:nil];
 	self.selectedTableDocument = nil;
 	for (NSTabViewItem *eachItem in [tabView tabViewItems])
 	{

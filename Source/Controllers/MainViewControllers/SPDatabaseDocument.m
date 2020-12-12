@@ -225,14 +225,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = nil;
 		printThread = nil;
 		windowTitleStatusViewIsVisible = NO;
-		nibObjectsToRelease = [[NSMutableArray alloc] init];
 
 		// As this object is not an NSWindowController subclass, top-level objects in loaded nibs aren't
 		// automatically released.  Keep track of the top-level objects for release on dealloc.
 		NSArray *dbViewTopLevelObjects = nil;
 		NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"DBView" bundle:[NSBundle mainBundle]];
 		[nibLoader instantiateWithOwner:self topLevelObjects:&dbViewTopLevelObjects];
-		[nibObjectsToRelease addObjectsFromArray:dbViewTopLevelObjects];
 
 		databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
 	}
@@ -295,19 +293,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Load additional nibs, keeping track of the top-level objects to allow correct release
 	NSArray *connectionDialogTopLevelObjects = nil;
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ConnectionErrorDialog" bundle:[NSBundle mainBundle]];
-	if (![nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects]) {
-		NSLog(@"Connection error dialog could not be loaded; connection failure handling will not function correctly.");
-	} else {
-		[nibObjectsToRelease addObjectsFromArray:connectionDialogTopLevelObjects];
-	}
+	[nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects];
 
 	NSArray *progressIndicatorLayerTopLevelObjects = nil;
 	nibLoader = [[NSNib alloc] initWithNibNamed:@"ProgressIndicatorLayer" bundle:[NSBundle mainBundle]];
-	if (![nibLoader instantiateWithOwner:self topLevelObjects:&progressIndicatorLayerTopLevelObjects]) {
-		NSLog(@"Progress indicator layer could not be loaded; progress display will not function correctly.");
-	} else {
-		[nibObjectsToRelease addObjectsFromArray:progressIndicatorLayerTopLevelObjects];
-	}
+	[nibLoader instantiateWithOwner:self topLevelObjects:&progressIndicatorLayerTopLevelObjects];
 
 	// Set up the progress indicator child window and layer - change indicator color and size
 	[taskProgressIndicator setForeColor:[NSColor whiteColor]];
