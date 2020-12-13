@@ -3419,15 +3419,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)loadNib
 {
 
-	// Load the connection nib, keeping references to the top-level objects for later release
-	nibObjectsToRelease = [[NSMutableArray alloc] init];
-
 	NSArray *connectionViewTopLevelObjects = nil;
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:SPConnectionViewNibName bundle:[NSBundle mainBundle]];
-
 	[nibLoader instantiateWithOwner:self topLevelObjects:&connectionViewTopLevelObjects];
-	[nibObjectsToRelease addObjectsFromArray:connectionViewTopLevelObjects];
-
 }
 
 /**

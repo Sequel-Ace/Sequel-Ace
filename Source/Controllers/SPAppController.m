@@ -1281,7 +1281,6 @@
 		[self newWindow:self];
 		return NO;
 	}
-
 	// Return YES to the automatic opening
 	return YES;
 }

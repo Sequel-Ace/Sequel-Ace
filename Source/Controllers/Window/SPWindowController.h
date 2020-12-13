@@ -43,7 +43,6 @@
 	NSMenuItem *closeTabMenuItem;
 
 	NSMutableArray *managedDatabaseConnections;
-	SPDatabaseDocument *selectedTableDocument;
 }
 
 @property (readonly, strong) IBOutlet PSMTabBarControl *tabBar;
@@ -54,16 +53,6 @@
 - (IBAction)moveSelectedTabInNewWindow:(id)sender;
 
 - (SPDatabaseDocument *)addNewConnection;
-
-/**
- * @danger THIS IS NOT RETAINED!!! 
- *
- * Ever only directly use it on the main thread! 
- * Do not cache it without retaining first!
- * For background threads get it and retain it via the main thread!
- *   Release it on the main thread again.
- */
-- (SPDatabaseDocument *)selectedTableDocument;
 
 - (void)updateSelectedTableDocument;
 - (void)updateAllTabTitles:(id)sender;

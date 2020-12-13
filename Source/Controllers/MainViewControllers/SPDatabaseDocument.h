@@ -188,7 +188,6 @@
 	NSString *mySQLVersion;
 	NSString *selectedDatabaseEncoding;
 	NSUserDefaults *prefs;
-	NSMutableArray *nibObjectsToRelease;
 	NSUndoManager *undoManager;
 
 	NSMenu *selectEncodingMenu;
