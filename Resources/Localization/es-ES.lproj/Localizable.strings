@@ -347,16 +347,16 @@
 "An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "An error occurred when reading the file, as it could not be read using the encoding you selected (%1$@).\n\nOnly %2$ld rows were imported.";
 
 /* SQL read error, including detail from system */
-"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld queries were executed.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "Ha ocurrido un error al leer el archivo.\n\nSolo %1$ld consultas fueron ejecutadas.\n\n(%2$@)";
 
 /* CSV read error, including detail string from system */
-"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld rows were imported.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Ha ocurrido un error al leer el archivo.\n\nSolo %1$ld filas fueron importadas.\n\n(%2$@)";
 
 /* error adding field informative message */
 "An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Ha ocurrido un error al intentar añadir el campo '%1$@' a través de\n\n%2$@\n\nMySQL dijo: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to change the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Ha ocurrido un error al intentar modificar el campo '%1$@' a través de\n\n%2$@\n\nMySQL dijo: %3$@";
 
 /* error changing table collation informative message */
 "An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar cambiar la intercalación de la tabla a '%1$@'.\n\nMySQL dijo: %2$@";
@@ -413,22 +413,22 @@
 "An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar modificar la tabla '%1$@'.\n\nMySQL dijo: %2$@";
 
 /* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "An error occurred while trying to check the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Ha ocurrido un error al intentar comprobar %1$@.\n\nMySQL dijo:%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "An error occurred while trying to delete the relation '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar eliminar la relación '%1$@'.\n\nMySQL dijo: %2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Ha ocurrido un error al intentar obtener la lista de usuarios. Por favor, asegúrese que tiene los privilegios necesarios para realizar la gestión de usuarios, incluido el acceso a la tabla mysql.user.";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "An error occurred while trying to import a table via: \n%1$@\n\n\nMySQL said: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Ha ocurrido un error al intentar importar la tabla a través de: \n%1$@\n\n\nMySQL dijo: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "An error occurred while trying to move the field.\n\nMySQL said: %@";
+"An error occurred while trying to move the field.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar mover el campo.\n\nMySQL dijo: %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to reset AUTO_INCREMENT of table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar reiniciar AUTO_INCREMENT de la tabla '%1$@'.\n\nMySQL dijo: %2$@";
 
 /* error truncating table informative message */
 "An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar truncar la tabla '%1$@'.\n\nMySQL dijo: %2$@";
@@ -1224,76 +1224,76 @@
 "Error updating Keychain item" = "Error updating Keychain item";
 
 /* error while analyzing selected items message */
-"Error while analyzing selected items" = "Error while analyzing selected items";
+"Error while analyzing selected items" = "Error al analizar los elementos seleccionados";
 
 /* error while checking selected items message */
-"Error while checking selected items" = "Error while checking selected items";
+"Error while checking selected items" = "Error al comprobar los elementos seleccionados";
 
 /* error while converting color scheme data */
-"Error while converting color scheme data" = "Error while converting color scheme data";
+"Error while converting color scheme data" = "Error al convertir los datos de tema de color";
 
 /* error while converting connection data */
-"Error while converting connection data" = "Error while converting connection data";
+"Error while converting connection data" = "Error al convertir los datos de conexión";
 
 /* Content filters could not be converted to plist upon export - message title (ContentFilterManager) */
-"Error while converting content filter data" = "Error while converting content filter data";
+"Error while converting content filter data" = "Error al convertir los datos de filtro de contenido";
 
 /* error while converting query favorite data */
-"Error while converting query favorite data" = "Error while converting query favorite data";
+"Error while converting query favorite data" = "Error al convertir los datos de la consulta favorita";
 
 /* error while converting session data */
-"Error while converting session data" = "Error while converting session data";
+"Error while converting session data" = "Error al convertir los datos de la sesión";
 
 /* Error while deleting field */
-"Error while deleting field" = "Error while deleting field";
+"Error while deleting field" = "Error al eliminar el campo";
 
 /* Bundle Editor : Copy-Command-Error : Copying failed error message */
-"Error while duplicating Bundle content." = "Error while duplicating Bundle content.";
+"Error while duplicating Bundle content." = "Error al duplicar el contenido del paquete.";
 
 /* error while executing javascript bash command */
-"Error while executing JavaScript BASH command" = "Error while executing JavaScript BASH command";
+"Error while executing JavaScript BASH command" = "Error al ejecutar el comando JavaScript BASH";
 
 /* error while fetching the optimized field type message */
-"Error while fetching the optimized field type" = "Error while fetching the optimized field type";
+"Error while fetching the optimized field type" = "Error al obtener el tipo óptimo de campo";
 
 /* error while flushing selected items message */
-"Error while flushing selected items" = "Error while flushing selected items";
+"Error while flushing selected items" = "Error al limpiar los elementos seleccionados";
 
 /* error while importing table message */
-"Error while importing table" = "Error while importing table";
+"Error while importing table" = "Error al importar la tabla";
 
 /* Open Files : Bundle : Install-Error : error dialog title
  Open Files : Bundle : UUID : Error dialog title */
-"Error while installing Bundle" = "Error while installing Bundle";
+"Error while installing Bundle" = "Error al instalar el paquete";
 
 /* error while installing color theme file */
-"Error while installing color theme file" = "Error while installing color theme file";
+"Error while installing color theme file" = "Error al instalar el archivo de tema de color";
 
 /* Bundle Editor : Trash-Bundle(s)-Error : error dialog title
  error while moving “%@” to trash
  Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version. */
-"Error while moving “%@” to Trash." = "Error while moving “%@” to Trash.";
+"Error while moving “%@” to Trash." = "Error al trasladar “%@” a la papelera.";
 
 /* error while optimizing selected items message */
-"Error while optimizing selected items" = "Error while optimizing selected items";
+"Error while optimizing selected items" = "Error al optimizar los elementos seleccionados";
 
 /* error while parsing CREATE TABLE syntax */
-"Error while parsing CREATE TABLE syntax" = "Error while parsing CREATE TABLE syntax";
+"Error while parsing CREATE TABLE syntax" = "Error al analizar la sintaxis CREATE TABLE";
 
 /* error while reading connection data file */
-"Error while reading connection data file" = "Error while reading connection data file";
+"Error while reading connection data file" = "Error al leer el archivo de datos de conexión";
 
 /* error while reading data file */
-"Error while reading data file" = "Error while reading data file";
+"Error while reading data file" = "Error al leer el archivo de datos";
 
 /* error while repairing selected items message */
-"Error while repairing selected items" = "Error while repairing selected items";
+"Error while repairing selected items" = "Error al reparar los elementos seleccionados";
 
 /* Bundle Editor : Save-Bundle-Error : error dialog title */
-"Error while saving the Bundle." = "Error while saving the Bundle.";
+"Error while saving the Bundle." = "Error al guardar el paquete.";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
-"Error while saving “%@”." = "Error while saving “%@”.";
+"Error while saving “%@”." = "Error al guardar “%@”.";
 
 /* Errors title */
 "Errors" = "Errors";
@@ -1308,22 +1308,22 @@
 "Execution Privilege" = "Execution Privilege";
 
 /* execution privilege: %@ */
-"execution privilege: %@" = "execution privilege: %@";
+"execution privilege: %@" = "privilegio de ejecución: %@";
 
 /* execution stopped message */
-"Execution stopped!\n" = "Execution stopped!\n";
+"Execution stopped!\n" = "¡Ejecución interrumpida!\n";
 
 /* export selected favorites menu item */
 "Export Selected..." = "Export Selected...";
 
 /* text showing that the application is importing a supplied format */
-"Exporting %@" = "Exporting %@";
+"Exporting %@" = "Exportando %@";
 
 /* text showing that the application is exporting a Dot file */
 "Exporting Dot File" = "Exporting Dot File";
 
 /* text showing that the application is exporting SQL */
-"Exporting SQL" = "Exporting SQL";
+"Exporting SQL" = "Exportando SQL";
 
 /* extra label (Navigator) */
 "Extra" = "Extra";
@@ -1332,13 +1332,13 @@
 "Failed to remove index '%@'" = "Failed to remove index '%@'";
 
 /* fatal error */
-"Fatal Error" = "Fatal Error";
+"Fatal Error" = "Error grave";
 
 /* export filename favorite name token */
 "Favorite" = "Favorite";
 
 /* favorites label */
-"Favorites" = "Favorites";
+"Favorites" = "Favoritos";
 
 /* favorites export error message */
 "Favorites export error" = "Favorites export error";
@@ -1356,10 +1356,10 @@
 "fetching database structure in progress" = "fetching database structure in progress";
 
 /* fetching table data for completion in progress message */
-"fetching table data…" = "fetching table data…";
+"fetching table data…" = "Recuperando datos de la tabla…";
 
 /* popup menuitem for field (showing only if disabled) */
-"field" = "field";
+"field" = "campo";
 
 /* Field */
 "Field" = "Field";
@@ -1368,7 +1368,7 @@
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
 
 /* field is not editable due to no table/database */
-"Field is not editable. Field has no or multiple table or database origin(s)." = "Field is not editable. Field has no or multiple table or database origin(s).";
+"Field is not editable. Field has no or multiple table or database origin(s)." = "Campo no editable. El campo no tiene o tiene múltiples orígenes de tablas o bases de datos.";
 
 /* Custom Query result editing error - could not identify original row */
 "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously.";
@@ -1377,7 +1377,7 @@
 "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
 
 /* error while reading data file */
-"File couldn't be read." = "File couldn't be read.";
+"File couldn't be read." = "El archivo no se ha podido leer.";
 "File couldn't be read: %@\n\nIt will be deleted." = "File couldn't be read: %@\n\nIt will be deleted.";
 
 /* File read error title (Import Dialog) */
@@ -1387,7 +1387,7 @@
 "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
 
 /* filter label */
-"Filter" = "Filter";
+"Filter" = "Filtro";
 
 /* filter tables menu item */
 "Filter Tables" = "Filter Tables";
@@ -1399,13 +1399,13 @@
 "Filtering failed. Please try again." = "Filtering failed. Please try again.";
 
 /* Filtering table task description */
-"Filtering table..." = "Filtering table...";
+"Filtering table..." = "Filtrando tabla...";
 
 /* description for finished exporting notification */
-"Finished exporting to %@" = "Finished exporting to %@";
+"Finished exporting to %@" = "Exportación de %@ finalizada";
 
 /* description for finished importing notification */
-"Finished importing %@" = "Finished importing %@";
+"Finished importing %@" = "Importación %@ finalizada";
 
 /* FLUSH one or more tables - result title */
 "Flush %@" = "Limpiar %@";
@@ -1420,10 +1420,10 @@
 "Flush table failed." = "Flush table failed.";
 
 /* flush view menu item */
-"Flush View" = "Flush View";
+"Flush View" = "Limpiar vista";
 
 /* title of panel when successfully flushed privs */
-"Flushed Privileges" = "Flushed Privileges";
+"Flushed Privileges" = "Privilegios vueltos a cargar";
 
 /* For BIT fields only “1” or “0” are allowed. */
 "For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
@@ -1435,13 +1435,13 @@
 "FULLTEXT" = "FULLTEXT";
 
 /* function */
-"function" = "function";
+"function" = "función";
 
 /* header for function info pane */
 "FUNCTION INFORMATION" = "INFORMACIÓN DE FUNCIÓN";
 
 /* functions */
-"functions" = "functions";
+"functions" = "funciones";
 
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
@@ -1541,7 +1541,7 @@
 "Import of the selected data is currently not supported." = "Import of the selected data is currently not supported.";
 
 /* SQL import progress text */
-"Imported %@ of %@" = "Imported %1$@ of %2$@";
+"Imported %@ of %@" = "Importado %1$@ de %2$@";
 
 /* CSV import progress text where total size is unknown */
 "Imported %@ of CSV data" = "Imported %@ of CSV data";
@@ -1600,19 +1600,19 @@
 "Installing Bundle" = "Installing Bundle";
 
 /* insufficient details message */
-"Insufficient connection details" = "Insufficient connection details";
+"Insufficient connection details" = "Detalles de conexión insuficientes";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Insufficient details provided to establish a connection. Please enter at least the hostname.";
+"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Ha proporcionado detalles insuficientes para establecer una conexión. Por favor, introduzca al menos el nombre de equipo.";
 
 /* insufficient SSH tunnel details informative message */
-"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
+"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Ha proporcionado detalles insuficientes para establecer una conexión. Por favor, introduzca el nombre de equipo para el túnel SSH, o deshabilite el túnel SSH.";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please provide at least a host." = "Insufficient details provided to establish a connection. Please provide at least a host.";
+"Insufficient details provided to establish a connection. Please provide at least a host." = "Ha proporcionado detalles insuficientes para establecer una conexión. Por favor, proporcione al menos un equipo.";
 
 /* Interpret data as: */
-"Interpret data as:" = "Interpret data as:";
+"Interpret data as:" = "Interpretar datos como:";
 
 /* Invalid database very short status message */
 "Invalid database" = "Invalid database";
@@ -1633,7 +1633,7 @@
 "is updatable: %@" = "is updatable: %@";
 
 /* items */
-"items" = "items";
+"items" = "ítems";
 
 /* javascript exception */
 "JavaScript Exception" = "JavaScript Exception";
@@ -1648,13 +1648,13 @@
 "Keyword" = "Keyword";
 
 /* kill button */
-"Kill" = "Kill";
+"Kill" = "Finalizar";
 
 /* kill connection message */
-"Kill connection?" = "Kill connection?";
+"Kill connection?" = "¿Finalizar conexión?";
 
 /* kill query message */
-"Kill query?" = "Kill query?";
+"Kill query?" = "¿Finalizar consulta?";
 
 /* Last Error Message */
 "Last Error Message" = "Last Error Message";
