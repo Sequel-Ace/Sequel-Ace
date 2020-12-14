@@ -131,6 +131,7 @@
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
+		1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */ = {isa = PBXBuildFile; fileRef = 584192A0101E57BB0089807F /* NSMutableArray-MultipleSort.m */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */; };
 		1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */; };
@@ -3028,6 +3029,7 @@
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
+				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
