@@ -881,12 +881,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
 			NSString *errorDetail;
-			if([filterString length])
+			if([filterString length]){
 				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [mySQLConnection lastErrorMessage]];
-			else
+			}
+			else{
 				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nMySQL said: %@", @"message of panel when loading of table failed"), [mySQLConnection lastErrorMessage]];
-		
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
+				SPMainQSync(^{
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
+				});
+			}
 		}
 		// Filter task came from filter table
 		else if(activeFilter == SPTableContentFilterSourceTableFilter) {
