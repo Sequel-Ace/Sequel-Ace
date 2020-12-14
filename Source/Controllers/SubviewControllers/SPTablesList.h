@@ -72,6 +72,9 @@
 	IBOutlet NSPopUpButton *tableTypeButton;
 	IBOutlet NSButton *toolbarAddButton;
 
+	__weak IBOutlet NSPopUpButton *chooseDatabaseButton;
+	__weak IBOutlet NSTextField *copyTableToNewDatabaseField;
+	__weak IBOutlet NSTextField *copyTableToNewDatabaseMessageField;
 	IBOutlet NSPopUpButton *toolbarActionsButton;
 	IBOutlet NSButton *toolbarReloadButton;
 	IBOutlet NSButton *addTableButton;
