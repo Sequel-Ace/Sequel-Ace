@@ -55,6 +55,7 @@
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
+#import "SPBundleManager.h"
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
@@ -668,7 +669,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)performQueries:(NSArray *)queries withCallback:(SEL)customQueryCallbackMethod;
 {
 	// check for new flag, if set to no, just exec queries
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled] == NO) {
+	if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
 		[self performQueriesWithNoWarning:queries withCallback:customQueryCallbackMethod];
 		return;
 	}
@@ -724,7 +725,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 		NSUInteger i, totalQueriesRun = 0, totalAffectedRows = 0;
 		double executionTime = 0;
-		NSInteger firstErrorOccuredInQuery = -1;
+		NSInteger firstErrorOccurredInQuery = -1;
 		BOOL suppressErrorSheet = NO;
 		BOOL tableListNeedsReload = NO;
 		BOOL databaseWasChanged = NO;
@@ -849,7 +850,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 				// If the query errored, append error to the error log for display at the end
 				if ( queryCount > 1 ) {
-					if(firstErrorOccuredInQuery == -1) firstErrorOccuredInQuery = i+1;
+					if(firstErrorOccurredInQuery == -1) firstErrorOccurredInQuery = i+1;
 
 					if(!suppressErrorSheet) {
 						// Update error text for the user
@@ -943,7 +944,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// Update status/errors text
 		NSDictionary *statusDetails = [NSDictionary dictionaryWithObjectsAndKeys:
 			errors, @"errorString",
-			[NSNumber numberWithInteger:firstErrorOccuredInQuery], @"firstErrorQueryNumber",
+			[NSNumber numberWithInteger:firstErrorOccurredInQuery], @"firstErrorQueryNumber",
 			nil
 		];
 		[self performSelectorOnMainThread:@selector(updateStatusInterfaceWithDetails:) withObject:statusDetails waitUntilDone:YES];
@@ -1014,7 +1015,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			// Perform the notification for query completion
 			NSUserNotification *notification = [[NSUserNotification alloc] init];
 			notification.title = @"Query Finished";
-			notification.informativeText=[NSString stringWithFormat:[[errorText onMainThread] string]];
+			notification.informativeText=[[errorText onMainThread] string];
 			notification.soundName = NSUserNotificationDefaultSoundName;
 
 			[defaultUNC deliverNotification:notification];
@@ -1044,7 +1045,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// Query finished notification
 		NSUserNotification *notification = [[NSUserNotification alloc] init];
 		notification.title = @"Query Finished";
-		notification.informativeText=[NSString stringWithFormat:[[errorText onMainThread] string]];
+		notification.informativeText=[[errorText onMainThread] string];
 		notification.soundName = NSUserNotificationDefaultSoundName;
 
 		[defaultUNC deliverNotification:notification];
@@ -1384,7 +1385,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void) updateStatusInterfaceWithDetails:(NSDictionary *)errorDetails
 {
 	NSString *errorsString = [errorDetails objectForKey:@"errorString"];
-	NSInteger firstErrorOccuredInQuery = [[errorDetails objectForKey:@"firstErrorQueryNumber"] integerValue];
+	NSInteger firstErrorOccurredInQuery = [[errorDetails objectForKey:@"firstErrorQueryNumber"] integerValue];
 
 	// If errors occur, display them
 	if ( [mySQLConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
@@ -1402,7 +1403,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		{
 			// Get the line number
 			NSUInteger errorAtLine = [[errorsString substringWithRange:errorLineNumberRange] integerValue];
-			NSUInteger lineOffset = [textView getLineNumberForCharacterIndex:[self queryTextRangeForQuery:firstErrorOccuredInQuery startPosition:queryStartPosition].location] - 1;
+			NSUInteger lineOffset = [textView getLineNumberForCharacterIndex:[self queryTextRangeForQuery:firstErrorOccurredInQuery startPosition:queryStartPosition].location] - 1;
 
 			// Check for near message
 			NSRange errorNearMessageRange = [errorsString rangeOfRegex:@"[( ]'(.+)'[ -]" options:(RKLMultiline|RKLDotAll) inRange:NSMakeRange(0, [errorsString length]) capture:1L error:nil];
@@ -1434,7 +1435,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		} else { // Select first erroneous query entirely
 
 			NSRange queryRange;
-			if(firstErrorOccuredInQuery == -1) // for current or previous query
+			if(firstErrorOccurredInQuery == -1) // for current or previous query
 			{
 				BOOL isLookBehind = YES;
 				queryRange = [self queryRangeAtPosition:[textView selectedRange].location lookBehind:&isLookBehind];
@@ -1442,7 +1443,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 					[textView setSelectedRange:queryRange];
 			} else {
 				// select the query for which the first error was detected
-				queryRange = [self queryTextRangeForQuery:firstErrorOccuredInQuery startPosition:queryStartPosition];
+				queryRange = [self queryTextRangeForQuery:firstErrorOccurredInQuery startPosition:queryStartPosition];
 				queryRange = NSIntersectionRange(NSMakeRange(0, [[textView string] length]), queryRange);
 				[textView setSelectedRange:queryRange];
 				[textView scrollRangeToVisible:queryRange];
@@ -1451,7 +1452,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	} else if ( [errorsString length] && queryIsTableSorter ) {
 		[errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
-		[errorText setString:NSLocalizedString(@"Couldn't sort column.", @"text shown if an error occured while sorting the result table")];
+		[errorText setString:NSLocalizedString(@"Couldn't sort column.", @"text shown if an error occurred while sorting the result table")];
 		NSBeep();
 	} else {
 		[errorText setString:NSLocalizedString(@"There were no errors.", @"text shown when query was successfull")];
@@ -2595,7 +2596,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Check our notification object is our table content view
 	if ([aNotification object] != customQueryView) return;
 
-	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
+	NSArray *triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
 		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
@@ -2620,7 +2621,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if(!stopTrigger) {
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 			if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-				[[SPAppDelegate onMainThread] executeBundleItemForApp:aMenuItem];
+				[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 			}
 			else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 				if([[[firstResponder class] description] isEqualToString:@"SPCopyTable"])

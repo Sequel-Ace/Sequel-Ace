@@ -55,6 +55,9 @@
 #import "SPColorSelectorView.h"
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
+#import "SPBundleManager.h"
+@import Firebase;
+
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -466,9 +469,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
 		
 		if([sharedSecureBookmarkManager addBookMarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
-
-			SPLog(@"addBookMarkForUrl success");
-
+															   includingResourceValuesForKeys:nil
+																				relativeToURL:nil
+																						error:&error];
+				// save to prefs
+				if(tmpAppScopedBookmark && !error) {
+					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
+					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
+				}
+				else{
+					SPLog(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
+					CLS_LOG(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
+				}
+			}
+		}
+		else{
+			SPLog(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
+			CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
 		}
 		
 //		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
@@ -2096,7 +2113,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			}
 		}
 
-		// Only set the password if there is no Keychain item set and the connection is not being tested.
+		// Only set the password if there is no Keychain item set or the connection is being tested.
 		// The connection will otherwise ask the delegate for passwords in the Keychain.
 		if ((!connectionKeychainItemName || isTestingConnection) && [self password]) {
 			[mySQLConnection setPassword:[self password]];
@@ -3013,7 +3030,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 					}
 				}
 				if(error == nil){
-					[SPAppDelegate addHTMLOutputController:bundleController];
+					[SPBundleManager.sharedSPBundleManager addHTMLOutputController:bundleController];
 				}
 				// set straight away, or wait for them to close the window?
 				//[prefs setBool:YES forKey:SPConnectionShownSocketHelp];
@@ -3285,9 +3302,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		bookmarks = [[NSMutableArray alloc] init];
 		resolvedBookmarks = [[NSMutableArray alloc] init];
 
+
+		SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
+		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
+
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){
 			[bookmarks setArray:o];
+		}
+		else{
+			SPLog(@"Could not load SPSecureBookmarks from prefs");
+			CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
 		}
 		
 		// we need to re-request access to places we've been before..
@@ -3399,9 +3424,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			}
 			else{
 				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+				CLS_LOG(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
 			}
 		}];
 	}];
+
+	SPLog(@"resolvedBookmarks - %@",resolvedBookmarks);
+	CLS_LOG(@"resolvedBookmarks - %@",resolvedBookmarks);
+
 }
 
 /**
@@ -3410,15 +3440,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)loadNib
 {
 
-	// Load the connection nib, keeping references to the top-level objects for later release
-	nibObjectsToRelease = [[NSMutableArray alloc] init];
-
 	NSArray *connectionViewTopLevelObjects = nil;
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:SPConnectionViewNibName bundle:[NSBundle mainBundle]];
-
 	[nibLoader instantiateWithOwner:self topLevelObjects:&connectionViewTopLevelObjects];
-	[nibObjectsToRelease addObjectsFromArray:connectionViewTopLevelObjects];
-
 }
 
 /**

@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFilePreferencePane.h"
+@import Firebase;
 
 @interface SPFilePreferencePane ()
 @end
@@ -97,6 +98,10 @@
 	if((o = [prefs objectForKey:SPSecureBookmarks])){
 		[bookmarks setArray:o];
 	}
+	else{
+		SPLog(@"Could not load SPSecureBookmarks from prefs");
+		CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
+	}
 	
 	// we need to re-request access to places we've been before..
 	[self reRequestSecureAccess];
@@ -150,9 +155,14 @@
 			}
 			else{
 				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
+				CLS_LOG(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
 			}
 		}];
 	}];
+
+	SPLog(@"resolvedBookmarks - %@",resolvedBookmarks);
+	CLS_LOG(@"resolvedBookmarks - %@",resolvedBookmarks);
+
 }
 
 #pragma mark -
@@ -276,7 +286,15 @@
 						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
 						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
 					}
+					else{
+						SPLog(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
+						CLS_LOG(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
+					}
 				}
+			}
+			else{
+				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
+				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
 			}
 		}];
 		

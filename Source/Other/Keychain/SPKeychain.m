@@ -132,7 +132,7 @@
 			NSAlert *alert = [[NSAlert alloc] init];
 			alert.alertStyle = NSAlertStyleCritical;
 			alert.messageText = NSLocalizedString(@"Error adding password to Keychain", @"error adding password to keychain message");
-			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error adding password to keychain informative message"), status];
+			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error adding password to keychain informative message"), status];
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 			[alert runModal];
 		}
@@ -283,7 +283,7 @@
 		NSAlert *alert = [[NSAlert alloc] init];
 		alert.alertStyle = NSAlertStyleCritical;
 		alert.messageText = NSLocalizedString(@"Error retrieving Keychain item to edit", @"error finding keychain item to edit message");
-		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error finding keychain item to edit informative message"), status];
+		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error finding keychain item to edit informative message"), status];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		[alert runModal];
 		return;
@@ -317,7 +317,7 @@
 		NSAlert *alert = [[NSAlert alloc] init];
 		alert.alertStyle = NSAlertStyleCritical;
 		alert.messageText = NSLocalizedString(@"Error updating Keychain item", @"error updating keychain item message");
-		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error updating keychain item informative message"), status];
+		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error updating keychain item informative message"), status];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		[alert runModal];
 	}
@@ -326,27 +326,33 @@
 /**
  * Retrieve the keychain item name for a supplied name and id.
  */
-- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId
-{
+- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
+	if (!favoriteName || !favoriteId) {
+		return nil;
+	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
-	return [NSString stringWithFormat:@"Sequel Ace : %@ (%lld)", favoriteName ? favoriteName: @"", [favoriteId longLongValue]];
+	return [NSString stringWithFormat:@"Sequel Ace : %@ (%lld)", favoriteName, [favoriteId longLongValue]];
 }
 
 /**
  * Retrieve the keychain item account for a supplied user, host, and database - which can be nil.
  */
-- (NSString *)accountForUser:(NSString *)user host:(NSString *)host database:(NSString *)database
-{
-	return [NSString stringWithFormat:@"%@@%@/%@", user ? user : @"", host ? host : @"", database ? database : @""];
+- (NSString *)accountForUser:(NSString *)user host:(NSString *)host database:(NSString *)database {
+	if (!user || !host) {
+		return nil;
+	}
+	return [NSString stringWithFormat:@"%@@%@/%@", user, host, database ? database : @""];
 }
 
 /**
  * Retrieve the keychain SSH item name for a supplied name and id.
  */
-- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId
-{
+- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
+	if (!favoriteName || !favoriteId) {
+		return nil;
+	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
-	return [NSString stringWithFormat:@"Sequel Ace SSHTunnel : %@ (%lld)", favoriteName ? favoriteName: @"", [favoriteId longLongValue]];
+	return [NSString stringWithFormat:@"Sequel Ace SSHTunnel : %@ (%lld)", favoriteName, [favoriteId longLongValue]];
 }
 
 /**

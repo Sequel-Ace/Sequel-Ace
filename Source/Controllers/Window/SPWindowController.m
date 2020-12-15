@@ -45,6 +45,8 @@
 - (void)_switchOutSelectedTableDocument:(SPDatabaseDocument *)newDoc;
 - (void)_selectedTableDocumentDeallocd:(NSNotification *)notification;
 
+@property (readwrite, strong) SPDatabaseDocument *selectedTableDocument;
+
 #pragma mark - SPWindowControllerDelegate
 
 - (void)tabDragStarted:(id)sender;
@@ -131,21 +133,13 @@
 }
 
 /**
- * Retrieve the currently connection view in the window.
- */
-- (SPDatabaseDocument *)selectedTableDocument
-{
-	return selectedTableDocument;
-}
-
-/**
  * Update the currently selected connection view
  */
 - (void)updateSelectedTableDocument
 {
 	[self _switchOutSelectedTableDocument:[[tabView selectedTabViewItem] identifier]];
 	
-	[selectedTableDocument didBecomeActiveTabInWindow];
+	[self.selectedTableDocument didBecomeActiveTabInWindow];
 }
 
 /**
@@ -174,7 +168,7 @@
 	// If there are multiple tabs, close the front tab.
 	if ([tabView numberOfTabViewItems] > 1) {
 		// Return if the selected tab shouldn't be closed
-		if (![selectedTableDocument parentTabShouldClose]) return;
+		if (![self.selectedTableDocument parentTabShouldClose]) return;
 		[tabView removeTabViewItem:[tabView selectedTabViewItem]];
 	} 
 	else {
@@ -309,7 +303,7 @@
 	}
 	
 	// See if the front document blocks validation of this item
-	if (![selectedTableDocument validateMenuItem:menuItem]) return NO;
+	if (![self.selectedTableDocument validateMenuItem:menuItem]) return NO;
 
 	return YES;
 }
@@ -349,8 +343,8 @@
  */
 - (void)openDatabaseInNewTab
 {
-	if ([selectedTableDocument database]) {
-		[selectedTableDocument openDatabaseInNewTab:self];
+	if ([self.selectedTableDocument database]) {
+		[self.selectedTableDocument openDatabaseInNewTab:self];
 	}
 }
 
@@ -360,8 +354,8 @@
 {
 	BOOL collapse = NO;
  
-	if (selectedTableDocument.getConnection) {
-		if (selectedTableDocument.connectionController.colorIndex != -1) {
+	if (self.selectedTableDocument.getConnection) {
+		if (self.selectedTableDocument.connectionController.colorIndex != -1) {
 			collapse = YES;
 		}
 	}
@@ -383,11 +377,11 @@
 {
 	SEL theSelector = [theInvocation selector];
 	
-	if (![selectedTableDocument respondsToSelector:theSelector]) {
+	if (![self.selectedTableDocument respondsToSelector:theSelector]) {
 		[self doesNotRecognizeSelector:theSelector];
 	}
 	
-	[theInvocation invokeWithTarget:selectedTableDocument];
+	[theInvocation invokeWithTarget:self.selectedTableDocument];
 }
 
 /**
@@ -398,7 +392,7 @@
 {
 	NSMethodSignature *defaultSignature = [super methodSignatureForSelector:theSelector];
 	
-	return defaultSignature ? defaultSignature : [selectedTableDocument methodSignatureForSelector:theSelector];
+	return defaultSignature ? defaultSignature : [self.selectedTableDocument methodSignatureForSelector:theSelector];
 }
 
 /**
@@ -407,7 +401,7 @@
  */
 - (BOOL)respondsToSelector:(SEL)theSelector
 {
-	return ([super respondsToSelector:theSelector] || [selectedTableDocument respondsToSelector:theSelector]);
+	return ([super respondsToSelector:theSelector] || [self.selectedTableDocument respondsToSelector:theSelector]);
 }
 
 /**
@@ -477,16 +471,16 @@
 	NSAssert([NSThread isMainThread], @"Switching the selectedTableDocument via a background thread is not supported!");
 	
 	// shortcut if there is nothing to do
-	if(selectedTableDocument == newDoc) return;
+	if(self.selectedTableDocument == newDoc) return;
 	
 	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	if(selectedTableDocument) {
-		[nc removeObserver:self name:SPDocumentWillCloseNotification object:selectedTableDocument];
-		selectedTableDocument = nil;
+	if(self.selectedTableDocument) {
+		[nc removeObserver:self name:SPDocumentWillCloseNotification object:self.selectedTableDocument];
+		self.selectedTableDocument = nil;
 	}
 	if(newDoc) {
 		[nc addObserver:self selector:@selector(_selectedTableDocumentDeallocd:) name:SPDocumentWillCloseNotification object:newDoc];
-		selectedTableDocument = newDoc;
+		self.selectedTableDocument = newDoc;
 	}
 	
 	[self updateTabBar];
@@ -504,7 +498,7 @@
  * Go through the tabs in this window, and ask the database connection view
  * in each one if it can be closed, returning YES only if all can be closed.
  */
-- (BOOL)windowShouldClose:(id)sender
+- (BOOL)windowShouldClose:(NSWindow *)sender
 {
 	for (NSTabViewItem *eachItem in [tabView tabViewItems])
 	{
@@ -518,7 +512,7 @@
 		[SPAppDelegate setSessionURL:nil];
 		[SPAppDelegate setSpfSessionDocData:nil];
 	}
-
+	[sender setReleasedWhenClosed:YES];
 	return YES;
 }
 
@@ -539,7 +533,7 @@
  */
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
-	[selectedTableDocument tabDidBecomeKey];
+	[self.selectedTableDocument tabDidBecomeKey];
 
 	// Update the "Close window" item
 	[closeWindowMenuItem setTitle:NSLocalizedString(@"Close Window", @"Close Window menu item")];
@@ -595,7 +589,7 @@
  */
 - (void)windowWillEnterFullScreen:(NSNotification *)notification
 {
-	[selectedTableDocument updateTitlebarStatusVisibilityForcingHide:YES];
+	[self.selectedTableDocument updateTitlebarStatusVisibilityForcingHide:YES];
 }
 
 /**
@@ -603,7 +597,7 @@
  */
 - (void)windowDidExitFullScreen:(NSNotification *)notification
 {
-	[selectedTableDocument updateTitlebarStatusVisibilityForcingHide:NO];
+	[self.selectedTableDocument updateTitlebarStatusVisibilityForcingHide:NO];
 }
 
 #pragma mark -
@@ -614,7 +608,7 @@
  */
 - (void)tabView:(NSTabView *)tabView willSelectTabViewItem:(NSTabViewItem *)tabViewItem
 {
-	[selectedTableDocument willResignActiveTabInWindow];
+	[self.selectedTableDocument willResignActiveTabInWindow];
 }
 
 /**
@@ -625,9 +619,9 @@
 	if ([[PSMTabDragAssistant sharedDragAssistant] isDragging]) return;
 
 	[self _switchOutSelectedTableDocument:[tabViewItem identifier]];
-	[selectedTableDocument didBecomeActiveTabInWindow];
+	[self.selectedTableDocument didBecomeActiveTabInWindow];
 
-	if ([[self window] isKeyWindow]) [selectedTableDocument tabDidBecomeKey];
+	if ([[self window] isKeyWindow]) [self.selectedTableDocument tabDidBecomeKey];
 
 	[self updateAllTabTitles:self];
 }
@@ -901,8 +895,7 @@
 
 #pragma mark -
 
-- (void)dealloc
-{
+- (void)dealloc {
 	[self _switchOutSelectedTableDocument:nil];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
@@ -910,7 +903,6 @@
 	
 	// Tear down the animations on the tab bar to stop redraws
 	[tabBar destroyAnimations];
-
 }
 
 @end

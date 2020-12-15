@@ -85,6 +85,7 @@
 #import "PSMTabBarController.h"
 #import "PSMTabBarControl.h"
 #import "SPPrintUtility.h"
+#import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -224,14 +225,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = nil;
 		printThread = nil;
 		windowTitleStatusViewIsVisible = NO;
-		nibObjectsToRelease = [[NSMutableArray alloc] init];
 
 		// As this object is not an NSWindowController subclass, top-level objects in loaded nibs aren't
 		// automatically released.  Keep track of the top-level objects for release on dealloc.
 		NSArray *dbViewTopLevelObjects = nil;
 		NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"DBView" bundle:[NSBundle mainBundle]];
 		[nibLoader instantiateWithOwner:self topLevelObjects:&dbViewTopLevelObjects];
-		[nibObjectsToRelease addObjectsFromArray:dbViewTopLevelObjects];
 
 		databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
 	}
@@ -294,19 +293,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Load additional nibs, keeping track of the top-level objects to allow correct release
 	NSArray *connectionDialogTopLevelObjects = nil;
 	NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ConnectionErrorDialog" bundle:[NSBundle mainBundle]];
-	if (![nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects]) {
-		NSLog(@"Connection error dialog could not be loaded; connection failure handling will not function correctly.");
-	} else {
-		[nibObjectsToRelease addObjectsFromArray:connectionDialogTopLevelObjects];
-	}
+	[nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects];
 
 	NSArray *progressIndicatorLayerTopLevelObjects = nil;
 	nibLoader = [[NSNib alloc] initWithNibNamed:@"ProgressIndicatorLayer" bundle:[NSBundle mainBundle]];
-	if (![nibLoader instantiateWithOwner:self topLevelObjects:&progressIndicatorLayerTopLevelObjects]) {
-		NSLog(@"Progress indicator layer could not be loaded; progress display will not function correctly.");
-	} else {
-		[nibObjectsToRelease addObjectsFromArray:progressIndicatorLayerTopLevelObjects];
-	}
+	[nibLoader instantiateWithOwner:self topLevelObjects:&progressIndicatorLayerTopLevelObjects];
 
 	// Set up the progress indicator child window and layer - change indicator color and size
 	[taskProgressIndicator setForeColor:[NSColor whiteColor]];
@@ -1673,7 +1664,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([mySQLConnection queryErrored]) {
 			if ([mySQLConnection isConnected]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error message title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [mySQLConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error message title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [mySQLConnection lastErrorMessage]] callback:nil];
 			}
 
 			return;
@@ -5573,7 +5564,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		if (!success) {
 			dispatch_sync(dispatch_get_main_queue(), ^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to copy database", @"unable to copy database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to copy the database '%@' to '%@'.", @"unable to copy database message informative message"), [databaseDetails[SPNewDatabaseDetails] databaseName], newDatabaseName] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to copy database", @"unable to copy database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to copy the database '%@' to '%@'.", @"unable to copy database message informative message"), [databaseDetails[SPNewDatabaseDetails] databaseName], newDatabaseName] callback:nil];
 			});
 		}
 	}
@@ -5601,7 +5592,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		[self selectDatabase:newDatabaseName item:nil];
 	}
 	else {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
 	}
 }
 
@@ -5798,7 +5789,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	NSArray __block *triggeredCommands = nil;
 	
 	dispatch_sync(dispatch_get_main_queue(), ^{
-		triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionDatabaseChanged];
+		triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionDatabaseChanged];
 	});
 
 	
@@ -5832,7 +5823,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		if(!stopTrigger) {
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 			if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-				[[SPAppDelegate onMainThread] executeBundleItemForApp:aMenuItem];
+				[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 			}
 			else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 				if ([[[firstResponder class] description] isEqualToString:@"SPCopyTable"]) {
@@ -6307,7 +6298,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 			// If encoding is set to Autodetect, update the connection character set encoding to utf8mb4
 			// This allows us to receive data encoded in various charsets as UTF-8 characters.
-			if ([[[NSUserDefaults standardUserDefaults] objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
+			if ([[prefs objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
 				if (![@"utf8mb4" isEqualToString:previousEncoding]) {
 					[self setConnectionEncoding:@"utf8mb4" reloadingViews:NO];
 					changeEncoding = NO;
@@ -6382,7 +6373,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		NSArray __block *triggeredCommands = nil;
 		
 		dispatch_sync(dispatch_get_main_queue(), ^{
-			triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableChanged];
+			triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableChanged];
 		});
 		
 		for(NSString* cmdPath in triggeredCommands)
@@ -6410,7 +6401,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			if(!stopTrigger) {
 				id firstResponder = [[NSApp keyWindow] firstResponder];
 				if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-					[[SPAppDelegate onMainThread] executeBundleItemForApp:aMenuItem];
+					[SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
 				}
 				else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 					if([[[firstResponder class] description] isEqualToString:@"SPCopyTable"])
@@ -6480,7 +6471,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)noConnectionAvailable:(id)connection
 {
-	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occured and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occurred and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
 }
 
 /**
@@ -6536,7 +6527,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Close the connection - should be performed on the main thread.
  */
-- (void) closeAndDisconnect
+- (void)closeAndDisconnect
 {
 	NSWindow *theParentWindow = [self parentWindow];
 

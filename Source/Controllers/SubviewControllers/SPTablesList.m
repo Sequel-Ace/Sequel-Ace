@@ -114,7 +114,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
 	// Collapse the pane if the last state was collapsed
-	if ([[[NSUserDefaults standardUserDefaults] objectForKey:SPTableInformationPanelCollapsed] boolValue]) {
+	if ([[prefs objectForKey:SPTableInformationPanelCollapsed] boolValue]) {
 		[tableListSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
 	}
 	
@@ -604,7 +604,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	{
 		case SPTableTypeTable:
 			tableType = NSLocalizedString(@"table", @"table");
-			[copyTableContentSwitch setState:[[[NSUserDefaults standardUserDefaults] objectForKey:SPCopyContentOnTableCopy] boolValue]];
+			[copyTableContentSwitch setState:[[prefs objectForKey:SPCopyContentOnTableCopy] boolValue]];
 			break;
 		case SPTableTypeView:
 			tableType = NSLocalizedString(@"view", @"view");
@@ -717,7 +717,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[tableListSplitView toggleCollapse:sender];
 
-	[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
+	[prefs setObject:[NSNumber numberWithBool:[tableListSplitView isCollapsibleSubviewCollapsed]] forKey:SPTableInformationPanelCollapsed];
 }
 
 #pragma mark -
@@ -2418,7 +2418,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([mySQLConnection queryErrored]) {
 			if ([mySQLConnection isConnected]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occured while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [mySQLConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [mySQLConnection lastErrorMessage]] callback:nil];
 			}
 			return;
 		}
@@ -2521,7 +2521,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		
 		if (tempNumber==100) {
 			// we couldn't find a temporary name
-			[NSException raise:@"No Tempname found" format:NSLocalizedString(@"An error occured while renaming '%@'. No temporary name could be found. Please try renaming to something else first.", @"rename table error - no temporary name found"), oldTableName];
+			[NSException raise:@"No Tempname found" format:NSLocalizedString(@"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.", @"rename table error - no temporary name found"), oldTableName];
 		}
 
 		[self _renameTableOfType:tableType from:oldTableName to:tempTableName];
@@ -2536,7 +2536,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[mySQLConnection queryString:[NSString stringWithFormat:@"RENAME TABLE %@ TO %@", [oldTableName backtickQuotedString], [newTableName backtickQuotedString]]];
 		// check for errors
 		if ([mySQLConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occured while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [mySQLConnection lastErrorMessage]];
+			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [mySQLConnection lastErrorMessage]];
 		}
 		
 		return;
@@ -2557,7 +2557,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		SPMySQLResult *theResult  = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@", stringTableType, [oldTableName backtickQuotedString] ] ];
 		if ([mySQLConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occured while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't retrieve syntax"), oldTableName, [mySQLConnection lastErrorMessage]];
+			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't retrieve syntax"), oldTableName, [mySQLConnection lastErrorMessage]];
 		}
 		[theResult setReturnDataAsStrings:YES];
 		NSString *oldCreateSyntax = [[theResult getRowAsArray] objectAtIndex:2];
@@ -2565,23 +2565,23 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// replace the old name with the new name
 		NSRange rangeOfProcedureName = [oldCreateSyntax rangeOfString: [NSString stringWithFormat:@"%@ %@", stringTableType, [oldTableName backtickQuotedString] ] ];
 		if (rangeOfProcedureName.length == 0) {
-			[NSException raise:@"Unknown Syntax" format:NSLocalizedString(@"An error occured while renaming. The CREATE syntax of '%@' could not be parsed.", @"rename error - invalid create syntax"), oldTableName];
+			[NSException raise:@"Unknown Syntax" format:NSLocalizedString(@"An error occurred while renaming. The CREATE syntax of '%@' could not be parsed.", @"rename error - invalid create syntax"), oldTableName];
 		}
 		NSString *newCreateSyntax = [oldCreateSyntax stringByReplacingCharactersInRange: rangeOfProcedureName
 			withString: [NSString stringWithFormat:@"%@ %@", stringTableType, [newTableName backtickQuotedString] ] ];
 		[mySQLConnection queryString: newCreateSyntax];
 		if ([mySQLConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occured while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't recreate procedure"), oldTableName, [mySQLConnection lastErrorMessage]];
+			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't recreate procedure"), oldTableName, [mySQLConnection lastErrorMessage]];
 		}
 
 		[mySQLConnection queryString: [NSString stringWithFormat: @"DROP %@ %@", stringTableType, [oldTableName backtickQuotedString]]];
 		if ([mySQLConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occured while renaming. I couldn't delete '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't delete old procedure"), oldTableName, [mySQLConnection lastErrorMessage]];
+			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't delete old procedure"), oldTableName, [mySQLConnection lastErrorMessage]];
 		}
 		return;
 	}
 
-	[NSException raise:@"Object of unknown type" format:NSLocalizedString(@"An error occured while renaming. '%@' is of an unknown type.", @"rename error - don't know what type the renamed thing is"), oldTableName];
+	[NSException raise:@"Object of unknown type" format:NSLocalizedString(@"An error occurred while renaming. '%@' is of an unknown type.", @"rename error - don't know what type the renamed thing is"), oldTableName];
 }
 
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type

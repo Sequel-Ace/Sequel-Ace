@@ -144,7 +144,7 @@
 	[theEnv setDictionary:shellEnvironment];
 
 	[theEnv setObject:[NSImage imageNamed:@"AppIconImage"] forKey:SPBundleShellVariableIconFile];
-	[theEnv setObject:[NSString stringWithFormat:@"%@/Contents/Resources", [[NSBundle mainBundle] bundlePath]] forKey:SPBundleShellVariableAppResourcesDirectory];
+	[theEnv setObject:[NSBundle mainBundle].resourcePath forKey:SPBundleShellVariableAppResourcesDirectory];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionNone] forKey:SPBundleShellVariableExitNone];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionReplaceSection] forKey:SPBundleShellVariableExitReplaceSelection];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionReplaceContent] forKey:SPBundleShellVariableExitReplaceContent];
@@ -153,6 +153,8 @@
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionShowAsHTML] forKey:SPBundleShellVariableExitShowAsHTML];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionShowAsTextTooltip] forKey:SPBundleShellVariableExitShowAsTextTooltip];
 	[theEnv setObject:[NSNumber numberWithInteger:SPBundleRedirectActionShowAsHTMLTooltip] forKey:SPBundleShellVariableExitShowAsHTMLTooltip];
+	[theEnv setObject:[NSBundle mainBundle].saURLScheme forKey:SPBundleShellVariableAppCallbackURL];
+
 
 	// Create and set an unique process ID for each SPDatabaseDocument which has to passed
 	// for each sequelace:// scheme command as user to be able to identify the url scheme command.

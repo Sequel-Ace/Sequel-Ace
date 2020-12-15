@@ -286,7 +286,7 @@
 			[self setHighlighted:mouseInButton];
 		}
 
-		theEvent = [[controlView window] nextEventMatchingMask:(NSEventTypeLeftMouseUp | NSEventMaskLeftMouseDragged)];
+		theEvent = [[controlView window] nextEventMatchingMask:(NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDragged)];
 	}
 
 	// If the mouse is still inside the button area, perform a click action and restore state
