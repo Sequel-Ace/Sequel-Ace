@@ -123,6 +123,8 @@
 		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
+		1A6447912588CD8B00927DB3 /* License.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17CC993A10B4C9C80034CD7A /* License.rtf */; };
+		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A8B53572584520800526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A8B53732584573500526DED /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8B53722584573500526DED /* FirebaseCrashlytics */; };
@@ -2790,6 +2792,7 @@
 				17E641D20EF02036001BC333 /* grabber-vertical.png in Resources */,
 				17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */,
 				17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */,
+				1A6447992588CD9200927DB3 /* Credits.rtf in Resources */,
 				17E6420A0EF020CB001BC333 /* DBView.xib in Resources */,
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
@@ -2826,6 +2829,7 @@
 				58D2E230101222870063EF1D /* link-arrow.png in Resources */,
 				581068B61015411B0068C6E2 /* link-arrow-highlighted.png in Resources */,
 				4D90B7A2101E0D1500D116A1 /* UserManagerView.xib in Resources */,
+				1A6447912588CD8B00927DB3 /* License.rtf in Resources */,
 				BC8B0DAF104004F900FC02EC /* EncodingPopupView.xib in Resources */,
 				BCCBD7FC104408B000D4C50A /* SaveSPFAccessory.xib in Resources */,
 				8831EFC7224016E000D10172 /* button_filterTemplate.pdf in Resources */,
