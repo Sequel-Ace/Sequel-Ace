@@ -2803,7 +2803,10 @@
 "Themes Installation Error" = "Themes Installation Error";
 
 /* message of panel when table content cannot be copied */
-"There have been errors while copying table content. Please control the new table." = "There have been errors while copying table content. Please control the new table.";
+"There have been errors while copying table content. Please check the new table." = "There have been errors while copying table content. Please check the new table.";
+
+/* Cannot duplicate a table with triggers to a different database */
+"Cannot duplicate a table with triggers to a different database." = "Cannot duplicate a table with triggers to a different database.";
 
 /* text shown when query was successfull */
 "There were no errors." = "There were no errors.";
