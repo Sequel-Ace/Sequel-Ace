@@ -133,6 +133,8 @@
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
+		1A96E4B62588F34C0055F5F5 /* SecureBookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */; };
+		1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */; };
 		1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */; };
@@ -755,6 +757,8 @@
 		1A8B53562584520800526DED /* SPURLAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditions.m; sourceTree = "<group>"; };
 		1A8B53672584552F00526DED /* SPURLAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditionsTests.m; sourceTree = "<group>"; };
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
+		1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmark.swift; sourceTree = "<group>"; };
+		1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManager.swift; sourceTree = "<group>"; };
 		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
 		1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteHistoryManager.swift; sourceTree = "<group>"; };
 		1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPBundleManager.m; sourceTree = "<group>"; };
@@ -1533,6 +1537,8 @@
 		173E70D5107FF7AF008733C9 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */,
+				1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */,
 				589235311020C1230011DE00 /* SPHistoryController.h */,
 				589235301020C1230011DE00 /* SPHistoryController.m */,
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
@@ -3136,6 +3142,7 @@
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
+				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
@@ -3212,6 +3219,7 @@
 				1785EB6A127DD79300F468C8 /* SPEditorPreferencePane.m in Sources */,
 				17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */,
 				17D3C22212859E070047709F /* SPFavoriteNode.m in Sources */,
+				1A96E4B62588F34C0055F5F5 /* SecureBookmark.swift in Sources */,
 				506CE9311A311C6C0039F736 /* SPRuleFilterController.m in Sources */,
 				17D3C66E128AD4710047709F /* SPFavoritesController.m in Sources */,
 				17D3C671128AD8160047709F /* SPSingleton.m in Sources */,

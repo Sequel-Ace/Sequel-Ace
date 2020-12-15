@@ -8,38 +8,35 @@
 
 import Foundation
 
-//public struct SecureBookmark: Identifiable, Codable {
-//	enum CodingKeys: String, CodingKey {
-//		case id = "theId"
-//		case bookmarkData = "theBookmarkData"
-//		case options = "theOptions"
-//	}
-//
-//	public let id: String
-//	let bookmarkData: Data
-//	let options: UInt
-//
-//	public init(id: String, bookmarkData: Data, options: UInt) {
-//		self.id = id
-//		self.bookmarkData = bookmarkData
-//		self.options = options
-//	}
-//}
 
-struct SecureBookmark: Encodable, Decodable {
-	
-	let id: String
-	let bookmarkData: String
-	let options: UInt
+struct SecureBookmark: Codable {
+	let bookmarkData: Data
+    let options: Double
+    let theUrl: URL
 }
 
 
+//extension SecureBookmark {
+//    func encode() -> Data {
+//        let data = NSMutableData()
+//        let archiver = NSKeyedArchiver(forWritingWith: data)
+//        archiver.encode(bookmarkData, forKey: "bookmarkData")
+//        archiver.encode(options, forKey: "options")
+//        archiver.encode(theUrl, forKey: "theUrl")
+//        archiver.finishEncoding()
+//        return data as Data
+//    }
 //
-//public struct SecureBookmark: Codable {
-//
-//	let id: String
-//	let bookmarkData: Data
-//	let options: UInt
-//
-//	
+//    init?(data: Data) {
+//        let unarchiver = NSKeyedUnarchiver(forReadingWith: data)
+//        defer {
+//            unarchiver.finishDecoding()
+//        }
+//        guard let bookmarkData = unarchiver.decodeObject(forKey: "bookmarkData") as? Data else { return nil }
+//        guard let theUrl = unarchiver.decodeObject(forKey: "theUrl") as? URL else { return nil }
+//        options = unarchiver.decodeDouble(forKey: "options")
+//        self.bookmarkData = bookmarkData
+//        self.theUrl = theUrl
+//    }
 //}
+

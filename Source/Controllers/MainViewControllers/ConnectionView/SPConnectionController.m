@@ -172,6 +172,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize isEditingConnection;
 
 + (void)initialize {
+
+
 }
 
 - (NSString *)keychainPassword
@@ -463,67 +465,58 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[keySelectionPanel setDelegate:self];
 	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
-		NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
-		NSError *err=nil;
+        NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
+        NSError *err=nil;
+
+        SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
+
+        
+        if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
+
+            SPLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
+            CLS_LOG(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
+
+            // a bit of duplicated code here,
+            // same code is in the export controler
+            //TODO: put this in a utility/helper class
+            BOOL __block beenHereBefore = NO;
+
+            // have we been here before?
+            [self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+
+                if(dict[self->keySelectionPanel.URL.absoluteString] != nil){
+                    NSLog(@"beenHereBefore: %@", dict[self->keySelectionPanel.URL.absoluteString]);
+                    beenHereBefore = YES;
+                    *stop = YES;
+                }
+            }];
+
+            if(beenHereBefore == NO){
+                // create a bookmark
+                NSError *error = nil;
+                // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
+                NSData *tmpAppScopedBookmark = [self->keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+                                                                                               | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
+                                                               includingResourceValuesForKeys:nil
+                                                                                relativeToURL:nil
+                                                                                        error:&error];
+                // save to prefs
+                if(tmpAppScopedBookmark && !error) {
+                    [self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
+                    [self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
+                }
+                else{
+                    SPLog(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
+                    CLS_LOG(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
+                }
+            }
+        }
+        else{
+            SPLog(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
+            CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
+        }
 		
-		SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
-		
-		if([sharedSecureBookmarkManager addBookMarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
-															   includingResourceValuesForKeys:nil
-																				relativeToURL:nil
-																						error:&error];
-				// save to prefs
-				if(tmpAppScopedBookmark && !error) {
-					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
-					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-				}
-				else{
-					SPLog(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
-					CLS_LOG(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
-				}
-			}
-		}
-		else{
-			SPLog(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
-			CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
-		}
-		
-//		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
-//
-//			NSLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
-//
-//			// a bit of duplicated code here,
-//			// same code is in the export controler
-//			//TODO: put this in a utility/helper class
-//			BOOL __block beenHereBefore = NO;
-//
-//			// have we been here before?
-//			[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-//
-//				if(dict[self->keySelectionPanel.URL.absoluteString] != nil){
-//					NSLog(@"beenHereBefore: %@", dict[self->keySelectionPanel.URL.absoluteString]);
-//					beenHereBefore = YES;
-//					*stop = YES;
-//				}
-//			}];
-//
-//			if(beenHereBefore == NO){
-//				// create a bookmark
-//				NSError *error = nil;
-//				// this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-//				NSData *tmpAppScopedBookmark = [self->keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
-//																							   | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
-//															   includingResourceValuesForKeys:nil
-//																				relativeToURL:nil
-//																						error:&error];
-//				// save to prefs
-//				if(tmpAppScopedBookmark && !error) {
-//					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
-//					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-//				}
-//			}
-//
-//		}
+
 		// SSH key file selection
 		if (sender == self->sshSSHKeyButton) {
 			if (returnCode == NSModalResponseCancel) {
@@ -1345,7 +1338,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[bookmarks setArray:o];
 		}
 
-		[self reRequestSecureAccess];
+//		[self reRequestSecureAccess];
 	}
 }
 
@@ -3235,6 +3228,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (instancetype)initWithDocument:(SPDatabaseDocument *)document
 {
+
+    SPLog(@"initWithDocument");
+
 	if ((self = [super init])) {
 
 		// Weak reference
@@ -3242,6 +3238,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		databaseConnectionSuperview = [dbDocument databaseView];
 		databaseConnectionView = dbDocument->contentViewSplitter;
+
 
 		// Keychain references
 		connectionKeychainItemName = nil;
@@ -3314,9 +3311,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			SPLog(@"Could not load SPSecureBookmarks from prefs");
 			CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
 		}
-		
+
+        SecureBookmarkManager __unused *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
+
 		// we need to re-request access to places we've been before..
-		[self reRequestSecureAccess];
+//		[self reRequestSecureAccess];
 		
 		// add an observer to get re-read the bookmarks when they change
 		[prefs addObserver:self

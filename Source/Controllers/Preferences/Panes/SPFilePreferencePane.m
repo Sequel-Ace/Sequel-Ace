@@ -29,6 +29,8 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFilePreferencePane.h"
+#import "sequel-ace-Swift.h"
+
 @import Firebase;
 
 @interface SPFilePreferencePane ()
@@ -56,6 +58,8 @@
 
 - (void)dealloc
 {
+    SPLog(@"dealloc");
+
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
@@ -250,52 +254,60 @@
 			return;
 		}
 
+        SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
+
 		// since ssh configs are able to consist of multiple files, bookmarks
 		// for every selected file should be created in order to access them
 		// read-only.
 		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 			// check if the file is out of the sandbox
-			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
-				NSLog(@"got access to: %@", url.absoluteString);
-				
-				BOOL __block beenHereBefore = NO;
-				
-				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-					// check, if a bookmark already exists
-					if (dict[url.absoluteString] != nil) {
-						beenHereBefore = YES;
-						*stop = YES;
-					}
-				}];
-				
-				// if no bookmark exist, create on
-				if (beenHereBefore == NO) {
-					NSError *error = nil;
-					
-					NSData *tmpAppScopedBookmark = [url
-													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
-																			 |
-																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
-													includingResourceValuesForKeys:nil
-													relativeToURL:nil
-													error:&error];
-					
-					// save the bookmark to the preferences in order to access
-					// them later in the SPConnectionController
-					if (tmpAppScopedBookmark && !error) {
-						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
-						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-					}
-					else{
-						SPLog(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
-						CLS_LOG(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
-					}
-				}
-			}
-			else{
-				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
-				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
-			}
+//			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
+//                SPLog(@"got access to: %@", self->_currentFilePanel.URL.absoluteString);
+//                CLS_LOG(@"got access to: %@", self->_currentFilePanel.URL.absoluteString);
+//
+//				BOOL __block beenHereBefore = NO;
+//
+//				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
+//					// check, if a bookmark already exists
+//					if (dict[url.absoluteString] != nil) {
+//						beenHereBefore = YES;
+//						*stop = YES;
+//					}
+//				}];
+//
+//				// if no bookmark exist, create on
+//				if (beenHereBefore == NO) {
+//					NSError *error = nil;
+//
+//					NSData *tmpAppScopedBookmark = [self->_currentFilePanel.URL
+//													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
+//																			 |
+//																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
+//													includingResourceValuesForKeys:nil
+//													relativeToURL:nil
+//													error:&error];
+//
+//					// save the bookmark to the preferences in order to access
+//					// them later in the SPConnectionController
+//					if (tmpAppScopedBookmark && !error) {
+//						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
+//						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
+//					}
+//					else{
+//						SPLog(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
+//						CLS_LOG(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
+//					}
+//				}
+//			}
+//			else{
+//				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
+//				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
+//			}
+
+            if([sharedSecureBookmarkManager addBookMarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+                SPLog(@"addBookMarkForUrl success");
+            }
+
 		}];
 		
 		[self loadBookmarks];

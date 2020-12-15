@@ -73,6 +73,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (void)dealloc
 {
+    SPLog(@"dealloc");
+
 	for(NSURL *url in resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
@@ -337,8 +339,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 			// check if the file is out of the sandbox
 			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
-				NSLog(@"got access to: %@", url.absoluteString);
-				
+                SPLog(@"got access to: %@", self->_currentFilePanel.URL);
+                CLS_LOG(@"got access to: %@", self->_currentFilePanel.URL);
+
 				BOOL __block beenHereBefore = NO;
 				
 				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
@@ -353,7 +356,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 				if (beenHereBefore == NO) {
 					NSError *error = nil;
 					
-					NSData *tmpAppScopedBookmark = [url
+					NSData *tmpAppScopedBookmark = [self->_currentFilePanel.URL
 													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
 																			 |
 																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)

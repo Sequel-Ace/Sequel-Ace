@@ -48,7 +48,7 @@ handle bookmarkDataIsStale
 
 		print(bookmarks.count)
 
-		if(bookmarks.count == 1){
+		if(bookmarks.count < 2){
 			os_log("Could not get secureBookmarks from prefs.", log: self.log, type: .error)
 			Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
 			bookmarks.removeAll()
@@ -136,20 +136,43 @@ handle bookmarkDataIsStale
 
 					var bookmarkDataIsStale = false
 
-					let urlForBookmark = try URL(resolvingBookmarkData: urlData , options: [URL.BookmarkResolutionOptions(rawValue: bookmarkOptionsForKey)], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+//                    let sp = SecureBookmark(bookmarkData: urlData, options: Double(URL.BookmarkResolutionOptions(rawValue: bookmarkOptionsForKey).rawValue))
+//
+//                    UserDefaults.standard.set(sp.encode(), forKey: "sp")
+
+                    let decoder = JSONDecoder()
+                    let sp = try decoder.decode(SecureBookmark.self, from: urlData)
+
+                    print(sp.theUrl)
+
+//                    let sp = SecureBookmark(data: urlData)
+
+                    let urlForBookmark = try URL(resolvingBookmarkData: sp.bookmarkData , options: [URL.BookmarkResolutionOptions(rawValue: UInt(sp.options))], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
 //					 a bookmark might be "stale" because the app hasn't been used
 //					 in many months, macOS has been upgraded, the app was
 //					 re-installed, the app's preferences .plist file was deleted, etc.
 					if bookmarkDataIsStale {
 						os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
-						if regenerateBookmarkFor(url: URL(fileURLWithPath: key), options: bookmarkOptionsForKey) == true {
+
+                        let bookmarkCreationOptions : URL.BookmarkCreationOptions = URL.BookmarkCreationOptions.init(rawValue: UInt(sp.options))
+
+                        let res = sp.theUrl.startAccessingSecurityScopedResource()
+
+                        print(res)
+
+                        let bookmarkData = try sp.theUrl.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
+
+                        let sp = SecureBookmark(bookmarkData: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), theUrl: sp.theUrl)
+
+                        if regenerateBookmarkFor(secureBookMark: sp ) == true {
 							os_log("Stale bookmark regenerated: key = %@", log: log, type: .error, key)
 							bookmarks.remove(at: index) //
 						}
 						else{
 							os_log("Regen failed! Stale bookmark added: key = %@", log: log, type: .error, key)
 							staleBookmarks.append(URL(fileURLWithPath: key))
+                            bookmarks.remove(at: index) 
 						}
 					}
 					else {
@@ -167,6 +190,21 @@ handle bookmarkDataIsStale
 		}
 
 		prefs.set(bookmarks, forKey: SPSecureBookmarks)
+
+//        if let data = UserDefaults.standard.object(forKey: "sp") as? Data {
+//            let room = SecureBookmark(data: data)
+////            os_log("JIMMY room = %@", log: log, type: .info, room as! CVarArg)
+//
+//            var bookmarkDataIsStale = false
+//
+//            do {
+//            let urlForBookmark = try URL(resolvingBookmarkData: room!.bookmarkData , options: [URL.BookmarkResolutionOptions(rawValue: UInt(room!.options))], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+//
+//                os_log("JIMMY room = %@", log: log, type: .info, urlForBookmark as CVarArg)
+//
+//            }
+//            catch{}
+//        }
 	}
 
 	// MAY NOT WORK - See https://stackoverflow.com/a/25247535
@@ -174,31 +212,40 @@ handle bookmarkDataIsStale
 	/// - Parameters:
 	///   - url: file URL to generate secure bookmark for
 	/// - Returns: Bool on success or fail
-	private func regenerateBookmarkFor(url: URL, options: UInt) -> Bool {
+	private func regenerateBookmarkFor(secureBookMark: SecureBookmark) -> Bool {
 		os_log("regenerateBookmarkFor", log: log, type: .debug)
 
-		let bookmarkCreationOptions : URL.BookmarkCreationOptions = URL.BookmarkCreationOptions.init(rawValue: options)
+        let bookmarkCreationOptions : URL.BookmarkCreationOptions = URL.BookmarkCreationOptions.init(rawValue: UInt(secureBookMark.options))
 
-
+//        let urlForBookmark = try URL(resolvingBookmarkData: sp!.bookmarkData , options: [URL.BookmarkResolutionOptions(rawValue: UInt(sp!.options))], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 		do {
-			let bookmarkData = try url.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
 
-//			let bookmarkData = Data()
+            let bookmarkData = try secureBookMark.theUrl.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
 
-			let tmpDict = [url.absoluteString : bookmarkData]
+            let sp = SecureBookmark(bookmarkData: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), theUrl: secureBookMark.theUrl)
+
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let data = try encoder.encode(sp)
+            print(String(data: data, encoding: .utf8)!)
+
+
+//                let spData = sp.encode()
+            bookmarks.append([secureBookMark.theUrl.absoluteString : data])
+//                bookmarks.append([url.absoluteString : bookmarkData])
+
+            bookmarkOptions.append([secureBookMark.theUrl.absoluteString :  bookmarkCreationOptions.rawValue])
+            prefs.set(bookmarks, forKey: SPSecureBookmarks)
+            prefs.set(bookmarkOptions, forKey: SPSecureBookmarkOptions)
 
 			// i dont think this will work ...
-			let tmpURL = URL(dataRepresentation: bookmarkData, relativeTo: nil)
-			_ = tmpURL?.startAccessingSecurityScopedResource()
-
-			bookmarks.append(tmpDict)
-			prefs.set(bookmarks, forKey: SPSecureBookmarks)
+			_ = secureBookMark.theUrl.startAccessingSecurityScopedResource()
 
 			return true
 
 		} catch {
-			os_log("Error regenerateBookmarkFor: key = %@. Error: %@", log: log, type: .error, url.absoluteString, error.localizedDescription)
-			Crashlytics.crashlytics().log("Error regenerateBookmarkFor: key = \(url.absoluteString). Error: \(error.localizedDescription)")
+//			os_log("Error regenerateBookmarkFor: key = %@. Error: %@", log: log, type: .error, url.absoluteString, error.localizedDescription)
+//			Crashlytics.crashlytics().log("Error regenerateBookmarkFor: key = \(url.absoluteString). Error: \(error.localizedDescription)")
 			return false
 		}
 	}
@@ -212,13 +259,15 @@ handle bookmarkDataIsStale
 
 		let bookmarkCreationOptions : URL.BookmarkCreationOptions = URL.BookmarkCreationOptions.init(rawValue: options)
 
+
+
 		if url.startAccessingSecurityScopedResource() {
 
 			for (index, bookmarkDict) in bookmarks.enumerated(){
 
 				print("Found \(bookmarkDict) at position \(index)")
 
-				if bookmarkDict[url.absoluteString] != nil {
+                if bookmarkDict[url.absoluteString] != nil {
 					os_log("beenHereBefore", log: log, type: .debug)
 					return true
 				}
@@ -228,7 +277,20 @@ handle bookmarkDataIsStale
 
 				let bookmarkData = try url.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
 
-				bookmarks.append([url.absoluteString : bookmarkData])
+                let sp = SecureBookmark(bookmarkData: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), theUrl: url)
+
+//                UserDefaults.standard.set(sp.encode(), forKey: "sp")
+
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = .prettyPrinted
+                let data = try encoder.encode(sp)
+                print(String(data: data, encoding: .utf8)!)
+
+
+//                let spData = sp.encode()
+				bookmarks.append([url.absoluteString : data])
+//                bookmarks.append([url.absoluteString : bookmarkData])
+
 				bookmarkOptions.append([url.absoluteString : options])
 				prefs.set(bookmarks, forKey: SPSecureBookmarks)
 				prefs.set(bookmarkOptions, forKey: SPSecureBookmarkOptions)
