@@ -2454,11 +2454,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			scanString = [scanString stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"AUTO_INCREMENT=[0-9]+ "] withString:@""];
 		}
 
-		NSString *tmpStr =  [NSString stringWithFormat:@"CREATE TABLE %@ %@", (moveToDifferentDB == NO) ? [tableName backtickQuotedString] : [tempTableName backtickQuotedString], scanString];
+		NSString *queryStr =  [NSString stringWithFormat:@"CREATE TABLE %@ %@", (moveToDifferentDB == NO) ? [tableName backtickQuotedString] : [tempTableName backtickQuotedString], scanString];
 
-		SPLog("tmpStr = %@", tmpStr);
+		SPLog("queryStr = %@", queryStr);
 
-		[mySQLConnection queryString:tmpStr];
+		[mySQLConnection queryString:queryStr];
 	}
 	else if(tblType == SPTableTypeFunc || tblType == SPTableTypeProc)
 	{
