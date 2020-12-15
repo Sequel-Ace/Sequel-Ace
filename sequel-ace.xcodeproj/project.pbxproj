@@ -888,15 +888,9 @@
 		517E4475257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/SSHQuestionDialog.xib; sourceTree = "<group>"; };
 		517E4476257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ImportAccessory.xib; sourceTree = "<group>"; };
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
-		517E44C5257A8F2C00ED333B /* AppDelegate.applescript */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.applescript; path = AppDelegate.applescript; sourceTree = "<group>"; };
-		517E44C7257A8F2D00ED333B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		517E44CC257A8F2D00ED333B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		517E44CD257A8F2D00ED333B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		517E44F6257A90E700ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		517E44FB257A94C400ED333B /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
 		517E457C257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-ES"; path = "es-ES.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		517E457D257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "es-ES"; path = "es-ES.lproj/MainMenu.xib"; sourceTree = "<group>"; };
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
@@ -2215,7 +2209,6 @@
 				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
 				17E642050EF020A3001BC333 /* Interfaces */,
 				17E641430EF01E90001BC333 /* Resources */,
-				517E44C4257A8F2C00ED333B /* Sequel Ace update strings */,
 				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
@@ -2274,18 +2267,6 @@
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 			);
 			name = Other;
-			sourceTree = "<group>";
-		};
-		517E44C4257A8F2C00ED333B /* Sequel Ace update strings */ = {
-			isa = PBXGroup;
-			children = (
-				517E44C5257A8F2C00ED333B /* AppDelegate.applescript */,
-				517E44C7257A8F2D00ED333B /* Assets.xcassets */,
-				517E44C9257A8F2D00ED333B /* MainMenu.xib */,
-				517E44CC257A8F2D00ED333B /* Info.plist */,
-				517E44CD257A8F2D00ED333B /* main.m */,
-			);
-			path = "Sequel Ace update strings";
 			sourceTree = "<group>";
 		};
 		517E44F5257A906100ED333B /* Localization */ = {
@@ -3370,15 +3351,6 @@
 				517E4474257A8B6100ED333B /* en */,
 			);
 			name = GotoDatabaseDialog.xib;
-			sourceTree = "<group>";
-		};
-		517E44C9257A8F2D00ED333B /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E44F6257A90E700ED333B /* en */,
-				517E457D257A971900ED333B /* es-ES */,
-			);
-			name = MainMenu.xib;
 			sourceTree = "<group>";
 		};
 		58186D1F0F4CB38900851FE9 /* ConnectionErrorDialog.xib */ = {
