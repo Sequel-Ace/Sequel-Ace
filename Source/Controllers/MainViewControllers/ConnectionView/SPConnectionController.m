@@ -468,8 +468,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
 		
-			NSLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
-			
+            SPLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
+            CLS_LOG(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
+
 			// a bit of duplicated code here,
 			// same code is in the export controler
 			//TODO: put this in a utility/helper class
