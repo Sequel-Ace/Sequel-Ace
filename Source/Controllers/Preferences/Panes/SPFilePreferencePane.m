@@ -108,7 +108,7 @@
 	}
 	
 	// we need to re-request access to places we've been before..
-	[self reRequestSecureAccess];
+//	[self reRequestSecureAccess];
 	
 	// remove all saved filenames for the list view
 	[fileNames removeAllObjects];
