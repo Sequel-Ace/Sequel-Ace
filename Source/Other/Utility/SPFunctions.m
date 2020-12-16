@@ -129,3 +129,23 @@ void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement)
 		method_exchangeImplementations(a, b);
 	}
 }
+
+id DumpObjCMethods(Class clz) {
+    
+    unsigned int i=0;
+    unsigned int mc = 0;
+    Method * mlist = class_copyMethodList(object_getClass(clz), &mc);
+    
+    NSMutableArray *arr = [[NSMutableArray alloc] initWithCapacity:mc];
+    
+    SPLog(@"%d class methods", mc);
+    for(i=0;i<mc;i++){
+        SPLog(@"Class Method no #%d: %s", i, sel_getName(method_getName(mlist[i])));
+        [arr addObject:[[NSString alloc] initWithCString:sel_getName(method_getName(mlist[i])) encoding:NSUTF8StringEncoding]];
+    }
+    
+    free(mlist);
+    
+    return arr;
+}
+
