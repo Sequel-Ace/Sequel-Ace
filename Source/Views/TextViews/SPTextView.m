@@ -836,7 +836,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			NSArray *allTables = [[dbs objectForKey:conID] allKeys];
 			// Check if found table name is known, if not parse for aliases
 			if(![allTables containsObject:[NSString stringWithFormat:@"%@%@%@", conID, SPUniqueSchemaDelimiter, tableName]]) {
-				NSString *currentQuery = [[self string] substringWithRange:[customQueryInstance currentQueryRange]];
+                NSString *currentQuery = [[self string] substringWithRange:NSMakeRange(0, self.string.length)];
 				NSString *re = [NSString stringWithFormat:@"(?i)[\\s,]`?(\\S+?)`?\\s+(AS\\s+)?`?%@`?\\b", tableName];
 				NSArray *matches = [currentQuery componentsMatchedByRegex:re];
 				for(NSString* m in matches) {
