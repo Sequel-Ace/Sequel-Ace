@@ -124,10 +124,11 @@
 			}
 			
 			// remove the file protocol
-			NSString *fileName = [key substringFromIndex:[@"file://" length]];
-			
-			// save the filename without the file protocol
-			[fileNames addObject:fileName];
+            if([key hasPrefixWithPrefix:@"file://" caseSensitive:YES] == YES){
+                NSString *fileName = [key substringFromIndex:[@"file://" length]];
+                // save the filename without the file protocol
+                [fileNames addObject:fileName];
+            }
 		}
 	}];
 	

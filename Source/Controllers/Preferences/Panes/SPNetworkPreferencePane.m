@@ -266,11 +266,13 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		
 		// every bookmark is saved in relation to it's abslute path
 		while (key = [keyEnumerator nextObject]) {
-			NSString *itemTitle = [key substringFromIndex:[@"file://" length]];
-			
-			[sshConfigChooser addItemWithTitle:itemTitle];
-			
-			count++;
+            
+            if([key hasPrefixWithPrefix:@"file://" caseSensitive:YES] == YES){
+                // save the filename without the file protocol
+                NSString *itemTitle = [key substringFromIndex:[@"file://" length]];
+                [sshConfigChooser addItemWithTitle:itemTitle];
+                count++;
+            }
 		}
 	}];
 
