@@ -1438,7 +1438,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Grab the password for this connection
 	// Add the password to keychain as appropriate
 	NSString *sqlPassword = [self password];
-	if (mySQLConnection && connectionKeychainItemName) {
+	if (![sqlPassword length] && mySQLConnection && connectionKeychainItemName) {
 		sqlPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
 	}
 

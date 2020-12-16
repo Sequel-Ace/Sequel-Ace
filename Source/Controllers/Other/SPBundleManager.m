@@ -252,7 +252,7 @@ static SPBundleManager *sharedSPBundleManager = nil;
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							CLS_LOG(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
-							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
+//							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							[self doOrDoNotBeep:infoPath];
 
 							// remove the dodgy bundle
@@ -462,7 +462,7 @@ static SPBundleManager *sharedSPBundleManager = nil;
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							CLS_LOG(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
-							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
+//							[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"File couldn't be read: %@\n\nIt will be deleted.", @"File couldn't be read nIt will be deleted"), infoPath] message:readError.localizedDescription callback:nil];
 							[self doOrDoNotBeep:bundle];
 
 							// remove the dodgy bundle
