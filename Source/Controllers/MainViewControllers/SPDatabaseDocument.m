@@ -3877,7 +3877,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Validates the toolbar items
+ * Validates the toolbar items - JCS NOTE: this is called loads!
  */
 - (BOOL)validateToolbarItem:(NSToolbarItem *)toolbarItem
 {
@@ -3895,6 +3895,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			if ([queryWindow isVisible]) {
 				[toolbarItem setImage:[NSImage imageNamed:@"showconsole"]];
 			} else {
+                CLS_LOG(@"macOS < 11 and queryWindow is NOT Visible");
 				[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
 			}
 		}
