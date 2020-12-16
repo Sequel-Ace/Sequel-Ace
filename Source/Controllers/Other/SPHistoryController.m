@@ -33,6 +33,7 @@
 #import "SPTablesList.h"
 #import "SPHistoryController.h"
 #import "SPThreadAdditions.h"
+@import Firebase;
 
 @implementation SPHistoryController
 
@@ -153,18 +154,25 @@
 	// Ensure history navigation is permitted - trigger end editing and any required saves
 	if (![theDocument couldCommitCurrentViewActions]) return;
 
-	switch ([theControl selectedSegment]) 
-	{
-		// Back button clicked:
-		case 0:
-			[self goBackInHistory];
-			break;
-
-		// Forward button clicked:
-		case 1:
-			[self goForwardInHistory];
-			break;
-	}
+    
+    if ([theControl respondsToSelector:@selector(selectedSegment)]) {
+        switch ([theControl selectedSegment])
+        {
+                // Back button clicked:
+            case 0:
+                [self goBackInHistory];
+                break;
+                
+                // Forward button clicked:
+            case 1:
+                [self goForwardInHistory];
+                break;
+        }
+    }
+    else {
+        SPLog(@"theControl does not respondToSelector: selectedSegment. theControl class: %@", [theControl class]);
+        CLS_LOG(@"theControl does not respondToSelector: selectedSegment. theControl class: %@", [theControl class]);
+    }
 }
 
 /**
