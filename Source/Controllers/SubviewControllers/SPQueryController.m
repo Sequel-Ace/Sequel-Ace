@@ -953,13 +953,21 @@ NSInteger intSort(id num1, id num2, void *context)
 {
 	NSUInteger maxHistoryItems = [[prefs objectForKey:SPCustomQueryMaxHistoryItems] integerValue];
 
+    NSString *fileURLStr = [fileURL absoluteString];
+
+    CLS_LOG(@"fileURLStr = %@", fileURLStr);
+    SPLog(@"fileURLStr = %@", fileURLStr);
+
 	// Save each history item due to its document source
-	if ([historyContainer safeObjectForKey:[fileURL absoluteString]]) {
+	if (fileURLStr != nil && [historyContainer safeObjectForKey:fileURLStr]) {
 
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
 
-		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:[fileURL absoluteString]]];
+        CLS_LOG(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
+        SPLog(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
+
+		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];
 		[uniquifier insertItemWithTitle:history atIndex:0];
 
 		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)
