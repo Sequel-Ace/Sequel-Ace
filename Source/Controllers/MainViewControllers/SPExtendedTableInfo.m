@@ -38,6 +38,7 @@
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
 #import "sequel-ace-Swift.h"
+@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -238,6 +239,10 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 	// Retrieve the table status information via the table data cache
 	NSDictionary *statusFields = [tableDataInstance statusValues];
+
+    CLS_LOG(@"tableTypePopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
+    CLS_LOG(@"tableEncodingPopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
+    CLS_LOG(@"tableCollationPopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
 
 	[tableTypePopUpButton removeAllItems];
 	[tableEncodingPopUpButton removeAllItems];

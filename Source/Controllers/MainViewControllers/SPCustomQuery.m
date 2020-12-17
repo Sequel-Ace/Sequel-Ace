@@ -213,13 +213,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Re-init sort order
 	isDesc = NO;
 	sortColumn = nil;
-	
+
 
 	// If the current selection is a single caret position, run the current query.
 	if (selectedRange.length == 0) {
 		// BOOL doLookBehind = YES;
 		// query = [self queryAtPosition:selectedRange.location lookBehind:&doLookBehind];
-		if(currentQueryRange.length)
+		if(currentQueryRange.length  && [textView string].length > currentQueryRange.length)
 			query = [[textView string] substringWithRange:currentQueryRange];
 		if (!query) {
 			NSBeep();
