@@ -949,8 +949,8 @@
 
 				// Set up index sets for use during row enumeration
 				for (i = 0; i < [fieldMappingArray count]; i++) {
-					if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] == 0) {
-						NSString *fieldName = NSArrayObjectAtIndex(fieldMappingTableColumnNames, i);
+                    if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0) {
+                        NSString *fieldName = [fieldMappingTableColumnNames safeObjectAtIndex:i];
 						if ([nullableNumericFields containsObject:fieldName]) {
 							[nullableNumericFieldsMapIndex addIndex:i];
 						}
