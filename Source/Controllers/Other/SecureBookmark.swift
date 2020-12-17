@@ -18,12 +18,24 @@ class SecureBookmark: NSObject {
     }
     
     public func getEncodedData() -> Data{
-        let codedData = NSKeyedArchiver.archivedData(withRootObject: _data)
-        return codedData
+        if #available(OSX 10.13, *) {
+            let codedData = try! NSKeyedArchiver.archivedData(withRootObject: _data, requiringSecureCoding: true)
+            return codedData
+        } else {
+            // Fallback on earlier versions
+            let codedData = NSKeyedArchiver.archivedData(withRootObject: _data)
+            return codedData
+        }
     }
     
     public class func getDecodedData(encodedData: Data) -> SecureBookmarkData {
-        return try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(encodedData) as! SecureBookmarkData
+        
+        if #available(OSX 10.13, *) {
+            return try! NSKeyedUnarchiver.unarchivedObject(ofClass: SecureBookmarkData.self, from: encodedData)!
+        } else {
+            // Fallback on earlier versions
+            return try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(encodedData) as! SecureBookmarkData
+        }
     }
 }
 

@@ -411,8 +411,6 @@ NSString *SPBundleLegacyAppSchema                           = @"sequelpro";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
 const long SPBundleCurrentVersion                           = 2;
 
-NSString *SPCreatedBookmarksOptions					        = @"CreatedBookmarksOptions";
-
 NSString *SPBundleFileName                                  = @"command.plist";
 NSString *SPBundleTaskInputFilePath                         = @"~/tmp/SP_BUNDLE_INPUT";
 NSString *SPBundleTaskOutputFilePath                        = @"~/tmp/SP_BUNDLE_OUTPUT";

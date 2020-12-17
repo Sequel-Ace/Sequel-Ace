@@ -46,7 +46,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 @implementation SPNetworkPreferencePane
 
 @synthesize bookmarks;
-@synthesize resolvedBookmarks;
 
 - (instancetype)init
 {
@@ -54,7 +53,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
 		bookmarks = [[NSMutableArray alloc] init];
-		resolvedBookmarks = [[NSMutableArray alloc] init];
 		
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){
@@ -65,7 +63,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
 		}
 		
-		[self reRequestSecureAccess];
 	}
 	
 	return self;
@@ -75,7 +72,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 {
     SPLog(@"dealloc");
 
-	for(NSURL *url in resolvedBookmarks){
+	for(NSURL *url in SecureBookmarkManager.sharedInstance.resolvedBookmarks){
 		[url stopAccessingSecurityScopedResource];
 	}
 }
@@ -121,40 +118,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		[sslCipherView registerForDraggedTypes:@[SPSSLCipherPboardTypeName]];
 }
 
-#pragma mark -
-#pragma mark Bookmarks
-
--(void)reRequestSecureAccess{
-	
-	SPLog(@"reRequestSecureAccess to saved bookmarks");
-
-	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-		
-		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
-			
-			NSError *error = nil;
-			BOOL bookmarkDataIsStale;
-			
-			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
-													  options:NSURLBookmarkResolutionWithSecurityScope
-												relativeToURL:nil
-										  bookmarkDataIsStale:&bookmarkDataIsStale
-														error:&error];
-			
-			if(!error){
-				[tmpURL startAccessingSecurityScopedResource];
-				[resolvedBookmarks addObject:tmpURL];
-			}
-			else{
-				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
-				CLS_LOG(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
-			}
-		}];
-	}];
-
-	SPLog(@"resolvedBookmarks - %@",resolvedBookmarks);
-	CLS_LOG(@"resolvedBookmarks - %@",resolvedBookmarks);
-}
 
 #pragma mark -
 #pragma mark Custom SSH client methods
@@ -312,7 +275,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	} else {
 		homeDirectory = [NSURL fileURLWithPath:NSHomeDirectory()];
 	}
-	
+
+    SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
+    
 	_currentFilePanel = [NSOpenPanel openPanel];
 	[_currentFilePanel setTitle:@"Choose ssh config"];
 	[_currentFilePanel setCanChooseFiles:YES];
@@ -340,49 +305,11 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		// read-only.
 		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 			// check if the file is out of the sandbox
-			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
-                SPLog(@"got access to: %@", self->_currentFilePanel.URL);
-                CLS_LOG(@"got access to: %@", self->_currentFilePanel.URL);
 
-				BOOL __block beenHereBefore = NO;
-				
-				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-					// check, if a bookmark already exists
-					if (dict[url.absoluteString] != nil) {
-						beenHereBefore = YES;
-						*stop = YES;
-					}
-				}];
-				
-				// if no bookmark exist, create on
-				if (beenHereBefore == NO) {
-					NSError *error = nil;
-					
-					NSData *tmpAppScopedBookmark = [self->_currentFilePanel.URL
-													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
-																			 |
-																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
-													includingResourceValuesForKeys:nil
-													relativeToURL:nil
-													error:&error];
-					
-					// save the bookmark to the preferences in order to access
-					// them later in the SPConnectionController
-					if (tmpAppScopedBookmark && !error) {
-						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
-						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-					}
-					else{
-						SPLog(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
-						CLS_LOG(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
-					}
-				}
-			}
-			else{
-				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
-				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
-			}
-			
+            if([SecureBookmarkManager.sharedInstance addBookMarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+                SPLog(@"addBookMarkForUrl success");
+            }
+
 			// set the config path to the first selected file
 			if (idxURL == 0) {
 				// save the preferences

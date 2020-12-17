@@ -62,37 +62,37 @@ extension UserDefaults {
         
     }
     
-    @objc static func getBookmarks() -> NSArray {
-        let defaults = UserDefaults.standard
-        
-        let bookmarks = defaults.object(forKey: SPSecureBookmarks) as! Array<Dictionary<String, Data>>
-        
-        var bmCopy : [Dictionary<String, Data>] = []
-        
-        for (_, bookmarkDict) in bookmarks.enumerated(){
-            for (key, bookmarkData) in bookmarkDict {
-                guard
-                    let unarchivedBookmarkData = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(bookmarkData) as? Data,
-                    let newDict = [key : unarchivedBookmarkData],
-                    bmCopy.append(newDict)
-                else {
-                    return Data()
-                }
-            }
-        }
-        
-        
-//        var bmCopy = bookmarks
-//        bmCopy.removeAll()
-//        for (_, bookmarkDict) in bookmarks.enumerated(){
+//    @objc static func getBookmarks() -> NSArray {
+//        let defaults = UserDefaults.standard
 //
+//        let bookmarks = defaults.object(forKey: SPSecureBookmarks) as! Array<Dictionary<String, Data>>
+//
+//        var bmCopy : [Dictionary<String, Data>] = []
+//
+//        for (_, bookmarkDict) in bookmarks.enumerated(){
 //            for (key, bookmarkData) in bookmarkDict {
-//                let encData = NSKeyedArchiver.archivedData(withRootObject: bookmarkData)
-//                let newDict = [key : encData]
-//                bmCopy.append(newDict)
+//                guard
+//                    let unarchivedBookmarkData = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(bookmarkData) as? Data,
+//                    let newDict = [key : unarchivedBookmarkData],
+//                    bmCopy.append(newDict)
+//                else {
+//                    return Data()
+//                }
 //            }
 //        }
-//        defaults.set(bmCopy, forKey: SPSecureBookmarks)
-        
-    }
+//
+//
+////        var bmCopy = bookmarks
+////        bmCopy.removeAll()
+////        for (_, bookmarkDict) in bookmarks.enumerated(){
+////
+////            for (key, bookmarkData) in bookmarkDict {
+////                let encData = NSKeyedArchiver.archivedData(withRootObject: bookmarkData)
+////                let newDict = [key : encData]
+////                bmCopy.append(newDict)
+////            }
+////        }
+////        defaults.set(bmCopy, forKey: SPSecureBookmarks)
+//
+//    }
 }
