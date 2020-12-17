@@ -634,9 +634,9 @@ set_input:
 			// the code always seems to go into this block as the
 			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
 			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
-				
-				NSLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-				
+                SPLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
+                CLS_LOG(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
+                
 				BOOL __block beenHereBefore = NO;
 				
 				// have we been here before?

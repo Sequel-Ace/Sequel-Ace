@@ -74,3 +74,5 @@ void executeOnBackgroundThread(void (^block)(void));
 void executeOnBackgroundThreadSync(void (^block)(void));
 
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement);
+
+id DumpObjCMethods(Class clz);
