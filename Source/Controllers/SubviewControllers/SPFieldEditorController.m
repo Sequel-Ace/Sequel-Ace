@@ -38,8 +38,9 @@
 #import "SPCustomQuery.h"
 #import "SPTableContent.h"
 #import "SPJSONFormatter.h"
-
+@import Firebase;
 #import <SPMySQL/SPMySQL.h>
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -528,17 +529,33 @@ typedef enum {
 		case JsonSegment:
 			[usedSheet makeFirstResponder:jsonTextView];
 			if([[jsonTextView string] isEqualToString:@""]) {
-				NSError *error;
-				NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
-				id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
-				
-				if([NSJSONSerialization isValidJSONObject:jsonObject]){
-					NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
-					NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
-					[jsonTextView setString:prettyPrintedJson];
-				}else{
-					[jsonTextView setString:sheetEditData];
-				}
+                if([sheetEditData isKindOfClass:[NSData class]]) {
+                    if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
+                        NSError *error;
+                        NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
+                        id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
+                        
+                        if([NSJSONSerialization isValidJSONObject:jsonObject]){
+                            NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
+                            NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
+                            [jsonTextView setString:prettyPrintedJson];
+                        }else{
+                            [jsonTextView setString:sheetEditData];
+                        }
+                    }
+                    else{
+                        SPLog(@"sheetEditData does not respond to dataUsingEncoding: %@", [sheetEditData class]);
+                        CLS_LOG(@"sheetEditData does not respond dataUsingEncoding: %@", [sheetEditData class]);
+#ifdef DEBUG
+                        NSArray *arr = DumpObjCMethods(sheetEditData);
+                        SPLog(@"sheetEditData class methods = %@", arr);
+#endif
+                    }
+                }
+                else{
+                    SPLog(@"sheetEditData not of NSData class: %@", [sheetEditData class]);
+                    CLS_LOG(@"sheetEditData not of NSData class: %@", [sheetEditData class]);
+                }
 			}
 			[editTextView setHidden:YES];
 			[editTextScrollView setHidden:YES];
