@@ -47,10 +47,9 @@ stopAllSecurityScopedAccess
         // this manager *should* be the only thing changing the bookmarks pref, but in case...
         observer = UserDefaults.standard.observe(\.SPSecureBookmarks, options: [.new,.old], changeHandler: { (defaults, change) in
 
-            os_log("SPSecureBookmarks changed.", log: self.log, type: .debug)
-            Crashlytics.crashlytics().log("SPSecureBookmarks changed.")
-
             if self.iChangedTheBookmarks == false{
+                os_log("SPSecureBookmarks changed NOT by SecureBookmarkManager.", log: self.log, type: .debug)
+                Crashlytics.crashlytics().log("SPSecureBookmarks changed NOT by SecureBookmarkManager.")
                 self.bookmarks.removeAll()
                 self.bookmarks = change.newValue!
             }
@@ -65,8 +64,8 @@ stopAllSecurityScopedAccess
         // FIXME: @Kaspik need help ... need a guard or if let, don't want the default value...
         bookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]] ?? [["noBookmarks": Data()]]
 
-        // check for default empty value
-        if bookmarks[0]["noBookmarks"] != nil {
+        // FIXME: check for default empty value - I don't like this.
+        if bookmarks.isEmpty == true || bookmarks[0]["noBookmarks"] != nil {
             os_log("Could not get secureBookmarks from prefs.", log: self.log, type: .error)
             Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
             bookmarks.removeAll()
@@ -114,7 +113,7 @@ stopAllSecurityScopedAccess
                     // always resolve with just _NSURLBookmarkResolutionWithSecurityScope
                     let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [_NSURLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
-//                    bookmarkDataIsStale = true
+//                   bookmarkDataIsStale = true
 //					 a bookmark might be "stale" because the app hasn't been used
 //					 in many months, macOS has been upgraded, the app was
 //					 re-installed, the app's preferences .plist file was deleted, etc.
@@ -150,9 +149,9 @@ stopAllSecurityScopedAccess
         // reset bookmarks
         iChangedTheBookmarks = true
 		prefs.set(bookmarks, forKey: SASecureBookmarks)
-
 	}
 
+   
 	/// addBookMark
 	///  - Parameters:
 	///	 - url: file URL to generate secure bookmark for
