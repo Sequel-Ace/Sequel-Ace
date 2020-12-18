@@ -33,7 +33,6 @@
 		172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = 172A65100F7BED7A001E861A /* SPConsoleMessage.m */; };
 		173284EA1088FEDE0062E892 /* SPConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = 173284E91088FEDE0062E892 /* SPConstants.m */; };
 		1734696B11C1167000AB3D16 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
-		173C4362104455CA001F3A30 /* QueryFavoriteManager.xib in Resources */ = {isa = PBXBuildFile; fileRef = 173C4360104455CA001F3A30 /* QueryFavoriteManager.xib */; };
 		173C4366104455E0001F3A30 /* SPQueryFavoriteManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C4365104455E0001F3A30 /* SPQueryFavoriteManager.m */; };
 		173C44D81044A6B0001F3A30 /* SPOutlineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C44D71044A6B0001F3A30 /* SPOutlineView.m */; };
 		173C837211AAD26E00B8B084 /* SPExportUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C837011AAD26E00B8B084 /* SPExportUtilities.m */; };
@@ -41,9 +40,7 @@
 		173C837A11AAD2AE00B8B084 /* SPHTMLExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C837611AAD2AE00B8B084 /* SPHTMLExporter.m */; };
 		173C837B11AAD2AE00B8B084 /* SPPDFExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C837811AAD2AE00B8B084 /* SPPDFExporter.m */; };
 		1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */ = {isa = PBXBuildFile; fileRef = 1740FABA0FC4372F00CF3699 /* SPDatabaseData.m */; };
-		174CE11E10AB80B5008F892B /* DatabaseProcessList.xib in Resources */ = {isa = PBXBuildFile; fileRef = 174CE11C10AB80B5008F892B /* DatabaseProcessList.xib */; };
 		174CE14210AB9281008F892B /* SPProcessListController.m in Sources */ = {isa = PBXBuildFile; fileRef = 174CE14110AB9281008F892B /* SPProcessListController.m */; };
-		1761FD480EF03A6F00331368 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1761FD460EF03A6F00331368 /* MainMenu.xib */; };
 		176E14D115570FE300FAF326 /* SPBundleCommandRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 176E14D015570FE300FAF326 /* SPBundleCommandRunner.m */; };
 		177E792E0FCB54EC00E9E122 /* database-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 177E792B0FCB54EC00E9E122 /* database-small.png */; };
 		177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 177E792C0FCB54EC00E9E122 /* dummy-small.png */; };
@@ -54,7 +51,6 @@
 		1785EB66127DD5EA00F468C8 /* SPNetworkPreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 1785EB65127DD5EA00F468C8 /* SPNetworkPreferencePane.m */; };
 		1785EB6A127DD79300F468C8 /* SPEditorPreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 1785EB69127DD79300F468C8 /* SPEditorPreferencePane.m */; };
 		1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1789343B0F30C1DD0097539A /* SPStringAdditions.m */; };
-		1792C13210AD752100ABE758 /* DatabaseServerVariables.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1792C13010AD752100ABE758 /* DatabaseServerVariables.xib */; };
 		1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1792C13610AD75C800ABE758 /* SPServerVariablesController.m */; };
 		1798F1871550175B004B0AB8 /* SPFavoritesExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F1821550175B004B0AB8 /* SPFavoritesExporter.m */; };
 		1798F1881550175B004B0AB8 /* SPFavoritesImporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F1851550175B004B0AB8 /* SPFavoritesImporter.m */; };
@@ -67,12 +63,10 @@
 		179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */ = {isa = PBXBuildFile; fileRef = 179F15050F7C433C00579954 /* SPEditorTokens.l */; };
 		17A20AC6124F9B110095CEFB /* SPServerSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = 17A20AC5124F9B110095CEFB /* SPServerSupport.m */; };
 		17A7773411C52D8E001E27B4 /* SPIndexesController.m in Sources */ = {isa = PBXBuildFile; fileRef = 17A7773311C52D8E001E27B4 /* SPIndexesController.m */; };
-		17A7773811C52E61001E27B4 /* IndexesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 17A7773611C52E61001E27B4 /* IndexesView.xib */; };
 		17AED4161888BD67008E380F /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5EAC0FC0EC87FF900CC579C /* Security.framework */; };
 		17B548631E81FFA600175D5A /* SPCreateDatabaseInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 17B548621E81FFA600175D5A /* SPCreateDatabaseInfo.m */; };
 		17C058880FC9FC390077E9CF /* SPNarrowDownCompletion.m in Sources */ = {isa = PBXBuildFile; fileRef = 17C058870FC9FC390077E9CF /* SPNarrowDownCompletion.m */; };
 		17CC97F310B4ABE90034CD7A /* SPAboutController.m in Sources */ = {isa = PBXBuildFile; fileRef = 17CC97F210B4ABE90034CD7A /* SPAboutController.m */; };
-		17CC97F710B4AC6C0034CD7A /* AboutPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 17CC97F510B4AC6C0034CD7A /* AboutPanel.xib */; };
 		17D38F701279E23A00672B13 /* SPTableFieldValidation.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D38F6F1279E23A00672B13 /* SPTableFieldValidation.m */; };
 		17D390C8127B65AF00672B13 /* SPGeneralPreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D390C7127B65AF00672B13 /* SPGeneralPreferencePane.m */; };
 		17D390CB127B6BF800672B13 /* SPPreferencesUpgrade.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D390CA127B6BF800672B13 /* SPPreferencesUpgrade.m */; };
@@ -106,7 +100,6 @@
 		17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */ = {isa = PBXBuildFile; fileRef = 17E641BF0EF02036001BC333 /* toolbar-switch-to-table-info.png */; };
 		17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */ = {isa = PBXBuildFile; fileRef = 17E641F70EF02088001BC333 /* sequel-pro.scriptSuite */; };
 		17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */ = {isa = PBXBuildFile; fileRef = 17E641F80EF02088001BC333 /* sequel-pro.scriptTerminology */; };
-		17E6420A0EF020CB001BC333 /* DBView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 17E642060EF020CB001BC333 /* DBView.xib */; };
 		17F5B1511048C4E400FC794F /* SPCSVExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5B1501048C4E400FC794F /* SPCSVExporter.m */; };
 		17F5B1541048C50D00FC794F /* SPExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5B1531048C50D00FC794F /* SPExporter.m */; };
 		17F5B39C1049B96A00FC794F /* SPSQLExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5B39B1049B96A00FC794F /* SPSQLExporter.m */; };
@@ -175,7 +168,6 @@
 		4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B799101E0CDF00D116A1 /* SPUserManager.m */; };
 		4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */; };
 		4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B79D101E0CF200D116A1 /* SPUserMO.m */; };
-		4D90B7A2101E0D1500D116A1 /* UserManagerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4D90B7A0101E0D1500D116A1 /* UserManagerView.xib */; };
 		500C1F921BFB5F9F0095DC7F /* SPPrivilegesMO.m in Sources */ = {isa = PBXBuildFile; fileRef = 500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */; };
 		500DA4B71BEFF877000773FE /* SPComboBoxCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 500DA4B61BEFF877000773FE /* SPComboBoxCell.m */; };
 		500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 500DA4BB1BF0CD57000773FE /* SPScreenAdditions.m */; };
@@ -199,7 +191,6 @@
 		50837F771E50E007004FAE8A /* SPJSONFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F70A951E4E547500636550 /* SPJSONFormatter.m */; };
 		5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */ = {isa = PBXBuildFile; fileRef = 5089B0261BE714E300E226CD /* SPIdMenu.m */; };
 		50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */ = {isa = PBXBuildFile; fileRef = 50A9F8B019EAD4B90053E571 /* SPGotoDatabaseController.m */; };
-		50D3C3491A75B8A800B5429C /* GotoDatabaseDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 50D3C34B1A75B8A800B5429C /* GotoDatabaseDialog.xib */; };
 		50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C3501A77135F00B5429C /* SPParserUtils.c */; };
 		50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */; };
 		50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C3501A77135F00B5429C /* SPParserUtils.c */; };
@@ -225,6 +216,36 @@
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1789343B0F30C1DD0097539A /* SPStringAdditions.m */; };
+		51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */; };
+		51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */; };
+		51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC0258D06D7009E2484 /* Preferences.xib */; };
+		51CD0BDF258D06D8009E2484 /* FilterTableWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */; };
+		51CD0BE0258D06D8009E2484 /* FieldEditorSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC2258D06D7009E2484 /* FieldEditorSheet.xib */; };
+		51CD0BE1258D06D8009E2484 /* GotoDatabaseDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC3258D06D7009E2484 /* GotoDatabaseDialog.xib */; };
+		51CD0BE2258D06D8009E2484 /* IndexesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC4258D06D7009E2484 /* IndexesView.xib */; };
+		51CD0BE3258D06D8009E2484 /* DBView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC5258D06D7009E2484 /* DBView.xib */; };
+		51CD0BE4258D06D8009E2484 /* HelpViewer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC6258D06D7009E2484 /* HelpViewer.xib */; };
+		51CD0BE5258D06D8009E2484 /* Navigator.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC7258D06D8009E2484 /* Navigator.xib */; };
+		51CD0BE6258D06D8009E2484 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC8258D06D8009E2484 /* MainWindow.xib */; };
+		51CD0BE7258D06D8009E2484 /* ImportAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */; };
+		51CD0BE8258D06D8009E2484 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCA258D06D8009E2484 /* MainMenu.xib */; };
+		51CD0BE9258D06D8009E2484 /* Console.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCB258D06D8009E2484 /* Console.xib */; };
+		51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */; };
+		51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */; };
+		51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */; };
+		51CD0BED258D06D8009E2484 /* SaveSPFAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */; };
+		51CD0BEE258D06D8009E2484 /* UserManagerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD0258D06D8009E2484 /* UserManagerView.xib */; };
+		51CD0BEF258D06D8009E2484 /* ExportDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD1258D06D8009E2484 /* ExportDialog.xib */; };
+		51CD0BF0258D06D8009E2484 /* BundleEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD2258D06D8009E2484 /* BundleEditor.xib */; };
+		51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD3258D06D8009E2484 /* ContentFilterManager.xib */; };
+		51CD0BF2258D06D8009E2484 /* EncodingPopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD4258D06D8009E2484 /* EncodingPopupView.xib */; };
+		51CD0BF3258D06D8009E2484 /* ContentPaginationView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD5258D06D8009E2484 /* ContentPaginationView.xib */; };
+		51CD0BF4258D06D8009E2484 /* SSHQuestionDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD6258D06D8009E2484 /* SSHQuestionDialog.xib */; };
+		51CD0BF5258D06D8009E2484 /* QueryFavoriteManager.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */; };
+		51CD0BF6258D06D8009E2484 /* ConnectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD8258D06D8009E2484 /* ConnectionView.xib */; };
+		51CD0BF7258D06D8009E2484 /* AboutPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD9258D06D8009E2484 /* AboutPanel.xib */; };
+		51CD0BF8258D06D8009E2484 /* DatabaseProcessList.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */; };
+		51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
@@ -232,12 +253,9 @@
 		580E8DBB11EA774B000D8427 /* SequelProTabDirty_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAF11EA772C000D8427 /* SequelProTabDirty_Rollover.png */; };
 		580E8DBC11EA774B000D8427 /* SequelProTabDirty.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DB011EA772C000D8427 /* SequelProTabDirty.png */; };
 		581068B61015411B0068C6E2 /* link-arrow-highlighted.png in Resources */ = {isa = PBXBuildFile; fileRef = 581068B51015411B0068C6E2 /* link-arrow-highlighted.png */; };
-		58186D210F4CB38900851FE9 /* ConnectionErrorDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 58186D1F0F4CB38900851FE9 /* ConnectionErrorDialog.xib */; };
 		5822C9B51000DB2400DCC3D6 /* SPConnectionController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5822C9B41000DB2400DCC3D6 /* SPConnectionController.m */; };
-		5822CAE110011C8000DCC3D6 /* ConnectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5822CADF10011C8000DCC3D6 /* ConnectionView.xib */; };
 		5822D3091061833C00CE2157 /* SPCSVParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 5822D3081061833C00CE2157 /* SPCSVParser.m */; };
 		582A01E9107C0C170027D42B /* SPNotLoaded.m in Sources */ = {isa = PBXBuildFile; fileRef = 582A01E8107C0C170027D42B /* SPNotLoaded.m */; };
-		582A05A9108A5CCF0027D42B /* ProgressIndicatorLayer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 582A05A7108A5CCF0027D42B /* ProgressIndicatorLayer.xib */; };
 		582E939D168296F3003459FD /* link-arrow-clicked@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 582E9399168296F3003459FD /* link-arrow-clicked@2x.png */; };
 		582E939E168296F3003459FD /* link-arrow-highlighted-clicked@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 582E939A168296F3003459FD /* link-arrow-highlighted-clicked@2x.png */; };
 		582E939F168296F3003459FD /* link-arrow-highlighted@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 582E939B168296F3003459FD /* link-arrow-highlighted@2x.png */; };
@@ -286,7 +304,6 @@
 		589235321020C1230011DE00 /* SPHistoryController.m in Sources */ = {isa = PBXBuildFile; fileRef = 589235301020C1230011DE00 /* SPHistoryController.m */; };
 		589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		58A137CD123ED5E6000B1B75 /* titlebarlock.png in Resources */ = {isa = PBXBuildFile; fileRef = 58A137CC123ED5E6000B1B75 /* titlebarlock.png */; };
-		58A8A72711A0149100B95749 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 58A8A72611A0149100B95749 /* MainWindow.xib */; };
 		58A8A79111A036C000B95749 /* SPWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 58A8A79011A036C000B95749 /* SPWindowController.m */; };
 		58B9074A11BD9B34000826E5 /* overflowImage.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070A11BD9B34000826E5 /* overflowImage.png */; };
 		58B9074B11BD9B34000826E5 /* overflowImagePressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070B11BD9B34000826E5 /* overflowImagePressed.png */; };
@@ -320,7 +337,6 @@
 		58B907CA11BDA541000826E5 /* PSMTabBar.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 58B906E611BD989A000826E5 /* PSMTabBar.framework */; };
 		58B907FB11BDA5A9000826E5 /* PSMTabBar.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 58B906E611BD989A000826E5 /* PSMTabBar.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		58B9097B11C3A4A2000826E5 /* xibLocalizationPostprocessor.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9095B11C3A3EC000826E5 /* xibLocalizationPostprocessor.m */; };
-		58C3507510B9ADEA00D37E14 /* ContentPaginationView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 58C3507310B9ADEA00D37E14 /* ContentPaginationView.xib */; };
 		58C4BA1616781A93004068AB /* SequelProTabDirty_Pressed@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1116781A93004068AB /* SequelProTabDirty_Pressed@2x.png */; };
 		58C4BA1716781A93004068AB /* SequelProTabDirty_Rollover@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1216781A93004068AB /* SequelProTabDirty_Rollover@2x.png */; };
 		58C4BA1816781A93004068AB /* SequelProTabDirty@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1316781A93004068AB /* SequelProTabDirty@2x.png */; };
@@ -384,25 +400,18 @@
 		B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */ = {isa = PBXBuildFile; fileRef = B51D6B9D114C310C0074704E /* toolbar-switch-to-table-triggers.png */; };
 		B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		B52460D80F8EF92300171639 /* SPTextViewAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D60F8EF92300171639 /* SPTextViewAdditions.m */; };
-		B52460DB0F8EF93B00171639 /* Console.xib in Resources */ = {isa = PBXBuildFile; fileRef = B52460D90F8EF93B00171639 /* Console.xib */; };
 		B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */ = {isa = PBXBuildFile; fileRef = B54F25E50FD909C400E2CF36 /* toolbar-switch-to-table-relations.png */; };
 		B55F8E6211C67D53006A3386 /* PSMSequelProTabStyle.m in Sources */ = {isa = PBXBuildFile; fileRef = B55F8E5E11C67CA0006A3386 /* PSMSequelProTabStyle.m */; };
 		B55F8E6611C67D8A006A3386 /* AddTabButton.png in Resources */ = {isa = PBXBuildFile; fileRef = B55F8E6311C67D8A006A3386 /* AddTabButton.png */; };
 		B55F8E6711C67D8A006A3386 /* AddTabButtonPushed.png in Resources */ = {isa = PBXBuildFile; fileRef = B55F8E6411C67D8A006A3386 /* AddTabButtonPushed.png */; };
 		B55F8E6811C67D8A006A3386 /* AddTabButtonRollover.png in Resources */ = {isa = PBXBuildFile; fileRef = B55F8E6511C67D8A006A3386 /* AddTabButtonRollover.png */; };
-		B57747D20F7A891A003B34F9 /* Preferences.xib in Resources */ = {isa = PBXBuildFile; fileRef = B57747D00F7A891A003B34F9 /* Preferences.xib */; };
 		B57747D40F7A8974003B34F9 /* SPPreferenceController.m in Sources */ = {isa = PBXBuildFile; fileRef = B57747D30F7A8974003B34F9 /* SPPreferenceController.m */; };
 		B57747D90F7A8990003B34F9 /* SPWindowAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B57747D80F7A8990003B34F9 /* SPWindowAdditions.m */; };
 		B57747DC0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = B57747DB0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m */; };
 		B57748420F7A8B57003B34F9 /* database.png in Resources */ = {isa = PBXBuildFile; fileRef = B577483A0F7A8B57003B34F9 /* database.png */; };
 		B58731280F838C9E00087794 /* PreferenceDefaults.plist in Resources */ = {isa = PBXBuildFile; fileRef = B58731270F838C9E00087794 /* PreferenceDefaults.plist */; };
-		B58DA73A0FF8BB9E00FDDACD /* SSHQuestionDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = B58DA7390FF8BB9E00FDDACD /* SSHQuestionDialog.xib */; };
-		B58DA73C0FF8BBA500FDDACD /* PrintAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = B58DA73B0FF8BBA500FDDACD /* PrintAccessory.xib */; };
 		B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */ = {isa = PBXBuildFile; fileRef = B5E2C5F90F2353B5007446E0 /* table-property.png */; };
-		B5E92F190F75B2D100012500 /* ExportDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = B5E92F170F75B2D100012500 /* ExportDialog.xib */; };
 		B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */ = {isa = PBXBuildFile; fileRef = B5E92F1B0F75B2E800012500 /* SPExportController.m */; };
-		BAC6BAF920A0D22400247837 /* FilterTableWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = BAC6BAF720A0D22400247837 /* FilterTableWindow.xib */; };
-		BAE25E0120B32BDA00DD9A40 /* HelpViewer.xib in Resources */ = {isa = PBXBuildFile; fileRef = BAE25DFF20B32BDA00DD9A40 /* HelpViewer.xib */; };
 		BC01BCCF104024BE006BDEE7 /* SPEncodingPopupAccessory.m in Sources */ = {isa = PBXBuildFile; fileRef = BC01BCCE104024BE006BDEE7 /* SPEncodingPopupAccessory.m */; };
 		BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = BC05F1C4101241DF008A97F8 /* YRKSpinningProgressIndicator.m */; };
 		BC09D7DE12A786FB0030DB64 /* cancel-clicked-highlighted.png in Resources */ = {isa = PBXBuildFile; fileRef = BC09D7D812A786FB0030DB64 /* cancel-clicked-highlighted.png */; };
@@ -419,28 +428,19 @@
 		BC29C37F10501EFD00DD6C6E /* SPQueryController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC29C37E10501EFD00DD6C6E /* SPQueryController.m */; };
 		BC2C16D40FEBEDF10003993B /* SPDataAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = BC2C16D30FEBEDF10003993B /* SPDataAdditions.m */; };
 		BC2C8E220FA8C2DB008468C7 /* SPMySQLHelpTemplate.html in Resources */ = {isa = PBXBuildFile; fileRef = BC2C8E210FA8C2DB008468C7 /* SPMySQLHelpTemplate.html */; };
-		BC30C011111C98BD002701C9 /* DataMigrationDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC30C00F111C98BD002701C9 /* DataMigrationDialog.xib */; };
 		BC32F242121D66260067305E /* SPFileManagerAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = BC32F241121D66260067305E /* SPFileManagerAdditions.m */; };
 		BC398A2D121D526200BE3EF4 /* SPCopyTable.m in Sources */ = {isa = PBXBuildFile; fileRef = BC398A2C121D526200BE3EF4 /* SPCopyTable.m */; };
 		BC4DF1981158FB280059FABD /* SPNavigatorOutlineView.m in Sources */ = {isa = PBXBuildFile; fileRef = BC4DF1971158FB280059FABD /* SPNavigatorOutlineView.m */; };
 		BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BC5750D312A6233900911BA2 /* SPActivityTextFieldCell.m */; };
-		BC65C3B2107CE3EE003F7B02 /* ImportAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC65C3B0107CE3EE003F7B02 /* ImportAccessory.xib */; };
 		BC675A141072039C00C5ACD4 /* SPContentFilterManager.m in Sources */ = {isa = PBXBuildFile; fileRef = BC675A131072039C00C5ACD4 /* SPContentFilterManager.m */; };
-		BC675A17107203BA00C5ACD4 /* ContentFilterManager.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC675A15107203BA00C5ACD4 /* ContentFilterManager.xib */; };
 		BC68BFC7128D4EAE004907D9 /* SPBundleEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC68BFC6128D4EAE004907D9 /* SPBundleEditorController.m */; };
-		BC77C5E1129AA67F009AD832 /* BundleHTMLOutput.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC77C5DF129AA67F009AD832 /* BundleHTMLOutput.xib */; };
 		BC77C5E4129AA69E009AD832 /* SPBundleHTMLOutputController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */; };
 		BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = BC85F5CF12193B7D00E255B5 /* SPColorAdditions.m */; };
 		BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BC878A70121A836F00AE5066 /* SPColorWellCell.m */; };
-		BC8B0DAF104004F900FC02EC /* EncodingPopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC8B0DAD104004F900FC02EC /* EncodingPopupView.xib */; };
 		BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */ = {isa = PBXBuildFile; fileRef = BC8C8531100E0A8000D7A129 /* SPTableView.m */; };
-		BC93FBBD11514ADE005F1D9F /* Navigator.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC93FBBB11514ADE005F1D9F /* Navigator.xib */; };
 		BC962D661144EACA006170BD /* CompletionTokens.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC962D651144EACA006170BD /* CompletionTokens.plist */; };
 		BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC9F0880100FCF2C00A80D32 /* SPFieldEditorController.m */; };
 		BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */ = {isa = PBXBuildFile; fileRef = BCA6271B1031B9D40047E5D5 /* SPTooltip.m */; };
-		BCA6F631100FA7D700E80253 /* FieldEditorSheet.xib in Resources */ = {isa = PBXBuildFile; fileRef = BCA6F62F100FA7D700E80253 /* FieldEditorSheet.xib */; };
-		BCCB747A128D4FD100339E25 /* BundleEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = BCCB7478128D4FD100339E25 /* BundleEditor.xib */; };
-		BCCBD7FC104408B000D4C50A /* SaveSPFAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = BCCBD7FA104408B000D4C50A /* SaveSPFAccessory.xib */; };
 		BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */ = {isa = PBXBuildFile; fileRef = BCD0AD480FBBFC340066EA5C /* SPSQLTokenizer.l */; };
 		BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */ = {isa = PBXBuildFile; fileRef = BCE0025C11173D2A009DA533 /* SPFieldMapperController.m */; };
 		C9AD7C781676138000234EEE /* database-small@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9AD7C771676138000234EEE /* database-small@2x.png */; };
@@ -858,36 +858,6 @@
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
-		517E4459257A8AFC00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = Interfaces/en.lproj/AboutPanel.xib; sourceTree = "<group>"; };
-		517E445A257A8B3100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = Interfaces/en.lproj/ConnectionErrorDialog.xib; sourceTree = "<group>"; };
-		517E445B257A8B3600ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/BundleEditor.xib; sourceTree = "<group>"; };
-		517E445C257A8B3F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/BundleHTMLOutput.xib; sourceTree = "<group>"; };
-		517E445D257A8B4B00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ConnectionView.xib; sourceTree = "<group>"; };
-		517E445E257A8B5000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/Console.xib; sourceTree = "<group>"; };
-		517E445F257A8B5F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/HelpViewer.xib; sourceTree = "<group>"; };
-		517E4460257A8B5F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = Interfaces/en.lproj/IndexesView.xib; sourceTree = "<group>"; };
-		517E4461257A8B5F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ContentFilterManager.xib; sourceTree = "<group>"; };
-		517E4462257A8B5F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/FilterTableWindow.xib; sourceTree = "<group>"; };
-		517E4463257A8B5F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ContentPaginationView.xib; sourceTree = "<group>"; };
-		517E4464257A8B5F00ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		517E4465257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/EncodingPopupView.xib; sourceTree = "<group>"; };
-		517E4466257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainWindow.xib; sourceTree = "<group>"; };
-		517E4467257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/Navigator.xib; sourceTree = "<group>"; };
-		517E4468257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/Preferences.xib; sourceTree = "<group>"; };
-		517E4469257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/PrintAccessory.xib; sourceTree = "<group>"; };
-		517E446A257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = Interfaces/en.lproj/DatabaseProcessList.xib; sourceTree = "<group>"; };
-		517E446B257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/DBView.xib; sourceTree = "<group>"; };
-		517E446C257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = Interfaces/en.lproj/ProgressIndicatorLayer.xib; sourceTree = "<group>"; };
-		517E446D257A8B6000ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = Interfaces/en.lproj/DatabaseServerVariables.xib; sourceTree = "<group>"; };
-		517E446E257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ExportDialog.xib; sourceTree = "<group>"; };
-		517E446F257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/UserManagerView.xib; sourceTree = "<group>"; };
-		517E4470257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/QueryFavoriteManager.xib; sourceTree = "<group>"; };
-		517E4471257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/DataMigrationDialog.xib; sourceTree = "<group>"; };
-		517E4472257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/FieldEditorSheet.xib; sourceTree = "<group>"; };
-		517E4473257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/SaveSPFAccessory.xib; sourceTree = "<group>"; };
-		517E4474257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/GotoDatabaseDialog.xib; sourceTree = "<group>"; };
-		517E4475257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/SSHQuestionDialog.xib; sourceTree = "<group>"; };
-		517E4476257A8B6100ED333B /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ImportAccessory.xib; sourceTree = "<group>"; };
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
 		517E44FB257A94C400ED333B /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
@@ -896,6 +866,36 @@
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
+		51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PrintAccessory.xib; sourceTree = "<group>"; };
+		51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DataMigrationDialog.xib; sourceTree = "<group>"; };
+		51CD0BC0258D06D7009E2484 /* Preferences.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Preferences.xib; sourceTree = "<group>"; };
+		51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = FilterTableWindow.xib; sourceTree = "<group>"; };
+		51CD0BC2258D06D7009E2484 /* FieldEditorSheet.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = FieldEditorSheet.xib; sourceTree = "<group>"; };
+		51CD0BC3258D06D7009E2484 /* GotoDatabaseDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = GotoDatabaseDialog.xib; sourceTree = "<group>"; };
+		51CD0BC4258D06D7009E2484 /* IndexesView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = IndexesView.xib; sourceTree = "<group>"; };
+		51CD0BC5258D06D7009E2484 /* DBView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DBView.xib; sourceTree = "<group>"; };
+		51CD0BC6258D06D7009E2484 /* HelpViewer.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HelpViewer.xib; sourceTree = "<group>"; };
+		51CD0BC7258D06D8009E2484 /* Navigator.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Navigator.xib; sourceTree = "<group>"; };
+		51CD0BC8258D06D8009E2484 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
+		51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ImportAccessory.xib; sourceTree = "<group>"; };
+		51CD0BCA258D06D8009E2484 /* MainMenu.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
+		51CD0BCB258D06D8009E2484 /* Console.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Console.xib; sourceTree = "<group>"; };
+		51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseServerVariables.xib; sourceTree = "<group>"; };
+		51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionErrorDialog.xib; sourceTree = "<group>"; };
+		51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ProgressIndicatorLayer.xib; sourceTree = "<group>"; };
+		51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SaveSPFAccessory.xib; sourceTree = "<group>"; };
+		51CD0BD0258D06D8009E2484 /* UserManagerView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = UserManagerView.xib; sourceTree = "<group>"; };
+		51CD0BD1258D06D8009E2484 /* ExportDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ExportDialog.xib; sourceTree = "<group>"; };
+		51CD0BD2258D06D8009E2484 /* BundleEditor.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleEditor.xib; sourceTree = "<group>"; };
+		51CD0BD3258D06D8009E2484 /* ContentFilterManager.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ContentFilterManager.xib; sourceTree = "<group>"; };
+		51CD0BD4258D06D8009E2484 /* EncodingPopupView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = EncodingPopupView.xib; sourceTree = "<group>"; };
+		51CD0BD5258D06D8009E2484 /* ContentPaginationView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ContentPaginationView.xib; sourceTree = "<group>"; };
+		51CD0BD6258D06D8009E2484 /* SSHQuestionDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SSHQuestionDialog.xib; sourceTree = "<group>"; };
+		51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = QueryFavoriteManager.xib; sourceTree = "<group>"; };
+		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
+		51CD0BD9258D06D8009E2484 /* AboutPanel.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AboutPanel.xib; sourceTree = "<group>"; };
+		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
+		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
@@ -2033,36 +2033,36 @@
 		17E642050EF020A3001BC333 /* Interfaces */ = {
 			isa = PBXGroup;
 			children = (
-				17CC97F510B4AC6C0034CD7A /* AboutPanel.xib */,
-				BCCB7478128D4FD100339E25 /* BundleEditor.xib */,
-				BC77C5DF129AA67F009AD832 /* BundleHTMLOutput.xib */,
-				58186D1F0F4CB38900851FE9 /* ConnectionErrorDialog.xib */,
-				5822CADF10011C8000DCC3D6 /* ConnectionView.xib */,
-				B52460D90F8EF93B00171639 /* Console.xib */,
-				BC675A15107203BA00C5ACD4 /* ContentFilterManager.xib */,
-				58C3507310B9ADEA00D37E14 /* ContentPaginationView.xib */,
-				174CE11C10AB80B5008F892B /* DatabaseProcessList.xib */,
-				1792C13010AD752100ABE758 /* DatabaseServerVariables.xib */,
-				BC30C00F111C98BD002701C9 /* DataMigrationDialog.xib */,
-				17E642060EF020CB001BC333 /* DBView.xib */,
-				BC8B0DAD104004F900FC02EC /* EncodingPopupView.xib */,
-				B5E92F170F75B2D100012500 /* ExportDialog.xib */,
-				BCA6F62F100FA7D700E80253 /* FieldEditorSheet.xib */,
-				50D3C34B1A75B8A800B5429C /* GotoDatabaseDialog.xib */,
-				BC65C3B0107CE3EE003F7B02 /* ImportAccessory.xib */,
-				17A7773611C52E61001E27B4 /* IndexesView.xib */,
-				1761FD460EF03A6F00331368 /* MainMenu.xib */,
-				58A8A72611A0149100B95749 /* MainWindow.xib */,
-				BC93FBBB11514ADE005F1D9F /* Navigator.xib */,
-				B57747D00F7A891A003B34F9 /* Preferences.xib */,
-				B58DA73B0FF8BBA500FDDACD /* PrintAccessory.xib */,
-				582A05A7108A5CCF0027D42B /* ProgressIndicatorLayer.xib */,
-				173C4360104455CA001F3A30 /* QueryFavoriteManager.xib */,
-				BCCBD7FA104408B000D4C50A /* SaveSPFAccessory.xib */,
-				B58DA7390FF8BB9E00FDDACD /* SSHQuestionDialog.xib */,
-				4D90B7A0101E0D1500D116A1 /* UserManagerView.xib */,
-				BAC6BAF720A0D22400247837 /* FilterTableWindow.xib */,
-				BAE25DFF20B32BDA00DD9A40 /* HelpViewer.xib */,
+				51CD0BD9258D06D8009E2484 /* AboutPanel.xib */,
+				51CD0BD2258D06D8009E2484 /* BundleEditor.xib */,
+				51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */,
+				51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */,
+				51CD0BD8258D06D8009E2484 /* ConnectionView.xib */,
+				51CD0BCB258D06D8009E2484 /* Console.xib */,
+				51CD0BD3258D06D8009E2484 /* ContentFilterManager.xib */,
+				51CD0BD5258D06D8009E2484 /* ContentPaginationView.xib */,
+				51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */,
+				51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */,
+				51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */,
+				51CD0BC5258D06D7009E2484 /* DBView.xib */,
+				51CD0BD4258D06D8009E2484 /* EncodingPopupView.xib */,
+				51CD0BD1258D06D8009E2484 /* ExportDialog.xib */,
+				51CD0BC2258D06D7009E2484 /* FieldEditorSheet.xib */,
+				51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */,
+				51CD0BC3258D06D7009E2484 /* GotoDatabaseDialog.xib */,
+				51CD0BC6258D06D7009E2484 /* HelpViewer.xib */,
+				51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */,
+				51CD0BC4258D06D7009E2484 /* IndexesView.xib */,
+				51CD0BCA258D06D8009E2484 /* MainMenu.xib */,
+				51CD0BC8258D06D8009E2484 /* MainWindow.xib */,
+				51CD0BC7258D06D8009E2484 /* Navigator.xib */,
+				51CD0BC0258D06D7009E2484 /* Preferences.xib */,
+				51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */,
+				51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */,
+				51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */,
+				51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */,
+				51CD0BD6258D06D8009E2484 /* SSHQuestionDialog.xib */,
+				51CD0BD0258D06D8009E2484 /* UserManagerView.xib */,
 			);
 			path = Interfaces;
 			sourceTree = "<group>";
@@ -2770,79 +2770,67 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				51CD0BF8258D06D8009E2484 /* DatabaseProcessList.xib in Resources */,
 				17E641D10EF02036001BC333 /* grabber-horizontal.png in Resources */,
 				17E641D20EF02036001BC333 /* grabber-vertical.png in Resources */,
+				51CD0BE5258D06D8009E2484 /* Navigator.xib in Resources */,
 				17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */,
 				17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */,
 				1A6447992588CD9200927DB3 /* Credits.rtf in Resources */,
-				17E6420A0EF020CB001BC333 /* DBView.xib in Resources */,
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
-				1761FD480EF03A6F00331368 /* MainMenu.xib in Resources */,
+				51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */,
+				51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */,
+				51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
-				58186D210F4CB38900851FE9 /* ConnectionErrorDialog.xib in Resources */,
-				B5E92F190F75B2D100012500 /* ExportDialog.xib in Resources */,
-				B57747D20F7A891A003B34F9 /* Preferences.xib in Resources */,
+				51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */,
 				B57748420F7A8B57003B34F9 /* database.png in Resources */,
+				51CD0BED258D06D8009E2484 /* SaveSPFAccessory.xib in Resources */,
 				B58731280F838C9E00087794 /* PreferenceDefaults.plist in Resources */,
-				B52460DB0F8EF93B00171639 /* Console.xib in Resources */,
+				51CD0BF4258D06D8009E2484 /* SSHQuestionDialog.xib in Resources */,
 				BC2C8E220FA8C2DB008468C7 /* SPMySQLHelpTemplate.html in Resources */,
 				384582C40FB95FF800DDACB6 /* func-small.png in Resources */,
 				384582C70FB9603600DDACB6 /* proc-small.png in Resources */,
-				BAC6BAF920A0D22400247837 /* FilterTableWindow.xib in Resources */,
+				51CD0BEE258D06D8009E2484 /* UserManagerView.xib in Resources */,
 				8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */,
 				177E792E0FCB54EC00E9E122 /* database-small.png in Resources */,
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
+				51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */,
+				51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
-				B58DA73C0FF8BBA500FDDACD /* PrintAccessory.xib in Resources */,
 				1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */,
-				B58DA73A0FF8BB9E00FDDACD /* SSHQuestionDialog.xib in Resources */,
+				51CD0BE3258D06D8009E2484 /* DBView.xib in Resources */,
 				B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */,
 				8831EFB0224013AF00D10172 /* button_refreshTemplate.pdf in Resources */,
 				3E242D4F20FEB44D0015470D /* button_bar_spacer_dark.png in Resources */,
 				588B2CC80FE5641E00EC5FC0 /* ssh-connected.png in Resources */,
 				588B2CC90FE5641E00EC5FC0 /* ssh-connecting.png in Resources */,
 				588B2CCA0FE5641E00EC5FC0 /* ssh-disconnected.png in Resources */,
-				5822CAE110011C8000DCC3D6 /* ConnectionView.xib in Resources */,
-				BCA6F631100FA7D700E80253 /* FieldEditorSheet.xib in Resources */,
+				51CD0BDF258D06D8009E2484 /* FilterTableWindow.xib in Resources */,
 				58D2E22E101222870063EF1D /* link-arrow-clicked.png in Resources */,
 				58D2E22F101222870063EF1D /* link-arrow-highlighted-clicked.png in Resources */,
 				58D2E230101222870063EF1D /* link-arrow.png in Resources */,
 				581068B61015411B0068C6E2 /* link-arrow-highlighted.png in Resources */,
-				4D90B7A2101E0D1500D116A1 /* UserManagerView.xib in Resources */,
 				1A6447912588CD8B00927DB3 /* License.rtf in Resources */,
-				BC8B0DAF104004F900FC02EC /* EncodingPopupView.xib in Resources */,
-				BCCBD7FC104408B000D4C50A /* SaveSPFAccessory.xib in Resources */,
 				8831EFC7224016E000D10172 /* button_filterTemplate.pdf in Resources */,
-				173C4362104455CA001F3A30 /* QueryFavoriteManager.xib in Resources */,
 				8831EFAA2240128700D10172 /* button_removeTemplate.pdf in Resources */,
-				BC675A17107203BA00C5ACD4 /* ContentFilterManager.xib in Resources */,
-				BC65C3B2107CE3EE003F7B02 /* ImportAccessory.xib in Resources */,
-				582A05A9108A5CCF0027D42B /* ProgressIndicatorLayer.xib in Resources */,
-				174CE11E10AB80B5008F892B /* DatabaseProcessList.xib in Resources */,
-				1792C13210AD752100ABE758 /* DatabaseServerVariables.xib in Resources */,
-				17CC97F710B4AC6C0034CD7A /* AboutPanel.xib in Resources */,
 				8831EFB92240154A00D10172 /* button_leftTemplate.pdf in Resources */,
-				58C3507510B9ADEA00D37E14 /* ContentPaginationView.xib in Resources */,
 				8831EFC8224016E000D10172 /* button_filter_activeTemplate.pdf in Resources */,
-				BC30C011111C98BD002701C9 /* DataMigrationDialog.xib in Resources */,
 				BC962D661144EACA006170BD /* CompletionTokens.plist in Resources */,
+				51CD0BF6258D06D8009E2484 /* ConnectionView.xib in Resources */,
 				17E0937E114AE154007FC1B4 /* SPTableInfoPrintTemplate.html in Resources */,
 				B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */,
 				8831EFBA2240154A00D10172 /* button_rightTemplate.pdf in Resources */,
+				51CD0BE0258D06D8009E2484 /* FieldEditorSheet.xib in Resources */,
 				17DD52B7115071D0007D8950 /* SPPrintTemplate.html in Resources */,
 				1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */,
 				8831EFCD2240175400D10172 /* button_actionTemplate.pdf in Resources */,
 				17DD52C6115074CB007D8950 /* Localizable.strings in Resources */,
-				BC93FBBD11514ADE005F1D9F /* Navigator.xib in Resources */,
-				58A8A72711A0149100B95749 /* MainWindow.xib in Resources */,
-				17A7773811C52E61001E27B4 /* IndexesView.xib in Resources */,
 				58E205FC1234FE4F00A97059 /* KeyTemplate.pdf in Resources */,
 				8831EFC12240166D00D10172 /* button_select_allTemplate.pdf in Resources */,
 				58A137CD123ED5E6000B1B75 /* titlebarlock.png in Resources */,
-				BCCB747A128D4FD100339E25 /* BundleEditor.xib in Resources */,
-				BC77C5E1129AA67F009AD832 /* BundleHTMLOutput.xib in Resources */,
+				51CD0BEF258D06D8009E2484 /* ExportDialog.xib in Resources */,
 				BC09D7DE12A786FB0030DB64 /* cancel-clicked-highlighted.png in Resources */,
 				8831EFAC2240131500D10172 /* button_editTemplate.pdf in Resources */,
 				BC09D7DF12A786FB0030DB64 /* cancel-clicked.png in Resources */,
@@ -2853,20 +2841,26 @@
 				58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */,
 				58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */,
 				5843DA6C161FA35600EAA6D1 /* key-icon-alternate.png in Resources */,
+				51CD0BF0258D06D8009E2484 /* BundleEditor.xib in Resources */,
 				583A278E23F06F1000FBE97B /* Colors.xcassets in Resources */,
 				5843DA6D161FA35600EAA6D1 /* key-icon-alternate@2x.png in Resources */,
 				5843DA6E161FA35600EAA6D1 /* key-icon.png in Resources */,
+				51CD0BF3258D06D8009E2484 /* ContentPaginationView.xib in Resources */,
 				5843DA6F161FA35600EAA6D1 /* key-icon@2x.png in Resources */,
+				51CD0BF5258D06D8009E2484 /* QueryFavoriteManager.xib in Resources */,
 				8831EFBE2240159E00D10172 /* button_pane_showTemplate.pdf in Resources */,
+				51CD0BE9258D06D8009E2484 /* Console.xib in Resources */,
 				8831EFB22240143600D10172 /* button_bar_handleTemplate.pdf in Resources */,
 				C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */,
 				C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */,
+				51CD0BE2258D06D8009E2484 /* IndexesView.xib in Resources */,
 				C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */,
+				51CD0BE8258D06D8009E2484 /* MainMenu.xib in Resources */,
 				51A709392565B99F001F1D2F /* Images.xcassets in Resources */,
+				51CD0BE7258D06D8009E2484 /* ImportAccessory.xib in Resources */,
 				C9AD7C781676138000234EEE /* database-small@2x.png in Resources */,
 				C9AD7C7B1676158C00234EEE /* toolbar-switch-to-sql.png in Resources */,
 				C9AD7C7C1676158C00234EEE /* toolbar-switch-to-sql@2x.png in Resources */,
-				50D3C3491A75B8A800B5429C /* GotoDatabaseDialog.xib in Resources */,
 				8831EFB4224014C700D10172 /* button_clearTemplate.pdf in Resources */,
 				C9C994411678A439001F5DA8 /* button_bar_spacer.png in Resources */,
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
@@ -2879,13 +2873,17 @@
 				582E939D168296F3003459FD /* link-arrow-clicked@2x.png in Resources */,
 				582E939E168296F3003459FD /* link-arrow-highlighted-clicked@2x.png in Resources */,
 				3E242D5020FEB44D0015470D /* button_bar_spacer_dark@2x.png in Resources */,
+				51CD0BF7258D06D8009E2484 /* AboutPanel.xib in Resources */,
 				582E939F168296F3003459FD /* link-arrow-highlighted@2x.png in Resources */,
 				582E93A0168296F3003459FD /* link-arrow@2x.png in Resources */,
+				51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */,
+				51CD0BE6258D06D8009E2484 /* MainWindow.xib in Resources */,
 				8831EFB62240150A00D10172 /* button_add_folderTemplate.pdf in Resources */,
 				582E940E1682A2AD003459FD /* button_bar_spacer@2x.png in Resources */,
 				50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */,
+				51CD0BE1258D06D8009E2484 /* GotoDatabaseDialog.xib in Resources */,
 				8831EFBD2240159E00D10172 /* button_pane_hideTemplate.pdf in Resources */,
-				BAE25E0120B32BDA00DD9A40 /* HelpViewer.xib in Resources */,
+				51CD0BE4258D06D8009E2484 /* HelpViewer.xib in Resources */,
 				517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
@@ -2897,6 +2895,8 @@
 				582E9484168380D6003459FD /* sync_arrows_02.png in Resources */,
 				582E9485168380D6003459FD /* sync_arrows_03.png in Resources */,
 				582E9486168380D6003459FD /* sync_arrows_04.png in Resources */,
+				51CD0BF2258D06D8009E2484 /* EncodingPopupView.xib in Resources */,
+				51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */,
 				582E9487168380D6003459FD /* sync_arrows_05.png in Resources */,
 				582E9488168380D6003459FD /* sync_arrows_06.png in Resources */,
 				582E948F168383F0003459FD /* table-view-small-square.png in Resources */,
@@ -3270,58 +3270,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		173C4360104455CA001F3A30 /* QueryFavoriteManager.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4470257A8B6100ED333B /* en */,
-			);
-			name = QueryFavoriteManager.xib;
-			sourceTree = "<group>";
-		};
-		174CE11C10AB80B5008F892B /* DatabaseProcessList.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E446A257A8B6000ED333B /* en */,
-			);
-			name = DatabaseProcessList.xib;
-			path = ..;
-			sourceTree = "<group>";
-		};
-		1761FD460EF03A6F00331368 /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4464257A8B5F00ED333B /* en */,
-			);
-			name = MainMenu.xib;
-			sourceTree = "<group>";
-		};
-		1792C13010AD752100ABE758 /* DatabaseServerVariables.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E446D257A8B6000ED333B /* en */,
-			);
-			name = DatabaseServerVariables.xib;
-			path = ..;
-			sourceTree = "<group>";
-		};
-		17A7773611C52E61001E27B4 /* IndexesView.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4460257A8B5F00ED333B /* en */,
-			);
-			name = IndexesView.xib;
-			path = ..;
-			sourceTree = "<group>";
-		};
-		17CC97F510B4AC6C0034CD7A /* AboutPanel.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4459257A8AFC00ED333B /* en */,
-			);
-			name = AboutPanel.xib;
-			path = ..;
-			sourceTree = "<group>";
-		};
 		17DD52C4115074CB007D8950 /* Localizable.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -3329,200 +3277,6 @@
 				517E457C257A971900ED333B /* es-ES */,
 			);
 			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-		17E642060EF020CB001BC333 /* DBView.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E446B257A8B6000ED333B /* en */,
-			);
-			name = DBView.xib;
-			sourceTree = "<group>";
-		};
-		4D90B7A0101E0D1500D116A1 /* UserManagerView.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E446F257A8B6100ED333B /* en */,
-			);
-			name = UserManagerView.xib;
-			sourceTree = "<group>";
-		};
-		50D3C34B1A75B8A800B5429C /* GotoDatabaseDialog.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4474257A8B6100ED333B /* en */,
-			);
-			name = GotoDatabaseDialog.xib;
-			sourceTree = "<group>";
-		};
-		58186D1F0F4CB38900851FE9 /* ConnectionErrorDialog.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E445A257A8B3100ED333B /* en */,
-			);
-			name = ConnectionErrorDialog.xib;
-			path = ..;
-			sourceTree = "<group>";
-		};
-		5822CADF10011C8000DCC3D6 /* ConnectionView.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E445D257A8B4B00ED333B /* en */,
-			);
-			name = ConnectionView.xib;
-			sourceTree = "<group>";
-		};
-		582A05A7108A5CCF0027D42B /* ProgressIndicatorLayer.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E446C257A8B6000ED333B /* en */,
-			);
-			name = ProgressIndicatorLayer.xib;
-			path = ..;
-			sourceTree = "<group>";
-		};
-		58A8A72611A0149100B95749 /* MainWindow.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4466257A8B6000ED333B /* en */,
-			);
-			name = MainWindow.xib;
-			sourceTree = "<group>";
-		};
-		58C3507310B9ADEA00D37E14 /* ContentPaginationView.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4463257A8B5F00ED333B /* en */,
-			);
-			name = ContentPaginationView.xib;
-			sourceTree = "<group>";
-		};
-		B52460D90F8EF93B00171639 /* Console.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E445E257A8B5000ED333B /* en */,
-			);
-			name = Console.xib;
-			sourceTree = "<group>";
-		};
-		B57747D00F7A891A003B34F9 /* Preferences.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4468257A8B6000ED333B /* en */,
-			);
-			name = Preferences.xib;
-			sourceTree = "<group>";
-		};
-		B58DA7390FF8BB9E00FDDACD /* SSHQuestionDialog.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4475257A8B6100ED333B /* en */,
-			);
-			name = SSHQuestionDialog.xib;
-			sourceTree = "<group>";
-		};
-		B58DA73B0FF8BBA500FDDACD /* PrintAccessory.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4469257A8B6000ED333B /* en */,
-			);
-			name = PrintAccessory.xib;
-			sourceTree = "<group>";
-		};
-		B5E92F170F75B2D100012500 /* ExportDialog.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E446E257A8B6100ED333B /* en */,
-			);
-			name = ExportDialog.xib;
-			sourceTree = "<group>";
-		};
-		BAC6BAF720A0D22400247837 /* FilterTableWindow.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4462257A8B5F00ED333B /* en */,
-			);
-			name = FilterTableWindow.xib;
-			sourceTree = "<group>";
-		};
-		BAE25DFF20B32BDA00DD9A40 /* HelpViewer.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E445F257A8B5F00ED333B /* en */,
-			);
-			name = HelpViewer.xib;
-			sourceTree = "<group>";
-		};
-		BC30C00F111C98BD002701C9 /* DataMigrationDialog.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4471257A8B6100ED333B /* en */,
-			);
-			name = DataMigrationDialog.xib;
-			sourceTree = "<group>";
-		};
-		BC65C3B0107CE3EE003F7B02 /* ImportAccessory.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4476257A8B6100ED333B /* en */,
-			);
-			name = ImportAccessory.xib;
-			sourceTree = "<group>";
-		};
-		BC675A15107203BA00C5ACD4 /* ContentFilterManager.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4461257A8B5F00ED333B /* en */,
-			);
-			name = ContentFilterManager.xib;
-			sourceTree = "<group>";
-		};
-		BC77C5DF129AA67F009AD832 /* BundleHTMLOutput.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E445C257A8B3F00ED333B /* en */,
-			);
-			name = BundleHTMLOutput.xib;
-			sourceTree = "<group>";
-		};
-		BC8B0DAD104004F900FC02EC /* EncodingPopupView.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4465257A8B6000ED333B /* en */,
-			);
-			name = EncodingPopupView.xib;
-			sourceTree = "<group>";
-		};
-		BC93FBBB11514ADE005F1D9F /* Navigator.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4467257A8B6000ED333B /* en */,
-			);
-			name = Navigator.xib;
-			sourceTree = "<group>";
-		};
-		BCA6F62F100FA7D700E80253 /* FieldEditorSheet.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4472257A8B6100ED333B /* en */,
-			);
-			name = FieldEditorSheet.xib;
-			sourceTree = "<group>";
-		};
-		BCCB7478128D4FD100339E25 /* BundleEditor.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E445B257A8B3600ED333B /* en */,
-			);
-			name = BundleEditor.xib;
-			sourceTree = "<group>";
-		};
-		BCCBD7FA104408B000D4C50A /* SaveSPFAccessory.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				517E4473257A8B6100ED333B /* en */,
-			);
-			name = SaveSPFAccessory.xib;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

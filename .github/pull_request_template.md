@@ -10,10 +10,10 @@ Please use one of these hashtags for your PR title:
 -->
 
 ## Changes:
--
+- 
 
 ## Closes following issues:
--
+- Closes 
 
 ## Tested:
 - Processors:
@@ -24,7 +24,7 @@ Please use one of these hashtags for your PR title:
   - [ ] 10.13
   - [ ] 10.14
   - [ ] 10.15
-  - [ ] 11.0
+  - [ ] 11.1
 - Xcode version:
 
 ## Screenshots:
