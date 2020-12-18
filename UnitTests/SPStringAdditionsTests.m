@@ -31,7 +31,7 @@
 #import "SPObjectAdditions.h"
 #import "SPStringAdditions.h"
 #import "RegexKitLite.h"
-
+#import "SPArrayAdditions.h"
 #import "sequel-ace-Swift.h"
 
 #import <XCTest/XCTest.h>
@@ -138,24 +138,75 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}];
 }
 
-- (void)testPerformance_CaseInsensitiveSearch {
+// MARK: pretty much no difference between these methods
+// so I don't know why we are using NSArrayObjectAtIndex all over.
+// should switch to objectOrNilAtIndex for safety
+
+// 0.0263s
+- (void)testPerformanceNSArrayObjectAtIndex {
 	// this is on main thread
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
-		int const iterations = 1;
+		int const iterations = 10000;
 		
 		NSArray *queryHist = [self randomHistArray];
 		
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
-				NSString *ran = [[NSProcessInfo processInfo] globallyUniqueString];
-				
-				for(NSString *str in queryHist){
-					BOOL __unused match = [str localizedCaseInsensitiveContainsString:ran];
-				}
+                id __unused ret = NSArrayObjectAtIndex(queryHist, i);
 			}
 		}
 	}];
+}
+
+//0.0259
+- (void)testPerformance_NormalNSArrayObjectAtIndex {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 10000;
+
+        NSArray *queryHist = [self randomHistArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                id __unused ret = [queryHist objectAtIndex:i];
+            }
+        }
+    }];
+}
+//0.0259
+- (void)testPerformance_NormalNSArrayObjectOrNilAtIndex {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 10000;
+
+        NSArray *queryHist = [NSArray arrayWithArray:[self randomHistArray]];
+
+        for (NSUInteger i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                id __unused ret = [queryHist objectOrNilAtIndex:i];
+            }
+        }
+    }];
+}
+
+// 0.0264
+- (void)testPerformance_safeObjectAtIndex {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 10000;
+
+        NSArray *queryHist = [NSArray arrayWithArray:[self randomHistArray]];
+
+        for (NSUInteger i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                id __unused ret = [queryHist safeObjectAtIndex:i];
+            }
+        }
+    }];
 }
 
 - (NSMutableArray *)randomHistArray {

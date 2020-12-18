@@ -95,5 +95,5 @@ static inline void NSMutableArrayReplaceObject(NSArray *self, CFIndex idx, id an
  * @return The object located at index or nil.
  */
 - (id)objectOrNilAtIndex:(NSUInteger)index;
-
+- (id)safeObjectAtIndex:(NSUInteger)idx;
 @end
