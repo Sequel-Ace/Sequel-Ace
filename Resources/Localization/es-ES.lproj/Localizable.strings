@@ -63,7 +63,7 @@
 "%@; Cancelled in query %ld, after %@" = "%1$@; Canceladas en la consulta %2$ld, después de %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL dijo: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favorite";
@@ -78,7 +78,7 @@
 "%lu groups" = "%lu grupos";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
-"%ld additional rows were removed!" = "%ld additional rows were removed!";
+"%ld additional rows were removed!" = "¡%ld filas adicionales fueron eliminadas!";
 
 /* Label showing the index of the selected CSV row */
 "%ld of %lu record(s)" = "%1$ld of %2$lu record(s)";
@@ -87,7 +87,7 @@
 "%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld filas no fueron eliminadas.";
 
 /* Export file already exists message */
 "%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
@@ -123,7 +123,7 @@
 ", taking %1$@" = ", taking %1$@";
 
 /* warning shown in the console when no rows have been affected after writing to the db */
-"/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
+"/* WARNING: No rows have been affected */\n" = "/* ADVERTENCIA: Ninguna fila ha sido afectada */\n";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[ERROR en la consulta %1$ld] %2$@\n";
@@ -150,7 +150,7 @@
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
-"A Bundle ‘%@’ is already installed. Do you want to update it?" = "A Bundle ‘%@’ is already installed. Do you want to update it?";
+"A Bundle ‘%@’ is already installed. Do you want to update it?" = "El paquete ‘%@’ ya está instalado. ¿Desea actualizarlo?";
 
 /* description of binary */
 "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M.";
@@ -209,7 +209,7 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.";
 
 /* duplicate host informative message */
-"A user with the host '%@' already exists" = "A user with the host '%@' already exists";
+"A user with the host '%@' already exists" = "El usuario con el equipo '%@' ya existe";
 
 /* duplicate user informative message */
 "A user with the name '%@' already exists" = "A user with the name '%@' already exists";
@@ -254,13 +254,13 @@
 "Alerts & Logs" = "Alertas & Registros";
 
 /* notifications preference pane tooltip */
-"Alerts & Logs Preferences" = "Alerts & Logs Preferences";
+"Alerts & Logs Preferences" = "Preferencias de Alertas y Registros";
 
 /* All databases placeholder */
-"All Databases" = "All Databases";
+"All Databases" = "Todas las bases de datos";
 
 /* All databases (%) placeholder */
-"All Databases (%)" = "All Databases (%)";
+"All Databases (%)" = "Todas las bases de datos (%)";
 
 /* All export files already exist message */
 "All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
@@ -272,13 +272,13 @@
 "An error has occurred and there doesn't seem to be a connection available." = "An error has occurred and there doesn't seem to be a connection available.";
 
 /* an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane. */
-"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.";
+"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "Ha ocurrido un error al ejecutar un comando del esquema. Si el comando del esquema fue invocado, puede ser que el comando siga funcionando. Puede intentar finalizarlo, pulsando ⌘+. o a través del panel de actividades.";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar finalizar la conexión %1$lld.\n\nMySQL dijo: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill the query associated with connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar finalizar la consulta asociada con la conexión %1$lld.\n\nMySQL dijo: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "An error occurred while creating table syntax.\n\n: %@";
@@ -329,10 +329,10 @@
 "An error occurred while trying to rename the database '%@' to '%@'." = "An error occurred while trying to rename the database '%1$@' to '%2$@'.";
 
 /* error finding keychain item to edit informative message */
-"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
+"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Ha ocurrido un error al intentar recuperar el ítem del llavero que está intentando editar. La reparación de su llavero puede resolver esto, pero de no ser así por favor contacte con el equipo Sequel Ace, proporcionando el código de error %i.";
 
 /* error updating keychain item informative message */
-"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
+"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Ha ocurrido un error al intentar actualizar el ítem del llavero. La reparación de su llavero puede resolver esto, pero de no ser así por favor contacte con el equipo de Sequel Ace, proporcionando el código de error %i.";
 
 /* mysql error occurred message */
 "An error occurred" = "Ha ocurrido un error";
@@ -446,16 +446,16 @@
 "An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "An unhandled error occurred when attempting to create the export file.  Please check the details and try again.";
 
 /* ANALYZE one or more tables - result title */
-"Analyze %@" = "Analyze %@";
+"Analyze %@" = "Analizar %@";
 
 /* analyze selected items menu item */
 "Analyze Selected Items" = "Analyze Selected Items";
 
 /* analyze table menu item */
-"Analyze Table" = "Analyze Table";
+"Analyze Table" = "Analizar tabla";
 
 /* analyze table failed message */
-"Analyze table failed." = "Analyze table failed.";
+"Analyze table failed." = "Análisis de tabla fallido.";
 
 /* change table type informative message */
 "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "¿Está seguro que desea cambiar el tipo de esta tabla a %@?\n\nTenga en cuenta que cambiar el tipo de la tabla tiene el potencial de causar la pérdida de parte o todos sus datos. Esta acción no se puede deshacer.";
@@ -536,10 +536,10 @@
 "Autodetect" = "Autodetect";
 
 /* background label for color table (Prefs > Editor) */
-"Background" = "Background";
+"Background" = "Fondo";
 
 /* backtick quote label for color table (Prefs > Editor) */
-"Backtick Quote" = "Backtick Quote";
+"Backtick Quote" = "Comillas invertidas";
 
 /* bash error */
 "BASH Error" = "Error bash";
@@ -583,7 +583,7 @@
  Open Files : Bundle : Already-Installed : Cancel button
  Preferences : Network : Custom SSH client : warning dialog : cancel button
  shutdown server : confirmation dialog : cancel button */
-"Cancel" = "Cancel";
+"Cancel" = "Cancelar";
 
 /* sql import : charset error alert : cancel button */
 "Cancel Import" = "Cancel Import";
@@ -595,16 +595,16 @@
 "Cannot save an empty query." = "No puede guardar una consulta vacía.";
 
 /* caret label for color table (Prefs > Editor) */
-"Caret" = "Caret";
+"Caret" = "Signo de intercalación";
 
 /* change button */
 "Change" = "Change";
 
 /* change focus to table list menu item */
-"Change Focus to Table List" = "Change Focus to Table List";
+"Change Focus to Table List" = "Cambiar foco al listado de tablas";
 
 /* change table type message */
-"Change table type" = "Change table type";
+"Change table type" = "Cambiar tipo de tabla";
 
 /* unsaved changes informative message */
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue";
@@ -613,7 +613,7 @@
 "character set client: %@" = "character set client: %@";
 
 /* CHECK one or more tables - result title */
-"Check %@" = "Check %@";
+"Check %@" = "Comprobar %@";
 
 /* check of all selected items successfully passed message */
 "Check of all selected items successfully passed." = "Check of all selected items successfully passed.";
@@ -628,10 +628,10 @@
 "Check Table" = "Comprobar tabla";
 
 /* check table failed message */
-"Check table failed." = "Check table failed.";
+"Check table failed." = "Comprobación de tabla fallida.";
 
 /* check table successfully passed message */
-"Check table successfully passed." = "Check table successfully passed.";
+"Check table successfully passed." = "Comprobación de tabla superada correctamente.";
 
 /* check view menu item */
 "Check View" = "Comprobar vista";
@@ -646,7 +646,7 @@
 "Checksum Selected Items" = "Checksum Selected Items";
 
 /* checksum table menu item */
-"Checksum Table" = "Checksum Table";
+"Checksum Table" = "Checksum de tabla";
 
 /* Checksums of %@ message */
 "Checksums of %@" = "Checksums de %@";
@@ -775,7 +775,7 @@
 /* copy create syntaxes menu item
  Table List : Context Menu : Copy CREATE syntax (multiple selection)
  Table List : Gear Menu : Copy CREATE syntax (multiple selection) */
-"Copy Create Syntaxes" = "Copy Create Syntaxes";
+"Copy Create Syntaxes" = "Copiar sintaxis create";
 
 /* copy create table syntax menu item
  Table List : Context Menu : Copy CREATE syntax (single table)
@@ -809,7 +809,7 @@
 "Could not select database" = "No se ha podido seleccionar la base de datos";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Couldn't alter database.\nMySQL said: %@";
+"Couldn't alter database.\nMySQL said: %@" = "No se ha podido modificar la base de datos.\nMySQL dijo: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Couldn't copy default themes to Application Support Theme folder!\nError: %@";
@@ -827,19 +827,19 @@
 "Couldn't create database.\nMySQL said: %@" = "No se ha podido crear la base de datos.\nMySQL dijo: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nMySQL said: %@" = "No se ha podido eliminar '%1$@'.\n\nMySQL dijo: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "No se ha podido eliminar '%1$@'.\n\nSeleccionando la opción 'Forzar borrado' puede evitar este problema, pero puede dejar la base de datos en un estado inconsistente.\n\nMySQL dijo: %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Couldn't delete field %1$@.\nMySQL said: %2$@";
+"Couldn't delete field %@.\nMySQL said: %@" = "No se ha podido eliminar el campo %1$@.\nMySQL dijo: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Couldn't delete rows.\n\nMySQL said: %@";
+"Couldn't delete rows.\n\nMySQL said: %@" = "No se ha podido eliminar las filas.\n\nMySQL dijo: %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Couldn't delete the database.\nMySQL said: %@";
+"Couldn't delete the database.\nMySQL said: %@" = "No se ha podido eliminar la base de datos.\nMySQL dijo: %@";
 
 /* message of panel when an item cannot be renamed */
 "Couldn't duplicate '%@'.\nMySQL said: %@" = "No se ha podido duplicar '%1$@'.\nMySQL dijo: %2$@";
@@ -851,7 +851,7 @@
 "Couldn't get create syntax.\nMySQL said: %@" = "No se ha podido obtener la sintaxis create.\nMySQL dijo: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
-"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.";
+"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "No se ha podido identificar el origen del campo sin ambigüedades. La columna '%@' contiene datos de más de una tabla.";
 
 /* message of panel when loading of row failed */
 "Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "No se ha podido cargar la fila. Vuelva a cargar la tabla para estar seguro que la fila existe y use la clave primaria de su tabla.";
@@ -885,7 +885,7 @@
 "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
 
 /* Creating table task string */
-"Creating %@..." = "Creating %@...";
+"Creating %@..." = "Creando %@...";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current line' item */
 "Current Line" = "Línea actual";
@@ -910,10 +910,10 @@
 
 /* Bundle Editor : Scope dropdown : 'data table' item
  data table menu item label */
-"Data Table" = "Data Table";
+"Data Table" = "Tabla de datos";
 
 /* Bundle Editor : Outline View : 'Data Table' item : tooltip */
-"Data Table Scope\ncommands will run on the Content and Query data tables" = "Data Table Scope\ncommands will run on the Content and Query data tables";
+"Data Table Scope\ncommands will run on the Content and Query data tables" = "Ámbito tabla de datos\nlos comandos se ejecutarán en el contenido y las consultas de tablas de datos";
 
 /* export filename database token
  export header database label
@@ -924,7 +924,7 @@
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
-"Database changed" = "Database changed";
+"Database changed" = "Base de datos modificada";
 
 /* message of panel when no db name is given */
 "Database must have a name." = "La base de datos debe tener un nombre.";
@@ -942,17 +942,17 @@
  Collation Dropdown : Default (unknown)
  default label
  Table Structure : Collation dropdown : 'item is the same as the default collation of the row's charset' marker */
-"Default" = "Default";
+"Default" = "Por defecto";
 
 /* Add Table : Collation : Default ($1 = collation name)
  Charset Dropdown : Default item ($1 = charset name)
  Collation Dropdown : Default ($1 = collation name)
  Collation Dropdown : Default collation for given charset ($1 = collation name)
  New Table Sheet : Table Engine Dropdown : Default */
-"Default (%@)" = "Default (%@)";
+"Default (%@)" = "Por defecto (%@)";
 
 /* default bundles update */
-"Default Bundles Update" = "Default Bundles Update";
+"Default Bundles Update" = "Actualización de paquetes predeterminados";
 
 /* import : csv field mapping : field default value */
 "Default: %@" = "Default: %@";
@@ -985,7 +985,7 @@
 "Delete database '%@'?" = "¿Eliminar la base de datos '%@'?";
 
 /* delete database message */
-"Delete favorite '%@'?" = "Delete favorite '%@'?";
+"Delete favorite '%@'?" = "¿Eliminar favorito '%@'?";
 
 /* delete field message */
 "Delete field '%@'?" = "¿Eliminar el campo '%@'?";
@@ -997,7 +997,7 @@
 "Delete Functions" = "Eliminar funciones";
 
 /* delete database message */
-"Delete group '%@'?" = "Delete group '%@'?";
+"Delete group '%@'?" = "¿Eliminar grupo '%@'?";
 
 /* delete index message */
 "Delete index '%@'?" = "¿Eliminar el índice '%@'?";
@@ -1057,10 +1057,10 @@
 "Delete Views" = "Eliminar vistas";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
-"Disabled Cipher Suites" = "Disabled Cipher Suites";
+"Disabled Cipher Suites" = "Juegos de cifrado desactivados";
 
 /* force table deltion button text tooltip */
-"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.";
+"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Deshabilita las claves ajenas (FOREIGN_KEY_CHECKS) antes de eliminar y las vuelve a habilitar después.";
 
 /* discard changes button */
 "Discard changes" = "Descartar cambios";
@@ -1069,7 +1069,7 @@
 "Disconnected from %@" = "Desconectado de %@";
 
 /* do update operator tooltip */
-"Do UPDATE where field contents match" = "Do UPDATE where field contents match";
+"Do UPDATE where field contents match" = "Hace UPDATE donde coincide el contenido de los campos";
 
 /* message of panel asking for confirmation for loading large text into the query editor */
 "Do you really want to load a SQL file with %@ of data into the Query Editor?" = "Do you really want to load a SQL file with %@ of data into the Query Editor?";
@@ -1084,7 +1084,7 @@
 "DTD Identifier" = "DTD Identifier";
 
 /* sql export dump of table label */
-"Dump of table" = "Dump of table";
+"Dump of table" = "Volcado de tabla";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Volcando...";
@@ -1096,7 +1096,7 @@
 "Duplicate Function..." = "Duplicar función...";
 
 /* duplicate host message */
-"Duplicate Host" = "Duplicate Host";
+"Duplicate Host" = "Duplicar equipo";
 
 /* duplicate proc menu title */
 "Duplicate Procedure..." = "Duplicar procedimiento...";
@@ -1144,7 +1144,7 @@
 "encoding: %1$@ (%2$@)" = "encoding: %1$@ (%2$@)";
 
 /* Table Info Section : Table Engine */
-"engine: %@" = "engine: %@";
+"engine: %@" = "motor: %@";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "Enter connection details below, or choose a favorite";
@@ -1154,7 +1154,7 @@
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
-"Entire Content" = "Entire Content";
+"Entire Content" = "Contenido completo";
 
 /* Bundle Editor : Copy-Command-Error : error dialog title
  error */
@@ -1320,7 +1320,7 @@
 "Exporting %@" = "Exportando %@";
 
 /* text showing that the application is exporting a Dot file */
-"Exporting Dot File" = "Exporting Dot File";
+"Exporting Dot File" = "Exportando archivo Dot";
 
 /* text showing that the application is exporting SQL */
 "Exporting SQL" = "Exportando SQL";
@@ -1347,7 +1347,7 @@
 "Favorites import error" = "Favorites import error";
 
 /* export label showing that the app is fetching data */
-"Fetching data..." = "Fetching data...";
+"Fetching data..." = "Recuperando datos...";
 
 /* fetching database structure data in progress */
 "fetching database structure data in progress" = "fetching database structure data in progress";
@@ -1365,7 +1365,7 @@
 "Field" = "Field";
 
 /* Query result editing error - could not match row being edited uniquely */
-"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
+"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Campo no editable. No se pudo identificar el campo de origen con precisión (%ld coincidencias).";
 
 /* field is not editable due to no table/database */
 "Field is not editable. Field has no or multiple table or database origin(s)." = "Campo no editable. El campo no tiene o tiene múltiples orígenes de tablas o bases de datos.";
@@ -1390,7 +1390,7 @@
 "Filter" = "Filtro";
 
 /* filter tables menu item */
-"Filter Tables" = "Filter Tables";
+"Filter Tables" = "Filtrar tablas";
 
 /* export source */
 "Filtered table content" = "Filtered table content";
@@ -1417,7 +1417,7 @@
 "Flush Table" = "Limpiar tabla";
 
 /* flush table failed message */
-"Flush table failed." = "Flush table failed.";
+"Flush table failed." = "Limpieza de tabla fallida.";
 
 /* flush view menu item */
 "Flush View" = "Limpiar vista";
@@ -1429,7 +1429,7 @@
 "For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
 
 /* force table deletion button text */
-"Force delete (disables integrity checks)" = "Force delete (disables integrity checks)";
+"Force delete (disables integrity checks)" = "Forzar borrado (deshabilita la comprobación de integridad)";
 
 /* full text index menu item title */
 "FULLTEXT" = "FULLTEXT";
@@ -1490,7 +1490,7 @@
 
 /* export filename host token
  export header host label */
-"Host" = "Host";
+"Host" = "Equipo";
 
 /* Localized help page for query favourites - do not localize if no translated webpage is available */
 "http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
@@ -1569,7 +1569,7 @@
 
 /* New Table Sheet : Table Collation Dropdown : Default inherited from database
  New Table Sheet : Table Encoding Dropdown : Default inherited from database */
-"Inherit from database (%@)" = "Inherit from database (%@)";
+"Inherit from database (%@)" = "Heredar de la base de datos (%@)";
 
 /* initializing export label */
 "Initializing..." = "Initializing...";
@@ -1582,7 +1582,7 @@
 "Input Field doesn't support insertion of snippets." = "Input Field doesn't support insertion of snippets.";
 
 /* input field is not editable. */
-"Input Field is not editable." = "Input Field is not editable.";
+"Input Field is not editable." = "El campo de entrada no se puede editar.";
 
 /* Bundle Editor : Outline View : 'Input Field' item : tooltip */
 "Input Field Scope\ncommands will run on each text input field" = "Input Field Scope\ncommands will run on each text input field";
@@ -1597,7 +1597,7 @@
 "Installed Bundles" = "Installed Bundles";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
-"Installing Bundle" = "Installing Bundle";
+"Installing Bundle" = "Instalando paquete";
 
 /* insufficient details message */
 "Insufficient connection details" = "Detalles de conexión insuficientes";
@@ -1630,7 +1630,7 @@
 "Is Nullable" = "Is Nullable";
 
 /* is updatable: %@ */
-"is updatable: %@" = "is updatable: %@";
+"is updatable: %@" = "es actualizable: %@";
 
 /* items */
 "items" = "ítems";
@@ -1645,7 +1645,7 @@
 "Key" = "Key";
 
 /* keyword label for color table (Prefs > Editor) */
-"Keyword" = "Keyword";
+"Keyword" = "Palabra reservada";
 
 /* kill button */
 "Kill" = "Finalizar";
@@ -1773,7 +1773,7 @@
 "MySQL said:\n\n%@" = "MySQL dijo:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
-"MyTheme" = "MyTheme";
+"MyTheme" = "MiTema";
 
 /* network preference pane name */
 "Network" = "Red";
@@ -1806,7 +1806,7 @@
 "New Name" = "New Name";
 
 /* new table menu item */
-"New Table" = "New Table";
+"New Table" = "Nueva tabla";
 
 /* error that no color theme found */
 "No color theme data found." = "No color theme data found.";
@@ -1874,7 +1874,7 @@
 "Number of arguments: %lu" = "Número de argumentos: %lu";
 
 /* numeric label for color table (Prefs > Editor) */
-"Numeric" = "Numeric";
+"Numeric" = "Numérico";
 
 /* Bundle Editor : Copy-Command-Error : OK button
  Bundle Editor : Save-and-Close-Error : OK button
@@ -1889,10 +1889,10 @@
 "OK" = "Aceptar";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
-"One additional row was removed!" = "One additional row was removed!";
+"One additional row was removed!" = "¡Una fila adicional fue eliminada!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : Only n-1 of n selected rows were deleted. */
-"One row was not removed." = "One row was not removed.";
+"One row was not removed." = "Una fila no fue eliminada.";
 
 /* Only one dragged item allowed. */
 "Only one dragged item allowed." = "Solo se permite arrastrar un ítem.";
@@ -1901,7 +1901,7 @@
 "Only Partially Supported" = "Only Partially Supported";
 
 /* open function in new table title */
-"Open Function in New Tab" = "Open Function in New Tab";
+"Open Function in New Tab" = "Abrir función en nueva pestaña";
 
 /* Table List : Context Menu : duplicate connection to new window
  Table List : Gear Menu : duplicate connection to new window */
@@ -1914,42 +1914,42 @@
 "Open in New Window" = "Abrir en nueva ventana";
 
 /* open procedure in new table title */
-"Open Procedure in New Tab" = "Open Procedure in New Tab";
+"Open Procedure in New Tab" = "Abrir procedimiento en nueva pestaña";
 
 /* Table List : Context Menu : duplicate connection to new window
  Table List : Gear Menu : duplicate connection to new window */
-"Open Procedure in New Window" = "Open Procedure in New Window";
+"Open Procedure in New Window" = "Abrir procedimiento en nueva ventana";
 
 /* open table in new tab title
  open table in new table title */
-"Open Table in New Tab" = "Open Table in New Tab";
+"Open Table in New Tab" = "Abrir tabla en nueva pestaña";
 
 /* Table List : Context Menu : Duplicate connection to new window
  Table List : Gear Menu : Duplicate connection to new window */
-"Open Table in New Window" = "Open Table in New Window";
+"Open Table in New Window" = "Abrir tabla en nueva ventana";
 
 /* open view in new tab title
  open view in new table title */
-"Open View in New Tab" = "Open View in New Tab";
+"Open View in New Tab" = "Abrir vista en nueva pestaña";
 
 /* Tables List : Context Menu : Duplicate connection to new window
  Tables List : Gear Menu : Duplicate connection to new window */
-"Open View in New Window" = "Open View in New Window";
+"Open View in New Window" = "Abrir vista en nueva ventana";
 
 /* menu item open “%@” in new window */
 "Open “%@” in New Window" = "Abrir “%@” en nueva ventana";
 
 /* OPTIMIZE one or more tables - result title */
-"Optimize %@" = "Optimize %@";
+"Optimize %@" = "Optimizar %@";
 
 /* optimize selected items menu item */
 "Optimize Selected Items" = "Optimize Selected Items";
 
 /* optimize table menu item */
-"Optimize Table" = "Optimize Table";
+"Optimize Table" = "Optimizar tabla";
 
 /* optimize table failed message */
-"Optimize table failed." = "Optimize table failed.";
+"Optimize table failed." = "Optimización de tabla fallida.";
 
 /* Optimized type for field %@ */
 "Optimized type for field '%@'" = "Optimized type for field '%@'";
@@ -2000,7 +2000,7 @@
 "Query" = "Consulta";
 
 /* query background label for color table (Prefs > Editor) */
-"Query Background" = "Query Background";
+"Query Background" = "Fondo de consulta";
 
 /* Query cancelled error */
 "Query cancelled." = "Consulta cancelada.";
@@ -2034,7 +2034,7 @@
 "Quick Connect" = "Quick Connect";
 
 /* quote label for color table (Prefs > Editor) */
-"Quote" = "Quote";
+"Quote" = "Comillas";
 
 /* databsse rename unsupported informative message */
 "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
@@ -2073,7 +2073,7 @@
 "Relations" = "Relaciones";
 
 /* Relations tab subtitle showing table name */
-"Relations for table: %@" = "Relations for table: %@";
+"Relations for table: %@" = "Relaciones de tabla: %@";
 
 /* reload bundles menu item label */
 "Reload Bundles" = "Reload Bundles";
@@ -2082,7 +2082,7 @@
 "Reloading data..." = "Volviendo a cargar datos...";
 
 /* Reloading table task string */
-"Reloading..." = "Reloading...";
+"Reloading..." = "Volviendo a cargar...";
 
 /* remote error */
 "Remote Error" = "Remote Error";
@@ -2098,7 +2098,7 @@
 "Remove all query favorites?" = "¿Eliminar todas las consultas favoritas?";
 
 /* Bundle Editor : Remove-Bundle: remove dialog title */
-"Remove selected Bundle?" = "Remove selected Bundle?";
+"Remove selected Bundle?" = "¿Eliminar paquete seleccionado?";
 
 /* remove selected content filters message */
 "Remove selected content filters?" = "¿Eliminar filtros de contenido seleccionados?";
@@ -2128,22 +2128,22 @@
 "Rename View..." = "Renombrar vista...";
 
 /* REPAIR one or more tables - result title */
-"Repair %@" = "Repair %@";
+"Repair %@" = "Reparar %@";
 
 /* repair selected items menu item */
 "Repair Selected Items" = "Repair Selected Items";
 
 /* repair table menu item */
-"Repair Table" = "Repair Table";
+"Repair Table" = "Reparar tabla";
 
 /* repair table failed message */
-"Repair table failed." = "Repair table failed.";
+"Repair table failed." = "Reparación de tabla fallida.";
 
 /* Replace button */
 "Replace" = "Replace";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace entire content' item */
-"Replace Entire Content" = "Replace Entire Content";
+"Replace Entire Content" = "Reemplazar todo el contenido";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace selection' item */
 "Replace Selection" = "Replace Selection";
@@ -2302,31 +2302,31 @@
 "selected items" = "selected items";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
-"Selected Rows (CSV)" = "Selected Rows (CSV)";
+"Selected Rows (CSV)" = "Filas seleccionadas (CSV)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as SQL' item */
-"Selected Rows (SQL)" = "Selected Rows (SQL)";
+"Selected Rows (SQL)" = "Filas seleccionadas (SQL)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as tab-separated' item */
-"Selected Rows (TSV)" = "Selected Rows (TSV)";
+"Selected Rows (TSV)" = "Filas seleccionadas (TSV)";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
 "Selected Text" = "Selected Text";
 
 /* selection label for color table (Prefs > Editor) */
-"Selection" = "Selection";
+"Selection" = "Selección";
 
 /* table structure : indexes : delete index : no columns error : description */
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace solo soporta y se prueba con versiones predeterminadas de clientes OpenSSH incluidas en Mac OS X. El uso de diferentes clientes puede causar problemas de conexión, riesgos de seguridad o no funcionar en absoluto.\n\nPor favor tenga en cuenta, que no podemos proporcionar soporte para estas configuraciones.";
 
 /* sequelace URL scheme command not supported. */
-"sequelace URL scheme command not supported." = "sequelace URL scheme command not supported.";
+"sequelace URL scheme command not supported." = "Comando de esquema URL de sequelace no soportado.";
 
 /* sequelace url Scheme Error */
-"sequelace URL Scheme Error" = "sequelace URL Scheme Error";
+"sequelace URL Scheme Error" = "Error de esquema URL sequelace";
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
@@ -2337,7 +2337,7 @@
 "Server Default (%@)" = "Server Default (%@)";
 
 /* server processes window title (var = hostname) */
-"Server Processes on %@" = "Server Processes on %@";
+"Server Processes on %@" = "Procesos de servidor en %@";
 
 /* Initial filename for 'Save session' file */
 "Session" = "Session";
@@ -2367,7 +2367,7 @@
 "Show Create Procedure Syntax..." = "Mostrar sintaxis create procedure...";
 
 /* show create syntaxes menu item */
-"Show Create Syntaxes..." = "Show Create Syntaxes...";
+"Show Create Syntaxes..." = "Mostrar sintaxis create...";
 
 /* show create table syntax menu item */
 "Show Create Table Syntax..." = "Mostrar sintaxis create table...";
@@ -2379,7 +2379,7 @@
 "Show Detail" = "Mostrar detalle";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
-"Show MySQL help for “%@”" = "Show MySQL help for “%@”";
+"Show MySQL help for “%@”" = "Mostrar ayuda de MySQL para “%@”";
 
 /* show navigator */
 "Show Navigator" = "Mostrar navegador";
@@ -2391,10 +2391,10 @@
 "Show the console which shows all MySQL commands performed by Sequel Ace" = "Muestra la consola que muestra todos los comandos MySQL ejecutados por Sequel Ace";
 
 /* Show Toolbar menu item */
-"Show Toolbar" = "Show Toolbar";
+"Show Toolbar" = "Mostrar barra de herramientas";
 
 /* filtered item count */
-"Showing %lu of %lu processes" = "Showing %1$lu of %2$lu processes";
+"Showing %lu of %lu processes" = "Mostrando %1$lu de %2$lu procesos";
 
 /* shutdown server : confirmation dialog : shutdown button */
 "Shutdown" = "Shutdown";
@@ -2424,7 +2424,7 @@
 "Socket not found!" = "¡Socket no encontrado!";
 
 /* Some export folders not writable explanatory text */
-"Some of the target export folders are not writable.  Please select a new export location and try again." = "Some of the target export folders are not writable.  Please select a new export location and try again.";
+"Some of the target export folders are not writable.  Please select a new export location and try again." = "Algunas de las carpetas de destino no se pueden modificar.  Por favor, seleccione una nueva ubicación y vuelva a intentarlo.";
 
 /* Some export folders missing explanatory text */
 "Some of the target export folders no longer exist.  Please select a new export location and try again." = "Some of the target export folders no longer exist.  Please select a new export location and try again.";
@@ -2478,7 +2478,7 @@
 "started" = "started";
 
 /* status file for sequelace url scheme command couldn't be written error message */
-"Status file for sequelace url scheme command couldn't be written!" = "Status file for sequelace url scheme command couldn't be written!";
+"Status file for sequelace url scheme command couldn't be written!" = "¡El archivo de estado para el esquema de comando URL de sequelace no se ha podido escribir!";
 
 /* stop button */
 "Stop" = "Detener";
@@ -2547,7 +2547,7 @@
 "Switch to the Table Structure tab" = "Cambia a la pestaña Estructura de tabla";
 
 /* tooltip for toolbar item for switching to the Table Triggers tab */
-"Switch to the Table Triggers tab" = "Switch to the Table Triggers tab";
+"Switch to the Table Triggers tab" = "Cambia a la pestaña Disparadores de tabla";
 
 /* tooltip for toolbar item for switching to the User Manager tab */
 "Switch to the User Manager tab" = "Cambia a la pestaña Administrador de usuario";
@@ -2562,7 +2562,7 @@
  table
  Table Structure : Collation dropdown : 'item is the same as the collation of table' marker
  Table Structure : Encoding dropdown : 'item is table default' marker */
-"Table" = "Table";
+"Table" = "Tabla";
 
 /* export label showing that the app is fetching data for a specific table */
 "Table %lu of %lu (%@): Fetching data..." = "Tabla %1$lu de %2$lu (%3$@): Recuperando datos...";
@@ -2587,13 +2587,13 @@
 "Table Content" = "Contenido de tabla";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
-"Table Content (CSV)" = "Table Content (CSV)";
+"Table Content (CSV)" = "Contenido de tabla (CSV)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as SQL' item */
-"Table Content (SQL)" = "Table Content (SQL)";
+"Table Content (SQL)" = "Contenido de tabla (SQL)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as tab-separated' item */
-"Table Content (TSV)" = "Table Content (TSV)";
+"Table Content (TSV)" = "Contenido de tabla (TSV)";
 
 /* toolbar item for navigation history */
 "Table History" = "Historial de tabla";
@@ -2605,7 +2605,7 @@
 "TABLE INFORMATION" = "INFORMACIÓN DE TABLA";
 
 /* table information print heading */
-"Table Information" = "Table Information";
+"Table Information" = "Información de tabla";
 
 /* message of panel when no name is given for table */
 "Table must have a name." = "La tabla debe tener un nombre.";
@@ -2617,7 +2617,7 @@
 "Table Relations" = "Relaciones de tabla";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table row changed' item */
-"Table Row changed" = "Table Row changed";
+"Table Row changed" = "Fila de tabla modificada";
 
 /* table structure print heading */
 "Table Structure" = "Estructura de tabla";
@@ -2629,13 +2629,13 @@
 "Table: %@" = "Tabla: %@";
 
 /* tables preference pane name */
-"Tables" = "Tables";
+"Tables" = "Tablas";
 
 /* tables */
-"tables" = "tables";
+"tables" = "tablas";
 
 /* header for table list */
-"TABLES" = "TABLES";
+"TABLES" = "TABLAS";
 
 /* header for table & views list */
 "TABLES & VIEWS" = "TABLAS & VISTAS";
@@ -2650,19 +2650,19 @@
 "Testing SSH..." = "Testing SSH...";
 
 /* text label for color table (Prefs > Editor) */
-"Text" = "Text";
+"Text" = "Texto";
 
 /* Text is too long. Maximum text length is set to %llu. */
-"Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
+"Text is too long. Maximum text length is set to %llu." = "El texto es demasiado largo. La longitud máxima del texto está establecida en %llu.";
 
 /* Release notes dialog title thanking user for upgrade */
-"Thanks for updating Sequel Ace!" = "Thanks for updating Sequel Ace!";
+"Thanks for updating Sequel Ace!" = "¡Gracias por actualizar Sequel Ace!";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@’ already exists." = "The Bundle ‘%@’ already exists.";
+"The Bundle ‘%@’ already exists." = "El paquete ‘%@’ ya existe.";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
-"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.";
+"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "El paquete ‘%@’ no tiene UUID el cual es necesario para identificar los paquetes instalados.";
 
 "‘%@’ Bundle contains legacy components" = "‘%@’ Bundle contains legacy components";
 
@@ -2687,10 +2687,10 @@
 "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.";
 
 /* CSV file open error */
-"The CSV file you selected could not be found or read." = "The CSV file you selected could not be found or read.";
+"The CSV file you selected could not be found or read." = "El archivo CSV seleccionado no se ha podido encontrar o leer.";
 
 /* Error when CSV appears to have too many columns to import, probably due to line ending mismatch */
-"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog.";
+"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "El CSV leído contiene más de 512 columnas, más del máximo de columnas permitidas por razones de velocidad en Sequel Ace.\n\nEsto normalmente ocurre debido a errores de lectura en el CSV; por favor, compruebe el CSV que será importado además de los finales de línea y los caracteres de escape en la parte inferior del cuadro de diálogo de selección CSV.";
 
 /* unsaved theme informative message */
 "The current color theme is unsaved. Do you want to proceed without saving it?" = "The current color theme is unsaved. Do you want to proceed without saving it?";
@@ -2699,7 +2699,7 @@
 "The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
-"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”.";
+"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Los siguientes paquetes predeterminados fueron actualizados:\n%@\nSus modificaciones fueron almacenadas como “(user)”.";
 
 /* favorites export error informative message */
 "The following error occurred during the export process:\n\n%@" = "The following error occurred during the export process:\n\n%@";
@@ -2708,19 +2708,19 @@
 "The following error occurred during the import process:\n\n%@" = "The following error occurred during the import process:\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
-"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "The foreign key relationship '%1$@' has a dependency on index '%2$@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.";
+"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "La relación de la clave ajena '%@' tiene una dependencia en este índice. Esta relación debe ser eliminada antes de que el índice pueda ser eliminado.\n\n¿Está seguro que desea eliminar la relación y el índice? Esta acción no se puede deshacer.";
 
 /* table list change alert message */
-"The list of tables has changed" = "The list of tables has changed";
+"The list of tables has changed" = "La lista de las tablas ha cambiado";
 
 /* message when trying to rename a table/view/proc/etc to an already used name */
-"The name '%@' is already used." = "The name '%@' is already used.";
+"The name '%@' is already used." = "El nombre '%@' ya está en uso.";
 
 /* table list change alert informative message */
-"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?";
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "El número de tablas de esta base de datos ha cambiado desde que la ventana de exportación fue abierta. Actualmente hay %d tabla(s) adicional(es), probablemente añadida(s) por una aplicación externa.\n\n¿Cómo le gustaría continuar?";
 
 /* message of panel when no rows have been affected after writing to the db */
-"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)";
+"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "La fila no fue escrita en la base de datos MySQL. Usted probablemente no ha modificado nada.\nVuelva a cargar la tabla para asegurarse que la fila existe y use la clave primaria de su tabla.\n(Este error se puede deshabilitar en las preferencias.)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
@@ -2732,10 +2732,10 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "The selected file is either not a valid SPF file or severely corrupted.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "The selected relation couldn't be deleted.\n\nMySQL said: %@";
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "La relación seleccionada no se ha podido eliminar.\n\nMySQL dijo: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "El disparador seleccionado no se ha podido eliminar.\n\nMySQL dijo: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
@@ -2780,13 +2780,13 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "El túnel SSH no se ha podido conectar al equipo %1$@, o la solicitud expiró.\n\nAsegúrese que la dirección es correcta y que dispone de los privilegios necesarios, o intente aumentar el tiempo de espera de la conexión (actualmente %2$ld segundos).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Los datos de la tabla no se han podido cargar probablemente debido a la cláusula del filtro usado. \n\nMySQL dijo: %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "The table data couldn't be loaded.\n\nMySQL said: %@";
+"The table data couldn't be loaded.\n\nMySQL said: %@" = "Los datos de la tabla no se han podido cargar.\n\nMySQL dijo: %@";
 
 /* Export folder not writable explanatory text */
-"The target export folder is not writable.  Please select a new export location and try again." = "The target export folder is not writable.  Please select a new export location and try again.";
+"The target export folder is not writable.  Please select a new export location and try again." = "No se puede escribir en la carpeta destino de la exportación.  Por favor, seleccione una nueva ubicación para exportar y vuelva a intentarlo.";
 
 /* Export folder not chosen by user explanatory text */
 "No directory selected.  Please select a new export location and try again." = "No directory selected.  Please select a new export location and try again.";
@@ -2803,13 +2803,13 @@
 "Themes Installation Error" = "Themes Installation Error";
 
 /* message of panel when table content cannot be copied */
-"There have been errors while copying table content. Please control the new table." = "There have been errors while copying table content. Please control the new table.";
+"There have been errors while copying table content. Please control the new table." = "Se han producido errores al copiar el contenido de la tabla. Por favor, compruebe la nueva tabla.";
 
 /* text shown when query was successfull */
-"There were no errors." = "There were no errors.";
+"There were no errors." = "No hubo errores.";
 
 /* delete field and foreign key informative message */
-"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
+"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Este campo es parte de una relación de clave ajena con la tabla '%@'. Esta relación debe ser eliminada antes de que el campo pueda ser eliminado.\n\n¿Está seguro que desea eliminar la relación y el campo? Esta acción no se puede deshacer.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
 "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@";
@@ -2854,13 +2854,13 @@
 "This is the default encoding of this server." = "This is the default encoding of this server.";
 
 /* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
-"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "This table currently does not support relations. Only tables that use the InnoDB storage engine support them.";
+"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "Esta tabla no soporta relaciones actualmente. Solo las tablas que usan el motor de almacenamiento InnoDB las soportan.";
 
 /* user has no hosts informative message */
-"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "This user doesn't have any hosts associated with it. It will be deleted unless one is added";
+"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "Este usuario no tiene ningún equipo asociado. Este se eliminará a menos que sea añadido uno";
 
 /* error removing host informative message */
-"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "This user doesn't seem to have any associated hosts and will be removed unless a host is added.";
+"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Este usuario no parece tener ningún equipo asociado y se eliminará a menos que un equipo sea añadido.";
 
 /* triggers not supported label */
 "This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2" = "This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2";
@@ -2872,13 +2872,13 @@
 "Time" = "Time";
 
 /* message of error when using 'localhost' for a network connection */
-"To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'." = "To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'.";
+"To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'." = "Para MySQL, 'localhost' es un equipo especial y significa que una conexión de socket debería ser usada.\n\n¿Pretende usar una conexión de socket, o conectarse a la máquina local a través de un puerto? Si pretende conectarse a través de un puerto, debería usar '127.0.0.1' en lugar de 'localhost'.";
 
 /* toolbar item label for switching to the Table Triggers tab */
-"Triggers" = "Triggers";
+"Triggers" = "Disparadores";
 
 /* triggers for table label */
-"Triggers for table: %@" = "Triggers for table: %@";
+"Triggers for table: %@" = "Disparadores de tabla: %@";
 
 /* truncate button */
 "Truncate" = "Truncar";
@@ -2983,7 +2983,7 @@
 "Unable to write row" = "No se puede escribir la fila";
 
 /* Table Content : Remove Row : Result : n Error title */
-"Unexpected number of rows removed!" = "Unexpected number of rows removed!";
+"Unexpected number of rows removed!" = "¡Número inesperado de filas eliminadas!";
 
 /* warning */
 "Unknown file format" = "Unknown file format";
@@ -2995,7 +2995,7 @@
 "Unsaved Theme" = "Tema no guardado";
 
 /* Preferences : Network : Custom SSH client : warning dialog title */
-"Unsupported configuration!" = "Unsupported configuration!";
+"Unsupported configuration!" = "¡Configuración no compatible!";
 
 /* export : import settings : file version error title */
 "Unsupported version for export settings!" = "Unsupported version for export settings!";
@@ -3004,7 +3004,7 @@
 "Untitled" = "Untitled";
 
 /* Title of a new Sequel Ace Document */
-"Untitled %ld" = "Untitled %ld";
+"Untitled %ld" = "Sin nombre %ld";
 
 /* range for mediumblob type */
 "Up to %@ bytes (16 MiB)" = "Up to %@ bytes (16 MiB)";
@@ -3025,16 +3025,16 @@
 "Up to 255 characters" = "Up to 255 characters";
 
 /* Open Files : Bundle : Already-Installed : Update button */
-"Update" = "Update";
+"Update" = "Actualizar";
 
 /* updated: %@ */
 "updated: %@" = "actualizada: %@";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Falló al actualizar el contenido del campo. No se pudo identificar el campo de origen con precisión (%1$ld coincidencias). Probablemente este campo de la tabla `%2$@` fue modificado durante la edición.";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Falló al actualizar el contenido del campo. No se pudo identificar el campo de origen de forma precisa (%1$ld coincidencias). Probablemente este campo de la tabla `%2$@` fue modificado por otro usuario mientras se editaba.";
 
 /* updating field task description */
 "Updating field data..." = "Updating field data...";
@@ -3055,7 +3055,7 @@
 "Use Standard Connection" = "Usar conexión estándar";
 
 /* user has no hosts message */
-"User has no hosts" = "User has no hosts";
+"User has no hosts" = "El usuario no tiene equipos";
 
 /* user-defined value */
 "User-defined value" = "User-defined value";
@@ -3097,7 +3097,7 @@
 "Warning" = "Warning";
 
 /* Short important release note for why password prompts may occur */
-"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again.";
+"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Hemos cambiado la firma digital de Sequel Ace para la compatibilidad con GateKeeper; tendrá que permitir de nuevo el acceso a sus contraseñas.";
 
 /* Important release notes informational text, single change */
 "We've made a few changes but we thought you should know about one particularly important one:" = "We've made a few changes but we thought you should know about one particularly important one:";
@@ -3118,10 +3118,10 @@
 "Working..." = "Working...";
 
 /* export label showing app is writing data */
-"Writing data..." = "Writing data...";
+"Writing data..." = "Escribiendo datos...";
 
 /* text showing that app is writing text file */
-"Writing..." = "Writing...";
+"Writing..." = "Escribiendo...";
 
 /* wrong data format or password */
 "Wrong data format or password." = "Wrong data format or password.";
@@ -3139,13 +3139,13 @@
 "You can only copy single rows." = "You can only copy single rows.";
 
 /* message of panel when trying to edit tables without index and with hidden blob/text fields */
-"You can't hide blob and text fields when working with tables without index." = "You can't hide blob and text fields when working with tables without index.";
+"You can't hide blob and text fields when working with tables without index." = "No se puede ocultar los campos blob y text al trabajar con tablas sin índices.";
 
 /* You cannot delete the last field in a table. Delete the table instead. */
-"You cannot delete the last field in a table. Delete the table instead." = "You cannot delete the last field in a table. Delete the table instead.";
+"You cannot delete the last field in a table. Delete the table instead." = "No puede eliminar el último campo de la tabla. Elimine la tabla en su lugar.";
 
 /* title of error when using 'localhost' for a network connection */
-"You have entered 'localhost' for a non-socket connection" = "You have entered 'localhost' for a non-socket connection";
+"You have entered 'localhost' for a non-socket connection" = "Ha introducido 'localhost' en una conexión sin socket";
 
 /* SSL connection requested but not established error detail */
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.";
@@ -3154,7 +3154,7 @@
 "‘%@’ based favorites" = "‘%@’ based favorites";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
-"‘%@’ Fields Content Filters" = "‘%@’ Fields Content Filters";
+"‘%@’ Fields Content Filters" = "‘%@’ Filtros de contenido de campos";
 
 /* Export file already exists message */
 "“%@” already exists. Do you want to replace it?" = "“%@” already exists. Do you want to replace it?";
@@ -3166,7 +3166,7 @@
 "“%@” could not be created" = "“%@” could not be created";
 
 /* “%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.";
+"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "“%@” no se ha podido analizar. Puede editar la columna pero no se mostrará en la vista de contenido; por favor informe este problema al equipo de Sequel Ace utilizando la opción del menú Ayuda.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
 "“%@” is not a valid client certificate file." = "“%@” is not a valid client certificate file.";
