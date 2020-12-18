@@ -3248,7 +3248,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
 
-		SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
 		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
 
 		// we need to re-request access to places we've been before.. JCS: do we?
