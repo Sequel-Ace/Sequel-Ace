@@ -13,11 +13,11 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
+	<string>3.0.1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>3007</string>
+	<string>3008</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

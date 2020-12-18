@@ -1,3 +1,28 @@
+## [3.0.1]
+
+### Added
+
+
+### Fixed
+4d7ae04c, Fix 3.0.0 bugs 
+7cf9986a, CSV import crash
+69011da7, Query alias completions 
+863909cc, Alerts being created on background threads
+26f8b0bc, SPQueryController addHistory:forFileURL crash
+c5644649, Crash when taking substring of query
+8f079d3e, Fix couple of Crashlytics crashes 
+4f5a1900, Secure bookmark generation and logging 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+d02aa6cc, Added logging for missing key 
+
+
 ## [3.0.0]
 
 ### Added

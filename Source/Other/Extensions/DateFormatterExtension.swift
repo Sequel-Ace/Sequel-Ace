@@ -41,7 +41,7 @@ extension DateFormatter {
 	/// 2020-06-30 14:14:11 is  example
 	@objc public static var naturalLanguageFormatter: DateFormatter = {
 		let formatter = DateFormatter()
-		formatter.dateFormat = "yyyy-MM-dd hh:mm:ss"
+		formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 		return formatter
 	}()
 		
