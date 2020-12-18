@@ -165,7 +165,7 @@ stopAllSecurityScopedAccess
 
             for (_, bookmarkDict) in bookmarks.enumerated(){
                 if bookmarkDict[url.absoluteString] != nil {
-                    os_log("Existing bookmark for:", log: log, type: .debug, url.absoluteString)
+                    os_log("Existing bookmark for: %@", log: log, type: .debug, url.absoluteString)
                     Crashlytics.crashlytics().log("Existing bookmark for: \(url.absoluteString)")
 					return true
 				}
