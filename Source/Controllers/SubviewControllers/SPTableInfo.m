@@ -52,7 +52,7 @@
 - (instancetype)init
 {
 	if ((self = [super init])) {
-		info       = [[NSMutableArray alloc] init];
+		info = [[NSMutableArray alloc] init];
 		activities = [[NSMutableArray alloc] init];
 		
 		_activitiesWillBeUpdated = NO;
