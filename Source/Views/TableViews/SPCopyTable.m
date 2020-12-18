@@ -446,13 +446,22 @@ static const NSInteger kBlobAsImageFile = 4;
 		NSString *t = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"typegrouping"];
 		
 		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
-			autoIncrement = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) boolForKey:@"autoincrement"];
-			// the columnDefinitions array contains dictionaries with different keys when copying from the table view (autoincrement)
-			// or the query view (AUTO_INCREMENT_FLAG)
-			// so we need this extra check
-			if(autoIncrement == NO){
-				autoIncrement = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) boolForKey:@"AUTO_INCREMENT_FLAG"];
-			}
+            
+            id obj = NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]);
+                        
+            if ([obj respondsToSelector:@selector(boolForKey:)]) {
+                autoIncrement = [obj boolForKey:@"autoincrement"];
+                // the columnDefinitions array contains dictionaries with different keys when copying from the table view (autoincrement)
+                // or the query view (AUTO_INCREMENT_FLAG)
+                // so we need this extra check
+                if(autoIncrement == NO){
+                    autoIncrement = [obj boolForKey:@"AUTO_INCREMENT_FLAG"];
+                }
+            }
+            else{
+                CLS_LOG(@"object does not respond to boolForKey. obj class: %@\n Description: %@", [obj class], [obj description]);
+                CLS_LOG(@"columnDefinitions: %@", columnDefinitions);
+            }
 		}
 
 		// Numeric data

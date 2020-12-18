@@ -2451,7 +2451,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		}
 	}
 
-	if (errorDetail) [errorDetailText setString:errorDetail];
+    CLS_LOG(@"errorDetail: %@", errorDetail);
+    
+	if (errorDetail && [errorDetail length] > 0) [errorDetailText setString:errorDetail];
 
 	// Inform the delegate that the connection attempt failed
 	if (delegate && [delegate respondsToSelector:@selector(connectionControllerConnectAttemptFailed:)]) {

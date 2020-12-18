@@ -213,13 +213,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	// Re-init sort order
 	isDesc = NO;
 	sortColumn = nil;
-	
+
 
 	// If the current selection is a single caret position, run the current query.
 	if (selectedRange.length == 0) {
 		// BOOL doLookBehind = YES;
 		// query = [self queryAtPosition:selectedRange.location lookBehind:&doLookBehind];
-		if(currentQueryRange.length)
+		if(currentQueryRange.length  && [textView string].length > currentQueryRange.length)
 			query = [[textView string] substringWithRange:currentQueryRange];
 		if (!query) {
 			NSBeep();
@@ -723,10 +723,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		SEL                          callbackMethod = NULL;
 		NSString                    *taskButtonString;
 
-		NSUInteger i, totalQueriesRun = 0, totalAffectedRows = 0;
+		NSUInteger __block i, totalQueriesRun = 0, totalAffectedRows = 0;
 		double executionTime = 0;
 		NSInteger firstErrorOccurredInQuery = -1;
-		BOOL suppressErrorSheet = NO;
+		BOOL __block suppressErrorSheet = NO;
 		BOOL tableListNeedsReload = NO;
 		BOOL databaseWasChanged = NO;
 		// BOOL queriesSeparatedByDelimiter = NO;
@@ -858,37 +858,39 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 						[[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 						[[errorText onMainThread] setString:errors];
 
-						// ask the user to continue after detecting an error
-						if (![mySQLConnection lastQueryWasCancelled]) {
-
-							[tableDocumentInstance setTaskIndicatorShouldAnimate:NO];
-
-							NSAlert *alert = [[NSAlert alloc] init];
-							[alert setMessageText:NSLocalizedString(@"MySQL Error", @"mysql error message")];
-							[alert setInformativeText:[mySQLConnection lastErrorMessage]];
-
-							// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
-							[alert addButtonWithTitle:NSLocalizedString(@"Run All", @"run all button")];
-							[alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
-							[alert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
-
-							NSInteger alertReturnCode = [alert runModal];
-
-							[tableDocumentInstance setTaskIndicatorShouldAnimate:YES];
-
-							switch (alertReturnCode) {
-								case NSAlertFirstButtonReturn:
-									suppressErrorSheet = YES;
-								case NSAlertSecondButtonReturn:
-									break;
-								default:
-									if (i < queryCount-1) {
-										// output that message only if it was not the last one
-										[errors appendString:NSLocalizedString(@"Execution stopped!\n", @"execution stopped message")];
-									}
-									i = queryCount; // break for loop; for safety reasons stop the execution of the following queries
-							}
-						}
+                        SPMainQSync(^{
+                            // ask the user to continue after detecting an error
+                            if (![self->mySQLConnection lastQueryWasCancelled]) {
+                                
+                                [self->tableDocumentInstance setTaskIndicatorShouldAnimate:NO];
+                                
+                                NSAlert *alert = [[NSAlert alloc] init];
+                                [alert setMessageText:NSLocalizedString(@"MySQL Error", @"mysql error message")];
+                                [alert setInformativeText:[self->mySQLConnection lastErrorMessage]];
+                                
+                                // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+                                [alert addButtonWithTitle:NSLocalizedString(@"Run All", @"run all button")];
+                                [alert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
+                                [alert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
+                                
+                                NSInteger alertReturnCode = [alert runModal];
+                                
+                                [self->tableDocumentInstance setTaskIndicatorShouldAnimate:YES];
+                                
+                                switch (alertReturnCode) {
+                                    case NSAlertFirstButtonReturn:
+                                        suppressErrorSheet = YES;
+                                    case NSAlertSecondButtonReturn:
+                                        break;
+                                    default:
+                                        if (i < queryCount-1) {
+                                            // output that message only if it was not the last one
+                                            [errors appendString:NSLocalizedString(@"Execution stopped!\n", @"execution stopped message")];
+                                        }
+                                        i = queryCount; // break for loop; for safety reasons stop the execution of the following queries
+                                }
+                            }
+                        });
 					} else {
 						[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"),
 						                     (long)(i+1),
