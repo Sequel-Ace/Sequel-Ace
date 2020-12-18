@@ -681,7 +681,14 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		}
 	}
 
-	return [value length] ? value : NSLocalizedString(@"Not available", @"not available label");
+    if(value.length){
+        return value;
+    }
+    else{
+        CLS_LOG(@"Unable to format key: %@", key);
+        CLS_LOG(@"infoDict: %@", infoDict);
+        return NSLocalizedString(@"Not available", @"not available label");;
+    }
 }
 
 #pragma mark -
