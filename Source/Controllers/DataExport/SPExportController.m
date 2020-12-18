@@ -202,8 +202,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		exporters = [[NSMutableArray alloc] init];
 		exportFiles = [[NSMutableArray alloc] init];
 		operationQueue = [[NSOperationQueue alloc] init];
-		bookmarks = [[NSMutableArray alloc] init];
-		
+        bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
+
 		showAdvancedView = NO;
 		showCustomFilenameView = NO;
 		serverLowerCaseTableNameValue = NSNotFound;
@@ -288,9 +288,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
-	
-    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
-	
+		
 	// overwrite defaults with user settings from last export
 	[self applySettingsFromDictionary:[prefs objectForKey:SPLastExportSettings] error:NULL];
 	

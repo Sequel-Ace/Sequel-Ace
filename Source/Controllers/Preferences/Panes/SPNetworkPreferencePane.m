@@ -52,10 +52,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	self = [super init];
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
-		bookmarks = [[NSMutableArray alloc] init];
-		
-        [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
-		
+        bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];		
 	}
 	
 	return self;
