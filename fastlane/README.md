@@ -41,16 +41,16 @@ Creates new branch changelog, generates changelog, creates a PR.
 fastlane mac generate_changelog_locally
 ```
 Generates changelog only.
-### mac increment_build_version
-```
-fastlane mac increment_build_version
-```
-Increase build number
 ### mac update_strings
 ```
 fastlane mac update_strings
 ```
 Builds Sequel Ace strings target, uploads strings to Crowdin, builds them, downloads them and commits to git
+### mac increment_build_version
+```
+fastlane mac increment_build_version
+```
+Increase build number
 ### mac increment_app_version
 ```
 fastlane mac increment_app_version
