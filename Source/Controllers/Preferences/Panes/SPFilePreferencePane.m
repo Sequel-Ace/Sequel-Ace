@@ -137,21 +137,10 @@
 		// retrieve the filename
 		NSString __block *fileName = [NSString stringWithFormat:@"file://%@", fileNames[idx]];
 		
-		[bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idxBookmarks, BOOL *stopBookmarks) {
-			NSEnumerator *keyEnumerator = [dict keyEnumerator];
-			id key;
-			
-			while (key = [keyEnumerator nextObject]) {
-				if (![key isEqualToString:fileName]) {
-					continue;
-				}
-
-                if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
-                    SPLog(@"refreshing bookmarks: %@", bookmarks);
-                    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
-                }
-			}
-		}];
+        if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
+            SPLog(@"refreshing bookmarks: %@", bookmarks);
+            [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+        }
 	}];
 	
 	// reload the bookmarks and reset the view
