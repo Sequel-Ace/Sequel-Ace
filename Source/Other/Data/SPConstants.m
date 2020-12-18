@@ -235,6 +235,7 @@ NSString *SPFileNameTableTokenName               = @"table";
 // Misc
 NSString *SPContentFilters                       = @"ContentFilters";
 NSString *SPDocumentTaskEndNotification          = @"DocumentTaskEnded";
+NSString *SPBookmarksChangedNotification         = @"BookmarksChangedNotification";
 NSString *SPDocumentTaskStartNotification        = @"DocumentTaskStarted";
 NSString *SPDocumentWillCloseNotification        = @"DocumentWillClose";
 NSString *SPActivitiesUpdateNotification         = @"ActivitiesUpdateNotification";

@@ -95,6 +95,8 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (void)_scrollToSelectedNode;
 - (void)_removeNode:(SPTreeNode *)node;
 - (void)_removeAllPasswordsForNode:(SPTreeNode *)node;
+- (void)_refreshBookmarks;
+
 
 - (NSNumber *)_createNewFavoriteID;
 - (SPTreeNode *)_favoriteNodeForFavoriteID:(NSInteger)favoriteID;
@@ -1286,16 +1288,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// reload the bookmarks, when the observer detected a change in them
 	//
 	// thanks a lot to @jamesstout for pointing this out!
-	if ([keyPath isEqualToString:SASecureBookmarks]) {
-		id o;
-
-		if((o = [prefs objectForKey:SASecureBookmarks])){
-			[bookmarks setArray:o];
-		}
-
-        // do we?
-        [SecureBookmarkManager.sharedInstance reRequestSecureAccessToBookmarks];
-	}
+    // no longer needed
+    // but for some reson there are other KVO registered, so need to keep the method...
 }
 
 #pragma mark -
@@ -3252,21 +3246,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		keychain = [[SPKeychain alloc] init];
 		prefs = [NSUserDefaults standardUserDefaults];
 		
-		bookmarks = [[NSMutableArray alloc] init];
+		bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
 
 		SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
 		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
 
-        [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
-
 		// we need to re-request access to places we've been before.. JCS: do we?
         [SecureBookmarkManager.sharedInstance reRequestSecureAccessToBookmarks];
-		
-		// add an observer to get re-read the bookmarks when they change
-		[prefs addObserver:self
-				forKeyPath:SASecureBookmarks
-				options:NSKeyValueObservingOptionNew
-				   context:NULL];
+
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk
 		// and the tree to be constructed.
@@ -3305,6 +3293,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	return self;
 }
+
+- (void)_refreshBookmarks{
+    SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+}
+
+
 
 // TODO: this is called once per connection screen - but the timezones don't change right? Should be static/class method?
 - (NSArray<NSMenuItem *> *)generateTimeZoneMenuItems
@@ -3356,19 +3353,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)registerForNotifications
 {
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(_documentWillClose:)
-	                                             name:SPDocumentWillCloseNotification
-	                                           object:dbDocument];
+    NSNotificationCenter *nc = NSNotificationCenter.defaultCenter;
 
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(scrollViewFrameChanged:)
-	                                             name:NSViewFrameDidChangeNotification
-	                                           object:nil];
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(_processFavoritesDataChange:)
-	                                             name:SPConnectionFavoritesChangedNotification
-	                                           object:nil];
+    [nc addObserver:self
+           selector:@selector(_documentWillClose:)
+               name:SPDocumentWillCloseNotification
+             object:dbDocument];
+
+    [nc addObserver:self
+           selector:@selector(scrollViewFrameChanged:)
+               name:NSViewFrameDidChangeNotification
+             object:nil];
+    [nc addObserver:self
+           selector:@selector(_processFavoritesDataChange:)
+               name:SPConnectionFavoritesChangedNotification
+             object:nil];
 
 	// Registered to be notified of changes to connection information
 	[self addObserver:self
@@ -3690,7 +3689,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
 	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
+    [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
 
     [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 

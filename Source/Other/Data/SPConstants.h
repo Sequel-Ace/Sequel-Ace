@@ -429,6 +429,7 @@ extern NSString *SASecureBookmarks;
 
 // Misc
 extern NSString *SPContentFilters;
+extern NSString *SPBookmarksChangedNotification;
 extern NSString *SPDocumentTaskEndNotification;
 extern NSString *SPDocumentTaskStartNotification;
 extern NSString *SPDocumentWillCloseNotification;

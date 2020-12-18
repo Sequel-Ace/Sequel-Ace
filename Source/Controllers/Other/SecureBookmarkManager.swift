@@ -21,14 +21,20 @@ stopAllSecurityScopedAccess
 */
 
 @objc final class SecureBookmarkManager: NSObject {
+
 	@objc static let sharedInstance = SecureBookmarkManager()
-	@objc public var bookmarks: [Dictionary<String, Data>] = []
+
+    @objc public var bookmarks: [Dictionary<String, Data>] = []
 	@objc public var resolvedBookmarks: [URL] = []
 	@objc public var staleBookmarks: [URL] = []
+
     private let _NSURLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let log: OSLog
     private let prefs: UserDefaults = UserDefaults.standard
-    var observer: NSKeyValueObservation?
+    private var observer: NSKeyValueObservation?
+
+    private var iChangedTheBookmarks: Bool = false
+
 
 	override private init() {
 		log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "secureBookmarks")
@@ -41,15 +47,20 @@ stopAllSecurityScopedAccess
         // this manager *should* be the only thing changing the bookmarks pref, but in case...
         observer = UserDefaults.standard.observe(\.SPSecureBookmarks, options: [.new,.old], changeHandler: { (defaults, change) in
 
-            print("SPSecureBookmarks changed from: \(String(describing: change.oldValue)), updated to: \(String(describing: change.newValue))")
+            os_log("SPSecureBookmarks changed.", log: self.log, type: .debug)
+            Crashlytics.crashlytics().log("SPSecureBookmarks changed.")
 
-            print("change.newValue count: \(String(describing: change.newValue?.count))")
-            print("change.oldValue count: \(String(describing: change.oldValue?.count))")
+            if self.iChangedTheBookmarks == false{
+                self.bookmarks.removeAll()
+                self.bookmarks = change.newValue!
+            }
+            // reset
+            self.iChangedTheBookmarks = false
 
-            self.bookmarks.removeAll()
-            self.bookmarks = change.newValue!
+            // post notificay for ConnectionController
+            NotificationCenter.default.post(name: Notification.Name.init(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
 
-            })
+        })
 
         // FIXME: @Kaspik need help ... need a guard or if let, don't want the default value...
         bookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]] ?? [["noBookmarks": Data()]]
@@ -137,6 +148,7 @@ stopAllSecurityScopedAccess
 		}
 
         // reset bookmarks
+        iChangedTheBookmarks = true
 		prefs.set(bookmarks, forKey: SASecureBookmarks)
 
 	}
@@ -176,12 +188,13 @@ stopAllSecurityScopedAccess
                 Crashlytics.crashlytics().log("Attempting getEncodedData for: \(sp.debugDescription)")
                 let spData = sp.getEncodedData()
 
-                os_log("Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
-                Crashlytics.crashlytics().log("Adding \(url.absoluteString) to bookmarks")
+                os_log("SUCCESS: Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
+                Crashlytics.crashlytics().log("SUCCESS: Adding \(url.absoluteString) to bookmarks")
 				bookmarks.append([url.absoluteString : spData])
 
                 os_log("Updating UserDefaults", log: log, type: .debug)
                 Crashlytics.crashlytics().log("Updating UserDefaults")
+                iChangedTheBookmarks = true
 				prefs.set(bookmarks, forKey: SASecureBookmarks)
 
 				return true
@@ -288,6 +301,7 @@ stopAllSecurityScopedAccess
 
                         resolvedBookmarks.removeAll(where: { $0 == urlForBookmark })
                         bookmarks.remove(at: index)
+                        iChangedTheBookmarks = true
                         prefs.set(bookmarks, forKey: SASecureBookmarks)
                         os_log("Successfully revoked bookmark for: %@", log: log, type: .debug, filename)
                         Crashlytics.crashlytics().log("Successfully revoked bookmark for: \(filename)")
