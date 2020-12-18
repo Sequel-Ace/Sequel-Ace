@@ -204,8 +204,31 @@
 #endif
 
     // has to be after FIRApp configure
-    SecureBookmarkManager __unused *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
-	
+    // this reRequests access to all bookmarks
+    SecureBookmarkManager *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
+
+    // prompt user to recreate secure bookmarks
+    if(secureBookmarkManager.staleBookmarks.count > 0){
+
+        SPLog(@"We have stale bookmarks");
+
+        NSString *staleBookmarksString = [secureBookmarkManager.staleBookmarks componentsJoinedByString:@"\n"];
+
+        [NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")]
+                                     message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString]
+                          primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
+                        primaryButtonHandler:^{
+            SPLog(@"re-request access now");
+            [self->prefsController showWindow:self];
+            [self->prefsController displayPreferencePane:self->prefsController->fileItem];
+
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Stale Bookmarks", @"Stale Bookmarks") message:[NSString stringWithFormat:NSLocalizedString(@"A reminder of your stale secure bookmarks:\n\n%@\n", @"A reminder of your stale secure bookmarks:\n\n%@\n"), staleBookmarksString] callback:nil];
+
+        }                 cancelButtonHandler:^{
+            SPLog(@"No not now");
+        }];
+    }
+
 	// init SQLite query history	
 	SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
 
@@ -239,7 +262,7 @@
 		}
 
 		// Set autoconnection if appropriate
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAutoConnectToDefault]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
 			[newConnection connect];
 		}
 	}

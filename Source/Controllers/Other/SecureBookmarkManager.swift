@@ -26,7 +26,7 @@ stopAllSecurityScopedAccess
 
     @objc public var bookmarks: [Dictionary<String, Data>] = []
 	@objc public var resolvedBookmarks: [URL] = []
-	@objc public var staleBookmarks: [URL] = []
+	@objc public var staleBookmarks: [String] = []
 
     private let _NSURLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let log: OSLog
@@ -120,8 +120,7 @@ stopAllSecurityScopedAccess
 					if bookmarkDataIsStale {
 						os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
                         Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
-                        staleBookmarks.append(URL(fileURLWithPath: key))
-                    }
+                        staleBookmarks.append(key)                    }
 					else {
 						os_log("Resolved bookmark: %@", log: log, type: .info, key)
                         Crashlytics.crashlytics().log("Resolved bookmark: \(key)")
@@ -135,12 +134,11 @@ stopAllSecurityScopedAccess
                         else{
                             os_log("ERROR: startAccessingSecurityScopedResource for: %@", log: log, type: .info, key)
                             Crashlytics.crashlytics().log("ERROR: startAccessingSecurityScopedResource for: \(key)")
-                            staleBookmarks.append(URL(fileURLWithPath: key))
-                        }
+                            staleBookmarks.append(key)                        }
 					}
 				} catch {
-					staleBookmarks.append(URL(fileURLWithPath: key))
-					os_log("Error resolving bookmark: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
+                    staleBookmarks.append(key)
+                    os_log("Error resolving bookmark: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
 					Crashlytics.crashlytics().log("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
 				}
 			}
@@ -240,7 +238,7 @@ stopAllSecurityScopedAccess
                         if bookmarkDataIsStale {
                             os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
                             Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
-                            staleBookmarks.append(URL(fileURLWithPath: key))
+                            staleBookmarks.append(key)
                         }
                         else {
                             if urlForBookmark.startAccessingSecurityScopedResource() {
