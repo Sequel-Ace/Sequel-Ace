@@ -1376,7 +1376,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		// The caret will be placed at the beginning of the next line if present to
 		// allow a fast (un)commenting of lines
 		[textView setSelectedRange:lineRange];
-		[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:n]];
+        [textView insertText:[[NSAttributedString alloc] initWithString:n] replacementRange:lineRange];
 	}
 }
 
