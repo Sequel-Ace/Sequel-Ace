@@ -19,14 +19,17 @@ Please use one of these hashtags for your PR title:
 - Processors:
   - [ ] Intel
   - [ ] Apple Silicon
-- macOS versions:
+- macOS Versions (please specify major.minor.build):
   - [ ] 10.12
   - [ ] 10.13
   - [ ] 10.14
   - [ ] 10.15
-  - [ ] 11.1
-- Xcode version:
-
+  - [ ] 11
+- Xcode Version:
+- Localizations:
+  - [ ] English
+  - [ ] Spanish
+  - [ ] Other (please specify)
 ## Screenshots:
 
 
