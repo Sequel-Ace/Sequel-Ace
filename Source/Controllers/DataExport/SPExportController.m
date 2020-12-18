@@ -289,14 +289,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
 	
-	id o;
-	if((o = [prefs objectForKey:SPSecureBookmarks])){
-		[bookmarks setArray:o];
-	}
-	else{
-		SPLog(@"Could not load SPSecureBookmarks from prefs");
-		CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
-	}
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 	
 	// overwrite defaults with user settings from last export
 	[self applySettingsFromDictionary:[prefs objectForKey:SPLastExportSettings] error:NULL];
@@ -630,48 +623,11 @@ set_input:
 			}
 			
 			[self->exportPathField setStringValue:path];
-			
-			// the code always seems to go into this block as the
-			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
-			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
-				
-                SPLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-                CLS_LOG(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-                
-				BOOL __block beenHereBefore = NO;
-				
-				// have we been here before?
-				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-					
-					if(dict[self->changeExportOutputPathPanel.URL.absoluteString] != nil){
-						NSLog(@"beenHereBefore: %@", dict[self->changeExportOutputPathPanel.URL.absoluteString]);
-						beenHereBefore = YES;
-						*stop = YES;
-					}
-				}];
-				
-				if(beenHereBefore == NO){
-					// create a bookmark
-					NSError *error = nil;
-					NSData *tmpAppScopedBookmark = [self->changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
-																			 includingResourceValuesForKeys:nil
-																							  relativeToURL:nil
-																									  error:&error];
-					// save to prefs
-					if(tmpAppScopedBookmark && !error) {
-						[self->bookmarks addObject:@{self->changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
-						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-					}
-					else{
-						SPLog(@"Problem creating bookmark - %@ : %@",self->changeExportOutputPathPanel.URL.absoluteString, [error localizedDescription]);
-						CLS_LOG(@"Problem creating bookmark - %@ : %@",self->changeExportOutputPathPanel.URL.absoluteString, [error localizedDescription]);
-					}
-				}
-			}
-			else{
-				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",self->changeExportOutputPathPanel.URL.absoluteString);
-				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",self->changeExportOutputPathPanel.URL.absoluteString);
-			}
+
+            // this needs to be read-write
+            if([SecureBookmarkManager.sharedInstance addBookMarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope)] == YES){
+                SPLog(@"addBookMarkForUrl success");
+            }
         }
     }];		
 }

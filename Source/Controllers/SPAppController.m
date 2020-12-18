@@ -108,7 +108,7 @@
 
 		[NSApp setDelegate:self];
 		
-		SecureBookmarkManager __unused *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
+
 
 	}
 
@@ -202,7 +202,9 @@
 	// cannot be set higher than FIRLoggerLevelNotice
 	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
 #endif
-	
+
+    // has to be after FIRApp configure
+    SecureBookmarkManager __unused *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
 	
 	// init SQLite query history	
 	SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;

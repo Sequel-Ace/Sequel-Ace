@@ -57,10 +57,7 @@
 - (void)dealloc
 {
     SPLog(@"dealloc");
-
-	for(NSURL *url in SecureBookmarkManager.sharedInstance.resolvedBookmarks){
-		[url stopAccessingSecurityScopedResource];
-	}
+    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 
 }
 
@@ -95,16 +92,9 @@
 
 - (void)loadBookmarks
 {
-	id o;
-	
-	if((o = [prefs objectForKey:SPSecureBookmarks])){
-		[bookmarks setArray:o];
-	}
-	else{
-		SPLog(@"Could not load SPSecureBookmarks from prefs");
-		CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
-	}
-	
+
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+
 	// we need to re-request access to places we've been before..
     // not anymore, done at startup
 
@@ -145,7 +135,7 @@
 	// iterate through all selected indice
 	[indiceToRevoke enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
 		// retrieve the filename
-		NSString __block *fileName = [NSString  stringWithFormat:@"file://%@", fileNames[idx]];
+		NSString __block *fileName = [NSString stringWithFormat:@"file://%@", fileNames[idx]];
 		
 		[bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idxBookmarks, BOOL *stopBookmarks) {
 			NSEnumerator *keyEnumerator = [dict keyEnumerator];
@@ -155,9 +145,11 @@
 				if (![key isEqualToString:fileName]) {
 					continue;
 				}
-				
-				[bookmarks removeObjectAtIndex:idxBookmarks];
-				[prefs setObject:bookmarks forKey:SPSecureBookmarks];
+
+                [SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName];
+
+//				[bookmarks removeObjectAtIndex:idxBookmarks];
+//				[prefs setObject:bookmarks forKey:SASecureBookmarks];
 			}
 		}];
 	}];

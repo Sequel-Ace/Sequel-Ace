@@ -219,8 +219,7 @@ NSString *SPCSVImportLineTerminator              = @"CSVImportLineTerminator";
 NSString *SPCSVFieldImportMappingAlignment       = @"CSVFieldImportMappingAlignment";
 NSString *SPImportClipboardTempFileNamePrefix    = @"~/tmp/_SP_ClipBoard_Import_File_";
 NSString *SPLastExportSettings                   = @"LastExportSettings";
-NSString *SPSecureBookmarks      	             = @"SPSecureBookmarks";
-NSString *SPSecureBookmarkOptions                = @"SPSecureBookmarkOptions";
+NSString *SASecureBookmarks      	             = @"SPSecureBookmarks";
 // Export filename tokens
 NSString *SPFileNameDatabaseTokenName            = @"database";
 NSString *SPFileNameHostTokenName                = @"host";

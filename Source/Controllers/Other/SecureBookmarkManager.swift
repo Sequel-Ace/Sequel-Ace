@@ -15,7 +15,8 @@ import Firebase
 reRequestSecureAccess
 addBookmark
 handle bookmarkDataIsStale
-
+revokeBookmark
+ stopAllSecurityScopedAccess
 */
 
 @objc final class SecureBookmarkManager: NSObject {
@@ -24,28 +25,41 @@ handle bookmarkDataIsStale
 	@objc public var resolvedBookmarks: [URL] = []
 	@objc public var staleBookmarks: [URL] = []
     private let _NSURLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
-
-	private let log: OSLog
-	private let prefs: UserDefaults = UserDefaults.standard
+    private let log: OSLog
+    private let prefs: UserDefaults = UserDefaults.standard
+    var observer: NSKeyValueObservation?
 
 	override private init() {
 		log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "secureBookmarks")
 
-        os_log("SecureBookmarkManager init = %@", log: log, type: .info)
+        os_log("SecureBookmarkManager init.", log: log, type: .info)
         Crashlytics.crashlytics().log("SecureBookmarkManager init.")
 
 		super.init()
 
-		bookmarks = prefs.array(forKey: SPSecureBookmarks) as? [[String: Data]] ?? [["": Data()]]
+        // this manager *should* be the only thing changing the bookmarks pref, but in case...
+        observer = UserDefaults.standard.observe(\.SPSecureBookmarks, options: [.new,.old], changeHandler: { (defaults, change) in
 
-        // the default above means there is always one entry, even if there are none in prefs
-        // so check for less than 2
-		if(bookmarks.count < 2){
-			os_log("Could not get secureBookmarks from prefs.", log: self.log, type: .error)
-			Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
-			bookmarks.removeAll()
-			return
-		}
+            print("SPSecureBookmarks changed from: \(String(describing: change.oldValue)), updated to: \(String(describing: change.newValue))")
+
+            print("change.newValue count: \(String(describing: change.newValue?.count))")
+            print("change.oldValue count: \(String(describing: change.oldValue?.count))")
+
+            self.bookmarks.removeAll()
+            self.bookmarks = change.newValue!
+
+            })
+
+        // FIXME: @Kaspik need help ... need a guard or if let, don't want the default value...
+        bookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]] ?? [["noBookmarks": Data()]]
+
+        // check for default empty value
+        if bookmarks[0]["noBookmarks"] != nil {
+            os_log("Could not get secureBookmarks from prefs.", log: self.log, type: .error)
+            Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
+            bookmarks.removeAll()
+            return
+        }
 
 		os_log("bookmarks = %@", log: log, type: .info, bookmarks)
 
@@ -58,7 +72,6 @@ handle bookmarkDataIsStale
         Crashlytics.crashlytics().log("resolvedBookmarks count = \(resolvedBookmarks.count)")
         Crashlytics.crashlytics().log("staleBookmarks count = \(staleBookmarks.count)")
 	}
-
 
 	/// reRequestSecureAccessToBookmarks
     // loops through current bookmarks from prefs and re-requests secure access
@@ -123,10 +136,9 @@ handle bookmarkDataIsStale
 		}
 
         // reset bookmarks
-		prefs.set(bookmarks, forKey: SPSecureBookmarks)
+		prefs.set(bookmarks, forKey: SASecureBookmarks)
 
 	}
-
 
 	/// addBookMark
 	///  - Parameters:
@@ -169,7 +181,7 @@ handle bookmarkDataIsStale
 
                 os_log("Updating UserDefaults", log: log, type: .debug)
                 Crashlytics.crashlytics().log("Updating UserDefaults")
-				prefs.set(bookmarks, forKey: SPSecureBookmarks)
+				prefs.set(bookmarks, forKey: SASecureBookmarks)
 
 				return true
 
@@ -185,4 +197,71 @@ handle bookmarkDataIsStale
 			return false
 		}
 	}
+
+    /// revokeBookmark
+    ///  - Parameters:
+    ///     - filename: filename to revoke secure bookmark for
+    /// - Returns: Bool on success or fail
+    @objc public func revokeBookmark(filename: String) -> Bool {
+
+        // FIXME: don't seem to need to take a mutable copy
+        // is that right @Kaspik?
+        for (index, bookmarkDict) in bookmarks.enumerated(){
+            for (key, urlData) in bookmarkDict {
+
+                if key == filename {
+                    do {
+                        os_log("Revoking bookmark for: %@", log: log, type: .debug, filename)
+                        Crashlytics.crashlytics().log("Revoking bookmark for: \(filename)")
+
+                        os_log("bookmarks[%i]: %@", log: log, type: .debug, index, bookmarks[index])
+
+                        var bookmarkDataIsStale = false
+
+                        // need to get the proper URL
+                        let spData = SecureBookmark.getDecodedData(encodedData: urlData)
+
+                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
+                        Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
+                        // always resolve with just _NSURLBookmarkResolutionWithSecurityScope
+                        let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [_NSURLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+
+                        urlForBookmark.stopAccessingSecurityScopedResource()
+
+                        resolvedBookmarks.removeAll(where: { $0 == urlForBookmark })
+                        bookmarks.remove(at: index)
+                        prefs.set(bookmarks, forKey: SASecureBookmarks)
+                        os_log("Successfully revoked bookmark for: %@", log: log, type: .debug, filename)
+                        Crashlytics.crashlytics().log("Successfully revoked bookmark for: \(filename)")
+                        return true
+                    }
+                    catch{
+                        os_log("Error resolving bookmark: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
+                        Crashlytics.crashlytics().log("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
+                        os_log("Failed to revoke bookmark for: %@", log: log, type: .debug, filename)
+                        Crashlytics.crashlytics().log("Failed to revoke bookmark for: \(filename)")
+                        return false
+                    }
+                }
+            }
+        }
+
+        os_log("Failed to revoke bookmark for: %@", log: log, type: .debug, filename)
+        Crashlytics.crashlytics().log("Failed to revoke bookmark for: \(filename)")
+        return false
+    }
+
+    // revoke secure access to all bookmarks
+    @objc public func stopAllSecurityScopedAccess() {
+
+        for url in resolvedBookmarks{
+            resolvedBookmarks.removeAll(where: { $0 == url })
+            url.stopAccessingSecurityScopedResource()
+        }
+    }
+
+    deinit {
+        observer?.invalidate()
+    }
+
 }

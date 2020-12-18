@@ -54,14 +54,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		sslCiphers = [[NSMutableArray alloc] init];
 		bookmarks = [[NSMutableArray alloc] init];
 		
-		id o;
-		if((o = [prefs objectForKey:SPSecureBookmarks])){
-			[bookmarks setArray:o];
-		}
-		else{
-			SPLog(@"Could not load SPSecureBookmarks from prefs");
-			CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
-		}
+        [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 		
 	}
 	
@@ -71,10 +64,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 - (void)dealloc
 {
     SPLog(@"dealloc");
-
-	for(NSURL *url in SecureBookmarkManager.sharedInstance.resolvedBookmarks){
-		[url stopAccessingSecurityScopedResource];
-	}
+    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 }
 
 #pragma mark -
@@ -276,8 +266,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		homeDirectory = [NSURL fileURLWithPath:NSHomeDirectory()];
 	}
 
-    SecureBookmarkManager *sharedSecureBookmarkManager = SecureBookmarkManager.sharedInstance;
-    
 	_currentFilePanel = [NSOpenPanel openPanel];
 	[_currentFilePanel setTitle:@"Choose ssh config"];
 	[_currentFilePanel setCanChooseFiles:YES];
