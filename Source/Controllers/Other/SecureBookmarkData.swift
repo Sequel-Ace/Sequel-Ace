@@ -1,5 +1,5 @@
 //
-//  SecureBookmark.swift
+//  SecureBookmarkData.swift
 //  Sequel Ace
 //
 //  Created by James on 7/12/2020.
