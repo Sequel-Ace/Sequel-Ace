@@ -34,6 +34,8 @@
 @import Firebase;
 
 @interface SPFilePreferencePane ()
+- (void)_refreshBookmarks;
+
 @end
 
 @implementation SPFilePreferencePane
@@ -47,7 +49,9 @@
 	if (self) {
 		fileNames = [[NSMutableArray alloc] init];
 		bookmarks = [[NSMutableArray alloc] init];
-		
+        
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
+
 		[self loadBookmarks];
 	}
 	
@@ -59,6 +63,13 @@
     SPLog(@"dealloc");
     [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 
+}
+
+- (void)_refreshBookmarks{
+    SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 }
 
 - (NSImage *)preferencePaneIcon {

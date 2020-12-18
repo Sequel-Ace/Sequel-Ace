@@ -41,6 +41,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 - (void)loadSSLCiphers;
 - (void)storeSSLCiphers;
 + (NSArray *)defaultSSLCipherList;
+- (void)_refreshBookmarks;
+
 @end
 
 @implementation SPNetworkPreferencePane
@@ -52,7 +54,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	self = [super init];
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
-        bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];		
+        bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 	}
 	
 	return self;
@@ -61,7 +64,15 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 - (void)dealloc
 {
     SPLog(@"dealloc");
+    [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
     [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
+}
+
+- (void)_refreshBookmarks{
+    SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 }
 
 #pragma mark -
