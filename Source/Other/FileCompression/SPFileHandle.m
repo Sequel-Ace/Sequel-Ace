@@ -32,6 +32,7 @@
 #import "bzlib.h"
 #import <zlib.h>
 #import "pthread.h"
+@import Firebase;
 
 // Define the maximum size of the background write buffer before the writing thread
 // waits until some has been written out.  This can affect speed and memory usage.
@@ -174,6 +175,8 @@ struct SPRawFileHandles {
  */
 + (id)fileHandleForWritingAtPath:(NSString *)path
 {
+    SPLog(@"Getting filehandle for: %@", path);
+    CLS_LOG(@"Getting filehandle for: %@", path);
 	return [self fileHandleForPath:path mode:O_WRONLY];
 }
 
@@ -186,14 +189,26 @@ struct SPRawFileHandles {
 {
 	// Retrieves the path in a filesystem-appropriate format and encoding
 	const char *pathRepresentation = [path fileSystemRepresentation];
-	if (!pathRepresentation) return nil;
+    if (!pathRepresentation){
+        SPLog(@"Failed to get fileSystemRepresentation for: %@", path);
+        CLS_LOG(@"Failed to get fileSystemRepresentation for: %@", path);
+        return nil;
+    }
 
 	// Open the file to get a file descriptor, returning on failure
 	const char *theMode = (mode == O_WRONLY) ? "wb" : "rb";
 	
 	FILE *file = fopen(pathRepresentation, theMode);
 	
-	if (file == NULL) return nil;
+    if (file == NULL) {
+        SPLog(@"Failed to get open: %@", path);
+        CLS_LOG(@"Failed to get open for: %@", path);
+        return nil;
+
+    };
+
+    SPLog(@"Got filehandle for: %@", path);
+    CLS_LOG(@"Got filehandle for: %@", path);
 
 	// Return an autoreleased file handle
 	return [[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode];

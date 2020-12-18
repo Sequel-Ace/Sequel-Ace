@@ -5098,7 +5098,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			if(inError == nil && query && [query length]) {
 
 				SPFileHandle *fh = [SPFileHandle fileHandleForWritingAtPath:resultFileName];
-				if(!fh) NSLog(@"Couldn't create file handle to %@", resultFileName);
+                if(!fh){
+                    SPLog(@"Couldn't create file handle to %@", resultFileName);
+                    CLS_LOG(@"Couldn't create file handle to %@", resultFileName);
+                }
 
 				SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
 				[theResult setReturnDataAsStrings:YES];

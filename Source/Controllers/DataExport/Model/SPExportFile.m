@@ -30,6 +30,7 @@
 
 #import "SPExportFile.h"
 #import "SPFileHandle.h"
+@import Firebase;
 
 @interface SPExportFile ()
 
@@ -128,6 +129,9 @@
 - (void)writeData:(NSData *)data
 {
 	if (![self exportFileHandle]) {
+        SPLog(@"Failed to get filehandle for: %@", [self exportFileHandle]);
+        CLS_LOG(@"Failed to get filehandle for: %@", [self exportFileHandle]);
+
 		[NSException raise:NSInternalInconsistencyException format:@"Attempting to write to an uninitialized file handle."];
 		
 		return;
@@ -209,6 +213,9 @@
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 	
 	if (![fileManager createFileAtPath:[self exportFilePath] contents:[NSData data] attributes:nil]) {
+        SPLog(@"createFileAtPath failed: %@",[self exportFilePath] );
+        CLS_LOG(@"createFileAtPath failed: %@",[self exportFilePath] );
+
 		return SPExportFileHandleFailed;
 	}
 	
@@ -216,6 +223,8 @@
 	exportFileHandle = [SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]];
 	
 	if (!exportFileHandle) {
+        SPLog(@"fileHandleForWritingAtPath failed: %@",[self exportFilePath] );
+        CLS_LOG(@"fileHandleForWritingAtPath failed: %@",[self exportFilePath] );
 		[fileManager removeItemAtPath:[self exportFilePath] error:nil];
 		
 		return SPExportFileHandleFailed;
