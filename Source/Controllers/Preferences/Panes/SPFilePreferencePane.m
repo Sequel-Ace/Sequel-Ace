@@ -92,7 +92,7 @@
 
 - (void)loadBookmarks
 {
-
+ 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 
 	// we need to re-request access to places we've been before..
@@ -146,10 +146,10 @@
 					continue;
 				}
 
-                [SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName];
-
-//				[bookmarks removeObjectAtIndex:idxBookmarks];
-//				[prefs setObject:bookmarks forKey:SASecureBookmarks];
+                if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
+                    SPLog(@"refreshing bookmarks: %@", bookmarks);
+                    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+                }
 			}
 		}];
 	}];
