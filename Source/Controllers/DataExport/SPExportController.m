@@ -3119,30 +3119,12 @@ set_input:
 	// look up that bookmark and request access
 	if(bookmarks.count > 0){
 		if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
-		
-		NSError __block *error = nil;
-		
-		[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict2, NSUInteger idx, BOOL *stop) {
-			
-			NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
-			
-			if(dict2[tmpStr] != nil){
 
-				BOOL bookmarkDataIsStale;
+        NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
 
-				self.userChosenDirectory = [NSURL URLByResolvingBookmarkData:dict2[tmpStr]
-																	 options:NSURLBookmarkResolutionWithSecurityScope
-															   relativeToURL:nil
-														 bookmarkDataIsStale:&bookmarkDataIsStale
-																	   error:&error];
-				*stop = YES;
-			}
-		}];
-		
-		// if no bookmark was found this just calls against nil
-		if(!error){
-			[userChosenDirectory startAccessingSecurityScopedResource];
-		}
+        // ret value can be nil
+        userChosenDirectory = [SecureBookmarkManager.sharedInstance bookMarkForFilename:tmpStr];
+
 	}
 	
 	SPExportType et;

@@ -16,7 +16,8 @@ reRequestSecureAccess
 addBookmark
 handle bookmarkDataIsStale
 revokeBookmark
- stopAllSecurityScopedAccess
+stopAllSecurityScopedAccess
+
 */
 
 @objc final class SecureBookmarkManager: NSObject {
@@ -197,6 +198,63 @@ revokeBookmark
 			return false
 		}
 	}
+
+    /// bookMarkFor a file
+    ///  - Parameters:
+    ///     - filename: file URL to generate secure bookmark for
+    /// - Returns: the resolved URL or nil
+    @objc public func bookMarkFor(filename: String) -> URL? {
+
+        os_log("filename %@", log: log, type: .debug, filename)
+
+        for (_, bookmarkDict) in bookmarks.enumerated(){
+            for (key, urlData) in bookmarkDict {
+
+                os_log("Bookmark URL = %@", log: log, type: .info, key)
+
+                if key == filename {
+                    do {
+                        var bookmarkDataIsStale = false
+
+                        os_log("Attempting to getDecodedData for %@", log: log, type: .debug, key)
+                        Crashlytics.crashlytics().log("Attempting to getDecodedData for: \(key)")
+                        let spData = SecureBookmark.getDecodedData(encodedData: urlData)
+
+                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
+                        Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
+                        // always resolve with just _NSURLBookmarkResolutionWithSecurityScope
+                        let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [_NSURLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+
+                        if bookmarkDataIsStale {
+                            os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
+                            Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
+                            staleBookmarks.append(URL(fileURLWithPath: key))
+                        }
+                        else {
+                            if urlForBookmark.startAccessingSecurityScopedResource() {
+                                return urlForBookmark
+                            }
+                            else{
+                                os_log("Error startAccessingSecurityScopedResource For: key = %@.", log: log, type: .error, urlForBookmark.absoluteString)
+                                Crashlytics.crashlytics().log("Error startAccessingSecurityScopedResource For: key = \(urlForBookmark.absoluteString).")
+                                return nil
+                            }
+                        }
+                    }
+                    catch{
+                        os_log("Error resolving bookmark: filename = %@. Error: %@", log: log, type: .error, filename, error.localizedDescription)
+                        Crashlytics.crashlytics().log("Error resolving bookmark: filename = \(filename). Error: \(error.localizedDescription)")
+                        return nil
+                    }
+                }
+            }
+        }
+
+        os_log("No bookmark found for %@", log: log, type: .info, filename)
+        Crashlytics.crashlytics().log("No bookmark found for: \(filename)")
+        return nil
+    }
+
 
     /// revokeBookmark
     ///  - Parameters:
