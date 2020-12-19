@@ -197,10 +197,10 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 	id attrValue;
 
 	if (isFiltered) {
-		attrValue = [(SPGotoFilteredItem *)[filteredList objectOrNilAtIndex:row] string];
+		attrValue = [(SPGotoFilteredItem *)[filteredList safeObjectAtIndex:row] string];
 	}
 	else {
-		attrValue = [unfilteredList objectOrNilAtIndex:row];
+		attrValue = [unfilteredList safeObjectAtIndex:row];
 	}
 
 	return attrValue;

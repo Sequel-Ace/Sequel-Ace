@@ -2227,7 +2227,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)_displayFieldTypeHelpIfPossible:(SPComboBoxCell *)cell
 {
-	NSString *selected = [typeSuggestions objectOrNilAtIndex:[cell indexOfSelectedItem]];
+	NSString *selected = [typeSuggestions safeObjectAtIndex:[cell indexOfSelectedItem]];
 
 	const SPFieldTypeHelp *help = [[self class] helpForFieldType:selected];
 

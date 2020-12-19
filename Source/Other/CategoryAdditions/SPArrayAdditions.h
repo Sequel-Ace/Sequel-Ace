@@ -91,9 +91,8 @@ static inline void NSMutableArrayReplaceObject(NSArray *self, CFIndex idx, id an
  * just returning nil instead.
  *
  * @warning This method is NOT thread-safe.
- * @param index  An index
+ * @param idx  An index
  * @return The object located at index or nil.
  */
-- (id)objectOrNilAtIndex:(NSUInteger)index;
 - (id)safeObjectAtIndex:(NSUInteger)idx;
 @end
