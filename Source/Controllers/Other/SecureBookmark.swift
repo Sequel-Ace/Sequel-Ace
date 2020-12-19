@@ -8,16 +8,15 @@
 
 import Foundation
 
-
 final class SecureBookmark: NSObject {
     var _data: SecureBookmarkData
-    
+
     init(data: Data, options: Double, url: URL) {
         _data = SecureBookmarkData(data: data, options: options, url: url)
         super.init()
     }
-    
-    func getEncodedData() -> Data{
+
+    func getEncodedData() -> Data {
         if #available(OSX 10.13, *) {
             let codedData = try! NSKeyedArchiver.archivedData(withRootObject: _data, requiringSecureCoding: true)
             return codedData
@@ -27,9 +26,8 @@ final class SecureBookmark: NSObject {
             return codedData
         }
     }
-    
+
     class func getDecodedData(encodedData: Data) -> SecureBookmarkData {
-        
         if #available(OSX 10.13, *) {
             return try! NSKeyedUnarchiver.unarchivedObject(ofClass: SecureBookmarkData.self, from: encodedData)!
         } else {
@@ -38,5 +36,3 @@ final class SecureBookmark: NSObject {
         }
     }
 }
-
-
