@@ -102,15 +102,15 @@ import os.log
                     Crashlytics.crashlytics().log("Attempting to getDecodedData for: \(key)")
                     let spData = SecureBookmark.getDecodedData(encodedData: urlData)
 
-                    os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
-                    Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
+                    os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                    Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                     // always resolve with just URLBookmarkResolutionWithSecurityScope
                     let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
 //                   bookmarkDataIsStale = true
-                    //					 a bookmark might be "stale" because the app hasn't been used
-                    //					 in many months, macOS has been upgraded, the app was
-                    //					 re-installed, the app's preferences .plist file was deleted, etc.
+                    //a bookmark might be "stale" because the app hasn't been used
+                    //in many months, macOS has been upgraded, the app was
+                    //re-installed, the app's preferences .plist file was deleted, etc.
                     if bookmarkDataIsStale {
                         os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
                         Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
@@ -213,8 +213,8 @@ import os.log
                         Crashlytics.crashlytics().log("Attempting to getDecodedData for: \(key)")
                         let spData = SecureBookmark.getDecodedData(encodedData: urlData)
 
-                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
-                        Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
+                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                        Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                         // always resolve with just URLBookmarkResolutionWithSecurityScope
                         let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
@@ -264,8 +264,8 @@ import os.log
                         // need to get the proper URL
                         let spData = SecureBookmark.getDecodedData(encodedData: urlData)
 
-                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
-                        Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
+                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                        Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                         // always resolve with just URLBookmarkResolutionWithSecurityScope
                         let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
