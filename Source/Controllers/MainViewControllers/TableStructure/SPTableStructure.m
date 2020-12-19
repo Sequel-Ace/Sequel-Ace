@@ -48,6 +48,7 @@
 #import "SPPillAttachmentCell.h"
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
+@import Firebase;
 
 #import "sequel-ace-Swift.h"
 
@@ -1410,9 +1411,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// MySQL 5.7 manual:
 			// "MySQL handles strings used in JSON context using the utf8mb4 character set and utf8mb4_bin collation.
 			//  Strings in other character set are converted to utf8mb4 as necessary."
-			[theField setObject:@"utf8mb4" forKey:@"encodingName"];
-			[theField setObject:@"utf8mb4_bin" forKey:@"collationName"];
-			[theField setObject:@1 forKey:@"binary"];
+			[theField safeSetObject:@"utf8mb4" forKey:@"encodingName"];
+			[theField safeSetObject:@"utf8mb4_bin" forKey:@"collationName"];
+			[theField safeSetObject:@1 forKey:@"binary"];
 		}
 		else if ([fieldValidation isFieldTypeString:type]) {
 			// The MySQL 4.1 manual says:
@@ -1447,9 +1448,20 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 
 			// MySQL < 4.1 does not support collations (they are part of the charset), it will be nil there
-
-			[theField setObject:encoding forKey:@"encodingName"];
-			[theField setObject:collation forKey:@"collationName"];
+            if(collation != nil){
+                [theField safeSetObject:collation forKey:@"collationName"];
+            }
+            else{
+                SPLog(@"collation was nil");
+                CLS_LOG(@"collation was nil");
+            }
+            if(encoding != nil){
+                [theField safeSetObject:encoding forKey:@"encodingName"];
+            }
+            else{
+                SPLog(@"encoding was nil");
+                CLS_LOG(@"encoding was nil");
+            }
 
 			// Set BINARY if collation ends with _bin for convenience
 			if ([collation hasSuffix:@"_bin"]) {
