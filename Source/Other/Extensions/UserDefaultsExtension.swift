@@ -29,7 +29,8 @@ extension UserDefaults {
 		return savedFont
 	}
 
-    @objc dynamic var SPSecureBookmarks: [Dictionary<String, Data>] {
+    // needs to be objc for KVO
+    @objc var SPSecureBookmarks: [Dictionary<String, Data>] {
         return array(forKey: SASecureBookmarks) as? [Dictionary<String, Data>] ?? [["noBookmarks": Data()]]
     }
 

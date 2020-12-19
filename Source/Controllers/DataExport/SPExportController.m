@@ -3118,11 +3118,10 @@ set_input:
 	if(bookmarks.count > 0){
 		if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
 
-        NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
+        NSString *fileURLString = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
 
         // ret value can be nil
-        userChosenDirectory = [SecureBookmarkManager.sharedInstance bookMarkForFilename:tmpStr];
-
+        userChosenDirectory = [SecureBookmarkManager.sharedInstance bookMarkForFilename:fileURLString];
 	}
 	
 	SPExportType et;

@@ -8,30 +8,33 @@
 
 import Foundation
 
-class SecureBookmarkData: NSObject, NSCoding, NSSecureCoding {
+final class SecureBookmarkData: NSObject {
  
-    var bookmarkData: Data
-    var options: Double
-    var theUrl: URL
-    
-    static var supportsSecureCoding: Bool {
-        return true
-    }
-   
+    internal let bookmarkData: Data
+    internal let options: Double
+    internal let theUrl: URL
+
     init(data: Data, options: Double, url: URL ) {
         self.bookmarkData = data
         self.options = options
         self.theUrl = url
         super.init()
     }
-    
+}
+
+extension SecureBookmarkData: NSCoding, NSSecureCoding {
+
+    static var supportsSecureCoding: Bool {
+        return true
+    }
+
     // MARK: NSCoding Implementation
     enum Keys: String {
         case bookmarkData = "BookmarkData"
         case options = "Options"
         case theUrl = "TheUrl"
     }
-    
+
     func encode(with coder: NSCoder) {
 
         if #available(OSX 10.13, *) {
@@ -47,8 +50,8 @@ class SecureBookmarkData: NSObject, NSCoding, NSSecureCoding {
             coder.encode(theUrl, forKey: Keys.theUrl.rawValue)
         }
     }
-    
-    required convenience init?(coder: NSCoder) {
+
+    convenience init?(coder: NSCoder) {
 
         if #available(OSX 10.13, *) {
             let bookmarkData = coder.decodeObject(of: NSData.self, forKey: Keys.bookmarkData.rawValue)! as Data
@@ -63,6 +66,6 @@ class SecureBookmarkData: NSObject, NSCoding, NSSecureCoding {
             let theUrl = coder.decodeObject(forKey: Keys.theUrl.rawValue) as! URL
             self.init(data: bookmarkData, options: options, url: theUrl)
         }
-
     }
 }
+

@@ -24,11 +24,11 @@ stopAllSecurityScopedAccess
 
 	@objc static let sharedInstance = SecureBookmarkManager()
 
-    @objc public var bookmarks: [Dictionary<String, Data>] = []
-	@objc public var resolvedBookmarks: [URL] = []
-	@objc public var staleBookmarks: [String] = []
+    @objc var bookmarks: [Dictionary<String, Data>] = []
+	@objc var staleBookmarks: [String] = []
+    @objc private var resolvedBookmarks: [URL] = []
 
-    private let _NSURLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
+    private let URLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let log: OSLog
     private let prefs: UserDefaults = UserDefaults.standard
     private var observer: NSKeyValueObservation?
@@ -36,7 +36,7 @@ stopAllSecurityScopedAccess
     private var iChangedTheBookmarks: Bool = false
 
 
-	override private init() {
+    override init() {
 		log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "secureBookmarks")
 
         os_log("SecureBookmarkManager init.", log: log, type: .info)
@@ -62,15 +62,14 @@ stopAllSecurityScopedAccess
         })
 
         // FIXME: @Kaspik need help ... need a guard or if let, don't want the default value...
-        bookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]] ?? [["noBookmarks": Data()]]
 
-        // FIXME: check for default empty value - I don't like this.
-        if bookmarks.isEmpty == true || bookmarks[0]["noBookmarks"] != nil {
+        guard let secureBookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]], secureBookmarks.isNotEmpty else {
             os_log("Could not get secureBookmarks from prefs.", log: self.log, type: .error)
             Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
-            bookmarks.removeAll()
             return
         }
+
+        bookmarks = secureBookmarks
 
 		os_log("bookmarks = %@", log: log, type: .info, bookmarks)
 
@@ -87,16 +86,16 @@ stopAllSecurityScopedAccess
 	/// reRequestSecureAccessToBookmarks
     // loops through current bookmarks from prefs and re-requests secure access
     // NOTE: when re-requesting access (resolvingBookmarkData) you only need to use
-    // _NSURLBookmarkResolutionWithSecurityScope, not the options it was originally created with
+    // URLBookmarkResolutionWithSecurityScope, not the options it was originally created with
     // otherwise it will be markes as stale.
-	@objc public func reRequestSecureAccessToBookmarks() {
+	@objc func reRequestSecureAccessToBookmarks() {
 
 		let bmCopy = bookmarks
 
         // start afresh
         bookmarks.removeAll()
 
-        for (_, bookmarkDict) in bmCopy.enumerated(){
+        for bookmarkDict in bmCopy {
 			for (key, urlData) in bookmarkDict {
 
 				os_log("Bookmark URL = %@", log: log, type: .info, key)
@@ -110,8 +109,8 @@ stopAllSecurityScopedAccess
 
                     os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
                     Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
-                    // always resolve with just _NSURLBookmarkResolutionWithSecurityScope
-                    let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [_NSURLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+                    // always resolve with just URLBookmarkResolutionWithSecurityScope
+                    let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
 //                   bookmarkDataIsStale = true
 //					 a bookmark might be "stale" because the app hasn't been used
@@ -157,57 +156,50 @@ stopAllSecurityScopedAccess
 	/// - Returns: Bool on success or fail
 	@objc public func addBookMarkFor(url: URL, options: UInt) -> Bool {
 
-		let bookmarkCreationOptions : URL.BookmarkCreationOptions = URL.BookmarkCreationOptions.init(rawValue: options)
+        let bookmarkCreationOptions : URL.BookmarkCreationOptions = URL.BookmarkCreationOptions.init(rawValue: options)
 
-		if url.startAccessingSecurityScopedResource() {
-            os_log("success: startAccessingSecurityScopedResource for: %@", log: log, type: .info, url.absoluteString)
-            Crashlytics.crashlytics().log("success: startAccessingSecurityScopedResource for: \(url.absoluteString)")
+        // A file chosen from an NSOpen/SavePanel already has access
+        // no need to start access again here again here
 
-            for (_, bookmarkDict) in bookmarks.enumerated(){
-                if bookmarkDict[url.absoluteString] != nil {
-                    os_log("Existing bookmark for: %@", log: log, type: .debug, url.absoluteString)
-                    Crashlytics.crashlytics().log("Existing bookmark for: \(url.absoluteString)")
-					return true
-				}
-			}
+        for bookmarkDict in bookmarks {
+            if bookmarkDict[url.absoluteString] != nil {
+                os_log("Existing bookmark for: %@", log: log, type: .debug, url.absoluteString)
+                Crashlytics.crashlytics().log("Existing bookmark for: \(url.absoluteString)")
+                return true
+            }
+        }
 
-			do {
-                // any errors are caught below in the catch{}
-                os_log("Attempting to create secure bookmark for %@ - with bookmarkCreationOptions: %i", log: log, type: .debug, url.absoluteString, bookmarkCreationOptions.rawValue)
-                Crashlytics.crashlytics().log("Attempting to create secure bookmark for: \(url.absoluteString) - with bookmarkCreationOptions:\(bookmarkCreationOptions.rawValue)")
-				let bookmarkData = try url.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
+        do {
+            // any errors are caught below in the catch{}
+            os_log("Attempting to create secure bookmark for %@ - with bookmarkCreationOptions: %i", log: log, type: .debug, url.absoluteString, bookmarkCreationOptions.rawValue)
+            Crashlytics.crashlytics().log("Attempting to create secure bookmark for: \(url.absoluteString) - with bookmarkCreationOptions:\(bookmarkCreationOptions.rawValue)")
+            let bookmarkData = try url.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
 
-                os_log("Attempting to create SecureBookmark object for %@", log: log, type: .debug, url.absoluteString)
-                Crashlytics.crashlytics().log("Attempting to create SecureBookmark object for: \(url.absoluteString)")
-                let sp = SecureBookmark(data: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), url: url)
+            os_log("Attempting to create SecureBookmark object for %@", log: log, type: .debug, url.absoluteString)
+            Crashlytics.crashlytics().log("Attempting to create SecureBookmark object for: \(url.absoluteString)")
+            let sp = SecureBookmark(data: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), url: url)
 
-                os_log("Attempting to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
-                Crashlytics.crashlytics().log("Attempting getEncodedData for: \(sp.debugDescription)")
-                let spData = sp.getEncodedData()
+            os_log("Attempting to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
+            Crashlytics.crashlytics().log("Attempting getEncodedData for: \(sp.debugDescription)")
+            let spData = sp.getEncodedData()
 
-                os_log("SUCCESS: Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
-                Crashlytics.crashlytics().log("SUCCESS: Adding \(url.absoluteString) to bookmarks")
-				bookmarks.append([url.absoluteString : spData])
+            os_log("SUCCESS: Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
+            Crashlytics.crashlytics().log("SUCCESS: Adding \(url.absoluteString) to bookmarks")
+            bookmarks.append([url.absoluteString : spData])
 
-                os_log("Updating UserDefaults", log: log, type: .debug)
-                Crashlytics.crashlytics().log("Updating UserDefaults")
-                iChangedTheBookmarks = true
-				prefs.set(bookmarks, forKey: SASecureBookmarks)
+            os_log("Updating UserDefaults", log: log, type: .debug)
+            Crashlytics.crashlytics().log("Updating UserDefaults")
+            iChangedTheBookmarks = true
+            prefs.set(bookmarks, forKey: SASecureBookmarks)
 
-				return true
+            return true
 
-			} catch {
-				os_log("Error creating secure Bookmark For: key = %@. Error: %@", log: log, type: .error, url.absoluteString, error.localizedDescription)
-				Crashlytics.crashlytics().log("Error creating secure Bookmark For: key = \(url.absoluteString). Error: \(error.localizedDescription)")
-				return false
-			}
-		}
-		else{
-			os_log("Error startAccessingSecurityScopedResource For: key = %@.", log: log, type: .error, url.absoluteString)
-			Crashlytics.crashlytics().log("Error startAccessingSecurityScopedResource For: key = \(url.absoluteString).")
-			return false
-		}
-	}
+        } catch {
+            os_log("Error creating secure Bookmark For: key = %@. Error: %@", log: log, type: .error, url.absoluteString, error.localizedDescription)
+            Crashlytics.crashlytics().log("Error creating secure Bookmark For: key = \(url.absoluteString). Error: \(error.localizedDescription)")
+            return false
+        }
+    }
 
     /// bookMarkFor a file
     ///  - Parameters:
@@ -217,7 +209,7 @@ stopAllSecurityScopedAccess
 
         os_log("filename %@", log: log, type: .debug, filename)
 
-        for (_, bookmarkDict) in bookmarks.enumerated(){
+        for bookmarkDict in bookmarks {
             for (key, urlData) in bookmarkDict {
 
                 os_log("Bookmark URL = %@", log: log, type: .info, key)
@@ -232,8 +224,8 @@ stopAllSecurityScopedAccess
 
                         os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
                         Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
-                        // always resolve with just _NSURLBookmarkResolutionWithSecurityScope
-                        let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [_NSURLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+                        // always resolve with just URLBookmarkResolutionWithSecurityScope
+                        let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
                         if bookmarkDataIsStale {
                             os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
@@ -270,10 +262,8 @@ stopAllSecurityScopedAccess
     ///  - Parameters:
     ///     - filename: filename to revoke secure bookmark for
     /// - Returns: Bool on success or fail
-    @objc public func revokeBookmark(filename: String) -> Bool {
+    @objc func revokeBookmark(filename: String) -> Bool {
 
-        // FIXME: don't seem to need to take a mutable copy
-        // is that right @Kaspik?
         for (index, bookmarkDict) in bookmarks.enumerated(){
             for (key, urlData) in bookmarkDict {
 
@@ -291,10 +281,11 @@ stopAllSecurityScopedAccess
 
                         os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, spData.debugDescription)
                         Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(spData.debugDescription)")
-                        // always resolve with just _NSURLBookmarkResolutionWithSecurityScope
-                        let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [_NSURLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
+                        // always resolve with just URLBookmarkResolutionWithSecurityScope
+                        let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData , options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
-                        urlForBookmark.stopAccessingSecurityScopedResource()
+                        // you do not need to call .stopAccessingSecurityScopedResource()
+                        // simply remove from bookmarks
 
                         resolvedBookmarks.removeAll(where: { $0 == urlForBookmark })
                         bookmarks.remove(at: index)
@@ -321,7 +312,7 @@ stopAllSecurityScopedAccess
     }
 
     // revoke secure access to all bookmarks
-    @objc public func stopAllSecurityScopedAccess() {
+    @objc func stopAllSecurityScopedAccess() {
 
         for url in resolvedBookmarks{
             resolvedBookmarks.removeAll(where: { $0 == url })
