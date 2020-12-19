@@ -219,6 +219,21 @@
 		}
 	}
 
+    executeOnBackgroundThread(^{
+        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+        FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
+
+        // set some keys to help us diagnose issues
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoComplete, prefs)) forKey:@"CustomQueryAutoComplete"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEnableSyntaxHighlighting, prefs)) forKey:@"CustomQueryEnableSyntaxHighlighting"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoIndent, prefs)) forKey:@"CustomQueryAutoIndent"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoUppercaseKeywords, prefs)) forKey:@"CustomQueryAutoUppercaseKeywords"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEnableBracketHighlighting, prefs)) forKey:@"CustomQueryEnableBracketHighlighting"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEditorCompleteWithBackticks, prefs)) forKey:@"CustomQueryEditorCompleteWithBackticks"];
+        [crashlytics setCustomValue:[[NSLocale currentLocale] localeIdentifier] forKey:@"localeIdentifier"];
+        [crashlytics setCustomValue:[[NSLocale currentLocale] objectForKey:NSLocaleLanguageCode] forKey:@"localeLanguageCode"];
+    });
+
 
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
