@@ -6,9 +6,9 @@
 //  Copyright © 2020 Sequel-Ace. All rights reserved.
 //
 
+import Firebase
 import Foundation
 import os.log
-import Firebase
 
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
@@ -37,7 +37,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         do {
             tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
         } catch {
-            os_log("Could not get path to applicationSupportDirectory. Error: %@", log: self.log, type: .error, error as CVarArg)
+            os_log("Could not get path to applicationSupportDirectory. Error: %@", log: log, type: .error, error as CVarArg)
             Crashlytics.crashlytics().log("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
@@ -153,17 +153,16 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Loads the query history from the SQLite database.
     private func loadQueryHistory() {
-
-		os_log("loading Query History. SPCustomQueryMaxHistoryItems: %i", log: self.log, type: .debug, prefs.integer(forKey: SPCustomQueryMaxHistoryItems))
+        os_log("loading Query History. SPCustomQueryMaxHistoryItems: %i", log: log, type: .debug, prefs.integer(forKey: SPCustomQueryMaxHistoryItems))
 
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
-				// select by _rowid_ desc to get latest first, limit to max pref
+                // select by _rowid_ desc to get latest first, limit to max pref
                 let rs = try db.executeQuery("SELECT rowid, query FROM QueryHistory order by _rowid_ desc LIMIT (?)", values: [prefs.integer(forKey: SPCustomQueryMaxHistoryItems)])
 
                 while rs.next() {
-					queryHist[rs.longLongInt(forColumn: "rowid")] = rs.string(forColumn: "query")
+                    queryHist[rs.longLongInt(forColumn: "rowid")] = rs.string(forColumn: "query")
                 }
                 rs.close()
             } catch {
@@ -213,28 +212,28 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         os_log("migrateQueriesFromPrefs", log: log, type: .debug)
 
-		let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
+        let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
-		// we want to reverse the array from prefs
-		// prefs is stored by created date asc
-		// we want to insert in the opposite order
-		// so that drop down displays by latest created
-		for query in queryHistoryArray.reversed() where query.isNotEmpty {
-			os_log("query: [%@]", log: log, type: .debug, query)
+        // we want to reverse the array from prefs
+        // prefs is stored by created date asc
+        // we want to insert in the opposite order
+        // so that drop down displays by latest created
+        for query in queryHistoryArray.reversed() where query.isNotEmpty {
+            os_log("query: [%@]", log: log, type: .debug, query)
 
-			let newDate = Date()
+            let newDate = Date()
 
-			os_log("date: %@", log: log, type: .debug, newDate as CVarArg)
+            os_log("date: %@", log: log, type: .debug, newDate as CVarArg)
 
             queue.inDatabase { db in
                 db.traceExecution = traceExecution
                 do {
                     try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (query, createdTime) VALUES (?, ?)",
-										 values: [query.trimmedString, newDate])
+                                         values: [query.trimmedString, newDate])
                 } catch {
                     logDBError(error)
                 }
-				queryHist[db.lastInsertRowId] = query
+                queryHist[db.lastInsertRowId] = query
             }
         }
         // JCS note: at the moment I'm not deleting the queryHistory key from prefs
@@ -242,37 +241,35 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         os_log("migrated prefs query hist to db", log: log, type: .info)
         migratedPrefsToDB = true
         prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
-		reloadQueryHistory()
-
+        reloadQueryHistory()
     }
 
     /// Updates the history.
     /// - Parameters:
     ///   - newHist: Array of Strings - the Strings being the new history to update
     /// - Returns: Nothing
-	@objc func updateQueryHistory(newHist: [String]) {
-		os_log("updateQueryHistory", log: log, type: .debug)
+    @objc func updateQueryHistory(newHist: [String]) {
+        os_log("updateQueryHistory", log: log, type: .debug)
 
-		// dont delete any history, keep it all?
-		for query in newHist where query.isNotEmpty {
+        // dont delete any history, keep it all?
+        for query in newHist where query.isNotEmpty {
+            let newDate = Date()
 
-			let newDate = Date()
+            queue.inDatabase { db in
+                db.traceExecution = traceExecution
+                do {
+                    try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (query, createdTime) VALUES (?, ?)",
+                                         values: [query.trimmedString, newDate])
+                } catch {
+                    logDBError(error)
+                }
 
-			queue.inDatabase { db in
-				db.traceExecution = traceExecution
-				do {
-					try db.executeUpdate("INSERT OR IGNORE INTO QueryHistory (query, createdTime) VALUES (?, ?)",
-										 values: [query.trimmedString, newDate])
-				} catch {
-					logDBError(error)
-				}
-
-				queryHist[db.lastInsertRowId] = query
-			}
-		}
-		getDBsize()
-		queue.close()
-	}
+                queryHist[db.lastInsertRowId] = query
+            }
+        }
+        getDBsize()
+        queue.close()
+    }
 
     /// Deletes all query history from the db
     @objc func deleteQueryHistory() {
@@ -294,7 +291,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Executes the vacuum command on the db
     /// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
-	@objc func execSQLiteVacuum() {
+    @objc func execSQLiteVacuum() {
         os_log("execSQLiteVacuum", log: log, type: .debug)
 
         queue.inDatabase { db in
@@ -310,7 +307,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Handles db fails
     /// - Parameters:
-	///   - error: the thrown Error
+    ///   - error: the thrown Error
     /// - Returns: nothing, should crash
     func failed(error: Error) {
         Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
