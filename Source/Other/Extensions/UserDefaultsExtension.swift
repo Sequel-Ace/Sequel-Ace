@@ -31,7 +31,7 @@ extension UserDefaults {
 
     // needs to be objc for KVO
     @objc var SPSecureBookmarks: [Dictionary<String, Data>] {
-        return array(forKey: SASecureBookmarks) as? [Dictionary<String, Data>] ?? [["noBookmarks": Data()]]
+        return array(forKey: SASecureBookmarks) as? [Dictionary<String, Data>] ?? []
     }
 
 }

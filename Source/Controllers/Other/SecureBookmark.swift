@@ -9,20 +9,20 @@
 import Foundation
 
 final class SecureBookmark: NSObject {
-    private let theData: SecureBookmarkData
+    private let bookmarkData: SecureBookmarkData
 
     init(data: Data, options: Double, url: URL) {
-        theData = SecureBookmarkData(data: data, options: options, url: url)
+        bookmarkData = SecureBookmarkData(data: data, options: options, url: url)
         super.init()
     }
 
     func getEncodedData() -> Data {
         if #available(OSX 10.13, *) {
-            let codedData = try! NSKeyedArchiver.archivedData(withRootObject: theData, requiringSecureCoding: true)
+            let codedData = try! NSKeyedArchiver.archivedData(withRootObject: bookmarkData, requiringSecureCoding: true)
             return codedData
         } else {
             // Fallback on earlier versions
-            let codedData = NSKeyedArchiver.archivedData(withRootObject: theData)
+            let codedData = NSKeyedArchiver.archivedData(withRootObject: bookmarkData)
             return codedData
         }
     }

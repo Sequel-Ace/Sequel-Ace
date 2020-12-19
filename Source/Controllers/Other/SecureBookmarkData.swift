@@ -9,14 +9,14 @@
 import Foundation
 
 final class SecureBookmarkData: NSObject {
-    internal let bookmarkData: Data
-    internal let options: Double
-    internal let theUrl: URL
+    let bookmarkData: Data
+    private let options: Double
+    private let bookmarkURL: URL
 
     init(data: Data, options: Double, url: URL) {
         bookmarkData = data
         self.options = options
-        theUrl = url
+        bookmarkURL = url
         super.init()
     }
 }
@@ -31,7 +31,7 @@ extension SecureBookmarkData: NSCoding, NSSecureCoding {
     enum Keys: String {
         case bookmarkData = "BookmarkData"
         case options = "Options"
-        case theUrl = "TheUrl"
+        case bookmarkURL = "BookmarkURL"
     }
 
     func encode(with coder: NSCoder) {
@@ -39,12 +39,12 @@ extension SecureBookmarkData: NSCoding, NSSecureCoding {
             // For NSSecureCoding
             coder.encode(bookmarkData as NSData, forKey: Keys.bookmarkData.rawValue)
             coder.encode(NSNumber(value: options), forKey: Keys.options.rawValue)
-            coder.encode(theUrl as NSURL, forKey: Keys.theUrl.rawValue)
+            coder.encode(bookmarkURL as NSURL, forKey: Keys.bookmarkURL.rawValue)
         } else {
             // For NSCoding
             coder.encode(bookmarkData, forKey: Keys.bookmarkData.rawValue)
             coder.encode(options, forKey: Keys.options.rawValue)
-            coder.encode(theUrl, forKey: Keys.theUrl.rawValue)
+            coder.encode(bookmarkURL, forKey: Keys.bookmarkURL.rawValue)
         }
     }
 
@@ -52,14 +52,14 @@ extension SecureBookmarkData: NSCoding, NSSecureCoding {
         if #available(OSX 10.13, *) {
             let bookmarkData = coder.decodeObject(of: NSData.self, forKey: Keys.bookmarkData.rawValue)! as Data
             let options = coder.decodeObject(of: NSNumber.self, forKey: Keys.options.rawValue)! as! Double
-            let theUrl = coder.decodeObject(of: NSURL.self, forKey: Keys.theUrl.rawValue)! as URL
-            self.init(data: bookmarkData, options: options, url: theUrl)
+            let bookmarkURL = coder.decodeObject(of: NSURL.self, forKey: Keys.bookmarkURL.rawValue)! as URL
+            self.init(data: bookmarkData, options: options, url: bookmarkURL)
         } else {
             // For NSCoding
             let bookmarkData = coder.decodeObject(forKey: Keys.bookmarkData.rawValue) as! Data
             let options = coder.decodeDouble(forKey: Keys.options.rawValue)
-            let theUrl = coder.decodeObject(forKey: Keys.theUrl.rawValue) as! URL
-            self.init(data: bookmarkData, options: options, url: theUrl)
+            let bookmarkURL = coder.decodeObject(forKey: Keys.bookmarkURL.rawValue) as! URL
+            self.init(data: bookmarkData, options: options, url: bookmarkURL)
         }
     }
 }

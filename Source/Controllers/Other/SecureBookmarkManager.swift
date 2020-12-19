@@ -24,8 +24,8 @@ import os.log
 
     @objc var bookmarks: [Dictionary<String, Data>] = []
     @objc var staleBookmarks: [String] = []
-    @objc private var resolvedBookmarks: [URL] = []
 
+    private var resolvedBookmarks: [URL] = []
     private let URLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let log: OSLog
     private let prefs: UserDefaults = UserDefaults.standard
@@ -107,7 +107,6 @@ import os.log
                     // always resolve with just URLBookmarkResolutionWithSecurityScope
                     let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
-//                   bookmarkDataIsStale = true
                     //a bookmark might be "stale" because the app hasn't been used
                     //in many months, macOS has been upgraded, the app was
                     //re-installed, the app's preferences .plist file was deleted, etc.
@@ -148,7 +147,7 @@ import os.log
     ///	 - url: file URL to generate secure bookmark for
     ///	 - options: URL.BookmarkCreationOptions. see https://developer.apple.com/documentation/foundation/nsurl/bookmarkcreationoptions
     /// - Returns: Bool on success or fail
-    @objc public func addBookMarkFor(url: URL, options: UInt) -> Bool {
+    @objc func addBookMarkFor(url: URL, options: UInt) -> Bool {
         let bookmarkCreationOptions: URL.BookmarkCreationOptions = URL.BookmarkCreationOptions(rawValue: options)
 
         // A file chosen from an NSOpen/SavePanel already has access
@@ -198,7 +197,7 @@ import os.log
     ///  - Parameters:
     ///     - filename: file URL to generate secure bookmark for
     /// - Returns: the resolved URL or nil
-    @objc public func bookMarkFor(filename: String) -> URL? {
+    @objc func bookMarkFor(filename: String) -> URL? {
         os_log("filename %@", log: log, type: .debug, filename)
 
         for bookmarkDict in bookmarks {
