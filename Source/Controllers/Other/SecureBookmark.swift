@@ -7,9 +7,15 @@
 //
 
 import Foundation
+import os.log
+import Firebase
 
 final class SecureBookmark: NSObject {
     private let bookmarkData: SecureBookmarkData
+
+    static var emptySucureBookmarkData: SecureBookmarkData{
+        return SecureBookmarkData(data: Data(), options: 0, url: URL(string: "nil")!)
+    }
 
     init(data: Data, options: Double, url: URL) {
         bookmarkData = SecureBookmarkData(data: data, options: options, url: url)
@@ -18,9 +24,17 @@ final class SecureBookmark: NSObject {
 
     func getEncodedData() -> Data {
         if #available(OSX 10.13, *) {
-            let codedData = try! NSKeyedArchiver.archivedData(withRootObject: bookmarkData, requiringSecureCoding: true)
-            return codedData
-        } else {
+            do{
+                let codedData = try NSKeyedArchiver.archivedData(withRootObject: bookmarkData, requiringSecureCoding: true)
+                return codedData
+            }
+            catch{
+                os_log("Failed to encode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
+                Crashlytics.crashlytics().log("Failed to encode data, Error: \(error.localizedDescription)")
+                return Data() // hmmmmmmm JCS.
+            }
+        }
+        else {
             // Fallback on earlier versions
             let codedData = NSKeyedArchiver.archivedData(withRootObject: bookmarkData)
             return codedData
@@ -29,10 +43,27 @@ final class SecureBookmark: NSObject {
 
     class func getDecodedData(encodedData: Data) -> SecureBookmarkData {
         if #available(OSX 10.13, *) {
-            return try! NSKeyedUnarchiver.unarchivedObject(ofClass: SecureBookmarkData.self, from: encodedData)!
+            do{
+                let retData = try NSKeyedUnarchiver.unarchivedObject(ofClass: SecureBookmarkData.self, from: encodedData) ?? emptySucureBookmarkData
+                return retData
+            }
+            catch{
+                os_log("Failed to decode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
+                Crashlytics.crashlytics().log("Failed to decode data, Error: \(error.localizedDescription)")
+                return emptySucureBookmarkData
+            }
         } else {
             // Fallback on earlier versions
-            return try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(encodedData) as! SecureBookmarkData
+            do{
+                let retData = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(encodedData) as? SecureBookmarkData ?? emptySucureBookmarkData
+                return retData
+            }
+            catch{
+                os_log("Failed to decode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
+                Crashlytics.crashlytics().log("Failed to encode data, Error: \(error.localizedDescription)")
+                return emptySucureBookmarkData
+            }
         }
     }
 }
+
