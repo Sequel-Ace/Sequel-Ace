@@ -217,8 +217,8 @@
 		// read-only.
 		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 
-            if([SecureBookmarkManager.sharedInstance addBookMarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
-                SPLog(@"addBookMarkForUrl success");
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+                SPLog(@"addBookmarkForUrl success");
             }
 		}];
 		

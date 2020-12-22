@@ -623,8 +623,8 @@ set_input:
 			[self->exportPathField setStringValue:path];
 
             // this needs to be read-write
-            if([SecureBookmarkManager.sharedInstance addBookMarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope)] == YES){
-                SPLog(@"addBookMarkForUrl success");
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope)] == YES){
+                SPLog(@"addBookmarkForUrl success");
             }
         }
     }];		
@@ -3121,7 +3121,7 @@ set_input:
         NSString *fileURLString = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
 
         // ret value can be nil
-        userChosenDirectory = [SecureBookmarkManager.sharedInstance bookMarkForFilename:fileURLString];
+        userChosenDirectory = [SecureBookmarkManager.sharedInstance bookmarkForFilename:fileURLString];
 	}
 	
 	SPExportType et;

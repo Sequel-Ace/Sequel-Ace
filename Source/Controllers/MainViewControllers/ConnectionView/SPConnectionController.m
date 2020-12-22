@@ -470,8 +470,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSError *err=nil;
 
         // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-        if([SecureBookmarkManager.sharedInstance addBookMarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
-            SPLog(@"addBookMarkForUrl success");
+        if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+            SPLog(@"addBookmarkForUrl success");
         }
 
 		// SSH key file selection
@@ -3664,27 +3664,27 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
 	// Unregister observers
-	[self removeObserver:self forKeyPath:SPFavoriteTypeKey];
-	[self removeObserver:self forKeyPath:SPFavoriteNameKey];
-	[self removeObserver:self forKeyPath:SPFavoriteHostKey];
-	[self removeObserver:self forKeyPath:SPFavoriteUserKey];
-	[self removeObserver:self forKeyPath:SPFavoriteColorIndexKey];
-	[self removeObserver:self forKeyPath:SPFavoriteDatabaseKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSocketKey];
-	[self removeObserver:self forKeyPath:SPFavoritePortKey];
-	[self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
-	[self removeObserver:self forKeyPath:SPFavoriteEnableClearTextPluginKey];
-	[self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteTypeKey];
+    [self removeObserver:self forKeyPath:SPFavoriteNameKey];
+    [self removeObserver:self forKeyPath:SPFavoriteHostKey];
+    [self removeObserver:self forKeyPath:SPFavoriteUserKey];
+    [self removeObserver:self forKeyPath:SPFavoriteColorIndexKey];
+    [self removeObserver:self forKeyPath:SPFavoriteDatabaseKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSocketKey];
+    [self removeObserver:self forKeyPath:SPFavoritePortKey];
+    [self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
+    [self removeObserver:self forKeyPath:SPFavoriteEnableClearTextPluginKey];
+    [self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
     [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
 

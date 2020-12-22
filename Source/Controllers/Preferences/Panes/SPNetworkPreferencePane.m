@@ -219,22 +219,23 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
 	
 	NSUInteger __block count = 0;
-	
+
+    NSUInteger len = [@"file://" length];
+
 	// iterate through all bookmarks in order to display them as menu items
 	[bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
 		NSEnumerator *keyEnumerator = [dict keyEnumerator];
 		id key;
 		
 		// every bookmark is saved in relation to it's abslute path
-		while (key = [keyEnumerator nextObject]) {
-            
-            if([key hasPrefixWithPrefix:@"file://" caseSensitive:YES] == YES){
-                // save the filename without the file protocol
-                NSString *itemTitle = [key substringFromIndex:[@"file://" length]];
-                [sshConfigChooser addItemWithTitle:itemTitle];
-                count++;
+        while (key = [keyEnumerator nextObject]) {
+            if([key hasPrefixWithPrefix:@"file://" caseSensitive:YES] != YES){
+                continue;
             }
-		}
+            NSString *itemTitle = [key substringFromIndex:len];
+            [sshConfigChooser addItemWithTitle:itemTitle];
+            count++;
+        }
 	}];
 
 	// default value if no bookmarks are available
@@ -302,8 +303,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 			// check if the file is out of the sandbox
 
-            if([SecureBookmarkManager.sharedInstance addBookMarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
-                SPLog(@"addBookMarkForUrl success");
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+                SPLog(@"addBookmarkForUrl success");
             }
 
 			// set the config path to the first selected file

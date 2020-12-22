@@ -34,7 +34,12 @@ import os.log
     private var iChangedTheBookmarks: Bool = false
 
     override init() {
-        log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "secureBookmarks")
+        if let bundleID = Bundle.main.bundleIdentifier {
+            log = OSLog(subsystem: bundleID, category: "secureBookmarks")
+        }
+        else{
+            log = OSLog.`default`
+        }
 
         os_log("SecureBookmarkManager init.", log: log, type: .info)
         Crashlytics.crashlytics().log("SecureBookmarkManager init.")
@@ -57,8 +62,6 @@ import os.log
             NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
 
         })
-
-        // FIXME: @Kaspik need help ... need a guard or if let, don't want the default value...
 
         guard let secureBookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]], secureBookmarks.isNotEmpty else {
             os_log("Could not get secureBookmarks from prefs.", log: log, type: .error)
@@ -85,7 +88,7 @@ import os.log
     // NOTE: when re-requesting access (resolvingBookmarkData) you only need to use
     // URLBookmarkResolutionWithSecurityScope, not the options it was originally created with
     // otherwise it will be markes as stale.
-    @objc func reRequestSecureAccessToBookmarks() {
+    private func reRequestSecureAccessToBookmarks() {
         let bmCopy = bookmarks
 
         // start afresh
@@ -139,15 +142,15 @@ import os.log
 
         // reset bookmarks
         iChangedTheBookmarks = true
-        prefs.set(bookmarks, forKey: SASecureBookmarks)
+	prefs.set(bookmarks, forKey: SASecureBookmarks)
     }
 
-    /// addBookMark
+    /// addBookmark 
     ///  - Parameters:
     ///	 - url: file URL to generate secure bookmark for
     ///	 - options: URL.BookmarkCreationOptions. see https://developer.apple.com/documentation/foundation/nsurl/bookmarkcreationoptions
     /// - Returns: Bool on success or fail
-    @objc func addBookMarkFor(url: URL, options: UInt) -> Bool {
+    @objc func addBookmarkFor(url: URL, options: UInt) -> Bool {
         let bookmarkCreationOptions: URL.BookmarkCreationOptions = URL.BookmarkCreationOptions(rawValue: options)
 
         // A file chosen from an NSOpen/SavePanel already has access
@@ -178,11 +181,12 @@ import os.log
             os_log("SUCCESS: Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
             Crashlytics.crashlytics().log("SUCCESS: Adding \(url.absoluteString) to bookmarks")
             bookmarks.append([url.absoluteString: spData])
+            resolvedBookmarks.append(url)
 
             os_log("Updating UserDefaults", log: log, type: .debug)
             Crashlytics.crashlytics().log("Updating UserDefaults")
             iChangedTheBookmarks = true
-            prefs.set(bookmarks, forKey: SASecureBookmarks)
+	    prefs.set(bookmarks, forKey: SASecureBookmarks)
 
             return true
 
@@ -193,11 +197,11 @@ import os.log
         }
     }
 
-    /// bookMarkFor a file
+    /// bookmarkFor a file
     ///  - Parameters:
     ///     - filename: file URL to generate secure bookmark for
     /// - Returns: the resolved URL or nil
-    @objc func bookMarkFor(filename: String) -> URL? {
+    @objc func bookmarkFor(filename: String) -> URL? {
         os_log("filename %@", log: log, type: .debug, filename)
 
         for bookmarkDict in bookmarks {
@@ -223,6 +227,7 @@ import os.log
                             staleBookmarks.append(key)
                         } else {
                             if urlForBookmark.startAccessingSecurityScopedResource() {
+                                resolvedBookmarks.append(urlForBookmark)
                                 return urlForBookmark
                             } else {
                                 os_log("Error startAccessingSecurityScopedResource For: key = %@.", log: log, type: .error, urlForBookmark.absoluteString)
@@ -274,7 +279,7 @@ import os.log
                         resolvedBookmarks.removeAll(where: { $0 == urlForBookmark })
                         bookmarks.remove(at: index)
                         iChangedTheBookmarks = true
-                        prefs.set(bookmarks, forKey: SASecureBookmarks)
+			prefs.set(bookmarks, forKey: SASecureBookmarks)
                         os_log("Successfully revoked bookmark for: %@", log: log, type: .debug, filename)
                         Crashlytics.crashlytics().log("Successfully revoked bookmark for: \(filename)")
                         return true
@@ -296,6 +301,12 @@ import os.log
 
     // revoke secure access to all bookmarks
     @objc func stopAllSecurityScopedAccess() {
+
+        os_log("stopAllSecurityScopedAccess called", log: log, type: .debug)
+        Crashlytics.crashlytics().log("stopAllSecurityScopedAccess called")
+        Crashlytics.crashlytics().log("resolvedBookmarks count = \(resolvedBookmarks.count)")
+        os_log("resolvedBookmarks count = %i", log: log, type: .info, resolvedBookmarks.count)
+
         for url in resolvedBookmarks {
             resolvedBookmarks.removeAll(where: { $0 == url })
             url.stopAccessingSecurityScopedResource()
