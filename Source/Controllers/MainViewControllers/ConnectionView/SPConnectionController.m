@@ -994,7 +994,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
 	NSArray *nodes = [self selectedFavoriteNodes];
 	
-	return (SPTreeNode *)[nodes objectOrNilAtIndex:0];
+	return (SPTreeNode *)[nodes safeObjectAtIndex:0];
 }
 
 /**
