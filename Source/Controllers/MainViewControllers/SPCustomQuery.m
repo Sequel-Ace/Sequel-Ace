@@ -2500,11 +2500,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Check if the field can identified bijectively
     if ( aTableView == customQueryView ) {
         
-        // Nothing is editable while the field editor is running.
-        // This guards against a special case where accessibility services might
-        // check if a table field is editable while the sheet is running.
-        if (fieldEditor) return NO;
-        
         NSDictionary *columnDefinition = [cqColumnDefinition objectAtIndex:[[aTableColumn identifier] integerValue]];
         
         // Check if current field is a blob

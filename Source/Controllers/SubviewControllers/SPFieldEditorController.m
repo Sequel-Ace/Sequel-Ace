@@ -652,7 +652,7 @@ typedef enum {
 		}
 	}
 
-	[NSApp endSheet:usedSheet returnCode:1];
+	[NSApp endSheet:usedSheet returnCode:editSheetReturnCode];
 	[usedSheet orderOut:self];
 
 	if(callerInstance) {
