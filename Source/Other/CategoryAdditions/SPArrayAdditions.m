@@ -141,18 +141,9 @@
 	return subArray;
 }
 
-- (id)objectOrNilAtIndex:(NSUInteger)index
-{
-	if([self count] <= index) // JCS: shouldn't this be just less than?
-		return nil;
-	return [self objectAtIndex:index];
-}
-
-
 - (id)safeObjectAtIndex:(NSUInteger)idx
 {
     return idx < self.count ? [self objectAtIndex:idx] : nil;
 }
-
 
 @end

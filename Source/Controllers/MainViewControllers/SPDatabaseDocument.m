@@ -387,6 +387,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Get the mysql version
 	mySQLVersion = [[NSString alloc] initWithString:[mySQLConnection serverVersionString]];
 
+    [[FIRCrashlytics crashlytics] setCustomValue:mySQLVersion forKey:@"serverVersion"];
+
 	// Update the selected database if appropriate
 	if ([connectionController database] && ![[connectionController database] isEqualToString:@""]) {
 		
@@ -422,6 +424,27 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		[[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[mySQLConnection encoding]]];
 	}
+
+    executeOnBackgroundThread(^{
+
+        // set a few more keys
+        FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
+
+        [crashlytics setCustomValue:self->mySQLConnection.encoding forKey:@"encoding"];
+        [crashlytics setCustomValue:self->mySQLConnection.timeZoneIdentifier forKey:@"timeZoneIdentifier"];
+
+        switch(self->connectionController.type) {
+        case SPSocketConnection:
+            [crashlytics setCustomValue:@"SocketConnection" forKey:@"connectionType"];
+            break;
+        case SPTCPIPConnection:
+            [crashlytics setCustomValue:@"TCPIPConnection" forKey:@"connectionType"];
+            break;
+        case SPSSHTunnelConnection:
+            [crashlytics setCustomValue:@"SSHTunnelConnection" forKey:@"connectionType"];
+            break;
+        }
+    });
 
 	// For each of the main controllers, assign the current connection
 	[tableSourceInstance setConnection:mySQLConnection];
