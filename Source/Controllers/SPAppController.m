@@ -222,7 +222,7 @@
             [self->prefsController showWindow:self];
             [self->prefsController displayPreferencePane:self->prefsController->fileItem];
 
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Stale Bookmarks", @"Stale Bookmarks") message:[NSString stringWithFormat:NSLocalizedString(@"A reminder of your stale secure bookmarks:\n\n%@\n", @"A reminder of your stale secure bookmarks:\n\n%@\n"), staleBookmarksString] callback:nil];
+            [self->prefsController.window makeKeyAndOrderFront:nil];
 
         }                 cancelButtonHandler:^{
             SPLog(@"No not now");
