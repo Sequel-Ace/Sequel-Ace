@@ -58,7 +58,6 @@
 #import "SPBundleManager.h"
 @import Firebase;
 
-
 #import <SPMySQL/SPMySQL.h>
 
 #import "sequel-ace-Swift.h"
