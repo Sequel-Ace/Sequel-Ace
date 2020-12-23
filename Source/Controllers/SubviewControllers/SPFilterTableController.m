@@ -436,7 +436,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			}
 			// Take value from currently edited table cell
 			else if ([currentValue isKindOfClass:[NSString class]]) {
-				if (i == editedRow && anIndex == [[NSArrayObjectAtIndex([filterTableView tableColumns], [filterTableView editedColumn]) identifier] integerValue]) {
+				if (i == editedRow && anIndex == [[[[filterTableView tableColumns] safeObjectAtIndex:[filterTableView editedColumn]] identifier] integerValue]) {
 					filterCell = (NSString*)currentValue;
 				}
 				else {
@@ -510,7 +510,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 				else if ([filterCell isMatchedByRegex:re2]) {
 					NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:re2];
 
-					if ([matches count] && [matches = NSArrayObjectAtIndex(matches,0) count] == 3) {
+					if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
 						[clause appendFormat:@"%@ %@ %@", fieldName, [[matches safeObjectAtIndex:1] uppercaseString], [matches safeObjectAtIndex:2]];
 					}
 				}

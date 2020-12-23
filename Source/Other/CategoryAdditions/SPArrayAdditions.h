@@ -28,11 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-static inline id NSArrayObjectAtIndex(NSArray *self, NSUInteger i) 
-{
-	return (id)CFArrayGetValueAtIndex((CFArrayRef)self, (long)i);
-}
-
 /**
  * Set up a static function to allow fast mutable array insertion using
  * cached selectors.

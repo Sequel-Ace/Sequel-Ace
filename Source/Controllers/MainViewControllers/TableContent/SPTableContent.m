@@ -4229,7 +4229,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// writing in gray if value was NULL
 		if ([tableView editedColumn] != -1
 			&& [tableView editedRow] == rowIndex
-			&& (NSUInteger)[[NSArrayObjectAtIndex([tableView tableColumns], [tableView editedColumn]) identifier] integerValue] == columnIndex) {
+			&& (NSUInteger)[[[[tableView tableColumns] safeObjectAtIndex:[tableView editedColumn]] identifier] integerValue] == columnIndex) {
 			[cell setTextColor:textForegroundColor];
 			if (cellIsLinkCell) [cell setLinkActive:NO];
 			return;
