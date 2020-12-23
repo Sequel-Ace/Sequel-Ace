@@ -127,7 +127,7 @@
 		}
 
 		NSMutableArray *targetArray;
-		switch ([NSArrayObjectAtIndex(item, 4) intValue]) {
+		switch ([[item safeObjectAtIndex:4] intValue]) {
 			case SPTableTypeProc:
 				targetArray = procs;
 				break;
@@ -267,11 +267,11 @@
 		}
 		
 		[self setSqlCurrentTableExportIndex:[self sqlCurrentTableExportIndex]+1];
-		NSString *tableName = NSArrayObjectAtIndex(table, 0);
+		NSString *tableName = [table safeObjectAtIndex:0];
 
-		BOOL sqlOutputIncludeStructure  = [NSArrayObjectAtIndex(table, 1) boolValue];
-		BOOL sqlOutputIncludeContent    = [NSArrayObjectAtIndex(table, 2) boolValue];
-		BOOL sqlOutputIncludeDropSyntax = [NSArrayObjectAtIndex(table, 3) boolValue];
+		BOOL sqlOutputIncludeStructure  = [[table safeObjectAtIndex:1] boolValue];
+		BOOL sqlOutputIncludeContent    = [[table safeObjectAtIndex:2] boolValue];
+		BOOL sqlOutputIncludeDropSyntax = [[table safeObjectAtIndex:3] boolValue];
 
 		// Skip tables if not set to output any detail for them
 		if (!sqlOutputIncludeStructure && !sqlOutputIncludeContent && !sqlOutputIncludeDropSyntax) {
@@ -357,7 +357,7 @@
 			// Determine whether raw data can be used for each column during processing - safe numbers and hex-encoded data.
 			for (NSUInteger j = 0; j < colCount; j++)
 			{
-				NSDictionary *theColumnDetail = NSArrayObjectAtIndex([tableDetails objectForKey:@"columns"], j);
+                NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
 				NSString *theTypeGrouping = [theColumnDetail objectForKey:@"typegrouping"];
 
 				// Start by setting the column as non-safe
@@ -401,7 +401,7 @@
 				continue;
 			}
 			
-			NSUInteger rowCount = [NSArrayObjectAtIndex(rowArray, 0) integerValue];
+			NSUInteger rowCount = [[rowArray safeObjectAtIndex:0] integerValue];
 
 			if (rowCount) {
 				// Set up a result set in streaming mode
@@ -476,7 +476,7 @@
 
 					for (NSUInteger t = 0; t < colCount; t++)
 					{
-						id object = NSArrayObjectAtIndex(row, t);
+						id object = [row safeObjectAtIndex:t];
 
 						// Add NULL values directly to the output row; use a pointer comparison to the singleton
 						// instance for speed.
@@ -490,7 +490,7 @@
 						}
 
 						// If the field is of type BIT, the values need a binary prefix of b'x'.
-						else if ([[NSArrayObjectAtIndex([tableDetails objectForKey:@"columns"], t) objectForKey:@"type"] isEqualToString:@"BIT"]) {
+                        else if ([[[[tableDetails safeObjectForKey:@"columns"] safeObjectAtIndex:t] safeObjectForKey:@"type"] isEqualToString:@"BIT"]) {
 							[sqlString appendFormat:@"b'%@'", [object description]];
 						}
 
@@ -596,8 +596,8 @@
 					
 					[metaString appendFormat:@"/*!50003 SET SESSION SQL_MODE=\"%@\" */;;\n/*!50003 CREATE */ ", [triggers objectForKey:@"sql_mode"]];
 					[metaString appendFormat:@"/*!50017 DEFINER=%@@%@ */ /*!50003 TRIGGER %@ %@ %@ ON %@ FOR EACH ROW %@ */;;\n",
-					                         [NSArrayObjectAtIndex(triggersDefiner, 0) backtickQuotedString],
-					                         [NSArrayObjectAtIndex(triggersDefiner, 1) backtickQuotedString],
+					                         [[triggersDefiner safeObjectAtIndex:0] backtickQuotedString],
+					                         [[triggersDefiner safeObjectAtIndex:1] backtickQuotedString],
 					                         [[triggers objectForKey:@"Trigger"] backtickQuotedString],
 					                         [triggers objectForKey:@"Timing"],
 					                         [triggers objectForKey:@"Event"],
@@ -695,10 +695,10 @@
 						return;
 					}
 					
-					if ([NSArrayObjectAtIndex(item, 0) isEqualToString:procedureName]) {
+					if ([[item safeObjectAtIndex:0] isEqualToString:procedureName]) {
 						itemFound = YES;
-						sqlOutputIncludeStructure  = [NSArrayObjectAtIndex(item, 1) boolValue];
-						sqlOutputIncludeDropSyntax = [NSArrayObjectAtIndex(item, 3) boolValue];
+						sqlOutputIncludeStructure  = [[item safeObjectAtIndex:1] boolValue];
+						sqlOutputIncludeDropSyntax = [[item safeObjectAtIndex:3] boolValue];
 						break;
 					}
 				}
@@ -724,8 +724,8 @@
 				NSArray *procedureDefiner = [[proceduresList objectForKey:@"Definer"] componentsSeparatedByString:@"@"];
 
 				NSString *escapedDefiner = [NSString stringWithFormat:@"%@@%@",
-				                                                      [NSArrayObjectAtIndex(procedureDefiner, 0) backtickQuotedString],
-				                                                      [NSArrayObjectAtIndex(procedureDefiner, 1) backtickQuotedString]];
+				                                                      [[procedureDefiner safeObjectAtIndex:0] backtickQuotedString],
+				                                                      [[procedureDefiner safeObjectAtIndex:1] backtickQuotedString]];
 				
 				SPMySQLResult *createProcedureResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
 				                                                                                          [procedureName backtickQuotedString]]];
@@ -855,7 +855,7 @@
 	// Loop through the columns, creating an appropriate column definition for each and appending it to the syntax string
 	for (i = 0; i < [viewColumns count]; i++) 
 	{
-		NSDictionary *column = NSArrayObjectAtIndex(viewColumns, i);
+		NSDictionary *column = [viewColumns safeObjectAtIndex:i];
 		
 		[fieldString setString:[[column objectForKey:@"name"] backtickQuotedString]];
 		
@@ -873,7 +873,7 @@
 			
 			for (j = 0; j < [[column objectForKey:@"values"] count]; j++) 
 			{
-				[fieldString appendString:[connection escapeAndQuoteString:NSArrayObjectAtIndex([column objectForKey:@"values"], j)]];
+                [fieldString appendString:[connection escapeAndQuoteString:[[column safeObjectForKey:@"values"] safeObjectAtIndex:j]]];
 				if ((j + 1) != [[column objectForKey:@"values"] count]) {
 					[fieldString appendString:@","];
 				}

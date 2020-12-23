@@ -349,7 +349,7 @@
 			return NSLocalizedString(@"ACTIVITIES", @"header for activities pane");
 		}
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
-			NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
+            NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
 			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init];
 			
 			[c setActivityName:[[dict objectForKey:@"contextInfo"] objectForKey:@"name"]];
@@ -429,9 +429,8 @@
 			return NSLocalizedString(@"Cancel", @"cancel");
 		}
 
-		NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
-		
-		if ([[dict objectForKey:@"contextInfo"] objectForKey:@"name"]) {
+        NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
+		if ([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"]) {
 			return [[dict objectForKey:@"contextInfo"] objectForKey:@"name"];
 		}
 		
