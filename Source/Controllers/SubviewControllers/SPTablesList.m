@@ -2587,12 +2587,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type
 {
 	NSMutableArray *returnArray = [NSMutableArray array];
+    NSArray *tmpTableTypes = [NSArray arrayWithArray:[self tableTypes]];
+    NSUInteger tableCount = [self tables].count;
 
-	for (NSUInteger i = 0; i < [[self tables] count]; i++)
+	for (NSUInteger i = 0; i < tableCount; i++)
 	{
-		if ([NSArrayObjectAtIndex([self tableTypes], i) integerValue] == type) {
-			[returnArray addObject:[[self tables] safeObjectAtIndex: i]];
-		}
+        if([[tmpTableTypes safeObjectAtIndex:i] integerValue] == type){
+            [returnArray addObject:[tmpTableTypes safeObjectAtIndex:i]];
+        }
 	}
 
 	return returnArray;
@@ -2601,13 +2603,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type
 {
 	BOOL hasObjectOfType = NO;
+    NSArray *tmpTableTypes = [NSArray arrayWithArray:[self tableTypes]];
+    NSUInteger tableCount = [self tables].count;
 
-	for (NSUInteger i = 0; i < [[self tables] count]; i++)
+	for (NSUInteger i = 0; i < tableCount; i++)
 	{
-		if ([NSArrayObjectAtIndex([self tableTypes], i) integerValue] == type) {
-			hasObjectOfType = YES;
-			break;
-		}
+        if([[tmpTableTypes safeObjectAtIndex:i] integerValue] == type){
+            hasObjectOfType = YES;
+            break;
+        }
 	}
 
 	return hasObjectOfType;
