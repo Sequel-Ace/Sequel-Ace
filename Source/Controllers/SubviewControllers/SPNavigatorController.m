@@ -635,7 +635,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		for(NSString* item in filteredItems) {
 			NSArray *a = [item componentsSeparatedByString:SPUniqueSchemaDelimiter];
 
-			NSString *db_id = [NSString stringWithFormat:@"%@%@%@", connectionID,SPUniqueSchemaDelimiter,NSArrayObjectAtIndex(a, 1)];
+			NSString *db_id = [NSString stringWithFormat:@"%@%@%@", connectionID,SPUniqueSchemaDelimiter,[a safeObjectAtIndex:1]];
 
 			if(!a || [a count] < 2) continue;
 
@@ -952,7 +952,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		if([outlineView levelForItem:item] == 3 && [item isKindOfClass:[NSArray class]])
 		{
-			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)];
+			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[item safeObjectAtIndex:9]];
 			[b setEditable:NO];
 			[b setAlignment:NSTextAlignmentRight];
 			[b setFont:[NSFont systemFontOfSize:11]];
@@ -1033,7 +1033,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		if([selectedItem isKindOfClass:[NSArray class]]) {
 			NSUInteger i = 0;
 			for(i=0; i<[selectedItem count]-2; i++) {
-				NSString *item = NSArrayObjectAtIndex(selectedItem, i);
+				NSString *item = [selectedItem safeObjectAtIndex:i];
 				if([item isNSNull] || ![item length]) continue;
 				[infoArray addObject:[NSString stringWithFormat:@"%@: %@", 
 					[self tableInfoLabelForIndex:i ofType:SPTableTypeTable],
@@ -1049,9 +1049,9 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 			NSInteger keyIndex = 0;
 			if(keys && [keys count] == 2) {
 				// there only are two keys, get that key which doesn't begin with "  " due to it's the struct_type key
-				if([NSArrayObjectAtIndex(keys, keyIndex) hasPrefix:@"  "]) keyIndex++;
-				if(NSArrayObjectAtIndex(keys, keyIndex) && [[selectedItem objectForKey:NSArrayObjectAtIndex(keys, keyIndex)] isKindOfClass:[NSArray class]]) {
-					for(id item in [selectedItem objectForKey:NSArrayObjectAtIndex(keys, keyIndex)]) {
+				if([[keys safeObjectAtIndex:keyIndex] hasPrefix:@"  "]) keyIndex++;
+				if([keys safeObjectAtIndex:keyIndex] && [[selectedItem objectForKey:[keys safeObjectAtIndex:keyIndex]] isKindOfClass:[NSArray class]]) {
+					for(id item in [selectedItem objectForKey:[keys safeObjectAtIndex:keyIndex]]) {
 						if([item isKindOfClass:[NSString class]] && [(NSString*)item length]) {
 							[infoArray addObject:[NSString stringWithFormat:@"%@: %@", [self tableInfoLabelForIndex:i ofType:type], item]];
 						}

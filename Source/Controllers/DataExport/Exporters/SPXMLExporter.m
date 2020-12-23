@@ -173,8 +173,8 @@
 		{
 			[xmlTags addObject:[NSMutableArray array]];
 			
-			[NSArrayObjectAtIndex(xmlTags, i) addObject:[NSString stringWithFormat:@"\t\t<%@>", [[NSArrayObjectAtIndex(fieldNames, i) description] HTMLEscapeString]]];
-			[NSArrayObjectAtIndex(xmlTags, i) addObject:[NSString stringWithFormat:@"</%@>\n", [[NSArrayObjectAtIndex(fieldNames, i) description] HTMLEscapeString]]];
+			[[xmlTags safeObjectAtIndex:i] addObject:[NSString stringWithFormat:@"\t\t<%@>", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]]];
+			[[xmlTags safeObjectAtIndex:i] addObject:[NSString stringWithFormat:@"</%@>\n", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]]];
 		}
 		
 		// If required, write an opening tag in the form of the table name
@@ -234,7 +234,7 @@
 				}
 				
 				BOOL dataIsNULL = NO;
-				id data = NSArrayObjectAtIndex(xmlRow, i);
+				id data = [xmlRow safeObjectAtIndex:i];
 				
 				// Retrieve the contents of this tag
 				if ([data isKindOfClass:[NSData class]]) {
@@ -263,7 +263,7 @@
 				}
 				
 				if ([self xmlFormat] == SPXMLExportMySQLFormat) {
-					[xmlString appendFormat:@"\t\t<field name=\"%@\"", [[NSArrayObjectAtIndex(fieldNames, i) description] HTMLEscapeString]];
+					[xmlString appendFormat:@"\t\t<field name=\"%@\"", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]];
 					
 					if (dataIsNULL) {
 						[xmlString appendString:@" xsi:nil=\"true\" />\n"];
@@ -274,9 +274,9 @@
 				}
 				else if ([self xmlFormat] == SPXMLExportPlainFormat) {
 					// Add the opening and closing tag and the contents to the XML string
-					[xmlString appendString:NSArrayObjectAtIndex(NSArrayObjectAtIndex(xmlTags, i), 0)];
+					[xmlString appendString:NSArrayObjectAtIndex([xmlTags safeObjectAtIndex:i], 0)];
 					[xmlString appendString:[xmlItem HTMLEscapeString]];
-					[xmlString appendString:NSArrayObjectAtIndex(NSArrayObjectAtIndex(xmlTags, i), 1)];
+					[xmlString appendString:NSArrayObjectAtIndex([xmlTags safeObjectAtIndex:i], 1)];
 				}
 			}
 			

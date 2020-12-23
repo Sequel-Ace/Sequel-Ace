@@ -964,23 +964,23 @@
 					[insertBaseString appendFormat:@"%@ (", [selectedTableTarget backtickQuotedString]];
 					insertBaseStringHasEntries = NO;
 					for (i = 0; i < [fieldMappingArray count]; i++) {
-						if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] == 0) {
+						if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0) {
 							if (insertBaseStringHasEntries)
 								[insertBaseString appendString:@","];
 							else
 								insertBaseStringHasEntries = YES;
 							if([geometryFields count]) {
 								// Store column index for each geometry field to be able to apply ST_GeomFromText() while importing
-								if([geometryFields containsObject:fieldName = NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) ])
+								if([geometryFields containsObject:fieldName = [fieldMappingTableColumnNames safeObjectAtIndex:i] ])
 									[geometryFieldsMapIndex addIndex:i];
 								[insertBaseString appendString:[fieldName backtickQuotedString]];
 							} else if([bitFields count]) {
 								// Store column index for each bit field to be able to wrap it into b'…' while importing
-								if([bitFields containsObject:fieldName = NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) ])
+								if([bitFields containsObject:fieldName = [fieldMappingTableColumnNames safeObjectAtIndex:i] ])
 									[bitFieldsMapIndex addIndex:i];
 								[insertBaseString appendString:[fieldName backtickQuotedString]];
 							} else {
-								[insertBaseString appendString:[NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) backtickQuotedString]];
+								[insertBaseString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 							}
 						}
 					}
@@ -1032,10 +1032,10 @@
 						[insertRemainingBaseString appendFormat:@"%@ (", [selectedTableTarget backtickQuotedString]];
 						insertBaseStringHasEntries = NO;
 						for (i = 0; i < [fieldMappingArray count]; i++) {
-							if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] == 0) {
+							if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0) {
 								if (insertBaseStringHasEntries) [insertRemainingBaseString appendString:@","];
 								else insertBaseStringHasEntries = YES;
-								[insertRemainingBaseString appendString:[NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) backtickQuotedString]];
+								[insertRemainingBaseString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 							}
 						}
 						[insertRemainingBaseString appendString:@") VALUES\n"];
@@ -1335,20 +1335,20 @@
 	for (i = 0; i < mappingArrayCount; i++) {
 
 		// Skip unmapped columns
-		if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] == 1 ) continue;
+		if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 1 ) continue;
 
-		mapColumn = [NSArrayObjectAtIndex(fieldMappingArray, i) integerValue];
+		mapColumn = [[fieldMappingArray safeObjectAtIndex:i] integerValue];
 
 		// SET clause
-		if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] == 0 ) {
+		if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0 ) {
 			if ([setString length] > 1) [setString appendString:@","];
-			[setString appendString:[NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) backtickQuotedString]];
+			[setString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 			[setString appendString:@"="];
 			// Append the data
 			// - check for global values
 			if(fieldMappingArrayHasGlobalVariables && mapColumn >= numberOfImportDataColumns) {
 				NSMutableString *globalVar = [NSMutableString string];
-				id insertItem = NSArrayObjectAtIndex(fieldMappingGlobalValueArray, mapColumn);
+				id insertItem = [fieldMappingGlobalValueArray safeObjectAtIndex:mapColumn];
 				if([insertItem isNSNull]) {
 					[globalVar setString:@"NULL"];
 				} else if([insertItem isSPNotLoaded]) {
@@ -1378,11 +1378,11 @@
 				}
 				[setString appendString:globalVar];
 			} else {
-				cellData = NSArrayObjectAtIndex(csvRowArray, mapColumn);
+				cellData = [csvRowArray safeObjectAtIndex:mapColumn];
 
 				// If import column isn't specified import the table column default value
 				if ([cellData isSPNotLoaded])
-					cellData = NSArrayObjectAtIndex(fieldMappingTableDefaultValues, i);
+					cellData = [fieldMappingTableDefaultValues safeObjectAtIndex:i];
 
 				if ([cellData isNSNull]) {
 					[setString appendString:@"NULL"];
@@ -1392,15 +1392,15 @@
 			}
 		}
 		// WHERE clause
-		else if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] == 2 )
+		else if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 2 )
 		{
 			if ([whereString length] > 7) [whereString appendString:@" AND "];
-			[whereString appendString:[NSArrayObjectAtIndex(fieldMappingTableColumnNames, i) backtickQuotedString]];
+			[whereString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 			// Append the data
 			// - check for global values
 			if(fieldMappingArrayHasGlobalVariables && mapColumn >= numberOfImportDataColumns) {
 				NSMutableString *globalVar = [NSMutableString string];
-				id insertItem = NSArrayObjectAtIndex(fieldMappingGlobalValueArray, mapColumn);
+				id insertItem = [fieldMappingGlobalValueArray safeObjectAtIndex:mapColumn];
 				if([insertItem isNSNull]) {
 					[globalVar setString:@"NULL"];
 				} else if([insertItem isSPNotLoaded]) {
@@ -1430,11 +1430,11 @@
 				}
 				[whereString appendFormat:@"=%@", globalVar];
 			} else {
-				cellData = NSArrayObjectAtIndex(csvRowArray, mapColumn);
+				cellData = [csvRowArray safeObjectAtIndex:mapColumn];
 
 				// If import column isn't specified import the table column default value
 				if ([cellData isSPNotLoaded])
-					cellData = NSArrayObjectAtIndex(fieldMappingTableDefaultValues, i);
+					cellData = [fieldMappingTableDefaultValues safeObjectAtIndex:i];
 
 				if ([cellData isNSNull]) {
 					[whereString appendString:@" IS NULL"];
@@ -1465,9 +1465,9 @@
 	for (i = 0; i < mappingArrayCount; i++) {
 
 		// Skip unmapped columns
-		if ([NSArrayObjectAtIndex(fieldMapperOperator, i) integerValue] > 0) continue;
+		if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] > 0) continue;
 
-		mapColumn = [NSArrayObjectAtIndex(fieldMappingArray, i) integerValue];
+		mapColumn = [[fieldMappingArray safeObjectAtIndex:i] integerValue];
 
 		if ([valueString length] > 1) [valueString appendString:@","];
 
@@ -1475,7 +1475,7 @@
 		// - check for global values
 		if(fieldMappingArrayHasGlobalVariables && mapColumn >= numberOfImportDataColumns) {
 			NSMutableString *globalVar = [NSMutableString string];
-			id insertItem = NSArrayObjectAtIndex(fieldMappingGlobalValueArray, mapColumn);
+			id insertItem = [fieldMappingGlobalValueArray safeObjectAtIndex:mapColumn];
 			if([insertItem isNSNull]) {
 				[globalVar setString:@"NULL"];
 			} else if([insertItem isSPNotLoaded]) {
@@ -1505,11 +1505,11 @@
 			}
 			[valueString appendString:globalVar];
 		} else {
-			cellData = NSArrayObjectAtIndex(csvRowArray, mapColumn);
+			cellData = [csvRowArray safeObjectAtIndex:mapColumn];
 
 			// If import column isn't specified import the table column default value
 			if ([cellData isSPNotLoaded])
-				cellData = NSArrayObjectAtIndex(fieldMappingTableDefaultValues, i);
+				cellData = [fieldMappingTableDefaultValues safeObjectAtIndex:i];
 
 			// Insert a NULL if the cell is an NSNull, or is a nullable numeric field and empty
 			if ([cellData isNSNull] || ([nullableNumericFieldsMapIndex containsIndex:i] && [[cellData description] isEqualToString:@""])) {

@@ -255,7 +255,7 @@
 				return;
 			}
 			
-			csvCell = NSArrayObjectAtIndex(csvRow, i);
+			csvCell = [csvRow safeObjectAtIndex:i];
 							
 			// For NULL objects supplied from a queryResult, add an unenclosed null string as per prefs
 			if ([csvCell isNSNull]) {
@@ -295,10 +295,10 @@
 				}
 				// If an array of bools supplying information as to whether the column is numeric has been supplied, use it.
 				else if ([tableColumnNumericStatus count] > 0) {
-					csvCellIsNumeric = [NSArrayObjectAtIndex(tableColumnNumericStatus, i) boolValue];
+					csvCellIsNumeric = [[tableColumnNumericStatus safeObjectAtIndex:i] boolValue];
 				} 
 				// Otherwise, first test whether this cell contains data
-				else if ([NSArrayObjectAtIndex(csvRow, i) isKindOfClass:[NSData class]]) {
+				else if ([[csvRow safeObjectAtIndex:i] isKindOfClass:[NSData class]]) {
 					csvCellIsNumeric = NO;
 				} 
 				// Or fall back to testing numeric content via an NSScanner.

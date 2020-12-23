@@ -468,14 +468,14 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 					if ([filterTableDefaultOperator isMatchedByRegex:@"['\"]"]) {
 						NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:@"^\\s*(['\"])(.*)\\1\\s*$"];
 
-						if ([matches count] && [matches = NSArrayObjectAtIndex(matches, 0) count] == 3) {
-							[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, NSArrayObjectAtIndex(matches, 2)];
+						if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+							[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, [matches safeObjectAtIndex:2]];
 						}
 						else {
 							matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:@"^\\s*(['\"])(.*)\\s*$"];
 
-							if ([matches count] && [matches = NSArrayObjectAtIndex(matches, 0) count] == 3) {
-								[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, NSArrayObjectAtIndex(matches, 2)];
+							if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+								[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, [matches safeObjectAtIndex:2]];
 							}
 						}
 					}
@@ -502,8 +502,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 				else if ([filterCell isMatchedByRegex:re1]) {
 					NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:re1];
 
-					if ([matches count] && [matches = NSArrayObjectAtIndex(matches, 0) count] == 3) {
-						[clause appendFormat:@"%@ %@ %@", fieldName, NSArrayObjectAtIndex(matches, 1), NSArrayObjectAtIndex(matches, 2)];
+					if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+						[clause appendFormat:@"%@ %@ %@", fieldName, [matches safeObjectAtIndex:1], [matches safeObjectAtIndex:2]];
 					}
 				}
 					// If cell consists of at least two words treat the first as operator and the rest as argument
@@ -511,7 +511,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 					NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:re2];
 
 					if ([matches count] && [matches = NSArrayObjectAtIndex(matches,0) count] == 3) {
-						[clause appendFormat:@"%@ %@ %@", fieldName, [NSArrayObjectAtIndex(matches, 1) uppercaseString], NSArrayObjectAtIndex(matches, 2)];
+						[clause appendFormat:@"%@ %@ %@", fieldName, [[matches safeObjectAtIndex:1] uppercaseString], [matches safeObjectAtIndex:2]];
 					}
 				}
 					// Apply the default operator

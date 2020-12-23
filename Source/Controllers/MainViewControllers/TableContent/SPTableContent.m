@@ -927,7 +927,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Set the column load states on the table values store
 	if ([prefs boolForKey:SPLoadBlobsAsNeeded]) {
 		for ( i = 0; i < dataColumnsCount ; i++ ) {
-			if ([tableDataInstance columnIsBlobOrText:[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"name"]]) {
+			if ([tableDataInstance columnIsBlobOrText:[[dataColumns safeObjectAtIndex:i] objectForKey:@"name"]]) {
 				[tableValues setColumnAsUnloaded:i];
 			}
 		}
@@ -2417,7 +2417,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			else {
 				// Set the insertId for fields with auto_increment
 				for ( i = 0; i < [dataColumns count]; i++ ) {
-					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
+					if ([[[dataColumns safeObjectAtIndex:i] objectForKey:@"autoincrement"] integerValue]) {
 						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
 					}
 				}
@@ -2475,7 +2475,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	for (i = 0; i < dataColumnsCount; i++)
 	{
 		rowObject = [tableValues cellDataAtRow:currentlyEditingRow column:i];
-		fieldDefinition = NSArrayObjectAtIndex(dataColumns, i);
+		fieldDefinition = [dataColumns safeObjectAtIndex:i];
 
 		// Skip "not loaded" cells entirely - these only occur when editing tables when the
 		// preference setting is enabled, and don't need to be saved back to the table.
@@ -2483,7 +2483,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// If an edit has taken place, and the field value hasn't changed, the value
 		// can also be skipped
-		if (!isEditingNewRow && [rowObject isEqual:NSArrayObjectAtIndex(oldRow, i)]) continue;
+		if (!isEditingNewRow && [rowObject isEqual:[oldRow safeObjectAtIndex:i]]) continue;
 
 		// Prepare to derive the value to save
 		NSString *fieldValue;
@@ -2550,7 +2550,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		for (i = 0; i < [rowFieldsToSave count]; i++) {
 			if (i) [queryString appendString:@", "];
 			[queryString appendFormat:@"%@ = %@",
-									   [NSArrayObjectAtIndex(rowFieldsToSave, i) backtickQuotedString], NSArrayObjectAtIndex(rowValuesToSave, i)];
+									   [[rowFieldsToSave safeObjectAtIndex:i] backtickQuotedString], [rowValuesToSave safeObjectAtIndex:i]];
 		}
 		NSString *whereArg = [self argumentForRow:-2];
 		if(![whereArg length]) {
@@ -2771,15 +2771,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		id tempValue;
 		// Use the selected row if appropriate
 		if ( row >= 0 ) {
-			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:NSArrayObjectAtIndex(keys, i)] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
 		}
 		// Otherwise use the oldRow
 		else {
-			tempValue = [oldRow objectAtIndex:[[[tableDataInstance columnWithName:NSArrayObjectAtIndex(keys, i)] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [oldRow objectAtIndex:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
 		}
 
 		if ([tempValue isNSNull]) {
-			[argument appendFormat:@"%@ IS NULL", [NSArrayObjectAtIndex(keys, i) backtickQuotedString]];
+			[argument appendFormat:@"%@ IS NULL", [[keys safeObjectAtIndex:i] backtickQuotedString]];
 		}
 		else if ([tempValue isSPNotLoaded]) {
 			SPLog(@"Exceptional case: SPNotLoaded object found! Abort.");
@@ -2789,7 +2789,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSString *escVal;
 			NSString *fmt = @"%@";
 			// If the field is of type BIT then it needs a binary prefix
-			if ([[[tableDataInstance columnWithName:NSArrayObjectAtIndex(keys, i)] objectForKey:@"type"] isEqualToString:@"BIT"]) {
+			if ([[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"type"] isEqualToString:@"BIT"]) {
 				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
 			}
@@ -2805,11 +2805,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			
 			if(!escVal) {
-				SPLog(@"(row=%ld) nil value for key <%@> is invalid! Abort.",row,NSArrayObjectAtIndex(keys, i));
+				SPLog(@"(row=%ld) nil value for key <%@> is invalid! Abort.",row,[keys safeObjectAtIndex:i]);
 				return @"";
 			}
 			
-			[argument appendFormat:@"%@ = %@", [NSArrayObjectAtIndex(keys, i) backtickQuotedString], [NSString stringWithFormat:fmt,escVal]];
+			[argument appendFormat:@"%@ = %@", [[keys safeObjectAtIndex:i] backtickQuotedString], [NSString stringWithFormat:fmt,escVal]];
 		}
 	}
 
@@ -3773,7 +3773,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			currentlyEditingRow = rowIndex;
 		}
 
-		NSDictionary *column = NSArrayObjectAtIndex(dataColumns, columnIndex);
+		NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
 
 		if (object) {
 			// Restore NULLs if necessary
@@ -4374,7 +4374,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSInteger columnIndex = [tableContentView editedColumn];
 		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
 			// special case: the "NULL" string
-			NSDictionary *column = NSArrayObjectAtIndex(dataColumns, columnIndex);
+			NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
 			if ([[editor string] isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
 				return YES;
 			}

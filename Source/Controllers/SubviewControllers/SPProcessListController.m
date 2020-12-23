@@ -146,7 +146,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		
 		[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
 			if (i < [processesFiltered count]) {
-				NSDictionary *process = NSArrayObjectAtIndex(processesFiltered, i);
+				NSDictionary *process = [processesFiltered safeObjectAtIndex:i];
 				
 				NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@",
 									   [process objectForKey:@"Id"],

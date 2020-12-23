@@ -776,7 +776,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 [progressUpdater setQueryProgress:qp];
             }
             
-            NSString *query = [NSArrayObjectAtIndex(queries, i) stringByTrimmingCharactersInSet:whitespaceAndNewlineSet];
+            NSString *query = [[queries safeObjectAtIndex:i] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet];
             
             // Don't run blank queries, or queries which only contain whitespace.
             if (![query length]) continue;
@@ -1138,7 +1138,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // the extra semicolon at the end of each query
     for (i = 0; i < queryCount; i++ ) {
         
-        queryRange = [NSArrayObjectAtIndex(queries, i) rangeValue];
+        queryRange = [[queries safeObjectAtIndex:i] rangeValue];
         queryPosition = NSMaxRange(queryRange);
         queryStartPosition = queryRange.location;
         
@@ -1734,8 +1734,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Remove all existing columns from the table
     theColumns = [customQueryView tableColumns];
     while ([theColumns count]) {
-        [NSArrayObjectAtIndex(theColumns, 0) setHeaderToolTip:nil]; // prevent crash #2414
-        [customQueryView removeTableColumn:NSArrayObjectAtIndex(theColumns, 0)];
+        [[theColumns safeObjectAtIndex:0] setHeaderToolTip:nil]; // prevent crash #2414
+        [customQueryView removeTableColumn:[theColumns safeObjectAtIndex:0]];
     }
     
     // Update font size on the table
@@ -2645,7 +2645,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Retrieve the original index of the column from the identifier
     NSInteger columnIndex = [[[[aNotification userInfo] objectForKey:@"NSTableColumn"] identifier] integerValue];
-    NSDictionary *columnDefinition = NSArrayObjectAtIndex(cqColumnDefinition, columnIndex);
+    NSDictionary *columnDefinition = [cqColumnDefinition safeObjectAtIndex:columnIndex];
     NSString *table = [columnDefinition objectForKey:@"org_table"];
     NSString *col = [columnDefinition objectForKey:@"org_name"];
     
@@ -3301,7 +3301,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     if(!columnDefinition) return NO;
     
     NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:column];
-    NSInteger numberOfPossibleUpdateRows = [NSArrayObjectAtIndex(editStatus, 0) integerValue];
+    NSInteger numberOfPossibleUpdateRows = [[editStatus safeObjectAtIndex:0] integerValue];
     
     NSPoint customQueryViewPoint = [customQueryView convertPoint:[customQueryView frameOfCellAtColumn:column row:row].origin toView:nil];
     NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(customQueryViewPoint.x, customQueryViewPoint.y, 0,0)];

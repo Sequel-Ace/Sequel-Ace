@@ -1173,7 +1173,7 @@ set_input:
 			// Only enable the button if at least one table is selected
 			for (NSArray *table in tables)
 			{
-				if ([NSArrayObjectAtIndex(table, 2) boolValue]) {
+				if ([[table safeObjectAtIndex:2] boolValue]) {
 					enable = YES;
 					break;
 				}
@@ -1191,9 +1191,9 @@ set_input:
 				// Only enable the button if at least one table is selected
 				for (NSArray *table in tables)
 				{
-					if ([NSArrayObjectAtIndex(table, 1) boolValue] ||
-						[NSArrayObjectAtIndex(table, 2) boolValue] ||
-						[NSArrayObjectAtIndex(table, 3) boolValue])
+					if ([[table safeObjectAtIndex:1] boolValue] ||
+						[[table safeObjectAtIndex:2] boolValue] ||
+						[[table safeObjectAtIndex:3] boolValue])
 					{
 						enable = YES;
 						break;
@@ -2175,7 +2175,7 @@ set_input:
 	else if (isSQL || isCSV || isXML) {
 		for (NSArray *table in tables)
 		{
-			if ([NSArrayObjectAtIndex(table, 2) boolValue]) {
+			if ([[table safeObjectAtIndex:2] boolValue]) {
 				i++;
 				if (i == 2) break;
 			}

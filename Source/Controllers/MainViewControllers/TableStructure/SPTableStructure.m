@@ -1630,7 +1630,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Return a placeholder if the table is reloading
 	if ((NSUInteger)rowIndex >= [tableFields count]) return @"...";
 
-	NSDictionary *rowData = NSArrayObjectAtIndex(tableFields, rowIndex);
+	NSDictionary *rowData = [tableFields safeObjectAtIndex:rowIndex];
 
 	if ([[tableColumn identifier] isEqualToString:@"collation"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
@@ -2087,7 +2087,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	else {
 		// Validate cell against current field type
 		NSString *rowType;
-		NSDictionary *row = NSArrayObjectAtIndex(tableFields, rowIndex);
+		NSDictionary *row = [tableFields safeObjectAtIndex:rowIndex];
 
 		if ((rowType = [row objectForKey:@"type"])) {
 			rowType = [[rowType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
@@ -2184,7 +2184,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (id)comboBoxCell:(NSComboBoxCell *)aComboBoxCell objectValueForItemAtIndex:(NSInteger)index
 {
-	return NSArrayObjectAtIndex(typeSuggestions, index);
+	return [typeSuggestions safeObjectAtIndex:index];
 }
 
 - (NSInteger)numberOfItemsInComboBoxCell:(NSComboBoxCell *)aComboBoxCell
