@@ -294,8 +294,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 
 				for (NSArray *eachRow in theResult) {
-					[tables addObject:NSArrayObjectAtIndex(eachRow, 3)];
-					if ([NSArrayObjectAtIndex(eachRow, 4) isEqualToString:@"PROCEDURE"]) {
+					[tables addObject:[eachRow safeObjectAtIndex:3]];
+					if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
 						[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
 					} else {
 						[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
@@ -1198,10 +1198,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	for (NSUInteger i = 0; i <  [[self tables] count]; i++)
 	{
-		SPTableType tt = (SPTableType)[NSArrayObjectAtIndex([self tableTypes], i) integerValue];
+		SPTableType tt = (SPTableType)[[[self tableTypes] safeObjectAtIndex: i] integerValue];
 
 		if (tt == SPTableTypeTable || tt == SPTableTypeView) {
-			[returnArray addObject:NSArrayObjectAtIndex([self tables], i)];
+			[returnArray addObject:[[self tables] safeObjectAtIndex: i]];
 		}
 	}
 
@@ -1747,7 +1747,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	if (rowIndex > 0 && rowIndex < (NSInteger)[filteredTableTypes count] && [[aTableColumn identifier] isEqualToString:@"tables"]) {
 
-		id item = NSArrayObjectAtIndex(filteredTables, rowIndex);
+		id item = [filteredTables safeObjectAtIndex:rowIndex];
 
 		if(![item isKindOfClass:[NSString class]]) {
 			[aCell setImage:nil];
@@ -1761,7 +1761,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[aCell setNote:comment];
 		}
 
-		switch([NSArrayObjectAtIndex(filteredTableTypes, rowIndex) integerValue]) {
+		switch([[filteredTableTypes safeObjectAtIndex:rowIndex] integerValue]) {
 			case SPTableTypeView:
 				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
 				[aCell setIndentationLevel:0];

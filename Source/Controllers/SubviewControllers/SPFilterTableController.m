@@ -149,8 +149,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	// Clear filter table
 	[filterTableView abortEditing];
 	while ([[filterTableView tableColumns] count]) {
-		[NSArrayObjectAtIndex([filterTableView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
-		[filterTableView removeTableColumn:NSArrayObjectAtIndex([filterTableView tableColumns], 0)];
+		[[[filterTableView tableColumns] safeObjectAtIndex: 0] setHeaderToolTip:nil]; // prevent crash #2414
+		[filterTableView removeTableColumn:[[filterTableView tableColumns] safeObjectAtIndex: 0]];
 	}
 	// Clear filter table data
 	[filterTableData removeAllObjects];
@@ -416,7 +416,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 			// Take filterTableData
 			if (!currentValue) {
-				filterCell = NSArrayObjectAtIndex([filterCellData objectForKey:SPTableContentFilterKey], i);
+				filterCell = [[filterCellData objectForKey:SPTableContentFilterKey] safeObjectAtIndex: i];
 			}
 			// Take last edited value to create the OR clause
 			else if (lookInAllFields) {
@@ -436,11 +436,11 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			}
 			// Take value from currently edited table cell
 			else if ([currentValue isKindOfClass:[NSString class]]) {
-				if (i == editedRow && anIndex == [[NSArrayObjectAtIndex([filterTableView tableColumns], [filterTableView editedColumn]) identifier] integerValue]) {
+				if (i == editedRow && anIndex == [[[[filterTableView tableColumns] safeObjectAtIndex:[filterTableView editedColumn]] identifier] integerValue]) {
 					filterCell = (NSString*)currentValue;
 				}
 				else {
-					filterCell = NSArrayObjectAtIndex([filterCellData objectForKey:SPTableContentFilterKey], i);
+					filterCell = [[filterCellData objectForKey:SPTableContentFilterKey] safeObjectAtIndex: i];
 				}
 			}
 
@@ -468,14 +468,14 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 					if ([filterTableDefaultOperator isMatchedByRegex:@"['\"]"]) {
 						NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:@"^\\s*(['\"])(.*)\\1\\s*$"];
 
-						if ([matches count] && [matches = NSArrayObjectAtIndex(matches, 0) count] == 3) {
-							[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, NSArrayObjectAtIndex(matches, 2)];
+						if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+							[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, [matches safeObjectAtIndex:2]];
 						}
 						else {
 							matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:@"^\\s*(['\"])(.*)\\s*$"];
 
-							if ([matches count] && [matches = NSArrayObjectAtIndex(matches, 0) count] == 3) {
-								[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, NSArrayObjectAtIndex(matches, 2)];
+							if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+								[clause appendFormat:[NSString stringWithFormat:@"%%@ %@", filterTableDefaultOperatorWithFieldName], fieldName, [matches safeObjectAtIndex:2]];
 							}
 						}
 					}
@@ -502,16 +502,16 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 				else if ([filterCell isMatchedByRegex:re1]) {
 					NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:re1];
 
-					if ([matches count] && [matches = NSArrayObjectAtIndex(matches, 0) count] == 3) {
-						[clause appendFormat:@"%@ %@ %@", fieldName, NSArrayObjectAtIndex(matches, 1), NSArrayObjectAtIndex(matches, 2)];
+					if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+						[clause appendFormat:@"%@ %@ %@", fieldName, [matches safeObjectAtIndex:1], [matches safeObjectAtIndex:2]];
 					}
 				}
 					// If cell consists of at least two words treat the first as operator and the rest as argument
 				else if ([filterCell isMatchedByRegex:re2]) {
 					NSArray *matches = [filterCell arrayOfCaptureComponentsMatchedByRegex:re2];
 
-					if ([matches count] && [matches = NSArrayObjectAtIndex(matches,0) count] == 3) {
-						[clause appendFormat:@"%@ %@ %@", fieldName, [NSArrayObjectAtIndex(matches, 1) uppercaseString], NSArrayObjectAtIndex(matches, 2)];
+					if ([matches count] && [matches = [matches safeObjectAtIndex:0] count] == 3) {
+						[clause appendFormat:@"%@ %@ %@", fieldName, [[matches safeObjectAtIndex:1] uppercaseString], [matches safeObjectAtIndex:2]];
 					}
 				}
 					// Apply the default operator
@@ -570,10 +570,10 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			return [[NSTableHeaderCell alloc] initTextCell:[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:@"name"]];
 		}
 
-		return NSArrayObjectAtIndex([[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:SPTableContentFilterKey], columnIndex - 1);
+		return [[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:SPTableContentFilterKey] safeObjectAtIndex: columnIndex - 1];
 	}
 
-	return NSArrayObjectAtIndex([[filterTableData objectForKey:[tableColumn identifier]] objectForKey:SPTableContentFilterKey], rowIndex);
+	return [[[filterTableData objectForKey:[tableColumn identifier]] objectForKey:SPTableContentFilterKey] safeObjectAtIndex: rowIndex];
 }
 
 #pragma mark - TableView delegate methods

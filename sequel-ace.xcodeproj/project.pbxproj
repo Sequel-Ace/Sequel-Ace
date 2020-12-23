@@ -113,6 +113,8 @@
 		1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2711CE2539D9B10066ED58 /* SPReachability.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */ = {isa = PBXBuildFile; fileRef = 1A2711E72539E2BB0066ED58 /* local-connection.html */; };
+		1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55025939B6400616E7E /* SPArrayAdditions.m */; };
+		1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55925939BEE00616E7E /* SPTestingUtils.m */; };
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
@@ -745,6 +747,9 @@
 		1A2711CD2539D9B10066ED58 /* SPReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPReachability.h; sourceTree = "<group>"; };
 		1A2711CE2539D9B10066ED58 /* SPReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReachability.m; sourceTree = "<group>"; };
 		1A2711E72539E2BB0066ED58 /* local-connection.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "local-connection.html"; sourceTree = "<group>"; };
+		1A2DD55025939B6400616E7E /* SPArrayAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPArrayAdditions.m; sourceTree = "<group>"; };
+		1A2DD55925939BEE00616E7E /* SPTestingUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPTestingUtils.m; sourceTree = "<group>"; };
+		1A2DD55F25939C1500616E7E /* SPTestingUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTestingUtils.h; sourceTree = "<group>"; };
 		1A47996E2543343A00D29E6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Plists/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
 		1A479B19254375D200D29E6E /* Pods-Sequel Ace-acknowledgements.markdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "Pods-Sequel Ace-acknowledgements.markdown"; sourceTree = "<group>"; };
@@ -1767,6 +1772,9 @@
 				502D21F51BA50710000D4CE7 /* SPDataAdditionsTests.m */,
 				1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */,
 				1A8B53672584552F00526DED /* SPURLAdditionsTests.m */,
+				1A2DD55025939B6400616E7E /* SPArrayAdditions.m */,
+				1A2DD55925939BEE00616E7E /* SPTestingUtils.m */,
+				1A2DD55F25939C1500616E7E /* SPTestingUtils.h */,
 			);
 			name = "Category Additions";
 			sourceTree = "<group>";
@@ -2971,7 +2979,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $SCRIPTS_DIR\n./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
+			shellScript = "cd $SCRIPTS_DIR\n#./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3001,6 +3009,7 @@
 				1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */,
 				1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */,
 				507FF1621BBF0D5000104523 /* SPTableCopyTest.m in Sources */,
+				1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */,
 				50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */,
 				1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */,
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
@@ -3010,6 +3019,7 @@
 				1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */,
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
+				1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
@@ -3053,7 +3063,6 @@
 			files = (
 				17D41A8221700F8200B1888D /* SPFunctions.m in Sources */,
 				1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */,
-				586F457B0FDB269E00B428D7 /* RegexKitLite.m in Sources */,
 				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
 				58CDB3420FCE142500F8ACA3 /* SPKeychain.m in Sources */,
 				584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,

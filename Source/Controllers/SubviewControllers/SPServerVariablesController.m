@@ -343,7 +343,7 @@
 		
 		[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
 			if (i < [variablesFiltered count]) {
-				NSDictionary *variable = NSArrayObjectAtIndex(variablesFiltered, i);
+				NSDictionary *variable = [variablesFiltered safeObjectAtIndex:i];
 				
 				NSString *variableName  = [variable objectForKey:@"Variable_name"];
 				NSString *variableValue = [variable objectForKey:@"Value"];

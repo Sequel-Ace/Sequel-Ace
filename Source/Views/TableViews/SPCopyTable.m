@@ -154,7 +154,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@"\t"];
-			[result appendString:[[NSArrayObjectAtIndex(columns, i) headerCell] stringValue]];
+			[result appendString:[[[columns safeObjectAtIndex:i] headerCell] stringValue]];
 		}
 		[result appendString:@"\n"];
 	}
@@ -162,7 +162,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	// Create an array of table column mappings for fast iteration
 	NSUInteger *columnMappings = calloc(numColumns, sizeof(NSUInteger));
 	for (NSUInteger ci = 0; ci < numColumns; ci++ )
-		columnMappings[ci] = (NSUInteger)[[NSArrayObjectAtIndex(columns, ci) identifier] integerValue];
+		columnMappings[ci] = (NSUInteger)[[[columns safeObjectAtIndex:ci] identifier] integerValue];
 
 	// Loop through the rows, adding their descriptive contents
 	NSString *nullString = [prefs objectForKey:SPNullValue];
@@ -286,7 +286,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@","];
-			[result appendFormat:@"\"%@\"", [[[NSArrayObjectAtIndex(columns, i) headerCell] stringValue] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+			[result appendFormat:@"\"%@\"", [[[[columns safeObjectAtIndex:i] headerCell] stringValue] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
 		}
 		[result appendString:@"\n"];
 	}
@@ -294,7 +294,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	// Create an array of table column mappings for fast iteration
 	NSUInteger *columnMappings = calloc(numColumns, sizeof(NSUInteger));
 	for (NSUInteger ci = 0; ci < numColumns; ci++ )
-		columnMappings[ci] = (NSUInteger)[[NSArrayObjectAtIndex(columns, ci) identifier] integerValue];
+		columnMappings[ci] = (NSUInteger)[[[columns safeObjectAtIndex:ci] identifier] integerValue];
 
 	// Loop through the rows, adding their descriptive contents
 	NSString *nullString = [prefs objectForKey:SPNullValue];
@@ -441,13 +441,13 @@ static const NSInteger kBlobAsImageFile = 4;
 	
 	for (c = 0; c < numColumns; c++) 
 	{
-		columnMappings[c] = (NSUInteger)[[NSArrayObjectAtIndex(columns, c) identifier] integerValue];
+		columnMappings[c] = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
 		
-		NSString *t = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"typegrouping"];
+		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"typegrouping"];
 		
 		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
             
-            id obj = NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]);
+            id obj = [columnDefinitions safeObjectAtIndex:columnMappings[c]];
                         
             if ([obj respondsToSelector:@selector(boolForKey:)]) {
                 autoIncrement = [obj boolForKey:@"autoincrement"];
@@ -483,7 +483,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		if(foundAutoIncColumn == NO && autoIncrement == YES && skipAutoIncrementColumn == YES){
 			SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
 			columnTypes[c] = 4; // new type
-			autoIncrementColumnName = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"name"];
+			autoIncrementColumnName = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"name"];
 			foundAutoIncColumn = YES;
 			autoIncrement = NO;
 		}
@@ -545,7 +545,7 @@ static const NSInteger kBlobAsImageFile = 4;
 				// TODO - this could be preloaded for all selected rows rather than cell-by-cell
 				cellData = [mySQLConnection getFirstFieldFromQuery:
 							[NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
-								[NSArrayObjectAtIndex(tbHeader, columnMappings[c]) backtickQuotedString],
+								[[tbHeader safeObjectAtIndex:columnMappings[c]] backtickQuotedString],
 								[selectedTable backtickQuotedString],
 								whereArgument]];
 			}
@@ -666,7 +666,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	// Create an array of table column mappings for fast iteration
 	NSUInteger *columnMappings = calloc(numColumns, sizeof(NSUInteger));
 	for (NSUInteger ci = 0; ci < numColumns; ci++ )
-		columnMappings[ci] = (NSUInteger)[[NSArrayObjectAtIndex(columns, ci) identifier] integerValue];
+		columnMappings[ci] = (NSUInteger)[[[columns safeObjectAtIndex:ci] identifier] integerValue];
 
 	// Loop through the rows, adding their descriptive contents
 	NSString *nullString = [prefs objectForKey:SPNullValue];
@@ -1396,7 +1396,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		NSUInteger *columnMappings = calloc(numColumns, sizeof(NSUInteger));
 		NSUInteger c;
 		for ( c = 0; c < numColumns; c++ )
-			columnMappings[c] = (NSUInteger)[[NSArrayObjectAtIndex(columns, c) identifier] integerValue];
+			columnMappings[c] = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
 
 		NSMutableString *tableMetaData = [NSMutableString string];
 		if([[self delegate] isKindOfClass:[SPCustomQuery class]]) {
@@ -1406,7 +1406,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			
 			if(defs && [defs count] == numColumns)
 				for( c = 0; c < numColumns; c++ ) {
-					NSDictionary *col = NSArrayObjectAtIndex(defs, columnMappings[c]);
+					NSDictionary *col = [defs safeObjectAtIndex:columnMappings[c]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"type"]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"typegrouping"]];
 					[tableMetaData appendFormat:@"%@\t", ([col objectForKey:@"char_length"]) ? : @""];
@@ -1423,7 +1423,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			
 			if(defs && [defs count] == numColumns)
 				for( c = 0; c < numColumns; c++ ) {
-					NSDictionary *col = NSArrayObjectAtIndex(defs, columnMappings[c]);
+					NSDictionary *col = [defs safeObjectAtIndex:columnMappings[c]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"type"]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"typegrouping"]];
 					[tableMetaData appendFormat:@"%@\t", ([col objectForKey:@"length"]) ? : @""];

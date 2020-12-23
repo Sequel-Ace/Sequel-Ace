@@ -125,17 +125,17 @@
 		
 		// Check for SPTablesList if right-click on header, then suppress context menu
 		if ([[[[self delegate] class] description] isEqualToString:@"SPTablesList"]) {
-			if ([NSArrayObjectAtIndex([(NSObject*)[self delegate] valueForKeyPath:@"tableTypes"], row) integerValue] == -1)
+			if ([[[(NSObject*)[self delegate] valueForKeyPath:@"tableTypes"] safeObjectAtIndex:row] integerValue] == -1)
 				return nil;
 		}
 		
 		if ([[[[self delegate] class] description] isEqualToString:@"SPQueryFavoriteManager"]) {
-			if ([NSArrayObjectAtIndex([(NSObject*)[self delegate] valueForKeyPath:SPFavorites], row)  objectForKey:@"headerOfFileURL"])
+			if ([[[(NSObject*)[self delegate] valueForKeyPath:SPFavorites] safeObjectAtIndex:row]  safeObjectForKey:@"headerOfFileURL"])
 				return nil;
 		}
 		
 		if ([[[[self delegate] class] description] isEqualToString:@"SPContentFilterManager"]) {
-			if ([NSArrayObjectAtIndex([(NSObject*)[self delegate] valueForKeyPath:@"contentFilters"], row)  objectForKey:@"headerOfFileURL"])
+			if ([[[(NSObject*)[self delegate] valueForKeyPath:@"contentFilters"] safeObjectAtIndex:row]  safeObjectForKey:@"headerOfFileURL"])
 				return nil;
 		}
 		

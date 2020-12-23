@@ -175,7 +175,7 @@ static SPQueryController *sharedQueryController = nil;
 	
 	[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
 		if (i < [messagesVisibleSet count]) {
-			SPConsoleMessage *message = NSArrayObjectAtIndex(messagesVisibleSet, i);
+			SPConsoleMessage *message = [messagesVisibleSet safeObjectAtIndex:i];
 			
 			if (includeTimestamps || includeConnections || includeDatabases) [string appendString:@"/* "];
 			

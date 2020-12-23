@@ -981,7 +981,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		for (NSArray *eachRow in theResult)
 		{
-			dbName = NSArrayObjectAtIndex(eachRow, 0);
+			dbName = [eachRow safeObjectAtIndex:0];
 		}
 
 		SPMainQSync(^{
@@ -5184,7 +5184,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 								}
 
 								if([result length]) [result appendString:@","];
-								id cell = NSArrayObjectAtIndex(theRow, j);
+								id cell = [theRow safeObjectAtIndex:j];
 								if([cell isNSNull])
 									[result appendString:@"\"NULL\""];
 								else if([cell isKindOfClass:[SPMySQLGeometryData class]])
@@ -5222,7 +5222,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 								}
 
 								if([result length]) [result appendString:@"\t"];
-								id cell = NSArrayObjectAtIndex(theRow, j);
+								id cell = [theRow safeObjectAtIndex:j];
 								if([cell isNSNull])
 									[result appendString:@"NULL"];
 								else if([cell isKindOfClass:[SPMySQLGeometryData class]])
