@@ -233,7 +233,7 @@ enum trackingAreaIDs
 		NSRect colorSquareRect = [self rectForColorViewAtIndex:index];
 		
 		//make sure the color at index is actually defined
-		if(index >= 0 && [colorList objectOrNilAtIndex:index] == nil)
+		if(index >= 0 && [colorList safeObjectAtIndex:index] == nil)
 			continue;
 		
 		//do not draw a selection around the X item
