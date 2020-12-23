@@ -443,11 +443,11 @@ static const NSInteger kBlobAsImageFile = 4;
 	{
 		columnMappings[c] = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
 		
-		NSString *t = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"typegrouping"];
+		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"typegrouping"];
 		
 		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
             
-            id obj = NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]);
+            id obj = [columnDefinitions safeObjectAtIndex:columnMappings[c]];
                         
             if ([obj respondsToSelector:@selector(boolForKey:)]) {
                 autoIncrement = [obj boolForKey:@"autoincrement"];
@@ -483,7 +483,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		if(foundAutoIncColumn == NO && autoIncrement == YES && skipAutoIncrementColumn == YES){
 			SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
 			columnTypes[c] = 4; // new type
-			autoIncrementColumnName = [NSArrayObjectAtIndex(columnDefinitions, columnMappings[c]) objectForKey:@"name"];
+			autoIncrementColumnName = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"name"];
 			foundAutoIncColumn = YES;
 			autoIncrement = NO;
 		}
@@ -545,7 +545,7 @@ static const NSInteger kBlobAsImageFile = 4;
 				// TODO - this could be preloaded for all selected rows rather than cell-by-cell
 				cellData = [mySQLConnection getFirstFieldFromQuery:
 							[NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
-								[NSArrayObjectAtIndex(tbHeader, columnMappings[c]) backtickQuotedString],
+								[[tbHeader safeObjectAtIndex:columnMappings[c]] backtickQuotedString],
 								[selectedTable backtickQuotedString],
 								whereArgument]];
 			}
@@ -1406,7 +1406,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			
 			if(defs && [defs count] == numColumns)
 				for( c = 0; c < numColumns; c++ ) {
-					NSDictionary *col = NSArrayObjectAtIndex(defs, columnMappings[c]);
+					NSDictionary *col = [defs safeObjectAtIndex:columnMappings[c]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"type"]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"typegrouping"]];
 					[tableMetaData appendFormat:@"%@\t", ([col objectForKey:@"char_length"]) ? : @""];
@@ -1423,7 +1423,7 @@ static const NSInteger kBlobAsImageFile = 4;
 			
 			if(defs && [defs count] == numColumns)
 				for( c = 0; c < numColumns; c++ ) {
-					NSDictionary *col = NSArrayObjectAtIndex(defs, columnMappings[c]);
+					NSDictionary *col = [defs safeObjectAtIndex:columnMappings[c]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"type"]];
 					[tableMetaData appendFormat:@"%@\t", [col objectForKey:@"typegrouping"]];
 					[tableMetaData appendFormat:@"%@\t", ([col objectForKey:@"length"]) ? : @""];

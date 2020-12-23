@@ -1363,7 +1363,7 @@
 							NSRange aRange = [globalVar rangeOfRegex:re capture:0L];
 							NSInteger colIndex = [[globalVar substringWithRange:[globalVar rangeOfRegex:re capture:1L]] integerValue];
 							if (colIndex > 0 && colIndex <= (NSInteger)[csvRowArray count]) {
-								id colStr = NSArrayObjectAtIndex(csvRowArray, colIndex-1);
+								id colStr = [csvRowArray safeObjectAtIndex:colIndex-1];
 								if([colStr isNSNull])
 									[globalVar replaceCharactersInRange:aRange withString:@"NULL"];
 								else if([colStr isSPNotLoaded])
@@ -1415,7 +1415,7 @@
 							NSRange aRange = [globalVar rangeOfRegex:re capture:0L];
 							NSInteger colIndex = [[globalVar substringWithRange:[globalVar rangeOfRegex:re capture:1L]] integerValue];
 							if(colIndex > 0 && colIndex <= (NSInteger)[csvRowArray count]) {
-								id colStr = NSArrayObjectAtIndex(csvRowArray, colIndex-1);
+								id colStr = [csvRowArray safeObjectAtIndex:colIndex-1];
 								if([colStr isNSNull])
 									[globalVar replaceCharactersInRange:aRange withString:@"NULL"];
 								else if([colStr isSPNotLoaded])
@@ -1490,7 +1490,7 @@
 						NSRange aRange = [globalVar rangeOfRegex:re capture:0L];
 						NSInteger colIndex = [[globalVar substringWithRange:[globalVar rangeOfRegex:re capture:1L]] integerValue];
 						if(colIndex > 0 && colIndex <= (NSInteger)[csvRowArray count]) {
-							id colStr = NSArrayObjectAtIndex(csvRowArray, colIndex-1);
+							id colStr = [csvRowArray safeObjectAtIndex:colIndex-1];
 							if([colStr isNSNull])
 								[globalVar replaceCharactersInRange:aRange withString:@"NULL"];
 							else if([colStr isSPNotLoaded])

@@ -681,26 +681,26 @@
 					
 					if ([parts count] > nextOffs - 1) {
 						if( [[parts safeObjectAtIndex:nextOffs] hasPrefix:@"UPDATE"] ) {
-							if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"SET"] ) {
+							if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"SET"] ) {
 								[constraintDetails setObject:@"SET NULL"
 								                      forKey:@"update"];
-							} else if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"NO"] ) {
+							} else if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"NO"] ) {
 								[constraintDetails setObject:@"NO ACTION"
 								                      forKey:@"update"];
 							} else {
-								[constraintDetails setObject:NSArrayObjectAtIndex(parts, nextOffs+1)
+								[constraintDetails setObject:[parts safeObjectAtIndex:nextOffs+1]
 								                      forKey:@"update"];
 							}
 						}
 						else if( [[parts safeObjectAtIndex:nextOffs] hasPrefix:@"DELETE"] ) {
-							if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"SET"] ) {
+							if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"SET"] ) {
 								[constraintDetails setObject:@"SET NULL"
 								                      forKey:@"delete"];
-							} else if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"NO"] ) {
+							} else if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"NO"] ) {
 								[constraintDetails setObject:@"NO ACTION"
 								                      forKey:@"delete"];
 							} else {
-								[constraintDetails setObject:NSArrayObjectAtIndex(parts, nextOffs+1)
+								[constraintDetails setObject:[parts safeObjectAtIndex:nextOffs+1]
 								                      forKey:@"delete"];
 							}
 						}
@@ -1264,27 +1264,27 @@
 
 		// Whether text types have a different encoding to the table
 		} else if ([detailString isEqualToString:@"CHARSET"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			if (![[aValue = NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"DEFAULT"]) {
+			if (![[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"DEFAULT"]) {
 				[fieldDetails setValue:aValue forKey:@"encoding"];
 			}
 			definitionPartsIndex++;
 		} else if ([detailString isEqualToString:@"CHARACTER"] && (definitionPartsIndex + 2 < partsArrayLength)
-					&& [[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"SET"]) {
-			if (![[aValue = NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+2) uppercaseString] isEqualToString:@"DEFAULT"]) {
+					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"SET"]) {
+			if (![[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+2] uppercaseString] isEqualToString:@"DEFAULT"]) {
 				[fieldDetails setValue:aValue forKey:@"encoding"];
 			}
 			definitionPartsIndex += 2;
 
 		// Whether text types have a different collation to the table
 		} else if ([detailString isEqualToString:@"COLLATE"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			if (![[aValue = NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"DEFAULT"]) {
+			if (![[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"DEFAULT"]) {
 				[fieldDetails setValue:aValue forKey:@"collation"];
 			}
 			definitionPartsIndex++;
 
 		// Whether fields are NOT NULL
 		} else if ([detailString isEqualToString:@"NOT"] && (definitionPartsIndex + 1 < partsArrayLength)
-					&& [[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"NULL"]) {
+					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"NULL"]) {
 			[fieldDetails setValue:@NO forKey:@"null"];
 			definitionPartsIndex++;
 
@@ -1299,7 +1299,7 @@
 
 		// Field defaults
 		} else if ([detailString isEqualToString:@"DEFAULT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			detailParser = [[SPSQLParser alloc] initWithString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1)];
+			detailParser = [[SPSQLParser alloc] initWithString:[definitionParts safeObjectAtIndex:definitionPartsIndex+1]];
 			if([[detailParser unquotedString] isEqualToString:@"NULL"])
 				[fieldDetails setObject:[NSNull null] forKey:@"default"];
 			else
@@ -1308,15 +1308,15 @@
 
 		// Special timestamp/datetime case - Whether fields are set to update the current timestamp
 		} else if ([detailString isEqualToString:@"ON"] && (definitionPartsIndex + 2 < partsArrayLength)
-					&& [[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"UPDATE"]
-					&& [NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+2) isMatchedByRegex:SPCurrentTimestampPattern]) {
+					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"UPDATE"]
+					&& [[definitionParts safeObjectAtIndex:definitionPartsIndex+2] isMatchedByRegex:SPCurrentTimestampPattern]) {
 			// mysql requires the CURRENT_TIMESTAMP(n) to be exactly the same as the column types length, so we don't need to keep it, we can just restore it later
 			[fieldDetails setValue:@YES forKey:@"onupdatetimestamp"];
 			definitionPartsIndex += 2;
 
 		// Column comments
 		} else if ([detailString isEqualToString:@"COMMENT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			detailParser = [[SPSQLParser alloc] initWithString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1)];
+			detailParser = [[SPSQLParser alloc] initWithString:[definitionParts safeObjectAtIndex:definitionPartsIndex+1]];
 			[fieldDetails setValue:[detailParser unquotedString] forKey:@"comment"];
 			definitionPartsIndex++;
 

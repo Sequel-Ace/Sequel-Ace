@@ -1155,7 +1155,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (position == queryStartPosition) positionAssociatedWithPreviousQuery = YES;
                 
                 // If the caret is in between a user-defined delimiter whose length is >1, always associate
-                if (!positionAssociatedWithPreviousQuery && i && NSMaxRange([NSArrayObjectAtIndex(queries, i-1) rangeValue]) < position && position < queryStartPosition) positionAssociatedWithPreviousQuery = YES;
+                if (!positionAssociatedWithPreviousQuery && i && NSMaxRange([[queries safeObjectAtIndex:i-1] rangeValue]) < position && position < queryStartPosition) positionAssociatedWithPreviousQuery = YES;
                 
                 // Otherwise associate if only whitespace since previous, and a newline before next.
                 if (!positionAssociatedWithPreviousQuery) {
@@ -1175,7 +1175,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 }
                 
                 // If there is a previous query and the position should be associated with it, do so.
-                if (i && positionAssociatedWithPreviousQuery && [[[[textView string] substringWithRange:[NSArrayObjectAtIndex(queries, i-1) rangeValue]] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet] length]) {
+                if (i && positionAssociatedWithPreviousQuery && [[[[textView string] substringWithRange:[[queries safeObjectAtIndex:i-1] rangeValue]] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet] length]) {
                     queryRange = [[queries objectAtIndex:i-1] rangeValue];
                     break;
                 }

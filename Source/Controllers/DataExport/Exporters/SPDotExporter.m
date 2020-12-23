@@ -116,7 +116,7 @@
 			return;
 		}
 					
-		NSString *tableName = NSArrayObjectAtIndex([self dotExportTables], i);
+        NSString *tableName = [[self dotExportTables] safeObjectAtIndex:i];
 		NSString *tableLinkName = [self dotForceLowerTableNames] ? [tableName lowercaseString] : tableName;
 		NSDictionary *tableInfo = [[self dotTableData] informationForTable:tableName];
 					

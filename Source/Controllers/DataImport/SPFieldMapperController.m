@@ -1672,7 +1672,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 			if([importFieldNamesHeaderSwitch state] == NSOnState) {
 				if([[fieldMappingArray safeObjectAtIndex:rowIndex] unsignedIntegerValue]>=[[fieldMappingImportArray safeObjectAtIndex:0] count])
-					return [NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"User-defined value", @"user-defined value"), NSArrayObjectAtIndex(fieldMappingGlobalValues, [[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue])];
+					return [NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"User-defined value", @"user-defined value"), [fieldMappingGlobalValues safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]]];
 
 				if(fieldMappingCurrentRow)
 					return [NSString stringWithFormat:@"%@: %@",

@@ -272,12 +272,12 @@
 						[xmlString appendFormat:@">%@</field>\n", [xmlItem HTMLEscapeString]];
 					}
 				}
-				else if ([self xmlFormat] == SPXMLExportPlainFormat) {
-					// Add the opening and closing tag and the contents to the XML string
-					[xmlString appendString:NSArrayObjectAtIndex([xmlTags safeObjectAtIndex:i], 0)];
-					[xmlString appendString:[xmlItem HTMLEscapeString]];
-					[xmlString appendString:NSArrayObjectAtIndex([xmlTags safeObjectAtIndex:i], 1)];
-				}
+                else if ([self xmlFormat] == SPXMLExportPlainFormat) {
+                    // Add the opening and closing tag and the contents to the XML string
+                    [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:0]];
+                    [xmlString appendString:[xmlItem HTMLEscapeString]];
+                    [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:1]];
+                }
 			}
 			
 			[xmlString appendString:@"\t</row>\n\n"];

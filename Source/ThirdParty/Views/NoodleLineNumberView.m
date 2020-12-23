@@ -366,7 +366,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		NSUInteger selectionStart, selectionEnd;
 		NSArray *lines = [self lineIndices];
 
-		selectionStart = [NSArrayObjectAtIndex(lines, (line - 1)) unsignedIntegerValue];
+		selectionStart = [[lines safeObjectAtIndex:(line - 1)] unsignedIntegerValue];
 		if (line < [lines count]) {
 			selectionEnd = [[lines safeObjectAtIndex:line] unsignedIntegerValue];
 		} else {
@@ -399,7 +399,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 			endLine = dragSelectionStartLine;
 		}
 
-		selectionStart = [NSArrayObjectAtIndex(lines, (startLine - 1)) unsignedIntegerValue];
+		selectionStart = [[lines safeObjectAtIndex:(startLine - 1)] unsignedIntegerValue];
 		if (endLine < [lines count]) {
 			selectionEnd = [[lines safeObjectAtIndex:endLine] unsignedIntegerValue];
 		} else {

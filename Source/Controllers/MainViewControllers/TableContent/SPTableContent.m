@@ -2976,7 +2976,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		if ([data isKindOfClass:[NSString class]]
-			&& [data isEqualToString:[prefs objectForKey:SPNullValue]] && [[NSArrayObjectAtIndex(dataColumns, [[theTableColumn identifier] integerValue]) objectForKey:@"null"] boolValue])
+            && [data isEqualToString:[prefs objectForKey:SPNullValue]] && [[[dataColumns safeObjectAtIndex:[[theTableColumn identifier] integerValue]] objectForKey:@"null"] boolValue])
 		{
 			data = [NSNull null];
 		}

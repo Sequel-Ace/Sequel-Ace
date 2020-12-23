@@ -153,7 +153,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 		
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
-                id __unused ret = NSArrayObjectAtIndex(queryHist, i);
+                id __unused ret = [queryHist safeObjectAtIndex:i];
 			}
 		}
 	}];
