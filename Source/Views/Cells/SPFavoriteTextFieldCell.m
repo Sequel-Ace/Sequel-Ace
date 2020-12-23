@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFavoriteTextFieldCell.h"
-#import "SPOSInfo.h"
 
 @implementation SPFavoriteTextFieldCell
 

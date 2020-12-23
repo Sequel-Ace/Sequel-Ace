@@ -830,19 +830,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Clear the keychain referral items as appropriate
 	[self setConnectionKeychainID:nil];
-	
-	
-	
-	
 
 	SPTreeNode *node = [self selectedFavoriteNode];
 	if ([node isGroup]) node = nil;
 	
 	// Update key-value properties from the selected favourite, using empty strings where not found
 	NSDictionary *fav = [[node representedObject] nodeFavorite];
+    
+    // Don't prefill anything if we are not using favorite
+    if (!fav) {
+        return;
+    }
 	
 	// Keep a copy of the favorite as it currently stands
-	
 	currentFavorite = [fav copy];
 	
 	[connectionResizeContainer setHidden:NO];
@@ -926,8 +926,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	if (![[self password] length]) {
 		[self setPassword:nil];
-		
-		
 	}
 
 	// Store the selected favorite ID for use with the document on connection
@@ -941,8 +939,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	if (![[self sshPassword] length]) {
 		[self setSshPassword:nil];
-		
-		
 	}
 
 	[prefs setInteger:[[fav objectForKey:SPFavoriteIDKey] integerValue] forKey:SPLastFavoriteID];
@@ -3291,7 +3287,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 
 		SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
-		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
 
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){

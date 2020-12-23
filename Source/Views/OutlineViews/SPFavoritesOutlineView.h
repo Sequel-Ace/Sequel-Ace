@@ -28,8 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import "SPOSInfo.h"
-
 @interface SPFavoritesOutlineView : NSOutlineView
 {
 	BOOL justGainedFocus;

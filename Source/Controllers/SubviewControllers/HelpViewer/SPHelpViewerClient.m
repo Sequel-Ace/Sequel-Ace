@@ -35,7 +35,6 @@
 #import "RegexKitLite.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
-#import "SPOSInfo.h"
 
 typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	MySQLVer56 = 11,
