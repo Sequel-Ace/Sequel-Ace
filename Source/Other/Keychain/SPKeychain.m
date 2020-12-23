@@ -63,20 +63,19 @@
 /**
  * Add the supplied password to the user's Keychain using the supplied name, account, and label.
  */
-- (void)addPassword:(NSString *)password forName:(NSString *)name account:(NSString *)account withLabel:(NSString *)label;
-{
+- (void)addPassword:(NSString *)password forName:(NSString *)name account:(NSString *)account withLabel:(NSString *)label; {
+    
+    if (![self isValidName:name acount:account] || !password) {
+        return;
+    }
+    
 	OSStatus status;
 	SecTrustedApplicationRef sequelProRef, sequelProHelperRef;
 	SecAccessRef passwordAccessRef = NULL;
 	SecKeychainAttribute attributes[4];
 	SecKeychainAttributeList attList;
 
-	// If a nil password was supplied, do nothing.
-	if (!password) return;
-
 	// Check supplied variables and replaces nils with empty strings
-	if (!name) name = @"";
-	if (!account) account = @"";
 	if (!label) label = @"";
 
 	// Check if password already exists before adding
@@ -142,55 +141,58 @@
 /**
  * Get a password from the user's Keychain for the supplied name and account.
  */
-- (NSString *)getPasswordForName:(NSString *)name account:(NSString *)account
-{
-	OSStatus status;
-	
-	void *passwordData;
-	UInt32 passwordLength;
-	SecKeychainItemRef itemRef;
-	NSString *password = nil;
-
-	// Check supplied variables and replaces nils with empty strings
-	if (!name) name = @"";
-	if (!account) account = @"";
-
-	status = SecKeychainFindGenericPassword(
-											NULL,									// default keychain
-											(UInt32)strlen([name UTF8String]),		// length of service name (bytes)
-											[name UTF8String],						// service name
-
-											(UInt32)strlen([account UTF8String]),	// length of account name (bytes)
-											[account UTF8String],					// account name
-											&passwordLength,						// length of password
-											&passwordData,							// pointer to password data
-											&itemRef								// the item reference
-											);
-	
-	if (status == noErr) {
-
-		// Create a \0 terminated cString out of passwordData
-		char passwordBuf[passwordLength + 1];
-		strncpy(passwordBuf, passwordData, (size_t)passwordLength);
-		passwordBuf[passwordLength] = '\0';
-
-		password = [NSString stringWithCString:passwordBuf encoding:NSUTF8StringEncoding];
-
-		// Free the data allocated by SecKeychainFindGenericPassword:
-		SecKeychainItemFreeContent(
-									NULL,           // No attribute data to release
-									passwordData    // Release data
-									);
-	}
-
-	return password;
+- (NSString *)getPasswordForName:(NSString *)name account:(NSString *)account {
+    NSString *password = nil;
+    if (![self isValidName:name acount:account]) {
+        return nil;
+    }
+    OSStatus status;
+    
+    void *passwordData;
+    UInt32 passwordLength;
+    SecKeychainItemRef itemRef;
+    
+    // Check supplied variables and replaces nils with empty strings
+    if (!name) name = @"";
+    if (!account) account = @"";
+    
+    status = SecKeychainFindGenericPassword(
+                                            NULL,									// default keychain
+                                            (UInt32)strlen([name UTF8String]),		// length of service name (bytes)
+                                            [name UTF8String],						// service name
+                                            
+                                            (UInt32)strlen([account UTF8String]),	// length of account name (bytes)
+                                            [account UTF8String],					// account name
+                                            &passwordLength,						// length of password
+                                            &passwordData,							// pointer to password data
+                                            &itemRef								// the item reference
+                                            );
+    
+    if (status == noErr) {
+        
+        // Create a \0 terminated cString out of passwordData
+        char passwordBuf[passwordLength + 1];
+        strncpy(passwordBuf, passwordData, (size_t)passwordLength);
+        passwordBuf[passwordLength] = '\0';
+        
+        password = [NSString stringWithCString:passwordBuf encoding:NSUTF8StringEncoding];
+        
+        // Free the data allocated by SecKeychainFindGenericPassword:
+        SecKeychainItemFreeContent(NULL,           // No attribute data to release
+                                   passwordData    // Release data
+                                   );
+    }
+    return password;
 }
 
 /**
  * Delete a password from the user's Keychain for the supplied name and account.
  */
-- (void)deletePasswordForName:(NSString *)name account:(NSString *)account
-{
+- (void)deletePasswordForName:(NSString *)name account:(NSString *)account {
+    
+    if (![self isValidName:name acount:account]) {
+        return;
+    }
 	OSStatus status;
 	SecKeychainItemRef itemRef = nil;
 
@@ -230,7 +232,7 @@
 {
 	// "kSecClassGenericPassword" was introduced with the 10.7 SDK.
 	// It won't work on 10.6 either (meaning this code never matches properly there).
-	if([SPOSInfo isOSVersionAtLeastMajor:10 minor:7 patch:0]) {
+	if ([SPOSInfo isOSVersionAtLeastMajor:10 minor:7 patch:0] && [self isValidName:name acount:account]) {
 		NSMutableDictionary *query = [NSMutableDictionary dictionary];
 		
 		[query setObject:(id)kSecClassGenericPassword forKey:(id)kSecClass];
@@ -263,8 +265,10 @@
  * deleting and recreating the keychain item, as it allows preservation of
  * access lists and works around Lion cacheing issues.
  */
-- (void)updateItemWithName:(NSString *)name account:(NSString *)account toName:(NSString *)newName account:(NSString *)newAccount password:(NSString *)password
-{
+- (void)updateItemWithName:(NSString *)name account:(NSString *)account toName:(NSString *)newName account:(NSString *)newAccount password:(NSString *)password {
+    if (![self isValidName:name acount:account]) {
+        return;
+    }
 	OSStatus status;
 	SecKeychainItemRef itemRef;
 	SecKeychainAttribute attributes[2];
@@ -327,7 +331,7 @@
  * Retrieve the keychain item name for a supplied name and id.
  */
 - (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
-	if (!favoriteName || !favoriteId) {
+	if (!favoriteName || favoriteName.length == 0 || !favoriteId || favoriteId.length == 0) {
 		return nil;
 	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
@@ -338,7 +342,7 @@
  * Retrieve the keychain item account for a supplied user, host, and database - which can be nil.
  */
 - (NSString *)accountForUser:(NSString *)user host:(NSString *)host database:(NSString *)database {
-	if (!user || !host) {
+    if (!user || user.length == 0 || !host || host.length == 0) {
 		return nil;
 	}
 	return [NSString stringWithFormat:@"%@@%@/%@", user, host, database ? database : @""];
@@ -348,7 +352,7 @@
  * Retrieve the keychain SSH item name for a supplied name and id.
  */
 - (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
-	if (!favoriteName || !favoriteId) {
+    if (!favoriteName || favoriteName.length == 0 || !favoriteId || favoriteId.length == 0) {
 		return nil;
 	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
@@ -358,9 +362,18 @@
 /**
  * Retrieve the keychain SSH item account for a supplied SSH user and host - which can be nil.
  */
-- (NSString *)accountForSSHUser:(NSString *)theSSHUser sshHost:(NSString *)theSSHHost
-{
-	return [NSString stringWithFormat:@"%@@%@", theSSHUser ? theSSHUser : @"", theSSHHost ? theSSHHost : @""];
+- (NSString *)accountForSSHUser:(NSString *)theSSHUser sshHost:(NSString *)theSSHHost {
+    if (!theSSHUser || theSSHUser.length == 0 || !theSSHHost || theSSHHost.length == 0) {
+        return nil;
+    }
+	return [NSString stringWithFormat:@"%@@%@", theSSHUser, theSSHHost];
+}
+
+- (BOOL)isValidName:(NSString *)name acount:(NSString *)account {
+    if (name && name.length > 0 && account && account.length > 0) {
+        return YES;
+    }
+    return NO;
 }
 
 @end
