@@ -33,7 +33,7 @@
 #import "SPTablesList.h"
 #import "RegexKitLite.h"
 #import "SPThreadAdditions.h"
-
+@import Firebase;
 #import <pthread.h>
 
 @interface SPDatabaseStructure ()
@@ -313,8 +313,14 @@
 			 return;
 		 }
 
+            NSString *theQuery = [NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@ FROM %@", [aTableName backtickQuotedString], [currentDatabase backtickQuotedString]];
+
+            CLS_LOG(@"theQuery: %@", theQuery);
+            SPLog(@"theQuery: %@", theQuery);
+            [[FIRCrashlytics crashlytics] setCustomValue:mySQLConnection.serverVersionString forKey:@"serverVersion"];
+            
 			// Retrieve the column details
-			theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@ FROM %@", [aTableName backtickQuotedString], [currentDatabase backtickQuotedString]]];
+			theResult = [mySQLConnection queryString:theQuery];
 			if (!theResult) {
 				continue;
 			}
@@ -331,23 +337,30 @@
 
 			// Loop through the fields, extracting details for each
 			for (NSArray *row in theResult) {
-				NSString *field = [row objectAtIndex:0];
-				NSString *type = [row objectAtIndex:1];
+
+                if (row.count < 7){
+                    CLS_LOG(@"row count < 7. the row: %@", row);
+                    SPLog(@"row count < 7. the row: %@", row);
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:7 userInfo:userInfo]];
+                }
+
+				NSString *field = [row safeObjectAtIndex:0];
+				NSString *type = [row safeObjectAtIndex:1];
 				NSString *type_display = [type stringByReplacingOccurrencesOfRegex:@"\\(.*?,.*?\\)" withString:@"(…)"];
-				NSString *collation = [row objectAtIndex:2];
-				NSString *isnull = [row objectAtIndex:3];
-				NSString *key = [row objectAtIndex:4];
-				NSString *def = [row objectAtIndex:5];
-				NSString *extra = [row objectAtIndex:6];
+				NSString *collation = [row safeObjectAtIndex:2];
+				NSString *isnull = [row safeObjectAtIndex:3];
+				NSString *key = [row safeObjectAtIndex:4];
+				NSString *def = [row safeObjectAtIndex:5];
+				NSString *extra = [row safeObjectAtIndex:6];
 				NSString *priv = @"";
 				NSString *comment = @"";
-				if ([row count] > 7) priv = [row objectAtIndex:7];
-				if ([row count] > 8) comment = [row objectAtIndex:8];
+				if ([row count] > 7) priv = [row safeObjectAtIndex:7];
+				if ([row count] > 8) comment = [row safeObjectAtIndex:8];
 
 				NSString *charset = @"";
 				if (![collation isNSNull]) {
 					NSArray *a = [collation componentsSeparatedByString:@"_"];
-					charset = [a objectAtIndex:0];
+					charset = [a safeObjectAtIndex:0];
 				}
 
 				// Add a structure key for this field
