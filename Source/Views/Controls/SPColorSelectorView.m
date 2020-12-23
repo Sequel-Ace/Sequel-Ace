@@ -41,7 +41,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPColorSelectorView.h"
-#import "SPOSInfo.h"
 
 @interface SPColorSelectorView ()
 
