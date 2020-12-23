@@ -31,12 +31,13 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPSSHTunnel.h"
-#import "RegexKitLite.h"
 #import "SPKeychain.h"
 #import "SPThreadAdditions.h"
 #import "SPOSInfo.h"
 #import "SPFileHandle.h"
 @import Firebase;
+
+#import "sequel-ace-Swift.h"
 
 #import <netinet/in.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -747,14 +748,17 @@ static unsigned short getRandomPort(void);
 	NSRect windowFrameRect;
 
 	// Work out whether a passphrase is being requested, extracting the key name
-	NSString *keyName = [theQuery stringByMatching:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$" capture:1L];
-	
-	if (keyName) {
+    NSString *keyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
+
+	if (keyName.length > 0) {
+        SPLog(@"keyName: %@", keyName);
 		[sshPasswordText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Enter your password for the SSH key\n\"%@\"", @"SSH key password prompt"), keyName]];
 		[sshPasswordKeychainCheckbox setHidden:NO];
 		currentKeyName = keyName;
 	} 
 	else {
+        SPLog(@"key not found in [%@]", theQuery);
+        CLS_LOG(@"key not found in [%@]", theQuery);
 		[sshPasswordText setStringValue:theQuery];
 		[sshPasswordKeychainCheckbox setHidden:YES];
 		currentKeyName = nil;
