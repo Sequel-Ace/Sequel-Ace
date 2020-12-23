@@ -1198,10 +1198,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	for (NSUInteger i = 0; i <  [[self tables] count]; i++)
 	{
-		SPTableType tt = (SPTableType)[NSArrayObjectAtIndex([self tableTypes], i) integerValue];
+		SPTableType tt = (SPTableType)[[[self tableTypes] safeObjectAtIndex: i] integerValue];
 
 		if (tt == SPTableTypeTable || tt == SPTableTypeView) {
-			[returnArray addObject:NSArrayObjectAtIndex([self tables], i)];
+			[returnArray addObject:[[self tables] safeObjectAtIndex: i]];
 		}
 	}
 
@@ -2591,7 +2591,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	for (NSUInteger i = 0; i < [[self tables] count]; i++)
 	{
 		if ([NSArrayObjectAtIndex([self tableTypes], i) integerValue] == type) {
-			[returnArray addObject:NSArrayObjectAtIndex([self tables], i)];
+			[returnArray addObject:[[self tables] safeObjectAtIndex: i]];
 		}
 	}
 

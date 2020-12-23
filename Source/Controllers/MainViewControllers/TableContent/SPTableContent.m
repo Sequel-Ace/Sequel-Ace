@@ -338,8 +338,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	// Remove existing columns from the table
 	while ([[tableContentView tableColumns] count]) {
-		[NSArrayObjectAtIndex([tableContentView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
-		[tableContentView removeTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], 0)];
+		[[[tableContentView tableColumns] safeObjectAtIndex: 0] setHeaderToolTip:nil]; // prevent crash #2414
+		[tableContentView removeTableColumn:[[tableContentView tableColumns] safeObjectAtIndex: 0]];
 	}
 
 	// Empty the stored data arrays, including emptying the tableValues array
@@ -459,8 +459,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Remove existing columns from the table
 	while ([[tableContentView tableColumns] count]) {
-		[NSArrayObjectAtIndex([tableContentView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
-		[tableContentView removeTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], 0)];
+		[[[tableContentView tableColumns] safeObjectAtIndex: 0] setHeaderToolTip:nil]; // prevent crash #2414
+		[tableContentView removeTableColumn:[[tableContentView tableColumns] safeObjectAtIndex: 0]];
 	}
 	// Remove existing columns from the filter table
 	[filterTableController setColumns:nil];
@@ -1931,11 +1931,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				// delete the fast way by using the PRIMARY KEY in an IN clause
 				NSMutableString *deleteQuery = [NSMutableString string];
 
-				[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [NSArrayObjectAtIndex(primaryKeyFieldNames,0) backtickQuotedString]]];
+				[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames safeObjectAtIndex:0] backtickQuotedString]]];
 
 				while (anIndex != NSNotFound) {
 
-					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:NSArrayObjectAtIndex(primaryKeyFieldNames,0)] objectForKey:@"datacolumnindex"] integerValue]];
+					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames safeObjectAtIndex:0]] objectForKey:@"datacolumnindex"] integerValue]];
 
 					if([keyValue isKindOfClass:[NSData class]])
 						[deleteQuery appendString:[mySQLConnection escapeAndQuoteData:keyValue]];
@@ -1951,7 +1951,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 						affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
 
 						// Reinit a new deletion query
-						[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [NSArrayObjectAtIndex(primaryKeyFieldNames,0) backtickQuotedString]]];
+						[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames safeObjectAtIndex:0] backtickQuotedString]]];
 					} else {
 						[deleteQuery appendString:@","];
 					}
@@ -4410,7 +4410,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// or bypass if numberOfPossibleUpdateRows == 1
 	if ([tableContentView isCellEditingMode]) {
 
-		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[NSArrayObjectAtIndex([tableContentView tableColumns], column) identifier] integerValue]];
+		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[[[tableContentView tableColumns] safeObjectAtIndex: column] identifier] integerValue]];
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 		
 		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
@@ -4455,7 +4455,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		NSAssert(fieldEditor == nil, @"Method should not to be called while a field editor sheet is open!");
 		// Call the field editor sheet
-		[self tableView:tableContentView shouldEditTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], column) row:row];
+		[self tableView:tableContentView shouldEditTableColumn:[[tableContentView tableColumns] safeObjectAtIndex: column] row:row];
 
 		// send current event to field editor sheet
 		if ([NSApp currentEvent]) {

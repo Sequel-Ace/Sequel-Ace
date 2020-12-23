@@ -149,8 +149,8 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	// Clear filter table
 	[filterTableView abortEditing];
 	while ([[filterTableView tableColumns] count]) {
-		[NSArrayObjectAtIndex([filterTableView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
-		[filterTableView removeTableColumn:NSArrayObjectAtIndex([filterTableView tableColumns], 0)];
+		[[[filterTableView tableColumns] safeObjectAtIndex: 0] setHeaderToolTip:nil]; // prevent crash #2414
+		[filterTableView removeTableColumn:[[filterTableView tableColumns] safeObjectAtIndex: 0]];
 	}
 	// Clear filter table data
 	[filterTableData removeAllObjects];
@@ -416,7 +416,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 			// Take filterTableData
 			if (!currentValue) {
-				filterCell = NSArrayObjectAtIndex([filterCellData objectForKey:SPTableContentFilterKey], i);
+				filterCell = [[filterCellData objectForKey:SPTableContentFilterKey] safeObjectAtIndex: i];
 			}
 			// Take last edited value to create the OR clause
 			else if (lookInAllFields) {
@@ -440,7 +440,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 					filterCell = (NSString*)currentValue;
 				}
 				else {
-					filterCell = NSArrayObjectAtIndex([filterCellData objectForKey:SPTableContentFilterKey], i);
+					filterCell = [[filterCellData objectForKey:SPTableContentFilterKey] safeObjectAtIndex: i];
 				}
 			}
 
@@ -570,10 +570,10 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 			return [[NSTableHeaderCell alloc] initTextCell:[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:@"name"]];
 		}
 
-		return NSArrayObjectAtIndex([[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:SPTableContentFilterKey], columnIndex - 1);
+		return [[[filterTableData objectForKey:[NSNumber numberWithInteger:rowIndex]] objectForKey:SPTableContentFilterKey] safeObjectAtIndex: columnIndex - 1];
 	}
 
-	return NSArrayObjectAtIndex([[filterTableData objectForKey:[tableColumn identifier]] objectForKey:SPTableContentFilterKey], rowIndex);
+	return [[[filterTableData objectForKey:[tableColumn identifier]] objectForKey:SPTableContentFilterKey] safeObjectAtIndex: rowIndex];
 }
 
 #pragma mark - TableView delegate methods

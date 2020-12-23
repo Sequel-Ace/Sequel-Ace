@@ -788,36 +788,36 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 			// No parent return the child by using the normal sort routine
 			if(!parentObject || ![parentObject isKindOfClass:NSDictionaryClass])
-				return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+				return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 
 			// Get the parent key name for storing
 			id parentKeys = [parentObject allKeysForObject:item];
 			if(parentKeys && [parentKeys count] == 1) {
 
-				NSString *itemRef = [NSArrayObjectAtIndex(parentKeys,0) description];
+				NSString *itemRef = [[parentKeys safeObjectAtIndex:0] description];
 
 				// For safety reasons
 				if(!itemRef)
-					return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+					return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 
 				// Not yet cached so do it
 				if(![cachedSortedKeys objectForKey:itemRef])
 					[cachedSortedKeys setObject:[allKeys sortedArrayUsingFunction:compareStrings context:nil] forKey:itemRef];
 
-				return [item objectForKey:NSArrayObjectAtIndex([cachedSortedKeys objectForKey:itemRef],childIndex)];
+				return [item objectForKey:[[cachedSortedKeys objectForKey:itemRef] safeObjectAtIndex:childIndex]];
 
 			}
 
 			// If something failed return the child by using the normal way
-			return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+			return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 
 		} else {
-			return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+			return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 		}
 	}
 	else if ([item isKindOfClass:[NSArray class]]) 
 	{
-		return NSArrayObjectAtIndex(item,childIndex);
+		return [item safeObjectAtIndex:childIndex];
 	}
 	return nil;
 
@@ -908,7 +908,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 				} else {
 					[[tableColumn dataCell] setImage:databaseIcon];
 				}
-				return [[NSArrayObjectAtIndex([parentObject allKeysForObject:item], 0) componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+				return [[[[parentObject allKeysForObject:item] safeObjectAtIndex: 0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 
 			} else {
 				id allKeysForItem = [parentObject allKeysForObject:item];
@@ -916,12 +916,12 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 					if([outlineView levelForItem:item] == 1) {
 						// It's a db name which wasn't queried yet
 						[[tableColumn dataCell] setImage:databaseIcon];
-						return [[NSArrayObjectAtIndex(allKeysForItem,0) componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+						return [[[allKeysForItem safeObjectAtIndex:0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 					} else {
 						// It's a field and use the key "  struct_type  " to increase the distance between node and first child
-						if(![NSArrayObjectAtIndex(allKeysForItem,0) hasPrefix:@"  "]) {
+						if(![[allKeysForItem safeObjectAtIndex:0] hasPrefix:@"  "]) {
 							[[tableColumn dataCell] setImage:fieldIcon];
-							return [[NSArrayObjectAtIndex([parentObject allKeysForObject:item], 0) componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+							return [[[[parentObject allKeysForObject:item] safeObjectAtIndex: 0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 						} else {
 							[[tableColumn dataCell] setImage:[NSImage imageNamed:@"dummy-small"]];
 							return nil;
