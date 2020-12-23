@@ -28,8 +28,6 @@
 
 // add tab button
 - (NSImage *)addTabButtonImage;
-- (NSImage *)addTabButtonPressedImage;
-- (NSImage *)addTabButtonRolloverImage;
 
 // cell specific parameters
 - (NSRect)dragRectForTabCell:(PSMTabBarCell *)cell orientation:(PSMTabBarOrientation)orientation;
