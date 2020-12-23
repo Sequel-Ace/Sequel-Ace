@@ -3287,7 +3287,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 
 		SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
-		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
 
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){

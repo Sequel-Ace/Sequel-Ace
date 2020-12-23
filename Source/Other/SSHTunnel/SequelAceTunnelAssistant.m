@@ -32,8 +32,9 @@
 
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
-#import "RegexKitLite.h"
 #import "SPConstants.h"
+#import "sequel-ace-Swift.h"
+
 
 int main(int argc, const char *argv[])
 {
@@ -134,12 +135,16 @@ int main(int argc, const char *argv[])
 			}
 		}
 
+
 		// Check whether we're being asked for a SSH key passphrase
 		if (argument && [[argument lowercaseString] rangeOfString:@"enter passphrase for"].location != NSNotFound ) {
 			NSString *passphrase;
-			NSString *keyName = [argument stringByMatching:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$" capture:1L];
 
-			if (keyName) {
+            NSString *keyName = [argument captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
+
+			if (keyName.length > 0) {
+
+                SPLog(@"keyName: %@", keyName);
 
 				// Check whether the passphrase is in the keychain, using standard OS X sshagent name and account
 				SPKeychain *keychain = [[SPKeychain alloc] init];
@@ -149,6 +154,9 @@ int main(int argc, const char *argv[])
 					return 0;
 				}
 			}
+            else{
+                SPLog(@"key not found in [%@]", argument);
+            }
 
 			// Not found in the keychain - we need to ask the GUI.
 

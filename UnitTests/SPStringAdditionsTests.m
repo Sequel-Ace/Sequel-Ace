@@ -118,6 +118,48 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 //	}];
 //}
 
+// 0.0383s
+- (void)testPerformance_stringByMatchingRegexSearch {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 1;
+
+        NSArray *randomSSHKeyArray = [self randomSSHKeyArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+
+                for(NSString *str in randomSSHKeyArray){
+                    NSString __unused *keyName = [str stringByMatching:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$" capture:1L];
+                }
+            }
+        }
+    }];
+}
+
+
+// 0.175s - 4 times slower than regexkit
+- (void)testPerformance_captureGroupForRegex {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 1;
+
+        NSArray *randomSSHKeyArray = [self randomSSHKeyArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+
+                for(NSString *str in randomSSHKeyArray){
+                    NSString __unused *keyName = [str captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
+                }
+            }
+        }
+    }];
+}
+
+
 - (void)testPerformance_RegexSearch {
 	// this is on main thread
 	[self measureBlock:^{
@@ -203,6 +245,20 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}
 	
 	return randomHistArray;
+}
+
+//      Enter passphrase for key 'NKQ4HJ66PX.sequel-ace.SequelAce-9432114299965393799':
+
+- (NSMutableArray *)randomSSHKeyArray {
+
+    NSMutableArray *randomSSHKeyArray = [NSMutableArray array];
+
+    for (int i = 0; i < 10000; i++) {
+        NSString *ran = [[NSProcessInfo processInfo] globallyUniqueString];
+        [randomSSHKeyArray addObject:[NSString stringWithFormat:@"%@%@':",@"      Enter passphrase for key '", ran]];
+    }
+
+    return randomSSHKeyArray;
 }
 
 - (void)testPerformance_StringWithString {

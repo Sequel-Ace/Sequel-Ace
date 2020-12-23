@@ -1177,7 +1177,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 						[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY" withString:@""];
 						[tip appendString:NSLocalizedString(@"\n\nPress ⇧ for binary search (case-sensitive).", @"\n\npress shift for binary search tooltip message")];
 					}
+                    // don't log here ... it's called hundreds of times.
 					[tip flushCachedRegexData];
+                    // the regex below is causing a crash:
+                    // https://console.firebase.google.com/u/0/project/com-sequel-ace/crashlytics/app/ios:com.sequel-ace.sequel-ace/issues/8754587eadf991cbb11ccc83b9fe0b5b
+                    // so I've added logging to RegexLite exception generation.
 					[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[[colNode name] backtickQuotedString]];
 					[tip flushCachedRegexData];
 					tooltip = [NSString stringWithString:tip];
