@@ -30,7 +30,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPKeychain.h"
-#import "SPOSInfo.h"
 
 #import <Security/Security.h>
 #import <CoreFoundation/CoreFoundation.h>
@@ -232,7 +231,7 @@
 {
 	// "kSecClassGenericPassword" was introduced with the 10.7 SDK.
 	// It won't work on 10.6 either (meaning this code never matches properly there).
-	if ([SPOSInfo isOSVersionAtLeastMajor:10 minor:7 patch:0] && [self isValidName:name acount:account]) {
+	if ([self isValidName:name acount:account]) {
 		NSMutableDictionary *query = [NSMutableDictionary dictionary];
 		
 		[query setObject:(id)kSecClassGenericPassword forKey:(id)kSecClass];

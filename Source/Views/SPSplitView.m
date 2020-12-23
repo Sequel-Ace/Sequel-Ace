@@ -30,7 +30,6 @@
 
 #import "SPSplitView.h"
 #import "SPDateAdditions.h"
-#import "SPOSInfo.h"
 #include <stdlib.h>
 
 @interface SPSplitView ()

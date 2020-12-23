@@ -48,7 +48,6 @@
 #import "SPBundleCommandRunner.h"
 #import "SPCopyTable.h"
 #import "SPSyntaxParser.h"
-#import "SPOSInfo.h"
 #import "SPTextView.h"
 #import <PSMTabBar/PSMTabBarControl.h>
 #import "SPFunctions.h"

@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPAboutController.h"
-#import "SPOSInfo.h"
 
 static NSString *SPSnapshotBuildIndicator = @"Beta";
 
