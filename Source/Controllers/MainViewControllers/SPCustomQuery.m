@@ -1714,7 +1714,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView didChangeText];
     [textView scrollRangeToVisible:NSMakeRange([query length], 0)];
     
-    if ([[textView string] length] < 15000) {
+    if ([[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
         [textView doSyntaxHighlightingWithForce:YES];
     }
 }

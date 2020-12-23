@@ -2338,7 +2338,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[super paste:sender];
 
 	// CMD+V - paste
-    if ([[self string] length] < 15000) {
+    if ([[self string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
         [self doSyntaxHighlightingWithForce:YES];
     }
 }
