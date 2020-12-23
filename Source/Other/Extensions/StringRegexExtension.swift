@@ -17,14 +17,15 @@ extension String {
     ///   - regex: The regular expression - must contain group captures. e.g. "^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"
     /// - Returns: The string matching the first group, or an empty string
     func captureGroup(regex: String) -> String {
-        let regexValid = try? NSRegularExpression(pattern: regex, options: [])
-        if let match = regexValid?.firstMatch(in: self, options: [], range: NSRange(self.startIndex..<self.endIndex, in: self)) {
-            if let groupRange = Range(match.range(at: 1), in: self) {
-                return String(self[groupRange])
-            }
+        guard
+            let regexValid = try? NSRegularExpression(pattern: regex, options: []),
+            let match = regexValid.firstMatch(in: self, options: [], range: NSRange(self.startIndex..<self.endIndex, in: self)),
+            let groupRange = Range(match.range(at: 1), in: self)
+        else{
+            return ""
         }
 
-        return ""
+        return String(self[groupRange])
     }
 }
 
