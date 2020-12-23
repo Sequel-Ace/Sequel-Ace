@@ -3349,8 +3349,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [control abortEditing];
         
         // Call the field editor sheet
-        [self tableView:customQueryView shouldEditTableColumn:NSArrayObjectAtIndex([customQueryView tableColumns], column) row:row];
-        
+        [self tableView:customQueryView shouldEditTableColumn:[[customQueryView tableColumns] safeObjectAtIndex:column] row:row];
         // send current event to field editor sheet
         if([NSApp currentEvent])
             [NSApp sendEvent:[NSApp currentEvent]];

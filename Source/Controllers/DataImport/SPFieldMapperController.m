@@ -1335,10 +1335,10 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	for(i=0; i < [tableHeaderNames count]; i++) {
 		CGFloat   dist     = 1e6f;
 		for(j=0; j < [fileHeaderNames count]; j++) {
-			id fileHeaderName = NSArrayObjectAtIndex(fileHeaderNames,j);
+            id fileHeaderName = [fileHeaderNames safeObjectAtIndex:j];
 			if([fileHeaderName isNSNull] || [fileHeaderName isSPNotLoaded]) continue;
 			NSString *headerName = [(NSString*)fileHeaderName lowercaseString];
-			NSString *tableHeadName = [NSArrayObjectAtIndex(tableHeaderNames,i) lowercaseString];
+			NSString *tableHeadName = [[tableHeaderNames safeObjectAtIndex:i] lowercaseString];
 			dist = [tableHeadName levenshteinDistanceWithWord:headerName];
 
 			// if dist > 0 subtract the length of common prefixes, suffixes, and in common sequence characters
@@ -1368,7 +1368,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[NSNumber numberWithFloat:dist], @"dist",
 				NSStringFromRange(NSMakeRange(i,j)), @"match",
 				(NSString*)fileHeaderName, @"file",
-				NSArrayObjectAtIndex(tableHeaderNames,i), @"table",
+                [tableHeaderNames safeObjectAtIndex:i], @"table",
 				nil]];
 
 		}
@@ -1676,8 +1676,8 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 				if(fieldMappingCurrentRow)
 					return [NSString stringWithFormat:@"%@: %@",
-													  [NSArrayObjectAtIndex([fieldMappingImportArray safeObjectAtIndex:0], [[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]) description],
-													  [NSArrayObjectAtIndex([fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow], [[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]) description]];
+													  [[[fieldMappingImportArray safeObjectAtIndex:0] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description],
+                                                       [[[fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description]];
 				else
 					return [NSArrayObjectAtIndex([fieldMappingImportArray safeObjectAtIndex:0], [[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]) description];
 

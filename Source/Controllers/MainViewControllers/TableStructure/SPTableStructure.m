@@ -1714,7 +1714,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Make sure that the operation is for the right table view
 	if (aTableView != tableSourceView) return;
 
-	NSMutableDictionary *currentRow = NSArrayObjectAtIndex(tableFields,rowIndex);
+    NSMutableDictionary *currentRow = [tableFields safeObjectAtIndex:rowIndex];
 
 	if (!isEditingRow) {
 		[oldRow setDictionary:currentRow];

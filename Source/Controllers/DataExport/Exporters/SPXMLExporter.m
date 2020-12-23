@@ -167,8 +167,7 @@
 	if ((!isTableExport) || (isTableExport && [self xmlOutputIncludeContent])) {
 	
 		// Set up an array of encoded field names as opening and closing tags
-		fieldNames = ([self xmlDataArray]) ? NSArrayObjectAtIndex([self xmlDataArray], 0) : [streamingResult fieldNames];
-		
+		fieldNames = ([self xmlDataArray]) ?  [[self xmlDataArray] safeObjectAtIndex:0] : [streamingResult fieldNames];
 		for (i = 0; i < [fieldNames count]; i++) 
 		{
 			[xmlTags addObject:[NSMutableArray array]];
@@ -207,7 +206,7 @@
 			
 			// Retrieve the next row from the supplied data, either directly from the array...
 			if ([self xmlDataArray]) {
-				xmlRow = NSArrayObjectAtIndex([self xmlDataArray], currentRowIndex);
+				xmlRow = [[self xmlDataArray] safeObjectAtIndex:currentRowIndex];
 			} 
 			// Or by reading an appropriate row from the streaming result
 			else {

@@ -357,7 +357,7 @@
 			// Determine whether raw data can be used for each column during processing - safe numbers and hex-encoded data.
 			for (NSUInteger j = 0; j < colCount; j++)
 			{
-				NSDictionary *theColumnDetail = NSArrayObjectAtIndex([tableDetails objectForKey:@"columns"], j);
+                NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
 				NSString *theTypeGrouping = [theColumnDetail objectForKey:@"typegrouping"];
 
 				// Start by setting the column as non-safe
@@ -490,7 +490,7 @@
 						}
 
 						// If the field is of type BIT, the values need a binary prefix of b'x'.
-						else if ([[NSArrayObjectAtIndex([tableDetails objectForKey:@"columns"], t) objectForKey:@"type"] isEqualToString:@"BIT"]) {
+                        else if ([[[[tableDetails safeObjectForKey:@"columns"] safeObjectAtIndex:t] safeObjectForKey:@"type"] isEqualToString:@"BIT"]) {
 							[sqlString appendFormat:@"b'%@'", [object description]];
 						}
 
@@ -873,7 +873,7 @@
 			
 			for (j = 0; j < [[column objectForKey:@"values"] count]; j++) 
 			{
-				[fieldString appendString:[connection escapeAndQuoteString:NSArrayObjectAtIndex([column objectForKey:@"values"], j)]];
+                [fieldString appendString:[connection escapeAndQuoteString:[[column safeObjectForKey:@"values"] safeObjectAtIndex:j]]];
 				if ((j + 1) != [[column objectForKey:@"values"] count]) {
 					[fieldString appendString:@","];
 				}

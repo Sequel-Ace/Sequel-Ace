@@ -225,8 +225,8 @@
 		// Retrieve the next row from the supplied data, either directly from the array...
 		BOOL forceNonNumericRow = NO;
 		if ([self csvDataArray]) {
-			csvRow = NSArrayObjectAtIndex([self csvDataArray], currentRowIndex);
-		} 
+            csvRow = [[self csvDataArray] safeObjectAtIndex:currentRowIndex];
+        }
 		// Or by reading an appropriate row from the streaming result
 		else {
 			// If still requested to read the field names, get the field names

@@ -3696,7 +3696,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	SPTreeNode *node = (item == nil ? favoritesRoot : (SPTreeNode *)item);
 
-	return NSArrayObjectAtIndex([node childNodes], childIndex);
+    return [[node childNodes] safeObjectAtIndex:childIndex];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item
