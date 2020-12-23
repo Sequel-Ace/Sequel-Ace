@@ -329,8 +329,8 @@
 /**
  * Retrieve the keychain item name for a supplied name and id.
  */
-- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
-	if (!favoriteName || favoriteName.length == 0 || !favoriteId || favoriteId.length == 0) {
+- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(id)favoriteId {
+	if (!favoriteName || favoriteName.length == 0 || !favoriteId) {
 		return nil;
 	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
@@ -350,8 +350,8 @@
 /**
  * Retrieve the keychain SSH item name for a supplied name and id.
  */
-- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId {
-    if (!favoriteName || favoriteName.length == 0 || !favoriteId || favoriteId.length == 0) {
+- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(id)favoriteId {
+    if (!favoriteName || favoriteName.length == 0 || !favoriteId) {
 		return nil;
 	}
 	// Look up the keychain name using long longs to support 64-bit > 32-bit keychain usage
