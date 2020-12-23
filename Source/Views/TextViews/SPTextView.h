@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #define SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING 10000
+#define SP_TEXT_SIZE_MAX_PASTE_LENGTH 15000
 
 @class SPNarrowDownCompletion;
 @class SPDatabaseDocument;

@@ -1713,7 +1713,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView setString:query];
     [textView didChangeText];
     [textView scrollRangeToVisible:NSMakeRange([query length], 0)];
-    [textView doSyntaxHighlightingWithForce:YES];
+    
+    if ([[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+        [textView doSyntaxHighlightingWithForce:YES];
+    }
 }
 
 #pragma mark -
@@ -2496,11 +2499,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Check if the field can identified bijectively
     if ( aTableView == customQueryView ) {
-        
-        // Nothing is editable while the field editor is running.
-        // This guards against a special case where accessibility services might
-        // check if a table field is editable while the sheet is running.
-        if (fieldEditor) return NO;
         
         NSDictionary *columnDefinition = [cqColumnDefinition objectAtIndex:[[aTableColumn identifier] integerValue]];
         
