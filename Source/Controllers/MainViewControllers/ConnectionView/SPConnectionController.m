@@ -303,7 +303,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// for increased security.
 	if (connectionKeychainItemName && !isTestingConnection) {
 		if ([[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount] isEqualToString:[self password]]) {
-			[self setPassword:[[NSString string] stringByPaddingToLength:[[self password] length] withString:@"sp" startingAtIndex:0]];
+			[self setPassword:@"SequelAceSecretPassword"];
 			
 			[[standardPasswordField undoManager] removeAllActionsWithTarget:standardPasswordField];
 			[[socketPasswordField undoManager] removeAllActionsWithTarget:socketPasswordField];
@@ -313,7 +313,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	if (connectionSSHKeychainItemName && !isTestingConnection) {
 		if ([[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount] isEqualToString:[self sshPassword]]) {
-			[self setSshPassword:[[NSString string] stringByPaddingToLength:[[self sshPassword] length] withString:@"sp" startingAtIndex:0]];
+			[self setSshPassword:@"SequelAceSecretPassword"];
 			[[sshSSHPasswordField undoManager] removeAllActionsWithTarget:sshSSHPasswordField];
 		}
 	}
@@ -2099,9 +2099,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			}
 		}
 
-		// Only set the password if there is no Keychain item set or the connection is being tested.
-		// The connection will otherwise ask the delegate for passwords in the Keychain.
-		if ((!connectionKeychainItemName || isTestingConnection) && [self password]) {
+		// Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
+		if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
 			[mySQLConnection setPassword:[self password]];
 		}
 		
@@ -2291,11 +2290,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	[sshTunnel setParentWindow:[dbDocument parentWindow]];
 
-	// Add keychain or plaintext password as appropriate - note the checks in initiateConnection.
-	if (connectionSSHKeychainItemName && !isTestingConnection) {
+    // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
+    if ((isTestingConnection || !connectionSSHKeychainItemName || (connectionSSHKeychainItemName && ![[self sshPassword] isEqualToString:@"SequelAceSecretPassword"])) && [self sshPassword]) {
+        [sshTunnel setPassword:[self sshPassword]];
+    } else if (connectionSSHKeychainItemName) {
 		[sshTunnel setPasswordKeychainName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
-	} else if (sshPassword) {
-		[sshTunnel setPassword:[self sshPassword]];
 	}
 
 	// Set the public key path if appropriate
