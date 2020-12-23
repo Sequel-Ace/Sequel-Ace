@@ -46,6 +46,7 @@
 #import "SPFunctions.h"
 #import "SPQueryController.h"
 #import "SPConstants.h"
+@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -947,8 +948,24 @@
 					[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 				});
 
-				// Set up index sets for use during row enumeration
-				for (i = 0; i < [fieldMappingArray count]; i++) {
+                // Set up index sets for use during row enumeration
+                NSUInteger fmaCount = fieldMappingArray.count;
+                NSUInteger fmoCount = fieldMapperOperator.count;
+
+                if(fmaCount >= fmoCount){
+                    SPLog(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
+                    CLS_LOG(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: [NSString stringWithFormat:@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]",(unsigned long)fmaCount, (unsigned long)fmoCount],
+                        @"fieldMappingArray.count":@(fmaCount),
+                        @"fieldMapperOperator.count": @(fmoCount),
+                    };
+
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"import" code:5 userInfo:userInfo]];
+                }
+
+				for (i = 0; i < fmaCount; i++) {
                     if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0) {
                         NSString *fieldName = [fieldMappingTableColumnNames safeObjectAtIndex:i];
 						if ([nullableNumericFields containsObject:fieldName]) {
@@ -963,7 +980,7 @@
 					NSString *fieldName;
 					[insertBaseString appendFormat:@"%@ (", [selectedTableTarget backtickQuotedString]];
 					insertBaseStringHasEntries = NO;
-					for (i = 0; i < [fieldMappingArray count]; i++) {
+					for (i = 0; i < fmaCount; i++) {
 						if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0) {
 							if (insertBaseStringHasEntries)
 								[insertBaseString appendString:@","];
