@@ -964,7 +964,6 @@ NSInteger intSort(id num1, id num2, void *context)
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
 
-        CLS_LOG(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
         SPLog(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
 
 		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];
