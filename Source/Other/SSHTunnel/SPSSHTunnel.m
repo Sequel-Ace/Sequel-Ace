@@ -33,7 +33,6 @@
 #import "SPSSHTunnel.h"
 #import "SPKeychain.h"
 #import "SPThreadAdditions.h"
-#import "SPOSInfo.h"
 #import "SPFileHandle.h"
 @import Firebase;
 

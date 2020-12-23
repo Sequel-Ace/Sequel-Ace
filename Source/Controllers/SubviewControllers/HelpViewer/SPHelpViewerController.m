@@ -31,7 +31,6 @@
 
 #import "SPHelpViewerController.h"
 
-#import "SPOSInfo.h"
 #import <WebKit/WebKit.h>
 #import "sequel-ace-Swift.h"
 
