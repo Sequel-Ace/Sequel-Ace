@@ -1283,8 +1283,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)commentOutCurrentQueryTakingSelection:(BOOL)takeSelection
 {
-    BOOL isUncomment = NO;
-    
     NSRange oldRange = [textView selectedRange];
     
     NSRange workingRange = oldRange;
@@ -1314,12 +1312,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [n replaceOccurrencesOfRegex:@"\\s*\\*/ \\*/\\s*\\Z" withString:@""];
         // unescape *\/
         [n replaceOccurrencesOfRegex:@"\\*\\\\/" withString:@"*/"];
-        isUncomment = YES;
     }
     
     // Replace current query/selection by (un)commented string
     [textView insertText:[[NSAttributedString alloc] initWithString:n] replacementRange:workingRange];
-    [textView setSelectedRange:NSMakeRange(workingRange.location,n.length)];
+    [textView setSelectedRange:NSMakeRange(workingRange.location, n.length)];
 }
 
 /**
