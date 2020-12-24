@@ -2529,9 +2529,20 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 
+        NSDictionary *userInfo = @{
+            NSLocalizedDescriptionKey: @"deriveQueryString fieldValue is nil",
+            @"rowObject":[rowObject description],
+        };
+        
+        if (fieldValue == nil || [fieldValue isNSNull]){
+            CLS_LOG(@"fieldValue is nil: %@", fieldValue);
+            SPLog(@"fieldValue is nil: %@", fieldValue);
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:6 userInfo:userInfo]];
+        }
+
 		// Store the key and value in the ordered arrays for saving.
-		[rowFieldsToSave addObject:[fieldDefinition objectForKey:@"name"]];
-		[rowValuesToSave addObject:fieldValue];
+		[rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
+		[rowValuesToSave safeAddObject:fieldValue];
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];

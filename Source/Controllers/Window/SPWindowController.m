@@ -35,8 +35,8 @@
 #import "SPConnectionController.h"
 #import "SPFavoritesOutlineView.h"
 
-#import <PSMTabBar/PSMTabBarControl.h>
-#import <PSMTabBar/PSMTabStyle.h>
+#import "PSMTabBarControl.h"
+#import "PSMTabStyle.h"
 
 @interface SPWindowController ()
 

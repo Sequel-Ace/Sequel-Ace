@@ -32,8 +32,6 @@
     NSImage *sequelProCloseDirtyButtonDown;
     NSImage *sequelProCloseDirtyButtonOver;
     NSImage *_addTabButtonImage;
-    NSImage *_addTabButtonPressedImage;
-    NSImage *_addTabButtonRolloverImage;
 	
 	NSDictionary *_objectCountStringAttributes;
 	
