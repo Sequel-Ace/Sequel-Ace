@@ -141,8 +141,10 @@
 			NSString *charsetId     = [encoding objectForKey:@"CHARACTER_SET_NAME"];
 			NSString *description   = [encoding objectForKey:@"DESCRIPTION"];
 			NSString *menuItemTitle = (![description length]) ? charsetId : [NSString stringWithFormat:@"%@ (%@)", description, charsetId];
-			
-			NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:menuItemTitle action:NULL keyEquivalent:@""];
+
+            // initWithTitle param cannot be nil
+            // This value must not be nil (if there is no title, specify an empty NSString).
+            NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:(menuItemTitle) ? : @"" action:NULL keyEquivalent:@""];
 			[menuItem setRepresentedObject:charsetId];
 			
 			//store the menu item that we want to select (we'll do that when the list is stable)

@@ -167,14 +167,13 @@
 	if ((!isTableExport) || (isTableExport && [self xmlOutputIncludeContent])) {
 	
 		// Set up an array of encoded field names as opening and closing tags
-		fieldNames = ([self xmlDataArray]) ? NSArrayObjectAtIndex([self xmlDataArray], 0) : [streamingResult fieldNames];
-		
+		fieldNames = ([self xmlDataArray]) ?  [[self xmlDataArray] safeObjectAtIndex:0] : [streamingResult fieldNames];
 		for (i = 0; i < [fieldNames count]; i++) 
 		{
 			[xmlTags addObject:[NSMutableArray array]];
 			
-			[NSArrayObjectAtIndex(xmlTags, i) addObject:[NSString stringWithFormat:@"\t\t<%@>", [[NSArrayObjectAtIndex(fieldNames, i) description] HTMLEscapeString]]];
-			[NSArrayObjectAtIndex(xmlTags, i) addObject:[NSString stringWithFormat:@"</%@>\n", [[NSArrayObjectAtIndex(fieldNames, i) description] HTMLEscapeString]]];
+			[[xmlTags safeObjectAtIndex:i] addObject:[NSString stringWithFormat:@"\t\t<%@>", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]]];
+			[[xmlTags safeObjectAtIndex:i] addObject:[NSString stringWithFormat:@"</%@>\n", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]]];
 		}
 		
 		// If required, write an opening tag in the form of the table name
@@ -207,7 +206,7 @@
 			
 			// Retrieve the next row from the supplied data, either directly from the array...
 			if ([self xmlDataArray]) {
-				xmlRow = NSArrayObjectAtIndex([self xmlDataArray], currentRowIndex);
+				xmlRow = [[self xmlDataArray] safeObjectAtIndex:currentRowIndex];
 			} 
 			// Or by reading an appropriate row from the streaming result
 			else {
@@ -234,7 +233,7 @@
 				}
 				
 				BOOL dataIsNULL = NO;
-				id data = NSArrayObjectAtIndex(xmlRow, i);
+				id data = [xmlRow safeObjectAtIndex:i];
 				
 				// Retrieve the contents of this tag
 				if ([data isKindOfClass:[NSData class]]) {
@@ -263,7 +262,7 @@
 				}
 				
 				if ([self xmlFormat] == SPXMLExportMySQLFormat) {
-					[xmlString appendFormat:@"\t\t<field name=\"%@\"", [[NSArrayObjectAtIndex(fieldNames, i) description] HTMLEscapeString]];
+					[xmlString appendFormat:@"\t\t<field name=\"%@\"", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]];
 					
 					if (dataIsNULL) {
 						[xmlString appendString:@" xsi:nil=\"true\" />\n"];
@@ -272,12 +271,12 @@
 						[xmlString appendFormat:@">%@</field>\n", [xmlItem HTMLEscapeString]];
 					}
 				}
-				else if ([self xmlFormat] == SPXMLExportPlainFormat) {
-					// Add the opening and closing tag and the contents to the XML string
-					[xmlString appendString:NSArrayObjectAtIndex(NSArrayObjectAtIndex(xmlTags, i), 0)];
-					[xmlString appendString:[xmlItem HTMLEscapeString]];
-					[xmlString appendString:NSArrayObjectAtIndex(NSArrayObjectAtIndex(xmlTags, i), 1)];
-				}
+                else if ([self xmlFormat] == SPXMLExportPlainFormat) {
+                    // Add the opening and closing tag and the contents to the XML string
+                    [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:0]];
+                    [xmlString appendString:[xmlItem HTMLEscapeString]];
+                    [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:1]];
+                }
 			}
 			
 			[xmlString appendString:@"\t</row>\n\n"];

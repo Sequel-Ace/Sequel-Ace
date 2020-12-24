@@ -776,7 +776,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 [progressUpdater setQueryProgress:qp];
             }
             
-            NSString *query = [NSArrayObjectAtIndex(queries, i) stringByTrimmingCharactersInSet:whitespaceAndNewlineSet];
+            NSString *query = [[queries safeObjectAtIndex:i] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet];
             
             // Don't run blank queries, or queries which only contain whitespace.
             if (![query length]) continue;
@@ -1138,7 +1138,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // the extra semicolon at the end of each query
     for (i = 0; i < queryCount; i++ ) {
         
-        queryRange = [NSArrayObjectAtIndex(queries, i) rangeValue];
+        queryRange = [[queries safeObjectAtIndex:i] rangeValue];
         queryPosition = NSMaxRange(queryRange);
         queryStartPosition = queryRange.location;
         
@@ -1155,7 +1155,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (position == queryStartPosition) positionAssociatedWithPreviousQuery = YES;
                 
                 // If the caret is in between a user-defined delimiter whose length is >1, always associate
-                if (!positionAssociatedWithPreviousQuery && i && NSMaxRange([NSArrayObjectAtIndex(queries, i-1) rangeValue]) < position && position < queryStartPosition) positionAssociatedWithPreviousQuery = YES;
+                if (!positionAssociatedWithPreviousQuery && i && NSMaxRange([[queries safeObjectAtIndex:i-1] rangeValue]) < position && position < queryStartPosition) positionAssociatedWithPreviousQuery = YES;
                 
                 // Otherwise associate if only whitespace since previous, and a newline before next.
                 if (!positionAssociatedWithPreviousQuery) {
@@ -1175,7 +1175,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 }
                 
                 // If there is a previous query and the position should be associated with it, do so.
-                if (i && positionAssociatedWithPreviousQuery && [[[[textView string] substringWithRange:[NSArrayObjectAtIndex(queries, i-1) rangeValue]] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet] length]) {
+                if (i && positionAssociatedWithPreviousQuery && [[[[textView string] substringWithRange:[[queries safeObjectAtIndex:i-1] rangeValue]] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet] length]) {
                     queryRange = [[queries objectAtIndex:i-1] rangeValue];
                     break;
                 }
@@ -1713,7 +1713,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView setString:query];
     [textView didChangeText];
     [textView scrollRangeToVisible:NSMakeRange([query length], 0)];
-    [textView doSyntaxHighlightingWithForce:YES];
+    
+    if ([[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+        [textView doSyntaxHighlightingWithForce:YES];
+    }
 }
 
 #pragma mark -
@@ -1731,8 +1734,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Remove all existing columns from the table
     theColumns = [customQueryView tableColumns];
     while ([theColumns count]) {
-        [NSArrayObjectAtIndex(theColumns, 0) setHeaderToolTip:nil]; // prevent crash #2414
-        [customQueryView removeTableColumn:NSArrayObjectAtIndex(theColumns, 0)];
+        [[theColumns safeObjectAtIndex:0] setHeaderToolTip:nil]; // prevent crash #2414
+        [customQueryView removeTableColumn:[theColumns safeObjectAtIndex:0]];
     }
     
     // Update font size on the table
@@ -2497,11 +2500,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Check if the field can identified bijectively
     if ( aTableView == customQueryView ) {
         
-        // Nothing is editable while the field editor is running.
-        // This guards against a special case where accessibility services might
-        // check if a table field is editable while the sheet is running.
-        if (fieldEditor) return NO;
-        
         NSDictionary *columnDefinition = [cqColumnDefinition objectAtIndex:[[aTableColumn identifier] integerValue]];
         
         // Check if current field is a blob
@@ -2647,7 +2645,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Retrieve the original index of the column from the identifier
     NSInteger columnIndex = [[[[aNotification userInfo] objectForKey:@"NSTableColumn"] identifier] integerValue];
-    NSDictionary *columnDefinition = NSArrayObjectAtIndex(cqColumnDefinition, columnIndex);
+    NSDictionary *columnDefinition = [cqColumnDefinition safeObjectAtIndex:columnIndex];
     NSString *table = [columnDefinition objectForKey:@"org_table"];
     NSString *col = [columnDefinition objectForKey:@"org_name"];
     
@@ -3303,7 +3301,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     if(!columnDefinition) return NO;
     
     NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:column];
-    NSInteger numberOfPossibleUpdateRows = [NSArrayObjectAtIndex(editStatus, 0) integerValue];
+    NSInteger numberOfPossibleUpdateRows = [[editStatus safeObjectAtIndex:0] integerValue];
     
     NSPoint customQueryViewPoint = [customQueryView convertPoint:[customQueryView frameOfCellAtColumn:column row:row].origin toView:nil];
     NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(customQueryViewPoint.x, customQueryViewPoint.y, 0,0)];
@@ -3351,8 +3349,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [control abortEditing];
         
         // Call the field editor sheet
-        [self tableView:customQueryView shouldEditTableColumn:NSArrayObjectAtIndex([customQueryView tableColumns], column) row:row];
-        
+        [self tableView:customQueryView shouldEditTableColumn:[[customQueryView tableColumns] safeObjectAtIndex:column] row:row];
         // send current event to field editor sheet
         if([NSApp currentEvent])
             [NSApp sendEvent:[NSApp currentEvent]];

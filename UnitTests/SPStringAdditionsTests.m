@@ -33,6 +33,7 @@
 #import "RegexKitLite.h"
 #import "SPArrayAdditions.h"
 #import "sequel-ace-Swift.h"
+#import "SPTestingUtils.h"
 
 #import <XCTest/XCTest.h>
 
@@ -118,13 +119,55 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 //	}];
 //}
 
+// 0.0383s
+- (void)testPerformance_stringByMatchingRegexSearch {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 1;
+
+        NSArray *randomSSHKeyArray = [SPTestingUtils randomSSHKeyArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+
+                for(NSString *str in randomSSHKeyArray){
+                    NSString __unused *keyName = [str stringByMatching:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$" capture:1L];
+                }
+            }
+        }
+    }];
+}
+
+
+// 0.175s - 4 times slower than regexkit
+- (void)testPerformance_captureGroupForRegex {
+    // this is on main thread
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 1;
+
+        NSArray *randomSSHKeyArray = [SPTestingUtils randomSSHKeyArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+
+                for(NSString *str in randomSSHKeyArray){
+                    NSString __unused *keyName = [str captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
+                }
+            }
+        }
+    }];
+}
+
+
 - (void)testPerformance_RegexSearch {
 	// this is on main thread
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1;
 		
-		NSArray *queryHist = [self randomHistArray];
+		NSArray *queryHist = [SPTestingUtils randomHistArray];
 		
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
@@ -138,88 +181,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}];
 }
 
-// MARK: pretty much no difference between these methods
-// so I don't know why we are using NSArrayObjectAtIndex all over.
-// should switch to objectOrNilAtIndex for safety
-
-// 0.0263s
-- (void)testPerformanceNSArrayObjectAtIndex {
-	// this is on main thread
-	[self measureBlock:^{
-		// Put the code you want to measure the time of here.
-		int const iterations = 10000;
-		
-		NSArray *queryHist = [self randomHistArray];
-		
-		for (int i = 0; i < iterations; i++) {
-			@autoreleasepool {
-                id __unused ret = NSArrayObjectAtIndex(queryHist, i);
-			}
-		}
-	}];
-}
-
-//0.0259
-- (void)testPerformance_NormalNSArrayObjectAtIndex {
-    // this is on main thread
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-        int const iterations = 10000;
-
-        NSArray *queryHist = [self randomHistArray];
-
-        for (int i = 0; i < iterations; i++) {
-            @autoreleasepool {
-                id __unused ret = [queryHist objectAtIndex:i];
-            }
-        }
-    }];
-}
-//0.0259
-- (void)testPerformance_NormalNSArrayObjectOrNilAtIndex {
-    // this is on main thread
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-        int const iterations = 10000;
-
-        NSArray *queryHist = [NSArray arrayWithArray:[self randomHistArray]];
-
-        for (NSUInteger i = 0; i < iterations; i++) {
-            @autoreleasepool {
-                id __unused ret = [queryHist objectOrNilAtIndex:i];
-            }
-        }
-    }];
-}
-
-// 0.0264
-- (void)testPerformance_safeObjectAtIndex {
-    // this is on main thread
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-        int const iterations = 10000;
-
-        NSArray *queryHist = [NSArray arrayWithArray:[self randomHistArray]];
-
-        for (NSUInteger i = 0; i < iterations; i++) {
-            @autoreleasepool {
-                id __unused ret = [queryHist safeObjectAtIndex:i];
-            }
-        }
-    }];
-}
-
-- (NSMutableArray *)randomHistArray {
-	
-	NSMutableArray *randomHistArray = [NSMutableArray array];
-	
-	for (int i = 0; i < 10000; i++) {
-		NSString *ran = [[NSProcessInfo processInfo] globallyUniqueString];
-		[randomHistArray addObject:[NSString stringWithFormat:@"%@%@'",@"select * from '", ran]];
-	}
-	
-	return randomHistArray;
-}
 
 - (void)testPerformance_StringWithString {
 	// this is on main thread

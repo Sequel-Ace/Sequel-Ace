@@ -30,7 +30,6 @@
 
 #import "SPFunctions.h"
 #import <Security/SecRandom.h>
-#import "SPOSInfo.h"
 #import <objc/runtime.h>
 
 void SPMainQSync(void (^block)(void))

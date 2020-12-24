@@ -106,6 +106,12 @@
     return aRect;
 }
 
+- (void)layout {
+    [_addTabButton setUsualImage:[style addTabButtonImage]];
+    
+    [super layout];
+}
+
 #pragma mark -
 #pragma mark Constructor/destructor
 
@@ -162,14 +168,6 @@
         NSImage *newButtonImage = [style addTabButtonImage];
         if (newButtonImage) {
             [_addTabButton setUsualImage:newButtonImage];
-        }
-        newButtonImage = [style addTabButtonPressedImage];
-        if (newButtonImage) {
-            [_addTabButton setAlternateImage:newButtonImage];
-        }
-        newButtonImage = [style addTabButtonRolloverImage];
-        if (newButtonImage) {
-            [_addTabButton setRolloverImage:newButtonImage];
         }
         [_addTabButton setTitle:@""];
         [_addTabButton setImagePosition:NSImageOnly];
@@ -329,16 +327,6 @@
             NSImage *newButtonImage = [style addTabButtonImage];
             if (newButtonImage) {
                 [_addTabButton setUsualImage:newButtonImage];
-            }
-            
-            newButtonImage = [style addTabButtonPressedImage];
-            if (newButtonImage) {
-                [_addTabButton setAlternateImage:newButtonImage];
-            }
-            
-            newButtonImage = [style addTabButtonRolloverImage];
-            if (newButtonImage) {
-                [_addTabButton setRolloverImage:newButtonImage];
             }
         }
         

@@ -48,6 +48,7 @@
 #import "SPPillAttachmentCell.h"
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
+@import Firebase;
 
 #import "sequel-ace-Swift.h"
 
@@ -1380,8 +1381,24 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			for (NSDictionary *encoding in encodings)
 			{
-				NSString *encodingName = [encoding objectForKey:@"CHARACTER_SET_NAME"];
-				NSString *title = (![encoding objectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], encodingName];
+				NSString *encodingName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
+				NSString *title = (![encoding safeObjectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding safeObjectForKey:@"DESCRIPTION"], encodingName];
+
+                if(title == nil || [title isNSNull]){
+                    SPLog(@"title is nil");
+                    CLS_LOG(@"title is nil");
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"loadTable: title is nil, check CHARACTER_SET_NAME",
+                        @"encodingName":encodingName,
+                        @"encoding": encoding,
+                    };
+
+                    // default to empty string?
+                    title = @"";
+
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:7 userInfo:userInfo]];
+                }
 
 				[self->encodingPopupCell addItemWithTitle:title];
 				NSMenuItem *item = [self->encodingPopupCell lastItem];
@@ -1410,9 +1427,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// MySQL 5.7 manual:
 			// "MySQL handles strings used in JSON context using the utf8mb4 character set and utf8mb4_bin collation.
 			//  Strings in other character set are converted to utf8mb4 as necessary."
-			[theField setObject:@"utf8mb4" forKey:@"encodingName"];
-			[theField setObject:@"utf8mb4_bin" forKey:@"collationName"];
-			[theField setObject:@1 forKey:@"binary"];
+			[theField safeSetObject:@"utf8mb4" forKey:@"encodingName"];
+			[theField safeSetObject:@"utf8mb4_bin" forKey:@"collationName"];
+			[theField safeSetObject:@1 forKey:@"binary"];
 		}
 		else if ([fieldValidation isFieldTypeString:type]) {
 			// The MySQL 4.1 manual says:
@@ -1447,9 +1464,20 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 
 			// MySQL < 4.1 does not support collations (they are part of the charset), it will be nil there
-
-			[theField setObject:encoding forKey:@"encodingName"];
-			[theField setObject:collation forKey:@"collationName"];
+            if(collation != nil){
+                [theField safeSetObject:collation forKey:@"collationName"];
+            }
+            else{
+                SPLog(@"collation was nil");
+                CLS_LOG(@"collation was nil");
+            }
+            if(encoding != nil){
+                [theField safeSetObject:encoding forKey:@"encodingName"];
+            }
+            else{
+                SPLog(@"encoding was nil");
+                CLS_LOG(@"encoding was nil");
+            }
 
 			// Set BINARY if collation ends with _bin for convenience
 			if ([collation hasSuffix:@"_bin"]) {
@@ -1618,7 +1646,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Return a placeholder if the table is reloading
 	if ((NSUInteger)rowIndex >= [tableFields count]) return @"...";
 
-	NSDictionary *rowData = NSArrayObjectAtIndex(tableFields, rowIndex);
+	NSDictionary *rowData = [tableFields safeObjectAtIndex:rowIndex];
 
 	if ([[tableColumn identifier] isEqualToString:@"collation"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
@@ -1702,7 +1730,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Make sure that the operation is for the right table view
 	if (aTableView != tableSourceView) return;
 
-	NSMutableDictionary *currentRow = NSArrayObjectAtIndex(tableFields,rowIndex);
+    NSMutableDictionary *currentRow = [tableFields safeObjectAtIndex:rowIndex];
 
 	if (!isEditingRow) {
 		[oldRow setDictionary:currentRow];
@@ -2075,7 +2103,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	else {
 		// Validate cell against current field type
 		NSString *rowType;
-		NSDictionary *row = NSArrayObjectAtIndex(tableFields, rowIndex);
+		NSDictionary *row = [tableFields safeObjectAtIndex:rowIndex];
 
 		if ((rowType = [row objectForKey:@"type"])) {
 			rowType = [[rowType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
@@ -2172,7 +2200,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (id)comboBoxCell:(NSComboBoxCell *)aComboBoxCell objectValueForItemAtIndex:(NSInteger)index
 {
-	return NSArrayObjectAtIndex(typeSuggestions, index);
+	return [typeSuggestions safeObjectAtIndex:index];
 }
 
 - (NSInteger)numberOfItemsInComboBoxCell:(NSComboBoxCell *)aComboBoxCell
@@ -2227,7 +2255,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)_displayFieldTypeHelpIfPossible:(SPComboBoxCell *)cell
 {
-	NSString *selected = [typeSuggestions objectOrNilAtIndex:[cell indexOfSelectedItem]];
+	NSString *selected = [typeSuggestions safeObjectAtIndex:[cell indexOfSelectedItem]];
 
 	const SPFieldTypeHelp *help = [[self class] helpForFieldType:selected];
 
@@ -2311,7 +2339,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	NSDictionary *rowData = NSArrayObjectAtIndex(tableFields, [tableSourceView selectedRow]);
+	NSDictionary *rowData = [tableFields safeObjectAtIndex:[tableSourceView selectedRow]];
 
 	if([[menu menuId] isEqualToString:@"encodingPopupMenu"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];

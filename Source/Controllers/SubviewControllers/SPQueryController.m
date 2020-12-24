@@ -175,7 +175,7 @@ static SPQueryController *sharedQueryController = nil;
 	
 	[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
 		if (i < [messagesVisibleSet count]) {
-			SPConsoleMessage *message = NSArrayObjectAtIndex(messagesVisibleSet, i);
+			SPConsoleMessage *message = [messagesVisibleSet safeObjectAtIndex:i];
 			
 			if (includeTimestamps || includeConnections || includeDatabases) [string appendString:@"/* "];
 			
@@ -964,7 +964,6 @@ NSInteger intSort(id num1, id num2, void *context)
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
 
-        CLS_LOG(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
         SPLog(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
 
 		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];

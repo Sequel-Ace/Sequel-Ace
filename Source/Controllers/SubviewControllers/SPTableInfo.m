@@ -196,8 +196,20 @@
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:[[tableStatus objectForKey:@"Data_length"] longLongValue]]]];
 			}
 
+            if([[tableStatus objectForKey:@"Collation"] isNSNull]){
+                NSDictionary *userInfo = @{
+                    NSLocalizedDescriptionKey: @"tableStatus Collation is NSNull" ,
+                    @"serverVersion" : tableDocumentInstance.mySQLVersion,
+                };
+
+                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
+            }
+
+            SPLog(@"tableStatus: %@", tableStatus);
+            CLS_LOG(@"tableStatus: %@", tableStatus);
+
 			NSString *tableEnc = [tableDataInstance tableEncoding];
-			NSString *tableColl = [tableStatus objectForKey:@"Collation"];
+			NSString *tableColl = [tableStatus safeObjectForKey:@"Collation"];
 
 			if([tableColl length]) {
 				// instead of @"latin1 (latin1_german_ci)" we can just show @"latin1 (german_ci)"
@@ -349,7 +361,7 @@
 			return NSLocalizedString(@"ACTIVITIES", @"header for activities pane");
 		}
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
-			NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
+            NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
 			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init];
 			
 			[c setActivityName:[[dict objectForKey:@"contextInfo"] objectForKey:@"name"]];
@@ -429,9 +441,8 @@
 			return NSLocalizedString(@"Cancel", @"cancel");
 		}
 
-		NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
-		
-		if ([[dict objectForKey:@"contextInfo"] objectForKey:@"name"]) {
+        NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
+		if ([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"]) {
 			return [[dict objectForKey:@"contextInfo"] objectForKey:@"name"];
 		}
 		
