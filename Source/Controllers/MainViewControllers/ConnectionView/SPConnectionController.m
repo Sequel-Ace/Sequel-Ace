@@ -81,6 +81,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL isEditingConnection;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
+@property (readwrite, assign) BOOL errorShowing;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (BOOL)_checkHost;
@@ -169,6 +170,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize socketHelpWindowUUID;
 @synthesize isConnecting;
 @synthesize isEditingConnection;
+@synthesize errorShowing;
 
 + (void)initialize {
 }
@@ -284,6 +286,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Basic details have validated - start the connection process animating
 	isConnecting = YES;
 	cancellingConnection = NO;
+    errorShowing = NO;
 
 	// Disable the favorites outline view to prevent further connections attempts
 	[favoritesOutlineView setEnabled:NO];
@@ -2423,6 +2426,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail rawErrorText:(NSString *)rawErrorText
 {
+    if(errorShowing == YES){
+        SPLog(@"errorShowing already, returning.");
+        return;
+    }
+
 	BOOL isSSHTunnelBindError = NO;
 
 	[self _restoreConnectionInterface];
@@ -2459,6 +2467,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Only display the connection error message if there is a window visible
 	if ([[dbDocument parentWindow] isVisible]) {
+        errorShowing = YES;
 		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:theTitle];
 		[alert setInformativeText:errorMessage];
@@ -2484,6 +2493,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			// Initiate the connection after a half second delay to give the connection view a chance to resize
 			[self performSelector:@selector(initiateConnection:) withObject:self afterDelay:0.5];
 		}
+
+        errorShowing = NO;
 
 		// we're not connecting anymore, it failed.
 		isConnecting = NO;
