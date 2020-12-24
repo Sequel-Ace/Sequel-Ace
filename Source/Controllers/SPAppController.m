@@ -49,7 +49,7 @@
 #import "SPCopyTable.h"
 #import "SPSyntaxParser.h"
 #import "SPTextView.h"
-#import <PSMTabBar/PSMTabBarControl.h>
+#import "PSMTabBarControl.h"
 #import "SPFunctions.h"
 #import "SPBundleManager.h"
 

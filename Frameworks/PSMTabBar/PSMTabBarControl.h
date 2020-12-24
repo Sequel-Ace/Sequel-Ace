@@ -20,7 +20,7 @@
 
 // internal cell border
 #define MARGIN_X        6
-#define MARGIN_Y        6
+#define MARGIN_Y        5
 
 // padding between objects
 #define kPSMTabBarCellPadding 4
