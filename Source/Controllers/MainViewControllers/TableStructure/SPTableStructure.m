@@ -1381,8 +1381,24 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			for (NSDictionary *encoding in encodings)
 			{
-				NSString *encodingName = [encoding objectForKey:@"CHARACTER_SET_NAME"];
-				NSString *title = (![encoding objectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], encodingName];
+				NSString *encodingName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
+				NSString *title = (![encoding safeObjectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding safeObjectForKey:@"DESCRIPTION"], encodingName];
+
+                if(title == nil || [title isNSNull]){
+                    SPLog(@"title is nil");
+                    CLS_LOG(@"title is nil");
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"loadTable: title is nil, check CHARACTER_SET_NAME",
+                        @"encodingName":encodingName,
+                        @"encoding": encoding,
+                    };
+
+                    // default to empty string?
+                    title = @"";
+
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:7 userInfo:userInfo]];
+                }
 
 				[self->encodingPopupCell addItemWithTitle:title];
 				NSMenuItem *item = [self->encodingPopupCell lastItem];
