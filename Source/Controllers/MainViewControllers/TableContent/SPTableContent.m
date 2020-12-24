@@ -3981,6 +3981,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSString *database = [NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]];
 	NSString *table = [tablesListInstance tableName];
 
+
+    if (database == nil || table == nil){
+        CLS_LOG(@"database or table is nil");
+        SPLog(@"database or table is nil");
+        NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] initWithCapacity:3];
+
+        [userInfo setObject:@"tableViewColumnDidResize: database or table is nil" forKey:NSLocalizedDescriptionKey];
+        [userInfo safeSetObject:@"database" forKey:database];
+        [userInfo safeSetObject:@"table" forKey:table];
+
+        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:8 userInfo:userInfo]];
+    }
+
 	// Get tableColumnWidths object
 	if ([prefs objectForKey:SPTableColumnWidths] != nil ) {
 		tableColumnWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
@@ -3990,25 +4003,25 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	// Get the database object
-	if  ([tableColumnWidths objectForKey:database] == nil) {
-		[tableColumnWidths setObject:[NSMutableDictionary dictionary] forKey:database];
+	if  ([tableColumnWidths safeObjectForKey:database] == nil) {
+		[tableColumnWidths safeSetObject:[NSMutableDictionary dictionary] forKey:database];
 	}
 	else {
-		[tableColumnWidths setObject:[NSMutableDictionary dictionaryWithDictionary:[tableColumnWidths objectForKey:database]] forKey:database];
+		[tableColumnWidths safeSetObject:[NSMutableDictionary dictionaryWithDictionary:[tableColumnWidths safeObjectForKey:database]] forKey:database];
 	}
 
 	// Get the table object
-	if  ([[tableColumnWidths objectForKey:database] objectForKey:table] == nil) {
-		[[tableColumnWidths objectForKey:database] setObject:[NSMutableDictionary dictionary] forKey:table];
+	if  ([[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table] == nil) {
+		[[tableColumnWidths safeObjectForKey:database] safeSetObject:[NSMutableDictionary dictionary] forKey:table];
 	}
 	else {
-		[[tableColumnWidths objectForKey:database] setObject:[NSMutableDictionary dictionaryWithDictionary:[[tableColumnWidths objectForKey:database] objectForKey:table]] forKey:table];
+		[[tableColumnWidths safeObjectForKey:database] safeSetObject:[NSMutableDictionary dictionaryWithDictionary:[[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table]] forKey:table];
 	}
 
 	// Save column size
-	[[[tableColumnWidths objectForKey:database] objectForKey:table]
-	 setObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[notification userInfo] objectForKey:@"NSTableColumn"] width]]
-	 forKey:[[[[notification userInfo] objectForKey:@"NSTableColumn"] headerCell] stringValue]];
+	[[[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table]
+     safeSetObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[notification userInfo] safeObjectForKey:@"NSTableColumn"] width]]
+	 forKey:[[[[notification userInfo] safeObjectForKey:@"NSTableColumn"] headerCell] stringValue]];
 	[prefs setObject:tableColumnWidths forKey:SPTableColumnWidths];
 }
 
