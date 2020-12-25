@@ -1283,8 +1283,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)commentOutCurrentQueryTakingSelection:(BOOL)takeSelection
 {
-    BOOL isUncomment = NO;
-    
     NSRange oldRange = [textView selectedRange];
     
     NSRange workingRange = oldRange;
@@ -1314,17 +1312,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [n replaceOccurrencesOfRegex:@"\\s*\\*/ \\*/\\s*\\Z" withString:@""];
         // unescape *\/
         [n replaceOccurrencesOfRegex:@"\\*\\\\/" withString:@"*/"];
-        isUncomment = YES;
     }
     
     // Replace current query/selection by (un)commented string
-    [textView setSelectedRange:workingRange];
-    [textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:n]];
-    
-    // If commenting out locate the caret just after the first /* to allow to enter
-    // something like /*!400000 or similar
-    if(!isUncomment)
-        [textView setSelectedRange:NSMakeRange(workingRange.location+2,0)];
+    [textView insertText:[[NSAttributedString alloc] initWithString:n] replacementRange:workingRange];
+    [textView setSelectedRange:NSMakeRange(workingRange.location, n.length)];
 }
 
 /**
@@ -1344,6 +1336,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // get the current line range
         NSRange lineRange = [[textView string] lineRangeForRange:oldRange];
         NSMutableString *n = [NSMutableString string];
+        NSUInteger offsetForPointer = 3;
         
         // Put "-- " in front of the current line
         [n setString:[NSString stringWithFormat:@"-- %@", [[textView string] substringWithRange:lineRange]]];
@@ -1351,6 +1344,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Check if current line is already commented out, if so uncomment it
         // and preserve the original indention via regex:@"^-- (\\s*)"
         if([n isMatchedByRegex:@"^-- \\s*(--\\s|#)"]) {
+            offsetForPointer = -3;
+            if((oldRange.location-lineRange.location) < 3) {
+                offsetForPointer = (lineRange.location - oldRange.location);
+            }
             [n replaceOccurrencesOfRegex:@"^-- \\s*(--\\s|#)"
                               withString:[n substringWithRange:[n rangeOfRegex:@"^-- (\\s*)"
                                                                        options:RKLNoOptions
@@ -1358,6 +1355,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                                                        capture:1
                                                                          error: nil]]];
         } else if ([n isMatchedByRegex:@"^-- \\s*/\\*.*? ?\\*/\\s*$"]) {
+            offsetForPointer = -3;
+            if((oldRange.location-lineRange.location) < 3) {
+                offsetForPointer = (lineRange.location - oldRange.location);
+            }
             [n replaceOccurrencesOfRegex:@"^-- \\s*/\\* ?"
                               withString:[n substringWithRange:[n rangeOfRegex:@"^-- (\\s*)"
                                                                        options:RKLNoOptions
@@ -1375,8 +1376,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Replace current line by (un)commented string
         // The caret will be placed at the beginning of the next line if present to
         // allow a fast (un)commenting of lines
-        [textView setSelectedRange:lineRange];
         [textView insertText:[[NSAttributedString alloc] initWithString:n] replacementRange:lineRange];
+        [textView setSelectedRange:NSMakeRange(MAX(0, oldRange.location + offsetForPointer),0)];
     }
 }
 
