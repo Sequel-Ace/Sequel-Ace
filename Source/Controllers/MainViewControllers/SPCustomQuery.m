@@ -1110,7 +1110,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Split the current text into ranges of queries
     // only if the textView was really changed, otherwise use the cache
-    if([[textView textStorage] editedMask] != 0 || [self textViewWasChanged] || currentQueryRanges != nil || currentQueryRanges.count == 0) {
+    if([[textView textStorage] editedMask] != 0 || [self textViewWasChanged] || currentQueryRanges == nil || currentQueryRanges.count == 0) {
         [self setTextViewWasChanged:NO];
         customQueryParser = [[SPSQLParser alloc] initWithString:[textView string]];
         [customQueryParser setDelimiterSupport:YES];
