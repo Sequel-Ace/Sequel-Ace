@@ -243,16 +243,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
     }
     
-    // Invoke textStorageDidProcessEditing: for syntax highlighting and auto-uppercase
-    // and preserve the selection
-    [textView setSelectedRange:NSMakeRange(selectedRange.location, 0)];
-    [textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
-    
-    // Inserting empty text may have cancelled a partial accent - range check before
-    // restoring the selection.
-    if (selectedRange.location > [[textView string] length]) selectedRange.location = [[textView string] length];
-    [textView setSelectedRange:selectedRange];
-    
     reloadingExistingResult = NO;
     [self clearResultViewDetailsToRestore];
     
@@ -1120,18 +1110,17 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Split the current text into ranges of queries
     // only if the textView was really changed, otherwise use the cache
-    if([[textView textStorage] editedMask] != 0 || [self textViewWasChanged]) {
+    if([[textView textStorage] editedMask] != 0 || [self textViewWasChanged] || currentQueryRanges != nil || currentQueryRanges.count == 0) {
         [self setTextViewWasChanged:NO];
         customQueryParser = [[SPSQLParser alloc] initWithString:[textView string]];
         [customQueryParser setDelimiterSupport:YES];
         queries = [[NSArray alloc] initWithArray:[customQueryParser splitStringIntoRangesByCharacter:';']];
         numberOfQueries = [queries count];
-        if(currentQueryRanges)
-            currentQueryRanges = [NSArray arrayWithArray:queries];
+        currentQueryRanges = [NSArray arrayWithArray:queries];
     } else {
         queries = [[NSArray alloc] initWithArray:currentQueryRanges];
     }
-    
+
     queryCount = [queries count];
     
     // Walk along the array of queries to identify the current query - taking into account
