@@ -350,7 +350,18 @@
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (tableView == infoTable) {
-		return [info objectAtIndex:rowIndex];
+        if(info.count <= (NSUInteger)rowIndex){
+            NSDictionary *userInfo = @{
+                NSLocalizedDescriptionKey: @"info.count <= (NSUInteger)rowIndex",
+                @"info.count":@(info.count),
+                @"rowIndex":@(rowIndex),
+                @"info":info
+            };
+            CLS_LOG(@"info.count <= (NSUInteger)rowIndex: [%lu] vs [%li]", (unsigned long)info.count, (long)rowIndex);
+            SPLog(@"info.count <= (NSUInteger)rowIndex: [%lu] vs [%li]", (unsigned long)info.count, (long)rowIndex);
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
+        }
+		return [info safeObjectAtIndex:rowIndex];
 	} 
 	else {
 		if (rowIndex == 0) {
