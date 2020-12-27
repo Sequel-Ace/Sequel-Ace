@@ -120,6 +120,8 @@ platform :mac do
          title: "Prepare Beta release",
          body: changelog
       )
+      
+      git checkout -- .
    end
 
    ############################## XCode ##############################
