@@ -109,6 +109,8 @@ platform :mac do
       increment_build_version
       
       changelog = generate_changelog_locally
+      
+      sh "git push -u origin prepare_release"
 
       # Create Pull request to master
       create_pull_request(
