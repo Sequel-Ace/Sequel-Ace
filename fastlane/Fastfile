@@ -39,7 +39,7 @@ platform :mac do
       
       update_strings
       increment_build_version
-      generate_changelog_locally
+      changelog = generate_changelog_locally
 
       # Commit and push changelog changes
       sh "git commit -am 'Changelog updates'"
@@ -51,7 +51,7 @@ platform :mac do
          repo: GITHUB_REPO,
          base: "main",
          title: "Prepare release",
-         body: "Updated strings, increased app and build number, updated changelog."
+         body: changelog
       )
    end
 
@@ -67,7 +67,7 @@ platform :mac do
       
       update_strings
       increment_build_version
-      generate_changelog_locally
+      changelog = generate_changelog_locally
 
       # Commit and push changelog changes
       sh "git commit -am 'Changelog updates'"
@@ -79,7 +79,7 @@ platform :mac do
          repo: GITHUB_REPO,
          base: "main",
          title: "Prepare Patch release",
-         body: "Updated strings, increased app and build number, updated changelog."
+         body: changelog
       )
    end
 
@@ -95,7 +95,7 @@ platform :mac do
       prepare_beta_release
    end
 
-   desc "Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR."
+   desc "Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR."
    lane :prepare_beta_release do |options|
    
       # Checkout to prepare release branch
@@ -107,10 +107,9 @@ platform :mac do
       
       update_strings
       increment_build_version
-      generate_changelog_locally
-
-      # Commit and push changelog changes
-      sh "git commit -am 'Changelog updates'"
+      
+      changelog = generate_changelog_locally
+      
       sh "git push -u origin prepare_release"
 
       # Create Pull request to master
@@ -119,8 +118,10 @@ platform :mac do
          repo: GITHUB_REPO,
          base: "main",
          title: "Prepare Beta release",
-         body: "Updated strings, increased build number, updated changelog."
+         body: changelog
       )
+      
+      git checkout -- .
    end
 
    ############################## XCode ##############################
@@ -133,8 +134,8 @@ platform :mac do
       ensure_git_branch(
          branch: 'changelog'
       )
-
-      generate_changelog_locally
+      
+      changelog = generate_changelog_locally
 
       # Commit and push changelog changes
       sh "git commit -am 'Changelog updates'"
@@ -146,13 +147,12 @@ platform :mac do
          repo: GITHUB_REPO,
          base: "main",
          title: "Changelog",
-         body: "Updated changelog for the release"
+         body: changelog
       )
    end
 
    desc "Generates changelog only."
    lane :generate_changelog_locally do |options|
-
       version = get_version_number(xcodeproj: PROJECT_NAME, target: TARGET_NAME)
       sh "../Scripts/generate-changelog.sh #{version}"
    end
@@ -169,10 +169,10 @@ platform :mac do
       )
 
       # Commit strings updates
-      #repo_clean = `git status --porcelain`.empty?
-      #if !repo_clean
-      #   sh "git add -A && git commit -m 'Update strings'"
-      #end
+      repo_clean = `git status --porcelain`.empty?
+      if !repo_clean
+         sh "git add -A && git commit -m 'Update strings'"
+      end
    end
 
    desc "Increase build number"

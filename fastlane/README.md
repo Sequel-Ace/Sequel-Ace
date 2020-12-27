@@ -20,17 +20,27 @@ or alternatively using `brew install fastlane`
 ```
 fastlane mac prepare_release
 ```
-Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR.
+Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
 ### mac prepare_patch_release
 ```
 fastlane mac prepare_patch_release
 ```
+Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
+### mac prepare_beta_release_bump_version
+```
+fastlane mac prepare_beta_release_bump_version
+```
 Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR.
+### mac prepare_beta_release_bump_patch_version
+```
+fastlane mac prepare_beta_release_bump_patch_version
+```
+Creates new branch prepare_release, updates strings, increments app patch version, increments build version, generates changelog, creates a PR.
 ### mac prepare_beta_release
 ```
 fastlane mac prepare_beta_release
 ```
-Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR.
+Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
 ### mac generate_changelog
 ```
 fastlane mac generate_changelog

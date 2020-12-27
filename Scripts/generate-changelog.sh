@@ -9,26 +9,30 @@ LAST_MAJOR_VERSION=$(git describe --match "production/*" --tags --abbrev=0)
 
 echo "## [$CURRENT_VERSION]" > $TEMP_FILE
 
-echo -e "\n### Added" >> $TEMP_FILE
-printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#added' | sed 's/#added//g')\n" >> $TEMP_FILE
+changelog_changes=""
 
-echo -e "\n### Fixed" >> $TEMP_FILE
-printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#fixed' | sed 's/#fixed//g')\n" >> $TEMP_FILE
+changelog_changes+="\n### Added\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#added' | sed 's/#added//g')\n"
 
-echo -e "\n### Changed" >> $TEMP_FILE
-printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#changed' | sed 's/#changed//g')\n" >> $TEMP_FILE
+changelog_changes+="\n### Fixed\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#fixed' | sed 's/#fixed//g')\n"
 
-echo -e "\n### Removed" >> $TEMP_FILE
-printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#removed' | sed 's/#removed//g')\n" >> $TEMP_FILE
+changelog_changes+="\n### Changed\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#changed' | sed 's/#changed//g')\n"
 
-echo -e "\n### Infra" >> $TEMP_FILE
-printf "$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#infra' | sed 's/#infra//g')\n" >> $TEMP_FILE
+changelog_changes+="\n### Removed\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#removed' | sed 's/#removed//g')\n"
 
-echo -e "\n" >> $TEMP_FILE
+changelog_changes+="\n### Infra\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'%h, %b' | grep '#infra' | sed 's/#infra//g')\n"
+
+changelog_changes+="\n"
+
+printf "$changelog_changes" >> $TEMP_FILE
 
 ################  Prepend Tempfile to CHANGELOG ###############
 
 cat $CHANGELOG_FILE >> $TEMP_FILE
 cp $TEMP_FILE $CHANGELOG_FILE
 
-echo "Updated $CHANGELOG_FILE with all changes since $LAST_MAJOR_VERSION!"
+printf "$changelog_changes"
