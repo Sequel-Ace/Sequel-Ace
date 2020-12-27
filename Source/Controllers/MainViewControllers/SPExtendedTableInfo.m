@@ -323,7 +323,16 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		// Populate type popup button
 		for (NSDictionary *engine in engines)
 		{
-			[tableTypePopUpButton addItemWithTitle:[engine objectForKey:SPMySQLEngineField]];
+            NSString *tmpEngine = [engine safeObjectForKey:SPMySQLEngineField];
+
+            if(tmpEngine == nil){
+                SPLog(@"engine string is nil: %@",engine );
+                CLS_LOG(@"engine string is nil: %@", engine);
+                // raise Crashyltics error?
+                continue;
+            }
+
+            [tableTypePopUpButton addItemWithTitle:tmpEngine];
 		}
 
 		[tableTypePopUpButton selectItemWithTitle:storageEngine];
