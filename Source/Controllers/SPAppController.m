@@ -1666,8 +1666,6 @@
 }
 
 - (void)rebuildMenus{
-
-	SPLog(@"JIMMY rebuildMenus");
 	// === Rebuild Bundles main menu item ===
 
 	// Get main menu "Bundles"'s submenu

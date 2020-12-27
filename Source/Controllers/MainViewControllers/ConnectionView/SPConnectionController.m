@@ -3295,9 +3295,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		bookmarks = [[NSMutableArray alloc] init];
 		resolvedBookmarks = [[NSMutableArray alloc] init];
 
-
-		SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
-
 		id o;
 		if((o = [prefs objectForKey:SPSecureBookmarks])){
 			[bookmarks setArray:o];
