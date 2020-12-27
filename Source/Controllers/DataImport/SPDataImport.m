@@ -631,7 +631,7 @@
 #ifdef DEBUG
 			endDate = [NSDate date];
 			interval = [endDate timeIntervalSinceDate:startDate];
-			SPLog(@"JIMMY time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
+			SPLog(@"Import time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
 #endif
 			// Update the progress bar
 			if (fileIsCompressed) {
@@ -707,7 +707,7 @@
 #ifdef DEBUG
 	endDate = [NSDate date];
 	interval = [endDate timeIntervalSinceDate:startDate];
-	SPLog(@"JIMMY total time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
+	SPLog(@"Import Process total time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
 #endif
 
 }
