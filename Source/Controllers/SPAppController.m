@@ -52,6 +52,8 @@
 #import "PSMTabBarControl.h"
 #import "SPFunctions.h"
 #import "SPBundleManager.h"
+#import "MGTemplateEngine.h"
+#import "ICUTemplateMatcher.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -217,12 +219,14 @@
                                      message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString]
                           primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
                         primaryButtonHandler:^{
+            
             SPLog(@"re-request access now");
             [self->prefsController showWindow:self];
             [self->prefsController displayPreferencePane:self->prefsController->fileItem];
-
-            [self->prefsController.window makeKeyAndOrderFront:nil];
-
+            
+            // display a window with a reminder of their stale bookmarks
+            [self displayStaleBookmarkReminderWindow:staleBookmarksString];
+            
         }                 cancelButtonHandler:^{
             SPLog(@"No not now");
         }];
@@ -281,6 +285,53 @@
 		}
 	}
 }
+
+- (void)displayStaleBookmarkReminderWindow:(NSString *)staleBookmarksString {
+
+    // display a window with a reminder of their stale bookmarks
+    NSDictionary *displayOptionsDict = @{SPStaleBookmarksHelp : @YES, @"frame" : @{@"x" : @225, @"y" : @536, @"w" : @400, @"h" : @300}};
+    SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
+    NSString *inputHTML = [NSString stringWithFormat:NSLocalizedString(@"A reminder of your stale secure bookmarks:<br /><br />%@<br />", @"A reminder of your stale secure bookmarks:<br /><br />%@<br />"), staleBookmarksString];
+    NSString *outputHTML = [self generateHTML:NSLocalizedString(@"Stale Secure Bookmarks",@"Title for Stale Secure Bookmarks help window" ) theHTML:inputHTML];
+    [bundleController displayHTMLContent:outputHTML withOptions:displayOptionsDict];
+    [SPBundleManager.sharedSPBundleManager addHTMLOutputController:bundleController];
+
+}
+
+- (NSString *)generateHTML:(NSString *)theTitle theHTML:(NSString *)someHTML {
+
+    MGTemplateEngine *engine = [[MGTemplateEngine alloc] init];
+    [engine setMatcher:[ICUTemplateMatcher matcherWithTemplateEngine:engine]];
+
+    NSError *error;
+
+    NSString *helpHTMLTemplate = [[NSString alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPHTMLHelpTemplate ofType:@"html"]
+                                                       encoding:NSUTF8StringEncoding
+                                                          error:&error];
+
+    if (helpHTMLTemplate == nil) {
+        helpHTMLTemplate = @"<html><body>{{body}}</body></html>"; //fallback
+        SPLog(@"%@", [NSString stringWithFormat:@"Error reading “%@.html”!<br>%@", SPHTMLHelpTemplate, [error localizedFailureReason]]);
+    }
+
+    NSString *addBodyClass = @"";
+    // Add CSS class if running in dark UI mode (10.14+)
+    if (@available(macOS 10.14, *)) {
+        NSString *match = [[[self frontDocumentWindow] effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
+        // aqua is already the default theme
+        if ([NSAppearanceNameDarkAqua isEqualToString:match]) {
+            addBodyClass = @"dark";
+        }
+    }
+
+    return [engine processTemplate:helpHTMLTemplate withVariables:@{
+        @"bodyClass": addBodyClass,
+        @"title": theTitle,
+        @"body": someHTML,
+    }];
+}
+
+
 
 - (void)externalApplicationWantsToOpenADatabaseConnection:(NSNotification *)notification
 {

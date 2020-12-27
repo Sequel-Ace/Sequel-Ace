@@ -3187,4 +3187,7 @@
 "Yes" = "Yes";
 
 /* Shown to remind users of their stale bookmarks */
-"A reminder of your stale secure bookmarks:\n\n%@\n" = "A reminder of your stale secure bookmarks:\n\n%@\n";
+"A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "A reminder of your stale secure bookmarks:<br /><br />%@<br />";
+
+/* Title for Stale Secure Bookmarks help window */
+"Stale Secure Bookmarks" = "Stale Secure Bookmarks";
