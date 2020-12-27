@@ -31,7 +31,7 @@
 #import "SPTableCopy.h"
 
 #import <SPMySQL/SPMySQL.h>
-@import Firebase;
+#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 
 @interface SPTableCopy ()
 
