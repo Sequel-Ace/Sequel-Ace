@@ -55,7 +55,7 @@ extension SecureBookmarkData: NSCoding, NSSecureCoding {
     convenience init?(coder: NSCoder) {
         if #available(OSX 10.13, *) {
             guard
-                let bookmarkData = coder.decodeObject(of: NSData.self, forKey: Keys.options.rawValue),
+                let bookmarkData = coder.decodeObject(of: NSData.self, forKey: Keys.bookmarkData.rawValue),
                 let options = coder.decodeObject(of: NSNumber.self, forKey: Keys.options.rawValue),
                 let bookmarkURL = coder.decodeObject(of: NSURL.self, forKey: Keys.bookmarkURL.rawValue)
             else {
