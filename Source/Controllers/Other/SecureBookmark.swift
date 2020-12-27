@@ -22,7 +22,7 @@ final class SecureBookmark: NSObject {
         super.init()
     }
 
-    func getEncodedData() -> Data {
+    func getEncodedData() -> Data? {
         if #available(OSX 10.13, *) {
             do{
                 let codedData = try NSKeyedArchiver.archivedData(withRootObject: bookmarkData, requiringSecureCoding: true)
@@ -31,7 +31,7 @@ final class SecureBookmark: NSObject {
             catch{
                 os_log("Failed to encode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
                 Crashlytics.crashlytics().log("Failed to encode data, Error: \(error.localizedDescription)")
-                return Data() // hmmmmmmm JCS.
+                return nil
             }
         }
         else {

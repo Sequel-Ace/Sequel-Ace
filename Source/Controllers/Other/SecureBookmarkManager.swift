@@ -50,8 +50,8 @@ import os.log
         observer = UserDefaults.standard.observe(\.SPSecureBookmarks, options: [.new, .old], changeHandler: { _, change in
 
             if self.iChangedTheBookmarks == false {
-                os_log("SPSecureBookmarks changed NOT by SecureBookmarkManager.", log: self.log, type: .debug)
-                Crashlytics.crashlytics().log("SPSecureBookmarks changed NOT by SecureBookmarkManager.")
+                os_log("SPSecureBookmarks changed, but NOT by SecureBookmarkManager.", log: self.log, type: .debug)
+                Crashlytics.crashlytics().log("SPSecureBookmarks changed, but NOT by SecureBookmarkManager.")
                 self.bookmarks.removeAll()
                 self.bookmarks = change.newValue!
             }
@@ -142,7 +142,7 @@ import os.log
 
         // reset bookmarks
         iChangedTheBookmarks = true
-	prefs.set(bookmarks, forKey: SASecureBookmarks)
+        prefs.set(bookmarks, forKey: SASecureBookmarks)
     }
 
     /// addBookmark 
@@ -176,7 +176,11 @@ import os.log
 
             os_log("Attempting to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
             Crashlytics.crashlytics().log("Attempting getEncodedData for: \(sp.debugDescription)")
-            let spData = sp.getEncodedData()
+            guard let spData = sp.getEncodedData() else {
+                os_log("Failed to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
+                Crashlytics.crashlytics().log("Failed to getEncodedData for: \(sp.debugDescription)")
+                return false
+            }
 
             os_log("SUCCESS: Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
             Crashlytics.crashlytics().log("SUCCESS: Adding \(url.absoluteString) to bookmarks")
@@ -186,7 +190,7 @@ import os.log
             os_log("Updating UserDefaults", log: log, type: .debug)
             Crashlytics.crashlytics().log("Updating UserDefaults")
             iChangedTheBookmarks = true
-	    prefs.set(bookmarks, forKey: SASecureBookmarks)
+            prefs.set(bookmarks, forKey: SASecureBookmarks)
 
             return true
 
@@ -279,7 +283,7 @@ import os.log
                         resolvedBookmarks.removeAll(where: { $0 == urlForBookmark })
                         bookmarks.remove(at: index)
                         iChangedTheBookmarks = true
-			prefs.set(bookmarks, forKey: SASecureBookmarks)
+                        prefs.set(bookmarks, forKey: SASecureBookmarks)
                         os_log("Successfully revoked bookmark for: %@", log: log, type: .debug, filename)
                         Crashlytics.crashlytics().log("Successfully revoked bookmark for: \(filename)")
                         return true
