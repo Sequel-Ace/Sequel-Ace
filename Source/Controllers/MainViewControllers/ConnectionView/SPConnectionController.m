@@ -838,11 +838,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	
 	// Update key-value properties from the selected favourite, using empty strings where not found
 	NSDictionary *fav = [[node representedObject] nodeFavorite];
-    
-    // Don't prefill anything if we are not using favorite
-    if (!fav) {
-        return;
-    }
 	
 	// Keep a copy of the favorite as it currently stands
 	currentFavorite = [fav copy];
@@ -921,12 +916,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Check whether the password exists in the keychain, and if so add it; also record the
 	// keychain details so we can pass around only those details if the password doesn't change
-	connectionKeychainItemName = [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
-	connectionKeychainItemAccount = [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
+	connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+	connectionKeychainItemAccount = !fav ? nil : [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
 
-	[self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
+    if(fav) {
+        [self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
+    }
 
-	if (![[self password] length]) {
+	if (!fav || ![[self password] length]) {
 		[self setPassword:nil];
 	}
 
@@ -934,12 +931,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if ([fav objectForKey:SPFavoriteIDKey]) [self setConnectionKeychainID:[[fav objectForKey:SPFavoriteIDKey] stringValue]];
 
 	// And the same for the SSH password
-	connectionSSHKeychainItemName = [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
-	connectionSSHKeychainItemAccount = [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
+	connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+	connectionSSHKeychainItemAccount = !fav ? nil : [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
 
-	[self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
+    if(fav) {
+        [self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
+    }
 
-	if (![[self sshPassword] length]) {
+	if (!fav || ![[self sshPassword] length]) {
 		[self setSshPassword:nil];
 	}
 
