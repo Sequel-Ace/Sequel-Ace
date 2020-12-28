@@ -35,7 +35,7 @@
 - (void)_setupTrackingRectsForCell:(PSMTabBarCell *)cell;
 - (void)_positionOverflowMenu;
 - (void)_checkWindowFrame;
-- (void)updateTabs:(BOOL)updateTabs;
+- (void)updateTabBarAndUpdateTabs:(BOOL)updateTabs;
 
     // actions
 - (void)closeTabClick:(id)sender;
@@ -708,8 +708,7 @@
 #pragma mark -
 #pragma mark Hide/Show
 
-- (void)hideTabBar:(BOOL)hide animate:(BOOL)animate
-{
+- (void)updateTabs {
     if (!_awakenedFromNib) {
         return;
 	}
@@ -869,10 +868,10 @@
 
 - (void)update
 {
-	[self updateTabs:YES];
+	[self updateTabBarAndUpdateTabs:YES];
 }
 
-- (void)updateTabs:(BOOL)updateTabs
+- (void)updateTabBarAndUpdateTabs:(BOOL)updateTabs
 {
     // make sure all of our tabs are accounted for before updating,
 	// or only proceed if a drag is in progress (where counts may mismatch)
@@ -881,7 +880,7 @@
     }
 
 	if (updateTabs) {
-        [self hideTabBar:NO animate:YES];
+        [self updateTabs];
 	}
 	
     [self removeAllToolTips];
@@ -1319,7 +1318,7 @@
 							   afterDelay:0];
 	}
 
-	[self updateTabs:NO];
+	[self updateTabBarAndUpdateTabs:NO];
 }
 
 - (void)viewDidMoveToWindow
