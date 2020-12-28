@@ -3114,10 +3114,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	}
 	// Disable "Copy with Column Names" and "Copy as SQL INSERT"
 	// in the main menu
-	if ( [menuItem tag] == SPEditMenuCopyWithColumns
-		|| [menuItem tag] == SPEditMenuCopyAsSQL) {
-		return NO;
-	}
+    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc) {
+        return NO;
+    }
 
 	return [super validateMenuItem:menuItem];
 }

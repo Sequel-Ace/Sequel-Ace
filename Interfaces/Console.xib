@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -23,11 +23,12 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <window title="Console" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="3" userLabel="Console" customClass="NSPanel">
+        <window title="Console" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" id="3" userLabel="Console" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+            <windowCollectionBehavior key="collectionBehavior" participatesInCycle="YES" fullScreenPrimary="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="426" y="331" width="575" height="203"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1050"/>
             <value key="minSize" type="size" width="575" height="130"/>
             <view key="contentView" id="4">
                 <rect key="frame" x="0.0" y="0.0" width="575" height="203"/>
@@ -53,11 +54,11 @@
                         <rect key="frame" x="0.0" y="32" width="576" height="134"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" id="Jw2-4l-Mr3">
-                            <rect key="frame" x="1" y="0.0" width="574" height="133"/>
+                            <rect key="frame" x="1" y="1" width="574" height="132"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" autosaveColumns="NO" rowHeight="16" headerView="112" id="14">
-                                    <rect key="frame" x="0.0" y="0.0" width="574" height="116"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="574" height="115"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="3" height="2"/>
                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -236,7 +237,10 @@
                     </button>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="139.5" y="161.5"/>
+            <connections>
+                <outlet property="delegate" destination="-2" id="9BU-PA-RsE"/>
+            </connections>
+            <point key="canvasLocation" x="-55" y="139"/>
         </window>
         <customView id="49" userLabel="saveLogView">
             <rect key="frame" x="0.0" y="0.0" width="278" height="79"/>
@@ -277,7 +281,14 @@
                         <action selector="copy:" target="-2" id="69"/>
                     </connections>
                 </menuItem>
+                <menuItem title="Copy Raw Query" id="dsy-Yk-yWd">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="copyQueryOnly:" target="-2" id="h9k-0G-NSI"/>
+                    </connections>
+                </menuItem>
             </items>
+            <point key="canvasLocation" x="-197" y="150"/>
         </menu>
         <userDefaultsController representsSharedInstance="YES" id="89"/>
         <menu id="DCA-JR-zjw" userLabel="Table Header Context Menu">
@@ -322,7 +333,7 @@
         </menu>
     </objects>
     <resources>
-        <image name="NSActionTemplate" width="14" height="14"/>
-        <image name="NSStopProgressFreestandingTemplate" width="14" height="14"/>
+        <image name="NSActionTemplate" width="15" height="15"/>
+        <image name="NSStopProgressFreestandingTemplate" width="15" height="15"/>
     </resources>
 </document>
