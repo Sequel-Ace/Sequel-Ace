@@ -2945,7 +2945,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $SCRIPTS_DIR\n#./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
+			shellScript = "cd $SCRIPTS_DIR\n./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
