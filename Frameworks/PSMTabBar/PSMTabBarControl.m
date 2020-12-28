@@ -39,7 +39,6 @@
 
     // actions
 - (void)closeTabClick:(id)sender;
-- (void)tabNothing:(id)sender;
 
 	// notification handlers
 - (void)frameDidChange:(NSNotification *)notification;
@@ -1135,8 +1134,6 @@
 					[self performSelector:@selector(tabClick:) withObject:cell];
 				}
 
-			} else {
-				[self performSelector:@selector(tabNothing:) withObject:cell];
 			}
 		}
 		
@@ -1297,27 +1294,9 @@
     [tabView selectTabViewItem:[sender representedObject]];
 }
 
-- (void)tabNothing:(id)sender
-{
-    //[self update];  // takes care of highlighting based on state
-}
-
 - (void)frameDidChange:(NSNotification *)notification
 {
 	[self _checkWindowFrame];
-
-	// trying to address the drawing artifacts for the progress indicators - hackery follows
-	// this one fixes the "blanking" effect when the control hides and shows itself
-	NSEnumerator *e = [_cells objectEnumerator];
-	PSMTabBarCell *cell;
-	while ( (cell = [e nextObject]) ) {
-		[[cell indicator] stopAnimation:self];
-
-		[[cell indicator] performSelector:@selector(startAnimation:)
-							   withObject:nil
-							   afterDelay:0];
-	}
-
 	[self updateTabBarAndUpdateTabs:NO];
 }
 
