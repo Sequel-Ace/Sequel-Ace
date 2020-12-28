@@ -190,16 +190,14 @@ enum {
 - (NSUInteger)numberOfVisibleTabs;
 - (PSMTabBarCell *)lastVisibleTab;
 
-// special effects
-- (void)hideTabBar:(BOOL)hide animate:(BOOL)animate;
-
 // internal bindings methods also used by the tab drag assistant
 - (void)bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item;
 - (void)removeTabForCell:(PSMTabBarCell *)cell;
 
 // External drawing accessors
 - (void)update;
-- (void)updateTabs:(BOOL)updateTabs;
+- (void)updateTabBarAndUpdateTabs:(BOOL)updateTabs;
+- (void)updateTabs;
 
 @end
 
