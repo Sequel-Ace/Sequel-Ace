@@ -387,7 +387,7 @@
     NSEnumerator *e = [[bar cells] objectEnumerator];
     PSMTabBarCell *cell;
     while ( (cell = [e nextObject]) ) {
-        if ([bar isAnimating] || (![cell isInOverflowMenu] && NSIntersectsRect([cell frame], rect))) {
+        if ((![cell isInOverflowMenu] && NSIntersectsRect([cell frame], rect))) {
             [cell drawWithFrame:[cell frame] inView:bar];
         }
     }
@@ -449,11 +449,7 @@
 }
 
 // Step 3
-- (void)drawTabCell:(PSMTabBarCell *)cell
-{
-	// Don't draw cells when collapsed
-	if ([tabBar isTabBarHidden]) return;
-
+- (void)drawTabCell:(PSMTabBarCell *)cell {
 	NSColor *lineColor = [self _lineColorForTabCellDrawing];
 	NSColor *fillColor = [self fillColorForCell:cell];
 

@@ -129,7 +129,7 @@
     _frame = rect;
 	
 	//move the status indicator along with the rest of the cell
-	if (![[self indicator] isHidden] && ![_customControlView isTabBarHidden]) {
+	if (![[self indicator] isHidden]) {
 		[[self indicator] setFrame:[self indicatorRectForFrame:rect]];
 	}
 }
@@ -210,7 +210,6 @@
 - (void)setHasIcon:(BOOL)value
 {
     _hasIcon = value;
-    //[_customControlView update:[[self customControlView] automaticallyAnimates]]; // binding notice is too fast
 }
 
 - (BOOL)hasLargeImage
@@ -231,7 +230,6 @@
 - (void)setCount:(NSInteger)value
 {
     _count = value;
-    //[_customControlView update:[[self customControlView] automaticallyAnimates]]; // binding notice is too fast
 }
 
 - (NSColor *)countColor
@@ -278,7 +276,6 @@
 - (void)setIsEdited:(BOOL)value
 {
     _isEdited = value;
-    //[_customControlView update:[[self customControlView] automaticallyAnimates]]; // binding notice is too fast
 }
 
 - (NSColor *)backgroundColor {

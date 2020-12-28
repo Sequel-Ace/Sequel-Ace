@@ -16,7 +16,6 @@
 #define PSMTabDragDidBeginNotification @"PSMTabDragDidBeginNotification"
 
 #define kPSMTabBarControlHeight 25
-#define kPSMTabBarControlDefaultHeightCollapsed 0 // can be changed with a property
 
 // internal cell border
 #define MARGIN_X        6
@@ -75,7 +74,6 @@ enum {
 	id<PSMTabStyle>			style;
 	BOOL					_canCloseOnlyTab;
 	BOOL					_disableTabClose;
-	BOOL					_hideForSingleTab;
 	BOOL					_showAddTabButton;
 	BOOL					_sizeCellsToFit;
 	BOOL					_useOverflowMenu;
@@ -84,8 +82,6 @@ enum {
 	BOOL					_useSafariStyleDragging;
 	NSInteger				_resizeAreaCompensation;
 	PSMTabBarOrientation	_orientation;
-	BOOL					_automaticallyAnimates;
-	NSTimer					*_animationTimer;
 	PSMTabBarTearOffStyle	_tearOffStyle;
 	
 	// behavior
@@ -108,11 +104,9 @@ enum {
 	
 	// animation for hide/show
 	NSInteger				_currentStep;
-	BOOL					_isHidden;
 	IBOutlet id				partnerView;				// gets resized when hide/show
 	BOOL					_awakenedFromNib;
 	NSInteger				_tabBarWidth;
-	NSTimer					*_showHideAnimationTimer;
 
 	// Tracking last window state for update draws
 	BOOL					_lastWindowIsMainCheck;
@@ -144,8 +138,6 @@ enum {
 - (void)setStyle:(id <PSMTabStyle>)newStyle;
 - (NSString *)styleName;
 - (void)setStyleNamed:(NSString *)name;
-- (BOOL)hideForSingleTab;
-- (void)setHideForSingleTab:(BOOL)value;
 - (BOOL)showAddTabButton;
 - (void)setShowAddTabButton:(BOOL)value;
 
@@ -177,8 +169,6 @@ enum {
 - (void)setSelectsTabsOnMouseDown:(BOOL)value;
 - (BOOL)createsTabOnDoubleClick;
 - (void)setCreatesTabOnDoubleClick:(BOOL)value;
-- (BOOL)automaticallyAnimates;
-- (void)setAutomaticallyAnimates:(BOOL)value;
 - (BOOL)alwaysShowActiveTab;
 - (void)setAlwaysShowActiveTab:(BOOL)value;
 - (BOOL)allowsScrubbing;
@@ -187,7 +177,6 @@ enum {
 - (void)setUsesSafariStyleDragging:(BOOL)value;
 - (PSMTabBarTearOffStyle)tearOffStyle;
 - (void)setTearOffStyle:(PSMTabBarTearOffStyle)tearOffStyle;
-@property CGFloat heightCollapsed;
 
 // accessors
 - (NSTabView *)tabView;
@@ -212,9 +201,6 @@ enum {
 
 // special effects
 - (void)hideTabBar:(BOOL)hide animate:(BOOL)animate;
-- (BOOL)isTabBarHidden;
-- (BOOL)isAnimating;
-- (void)destroyAnimations;
 
 // internal bindings methods also used by the tab drag assistant
 - (void)bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item;

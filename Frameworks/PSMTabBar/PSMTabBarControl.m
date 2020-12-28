@@ -60,10 +60,6 @@
     // convenience
 - (void)_bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item;
 - (id)cellForPoint:(NSPoint)point cellFrame:(NSRectPointer)outFrame;
-
-- (void)fireSpring:(NSTimer *)timer;
-- (void)animateShowHide:(NSTimer *)timer;
-- (void)_animateCells:(NSTimer *)timer;
 @end
 
 @implementation PSMTabBarControl
@@ -119,7 +115,6 @@
 {
     _cells = [[NSMutableArray alloc] initWithCapacity:10];
 	_controller = [[PSMTabBarController alloc] initWithTabBarControl:self];
-    _animationTimer = nil;
 	_lastWindowIsMainCheck = NO;
 	_lastAttachedWindowIsMainCheck = NO;
 	_lastAppIsActiveCheck = NO;
@@ -131,11 +126,8 @@
     _canCloseOnlyTab = NO;
 	_disableTabClose = NO;
     _showAddTabButton = NO;
-    _hideForSingleTab = NO;
     _sizeCellsToFit = NO;
-    _isHidden = NO;
     _awakenedFromNib = NO;
-	_automaticallyAnimates = NO;
     _useOverflowMenu = YES;
 	_allowsBackgroundTabClosing = YES;
 	_allowsResizing = NO;
@@ -147,8 +139,6 @@
     _cellMaxWidth = 280;
     _cellOptimumWidth = 130;
 	_tearOffStyle = PSMTabBarTearOffAlphaWindow;
-	
-	self.heightCollapsed = kPSMTabBarControlDefaultHeightCollapsed;
 	
 	style = [[PSMSequelProTabStyle alloc] init];
     
@@ -205,8 +195,6 @@
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	[self destroyAnimations];
-
 	//unbind all the items to prevent crashing
 	//not sure if this is necessary or not
     NSArray *cells = [NSArray arrayWithArray:_cells];  // create a copy as we will change the original array while being enumerated
@@ -239,10 +227,6 @@
 	[center removeObserver:self name:NSWindowDidResignMainNotification object:nil];
 	[center removeObserver:self name:NSWindowDidUpdateNotification object:nil];
 	[center removeObserver:self name:NSWindowDidMoveNotification object:nil];
-	
-	if (_showHideAnimationTimer) {
-		[_showHideAnimationTimer invalidate]; _showHideAnimationTimer = nil;
-	}
 	
     if (aWindow) {
 		[center addObserver:self selector:@selector(windowStatusDidChange:) name:NSWindowDidBecomeMainNotification object:aWindow];
@@ -392,19 +376,6 @@
 {
 	_disableTabClose = value;
 	[self update];
-}
-
-- (BOOL)hideForSingleTab
-{
-    return _hideForSingleTab;
-}
-
-- (void)setHideForSingleTab:(BOOL)value
-{
-    _hideForSingleTab = value;
-    if ([_cells count] == 1) {
-        [self update];
-    }
 }
 
 - (BOOL)showAddTabButton
@@ -569,16 +540,6 @@
 - (void)setCreatesTabOnDoubleClick:(BOOL)value
 {
 	_createsTabOnDoubleClick = value;
-}
-
-- (BOOL)automaticallyAnimates
-{
-	return _automaticallyAnimates;
-}
-
-- (void)setAutomaticallyAnimates:(BOOL)value
-{
-	_automaticallyAnimates = value;
 }
 
 - (BOOL)alwaysShowActiveTab
@@ -750,25 +711,16 @@
 
 - (void)hideTabBar:(BOOL)hide animate:(BOOL)animate
 {
-    if (!_awakenedFromNib/* || (_isHidden && hide) || (!_isHidden && !hide)*/) {
+    if (!_awakenedFromNib) {
         return;
 	}
 	
     [[self subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
 
-    _isHidden = hide;
-    _currentStep = 0;
-    if (!animate) {
-        _currentStep = (NSInteger)kPSMHideAnimationSteps;
-	}
+    _currentStep = (NSInteger)kPSMHideAnimationSteps;
 
-	if (hide) {
-		[_overflowPopUpButton removeFromSuperview];
-		[_addTabButton removeFromSuperview];
-	} else if (!animate) {
-		[self addSubview:_overflowPopUpButton];
-		[self addSubview:_addTabButton];
-	}
+    [self addSubview:_overflowPopUpButton];
+    [self addSubview:_addTabButton];
 
     CGFloat partnerOriginalSize, partnerOriginalOrigin, myOriginalSize, myOriginalOrigin, partnerTargetSize, partnerTargetOrigin, myTargetSize, myTargetOrigin;
     
@@ -784,13 +736,7 @@
 			partnerOriginalSize = [[self window] frame].size.height;
 			partnerOriginalOrigin = [[self window] frame].origin.y;
 		}
-
-		// Determine the target sizes
-		if (_isHidden) {
-			myTargetSize = self.heightCollapsed;
-		} else {
-			myTargetSize = kPSMTabBarControlHeight;
-		}
+        myTargetSize = kPSMTabBarControlHeight;
 
 		if (partnerView) {
 			partnerTargetSize = partnerOriginalSize + myOriginalSize - myTargetSize;
@@ -829,76 +775,39 @@
 		if (partnerView) {
 			//to the left or right?
 			if (myOriginalOrigin < partnerOriginalOrigin + partnerOriginalSize) {
-				// partner is to the left
-				if (_isHidden) {
-					// I'm shrinking
-					myTargetOrigin = myOriginalOrigin;
-					myTargetSize = 1;
-					partnerTargetOrigin = partnerOriginalOrigin - myOriginalSize + 1;
-					partnerTargetSize = partnerOriginalSize + myOriginalSize - 1;
-					_tabBarWidth = myOriginalSize;
-				} else {
+                // partner is to the left
 					// I'm growing
 					myTargetOrigin = myOriginalOrigin;
 					myTargetSize = myOriginalSize + _tabBarWidth;
 					partnerTargetOrigin = partnerOriginalOrigin + _tabBarWidth;
 					partnerTargetSize = partnerOriginalSize - _tabBarWidth;
-				}
 			} else {
 				// partner is to the right
-				if (_isHidden) {
-					// I'm shrinking
-					myTargetOrigin = myOriginalOrigin + myOriginalSize;
-					myTargetSize = 1;
-					partnerTargetOrigin = partnerOriginalOrigin;
-					partnerTargetSize = partnerOriginalSize + myOriginalSize;
-					_tabBarWidth = myOriginalSize;
-				} else {
 					// I'm growing
 					myTargetOrigin = myOriginalOrigin - _tabBarWidth;
 					myTargetSize = myOriginalSize + _tabBarWidth;
 					partnerTargetOrigin = partnerOriginalOrigin;
 					partnerTargetSize = partnerOriginalSize - _tabBarWidth;
-				}
 			}
 		} else {
-			// for window movement
-			if (_isHidden) {
-				// I'm shrinking
-				myTargetOrigin = myOriginalOrigin;
-				myTargetSize = 1;
-				partnerTargetOrigin = partnerOriginalOrigin + myOriginalSize - 1;
-				partnerTargetSize = partnerOriginalSize - myOriginalSize + 1;
-				_tabBarWidth = myOriginalSize;
-			} else {
 				// I'm growing
 				myTargetOrigin = myOriginalOrigin;
 				myTargetSize = _tabBarWidth;
 				partnerTargetOrigin = partnerOriginalOrigin - _tabBarWidth + 1;
 				partnerTargetSize = partnerOriginalSize + _tabBarWidth - 1;
-			}
 		}
 		
-		if (!_isHidden && [[self delegate] respondsToSelector:@selector(desiredWidthForVerticalTabBar:)])
+        if ([[self delegate] respondsToSelector:@selector(desiredWidthForVerticalTabBar:)]) {
 			myTargetSize = [[self delegate] desiredWidthForVerticalTabBar:self];
+        }
 	}
 
-    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithDouble:myOriginalOrigin], @"myOriginalOrigin", [NSNumber numberWithDouble:partnerOriginalOrigin], @"partnerOriginalOrigin", [NSNumber numberWithDouble:myOriginalSize], @"myOriginalSize", [NSNumber numberWithDouble:partnerOriginalSize], @"partnerOriginalSize", [NSNumber numberWithDouble:myTargetOrigin], @"myTargetOrigin", [NSNumber numberWithDouble:partnerTargetOrigin], @"partnerTargetOrigin", [NSNumber numberWithDouble:myTargetSize], @"myTargetSize", [NSNumber numberWithDouble:partnerTargetSize], @"partnerTargetSize", nil];
-	if (_showHideAnimationTimer) {
-		[_showHideAnimationTimer invalidate];
-	}
-    _showHideAnimationTimer = [NSTimer scheduledTimerWithTimeInterval:(1.0 / 30.0) target:self selector:@selector(animateShowHide:) userInfo:userInfo repeats:YES];
-}
-
-- (void)animateShowHide:(NSTimer *)timer
-{
     // moves the frame of the tab bar and window (or partner view) linearly to hide or show the tab bar
     NSRect myFrame = [self frame];
-	NSDictionary *userInfo = [timer userInfo];
-    CGFloat myCurrentOrigin = ([[userInfo objectForKey:@"myOriginalOrigin"] floatValue] + (([[userInfo objectForKey:@"myTargetOrigin"] floatValue] - [[userInfo objectForKey:@"myOriginalOrigin"] floatValue]) * (_currentStep/kPSMHideAnimationSteps)));
-    CGFloat myCurrentSize = ([[userInfo objectForKey:@"myOriginalSize"] floatValue] + (([[userInfo objectForKey:@"myTargetSize"] floatValue] - [[userInfo objectForKey:@"myOriginalSize"] floatValue]) * (_currentStep/kPSMHideAnimationSteps)));
-    CGFloat partnerCurrentOrigin = ([[userInfo objectForKey:@"partnerOriginalOrigin"] floatValue] + (([[userInfo objectForKey:@"partnerTargetOrigin"] floatValue] - [[userInfo objectForKey:@"partnerOriginalOrigin"] floatValue]) * (_currentStep/kPSMHideAnimationSteps)));
-    CGFloat partnerCurrentSize = ([[userInfo objectForKey:@"partnerOriginalSize"] floatValue] + (([[userInfo objectForKey:@"partnerTargetSize"] floatValue] - [[userInfo objectForKey:@"partnerOriginalSize"] floatValue]) * (_currentStep/kPSMHideAnimationSteps)));
+    CGFloat myCurrentOrigin = (myOriginalOrigin + ((myTargetOrigin - myOriginalOrigin)));
+    CGFloat myCurrentSize = (myOriginalSize + ((myTargetSize - myOriginalSize)));
+    CGFloat partnerCurrentOrigin = (partnerOriginalOrigin + ((partnerTargetOrigin - partnerOriginalOrigin)));
+    CGFloat partnerCurrentSize = (partnerOriginalSize + ((partnerTargetSize - partnerOriginalSize)));
     
 	NSRect myNewFrame;
 	if ([self orientation] == PSMTabBarHorizontalOrientation) {
@@ -936,34 +845,11 @@
 		_currentStep = kPSMIsNotBeingResized;
         [self viewDidEndLiveResize];
         [self update:NO];
-		
-		//send the delegate messages
-		if (_isHidden) {
-			if ([self delegate] && [[self delegate] respondsToSelector:@selector(tabView:tabBarDidHide:)]) {
-				[[self delegate] tabView:[self tabView] tabBarDidHide:self];
-			}
-		} else {
-			[self addSubview:_overflowPopUpButton];
-			[self addSubview:_addTabButton];
-
-			if ([self delegate] && [[self delegate] respondsToSelector:@selector(tabView:tabBarDidUnhide:)]) {
-				[[self delegate] tabView:[self tabView] tabBarDidUnhide:self];
-			}
-		}
-		
-		[_showHideAnimationTimer invalidate]; _showHideAnimationTimer = nil;
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(tabView:tabBarDidUnhide:)]) {
+            [[self delegate] tabView:[self tabView] tabBarDidUnhide:self];
+        }
     }
     [[self window] display];
-}
-
-- (BOOL)isTabBarHidden
-{
-	return _isHidden;
-}
-
-- (BOOL)isAnimating
-{
-    return _animationTimer != nil;
 }
 
 - (id)partnerView
@@ -974,17 +860,6 @@
 - (void)setPartnerView:(id)view
 {
     partnerView = view;
-}
-
-- (void)destroyAnimations
-{
-	// Stop any animations that may be running
-
-	[_animationTimer invalidate];
-	_animationTimer = nil;
-	
-	[_showHideAnimationTimer invalidate];
-	_showHideAnimationTimer = nil;
 }
 
 #pragma mark -
@@ -1002,7 +877,7 @@
 
 - (void)update
 {
-	[self update:_automaticallyAnimates];
+	[self update:NO];
 }
 
 - (void)update:(BOOL)animate
@@ -1019,12 +894,7 @@
     }
 
 	if (updateTabs) {
-		// hide/show? (these return if already in desired state)
-		if ( (_hideForSingleTab) && ([_cells count] <= 1) ) {
-			[self hideTabBar:YES animate:YES];
-		} else {
-			[self hideTabBar:NO animate:YES];
-		}
+        [self hideTabBar:NO animate:YES];
 	}
 	
     [self removeAllToolTips];
@@ -1036,133 +906,17 @@
     [_overflowPopUpButton setHidden:(overflowMenu == nil)];
     [_overflowPopUpButton setMenu:overflowMenu];
 
-	if (_animationTimer) {
-		[_animationTimer invalidate]; _animationTimer = nil;
-	}	
-
-    if (animate) {
-        NSMutableArray *targetFrames = [NSMutableArray arrayWithCapacity:[_cells count]];
+    for (NSUInteger i = 0; i < [_cells count]; i++) {
+        currentCell = [_cells objectAtIndex:i];
+        [currentCell setFrame:[_controller cellFrameAtIndex:i]];
         
-        for (NSUInteger i = 0; i < [_cells count]; i++) {
-            currentCell = [_cells objectAtIndex:i];
-            
-            //we're going from NSRect -> NSValue -> NSRect -> NSValue here - oh well
-            [targetFrames addObject:[NSValue valueWithRect:[_controller cellFrameAtIndex:i]]];
-        }
-        
-        [_addTabButton setHidden:!_showAddTabButton];
-        
-        NSAnimation *animation = [[NSAnimation alloc] initWithDuration:0.50 animationCurve:NSAnimationEaseInOut];
-        [animation setAnimationBlockingMode:NSAnimationNonblocking];
-        [animation startAnimation];
-        _animationTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0
-															target:self
-														  selector:@selector(_animateCells:)
-														  userInfo:[NSArray arrayWithObjects:targetFrames, animation, nil]
-														   repeats:YES];
-		[[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSEventTrackingRunLoopMode];
-		[self _animateCells:_animationTimer];
-
-    } else {
-        for (NSUInteger i = 0; i < [_cells count]; i++) {
-            currentCell = [_cells objectAtIndex:i];
-            [currentCell setFrame:[_controller cellFrameAtIndex:i]];
-            
-            if (![currentCell isInOverflowMenu]) {
-                [self _setupTrackingRectsForCell:currentCell];
-            }
-        }
-        
-        [_addTabButton setFrame:[_controller addButtonRect]];
-        [_addTabButton setHidden:!_showAddTabButton];
-        [self setNeedsDisplay:YES];
-    }
-}
-
-- (void)_animateCells:(NSTimer *)timer
-{
-    NSAnimation *animation = [[timer userInfo] objectAtIndex:1];
-	NSArray *targetFrames = [[timer userInfo] objectAtIndex:0];
-    PSMTabBarCell *currentCell;
-	NSUInteger cellCount = (NSUInteger)[_cells count];
-	
-    if ((cellCount > 0) && [animation isAnimating]) {
-		//compare our target position with the current position and move towards the target
-		for (NSUInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
-			currentCell = [_cells objectAtIndex:i];
-			NSRect cellFrame = [currentCell frame], targetFrame = [[targetFrames objectAtIndex:i] rectValue];
-			CGFloat sizeChange;
-			CGFloat originChange;
-			
-			if ([self orientation] == PSMTabBarHorizontalOrientation) {
-				sizeChange = (targetFrame.size.width - cellFrame.size.width) * [animation currentProgress];
-				originChange = (targetFrame.origin.x - cellFrame.origin.x) * [animation currentProgress];
-				cellFrame.size.width += sizeChange;
-				cellFrame.origin.x += originChange;
-			} else {
-				sizeChange = (targetFrame.size.height - cellFrame.size.height) * [animation currentProgress];
-				originChange = (targetFrame.origin.y - cellFrame.origin.y) * [animation currentProgress];
-				cellFrame.size.height += sizeChange;
-				cellFrame.origin.y += originChange;
-			}
-			
-			[currentCell setFrame:cellFrame];
-			
-			//highlight the cell if the mouse is over it
-			NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
-			[currentCell setHighlighted:NSMouseInRect(mousePoint, cellFrame, [self isFlipped])];
-		}
-        
-        if (_showAddTabButton) {
-            //animate the add tab button
-            NSRect target = [_controller addButtonRect], frame = [_addTabButton frame];
-            frame.origin.x += (target.origin.x - frame.origin.x) * [animation currentProgress];
-            [_addTabButton setFrame:frame];
-        }
-    } else { 
-		//put all the cells where they should be in their final position
-		if (cellCount > 0) {
-			for (NSUInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
-				currentCell = [_cells objectAtIndex:i];
-				NSRect cellFrame = [currentCell frame], targetFrame = [[targetFrames objectAtIndex:i] rectValue];
-				
-                if ([self orientation] == PSMTabBarHorizontalOrientation) {
-                    cellFrame.size.width = targetFrame.size.width;
-                    cellFrame.origin.x = targetFrame.origin.x;
-                } else {
-                    cellFrame.size.height = targetFrame.size.height;
-                    cellFrame.origin.y = targetFrame.origin.y;
-                }
-				
-				[currentCell setFrame:cellFrame];
-                
-                //highlight the cell if the mouse is over it
-                NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
-                [currentCell setHighlighted:NSMouseInRect(mousePoint, cellFrame, [self isFlipped])];
-			}
-		}
-        
-		//set the frame for the add tab button
-        if (_showAddTabButton) {
-            NSRect frame = [_addTabButton frame];
-            frame.origin.x = [_controller addButtonRect].origin.x;
-            [_addTabButton setFrame:frame];
-        }
-
-		[_animationTimer invalidate]; _animationTimer = nil;
-		
-        for (NSUInteger i = 0; i < cellCount; i++) {
-            currentCell = [_cells objectAtIndex:i];
-            
-            //we've hit the cells that are in overflow, stop setting up tracking rects
-            if ([currentCell isInOverflowMenu]) {
-                break;
-            }
-            
+        if (![currentCell isInOverflowMenu]) {
             [self _setupTrackingRectsForCell:currentCell];
         }
     }
     
+    [_addTabButton setFrame:[_controller addButtonRect]];
+    [_addTabButton setHidden:!_showAddTabButton];
     [self setNeedsDisplay:YES];
 }
 
@@ -1624,67 +1378,6 @@
 
 - (void)windowDidUpdate:(NSNotification *)notification
 {
-    // hide? must readjust things if I'm not supposed to be showing
-    // this block of code only runs when the app launches
-    if (!_awakenedFromNib && [self hideForSingleTab] && ([_cells count] <= 1)) {
-
-        // must adjust frames now before display
-        NSRect myFrame = [self frame];
-		if ([self orientation] == PSMTabBarHorizontalOrientation) {
-			if (partnerView) {
-				NSRect partnerFrame = [partnerView frame];
-				// above or below me?
-				if (myFrame.origin.y - kPSMTabBarControlHeight > [partnerView frame].origin.y) {
-					// partner is below me
-					[self setFrame:NSMakeRect(myFrame.origin.x, myFrame.origin.y + (kPSMTabBarControlHeight - 1), myFrame.size.width, myFrame.size.height - (kPSMTabBarControlHeight - 1))];
-					[partnerView setFrame:NSMakeRect(partnerFrame.origin.x, partnerFrame.origin.y, partnerFrame.size.width, partnerFrame.size.height + (kPSMTabBarControlHeight - 1))];
-				} else {
-					// partner is above me
-					[self setFrame:NSMakeRect(myFrame.origin.x, myFrame.origin.y, myFrame.size.width, myFrame.size.height - (kPSMTabBarControlHeight - 1))];
-					[partnerView setFrame:NSMakeRect(partnerFrame.origin.x, partnerFrame.origin.y - (kPSMTabBarControlHeight - 1), partnerFrame.size.width, partnerFrame.size.height + (kPSMTabBarControlHeight - 1))];
-				}
-				[partnerView setNeedsDisplay:YES];
-				[self setNeedsDisplay:YES];
-			} else {
-				// for window movement
-				NSRect windowFrame = [[self window] frame];
-				[[self window] setFrame:NSMakeRect(windowFrame.origin.x, windowFrame.origin.y + (kPSMTabBarControlHeight - 1), windowFrame.size.width, windowFrame.size.height - (kPSMTabBarControlHeight - 1)) display:YES];
-				[self setFrame:NSMakeRect(myFrame.origin.x, myFrame.origin.y, myFrame.size.width, myFrame.size.height - (kPSMTabBarControlHeight - 1))];
-			}
-		} else {
-			if (partnerView) {
-				NSRect partnerFrame = [partnerView frame];
-				//to the left or right?
-				if (myFrame.origin.x < [partnerView frame].origin.x) {
-					// partner is to the left
-					[self setFrame:NSMakeRect(myFrame.origin.x, myFrame.origin.y, 1, myFrame.size.height)];
-					[partnerView setFrame:NSMakeRect(partnerFrame.origin.x - myFrame.size.width + 1, partnerFrame.origin.y, partnerFrame.size.width + myFrame.size.width - 1, partnerFrame.size.height)];
-				} else {
-					// partner to the right
-					[self setFrame:NSMakeRect(myFrame.origin.x + myFrame.size.width, myFrame.origin.y, 1, myFrame.size.height)];
-					[partnerView setFrame:NSMakeRect(partnerFrame.origin.x, partnerFrame.origin.y, partnerFrame.size.width + myFrame.size.width, partnerFrame.size.height)];
-				}
-				_tabBarWidth = myFrame.size.width;
-				[partnerView setNeedsDisplay:YES];
-				[self setNeedsDisplay:YES];
-			} else {
-				// for window movement
-				NSRect windowFrame = [[self window] frame];
-				[[self window] setFrame:NSMakeRect(windowFrame.origin.x + myFrame.size.width - 1, windowFrame.origin.y, windowFrame.size.width - myFrame.size.width + 1, windowFrame.size.height) display:YES];
-				[self setFrame:NSMakeRect(myFrame.origin.x, myFrame.origin.y, 1, myFrame.size.height)];
-			}
-		}
-		
-        _isHidden = YES;
-        
-		if ([[self delegate] respondsToSelector:@selector(tabView:tabBarDidHide:)]) {
-			[[self delegate] tabView:[self tabView] tabBarDidHide:self];
-		}
-
-		// The above tasks only needs to be run once, so set a flag to ensure that
-		_awakenedFromNib = YES;
-    }
-
 	// Determine whether a draw update in response to window state change might be required
 	BOOL isMainWindow = [[self window] isMainWindow];
 	BOOL attachedWindowIsMainWindow = [[[self window] attachedSheet] isMainWindow];
@@ -1832,7 +1525,6 @@
 		[aCoder encodeInteger:_orientation forKey:@"PSMorientation"];
         [aCoder encodeBool:_canCloseOnlyTab forKey:@"PSMcanCloseOnlyTab"];
 		[aCoder encodeBool:_disableTabClose forKey:@"PSMdisableTabClose"];
-        [aCoder encodeBool:_hideForSingleTab forKey:@"PSMhideForSingleTab"];
 		[aCoder encodeBool:_allowsBackgroundTabClosing forKey:@"PSMallowsBackgroundTabClosing"];
 		[aCoder encodeBool:_allowsResizing forKey:@"PSMallowsResizing"];
 		[aCoder encodeBool:_selectsTabsOnMouseDown forKey:@"PSMselectsTabsOnMouseDown"];
@@ -1842,13 +1534,11 @@
         [aCoder encodeInteger:_cellMaxWidth forKey:@"PSMcellMaxWidth"];
         [aCoder encodeInteger:_cellOptimumWidth forKey:@"PSMcellOptimumWidth"];
         [aCoder encodeInteger:_currentStep forKey:@"PSMcurrentStep"];
-        [aCoder encodeBool:_isHidden forKey:@"PSMisHidden"];
         [aCoder encodeObject:partnerView forKey:@"PSMpartnerView"];
         [aCoder encodeBool:_awakenedFromNib forKey:@"PSMawakenedFromNib"];
         [aCoder encodeObject:_lastMouseDownEvent forKey:@"PSMlastMouseDownEvent"];
         [aCoder encodeObject:delegate forKey:@"PSMdelegate"];
 		[aCoder encodeBool:_useOverflowMenu forKey:@"PSMuseOverflowMenu"];
-		[aCoder encodeBool:_automaticallyAnimates forKey:@"PSMautomaticallyAnimates"];
 		[aCoder encodeBool:_alwaysShowActiveTab forKey:@"PSMalwaysShowActiveTab"];
     }
 }
@@ -1871,7 +1561,6 @@
 			_orientation = (PSMTabBarOrientation)[aDecoder decodeIntegerForKey:@"PSMorientation"];
             _canCloseOnlyTab = [aDecoder decodeBoolForKey:@"PSMcanCloseOnlyTab"];
 			_disableTabClose = [aDecoder decodeBoolForKey:@"PSMdisableTabClose"];
-            _hideForSingleTab = [aDecoder decodeBoolForKey:@"PSMhideForSingleTab"];
 			_allowsBackgroundTabClosing = [aDecoder decodeBoolForKey:@"PSMallowsBackgroundTabClosing"];
 			_allowsResizing = [aDecoder decodeBoolForKey:@"PSMallowsResizing"];
 			_selectsTabsOnMouseDown = [aDecoder decodeBoolForKey:@"PSMselectsTabsOnMouseDown"];
@@ -1881,12 +1570,10 @@
             _cellMaxWidth = [aDecoder decodeIntegerForKey:@"PSMcellMaxWidth"];
             _cellOptimumWidth = [aDecoder decodeIntegerForKey:@"PSMcellOptimumWidth"];
             _currentStep = [aDecoder decodeIntegerForKey:@"PSMcurrentStep"];
-            _isHidden = [aDecoder decodeBoolForKey:@"PSMisHidden"];
             partnerView = [aDecoder decodeObjectForKey:@"PSMpartnerView"];
             _awakenedFromNib = [aDecoder decodeBoolForKey:@"PSMawakenedFromNib"];
             _lastMouseDownEvent = [aDecoder decodeObjectForKey:@"PSMlastMouseDownEvent"];
 			_useOverflowMenu = [aDecoder decodeBoolForKey:@"PSMuseOverflowMenu"];
-			_automaticallyAnimates = [aDecoder decodeBoolForKey:@"PSMautomaticallyAnimates"];
 			_alwaysShowActiveTab = [aDecoder decodeBoolForKey:@"PSMalwaysShowActiveTab"];
             delegate = [aDecoder decodeObjectForKey:@"PSMdelegate"];
         }

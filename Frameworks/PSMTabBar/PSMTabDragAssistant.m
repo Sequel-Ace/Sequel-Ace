@@ -375,15 +375,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
         [[[self sourceTabBar] tabView] removeTabViewItem:[[self draggedCell] representedObject]];
         [[[self destinationTabBar] tabView] insertTabViewItem:[[self draggedCell] representedObject] atIndex:insertIndex];
 		
-		//calculate the position for the dragged cell
-		if ([[self destinationTabBar] automaticallyAnimates]) {
-			if (insertIndex > 0) {
-				NSRect cellRect = [[cells objectAtIndex:insertIndex - 1] frame];
-				cellRect.origin.x += cellRect.size.width;
-				[[self draggedCell] setFrame:cellRect];
-			}
-		}
-		
 		//rebind the cell to the new control
 		[[self destinationTabBar] bindPropertiesForCell:[self draggedCell] andTabViewItem:[[self draggedCell] representedObject]];
 		

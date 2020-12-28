@@ -274,15 +274,6 @@
 }
 
 /**
- * Toggle the tab bar's visibility.
- */
-- (IBAction)toggleTabBarShown:(id)sender
-{
-	[tabBar setHideForSingleTab:![tabBar hideForSingleTab]];
-	[[NSUserDefaults standardUserDefaults] setBool:![tabBar hideForSingleTab] forKey:SPAlwaysShowWindowTabBar];
-}
-
-/**
  * Menu item validation.
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
@@ -293,13 +284,6 @@
 		[menuItem action] == @selector(moveSelectedTabInNewWindow:))
 	{
 		return ([tabView numberOfTabViewItems] != 1);
-	}
-
-	// Show/hide Tab bar
-	if ([menuItem action] == @selector(toggleTabBarShown:)) {
-		[menuItem setTitle:(![tabBar isTabBarHidden] ? NSLocalizedString(@"Hide Tab Bar", @"hide tab bar") : NSLocalizedString(@"Show Tab Bar", @"show tab bar"))];
-		
-		return [[tabBar cells] count] <= 1;
 	}
 	
 	// See if the front document blocks validation of this item
@@ -333,11 +317,6 @@
 	}
 }
 
-- (void)setHideForSingleTab:(BOOL)hide
-{
-	[tabBar setHideForSingleTab:hide];
-}
-
 /**
  * Opens the current connection in a new tab, but only if it's already connected.
  */
@@ -359,8 +338,6 @@
 			collapse = YES;
 		}
 	}
-	
-	tabBar.heightCollapsed = collapse ? 8 : 1;
 	
 	[tabBar update];
 }
@@ -423,7 +400,6 @@
 {
 	[tabBar setStyleNamed:@"SequelPro"];
 	[tabBar setCanCloseOnlyTab:NO];
-	[tabBar setHideForSingleTab:![[NSUserDefaults standardUserDefaults] boolForKey:SPAlwaysShowWindowTabBar]];
 	[tabBar setShowAddTabButton:YES];
 	[tabBar setSizeCellsToFit:NO];
 	[tabBar setCellMinWidth:100];
@@ -796,9 +772,7 @@
 	}
 
 	// Adjust the positioning as appropriate
-	point.y += toolbarHeight;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAlwaysShowWindowTabBar]) point.y += kPSMTabBarControlHeight;
+	point.y += toolbarHeight + kPSMTabBarControlHeight;
 
 	// Set the new window position and size
 	NSRect targetWindowFrame = [[self window] frame];
@@ -880,7 +854,7 @@
  */
 - (void)tabDragStarted:(id)sender
 {
-	[tabBar setHideForSingleTab:NO];
+    
 }
 
 /**
@@ -888,9 +862,7 @@
  */
 - (void)tabDragStopped:(id)sender
 {
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:SPAlwaysShowWindowTabBar]) {
-		[tabBar setHideForSingleTab:YES];
-	}
+
 }
 
 #pragma mark -
@@ -900,9 +872,6 @@
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	
-	// Tear down the animations on the tab bar to stop redraws
-	[tabBar destroyAnimations];
 }
 
 @end
