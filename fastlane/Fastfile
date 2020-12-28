@@ -93,7 +93,7 @@ platform :mac do
          body: changelog
       )
       
-      git checkout -- .
+      sh "git checkout -- ."
    end
 
    ############################## XCode ##############################
