@@ -529,13 +529,6 @@
                 <menuItem title="View" tag="3" id="496">
                     <menu key="submenu" title="View" id="498">
                         <items>
-                            <menuItem title="Show Tab Bar" keyEquivalent="t" id="1124">
-                                <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
-                                <connections>
-                                    <action selector="toggleTabBarShown:" target="-1" id="1127"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem isSeparatorItem="YES" id="1125"/>
                             <menuItem title="Table Structure" keyEquivalent="1" id="497">
                                 <connections>
                                     <action selector="viewStructure:" target="-1" id="501"/>
