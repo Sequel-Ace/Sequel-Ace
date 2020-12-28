@@ -2593,7 +2593,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	for (NSUInteger i = 0; i < tableCount; i++)
 	{
         if([[tmpTableTypes safeObjectAtIndex:i] integerValue] == type){
-            [returnArray addObject:[tmpTableTypes safeObjectAtIndex:i]];
+            [returnArray addObject:[[self tables] safeObjectAtIndex:i]];
         }
 	}
 
