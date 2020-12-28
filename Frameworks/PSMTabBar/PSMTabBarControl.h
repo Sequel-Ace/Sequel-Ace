@@ -28,13 +28,6 @@
 #define kPSMMinimumTitleWidth 30
 #define kPSMTabBarIndicatorWidth 16.0f
 #define kPSMTabBarIconWidth 16.0f
-#define kPSMHideAnimationSteps 3.0f
-
-// Value used in _currentStep to indicate that resizing operation is not in progress
-#define kPSMIsNotBeingResized -1
-
-// Value used in _currentStep when a resizing operation has just been started
-#define kPSMStartResizeAnimation 0
 
 @class PSMOverflowPopUpButton, PSMRolloverButton, PSMTabBarCell, PSMTabBarController;
 @protocol PSMTabStyle;
@@ -102,8 +95,6 @@ enum {
 	NSInteger				_cellMaxWidth;
 	NSInteger				_cellOptimumWidth;
 	
-	// animation for hide/show
-	NSInteger				_currentStep;
 	IBOutlet id				partnerView;				// gets resized when hide/show
 	BOOL					_awakenedFromNib;
 	NSInteger				_tabBarWidth;
@@ -208,7 +199,7 @@ enum {
 
 // External drawing accessors
 - (void)update;
-- (void)update:(BOOL)animate;
+- (void)updateTabs:(BOOL)updateTabs;
 
 @end
 

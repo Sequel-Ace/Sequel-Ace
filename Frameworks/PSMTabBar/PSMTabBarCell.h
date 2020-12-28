@@ -16,7 +16,6 @@
     // sizing
     NSRect              _frame;
     NSSize              _stringSize;
-    NSInteger                 _currentStep;
     BOOL                _isPlaceholder;
     
     // state

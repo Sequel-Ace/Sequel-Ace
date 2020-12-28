@@ -252,22 +252,6 @@
     _isPlaceholder = value;
 }
 
-- (NSInteger)currentStep
-{
-    return _currentStep;
-}
-
-- (void)setCurrentStep:(NSInteger)value
-{
-    if(value < 0)
-        value = 0;
-    
-    if(value > (kPSMTabDragAnimationSteps - 1))
-        value = (kPSMTabDragAnimationSteps - 1);
-    
-    _currentStep = value;
-}
-
 - (BOOL)isEdited
 {
     return _isEdited;
@@ -418,7 +402,6 @@
     if ([aCoder allowsKeyedCoding]) {
         [aCoder encodeRect:_frame forKey:@"frame"];
         [aCoder encodeSize:_stringSize forKey:@"stringSize"];
-        [aCoder encodeInteger:_currentStep forKey:@"currentStep"];
         [aCoder encodeBool:_isPlaceholder forKey:@"isPlaceholder"];
         [aCoder encodeInteger:_tabState forKey:@"tabState"];
         [aCoder encodeInteger:_closeButtonTrackingTag forKey:@"closeButtonTrackingTag"];
@@ -440,7 +423,6 @@
         if ([aDecoder allowsKeyedCoding]) {
             _frame = [aDecoder decodeRectForKey:@"frame"];
             _stringSize = [aDecoder decodeSizeForKey:@"stringSize"];
-            _currentStep = [aDecoder decodeIntegerForKey:@"currentStep"];
             _isPlaceholder = [aDecoder decodeBoolForKey:@"isPlaceholder"];
             _tabState = [aDecoder decodeIntegerForKey:@"tabState"];
             _closeButtonTrackingTag = [aDecoder decodeIntegerForKey:@"closeButtonTrackingTag"];

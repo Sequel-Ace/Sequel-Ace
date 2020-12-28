@@ -265,7 +265,7 @@
 	[[control tabView] addTabViewItem:selectedTabViewItem];
 
 	// Make sure the new tab is set in the correct position by forcing an update
-	[tabBar update:NO];
+	[tabBar update];
 
 	// Update tabBar of the new window
 	[newWindowController tabView:[tabBar tabView] didDropTabViewItem:[selectedCell representedObject] inTabBar:control];

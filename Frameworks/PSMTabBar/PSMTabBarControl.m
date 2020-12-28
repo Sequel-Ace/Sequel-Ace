@@ -35,7 +35,7 @@
 - (void)_setupTrackingRectsForCell:(PSMTabBarCell *)cell;
 - (void)_positionOverflowMenu;
 - (void)_checkWindowFrame;
-- (void)update:(BOOL)animate updateTabs:(BOOL)updateTabs;
+- (void)updateTabs:(BOOL)updateTabs;
 
     // actions
 - (void)closeTabClick:(id)sender;
@@ -121,7 +121,6 @@
 	_lastMouseDownEvent = nil;
 	
     // default config
-	_currentStep = kPSMIsNotBeingResized;
 	_orientation = PSMTabBarHorizontalOrientation;
     _canCloseOnlyTab = NO;
 	_disableTabClose = NO;
@@ -350,7 +349,7 @@
 		[[self style] setOrientation:_orientation];
 
         [self _positionOverflowMenu]; //move the overflow popup button to the right place
-		[self update:NO];
+		[self update];
 	}
 }
 
@@ -717,8 +716,6 @@
 	
     [[self subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
 
-    _currentStep = (NSInteger)kPSMHideAnimationSteps;
-
     [self addSubview:_overflowPopUpButton];
     [self addSubview:_addTabButton];
 
@@ -839,15 +836,10 @@
         [self setFrame:myNewFrame];
     }
     
-    // next
-    _currentStep++;
-    if (_currentStep == kPSMHideAnimationSteps + 1) {
-		_currentStep = kPSMIsNotBeingResized;
-        [self viewDidEndLiveResize];
-        [self update:NO];
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(tabView:tabBarDidUnhide:)]) {
-            [[self delegate] tabView:[self tabView] tabBarDidUnhide:self];
-        }
+    [self viewDidEndLiveResize];
+    [self update];
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(tabView:tabBarDidUnhide:)]) {
+        [[self delegate] tabView:[self tabView] tabBarDidUnhide:self];
     }
     [[self window] display];
 }
@@ -877,15 +869,10 @@
 
 - (void)update
 {
-	[self update:NO];
+	[self updateTabs:YES];
 }
 
-- (void)update:(BOOL)animate
-{
-	[self update:animate updateTabs:YES];
-}
-
-- (void)update:(BOOL)animate updateTabs:(BOOL)updateTabs
+- (void)updateTabs:(BOOL)updateTabs
 {
     // make sure all of our tabs are accounted for before updating,
 	// or only proceed if a drag is in progress (where counts may mismatch)
@@ -1332,7 +1319,7 @@
 							   afterDelay:0];
 	}
 
-	[self update:NO updateTabs:NO];
+	[self updateTabs:NO];
 }
 
 - (void)viewDidMoveToWindow
@@ -1359,7 +1346,7 @@
     }
 	
 	[self _checkWindowFrame];
-    [self update:NO];
+    [self update];
 }
 
 - (void)resetCursorRects
@@ -1533,7 +1520,6 @@
         [aCoder encodeInteger:_cellMinWidth forKey:@"PSMcellMinWidth"];
         [aCoder encodeInteger:_cellMaxWidth forKey:@"PSMcellMaxWidth"];
         [aCoder encodeInteger:_cellOptimumWidth forKey:@"PSMcellOptimumWidth"];
-        [aCoder encodeInteger:_currentStep forKey:@"PSMcurrentStep"];
         [aCoder encodeObject:partnerView forKey:@"PSMpartnerView"];
         [aCoder encodeBool:_awakenedFromNib forKey:@"PSMawakenedFromNib"];
         [aCoder encodeObject:_lastMouseDownEvent forKey:@"PSMlastMouseDownEvent"];
@@ -1569,7 +1555,6 @@
             _cellMinWidth = [aDecoder decodeIntegerForKey:@"PSMcellMinWidth"];
             _cellMaxWidth = [aDecoder decodeIntegerForKey:@"PSMcellMaxWidth"];
             _cellOptimumWidth = [aDecoder decodeIntegerForKey:@"PSMcellOptimumWidth"];
-            _currentStep = [aDecoder decodeIntegerForKey:@"PSMcurrentStep"];
             partnerView = [aDecoder decodeObjectForKey:@"PSMpartnerView"];
             _awakenedFromNib = [aDecoder decodeBoolForKey:@"PSMawakenedFromNib"];
             _lastMouseDownEvent = [aDecoder decodeObjectForKey:@"PSMlastMouseDownEvent"];
@@ -1604,7 +1589,7 @@
 {
     // this is called any time the view is resized in IB
     [self setFrame:newFrame];
-    [self update:NO];
+    [self update];
 }
 
 #pragma mark -
