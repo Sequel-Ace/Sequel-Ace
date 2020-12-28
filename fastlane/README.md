@@ -21,11 +21,6 @@ or alternatively using `brew install fastlane`
 fastlane mac prepare_release
 ```
 Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
-### mac prepare_patch_release
-```
-fastlane mac prepare_patch_release
-```
-Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
 ### mac prepare_beta_release_bump_version
 ```
 fastlane mac prepare_beta_release_bump_version
