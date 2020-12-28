@@ -252,6 +252,22 @@
     _isPlaceholder = value;
 }
 
+- (NSInteger)currentStep
+{
+    return _currentStep;
+}
+
+- (void)setCurrentStep:(NSInteger)value
+{
+    if(value < 0)
+        value = 0;
+    
+    if(value > (kPSMTabDragAnimationSteps - 1))
+        value = (kPSMTabDragAnimationSteps - 1);
+    
+    _currentStep = value;
+}
+
 - (BOOL)isEdited
 {
     return _isEdited;
