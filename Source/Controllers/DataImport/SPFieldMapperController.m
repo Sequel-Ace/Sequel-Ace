@@ -38,7 +38,7 @@
 #import "RegexKitLite.h"
 #import "SPDatabaseData.h"
 #import "SPFunctions.h"
-
+@import Firebase;
 #import <SPMySQL/SPMySQL.h>
 
 #import "sequel-ace-Swift.h"
@@ -1364,12 +1364,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				dist = -1e6f;
 			}
 
-			[distMatrix addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-				[NSNumber numberWithFloat:dist], @"dist",
-				NSStringFromRange(NSMakeRange(i,j)), @"match",
-				(NSString*)fileHeaderName, @"file",
-                [tableHeaderNames safeObjectAtIndex:i], @"table",
-				nil]];
+            [distMatrix addObject:@{
+                @"dist": @(dist),
+                @"match": NSStringFromRange(NSMakeRange(i,j)),
+                @"file": (NSString*)fileHeaderName,
+                @"table": [tableHeaderNames safeObjectAtIndex:i]
+            }];
 
 		}
 
@@ -1388,7 +1388,15 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			NSRange match = NSRangeFromString([m objectForKey:@"match"]);
 
 			// Set best match
-			[fieldMappingArray replaceObjectAtIndex:match.location withObject:[NSNumber numberWithInteger:match.length]];
+            if(match.location >= fieldMappingArray.count){
+                SPLog(@"match.location [%lu] >= fieldMappingArray.count [%lu]",(unsigned long)match.location, (unsigned long)fieldMappingArray.count );
+                CLS_LOG(@"match.location [%lu] >= fieldMappingArray.count [%lu]",(unsigned long)match.location, (unsigned long)fieldMappingArray.count );
+                CLS_LOG(@"fieldMappingArray = %@", m);
+                SPLog(@"fieldMappingArray = %@", m);
+                continue;
+            }
+
+			[fieldMappingArray replaceObjectAtIndex:match.location withObject:@(match.length)];
 			[fieldMappingOperatorArray replaceObjectAtIndex:match.location withObject:doImportKey];
 
 			// Remember matched pair
