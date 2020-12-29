@@ -105,6 +105,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 
+// images
+@property (nonatomic, strong) NSImage *hideConsoleImage;
+@property (nonatomic, strong) NSImage *showConsoleImage;
+@property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -146,6 +151,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize tableContentInstance;
 @synthesize customQueryInstance;
 @synthesize allowSplitViewResizing;
+@synthesize hideConsoleImage;
+@synthesize showConsoleImage;
+@synthesize textAndCommandMacwindowImage;
 
 #pragma mark -
 
@@ -180,6 +188,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		statusLoaded = NO;
 		triggersLoaded = NO;
 		relationsLoaded = NO;
+
+        hideConsoleImage = [NSImage imageNamed:@"hideconsole"];
+        showConsoleImage = [NSImage imageNamed:@"showconsole"];
+        if (@available(macOS 11.0, *)) {
+            textAndCommandMacwindowImage = [NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil];
+        }
 
 		selectedDatabase = nil;
 		selectedDatabaseEncoding = @"latin1";
@@ -3690,9 +3704,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		[toolbarItem setLabel:NSLocalizedString(@"Console", @"Console")];
 		if (@available(macOS 11.0, *)) {
-			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil]];
+			[toolbarItem setImage:textAndCommandMacwindowImage];
 		} else {
-			[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
+			[toolbarItem setImage:hideConsoleImage];
 		}
 
 		//set up the target action
@@ -3706,7 +3720,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		//set up tooltip and image
 		[toolbarItem setToolTip:NSLocalizedString(@"Clear the console which shows all MySQL commands performed by Sequel Ace", @"tooltip for toolbar item for clear console")];
 		if (@available(macOS 11.0, *)) {
-			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil]];
+			[toolbarItem setImage:textAndCommandMacwindowImage];
 		} else {
 			[toolbarItem setImage:[NSImage imageNamed:@"clearconsole"]];
 		}
@@ -3913,16 +3927,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	if ([identifier isEqualToString:SPMainToolbarShowConsole]) {
 		NSWindow *queryWindow = [[SPQueryController sharedQueryController] window];
 
-		if (@available(macOS 11.0, *)) {
-			[toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.and.command.macwindow" accessibilityDescription:nil]];
-		} else {
-			if ([queryWindow isVisible]) {
-				[toolbarItem setImage:[NSImage imageNamed:@"showconsole"]];
-			} else {
-                CLS_LOG(@"macOS < 11 and queryWindow is NOT Visible");
-				[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
-			}
-		}
+        if (@available(macOS 11.0, *)) {
+            toolbarItem.image = textAndCommandMacwindowImage;
+        } else {
+            if ([queryWindow isVisible]) {
+                toolbarItem.image = showConsoleImage;
+            } else {
+                 CLS_LOG(@"macOS < 11 and queryWindow is NOT Visible");
+                toolbarItem.image = hideConsoleImage;
+            }
+        }
+
 		if ([queryWindow isKeyWindow]) {
 			return NO;
 		} else {
