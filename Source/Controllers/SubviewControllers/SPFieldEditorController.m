@@ -38,8 +38,9 @@
 #import "SPCustomQuery.h"
 #import "SPTableContent.h"
 #import "SPJSONFormatter.h"
-
+@import Firebase;
 #import <SPMySQL/SPMySQL.h>
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -259,7 +260,7 @@ typedef enum {
 		if ([bitSheetNULLButton state] == NSOffState && maxBit <= [(NSString*)sheetEditData length])
 			for (i = 0; i < maxBit; i++)
 			{
-				[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]]
+				[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]]
 				 setState:([(NSString*)sheetEditData characterAtIndex:(maxBit - i - 1)] == '1') ? NSOnState : NSOffState];
 			}
 
@@ -528,17 +529,33 @@ typedef enum {
 		case JsonSegment:
 			[usedSheet makeFirstResponder:jsonTextView];
 			if([[jsonTextView string] isEqualToString:@""]) {
-				NSError *error;
-				NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
-				id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
-				
-				if([NSJSONSerialization isValidJSONObject:jsonObject]){
-					NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
-					NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
-					[jsonTextView setString:prettyPrintedJson];
-				}else{
-					[jsonTextView setString:sheetEditData];
-				}
+                if([sheetEditData isKindOfClass:[NSData class]]) {
+                    if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
+                        NSError *error;
+                        NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
+                        id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
+                        
+                        if([NSJSONSerialization isValidJSONObject:jsonObject]){
+                            NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
+                            NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
+                            [jsonTextView setString:prettyPrintedJson];
+                        }else{
+                            [jsonTextView setString:sheetEditData];
+                        }
+                    }
+                    else{
+                        SPLog(@"sheetEditData does not respond to dataUsingEncoding: %@", [sheetEditData class]);
+                        CLS_LOG(@"sheetEditData does not respond dataUsingEncoding: %@", [sheetEditData class]);
+#ifdef DEBUG
+                        NSArray *arr = DumpObjCMethods(sheetEditData);
+                        SPLog(@"sheetEditData class methods = %@", arr);
+#endif
+                    }
+                }
+                else{
+                    SPLog(@"sheetEditData not of NSData class: %@", [sheetEditData class]);
+                    CLS_LOG(@"sheetEditData not of NSData class: %@", [sheetEditData class]);
+                }
 			}
 			[editTextView setHidden:YES];
 			[editTextScrollView setHidden:YES];
@@ -635,7 +652,7 @@ typedef enum {
 		}
 	}
 
-	[NSApp endSheet:usedSheet returnCode:1];
+	[NSApp endSheet:usedSheet returnCode:editSheetReturnCode];
 	[usedSheet orderOut:self];
 
 	if(callerInstance) {
@@ -1070,11 +1087,11 @@ typedef enum {
 	switch([sender tag]) {
 		case 0: // all to 1
 		for(i=0; i<maxBit; i++)
-			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOnState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOnState];
 		break;
 		case 1: // all to 0
 		for(i=0; i<maxBit; i++)
-			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOffState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOffState];
 		break;
 		case 2: // negate
 		for(i=0; i<maxBit; i++)
@@ -1084,27 +1101,27 @@ typedef enum {
 		for(i=maxBit-1; i>0; i--) {
 			[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i-1]] state]];
 		}
-		[[self valueForKeyPath:@"bitSheetBitButton0"] setState:NSOffState];
+		[(NSButton *)[self valueForKeyPath:@"bitSheetBitButton0"] setState:NSOffState];
 		break;
 		case 4: // shift right
 		for(i=0; i<maxBit-1; i++) {
 			[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i+1]] state]];
 		}
-		[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", maxBit-1]] setState:NSOffState];
+		[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", maxBit-1]] setState:NSOffState];
 		break;
 		case 5: // rotate left
 		aBit = [(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", maxBit-1]] state];
 		for(i=maxBit-1; i>0; i--) {
 			[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i-1]] state]];
 		}
-		[[self valueForKeyPath:@"bitSheetBitButton0"] setState:aBit];
+		[(NSButton *)[self valueForKeyPath:@"bitSheetBitButton0"] setState:aBit];
 		break;
 		case 6: // rotate right
 		aBit = [(NSButton*)[self valueForKeyPath:@"bitSheetBitButton0"] state];
 		for(i=0; i<maxBit-1; i++) {
 			[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i+1]] state]];
 		}
-		[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", maxBit-1]] setState:aBit];
+		[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", maxBit-1]] setState:aBit];
 		break;
 	}
 	[self updateBitSheet];
@@ -1170,7 +1187,7 @@ typedef enum {
 		NSUInteger intValue = (NSUInteger)strtoull([[bitSheetIntegerTextField stringValue] UTF8String], NULL, 0);
 
 		for(i=0; i<maxBit; i++)
-			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOffState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOffState];
 
 		[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%lX", (unsigned long)intValue]];
 		[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", (long long)intValue]];
@@ -1178,7 +1195,7 @@ typedef enum {
 		i = 0;
 		while( intValue && i < maxBit )
 		{
-			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:( (intValue & 0x1) == 0) ? NSOffState : NSOnState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:( (intValue & 0x1) == 0) ? NSOffState : NSOnState];
 			intValue >>= 1;
 			i++;
 		}
@@ -1194,7 +1211,7 @@ typedef enum {
 		[[NSScanner scannerWithString:[bitSheetHexTextField stringValue]] scanHexLongLong: &intValue];
 
 		for(i=0; i<maxBit; i++)
-			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:NSOffState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:NSOffState];
 
 		[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%qX", intValue]];
 		[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", intValue]];
@@ -1202,7 +1219,7 @@ typedef enum {
 		i = 0;
 		while( intValue && i < maxBit )
 		{
-			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:( (intValue & 0x1) == 0) ? NSOffState : NSOnState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:( (intValue & 0x1) == 0) ? NSOffState : NSOnState];
 			intValue >>= 1;
 			i++;
 		}

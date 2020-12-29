@@ -939,9 +939,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if(!display) return; // abort if unset
 
 	// try to restore the value from the previous displayValue for input fields
-	RuleNode *oldCriterion = [oldCriteria objectOrNilAtIndex:0];
+	RuleNode *oldCriterion = [oldCriteria safeObjectAtIndex:0];
 	if([curCriterion type] == RuleNodeTypeArgument && oldCriterion && [curCriterion type] == [oldCriterion type]) {
-		NSTextField *oldField = [oldDisplayValues objectOrNilAtIndex:0];
+		NSTextField *oldField = [oldDisplayValues safeObjectAtIndex:0];
 		if(oldField) [display setStringValue:[oldField stringValue]];
 	}
 	[displayValues addObject:display];
@@ -957,7 +957,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSArray *nextOldDisplayValues = ([oldDisplayValues count] > 1 ? [oldDisplayValues subarrayWithRange:NSMakeRange(1, [oldDisplayValues count] - 1)] : [NSArray array]);
 
 		// if the user changed the column, try to retain the previously selected operation
-		RuleNode *nextOldCriterion = [nextOldCriteria objectOrNilAtIndex:0];
+		RuleNode *nextOldCriterion = [nextOldCriteria safeObjectAtIndex:0];
 		if(nextOldCriterion && [nextOldCriterion type] == RuleNodeTypeOperator && [curCriterion type] == RuleNodeTypeColumn) {
 			NSString *opName = [(OpNode *)nextOldCriterion name];
 			OpNode *op = [self _operatorNamed:opName forColumn:(ColumnNode *)curCriterion];
@@ -1177,7 +1177,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 						[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY" withString:@""];
 						[tip appendString:NSLocalizedString(@"\n\nPress ⇧ for binary search (case-sensitive).", @"\n\npress shift for binary search tooltip message")];
 					}
+                    // don't log here ... it's called hundreds of times.
 					[tip flushCachedRegexData];
+                    // the regex below is causing a crash:
+                    // https://console.firebase.google.com/u/0/project/com-sequel-ace/crashlytics/app/ios:com.sequel-ace.sequel-ace/issues/8754587eadf991cbb11ccc83b9fe0b5b
+                    // so I've added logging to RegexLite exception generation.
 					[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[[colNode name] backtickQuotedString]];
 					[tip flushCachedRegexData];
 					tooltip = [NSString stringWithString:tip];
@@ -1709,9 +1713,9 @@ BOOL SerIsGroup(NSDictionary *dict)
 
 		SPTableFilterParser *parser = [[SPTableFilterParser alloc] initWithFilterClause:[filter objectForKey:@"Clause"]
 		                                                              numberOfArguments:[[filter objectForKey:@"NumberOfArguments"] integerValue]];
-		[parser setArgument:[values objectOrNilAtIndex:0]];
-		[parser setFirstBetweenArgument:[values objectOrNilAtIndex:0]];
-		[parser setSecondBetweenArgument:[values objectOrNilAtIndex:1]];
+		[parser setArgument:[values safeObjectAtIndex:0]];
+		[parser setFirstBetweenArgument:[values safeObjectAtIndex:0]];
+		[parser setSecondBetweenArgument:[values safeObjectAtIndex:1]];
 		[parser setSuppressLeadingTablePlaceholder:[[filter objectForKey:@"SuppressLeadingFieldPlaceholder"] boolValue]];
 		[parser setCaseSensitive:isBINARY];
 		[parser setCurrentField:[in objectForKey:SerFilterExprColumn]];

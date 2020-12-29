@@ -57,6 +57,8 @@
 #include <stdio.h>
 #include <os/lock.h>
 
+#import "SPConstants.h"
+#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 
 #import "RegexKitLite.h"
 
@@ -1721,11 +1723,27 @@ static NSDictionary *rkl_userInfoDictionary(RKLUserInfoOptions userInfoOptions, 
 
 static NSError *rkl_makeNSError(RKLUserInfoOptions userInfoOptions, NSString *regexString, RKLRegexOptions options, const UParseError *parseError, int32_t status, NSString *matchString, NSRange matchRange, NSString *replacementString, NSString *replacedString, NSInteger replacedCount, RKLRegexEnumerationOptions enumerationOptions, NSString *errorDescription) {
 	if(errorDescription == NULL) { errorDescription = (status == U_ZERO_ERROR) ? @"No description of this error is available." : [NSString stringWithFormat:@"ICU regular expression error #%d, %s.", status, u_errorName(status)]; }
-	return([NSError errorWithDomain:RKLICURegexErrorDomain code:(NSInteger)status userInfo:rkl_userInfoDictionary(userInfoOptions, regexString, options, parseError, status, matchString, matchRange, replacementString, replacedString, replacedCount, enumerationOptions, errorDescription, @"NSLocalizedDescription", NULL)]);
+
+    NSError *error = [NSError errorWithDomain:RKLICURegexErrorDomain code:(NSInteger)status userInfo:rkl_userInfoDictionary(userInfoOptions, regexString, options, parseError, status, matchString, matchRange, replacementString, replacedString, replacedCount, enumerationOptions, errorDescription, @"NSLocalizedDescription", NULL)];
+
+    SPLog(@"Error: %@", error.localizedDescription);
+    CLS_LOG(@"Error: %@", error.localizedDescription);
+    [FIRCrashlytics.crashlytics recordError:error];
+
+	return(error);
 }
 
 static NSException *rkl_NSExceptionForRegex(NSString *regexString, RKLRegexOptions options, const UParseError *parseError, int32_t status) {
-	return([NSException exceptionWithName:RKLICURegexException reason:[NSString stringWithFormat:@"ICU regular expression error #%d, %s.", status, u_errorName(status)] userInfo:rkl_userInfoDictionary((RKLUserInfoOptions)RKLUserInfoNone, regexString, options, parseError, status, NULL, NSNotFoundRange, NULL, NULL, 0L, (RKLRegexEnumerationOptions)RKLRegexEnumerationNoOptions, NULL)]);
+
+    NSString *reasonString = [[[NSString alloc] initWithFormat:@"ICU regular expression error #%d, %s.", status, u_errorName(status)] autorelease];
+
+    // will this leak?
+    NSDictionary *userInfoDict = rkl_userInfoDictionary((RKLUserInfoOptions)RKLUserInfoNone, regexString, options, parseError, status, NULL, NSNotFoundRange, NULL, NULL, 0L, (RKLRegexEnumerationOptions)RKLRegexEnumerationNoOptions, NULL);
+
+    CLS_LOG(@"RKLICURegexException. Reason: %@. userInfo: %@", reasonString, userInfoDict);
+    SPLog(@"RKLICURegexException. Reason: %@. userInfo: %@", reasonString, userInfoDict);
+
+	return([NSException exceptionWithName:RKLICURegexException reason:reasonString userInfo:userInfoDict]);
 }
 
 static NSDictionary *rkl_makeAssertDictionary(const char *function, const char *file, int line, NSString *format, ...) {

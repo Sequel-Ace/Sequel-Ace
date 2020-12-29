@@ -1,3 +1,66 @@
+## [3.0.2]
+
+### Added
+
+
+### Fixed
+c199dd0d,  spfieldmappercontroller match header names crash
+f03f6146, Fix Query Window Forgets Active Query 
+b0b0da30,  SPExtendedTableInfo loadTable crash
+b7b93ad3,   SPTableCopy _createTableStatementFor:inDatabase crash
+f2899dd6, Homebrew installation command 
+4540f8e8,  SPTableInfo crash
+b33ac44f, Fixed commenting out one or multiple lines in query editor 
+7eba8716,  double error alerts on connection failure
+c7cc1506,  sp table structure load table crash
+07b2d485,  - tableChanged NSNull Collation crash
+013c0f94,  tableViewColumnDidResize crash
+38a712e7, Update UI for light and dark mode on Tabs 
+5d70e94d,  deriveQueryString crash
+03fefe99,  databasestructure crash
+4c3f1a82, Keychain improvements and safety checks 
+ab1e3ea7, Query editor improvements 
+2bf774db, Use entered password for favorite if it changed 
+b10320f8, Various fixes/changes 
+
+### Changed
+cd85311a, Improvements to Console 
+
+### Removed
+
+
+### Infra
+42e36f3b, Remove a few extraneous log messages 
+22926dce, Change all NSArrayObjectAtIndex to safeObjectAtIndex 
+21fbea78,  logging in RegexKit's Exception and Error generation code
+20d48662, Update pull_request_template.md 
+7710ca24, Update bug_report.md 
+
+## [3.0.1]
+
+### Added
+
+
+### Fixed
+4d7ae04c, Fix 3.0.0 bugs 
+7cf9986a, CSV import crash
+69011da7, Query alias completions 
+863909cc, Alerts being created on background threads
+26f8b0bc, SPQueryController addHistory:forFileURL crash
+c5644649, Crash when taking substring of query
+8f079d3e, Fix couple of Crashlytics crashes 
+4f5a1900, Secure bookmark generation and logging 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+d02aa6cc, Added logging for missing key 
+
+
 ## [3.0.0]
 
 ### Added

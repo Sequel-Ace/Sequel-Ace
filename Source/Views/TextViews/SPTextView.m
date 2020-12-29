@@ -74,8 +74,8 @@
 #define SP_CQ_COPY_AS_RTF_MENU_ITEM_TAG          1001
 #define SP_CQ_SELECT_CURRENT_QUERY_MENU_ITEM_TAG 1002
 
-#define SP_SYNTAX_HILITE_BIAS 1000
-#define SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING 20000000
+#define SP_SYNTAX_HILITE_BIAS 1500
+#define SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING 2000000
 
 #pragma mark -
 
@@ -836,9 +836,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			NSArray *allTables = [[dbs objectForKey:conID] allKeys];
 			// Check if found table name is known, if not parse for aliases
 			if(![allTables containsObject:[NSString stringWithFormat:@"%@%@%@", conID, SPUniqueSchemaDelimiter, tableName]]) {
-				NSString *currentQuery = [[self string] substringWithRange:[customQueryInstance currentQueryRange]];
 				NSString *re = [NSString stringWithFormat:@"(?i)[\\s,]`?(\\S+?)`?\\s+(AS\\s+)?`?%@`?\\b", tableName];
-				NSArray *matches = [currentQuery componentsMatchedByRegex:re];
+				NSArray *matches = [[self string] componentsMatchedByRegex:re];
 				for(NSString* m in matches) {
 					NSRange aliasRange = [m rangeOfRegex:re capture:1L];
 					if(aliasRange.length) {
@@ -2339,7 +2338,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[super paste:sender];
 
 	// CMD+V - paste
-	[self doSyntaxHighlightingWithForce:YES];
+    if ([[self string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+        [self doSyntaxHighlightingWithForce:YES];
+    }
 }
 
 /**
@@ -3113,10 +3114,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	}
 	// Disable "Copy with Column Names" and "Copy as SQL INSERT"
 	// in the main menu
-	if ( [menuItem tag] == SPEditMenuCopyWithColumns
-		|| [menuItem tag] == SPEditMenuCopyAsSQL) {
-		return NO;
-	}
+    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc) {
+        return NO;
+    }
 
 	return [super validateMenuItem:menuItem];
 }

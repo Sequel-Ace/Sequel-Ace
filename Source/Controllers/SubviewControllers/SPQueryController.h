@@ -82,6 +82,7 @@ extern NSString *SPTableViewDatabaseColumnID;
  * puts the output into the general Pasteboard (only if non-empty)
  */
 - (IBAction)copy:(id)sender;
+- (IBAction)copyQueryOnly:(id)sender;
 - (IBAction)clearConsole:(id)sender;
 - (IBAction)saveConsoleAs:(id)sender;
 - (IBAction)toggleShowTimeStamps:(id)sender;
@@ -111,7 +112,7 @@ extern NSString *SPTableViewDatabaseColumnID;
  *
  * THIS METHOD IS NOT THREAD-SAFE!
  */
-- (NSString *)sqlStringForRowIndexes:(NSIndexSet *)indexes;
+- (NSString *)infoStringForRowIndexes:(NSIndexSet *)rows includeTimestamps:(BOOL)includeTimestamps includeConnections:(BOOL)includeConnections includeDatabases:(BOOL)includeDatabases;
 
 #pragma mark - SPQueryControllerInitializer
 

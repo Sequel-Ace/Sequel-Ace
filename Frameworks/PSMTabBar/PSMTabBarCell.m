@@ -129,7 +129,7 @@
     _frame = rect;
 	
 	//move the status indicator along with the rest of the cell
-	if (![[self indicator] isHidden] && ![_customControlView isTabBarHidden]) {
+	if (![[self indicator] isHidden]) {
 		[[self indicator] setFrame:[self indicatorRectForFrame:rect]];
 	}
 }
@@ -210,7 +210,6 @@
 - (void)setHasIcon:(BOOL)value
 {
     _hasIcon = value;
-    //[_customControlView update:[[self customControlView] automaticallyAnimates]]; // binding notice is too fast
 }
 
 - (BOOL)hasLargeImage
@@ -231,7 +230,6 @@
 - (void)setCount:(NSInteger)value
 {
     _count = value;
-    //[_customControlView update:[[self customControlView] automaticallyAnimates]]; // binding notice is too fast
 }
 
 - (NSColor *)countColor
@@ -278,7 +276,6 @@
 - (void)setIsEdited:(BOOL)value
 {
     _isEdited = value;
-    //[_customControlView update:[[self customControlView] automaticallyAnimates]]; // binding notice is too fast
 }
 
 - (NSColor *)backgroundColor {
@@ -421,7 +418,6 @@
     if ([aCoder allowsKeyedCoding]) {
         [aCoder encodeRect:_frame forKey:@"frame"];
         [aCoder encodeSize:_stringSize forKey:@"stringSize"];
-        [aCoder encodeInteger:_currentStep forKey:@"currentStep"];
         [aCoder encodeBool:_isPlaceholder forKey:@"isPlaceholder"];
         [aCoder encodeInteger:_tabState forKey:@"tabState"];
         [aCoder encodeInteger:_closeButtonTrackingTag forKey:@"closeButtonTrackingTag"];
@@ -443,7 +439,6 @@
         if ([aDecoder allowsKeyedCoding]) {
             _frame = [aDecoder decodeRectForKey:@"frame"];
             _stringSize = [aDecoder decodeSizeForKey:@"stringSize"];
-            _currentStep = [aDecoder decodeIntegerForKey:@"currentStep"];
             _isPlaceholder = [aDecoder decodeBoolForKey:@"isPlaceholder"];
             _tabState = [aDecoder decodeIntegerForKey:@"tabState"];
             _closeButtonTrackingTag = [aDecoder decodeIntegerForKey:@"closeButtonTrackingTag"];

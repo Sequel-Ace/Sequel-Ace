@@ -141,11 +141,9 @@
 	return subArray;
 }
 
-- (id)objectOrNilAtIndex:(NSUInteger)index
+- (id)safeObjectAtIndex:(NSUInteger)idx
 {
-	if([self count] <= index)
-		return nil;
-	return [self objectAtIndex:index];
+    return idx < self.count ? [self objectAtIndex:idx] : nil;
 }
 
 @end

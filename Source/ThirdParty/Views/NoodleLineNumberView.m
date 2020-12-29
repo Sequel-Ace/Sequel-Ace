@@ -225,7 +225,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		for (line = [self lineNumberForCharacterIndex:range.location]; line < count; line++)
 		{
 
-			rects = [layoutManager rectArrayForCharacterRange:NSMakeRange([NSArrayObjectAtIndex(lines, line) unsignedIntegerValue], 0)
+			rects = [layoutManager rectArrayForCharacterRange:NSMakeRange([[lines safeObjectAtIndex:line] unsignedIntegerValue], 0)
 								 withinSelectedCharacterRange:nullRange
 											  inTextContainer:container
 													rectCount:&rectCount];
@@ -255,7 +255,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	{
 
 		mid = (right + left) >> 1;
-		lineStart = [NSArrayObjectAtIndex(lines, mid) unsignedIntegerValue];
+		lineStart = [[lines safeObjectAtIndex:mid] unsignedIntegerValue];
 
 		if (charIndex < lineStart)
 			right = mid;
@@ -311,7 +311,7 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 		for (line = [self lineNumberForCharacterIndex:range.location]; line < count; line++)
 		{
-			lineIndex = [NSArrayObjectAtIndex(lines, line) unsignedIntegerValue];
+			lineIndex = [[lines safeObjectAtIndex:line] unsignedIntegerValue];
 
 			if (NSLocationInRange(lineIndex, range))
 			{
@@ -366,9 +366,9 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 		NSUInteger selectionStart, selectionEnd;
 		NSArray *lines = [self lineIndices];
 
-		selectionStart = [NSArrayObjectAtIndex(lines, (line - 1)) unsignedIntegerValue];
+		selectionStart = [[lines safeObjectAtIndex:(line - 1)] unsignedIntegerValue];
 		if (line < [lines count]) {
-			selectionEnd = [NSArrayObjectAtIndex(lines, line) unsignedIntegerValue];
+			selectionEnd = [[lines safeObjectAtIndex:line] unsignedIntegerValue];
 		} else {
 			selectionEnd = [[view string] length];
 		}
@@ -399,9 +399,9 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 			endLine = dragSelectionStartLine;
 		}
 
-		selectionStart = [NSArrayObjectAtIndex(lines, (startLine - 1)) unsignedIntegerValue];
+		selectionStart = [[lines safeObjectAtIndex:(startLine - 1)] unsignedIntegerValue];
 		if (endLine < [lines count]) {
-			selectionEnd = [NSArrayObjectAtIndex(lines, endLine) unsignedIntegerValue];
+			selectionEnd = [[lines safeObjectAtIndex:endLine] unsignedIntegerValue];
 		} else {
 			selectionEnd = [[view string] length];
 		}

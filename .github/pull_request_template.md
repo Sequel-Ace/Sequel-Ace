@@ -10,23 +10,26 @@ Please use one of these hashtags for your PR title:
 -->
 
 ## Changes:
--
+- 
 
 ## Closes following issues:
--
+- Closes 
 
 ## Tested:
 - Processors:
   - [ ] Intel
   - [ ] Apple Silicon
-- macOS versions:
-  - [ ] 10.12
-  - [ ] 10.13
-  - [ ] 10.14
-  - [ ] 10.15
-  - [ ] 11.0
-- Xcode version:
-
+- macOS Versions:
+  - [ ] 10.12.x (Sierra)
+  - [ ] 10.13.x (High Sierra)
+  - [ ] 10.14.x (Mojave)
+  - [ ] 10.15.x (Catalina)
+  - [ ] 11.x (Big Sur)
+- Xcode Version:
+- Localizations:
+  - [ ] English
+  - [ ] Spanish
+  - [ ] Other (please specify)
 ## Screenshots:
 
 

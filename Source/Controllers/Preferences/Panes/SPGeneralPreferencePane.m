@@ -64,7 +64,7 @@ static NSString *SPDatabaseImage = @"database-small";
 /**
  * Updates the default favorite.
  */ 
-- (IBAction)updateDefaultFavorite:(id)sender
+- (IBAction)updateDefaultFavorite:(NSPopUpButton *)sender
 {		
 	for (NSMenuItem *item in [defaultFavoritePopup itemArray])
 	{

@@ -338,8 +338,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
 	// Remove existing columns from the table
 	while ([[tableContentView tableColumns] count]) {
-		[NSArrayObjectAtIndex([tableContentView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
-		[tableContentView removeTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], 0)];
+		[[[tableContentView tableColumns] safeObjectAtIndex: 0] setHeaderToolTip:nil]; // prevent crash #2414
+		[tableContentView removeTableColumn:[[tableContentView tableColumns] safeObjectAtIndex: 0]];
 	}
 
 	// Empty the stored data arrays, including emptying the tableValues array
@@ -459,8 +459,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Remove existing columns from the table
 	while ([[tableContentView tableColumns] count]) {
-		[NSArrayObjectAtIndex([tableContentView tableColumns], 0) setHeaderToolTip:nil]; // prevent crash #2414
-		[tableContentView removeTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], 0)];
+		[[[tableContentView tableColumns] safeObjectAtIndex: 0] setHeaderToolTip:nil]; // prevent crash #2414
+		[tableContentView removeTableColumn:[[tableContentView tableColumns] safeObjectAtIndex: 0]];
 	}
 	// Remove existing columns from the filter table
 	[filterTableController setColumns:nil];
@@ -930,7 +930,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Set the column load states on the table values store
 	if ([prefs boolForKey:SPLoadBlobsAsNeeded]) {
 		for ( i = 0; i < dataColumnsCount ; i++ ) {
-			if ([tableDataInstance columnIsBlobOrText:[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"name"]]) {
+			if ([tableDataInstance columnIsBlobOrText:[[dataColumns safeObjectAtIndex:i] objectForKey:@"name"]]) {
 				[tableValues setColumnAsUnloaded:i];
 			}
 		}
@@ -1934,11 +1934,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				// delete the fast way by using the PRIMARY KEY in an IN clause
 				NSMutableString *deleteQuery = [NSMutableString string];
 
-				[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [NSArrayObjectAtIndex(primaryKeyFieldNames,0) backtickQuotedString]]];
+				[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames safeObjectAtIndex:0] backtickQuotedString]]];
 
 				while (anIndex != NSNotFound) {
 
-					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:NSArrayObjectAtIndex(primaryKeyFieldNames,0)] objectForKey:@"datacolumnindex"] integerValue]];
+					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames safeObjectAtIndex:0]] objectForKey:@"datacolumnindex"] integerValue]];
 
 					if([keyValue isKindOfClass:[NSData class]])
 						[deleteQuery appendString:[mySQLConnection escapeAndQuoteData:keyValue]];
@@ -1954,7 +1954,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 						affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
 
 						// Reinit a new deletion query
-						[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [NSArrayObjectAtIndex(primaryKeyFieldNames,0) backtickQuotedString]]];
+						[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames safeObjectAtIndex:0] backtickQuotedString]]];
 					} else {
 						[deleteQuery appendString:@","];
 					}
@@ -2420,7 +2420,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			else {
 				// Set the insertId for fields with auto_increment
 				for ( i = 0; i < [dataColumns count]; i++ ) {
-					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
+					if ([[[dataColumns safeObjectAtIndex:i] objectForKey:@"autoincrement"] integerValue]) {
 						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
 					}
 				}
@@ -2478,7 +2478,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	for (i = 0; i < dataColumnsCount; i++)
 	{
 		rowObject = [tableValues cellDataAtRow:currentlyEditingRow column:i];
-		fieldDefinition = NSArrayObjectAtIndex(dataColumns, i);
+		fieldDefinition = [dataColumns safeObjectAtIndex:i];
 
 		// Skip "not loaded" cells entirely - these only occur when editing tables when the
 		// preference setting is enabled, and don't need to be saved back to the table.
@@ -2486,7 +2486,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// If an edit has taken place, and the field value hasn't changed, the value
 		// can also be skipped
-		if (!isEditingNewRow && [rowObject isEqual:NSArrayObjectAtIndex(oldRow, i)]) continue;
+		if (!isEditingNewRow && [rowObject isEqual:[oldRow safeObjectAtIndex:i]]) continue;
 
 		// Prepare to derive the value to save
 		NSString *fieldValue;
@@ -2532,9 +2532,20 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 		}
 
+        NSDictionary *userInfo = @{
+            NSLocalizedDescriptionKey: @"deriveQueryString fieldValue is nil",
+            @"rowObject":[rowObject description],
+        };
+        
+        if (fieldValue == nil || [fieldValue isNSNull]){
+            CLS_LOG(@"fieldValue is nil: %@", fieldValue);
+            SPLog(@"fieldValue is nil: %@", fieldValue);
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:6 userInfo:userInfo]];
+        }
+
 		// Store the key and value in the ordered arrays for saving.
-		[rowFieldsToSave addObject:[fieldDefinition objectForKey:@"name"]];
-		[rowValuesToSave addObject:fieldValue];
+		[rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
+		[rowValuesToSave safeAddObject:fieldValue];
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
@@ -2553,7 +2564,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		for (i = 0; i < [rowFieldsToSave count]; i++) {
 			if (i) [queryString appendString:@", "];
 			[queryString appendFormat:@"%@ = %@",
-									   [NSArrayObjectAtIndex(rowFieldsToSave, i) backtickQuotedString], NSArrayObjectAtIndex(rowValuesToSave, i)];
+									   [[rowFieldsToSave safeObjectAtIndex:i] backtickQuotedString], [rowValuesToSave safeObjectAtIndex:i]];
 		}
 		NSString *whereArg = [self argumentForRow:-2];
 		if(![whereArg length]) {
@@ -2774,15 +2785,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		id tempValue;
 		// Use the selected row if appropriate
 		if ( row >= 0 ) {
-			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:NSArrayObjectAtIndex(keys, i)] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
 		}
 		// Otherwise use the oldRow
 		else {
-			tempValue = [oldRow objectAtIndex:[[[tableDataInstance columnWithName:NSArrayObjectAtIndex(keys, i)] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [oldRow objectAtIndex:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
 		}
 
 		if ([tempValue isNSNull]) {
-			[argument appendFormat:@"%@ IS NULL", [NSArrayObjectAtIndex(keys, i) backtickQuotedString]];
+			[argument appendFormat:@"%@ IS NULL", [[keys safeObjectAtIndex:i] backtickQuotedString]];
 		}
 		else if ([tempValue isSPNotLoaded]) {
 			SPLog(@"Exceptional case: SPNotLoaded object found! Abort.");
@@ -2792,7 +2803,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSString *escVal;
 			NSString *fmt = @"%@";
 			// If the field is of type BIT then it needs a binary prefix
-			if ([[[tableDataInstance columnWithName:NSArrayObjectAtIndex(keys, i)] objectForKey:@"type"] isEqualToString:@"BIT"]) {
+			if ([[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"type"] isEqualToString:@"BIT"]) {
 				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
 			}
@@ -2808,11 +2819,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			
 			if(!escVal) {
-				SPLog(@"(row=%ld) nil value for key <%@> is invalid! Abort.",row,NSArrayObjectAtIndex(keys, i));
+				SPLog(@"(row=%ld) nil value for key <%@> is invalid! Abort.",row,[keys safeObjectAtIndex:i]);
 				return @"";
 			}
 			
-			[argument appendFormat:@"%@ = %@", [NSArrayObjectAtIndex(keys, i) backtickQuotedString], [NSString stringWithFormat:fmt,escVal]];
+			[argument appendFormat:@"%@ = %@", [[keys safeObjectAtIndex:i] backtickQuotedString], [NSString stringWithFormat:fmt,escVal]];
 		}
 	}
 
@@ -2979,7 +2990,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
 		if ([data isKindOfClass:[NSString class]]
-			&& [data isEqualToString:[prefs objectForKey:SPNullValue]] && [[NSArrayObjectAtIndex(dataColumns, [[theTableColumn identifier] integerValue]) objectForKey:@"null"] boolValue])
+            && [data isEqualToString:[prefs objectForKey:SPNullValue]] && [[[dataColumns safeObjectAtIndex:[[theTableColumn identifier] integerValue]] objectForKey:@"null"] boolValue])
 		{
 			data = [NSNull null];
 		}
@@ -3776,7 +3787,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			currentlyEditingRow = rowIndex;
 		}
 
-		NSDictionary *column = NSArrayObjectAtIndex(dataColumns, columnIndex);
+		NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
 
 		if (object) {
 			// Restore NULLs if necessary
@@ -3973,6 +3984,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSString *database = [NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]];
 	NSString *table = [tablesListInstance tableName];
 
+
+    if (database == nil || table == nil){
+        CLS_LOG(@"database or table is nil");
+        SPLog(@"database or table is nil");
+        NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] initWithCapacity:3];
+
+        [userInfo setObject:@"tableViewColumnDidResize: database or table is nil" forKey:NSLocalizedDescriptionKey];
+        [userInfo safeSetObject:@"database" forKey:database];
+        [userInfo safeSetObject:@"table" forKey:table];
+
+        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:8 userInfo:userInfo]];
+    }
+
 	// Get tableColumnWidths object
 	if ([prefs objectForKey:SPTableColumnWidths] != nil ) {
 		tableColumnWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
@@ -3982,25 +4006,25 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	// Get the database object
-	if  ([tableColumnWidths objectForKey:database] == nil) {
-		[tableColumnWidths setObject:[NSMutableDictionary dictionary] forKey:database];
+	if  ([tableColumnWidths safeObjectForKey:database] == nil) {
+		[tableColumnWidths safeSetObject:[NSMutableDictionary dictionary] forKey:database];
 	}
 	else {
-		[tableColumnWidths setObject:[NSMutableDictionary dictionaryWithDictionary:[tableColumnWidths objectForKey:database]] forKey:database];
+		[tableColumnWidths safeSetObject:[NSMutableDictionary dictionaryWithDictionary:[tableColumnWidths safeObjectForKey:database]] forKey:database];
 	}
 
 	// Get the table object
-	if  ([[tableColumnWidths objectForKey:database] objectForKey:table] == nil) {
-		[[tableColumnWidths objectForKey:database] setObject:[NSMutableDictionary dictionary] forKey:table];
+	if  ([[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table] == nil) {
+		[[tableColumnWidths safeObjectForKey:database] safeSetObject:[NSMutableDictionary dictionary] forKey:table];
 	}
 	else {
-		[[tableColumnWidths objectForKey:database] setObject:[NSMutableDictionary dictionaryWithDictionary:[[tableColumnWidths objectForKey:database] objectForKey:table]] forKey:table];
+		[[tableColumnWidths safeObjectForKey:database] safeSetObject:[NSMutableDictionary dictionaryWithDictionary:[[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table]] forKey:table];
 	}
 
 	// Save column size
-	[[[tableColumnWidths objectForKey:database] objectForKey:table]
-	 setObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[notification userInfo] objectForKey:@"NSTableColumn"] width]]
-	 forKey:[[[[notification userInfo] objectForKey:@"NSTableColumn"] headerCell] stringValue]];
+	[[[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table]
+     safeSetObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[notification userInfo] safeObjectForKey:@"NSTableColumn"] width]]
+	 forKey:[[[[notification userInfo] safeObjectForKey:@"NSTableColumn"] headerCell] stringValue]];
 	[prefs setObject:tableColumnWidths forKey:SPTableColumnWidths];
 }
 
@@ -4232,7 +4256,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// writing in gray if value was NULL
 		if ([tableView editedColumn] != -1
 			&& [tableView editedRow] == rowIndex
-			&& (NSUInteger)[[NSArrayObjectAtIndex([tableView tableColumns], [tableView editedColumn]) identifier] integerValue] == columnIndex) {
+			&& (NSUInteger)[[[[tableView tableColumns] safeObjectAtIndex:[tableView editedColumn]] identifier] integerValue] == columnIndex) {
 			[cell setTextColor:textForegroundColor];
 			if (cellIsLinkCell) [cell setLinkActive:NO];
 			return;
@@ -4377,7 +4401,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSInteger columnIndex = [tableContentView editedColumn];
 		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
 			// special case: the "NULL" string
-			NSDictionary *column = NSArrayObjectAtIndex(dataColumns, columnIndex);
+			NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
 			if ([[editor string] isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
 				return YES;
 			}
@@ -4413,7 +4437,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// or bypass if numberOfPossibleUpdateRows == 1
 	if ([tableContentView isCellEditingMode]) {
 
-		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[NSArrayObjectAtIndex([tableContentView tableColumns], column) identifier] integerValue]];
+		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[[[tableContentView tableColumns] safeObjectAtIndex: column] identifier] integerValue]];
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 		
 		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
@@ -4458,7 +4482,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		NSAssert(fieldEditor == nil, @"Method should not to be called while a field editor sheet is open!");
 		// Call the field editor sheet
-		[self tableView:tableContentView shouldEditTableColumn:NSArrayObjectAtIndex([tableContentView tableColumns], column) row:row];
+		[self tableView:tableContentView shouldEditTableColumn:[[tableContentView tableColumns] safeObjectAtIndex: column] row:row];
 
 		// send current event to field editor sheet
 		if ([NSApp currentEvent]) {

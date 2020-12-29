@@ -544,7 +544,7 @@
 	for (NSUInteger i = 0; i < [fieldStrings count]; i++) {
 
 		// Take this field/key string, trim whitespace from both ends and remove comments
-		[fieldsParser setString:[NSArrayObjectAtIndex(fieldStrings, i) stringByTrimmingCharactersInSet:whitespaceAndNewlineSet]];
+		[fieldsParser setString:[[fieldStrings safeObjectAtIndex:i] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet]];
 		[fieldsParser deleteComments];
 		if (![fieldsParser length]) {
 			continue;
@@ -650,57 +650,57 @@
 					if ([parts count] > 8) {
 						// NOTE: this won't get SET NULL | NO ACTION | RESTRICT
 						if ([[parts objectAtIndex:9] hasPrefix:@"UPDATE"]) {
-							if( [NSArrayObjectAtIndex(parts, 10) hasPrefix:@"SET"] ) {
+							if( [[parts safeObjectAtIndex:10] hasPrefix:@"SET"] ) {
 								[constraintDetails setObject:@"SET NULL"
 								                      forKey:@"update"];
 								nextOffs = 13;
-							} else if( [NSArrayObjectAtIndex(parts, 10) hasPrefix:@"NO"] ) {
+							} else if( [[parts safeObjectAtIndex:10] hasPrefix:@"NO"] ) {
 								[constraintDetails setObject:@"NO ACTION"
 								                      forKey:@"update"];
 								nextOffs = 13;
 							} else {
-								[constraintDetails setObject:NSArrayObjectAtIndex(parts, 10)
+								[constraintDetails setObject:[parts safeObjectAtIndex:10]
 								                      forKey:@"update"];
 							}
 						}
-						else if ([NSArrayObjectAtIndex(parts, 9) hasPrefix:@"DELETE"]) {
-							if ([NSArrayObjectAtIndex(parts, 10) hasPrefix:@"SET"]) {
+						else if ([[parts safeObjectAtIndex:9] hasPrefix:@"DELETE"]) {
+							if ([[parts safeObjectAtIndex:10] hasPrefix:@"SET"]) {
 								[constraintDetails setObject:@"SET NULL"
 								                      forKey:@"delete"];
 								nextOffs = 13;
-							} else if( [NSArrayObjectAtIndex(parts, 10) hasPrefix:@"NO"] ) {
+							} else if( [[parts safeObjectAtIndex:10] hasPrefix:@"NO"] ) {
 								[constraintDetails setObject:@"NO ACTION"
 								                      forKey:@"delete"];
 								nextOffs = 13;
 							} else {
-								[constraintDetails setObject:NSArrayObjectAtIndex(parts, 10)
+								[constraintDetails setObject:[parts safeObjectAtIndex:10]
 								                      forKey:@"delete"];
 							}
 						}
 					}
 					
 					if ([parts count] > nextOffs - 1) {
-						if( [NSArrayObjectAtIndex(parts, nextOffs) hasPrefix:@"UPDATE"] ) {
-							if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"SET"] ) {
+						if( [[parts safeObjectAtIndex:nextOffs] hasPrefix:@"UPDATE"] ) {
+							if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"SET"] ) {
 								[constraintDetails setObject:@"SET NULL"
 								                      forKey:@"update"];
-							} else if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"NO"] ) {
+							} else if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"NO"] ) {
 								[constraintDetails setObject:@"NO ACTION"
 								                      forKey:@"update"];
 							} else {
-								[constraintDetails setObject:NSArrayObjectAtIndex(parts, nextOffs+1)
+								[constraintDetails setObject:[parts safeObjectAtIndex:nextOffs+1]
 								                      forKey:@"update"];
 							}
 						}
-						else if( [NSArrayObjectAtIndex(parts, nextOffs) hasPrefix:@"DELETE"] ) {
-							if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"SET"] ) {
+						else if( [[parts safeObjectAtIndex:nextOffs] hasPrefix:@"DELETE"] ) {
+							if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"SET"] ) {
 								[constraintDetails setObject:@"SET NULL"
 								                      forKey:@"delete"];
-							} else if( [NSArrayObjectAtIndex(parts, nextOffs+1) hasPrefix:@"NO"] ) {
+							} else if( [[parts safeObjectAtIndex:nextOffs+1] hasPrefix:@"NO"] ) {
 								[constraintDetails setObject:@"NO ACTION"
 								                      forKey:@"delete"];
 							} else {
-								[constraintDetails setObject:NSArrayObjectAtIndex(parts, nextOffs+1)
+								[constraintDetails setObject:[parts safeObjectAtIndex:nextOffs+1]
 								                      forKey:@"delete"];
 							}
 						}
@@ -718,8 +718,8 @@
 			// primary key
 			// add "isprimarykey" to the corresponding tableColumn
 			// add dict root "primarykeyfield" = <field> for faster accessing
-			else if( [NSArrayObjectAtIndex(parts, 0) hasPrefix:@"PRIMARY"] && [parts count] == 3) {
-				SPSQLParser *keyParser = [SPSQLParser stringWithString:NSArrayObjectAtIndex(parts, 2)];
+			else if( [[parts safeObjectAtIndex:0] hasPrefix:@"PRIMARY"] && [parts count] == 3) {
+				SPSQLParser *keyParser = [SPSQLParser stringWithString:[parts safeObjectAtIndex:2]];
 				keyParser = [SPSQLParser stringWithString:[keyParser stringFromCharacter:'(' toCharacter:')' inclusively:NO skippingBrackets:YES]];
 				NSArray *primaryKeyQuotedNames = [keyParser splitStringByCharacter:','];
 				if ([keyParser length]) {
@@ -740,8 +740,8 @@
 			
 			// unique keys
 			// add to each corresponding tableColumn the tag "unique" if given
-			else if( [NSArrayObjectAtIndex(parts, 0) hasPrefix:@"UNIQUE"]  && [parts count] == 4) {
-				SPSQLParser *keyParser = [SPSQLParser stringWithString:NSArrayObjectAtIndex(parts, 3)];
+			else if( [[parts safeObjectAtIndex:0] hasPrefix:@"UNIQUE"]  && [parts count] == 4) {
+				SPSQLParser *keyParser = [SPSQLParser stringWithString:[parts safeObjectAtIndex:3]];
 				keyParser = [SPSQLParser stringWithString:[keyParser stringFromCharacter:'(' toCharacter:')' inclusively:NO]];
 				for (NSString *quotedUniqueKey in [keyParser splitStringByCharacter:',']) {
 					NSString *uniqueFieldName = [[SPSQLParser stringWithString:quotedUniqueKey] unquotedString];
@@ -1157,11 +1157,11 @@
 
 	// Skip blank items within the definition parts
 	while (definitionPartsIndex < [definitionParts count]
-			&& ![[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex) stringByTrimmingCharactersInSet:whitespaceCharacterSet] length])
+			&& ![[[definitionParts safeObjectAtIndex:definitionPartsIndex] stringByTrimmingCharactersInSet:whitespaceCharacterSet] length])
 		definitionPartsIndex++;
 
 	// The first item is always the data type.
-	[fieldParser setString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex)];
+	[fieldParser setString:[definitionParts safeObjectAtIndex:definitionPartsIndex]];
 	definitionPartsIndex++;
 
 	// If no field length definition is present, store only the type
@@ -1178,7 +1178,7 @@
 			[detailParser setString:[fieldParser stringFromCharacter:'(' toCharacter:')' inclusively:NO]];
 			detailParts = [[NSMutableArray alloc] initWithArray:[detailParser splitStringByCharacter:',']];
 			for (i = 0; i < [detailParts count]; i++) {
-				[detailParser setString:NSArrayObjectAtIndex(detailParts, i)];
+				[detailParser setString:[detailParts safeObjectAtIndex:i]];
 				[detailParts replaceObjectAtIndex:i withObject:[detailParser unquotedString]];
 			}
 			[fieldDetails setObject:[NSArray arrayWithArray:detailParts] forKey:@"values"];
@@ -1190,7 +1190,7 @@
 			[detailParser setString:[detailParts objectAtIndex:0]];
 			[fieldDetails setObject:[detailParser unquotedString] forKey:@"length"];
 			if ([detailParts count] > 1) {
-				[detailParser setString:NSArrayObjectAtIndex(detailParts, 1)];
+				[detailParser setString:[detailParts safeObjectAtIndex:1]];
 				[fieldDetails setObject:[detailParser unquotedString] forKey:@"decimals"];
 			}
 
@@ -1250,7 +1250,7 @@
 	partsArrayLength = [definitionParts count];
 	id aValue;
 	for ( ; definitionPartsIndex < partsArrayLength; definitionPartsIndex++) {
-		detailString = [[NSString alloc] initWithString:[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex) uppercaseString]];
+		detailString = [[NSString alloc] initWithString:[[definitionParts safeObjectAtIndex:definitionPartsIndex] uppercaseString]];
 
 		// Whether numeric fields are unsigned
 		if ([detailString isEqualToString:@"UNSIGNED"]) {
@@ -1266,27 +1266,27 @@
 
 		// Whether text types have a different encoding to the table
 		} else if ([detailString isEqualToString:@"CHARSET"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			if (![[aValue = NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"DEFAULT"]) {
+			if (![[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"DEFAULT"]) {
 				[fieldDetails setValue:aValue forKey:@"encoding"];
 			}
 			definitionPartsIndex++;
 		} else if ([detailString isEqualToString:@"CHARACTER"] && (definitionPartsIndex + 2 < partsArrayLength)
-					&& [[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"SET"]) {
-			if (![[aValue = NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+2) uppercaseString] isEqualToString:@"DEFAULT"]) {
+					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"SET"]) {
+			if (![[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+2] uppercaseString] isEqualToString:@"DEFAULT"]) {
 				[fieldDetails setValue:aValue forKey:@"encoding"];
 			}
 			definitionPartsIndex += 2;
 
 		// Whether text types have a different collation to the table
 		} else if ([detailString isEqualToString:@"COLLATE"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			if (![[aValue = NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"DEFAULT"]) {
+			if (![[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"DEFAULT"]) {
 				[fieldDetails setValue:aValue forKey:@"collation"];
 			}
 			definitionPartsIndex++;
 
 		// Whether fields are NOT NULL
 		} else if ([detailString isEqualToString:@"NOT"] && (definitionPartsIndex + 1 < partsArrayLength)
-					&& [[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"NULL"]) {
+					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"NULL"]) {
 			[fieldDetails setValue:@NO forKey:@"null"];
 			definitionPartsIndex++;
 
@@ -1301,7 +1301,7 @@
 
 		// Field defaults
 		} else if ([detailString isEqualToString:@"DEFAULT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			detailParser = [[SPSQLParser alloc] initWithString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1)];
+			detailParser = [[SPSQLParser alloc] initWithString:[definitionParts safeObjectAtIndex:definitionPartsIndex+1]];
 			if([[detailParser unquotedString] isEqualToString:@"NULL"])
 				[fieldDetails setObject:[NSNull null] forKey:@"default"];
 			else
@@ -1310,15 +1310,15 @@
 
 		// Special timestamp/datetime case - Whether fields are set to update the current timestamp
 		} else if ([detailString isEqualToString:@"ON"] && (definitionPartsIndex + 2 < partsArrayLength)
-					&& [[NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1) uppercaseString] isEqualToString:@"UPDATE"]
-					&& [NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+2) isMatchedByRegex:SPCurrentTimestampPattern]) {
+					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"UPDATE"]
+					&& [[definitionParts safeObjectAtIndex:definitionPartsIndex+2] isMatchedByRegex:SPCurrentTimestampPattern]) {
 			// mysql requires the CURRENT_TIMESTAMP(n) to be exactly the same as the column types length, so we don't need to keep it, we can just restore it later
 			[fieldDetails setValue:@YES forKey:@"onupdatetimestamp"];
 			definitionPartsIndex += 2;
 
 		// Column comments
 		} else if ([detailString isEqualToString:@"COMMENT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
-			detailParser = [[SPSQLParser alloc] initWithString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex+1)];
+			detailParser = [[SPSQLParser alloc] initWithString:[definitionParts safeObjectAtIndex:definitionPartsIndex+1]];
 			[fieldDetails setValue:[detailParser unquotedString] forKey:@"comment"];
 			definitionPartsIndex++;
 
@@ -1326,7 +1326,7 @@
 		// TODO: Currently unhandled: [UNIQUE | PRIMARY] KEY | COLUMN_FORMAT bar | STORAGE q | REFERENCES...
 		} else {
 			[[fieldDetails objectForKey:@"unparsed"] appendString:@" "];
-			[[fieldDetails objectForKey:@"unparsed"] appendString:NSArrayObjectAtIndex(definitionParts, definitionPartsIndex)];
+			[[fieldDetails objectForKey:@"unparsed"] appendString:[definitionParts safeObjectAtIndex:definitionPartsIndex]];
 		}
 	}
 

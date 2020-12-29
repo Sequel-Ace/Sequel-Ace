@@ -48,9 +48,8 @@
 #import "SPBundleCommandRunner.h"
 #import "SPCopyTable.h"
 #import "SPSyntaxParser.h"
-#import "SPOSInfo.h"
 #import "SPTextView.h"
-#import <PSMTabBar/PSMTabBarControl.h>
+#import "PSMTabBarControl.h"
 #import "SPFunctions.h"
 #import "SPBundleManager.h"
 
@@ -219,8 +218,23 @@
 		}
 	}
 
+    executeOnBackgroundThread(^{
+        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+        FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
 
-	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
+        // set some keys to help us diagnose issues
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoComplete, prefs)) forKey:@"CustomQueryAutoComplete"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEnableSyntaxHighlighting, prefs)) forKey:@"CustomQueryEnableSyntaxHighlighting"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoIndent, prefs)) forKey:@"CustomQueryAutoIndent"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoUppercaseKeywords, prefs)) forKey:@"CustomQueryAutoUppercaseKeywords"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEnableBracketHighlighting, prefs)) forKey:@"CustomQueryEnableBracketHighlighting"];
+        [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEditorCompleteWithBackticks, prefs)) forKey:@"CustomQueryEditorCompleteWithBackticks"];
+        [crashlytics setCustomValue:[[NSLocale currentLocale] localeIdentifier] forKey:@"localeIdentifier"];
+        [crashlytics setCustomValue:[[NSLocale currentLocale] objectForKey:NSLocaleLanguageCode] forKey:@"localeLanguageCode"];
+    });
+
+
+    [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
 	[sharedSPBundleManager reloadBundles:self];
     [self _copyDefaultThemes];
@@ -547,11 +561,6 @@
 			SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
 			NSWindow *newWindow = [newWindowController window];
 
-			// If window has more than 1 tab then set setHideForSingleTab to NO
-			// in order to avoid animation problems while opening tabs
-			if([[window objectForKey:@"tabs"] count] > 1)
-				[newWindowController setHideForSingleTab:NO];
-
 			// The first window should use autosaving; subsequent windows should cascade.
 			// So attempt to set the frame autosave name; this will succeed for the very
 			// first window, and fail for others.
@@ -614,14 +623,6 @@
 
 			// Select active tab
 			[newWindowController selectTabAtIndex:[[window objectForKey:@"selectedTabIndex"] intValue]];
-
-			// Reset setHideForSingleTab
-			if ([[NSUserDefaults standardUserDefaults] objectForKey:SPAlwaysShowWindowTabBar]) {
-				[newWindowController setHideForSingleTab:[[NSUserDefaults standardUserDefaults] boolForKey:SPAlwaysShowWindowTabBar]];
-			}
-			else {
-				[newWindowController setHideForSingleTab:YES];
-			}
 		}
 	}
 
@@ -1652,8 +1653,6 @@
 }
 
 - (void)rebuildMenus{
-
-	SPLog(@"JIMMY rebuildMenus");
 	// === Rebuild Bundles main menu item ===
 
 	// Get main menu "Bundles"'s submenu

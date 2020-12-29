@@ -573,7 +573,7 @@ static NSInteger potentialMinimumForArray(NSArray *array, NSInteger minimum)
             [cell setIsInOverflowMenu:NO];
             
             // indicator
-            if (![[cell indicator] isHidden] && ![_control isTabBarHidden]) {
+            if (![[cell indicator] isHidden]) {
 				if (![[_control subviews] containsObject:[cell indicator]]) {
                     [_control addSubview:[cell indicator]];
                     [[cell indicator] startAnimation:self];

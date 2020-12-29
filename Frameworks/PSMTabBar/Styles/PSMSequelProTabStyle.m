@@ -26,6 +26,8 @@
 #import "NSBezierPath_AMShading.h"
 #import "PSMTabDragAssistant.h"
 
+#import "sequel-ace-Swift.h"
+
 #define kPSMSequelProObjectCounterRadius 7.0f
 #define kPSMSequelProCounterMinWidth 20
 #define kPSMSequelProTabCornerRadius 0
@@ -62,10 +64,12 @@
         sequelProCloseDirtyButton = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabDirty"]];
         sequelProCloseDirtyButtonDown = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabDirty_Pressed"]];
         sequelProCloseDirtyButtonOver = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"SequelProTabDirty_Rollover"]];
-                
-        _addTabButtonImage = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"AddTabButton"]];
-        _addTabButtonPressedImage = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"AddTabButton"]];
-        _addTabButtonRolloverImage = [[NSImage alloc] initByReferencingFile:[bundle pathForImageResource:@"AddTabButton"]];
+        
+        if (@available(macOS 11.0, *)) {
+            _addTabButtonImage = [NSImage imageWithSystemSymbolName:@"plus" accessibilityDescription:nil];
+        } else {
+            _addTabButtonImage = [NSImage imageNamed:NSImageNameAddTemplate];
+        }
 		
 		_objectCountStringAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:
 										[[NSFontManager sharedFontManager] convertFont:[NSFont fontWithName:@"Helvetica" size:11.0f] toHaveTrait:NSBoldFontMask], NSFontAttributeName,
@@ -117,19 +121,8 @@
 #pragma mark -
 #pragma mark Add Tab Button
 
-- (NSImage *)addTabButtonImage
-{
-    return _addTabButtonImage;
-}
-
-- (NSImage *)addTabButtonPressedImage
-{
-    return _addTabButtonPressedImage;
-}
-
-- (NSImage *)addTabButtonRolloverImage
-{
-    return _addTabButtonRolloverImage;
+- (NSImage *)addTabButtonImage {
+    return [_addTabButtonImage imageWithOverlayColor:[self isInDarkMode] ? [NSColor whiteColor] : [NSColor blackColor]];
 }
 
 #pragma mark -
@@ -326,7 +319,7 @@
     
     // Add font attribute
     [attrStr addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11.0f] range:range];
-    [attrStr addAttribute:NSForegroundColorAttributeName value:[[NSColor textColor] colorWithAlphaComponent:0.75f] range:range];
+    [attrStr addAttribute:NSForegroundColorAttributeName value:[NSColor textColor] range:range];
     
     // Add shadow attribute
     NSShadow* textShadow;
@@ -394,7 +387,7 @@
     NSEnumerator *e = [[bar cells] objectEnumerator];
     PSMTabBarCell *cell;
     while ( (cell = [e nextObject]) ) {
-        if ([bar isAnimating] || (![cell isInOverflowMenu] && NSIntersectsRect([cell frame], rect))) {
+        if ((![cell isInOverflowMenu] && NSIntersectsRect([cell frame], rect))) {
             [cell drawWithFrame:[cell frame] inView:bar];
         }
     }
@@ -456,11 +449,7 @@
 }
 
 // Step 3
-- (void)drawTabCell:(PSMTabBarCell *)cell
-{
-	// Don't draw cells when collapsed
-	if ([tabBar isTabBarHidden]) return;
-
+- (void)drawTabCell:(PSMTabBarCell *)cell {
 	NSColor *lineColor = [self _lineColorForTabCellDrawing];
 	NSColor *fillColor = [self fillColorForCell:cell];
 
@@ -494,6 +483,7 @@
         NSImage *closeButton = nil;
 
         closeButton = [cell isEdited] ? sequelProCloseDirtyButton : sequelProCloseButton;
+        closeButton = [closeButton imageWithOverlayColor:[self isInDarkMode] ? [NSColor whiteColor] : [NSColor blackColor]];
 
 		// Slightly darken background tabs on mouse over
 		if ([cell state] == NSOffState) {
@@ -502,7 +492,7 @@
 
 			[self _drawTabCell:cell withBackgroundColor:fillColor lineColor:lineColor];
 		}
-
+        
 		[closeButton drawInRect:closeButtonRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
     }
     

@@ -16,11 +16,10 @@
 #define PSMTabDragDidBeginNotification @"PSMTabDragDidBeginNotification"
 
 #define kPSMTabBarControlHeight 25
-#define kPSMTabBarControlDefaultHeightCollapsed 0 // can be changed with a property
 
 // internal cell border
 #define MARGIN_X        6
-#define MARGIN_Y        6
+#define MARGIN_Y        5
 
 // padding between objects
 #define kPSMTabBarCellPadding 4
@@ -29,13 +28,6 @@
 #define kPSMMinimumTitleWidth 30
 #define kPSMTabBarIndicatorWidth 16.0f
 #define kPSMTabBarIconWidth 16.0f
-#define kPSMHideAnimationSteps 3.0f
-
-// Value used in _currentStep to indicate that resizing operation is not in progress
-#define kPSMIsNotBeingResized -1
-
-// Value used in _currentStep when a resizing operation has just been started
-#define kPSMStartResizeAnimation 0
 
 @class PSMOverflowPopUpButton, PSMRolloverButton, PSMTabBarCell, PSMTabBarController;
 @protocol PSMTabStyle;
@@ -75,7 +67,6 @@ enum {
 	id<PSMTabStyle>			style;
 	BOOL					_canCloseOnlyTab;
 	BOOL					_disableTabClose;
-	BOOL					_hideForSingleTab;
 	BOOL					_showAddTabButton;
 	BOOL					_sizeCellsToFit;
 	BOOL					_useOverflowMenu;
@@ -84,8 +75,6 @@ enum {
 	BOOL					_useSafariStyleDragging;
 	NSInteger				_resizeAreaCompensation;
 	PSMTabBarOrientation	_orientation;
-	BOOL					_automaticallyAnimates;
-	NSTimer					*_animationTimer;
 	PSMTabBarTearOffStyle	_tearOffStyle;
 	
 	// behavior
@@ -106,13 +95,9 @@ enum {
 	NSInteger				_cellMaxWidth;
 	NSInteger				_cellOptimumWidth;
 	
-	// animation for hide/show
-	NSInteger				_currentStep;
-	BOOL					_isHidden;
 	IBOutlet id				partnerView;				// gets resized when hide/show
 	BOOL					_awakenedFromNib;
 	NSInteger				_tabBarWidth;
-	NSTimer					*_showHideAnimationTimer;
 
 	// Tracking last window state for update draws
 	BOOL					_lastWindowIsMainCheck;
@@ -144,8 +129,6 @@ enum {
 - (void)setStyle:(id <PSMTabStyle>)newStyle;
 - (NSString *)styleName;
 - (void)setStyleNamed:(NSString *)name;
-- (BOOL)hideForSingleTab;
-- (void)setHideForSingleTab:(BOOL)value;
 - (BOOL)showAddTabButton;
 - (void)setShowAddTabButton:(BOOL)value;
 
@@ -177,8 +160,6 @@ enum {
 - (void)setSelectsTabsOnMouseDown:(BOOL)value;
 - (BOOL)createsTabOnDoubleClick;
 - (void)setCreatesTabOnDoubleClick:(BOOL)value;
-- (BOOL)automaticallyAnimates;
-- (void)setAutomaticallyAnimates:(BOOL)value;
 - (BOOL)alwaysShowActiveTab;
 - (void)setAlwaysShowActiveTab:(BOOL)value;
 - (BOOL)allowsScrubbing;
@@ -187,7 +168,6 @@ enum {
 - (void)setUsesSafariStyleDragging:(BOOL)value;
 - (PSMTabBarTearOffStyle)tearOffStyle;
 - (void)setTearOffStyle:(PSMTabBarTearOffStyle)tearOffStyle;
-@property CGFloat heightCollapsed;
 
 // accessors
 - (NSTabView *)tabView;
@@ -210,19 +190,14 @@ enum {
 - (NSUInteger)numberOfVisibleTabs;
 - (PSMTabBarCell *)lastVisibleTab;
 
-// special effects
-- (void)hideTabBar:(BOOL)hide animate:(BOOL)animate;
-- (BOOL)isTabBarHidden;
-- (BOOL)isAnimating;
-- (void)destroyAnimations;
-
 // internal bindings methods also used by the tab drag assistant
 - (void)bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item;
 - (void)removeTabForCell:(PSMTabBarCell *)cell;
 
 // External drawing accessors
 - (void)update;
-- (void)update:(BOOL)animate;
+- (void)updateTabBarAndUpdateTabs:(BOOL)updateTabs;
+- (void)updateTabs;
 
 @end
 

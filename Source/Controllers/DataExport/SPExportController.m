@@ -634,9 +634,9 @@ set_input:
 			// the code always seems to go into this block as the
 			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
 			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
-				
-				NSLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-				
+                SPLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
+                CLS_LOG(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
+                
 				BOOL __block beenHereBefore = NO;
 				
 				// have we been here before?
@@ -1173,7 +1173,7 @@ set_input:
 			// Only enable the button if at least one table is selected
 			for (NSArray *table in tables)
 			{
-				if ([NSArrayObjectAtIndex(table, 2) boolValue]) {
+				if ([[table safeObjectAtIndex:2] boolValue]) {
 					enable = YES;
 					break;
 				}
@@ -1191,9 +1191,9 @@ set_input:
 				// Only enable the button if at least one table is selected
 				for (NSArray *table in tables)
 				{
-					if ([NSArrayObjectAtIndex(table, 1) boolValue] ||
-						[NSArrayObjectAtIndex(table, 2) boolValue] ||
-						[NSArrayObjectAtIndex(table, 3) boolValue])
+					if ([[table safeObjectAtIndex:1] boolValue] ||
+						[[table safeObjectAtIndex:2] boolValue] ||
+						[[table safeObjectAtIndex:3] boolValue])
 					{
 						enable = YES;
 						break;
@@ -2126,7 +2126,7 @@ set_input:
 		NSString *extension = [self currentDefaultExportFileExtension];
 
 		//note that there will be no tableName if the export is done from a query result without a database selected (or empty).
-		filename = [self expandCustomFilenameFormatUsingTableName:[[tablesListInstance tables] objectOrNilAtIndex:1]];
+		filename = [self expandCustomFilenameFormatUsingTableName:[[tablesListInstance tables] safeObjectAtIndex:1]];
 
 		if (![[self customFilenamePathExtension] length] && [extension length] > 0) filename = [filename stringByAppendingPathExtension:extension];
 	}
@@ -2175,7 +2175,7 @@ set_input:
 	else if (isSQL || isCSV || isXML) {
 		for (NSArray *table in tables)
 		{
-			if ([NSArrayObjectAtIndex(table, 2) boolValue]) {
+			if ([[table safeObjectAtIndex:2] boolValue]) {
 				i++;
 				if (i == 2) break;
 			}
@@ -2533,7 +2533,7 @@ set_input:
 
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
-	return NSArrayObjectAtIndex([tables objectAtIndex:rowIndex], [exportTableList columnWithIdentifier:[tableColumn identifier]]);
+    return [[tables objectAtIndex:rowIndex] safeObjectAtIndex:[exportTableList columnWithIdentifier:[tableColumn identifier]]];
 }
 
 - (void)tableView:(NSTableView *)tableView setObjectValue:(id)anObject forTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex

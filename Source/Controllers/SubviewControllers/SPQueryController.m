@@ -33,6 +33,7 @@
 #import "SPAppController.h"
 #import "SPFunctions.h"
 #import "pthread.h"
+#import "SPCopyTable.h"
 #import <fmdb/FMDB.h>
 
 #import "sequel-ace-Swift.h"
@@ -147,64 +148,85 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)copy:(id)sender
 {
-	NSResponder *firstResponder = [[self window] firstResponder];
+    if (([consoleTableView numberOfSelectedRows] > 0 || [consoleTableView clickedRow] > -1)) {
+        NSIndexSet *rows = [consoleTableView selectedRowIndexes];
+        if([consoleTableView clickedRow] > -1 && ![rows containsIndex:[consoleTableView clickedRow]]) {
+            rows = [NSIndexSet indexSetWithIndex:[consoleTableView clickedRow]];
+        }
 
-	if ((firstResponder == consoleTableView) && ([consoleTableView numberOfSelectedRows] > 0)) {
-		
-		NSIndexSet *rows = [consoleTableView selectedRowIndexes];
 
-		NSString *string = [self sqlStringForRowIndexes:rows];
+        BOOL includeTimestamps  = ![[consoleTableView tableColumnWithIdentifier:SPTableViewDateColumnID] isHidden];
+        BOOL includeConnections = ![[consoleTableView tableColumnWithIdentifier:SPTableViewConnectionColumnID] isHidden];
+        BOOL includeDatabases   = ![[consoleTableView tableColumnWithIdentifier:SPTableViewDatabaseColumnID] isHidden];
+        NSString *string = [self infoStringForRowIndexes:rows includeTimestamps:includeTimestamps includeConnections:includeConnections includeDatabases:includeDatabases];
 
-		NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
+        NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 
-		// Copy the string to the pasteboard
-		[pasteBoard declareTypes:@[NSStringPboardType] owner:nil];
-		[pasteBoard setString:string forType:NSStringPboardType];
-	}
+        // Copy the string to the pasteboard
+        [pasteBoard declareTypes:@[NSStringPboardType] owner:self];
+        [pasteBoard setString:string forType:NSStringPboardType];
+    }
 }
 
-- (NSString *)sqlStringForRowIndexes:(NSIndexSet *)rows
+/**
+ * Copy implementation for console table view.
+ */
+- (void)copyQueryOnly:(id)sender
 {
-	if(![rows count]) return @"";
-	
-	NSMutableString *string = [[NSMutableString alloc] init];
-	
-	BOOL includeTimestamps  = ![[consoleTableView tableColumnWithIdentifier:SPTableViewDateColumnID] isHidden];
-	BOOL includeConnections = ![[consoleTableView tableColumnWithIdentifier:SPTableViewConnectionColumnID] isHidden];
-	BOOL includeDatabases   = ![[consoleTableView tableColumnWithIdentifier:SPTableViewDatabaseColumnID] isHidden];
-	
-	[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
-		if (i < [messagesVisibleSet count]) {
-			SPConsoleMessage *message = NSArrayObjectAtIndex(messagesVisibleSet, i);
-			
-			if (includeTimestamps || includeConnections || includeDatabases) [string appendString:@"/* "];
-			
-			NSDate *date = [message messageDate];
-			if (includeTimestamps && date) {
-				[string appendString:[dateFormatter stringFromDate:date]];
-				[string appendString:@" "];
-			}
-			
-			NSString *connection = [message messageConnection];
-			if (includeConnections && connection) {
-				[string appendString:connection];
-				[string appendString:@" "];
-			}
-			
-			NSString *database = [message messageDatabase];
-			if (includeDatabases && database) {
-				[string appendString:database];
-				[string appendString:@" "];
-			}
-			
-			if (includeTimestamps || includeConnections || includeDatabases) [string appendString:@"*/ "];
-			
-			[string appendString:[message message]];
-			[string appendString:@"\n"];
-		}
-	}];
-	
-	return string;
+    if (([consoleTableView numberOfSelectedRows] > 0 || [consoleTableView clickedRow] > -1)) {
+        NSIndexSet *rows = [consoleTableView selectedRowIndexes];
+        if([consoleTableView clickedRow] > -1 && ![rows containsIndex:[consoleTableView clickedRow]]) {
+            rows = [NSIndexSet indexSetWithIndex:[consoleTableView clickedRow]];
+        }
+
+        NSString *string = [self infoStringForRowIndexes:rows includeTimestamps:NO includeConnections:NO includeDatabases:NO];
+
+        NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
+
+        // Copy the string to the pasteboard
+        [pasteBoard declareTypes:@[NSStringPboardType] owner:self];
+        [pasteBoard setString:string forType:NSStringPboardType];
+    }
+}
+
+- (NSString *)infoStringForRowIndexes:(NSIndexSet *)rows includeTimestamps:(BOOL)includeTimestamps includeConnections:(BOOL)includeConnections includeDatabases:(BOOL)includeDatabases
+{
+    if(![rows count]) return @"";
+
+    NSMutableString *string = [[NSMutableString alloc] init];
+
+    [rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
+        if (i < [messagesVisibleSet count]) {
+            SPConsoleMessage *message = [messagesVisibleSet safeObjectAtIndex:i];
+
+            if (includeTimestamps || includeConnections || includeDatabases) [string appendString:@"/* "];
+
+            NSDate *date = [message messageDate];
+            if (includeTimestamps && date) {
+                [string appendString:[dateFormatter stringFromDate:date]];
+                [string appendString:@" "];
+            }
+
+            NSString *connection = [message messageConnection];
+            if (includeConnections && connection) {
+                [string appendString:connection];
+                [string appendString:@" "];
+            }
+
+            NSString *database = [message messageDatabase];
+            if (includeDatabases && database) {
+                [string appendString:database];
+                [string appendString:@" "];
+            }
+
+            if (includeTimestamps || includeConnections || includeDatabases) [string appendString:@"*/ "];
+
+            [string appendString:[message message]];
+            [string appendString:@"\n"];
+        }
+    }];
+
+    return string;
 }
 
 /**
@@ -364,9 +386,19 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
+    // Disable "Copy with Column Names" and "Copy as SQL INSERT"
+    // in the main menu
+    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc) {
+        return NO;
+    }
+    
 	if ([menuItem action] == @selector(copy:)) {
-		return ([consoleTableView numberOfSelectedRows] > 0);
+		return ([consoleTableView numberOfSelectedRows] > 0 || [consoleTableView clickedRow] > -1);
 	}
+
+    if ([menuItem action] == @selector(copyQueryOnly:)) {
+        return ([consoleTableView numberOfSelectedRows] > 0 || [consoleTableView clickedRow] > -1);
+    }
 
 	// Clear console
 	if ([menuItem action] == @selector(clearConsole:)) {
@@ -743,7 +775,11 @@ static SPQueryController *sharedQueryController = nil;
 
 - (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
 {
-	NSString *string = [self sqlStringForRowIndexes:rowIndexes];
+    BOOL includeTimestamps  = ![[consoleTableView tableColumnWithIdentifier:SPTableViewDateColumnID] isHidden];
+    BOOL includeConnections = ![[consoleTableView tableColumnWithIdentifier:SPTableViewConnectionColumnID] isHidden];
+    BOOL includeDatabases   = ![[consoleTableView tableColumnWithIdentifier:SPTableViewDatabaseColumnID] isHidden];
+
+    NSString *string = [self infoStringForRowIndexes:rowIndexes includeTimestamps:includeTimestamps includeConnections:includeConnections includeDatabases:includeDatabases];
 	if([string length]) {
 		[pboard declareTypes:@[NSStringPboardType] owner:self];
 		return [pboard setString:string forType:NSStringPboardType];
@@ -953,13 +989,20 @@ NSInteger intSort(id num1, id num2, void *context)
 {
 	NSUInteger maxHistoryItems = [[prefs objectForKey:SPCustomQueryMaxHistoryItems] integerValue];
 
+    NSString *fileURLStr = [fileURL absoluteString];
+
+    CLS_LOG(@"fileURLStr = %@", fileURLStr);
+    SPLog(@"fileURLStr = %@", fileURLStr);
+
 	// Save each history item due to its document source
-	if ([historyContainer safeObjectForKey:[fileURL absoluteString]]) {
+	if (fileURLStr != nil && [historyContainer safeObjectForKey:fileURLStr]) {
 
 		// Remove all duplicates by using a NSPopUpButton
 		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
 
-		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:[fileURL absoluteString]]];
+        SPLog(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
+
+		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];
 		[uniquifier insertItemWithTitle:history atIndex:0];
 
 		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)

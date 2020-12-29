@@ -393,7 +393,6 @@ extern NSString *SPProcessListEnableAutoRefresh;
 extern NSString *SPProcessListAutoRrefreshInterval;
 extern NSString *SPFavoritesSortedBy;
 extern NSString *SPFavoritesSortedInReverse;
-extern NSString *SPAlwaysShowWindowTabBar;
 extern NSString *SPResetAutoIncrementAfterDeletionOfAllRows;
 extern NSString *SPFavoriteColorList;
 extern NSString *SPDisplayBinaryDataAsHex;
@@ -711,3 +710,8 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 		#error 'ESUCCESS' must be defined as zero!
 	#endif
 #endif
+
+// some benchmarking macros
+#define START_BENCH uint64_t dispatch_benchmark(size_t count, void (^block)(void)); size_t const iterations = 10000; uint64_t tt = dispatch_benchmark(iterations, ^{ @autoreleasepool {
+
+#define END_BENCH }}); SPLog(@"Benchmark Avg. Runtime: %llu ns", tt);

@@ -57,7 +57,6 @@
 //	See more possible syntaxa in SPTooltip to init a tooltip
 
 #import "SPTooltip.h"
-#import "SPOSInfo.h"
 
 #include <tgmath.h>
 
@@ -332,7 +331,7 @@ static CGFloat slow_in_out (CGFloat t)
 				@"<body>%@</body>"
 				@"</html>";
 
-	NSString *tooltipColor = ([SPOSInfo isOSVersionAtLeastMajor:10 minor:10 patch:0])? @"#F0F0F0" : @"#F9FBC5";
+	NSString *tooltipColor = @"#F0F0F0";
 	NSString *bgColor = ([displayOptions objectForKey:@"backgroundcolor"]) ? [displayOptions objectForKey:@"backgroundcolor"] : tooltipColor;
 	BOOL isTransparent = ([displayOptions objectForKey:@"transparent"]) ? YES : NO;
 

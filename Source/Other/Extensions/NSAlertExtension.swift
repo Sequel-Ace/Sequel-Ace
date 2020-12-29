@@ -22,17 +22,20 @@ import AppKit
 								   primaryButtonTitle: String,
 								   primaryButtonHandler: (() -> ())? = nil,
 								   cancelButtonHandler: (() -> ())? = nil) {
-		let alert = NSAlert()
-		alert.messageText = title
-		alert.informativeText = message
-		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
-		alert.addButton(withTitle: primaryButtonTitle)
-		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
-		if alert.runModal() == .alertFirstButtonReturn {
-			primaryButtonHandler?()
-		} else {
-			cancelButtonHandler?()
-		}
+
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+            alert.addButton(withTitle: primaryButtonTitle)
+            alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            if alert.runModal() == .alertFirstButtonReturn {
+                primaryButtonHandler?()
+            } else {
+                cancelButtonHandler?()
+            }
+        }
 	}
 
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message, and showsSuppressionButton
@@ -50,28 +53,30 @@ import AppKit
 												  primaryButtonTitle: String,
 												  primaryButtonHandler: (() -> ())? = nil,
 												  cancelButtonHandler: (() -> ())? = nil) {
-		let alert = NSAlert()
-		alert.messageText = title
-		alert.informativeText = message
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
 
-		if suppressionKey != nil {
-			alert.showsSuppressionButton = true
-		}
-		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
-		alert.addButton(withTitle: primaryButtonTitle)
-		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            if suppressionKey != nil {
+                alert.showsSuppressionButton = true
+            }
+            // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+            alert.addButton(withTitle: primaryButtonTitle)
+            alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
 
-		if alert.runModal() == .alertFirstButtonReturn {
-			primaryButtonHandler?()
-		} else {
-			cancelButtonHandler?()
-		}
+            if alert.runModal() == .alertFirstButtonReturn {
+                primaryButtonHandler?()
+            } else {
+                cancelButtonHandler?()
+            }
 
-		// if they check the box, set the bool
-		if let suppressionButton = alert.suppressionButton, let suppressionKey = suppressionKey,
-		   suppressionButton.state == .on {
-			UserDefaults.standard.set(true, forKey: suppressionKey)
-		}
+            // if they check the box, set the bool
+            if let suppressionButton = alert.suppressionButton, let suppressionKey = suppressionKey,
+               suppressionButton.state == .on {
+                UserDefaults.standard.set(true, forKey: suppressionKey)
+            }
+        }
 	}
 
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and secondary colored button (also accepts escape key), main title and informative subtitle message.
@@ -89,17 +94,19 @@ import AppKit
 							secondaryButtonTitle: String,
 							primaryButtonHandler: (() -> ())? = nil,
 							secondaryButtonHandler: (() -> ())? = nil) {
-		let alert = NSAlert()
-		alert.messageText = title
-		alert.informativeText = message
-		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
-		alert.addButton(withTitle: primaryButtonTitle)
-		alert.addButton(withTitle: secondaryButtonTitle)
-		if alert.runModal() == .alertFirstButtonReturn {
-			primaryButtonHandler?()
-		} else {
-			secondaryButtonHandler?()
-		}
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+            alert.addButton(withTitle: primaryButtonTitle)
+            alert.addButton(withTitle: secondaryButtonTitle)
+            if alert.runModal() == .alertFirstButtonReturn {
+                primaryButtonHandler?()
+            } else {
+                secondaryButtonHandler?()
+            }
+        }
 	}
 
 
@@ -111,13 +118,15 @@ import AppKit
 	static func createWarningAlert(title: String,
 								   message: String,
 								   callback: (() -> ())? = nil) {
-		let alert = NSAlert()
-		alert.alertStyle = .critical
-		alert.messageText = title
-		alert.informativeText = message
-		alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
-		alert.runModal()
-		callback?()
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = title
+            alert.informativeText = message
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            alert.runModal()
+            callback?()
+        }
 	}
 
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title, informative subtitle message and accessory view.
@@ -135,18 +144,20 @@ import AppKit
 									 primaryButtonTitle: String,
 									 primaryButtonHandler: (() -> ())? = nil,
 									 cancelButtonHandler: (() -> ())? = nil) {
-		let alert = NSAlert()
-		alert.messageText = title
-		alert.informativeText = message
-		alert.accessoryView = accessoryView
-		// Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
-		alert.addButton(withTitle: primaryButtonTitle)
-		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
-		if alert.runModal() == .alertFirstButtonReturn {
-			primaryButtonHandler?()
-		} else {
-			cancelButtonHandler?()
-		}
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.accessoryView = accessoryView
+            // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
+            alert.addButton(withTitle: primaryButtonTitle)
+            alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            if alert.runModal() == .alertFirstButtonReturn {
+                primaryButtonHandler?()
+            } else {
+                cancelButtonHandler?()
+            }
+        }
 	}
 
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title, informative subtitle message and accessory view.
@@ -159,14 +170,16 @@ import AppKit
 	static func createAccessoryWarningAlert(title: String,
 											message: String,
 											accessoryView: NSView,
-											callback: (() -> ())? = nil) {
-		let alert = NSAlert()
-		alert.alertStyle = .critical
-		alert.messageText = title
-		alert.informativeText = message
-		alert.accessoryView = accessoryView
-		alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
-		alert.runModal()
-		callback?()
+                                            callback: (() -> ())? = nil) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = title
+            alert.informativeText = message
+            alert.accessoryView = accessoryView
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            alert.runModal()
+            callback?()
+        }
 	}
 }

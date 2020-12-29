@@ -365,7 +365,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 				[syncButton setState:NSOffState];
 
 				// Select the database and table
-				[doc selectDatabase:[pathArray objectAtIndex:1] item:[pathArray objectOrNilAtIndex:2]];
+				[doc selectDatabase:[pathArray objectAtIndex:1] item:[pathArray safeObjectAtIndex:2]];
 
 				if(oldState == NSOnState)
 					[self performSelector:@selector(_setSyncButtonOn) withObject:nil afterDelay:0.1];
@@ -635,7 +635,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		for(NSString* item in filteredItems) {
 			NSArray *a = [item componentsSeparatedByString:SPUniqueSchemaDelimiter];
 
-			NSString *db_id = [NSString stringWithFormat:@"%@%@%@", connectionID,SPUniqueSchemaDelimiter,NSArrayObjectAtIndex(a, 1)];
+			NSString *db_id = [NSString stringWithFormat:@"%@%@%@", connectionID,SPUniqueSchemaDelimiter,[a safeObjectAtIndex:1]];
 
 			if(!a || [a count] < 2) continue;
 
@@ -788,36 +788,36 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 			// No parent return the child by using the normal sort routine
 			if(!parentObject || ![parentObject isKindOfClass:NSDictionaryClass])
-				return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+				return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 
 			// Get the parent key name for storing
 			id parentKeys = [parentObject allKeysForObject:item];
 			if(parentKeys && [parentKeys count] == 1) {
 
-				NSString *itemRef = [NSArrayObjectAtIndex(parentKeys,0) description];
+				NSString *itemRef = [[parentKeys safeObjectAtIndex:0] description];
 
 				// For safety reasons
 				if(!itemRef)
-					return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+					return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 
 				// Not yet cached so do it
 				if(![cachedSortedKeys objectForKey:itemRef])
 					[cachedSortedKeys setObject:[allKeys sortedArrayUsingFunction:compareStrings context:nil] forKey:itemRef];
 
-				return [item objectForKey:NSArrayObjectAtIndex([cachedSortedKeys objectForKey:itemRef],childIndex)];
+				return [item objectForKey:[[cachedSortedKeys objectForKey:itemRef] safeObjectAtIndex:childIndex]];
 
 			}
 
 			// If something failed return the child by using the normal way
-			return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+			return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 
 		} else {
-			return [item objectForKey:NSArrayObjectAtIndex([allKeys sortedArrayUsingFunction:compareStrings context:nil],childIndex)];
+			return [item objectForKey:[[allKeys sortedArrayUsingFunction:compareStrings context:nil] safeObjectAtIndex:childIndex]];
 		}
 	}
 	else if ([item isKindOfClass:[NSArray class]]) 
 	{
-		return NSArrayObjectAtIndex(item,childIndex);
+		return [item safeObjectAtIndex:childIndex];
 	}
 	return nil;
 
@@ -908,7 +908,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 				} else {
 					[[tableColumn dataCell] setImage:databaseIcon];
 				}
-				return [[NSArrayObjectAtIndex([parentObject allKeysForObject:item], 0) componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+				return [[[[parentObject allKeysForObject:item] safeObjectAtIndex: 0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 
 			} else {
 				id allKeysForItem = [parentObject allKeysForObject:item];
@@ -916,12 +916,12 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 					if([outlineView levelForItem:item] == 1) {
 						// It's a db name which wasn't queried yet
 						[[tableColumn dataCell] setImage:databaseIcon];
-						return [[NSArrayObjectAtIndex(allKeysForItem,0) componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+						return [[[allKeysForItem safeObjectAtIndex:0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 					} else {
 						// It's a field and use the key "  struct_type  " to increase the distance between node and first child
-						if(![NSArrayObjectAtIndex(allKeysForItem,0) hasPrefix:@"  "]) {
+						if(![[allKeysForItem safeObjectAtIndex:0] hasPrefix:@"  "]) {
 							[[tableColumn dataCell] setImage:fieldIcon];
-							return [[NSArrayObjectAtIndex([parentObject allKeysForObject:item], 0) componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+							return [[[[parentObject allKeysForObject:item] safeObjectAtIndex: 0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 						} else {
 							[[tableColumn dataCell] setImage:[NSImage imageNamed:@"dummy-small"]];
 							return nil;
@@ -952,7 +952,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		if([outlineView levelForItem:item] == 3 && [item isKindOfClass:[NSArray class]])
 		{
-			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:NSArrayObjectAtIndex(item, 9)];
+			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[item safeObjectAtIndex:9]];
 			[b setEditable:NO];
 			[b setAlignment:NSTextAlignmentRight];
 			[b setFont:[NSFont systemFontOfSize:11]];
@@ -1033,7 +1033,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		if([selectedItem isKindOfClass:[NSArray class]]) {
 			NSUInteger i = 0;
 			for(i=0; i<[selectedItem count]-2; i++) {
-				NSString *item = NSArrayObjectAtIndex(selectedItem, i);
+				NSString *item = [selectedItem safeObjectAtIndex:i];
 				if([item isNSNull] || ![item length]) continue;
 				[infoArray addObject:[NSString stringWithFormat:@"%@: %@", 
 					[self tableInfoLabelForIndex:i ofType:SPTableTypeTable],
@@ -1049,9 +1049,9 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 			NSInteger keyIndex = 0;
 			if(keys && [keys count] == 2) {
 				// there only are two keys, get that key which doesn't begin with "  " due to it's the struct_type key
-				if([NSArrayObjectAtIndex(keys, keyIndex) hasPrefix:@"  "]) keyIndex++;
-				if(NSArrayObjectAtIndex(keys, keyIndex) && [[selectedItem objectForKey:NSArrayObjectAtIndex(keys, keyIndex)] isKindOfClass:[NSArray class]]) {
-					for(id item in [selectedItem objectForKey:NSArrayObjectAtIndex(keys, keyIndex)]) {
+				if([[keys safeObjectAtIndex:keyIndex] hasPrefix:@"  "]) keyIndex++;
+				if([keys safeObjectAtIndex:keyIndex] && [[selectedItem objectForKey:[keys safeObjectAtIndex:keyIndex]] isKindOfClass:[NSArray class]]) {
+					for(id item in [selectedItem objectForKey:[keys safeObjectAtIndex:keyIndex]]) {
 						if([item isKindOfClass:[NSString class]] && [(NSString*)item length]) {
 							[infoArray addObject:[NSString stringWithFormat:@"%@: %@", [self tableInfoLabelForIndex:i ofType:type], item]];
 						}

@@ -52,7 +52,7 @@
 - (instancetype)init
 {
 	if ((self = [super init])) {
-		info       = [[NSMutableArray alloc] init];
+		info = [[NSMutableArray alloc] init];
 		activities = [[NSMutableArray alloc] init];
 		
 		_activitiesWillBeUpdated = NO;
@@ -196,8 +196,20 @@
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:[[tableStatus objectForKey:@"Data_length"] longLongValue]]]];
 			}
 
+            if([[tableStatus objectForKey:@"Collation"] isNSNull]){
+                NSDictionary *userInfo = @{
+                    NSLocalizedDescriptionKey: @"tableStatus Collation is NSNull" ,
+                    @"serverVersion" : tableDocumentInstance.mySQLVersion,
+                };
+
+                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
+            }
+
+            SPLog(@"tableStatus: %@", tableStatus);
+            CLS_LOG(@"tableStatus: %@", tableStatus);
+
 			NSString *tableEnc = [tableDataInstance tableEncoding];
-			NSString *tableColl = [tableStatus objectForKey:@"Collation"];
+			NSString *tableColl = [tableStatus safeObjectForKey:@"Collation"];
 
 			if([tableColl length]) {
 				// instead of @"latin1 (latin1_german_ci)" we can just show @"latin1 (german_ci)"
@@ -338,7 +350,18 @@
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (tableView == infoTable) {
-		return [info objectAtIndex:rowIndex];
+        if(info.count <= (NSUInteger)rowIndex){
+            NSDictionary *userInfo = @{
+                NSLocalizedDescriptionKey: @"info.count <= (NSUInteger)rowIndex",
+                @"info.count":@(info.count),
+                @"rowIndex":@(rowIndex),
+                @"info":info
+            };
+            CLS_LOG(@"info.count <= (NSUInteger)rowIndex: [%lu] vs [%li]", (unsigned long)info.count, (long)rowIndex);
+            SPLog(@"info.count <= (NSUInteger)rowIndex: [%lu] vs [%li]", (unsigned long)info.count, (long)rowIndex);
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
+        }
+		return [info safeObjectAtIndex:rowIndex];
 	} 
 	else {
 		if (rowIndex == 0) {
@@ -349,7 +372,7 @@
 			return NSLocalizedString(@"ACTIVITIES", @"header for activities pane");
 		}
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
-			NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
+            NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
 			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init];
 			
 			[c setActivityName:[[dict objectForKey:@"contextInfo"] objectForKey:@"name"]];
@@ -429,9 +452,8 @@
 			return NSLocalizedString(@"Cancel", @"cancel");
 		}
 
-		NSDictionary *dict = NSArrayObjectAtIndex(activities,rowIndex);
-		
-		if ([[dict objectForKey:@"contextInfo"] objectForKey:@"name"]) {
+        NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
+		if ([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"]) {
 			return [[dict objectForKey:@"contextInfo"] objectForKey:@"name"];
 		}
 		

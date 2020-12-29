@@ -387,6 +387,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Get the mysql version
 	mySQLVersion = [[NSString alloc] initWithString:[mySQLConnection serverVersionString]];
 
+    [[FIRCrashlytics crashlytics] setCustomValue:mySQLVersion forKey:@"serverVersion"];
+
 	// Update the selected database if appropriate
 	if ([connectionController database] && ![[connectionController database] isEqualToString:@""]) {
 		
@@ -422,6 +424,27 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	} else {
 		[[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[mySQLConnection encoding]]];
 	}
+
+    executeOnBackgroundThread(^{
+
+        // set a few more keys
+        FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
+
+        [crashlytics setCustomValue:self->mySQLConnection.encoding forKey:@"encoding"];
+        [crashlytics setCustomValue:self->mySQLConnection.timeZoneIdentifier forKey:@"timeZoneIdentifier"];
+
+        switch(self->connectionController.type) {
+        case SPSocketConnection:
+            [crashlytics setCustomValue:@"SocketConnection" forKey:@"connectionType"];
+            break;
+        case SPTCPIPConnection:
+            [crashlytics setCustomValue:@"TCPIPConnection" forKey:@"connectionType"];
+            break;
+        case SPSSHTunnelConnection:
+            [crashlytics setCustomValue:@"SSHTunnelConnection" forKey:@"connectionType"];
+            break;
+        }
+    });
 
 	// For each of the main controllers, assign the current connection
 	[tableSourceInstance setConnection:mySQLConnection];
@@ -958,7 +981,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		for (NSArray *eachRow in theResult)
 		{
-			dbName = NSArrayObjectAtIndex(eachRow, 0);
+			dbName = [eachRow safeObjectAtIndex:0];
 		}
 
 		SPMainQSync(^{
@@ -3381,6 +3404,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Show/hide console
 	if (action == @selector(toggleConsole:)) {
 		[menuItem setTitle:([[[SPQueryController sharedQueryController] window] isVisible] && [[[NSApp keyWindow] windowController] isKindOfClass:[SPQueryController class]]) ? NSLocalizedString(@"Hide Console", @"hide console") : NSLocalizedString(@"Show Console", @"show console")];
+        return YES;
 	}
 	
 	// Clear console
@@ -3877,7 +3901,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Validates the toolbar items
+ * Validates the toolbar items - JCS NOTE: this is called loads!
  */
 - (BOOL)validateToolbarItem:(NSToolbarItem *)toolbarItem
 {
@@ -3895,6 +3919,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			if ([queryWindow isVisible]) {
 				[toolbarItem setImage:[NSImage imageNamed:@"showconsole"]];
 			} else {
+                CLS_LOG(@"macOS < 11 and queryWindow is NOT Visible");
 				[toolbarItem setImage:[NSImage imageNamed:@"hideconsole"]];
 			}
 		}
@@ -5097,7 +5122,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			if(inError == nil && query && [query length]) {
 
 				SPFileHandle *fh = [SPFileHandle fileHandleForWritingAtPath:resultFileName];
-				if(!fh) NSLog(@"Couldn't create file handle to %@", resultFileName);
+                if(!fh){
+                    SPLog(@"Couldn't create file handle to %@", resultFileName);
+                    CLS_LOG(@"Couldn't create file handle to %@", resultFileName);
+                }
 
 				SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
 				[theResult setReturnDataAsStrings:YES];
@@ -5157,7 +5185,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 								}
 
 								if([result length]) [result appendString:@","];
-								id cell = NSArrayObjectAtIndex(theRow, j);
+								id cell = [theRow safeObjectAtIndex:j];
 								if([cell isNSNull])
 									[result appendString:@"\"NULL\""];
 								else if([cell isKindOfClass:[SPMySQLGeometryData class]])
@@ -5195,7 +5223,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 								}
 
 								if([result length]) [result appendString:@"\t"];
-								id cell = NSArrayObjectAtIndex(theRow, j);
+								id cell = [theRow safeObjectAtIndex:j];
 								if([cell isNSNull])
 									[result appendString:@"NULL"];
 								else if([cell isKindOfClass:[SPMySQLGeometryData class]])
@@ -5933,101 +5961,140 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 //WARNING: Might be called from code in background threads
 - (IBAction)viewStructure:(id)sender
 {
-	// Cancel the selection if currently editing a view and unable to save
-	if (![[self onMainThread] couldCommitCurrentViewActions]) {
-		[[mainToolbar onMainThread] setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[prefs integerForKey:SPLastViewMode]]];
-		return;
-	}
-
-	[[tableTabView onMainThread] selectTabViewItemAtIndex:0];
-	[[mainToolbar onMainThread] setSelectedItemIdentifier:SPMainToolbarTableStructure];
-	[spHistoryControllerInstance updateHistoryEntries];
-
-	[prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
+    if (![NSThread isMainThread]) {
+        CLS_LOG(@"Calling viewStructure from background thread");
+    }
+    
+    SPMainQSync(^{
+        // Cancel the selection if currently editing a view and unable to save
+        if (![[self onMainThread] couldCommitCurrentViewActions]) {
+            [[self->mainToolbar onMainThread] setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            return;
+        }
+        
+        [[self->tableTabView onMainThread] selectTabViewItemAtIndex:0];
+        [[self->mainToolbar onMainThread] setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self->spHistoryControllerInstance updateHistoryEntries];
+        
+        [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
+    });
 }
 
 - (IBAction)viewContent:(id)sender
 {
-	// Cancel the selection if currently editing a view and unable to save
-	if (![self couldCommitCurrentViewActions]) {
-		[mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[prefs integerForKey:SPLastViewMode]]];
-		return;
-	}
-
-	[tableTabView selectTabViewItemAtIndex:1];
-	[mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
-	[spHistoryControllerInstance updateHistoryEntries];
-
-	[prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
+    if (![NSThread isMainThread]) {
+        CLS_LOG(@"Calling viewContent from background thread");
+    }
+    
+    SPMainQSync(^{
+        // Cancel the selection if currently editing a view and unable to save
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            return;
+        }
+        
+        [self->tableTabView selectTabViewItemAtIndex:1];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
+        [self->spHistoryControllerInstance updateHistoryEntries];
+        [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
+    });
 }
 
 - (IBAction)viewQuery:(id)sender
 {
-	// Cancel the selection if currently editing a view and unable to save
-	if (![self couldCommitCurrentViewActions]) {
-		[mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[prefs integerForKey:SPLastViewMode]]];
-		return;
-	}
+    if (![NSThread isMainThread]) {
+        CLS_LOG(@"Calling viewQuery from background thread");
+    }
+    
+    SPMainQSync(^{
+        // Cancel the selection if currently editing a view and unable to save
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            return;
+        }
+        
+        [self->tableTabView selectTabViewItemAtIndex:2];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
+        [self->spHistoryControllerInstance updateHistoryEntries];
+        
+        // Set the focus on the text field
+        [self->parentWindow makeFirstResponder:self->customQueryTextView];
+        
+        [self->prefs setInteger:SPQueryEditorViewMode forKey:SPLastViewMode];
+    });
 
-	[tableTabView selectTabViewItemAtIndex:2];
-	[mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
-	[spHistoryControllerInstance updateHistoryEntries];
-
-	// Set the focus on the text field
-	[parentWindow makeFirstResponder:customQueryTextView];
-
-	[prefs setInteger:SPQueryEditorViewMode forKey:SPLastViewMode];
 }
 
 - (IBAction)viewStatus:(id)sender
 {
-	// Cancel the selection if currently editing a view and unable to save
-	if (![self couldCommitCurrentViewActions]) {
-		[mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[prefs integerForKey:SPLastViewMode]]];
-		return;
-	}
+    
+    if (![NSThread isMainThread]) {
+        CLS_LOG(@"Calling viewStatus from background thread");
+    }
+    
+    SPMainQSync(^{
+        // Cancel the selection if currently editing a view and unable to save
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            return;
+        }
+        
+        [self->tableTabView selectTabViewItemAtIndex:3];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
+        [self->spHistoryControllerInstance updateHistoryEntries];
+        
+        if ([[self table] length]) {
+            [self->extendedTableInfoInstance loadTable:[self table]];
+        }
+        
+        [self->parentWindow makeFirstResponder:[self->extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
+        
+        [self->prefs setInteger:SPTableInfoViewMode forKey:SPLastViewMode];
+    });
 
-	[tableTabView selectTabViewItemAtIndex:3];
-	[mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
-	[spHistoryControllerInstance updateHistoryEntries];
-
-	if ([[self table] length]) {
-		[extendedTableInfoInstance loadTable:[self table]];
-	}
-
-	[parentWindow makeFirstResponder:[extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
-
-	[prefs setInteger:SPTableInfoViewMode forKey:SPLastViewMode];
 }
 
 - (IBAction)viewRelations:(id)sender
 {
-	// Cancel the selection if currently editing a view and unable to save
-	if (![self couldCommitCurrentViewActions]) {
-		[mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[prefs integerForKey:SPLastViewMode]]];
-		return;
-	}
+    if (![NSThread isMainThread]) {
+        CLS_LOG(@"Calling viewStatus from background thread");
+    }
+    
+    SPMainQSync(^{
+        // Cancel the selection if currently editing a view and unable to save
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            return;
+        }
+        
+        [self->tableTabView selectTabViewItemAtIndex:4];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
+        [self->spHistoryControllerInstance updateHistoryEntries];
+        
+        [self->prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
+    });
 
-	[tableTabView selectTabViewItemAtIndex:4];
-	[mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
-	[spHistoryControllerInstance updateHistoryEntries];
-
-	[prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
 }
 
 - (IBAction)viewTriggers:(id)sender
 {
-	// Cancel the selection if currently editing a view and unable to save
-	if (![self couldCommitCurrentViewActions]) {
-		[mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[prefs integerForKey:SPLastViewMode]]];
-		return;
-	}
-
-	[tableTabView selectTabViewItemAtIndex:5];
-	[mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
-	[spHistoryControllerInstance updateHistoryEntries];
-
-	[prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
+    if (![NSThread isMainThread]) {
+        CLS_LOG(@"Calling viewTriggers from background thread");
+    }
+    
+    SPMainQSync(^{
+        // Cancel the selection if currently editing a view and unable to save
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            return;
+        }
+        
+        [self->tableTabView selectTabViewItemAtIndex:5];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
+        [self->spHistoryControllerInstance updateHistoryEntries];
+        
+        [self->prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
+    });
 }
 
 /**
