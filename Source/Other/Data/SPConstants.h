@@ -106,7 +106,8 @@ typedef enum
 	SPTableTypeView  = 1,
 	SPTableTypeProc  = 2,
 	SPTableTypeFunc  = 3,
-	SPTableTypeEvent = 4
+	SPTableTypeEvent = 4,
+	SPTableTypeTableNewDB = 5
 } SPTableType;
 
 // Content views

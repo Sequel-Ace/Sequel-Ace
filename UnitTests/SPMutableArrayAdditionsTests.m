@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPMutableArrayAdditions.h"
-
+#import "NSMutableArray-MultipleSort.h"
 #import <XCTest/XCTest.h>
 
 /**
@@ -52,10 +52,60 @@
 {
 	NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", @"4", @"5", nil];
 	NSMutableArray *expectedArray = [NSMutableArray arrayWithObjects:@"5", @"4", @"3", @"2", @"1", nil];
-	
+
 	[testArray reverse];
 	
 	XCTAssertEqualObjects(testArray, expectedArray, @"The reversed array should look like: %@, but actually looks like: %@", expectedArray, testArray);
+}
+
+- (void)testSort
+{
+	NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"o" ,@"n" ,@"m" ,@"l" ,@"k" ,@"j" ,@"i" ,@"h" ,@"g" ,@"f" ,@"e" ,@"d" ,@"c" ,@"b" ,@"a", nil];
+	NSMutableArray *expectedArray = [NSMutableArray arrayWithObjects:@"a", @"b", @"c", @"d", @"e", @"f", @"g", @"h", @"i", @"j", @"k", @"l", @"m", @"n", @"o", nil];
+
+	NSMutableArray *sortedArray = [NSMutableArray array];
+
+	NSMutableArray *PairedMutableArray = [NSMutableArray arrayWithObjects:@0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, nil];
+
+	[sortedArray setArray:[testArray sortedArrayUsingSelector:@selector(localizedCompare:)]];
+
+	XCTAssertEqualObjects(sortedArray, expectedArray, @"The sorted array should look like: %@, but actually looks like: %@", expectedArray, testArray);
+
+	[testArray sortArrayUsingSelector:@selector(localizedCompare:) withPairedMutableArrays:PairedMutableArray, nil];
+
+	XCTAssertEqualObjects(testArray, expectedArray, @"The sorted array should look like: %@, but actually looks like: %@", expectedArray, testArray);
+}
+
+
+- (void)testPerformance_withPairedMutableArrays {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"o" ,@"n" ,@"m" ,@"l" ,@"k" ,@"j" ,@"i" ,@"h" ,@"g" ,@"f" ,@"e" ,@"d" ,@"c" ,@"b" ,@"a", nil];
+		NSMutableArray *PairedMutableArray = [NSMutableArray arrayWithObjects:@0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, nil];
+
+		int const iterations = 100000;
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				[testArray sortArrayUsingSelector:@selector(localizedCompare:) withPairedMutableArrays:PairedMutableArray, nil];
+			}
+		}
+	}];
+}
+
+- (void)testPerformance_sortArrayUsingSelector {
+	// this is on main thread
+	[self measureBlock:^{
+		// Put the code you want to measure the time of here.
+		NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"o" ,@"n" ,@"m" ,@"l" ,@"k" ,@"j" ,@"i" ,@"h" ,@"g" ,@"f" ,@"e" ,@"d" ,@"c" ,@"b" ,@"a", nil];
+		NSMutableArray *sortedArray = [NSMutableArray array];
+		int const iterations = 100000;
+		for (int i = 0; i < iterations; i++) {
+			@autoreleasepool {
+				[sortedArray setArray:[testArray sortedArrayUsingSelector:@selector(localizedCompare:)]];
+			}
+		}
+	}];
 }
 
 @end

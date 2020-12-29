@@ -473,9 +473,9 @@
 				[tableListInstance deselectAllTables];
 				[tableListInstance updateTables:self];
 			}
-			
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
-
+			SPMainQSync(^{
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
+			});
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 
@@ -971,7 +971,9 @@
 	// Check for any errors, only displaying them if the connection hasn't been terminated
 	if ([mySQLConnection queryErrored]) {
 		if ([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+			SPMainQSync(^{
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [self->mySQLConnection lastErrorMessage]] callback:nil];
+			});
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 		pthread_mutex_unlock(&dataProcessingLock);

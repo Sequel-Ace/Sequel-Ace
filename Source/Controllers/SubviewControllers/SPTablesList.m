@@ -591,6 +591,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] != 1) return;
 	if (![tableSourceInstance saveRowOnDeselect] || ![tableContentInstance saveRowOnDeselect]) return;
 
+	[[self onMainThread] setDatabases:nil];
+
 	[[tableDocumentInstance parentWindow] endEditingFor:nil];
 
 	NSInteger objectType = [[filteredTableTypes objectAtIndex:[tablesListView selectedRow]] integerValue];
@@ -629,6 +631,37 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}];
 }
 
+
+- (IBAction)setDatabases:(id)sender;
+{
+	if (!chooseDatabaseButton) return;
+
+	[chooseDatabaseButton removeAllItems];
+
+	[chooseDatabaseButton addItemWithTitle:NSLocalizedString(@"Choose Database...", @"menu item for choose db")];
+	[[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
+	[[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
+	[[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
+
+	NSArray *theDatabaseList = [mySQLConnection databases];
+
+	NSMutableArray *allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
+
+	for (NSString *databaseName in theDatabaseList)
+	{
+		[allDatabases addObject:databaseName];
+	}
+
+	// Add user databases
+	for (NSString *database in allDatabases)
+	{
+		[chooseDatabaseButton addItemWithTitle:database];
+	}
+
+	[chooseDatabaseButton itemAtIndex:1].enabled = YES;
+
+	(![mySQLConnection database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[mySQLConnection database]];
+}
 /**
  * This action starts editing the table name in the table list
  */
@@ -2330,13 +2363,24 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)_copyTable
 {
 	NSString *tableType = @"";
+	NSString *tempTableName = nil;
+	NSString *tableName = [copyTableNameField stringValue];
 
-	if ([[copyTableNameField stringValue] isEqualToString:@""]) {
+	if ([tableName isEqualToString:@""]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Table must have a name.", @"message of panel when no name is given for table") callback:nil];
 		return;
 	}
 
 	BOOL copyTableContent = ([copyTableContentSwitch state] == NSOnState);
+
+	NSString *targetDatabaseName = [chooseDatabaseButton titleOfSelectedItem];
+
+	BOOL moveToDifferentDB = NO;
+
+	if (![targetDatabaseName isEqualToString:mySQLConnection.database]){
+		moveToDifferentDB = YES;
+		tempTableName = [NSString stringWithNewUUID];
+	}
 
 	SPTableType tblType = (SPTableType)[[filteredTableTypes objectAtIndex:[tablesListView selectedRow]] integerValue];
 
@@ -2385,9 +2429,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create View"]];
 		[scanner scanUpToString:@"AS" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
-		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [[copyTableNameField stringValue] backtickQuotedString], scanString]];
+		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [tableName backtickQuotedString], scanString]];
 	}
 	else if(tblType == SPTableTypeTable){
+
+		// check for triggers: https://dev.mysql.com/doc/refman/5.7/en/rename-table.html
+		NSArray *triggers = [self->tableDataInstance triggers];
+
+		if (moveToDifferentDB == YES && triggers.count > 0){
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"Cannot duplicate a table with triggers to a different database.", @"Cannot duplicate a table with triggers to a different database") callback:nil];
+			return;
+		}
+
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create Table"]];
 		[scanner scanUpToString:@"(" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
@@ -2401,7 +2454,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			scanString = [scanString stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"AUTO_INCREMENT=[0-9]+ "] withString:@""];
 		}
 
-		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE TABLE %@ %@", [[copyTableNameField stringValue] backtickQuotedString], scanString]];
+		NSString *queryStr =  [NSString stringWithFormat:@"CREATE TABLE %@ %@", (moveToDifferentDB == NO) ? [tableName backtickQuotedString] : [tempTableName backtickQuotedString], scanString];
+
+		SPLog("queryStr = %@", queryStr);
+
+		[mySQLConnection queryString:queryStr];
 	}
 	else if(tblType == SPTableTypeFunc || tblType == SPTableTypeProc)
 	{
@@ -2427,17 +2484,17 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSString *tableSyntax = [[theResult getRowAsArray] objectAtIndex:2];
 
 		// replace the old name by the new one and drop the old one
-		[mySQLConnection queryString:[tableSyntax stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[[copyTableNameField stringValue] backtickQuotedString]]];
+		[mySQLConnection queryString:[tableSyntax stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[tableName backtickQuotedString]]];
 
 		if ([mySQLConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
 	}
 
 	if ([mySQLConnection queryErrored]) {
 		//error while creating new table
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), [copyTableNameField stringValue], [mySQLConnection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];
 		return;
 	}
 
@@ -2445,54 +2502,89 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		//copy table content
 		[mySQLConnection queryString:[NSString stringWithFormat:
 									  @"INSERT INTO %@ SELECT * FROM %@",
-									  [[copyTableNameField stringValue] backtickQuotedString],
+									  (moveToDifferentDB == NO) ? [tableName backtickQuotedString] : [tempTableName backtickQuotedString],
 									  [selectedTableName backtickQuotedString]
 									  ]];
 
 		if ([mySQLConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"There have been errors while copying table content. Please control the new table.", @"message of panel when table content cannot be copied") callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"There have been errors while copying table content. Please check the new table.", @"message of panel when table content cannot be copied") callback:nil];
 		}
 	}
 
-	// Insert the new item into the tables list and select it.
-	NSInteger addItemAtIndex = NSNotFound;
-	for (NSUInteger i = 0; i < [tables count]; i++) {
-		NSInteger theTableType = [[tableTypes objectAtIndex:i] integerValue];
-		if (theTableType == SPTableTypeNone) continue;
-		if ((theTableType == SPTableTypeView || theTableType == SPTableTypeTable)
-			&& (tblType == SPTableTypeProc || tblType == SPTableTypeFunc)) {
-			continue;
-		}
-		if ((theTableType == SPTableTypeProc || theTableType == SPTableTypeFunc)
-			&& (tblType == SPTableTypeView || tblType == SPTableTypeTable)) {
-			addItemAtIndex = i - 1;
-			break;
-		}
-		if ([[copyTableNameField stringValue] localizedCompare:[tables objectAtIndex:i]] == NSOrderedAscending) {
-			addItemAtIndex = i;
-			break;
-		}
+	if (moveToDifferentDB == YES){
+		SPLog(@"Copying table to new database, targetDatabaseName = %@", targetDatabaseName);
+		[self _moveTable:tableName from:mySQLConnection.database to:targetDatabaseName tempTable:tempTableName];
+
+		SPMainQSync(^{
+			[self->mySQLConnection selectDatabase:targetDatabaseName];
+			[self->tableDocumentInstance selectDatabase:targetDatabaseName item:nil];
+			[self _renameTableOfType:SPTableTypeTableNewDB from:tempTableName to:tableName];
+		});
 	}
-	if (addItemAtIndex == NSNotFound) {
-		[tables addObject:[copyTableNameField stringValue]];
-		[tableTypes addObject:[NSNumber numberWithInteger:tblType]];
-	} else {
-		[tables insertObject:[copyTableNameField stringValue] atIndex:addItemAtIndex];
-		[tableTypes insertObject:[NSNumber numberWithInteger:tblType] atIndex:addItemAtIndex];
+	else{
+		// Insert the new item into the tables list and select it.
+		NSInteger addItemAtIndex = NSNotFound;
+		for (NSUInteger i = 0; i < [tables count]; i++) {
+			NSInteger theTableType = [[tableTypes objectAtIndex:i] integerValue];
+			if (theTableType == SPTableTypeNone) continue;
+			if ((theTableType == SPTableTypeView || theTableType == SPTableTypeTable)
+				&& (tblType == SPTableTypeProc || tblType == SPTableTypeFunc)) {
+				continue;
+			}
+			if ((theTableType == SPTableTypeProc || theTableType == SPTableTypeFunc)
+				&& (tblType == SPTableTypeView || tblType == SPTableTypeTable)) {
+				addItemAtIndex = i - 1;
+				break;
+			}
+			if ([tableName localizedCompare:[tables objectAtIndex:i]] == NSOrderedAscending) {
+				addItemAtIndex = i;
+				break;
+			}
+		}
+		if (addItemAtIndex == NSNotFound) {
+			[tables addObject:tableName];
+			[tableTypes addObject:[NSNumber numberWithInteger:tblType]];
+		} else {
+			[tables insertObject:tableName atIndex:addItemAtIndex];
+			[tableTypes insertObject:[NSNumber numberWithInteger:tblType] atIndex:addItemAtIndex];
+		}
+
+		// Set the selected table name and type, and use updateFilter to update the filter list and selection
+
+		selectedTableName = [[NSString alloc] initWithString:tableName];
+		selectedTableType = tblType;
+
+		[self updateFilter:self];
+
+		[tablesListView scrollRowToVisible:[tablesListView selectedRow]];
+		[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
+
+		// Query the structure of all databases in the background (mainly for completion)
+		[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 	}
+}
 
-	// Set the selected table name and type, and use updateFilter to update the filter list and selection
 
-	selectedTableName = [[NSString alloc] initWithString:[copyTableNameField stringValue]];
-	selectedTableType = tblType;
+- (void)_moveTable:(NSString *)newTableName from:(NSString *)sourceDatabaseName to:(NSString *)destinationDatabaseName tempTable:(NSString *)tempTableName{
 
-	[self updateFilter:self];
+	// check if the name really changed
+	if ([sourceDatabaseName isEqualToString:destinationDatabaseName]) return;
 
-	[tablesListView scrollRowToVisible:[tablesListView selectedRow]];
-	[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
+	if(destinationDatabaseName && [destinationDatabaseName length]) {
+		NSString *query = [NSString stringWithFormat: @"ALTER TABLE %@.%@ RENAME %@.%@", [sourceDatabaseName backtickQuotedString], [tempTableName backtickQuotedString], [destinationDatabaseName backtickQuotedString], [tempTableName backtickQuotedString]];
 
-	// Query the structure of all databases in the background (mainly for completion)
-	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
+		SPLog(@"QUERY is %@", query);
+
+		[mySQLConnection queryString:query];
+
+		SPMainQSync(^{
+			if ([self->mySQLConnection queryErrored]) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"There have been errors while copying table content. Please check the new table.", @"message of panel when table content cannot be copied") callback:nil];
+
+				SPLog(@"ERROR: %@", [self->mySQLConnection lastErrorMessage]);
+			}
+		});
+	}
 }
 
 /**
@@ -2531,14 +2623,24 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 
 	//check if we are trying to rename a TABLE or a VIEW
-	if (tableType == SPTableTypeView || tableType == SPTableTypeTable) {
+	if (tableType == SPTableTypeView || tableType == SPTableTypeTable || tableType == SPTableTypeTableNewDB) {
 		// we can use the rename table statement
 		[mySQLConnection queryString:[NSString stringWithFormat:@"RENAME TABLE %@ TO %@", [oldTableName backtickQuotedString], [newTableName backtickQuotedString]]];
 		// check for errors
 		if ([mySQLConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [mySQLConnection lastErrorMessage]];
+
+			if(mySQLConnection.lastErrorID == 1050 && tableType == SPTableTypeTableNewDB){
+				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [mySQLConnection lastErrorMessage]];
+
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:message callback:nil];
+
+				return;
+			}
+			else{
+				[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [mySQLConnection lastErrorMessage]];
+			}
 		}
-		
+
 		return;
 	}
 
