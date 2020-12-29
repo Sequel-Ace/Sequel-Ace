@@ -2993,18 +2993,18 @@ Gw
             <point key="canvasLocation" x="-632" y="-822"/>
         </window>
         <window title="Duplicate Table" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="501" userLabel="Duplicate Table Sheet">
-            <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
+            <windowStyleMask key="styleMask" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="356" y="461" width="260" height="164"/>
+            <rect key="contentRect" x="356" y="461" width="260" height="192"/>
             <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="260" height="127"/>
             <value key="maxSize" type="size" width="600" height="127"/>
             <view key="contentView" id="500">
-                <rect key="frame" x="0.0" y="0.0" width="260" height="164"/>
+                <rect key="frame" x="0.0" y="0.0" width="260" height="192"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="512">
-                        <rect key="frame" x="17" y="97" width="226" height="14"/>
+                        <rect key="frame" x="17" y="95" width="226" height="14"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="left" title="Duplicate table to" id="3830">
                             <font key="font" metaFont="message" size="11"/>
@@ -3052,7 +3052,7 @@ Gw
                         </connections>
                     </button>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zPq-c4-GfK">
-                        <rect key="frame" x="20" y="70" width="222" height="19"/>
+                        <rect key="frame" x="19" y="68" width="222" height="19"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="n3P-gU-pX8">
                             <font key="font" metaFont="message" size="11"/>
@@ -3064,16 +3064,16 @@ Gw
                         </connections>
                     </textField>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7VL-7D-xfr">
-                        <rect key="frame" x="15" y="146" width="226" height="14"/>
+                        <rect key="frame" x="16" y="145" width="226" height="14"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="left" title="Duplicate table to different database" id="vT5-w2-d4Q">
+                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="left" title="Database:" id="vT5-w2-d4Q">
                             <font key="font" metaFont="message" size="11"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
                     <popUpButton identifier="Choose Database..." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="k8n-fU-Dw2">
-                        <rect key="frame" x="18" y="114" width="224" height="25"/>
+                        <rect key="frame" x="16" y="113" width="228" height="25"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <popUpButtonCell key="cell" type="push" title="Choose Database..." bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="hWc-oz-cX8" id="e0p-I1-Wif">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -3090,9 +3090,18 @@ Gw
                             <outlet property="menu" destination="PWX-3H-T7u" id="ge9-Id-WkQ"/>
                         </connections>
                     </popUpButton>
+                    <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qFa-PB-fjb">
+                        <rect key="frame" x="18" y="167" width="224" height="19"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="center" title="Duplicate Table" id="Q9m-lS-SH7">
+                            <font key="font" textStyle="title3" name=".SFNS-Regular"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="-96" y="179"/>
+            <point key="canvasLocation" x="-96" y="193"/>
         </window>
         <window title="Key Sheet" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="409" userLabel="Key Sheet">
             <windowStyleMask key="styleMask" titled="YES"/>
@@ -4875,7 +4884,7 @@ Gw
                     </scroller>
                 </scrollView>
             </subviews>
-            <point key="canvasLocation" x="-318.5" y="-215.5"/>
+            <point key="canvasLocation" x="-422" y="-226"/>
         </customView>
         <window title="Type Info" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="NkY-EN-Fxn" userLabel="Structure Type Help" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" utility="YES" nonactivatingPanel="YES"/>
@@ -4924,7 +4933,7 @@ Gw
                     </scrollView>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="98" y="659.5"/>
+            <point key="canvasLocation" x="575" y="572"/>
         </window>
         <customView id="EmC-GF-Hfu">
             <rect key="frame" x="0.0" y="0.0" width="330" height="89"/>
