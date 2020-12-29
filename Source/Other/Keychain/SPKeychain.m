@@ -295,10 +295,10 @@
 	// Set up the attributes to modify
 	attributes[0].tag = kSecAccountItemAttr;
 	attributes[0].data = (unichar *)[newAccount UTF8String];
-	attributes[0].length = (UInt32)strlen([newAccount UTF8String]);
+    attributes[0].length = (newAccount != nil) ? (UInt32)strlen([newAccount UTF8String]) : 0;
 	attributes[1].tag = kSecServiceItemAttr;
 	attributes[1].data = (unichar *)[newName UTF8String];
-	attributes[1].length = (UInt32)strlen([newName UTF8String]);
+    attributes[1].length = (newName != nil) ? (UInt32)strlen([newName UTF8String]) : 0;
 	attList.count = 2;
 	attList.attr = attributes;
 
