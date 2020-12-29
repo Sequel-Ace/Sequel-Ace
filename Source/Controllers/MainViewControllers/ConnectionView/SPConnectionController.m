@@ -2291,7 +2291,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if ((isTestingConnection || !connectionSSHKeychainItemName || (connectionSSHKeychainItemName && ![[self sshPassword] isEqualToString:@"SequelAceSecretPassword"])) && [self sshPassword]) {
         [sshTunnel setPassword:[self sshPassword]];
     } else if (connectionSSHKeychainItemName) {
-		[sshTunnel setPasswordKeychainName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
+		[sshTunnel setPasswordKeychainName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]; // FIXME: not error checked?
 	}
 
 	// Set the public key path if appropriate
