@@ -198,7 +198,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             }
         }
         queue.close()
-        os_log("JIMMY db size2 = %@", log: log, type: .debug, dbSizeHumanReadable)
     }
 
     /// Migrates existing query history in the prefs plist to the SQLite db.

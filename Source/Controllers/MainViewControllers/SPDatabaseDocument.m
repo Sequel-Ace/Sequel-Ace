@@ -3404,6 +3404,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Show/hide console
 	if (action == @selector(toggleConsole:)) {
 		[menuItem setTitle:([[[SPQueryController sharedQueryController] window] isVisible] && [[[NSApp keyWindow] windowController] isKindOfClass:[SPQueryController class]]) ? NSLocalizedString(@"Hide Console", @"hide console") : NSLocalizedString(@"Show Console", @"show console")];
+        return YES;
 	}
 	
 	// Clear console

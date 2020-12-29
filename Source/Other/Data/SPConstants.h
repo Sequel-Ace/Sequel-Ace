@@ -392,7 +392,6 @@ extern NSString *SPProcessListEnableAutoRefresh;
 extern NSString *SPProcessListAutoRrefreshInterval;
 extern NSString *SPFavoritesSortedBy;
 extern NSString *SPFavoritesSortedInReverse;
-extern NSString *SPAlwaysShowWindowTabBar;
 extern NSString *SPResetAutoIncrementAfterDeletionOfAllRows;
 extern NSString *SPFavoriteColorList;
 extern NSString *SPDisplayBinaryDataAsHex;

@@ -16,7 +16,7 @@
 #define PI 3.1417
 
 @interface PSMTabBarControl (Private)
-- (void)update:(BOOL)animate;
+- (void)update;
 @end
 
 @interface PSMTabDragAssistant (Private)
@@ -217,7 +217,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 		// The placeholder is later removed by distributePlaceholdersInTabBar:.
 		PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control];
 		[[control cells] addObject:pc];
-		[control update:NO];
+		[control update];
 
 		// Deselect any currently selected tabs after the update
 		for (PSMTabBarCell *aCell in [control cells]) {
@@ -375,15 +375,6 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
         [[[self sourceTabBar] tabView] removeTabViewItem:[[self draggedCell] representedObject]];
         [[[self destinationTabBar] tabView] insertTabViewItem:[[self draggedCell] representedObject] atIndex:insertIndex];
 		
-		//calculate the position for the dragged cell
-		if ([[self destinationTabBar] automaticallyAnimates]) {
-			if (insertIndex > 0) {
-				NSRect cellRect = [[cells objectAtIndex:insertIndex - 1] frame];
-				cellRect.origin.x += cellRect.size.width;
-				[[self draggedCell] setFrame:cellRect];
-			}
-		}
-		
 		//rebind the cell to the new control
 		[[self destinationTabBar] bindPropertiesForCell:[self draggedCell] andTabViewItem:[[self draggedCell] representedObject]];
 		
@@ -462,7 +453,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 				[[[self sourceTabBar] tabView] removeTabViewItem:[[self draggedCell] representedObject]];
 				
 				[[control tabView] addTabViewItem:[[self draggedCell] representedObject]];
-				[control update:NO]; //make sure the new tab is set in the correct position
+				[control update]; //make sure the new tab is set in the correct position
 				
 				if (_currentTearOffStyle == PSMTabBarTearOffAlphaWindow) {
 				
@@ -939,7 +930,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
         }
     }
     // redraw
-    [control update:NO];
+    [control update];
 }
 
 #pragma mark -

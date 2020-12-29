@@ -66,10 +66,10 @@
 "%@\n\nMySQL said: %@" = "%1$@\n\nMySQL dijo: %2$@";
 
 /* favorite singular label (%d == 1) */
-"%lu favorite" = "%lu favorite";
+"%lu favorite" = "%lu favorito";
 
 /* favorites plural label (%d != 1) */
-"%lu favorites" = "%lu favorites";
+"%lu favorites" = "%lu favoritos";
 
 /* favorite group singular label (%d == 1) */
 "%lu group" = "%lu grupo";
@@ -90,22 +90,22 @@
 "%ld rows were not removed." = "%ld filas no fueron eliminadas.";
 
 /* Export file already exists message */
-"%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
+"%lu files already exist. Do you want to replace them?" = "%lu archivos ya existen. ¿Desea reemplazarlos?";
 
 /* Export files creation error title */
-"%lu files could not be created" = "%lu files could not be created";
+"%lu files could not be created" = "%lu archivos no se han podido crear";
 
 /* Some export files already exist explanatory text */
-"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu archivos con los mismos nombres ya existen en la carpeta de destino. Reemplazándolos sobreescribirá sus contenidos actuales.";
 
 /* filtered item count */
 "%lu of %lu" = "%1$lu de %2$lu";
 
 /* Export folder not writable for some files explanatory text */
-"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again.";
+"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu de los archivos de exportación no se han podido crear debido a que su carpeta de destino no se puede modificar; por favor seleccione una nueva ubicación y vuelva a intentarlo.";
 
 /* Export folder missing for some files explanatory text */
-"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again.";
+"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu de los archivos de exportación no se han podido crear debido a que su carpeta de destino ya no existe; por favor seleccione una nueva ubicación y vuelva a intentarlo.";
 
 /* History item title with nothing selected */
 "(no selection)" = "(sin selección)";
@@ -114,7 +114,7 @@
 "(not loaded)" = "(no cargado)";
 
 /* Explanation for MySQL server has gone away error */
-"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)";
+"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(Esto suele indicar que la conexión ha sido cerrada por el servidor tras inactividad, pero también puede ocurrir debido a otras condiciones. La conexión ha sido restablecida; por favor inténtelo de nuevo si es seguro volver a ejecutar la consulta.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
 ", first row available after %1$@" = ", first row available after %1$@";
@@ -135,13 +135,13 @@
 "[multiple selection]" = "[selección múltiple]";
 
 /* displayed when new content filter has empty Name field (ContentFilterManager) */
-"[name required]" = "[name required]";
+"[name required]" = "[nombre requerido]";
 
 /* [no selection] */
 "[no selection]" = "[sin selección]";
 
 /* Additional export file errors */
-"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
+"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(Además, uno o más errores han ocurrido al intentar crear los archivos de exportación: %lu no se han podido crear. Estos archivos serán ignorados.)";
 
 /* \n\npress shift for binary search tooltip message */
 "\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nPulse ⇧ para búsqueda binaria (sensible a mayúsculas).";
@@ -184,7 +184,7 @@
 "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.";
 
 /* Export file already exists explanatory text */
-"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents.";
+"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Un archivo con el mismo nombre ya existe en la carpeta de destino. Reemplazándolos sobreescribirá el contenido actual.";
 
 /* description of decimal */
 "A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”).";
@@ -197,22 +197,22 @@
 "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.";
 
 /* SSH key not found message */
-"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.";
+"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "La ubicación de la clave SSH fue especificada, pero el archivo no fue encontrado en la ubicación especificada.  Por favor, vuelva a seleccionar la clave y inténtelo de nuevo.";
 
 /* SSL CA certificate file not found message */
-"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again.";
+"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "La ubicación del certificado SSL CA fue especificada, pero el archivo no fue encontrado en la ubicación especificada.  Por favor, vuelva a seleccionar el certificado CA y inténtelo de nuevo.";
 
 /* SSL certificate file not found message */
-"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again.";
+"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "La ubicación del certificado SSL fue especificada, pero el archivo no fue encontrado en la ubicación especificada.  Por favor, vuelva a seleccionar el certificado y inténtelo de nuevo.";
 
 /* SSL key file not found message */
-"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.";
+"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "La ubicación del archivo de la clave SSL fue especificada, pero el archivo no fue encontrado en la ubicación especificada.  Por favor, vuelva a seleccionar el archivo de la clave y inténtelo de nuevo.";
 
 /* duplicate host informative message */
 "A user with the host '%@' already exists" = "El usuario con el equipo '%@' ya existe";
 
 /* duplicate user informative message */
-"A user with the name '%@' already exists" = "A user with the name '%@' already exists";
+"A user with the name '%@' already exists" = "El usuario con el nombre '%@' ya existe";
 
 /* table content : editing : error message description when parsing as hex string failed */
 "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.";
@@ -227,10 +227,10 @@
 "Accurate to approx. 7 decimal places" = "Accurate to approx. 7 decimal places";
 
 /* active connection window is busy. please wait and try again. tooltip */
-"Active connection window is busy. Please wait and try again." = "Active connection window is busy. Please wait and try again.";
+"Active connection window is busy. Please wait and try again." = "La conexión activa está ocupada. Por favor, espere y vuelva a intentarlo.";
 
 /* header for activities pane */
-"ACTIVITIES" = "ACTIVITIES";
+"ACTIVITIES" = "ACTIVIDADES";
 
 /* Add trigger button label */
 "Add" = "Añadir";
@@ -242,10 +242,10 @@
 "Add Host" = "Añadir host";
 
 /* add global value or expression menu item */
-"Add Value or Expression…" = "Add Value or Expression…";
+"Add Value or Expression…" = "Añadir valor o expresión…";
 
 /* adding index task status message */
-"Adding index..." = "Adding index...";
+"Adding index..." = "Añadiendo índice...";
 
 /* Advanced options short title */
 "Advanced" = "Avanzado";
@@ -263,7 +263,7 @@
 "All Databases (%)" = "Todas las bases de datos (%)";
 
 /* All export files already exist message */
-"All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
+"All the export files already exist. Do you want to replace them?" = "Todos los archivos de exportación ya existen. ¿Desea reemplazarlos?";
 
 /* An error for sequelace URL scheme command occurred. Probably no corresponding connection window found. */
 "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "Ha ocurrido un error en el comando de esquema URL de sequelace. Probablemente no se ha encontrado ninguna ventana de conexión que corresponda.";
@@ -437,19 +437,19 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Ha ocurrido un error al intentar realizar la operación.\n\nMySQL dijo: %@";
 
 /* Export files creation error explanatory text */
-"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Ha ocurrido un error incontrolado al intentar crear %lu de los archivos de exportación.  Por favor compruebe los detalles y vuelva a intentarlo.";
 
 /* All export files creation error explanatory text */
-"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "Ha ocurrido un error incontrolado al intentar crear cada uno de los archivos de exportación.  Por favor compruebe los detalles y vuelva a intentarlo.";
 
 /* Export file creation error explanatory text */
-"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "An unhandled error occurred when attempting to create the export file.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "Ha ocurrido un error incontrolado al intentar crear el archivo de exportación.  Por favor compruebe los detalles y vuelva a intentarlo.";
 
 /* ANALYZE one or more tables - result title */
 "Analyze %@" = "Analizar %@";
 
 /* analyze selected items menu item */
-"Analyze Selected Items" = "Analyze Selected Items";
+"Analyze Selected Items" = "Analizar ítems seleccionados";
 
 /* analyze table menu item */
 "Analyze Table" = "Analizar tabla";
@@ -563,13 +563,13 @@
 "Bundles" = "Paquetes";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item */
-"BUNDLES" = "BUNDLES";
+"BUNDLES" = "PAQUETES";
 
 /* Bundle Editor : Outline View : Menu Category item : tooltip */
-"Bundles in category “%@”" = "Bundles in category “%@”";
+"Bundles in category “%@”" = "Paquetes en categoría “%@”";
 
 /* bundles installation error */
-"Bundles Installation Error" = "Bundles Installation Error";
+"Bundles Installation Error" = "Error al instalar los paquetes";
 
 /* bzip2 compression export summary - within a sentence */
 "bzip2 compression" = "compresión bzip2";
@@ -589,7 +589,7 @@
 "Cancel Import" = "Cancel Import";
 
 /* cancelling task status message */
-"Cancelling..." = "Cancelling...";
+"Cancelling..." = "Cancelando...";
 
 /* empty query informative message */
 "Cannot save an empty query." = "No puede guardar una consulta vacía.";
@@ -598,7 +598,7 @@
 "Caret" = "Signo de intercalación";
 
 /* change button */
-"Change" = "Change";
+"Change" = "Cambiar";
 
 /* change focus to table list menu item */
 "Change Focus to Table List" = "Cambiar foco al listado de tablas";
@@ -607,7 +607,7 @@
 "Change table type" = "Cambiar tipo de tabla";
 
 /* unsaved changes informative message */
-"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue";
+"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Se han realizado modificaciones, que se perderán si la ventana se cierra. ¿Está seguro que desea continuar?";
 
 /* character set client: %@ */
 "character set client: %@" = "character set client: %@";
@@ -616,13 +616,13 @@
 "Check %@" = "Comprobar %@";
 
 /* check of all selected items successfully passed message */
-"Check of all selected items successfully passed." = "Check of all selected items successfully passed.";
+"Check of all selected items successfully passed." = "Comprobación de todos los ítems seleccionados superada correctamente.";
 
 /* check option: %@ */
 "check option: %@" = "check option: %@";
 
 /* check selected items menu item */
-"Check Selected Items" = "Check Selected Items";
+"Check Selected Items" = "Comprobar ítems seleccionados";
 
 /* check table menu item */
 "Check Table" = "Comprobar tabla";
@@ -637,13 +637,13 @@
 "Check View" = "Comprobar vista";
 
 /* checking field data for editing task description */
-"Checking field data for editing..." = "Checking field data for editing...";
+"Checking field data for editing..." = "Comprobando datos de campo para editar...";
 
 /* checksum %@ message */
 "Checksum %@" = "Checksum %@";
 
 /* checksum selected items menu item */
-"Checksum Selected Items" = "Checksum Selected Items";
+"Checksum Selected Items" = "Checksum de ítems seleccionados";
 
 /* checksum table menu item */
 "Checksum Table" = "Checksum de tabla";
@@ -655,7 +655,7 @@
 "Choose Database..." = "Elegir base de datos...";
 
 /* cancelling export cleaning up message */
-"Cleaning up..." = "Cleaning up...";
+"Cleaning up..." = "Limpiando...";
 
 /* clear button */
 "Clear" = "Vaciar";
@@ -685,16 +685,16 @@
 "Close" = "Cerrar";
 
 /* close tab context menu item */
-"Close Tab" = "Close Tab";
+"Close Tab" = "Cerrar pestaña";
 
 /* Close Window menu item */
 "Close Window" = "Cerrar ventana";
 
 /* collation label (Navigator) */
-"Collation" = "Collation";
+"Collation" = "Intercalación";
 
 /* collation connection: %@ */
-"collation connection: %@" = "collation connection: %@";
+"collation connection: %@" = "conexión de intercalación: %@";
 
 /* comment label */
 "Comment" = "Comentario";
@@ -706,7 +706,7 @@
 "Comment Selection" = "Comentar selección";
 
 /* connect button */
-"Connect" = "Connect";
+"Connect" = "Conectar";
 
 /* Connect via socket button */
 "Connect via socket" = "Conectar por socket";
@@ -730,7 +730,7 @@
 "Connection data file couldn't be read." = "El archivo de conexión no se ha podido leer.";
 
 /* message error while reading connection data file and suggesting to save it under a differnet name */
-"Connection data file “%@” couldn't be read. Please try to save the document under a different name." = "Connection data file “%@” couldn't be read. Please try to save the document under a different name.";
+"Connection data file “%@” couldn't be read. Please try to save the document under a different name." = "El archivo de conexión “%@” no se ha podido leer. Por favor, intente guardar el documento con un nombre distinto.";
 
 /* connection failed title */
 "Connection failed!" = "¡Conexión fallida!";
@@ -739,7 +739,7 @@
 "Connection file is encrypted" = "El archivo de conexión está cifrado";
 
 /* Connection success very short status message */
-"Connection succeeded" = "Connection succeeded";
+"Connection succeeded" = "Conexión satisfactoria";
 
 /* Console */
 "Console" = "Consola";
@@ -751,7 +751,7 @@
 "Content" = "Contenido";
 
 /* content filter clause is empty tooltip. */
-"Content Filter clause is empty." = "Content Filter clause is empty.";
+"Content Filter clause is empty." = "La cláusula de filtro de contenido está vacía.";
 
 /* continue button
  Continue button title */
@@ -812,16 +812,16 @@
 "Couldn't alter database.\nMySQL said: %@" = "No se ha podido modificar la base de datos.\nMySQL dijo: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
-"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Couldn't copy default themes to Application Support Theme folder!\nError: %@";
+"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "¡No se ha podido copiar los temas predeterminados en la carpeta Application Support Theme folder!\nError: %@";
 
 /* message of panel when table cannot be created */
 "Couldn't create '%@'.\nMySQL said: %@" = "No se ha podido crear '%1$@'.\nMySQL dijo: %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
-"Couldn't create Application Support Bundle folder!\nError: %@" = "Couldn't create Application Support Bundle folder!\nError: %@";
+"Couldn't create Application Support Bundle folder!\nError: %@" = "¡No se ha podido crear la carpeta Application Support Bundle!\nError: %@";
 
 /* Couldn't create Application Support Theme folder!\nError: %@ */
-"Couldn't create Application Support Theme folder!\nError: %@" = "Couldn't create Application Support Theme folder!\nError: %@";
+"Couldn't create Application Support Theme folder!\nError: %@" = "¡No se ha podido crear la carpeta Application Support Theme!\nError: %@";
 
 /* message of panel when creation of db failed */
 "Couldn't create database.\nMySQL said: %@" = "No se ha podido crear la base de datos.\nMySQL dijo: %@";
@@ -872,10 +872,10 @@
 "Create syntax for" = "Create syntax for";
 
 /* Create syntax label */
-"Create syntax for %@ '%@'" = "Create syntax for %1$@ '%2$@'";
+"Create syntax for %@ '%@'" = "Sintaxis create de %1$@ '%2$@'";
 
 /* Create syntaxes for selected items label */
-"Create syntaxes for selected items" = "Create syntaxes for selected items";
+"Create syntaxes for selected items" = "Sintaxis create de ítems seleccionados";
 
 /* created: %@
  Table Info Section : time+date table was created at */
@@ -920,7 +920,7 @@
  export source
  Table Structure : Collation dropdown : 'item is the same as the collation of database' marker
  Table Structure : Encoding dropdown : 'item is database default' marker */
-"Database" = "Database";
+"Database" = "Base de datos";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
@@ -955,13 +955,13 @@
 "Default Bundles Update" = "Actualización de paquetes predeterminados";
 
 /* import : csv field mapping : field default value */
-"Default: %@" = "Default: %@";
+"Default: %@" = "Por defecto: %@";
 
 /* Query snippet default value placeholder */
 "default_value" = "default_value";
 
 /* definer label (Navigator) */
-"Definer" = "Definer";
+"Definer" = "Creador";
 
 /* definer: %@ */
 "definer: %@" = "creador: %@";
@@ -1072,16 +1072,16 @@
 "Do UPDATE where field contents match" = "Hace UPDATE donde coincide el contenido de los campos";
 
 /* message of panel asking for confirmation for loading large text into the query editor */
-"Do you really want to load a SQL file with %@ of data into the Query Editor?" = "Do you really want to load a SQL file with %@ of data into the Query Editor?";
+"Do you really want to load a SQL file with %@ of data into the Query Editor?" = "¿Realmente desea cargar un archivo SQL con %@ datos en el Editor de consultas?";
 
 /* message of panel asking for confirmation for inserting large text from dragging action */
-"Do you really want to proceed with %@ of data?" = "Do you really want to proceed with %@ of data?";
+"Do you really want to proceed with %@ of data?" = "¿Realmente desea continuar con %@ datos?";
 
 /* shutdown server : confirmation dialog : title */
 "Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
 
 /* dtd identifier label (Navigator) */
-"DTD Identifier" = "DTD Identifier";
+"DTD Identifier" = "Identificador DTD";
 
 /* sql export dump of table label */
 "Dump of table" = "Volcado de tabla";
@@ -1105,7 +1105,7 @@
 "Duplicate Table..." = "Duplicar tabla...";
 
 /* duplicate user message */
-"Duplicate User" = "Duplicate User";
+"Duplicate User" = "Duplicar usuario";
 
 /* duplicate view menu title */
 "Duplicate View..." = "Duplicar vista...";
@@ -1123,7 +1123,7 @@
 "Edit Table Structure" = "Editar estructura de la tabla";
 
 /* edit theme list label */
-"Edit Theme List…" = "Edit Theme List…";
+"Edit Theme List…" = "Editar lista de temas…";
 
 /* edit user-defined filter */
 "Edit user-defined Filters…" = "Edita los filtros definidos por el usuario…";
@@ -1135,7 +1135,7 @@
 "en" = "en";
 
 /* encoding label (Navigator) */
-"Encoding" = "Encoding";
+"Encoding" = "Codificación";
 
 /* Table Info Section : $1 = table charset */
 "encoding: %1$@" = "codificación: %1$@";
@@ -1147,10 +1147,10 @@
 "engine: %@" = "motor: %@";
 
 /* enter connection details label */
-"Enter connection details below, or choose a favorite" = "Enter connection details below, or choose a favorite";
+"Enter connection details below, or choose a favorite" = "Introduzca los detalles de la conexión a continuación, o elija un favorito";
 
 /* SSH key password prompt */
-"Enter your password for the SSH key\n\"%@\"" = "Enter your password for the SSH key\n\"%@\"";
+"Enter your password for the SSH key\n\"%@\"" = "Introduzca la contraseña de la clave SSH\n\\"%@\\"";
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
@@ -1200,13 +1200,13 @@
 "Error for “%1$@”:\n%2$@" = "Error for “%1$@”:\n%2$@";
 
 /* error moving field message */
-"Error moving field" = "Error moving field";
+"Error moving field" = "Error al trasladar el campo";
 
 /* error occurred */
 "error occurred" = "error occurred";
 
 /* error reading import file */
-"Error reading import file." = "Error reading import file.";
+"Error reading import file." = "Error al leer el archivo de importación.";
 
 /* error finding keychain item to edit message */
 "Error retrieving Keychain item to edit" = "Error al recuperar ítem de llavero para editar";
@@ -1221,7 +1221,7 @@
 "Error truncating table" = "Error al truncar la tabla";
 
 /* error updating keychain item message */
-"Error updating Keychain item" = "Error updating Keychain item";
+"Error updating Keychain item" = "Error al actualizar el ítem de llavero";
 
 /* error while analyzing selected items message */
 "Error while analyzing selected items" = "Error al analizar los elementos seleccionados";
@@ -1299,13 +1299,13 @@
 "Errors" = "Errors";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
-"Example:" = "Example:";
+"Example:" = "Ejemplo:";
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
-"exclude BLOB" = "exclude BLOB";
+"exclude BLOB" = "excluir BLOB";
 
 /* execution privilege label (Navigator) */
-"Execution Privilege" = "Execution Privilege";
+"Execution Privilege" = "Privilegio de Ejecución";
 
 /* execution privilege: %@ */
 "execution privilege: %@" = "privilegio de ejecución: %@";
@@ -1314,7 +1314,7 @@
 "Execution stopped!\n" = "¡Ejecución interrumpida!\n";
 
 /* export selected favorites menu item */
-"Export Selected..." = "Export Selected...";
+"Export Selected..." = "Exportar seleccionado...";
 
 /* text showing that the application is importing a supplied format */
 "Exporting %@" = "Exportando %@";
@@ -1341,19 +1341,19 @@
 "Favorites" = "Favoritos";
 
 /* favorites export error message */
-"Favorites export error" = "Favorites export error";
+"Favorites export error" = "Error al exportar favoritos";
 
 /* favorites import error message */
-"Favorites import error" = "Favorites import error";
+"Favorites import error" = "Error al importar favoritos";
 
 /* export label showing that the app is fetching data */
 "Fetching data..." = "Recuperando datos...";
 
 /* fetching database structure data in progress */
-"fetching database structure data in progress" = "fetching database structure data in progress";
+"fetching database structure data in progress" = "recuperando estructura de datos de la base de datos";
 
 /* fetching database structure in progress */
-"fetching database structure in progress" = "fetching database structure in progress";
+"fetching database structure in progress" = "recuperando estructura de base de datos en progreso";
 
 /* fetching table data for completion in progress message */
 "fetching table data…" = "Recuperando datos de la tabla…";
@@ -1362,7 +1362,7 @@
 "field" = "campo";
 
 /* Field */
-"Field" = "Field";
+"Field" = "Campo";
 
 /* Query result editing error - could not match row being edited uniquely */
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Campo no editable. No se pudo identificar el campo de origen con precisión (%ld coincidencias).";
@@ -1381,10 +1381,10 @@
 "File couldn't be read: %@\n\nIt will be deleted." = "File couldn't be read: %@\n\nIt will be deleted.";
 
 /* File read error title (Import Dialog) */
-"File read error" = "File read error";
+"File read error" = "Error al leer el archivo";
 
 /* All export files already exist explanatory text */
-"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Los archivos con los mismos nombres ya existen en la carpeta de destino. Reemplazándolos sobreescribirá sus contenidos actuales.";
 
 /* filter label */
 "Filter" = "Filtro";
@@ -1396,7 +1396,7 @@
 "Filtered table content" = "Filtered table content";
 
 /* filtering failed. please try again. tooltip */
-"Filtering failed. Please try again." = "Filtering failed. Please try again.";
+"Filtering failed. Please try again." = "Filtrado fallido. Por favor vuelva a intentarlo de nuevo.";
 
 /* Filtering table task description */
 "Filtering table..." = "Filtrando tabla...";
@@ -1411,7 +1411,7 @@
 "Flush %@" = "Limpiar %@";
 
 /* flush selected items menu item */
-"Flush Selected Items" = "Flush Selected Items";
+"Flush Selected Items" = "Limpiar ítems seleccionados";
 
 /* flush table menu item */
 "Flush Table" = "Limpiar tabla";
@@ -1426,7 +1426,7 @@
 "Flushed Privileges" = "Privilegios vueltos a cargar";
 
 /* For BIT fields only “1” or “0” are allowed. */
-"For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
+"For BIT fields only “1” or “0” are allowed." = "Para los campos BIT solo están permitidos “1” o “0”.";
 
 /* force table deletion button text */
 "Force delete (disables integrity checks)" = "Forzar borrado (deshabilita la comprobación de integridad)";
@@ -1452,10 +1452,10 @@
 "General Preferences" = "Preferencias generales";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
-"General Scope\ncommands will run application-wide" = "General Scope\ncommands will run application-wide";
+"General Scope\ncommands will run application-wide" = "Ámbito general\nlos comandos se ejecutarán en toda la aplicación";
 
 /* generating print document status message */
-"Generating print document..." = "Generating print document...";
+"Generating print document..." = "Generando documento de impresión...";
 
 /* export header generation time label */
 "Generation Time" = "Generation Time";
@@ -1474,26 +1474,26 @@
 "Gzip compression" = "Compresión gzip";
 
 /* MySQL Help Viewer : Results list : Page title */
-"Help topics for “%@”" = "Help topics for “%@”";
+"Help topics for “%@”" = "Temas de ayuda para “%@”";
 
 /* hide console */
 "Hide Console" = "Ocultar consola";
 
 /* hide navigator */
-"Hide Navigator" = "Hide Navigator";
+"Hide Navigator" = "Ocultar navegador";
 
 /* hide tab bar */
 "Hide Tab Bar" = "Ocultar barra de pestañas";
 
 /* Hide Toolbar menu item */
-"Hide Toolbar" = "Hide Toolbar";
+"Hide Toolbar" = "Ocultar barra de herramientas";
 
 /* export filename host token
  export header host label */
 "Host" = "Equipo";
 
 /* Localized help page for query favourites - do not localize if no translated webpage is available */
-"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
+"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Query_Favorites";
 
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
@@ -1502,52 +1502,52 @@
 "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
 
 /* ignore button */
-"Ignore" = "Ignore";
+"Ignore" = "Ignorar";
 
 /* ignore errors button */
-"Ignore All Errors" = "Ignore All Errors";
+"Ignore All Errors" = "Ignorar todos los errores";
 
 /* ignore all fields menu item */
-"Ignore all Fields" = "Ignore all Fields";
+"Ignore all Fields" = "Ignorar todos los campos";
 
 /* ignore field label */
-"Ignore field" = "Ignore field";
+"Ignore field" = "Ignorar campo";
 
 /* ignore field label */
-"Ignore Field" = "Ignore Field";
+"Ignore Field" = "Ignorar campo";
 
 /* import button */
 "Import" = "Importar";
 
 /* import all fields menu item */
-"Import all Fields" = "Import all Fields";
+"Import all Fields" = "Importar todos los campos";
 
 /* sql import : charset error alert : continue button */
 "Import Anyway" = "Import Anyway";
 
 /* import cancelled message */
-"Import cancelled!\n" = "Import cancelled!\n";
+"Import cancelled!\n" = "¡Importación cancelada!\n";
 
 /* Import Error title */
-"Import Error" = "Import Error";
+"Import Error" = "Error al importar";
 
 /* import field operator tooltip */
-"Import field" = "Import field";
+"Import field" = "Importa el campo";
 
 /* import file does not exist message */
-"Import file does not exist." = "Import file does not exist.";
+"Import file does not exist." = "El archivo de importación no existe.";
 
 /* Export file format cannot be imported warning */
-"Import of the selected data is currently not supported." = "Import of the selected data is currently not supported.";
+"Import of the selected data is currently not supported." = "La importación de los datos seleccionados no está soportada actualmente.";
 
 /* SQL import progress text */
 "Imported %@ of %@" = "Importado %1$@ de %2$@";
 
 /* CSV import progress text where total size is unknown */
-"Imported %@ of CSV data" = "Imported %@ of CSV data";
+"Imported %@ of CSV data" = "Importado %@ datos de CSV";
 
 /* SQL import progress text where total size is unknown */
-"Imported %@ of SQL" = "Imported %@ of SQL";
+"Imported %@ of SQL" = "Importado %@ de SQL";
 
 /* text showing that the application is importing CSV */
 "Importing CSV" = "Importando CSV";
@@ -1556,7 +1556,7 @@
 "Importing SQL" = "Importando SQL";
 
 /* Bundle Editor : BLOB dropdown : 'include BLOB' item */
-"include BLOB" = "include BLOB";
+"include BLOB" = "incluir BLOB";
 
 /* include content table column tooltip */
 "Include content" = "Incluir contenido";
@@ -1572,29 +1572,29 @@
 "Inherit from database (%@)" = "Heredar de la base de datos (%@)";
 
 /* initializing export label */
-"Initializing..." = "Initializing...";
+"Initializing..." = "Inicializando...";
 
 /* Bundle Editor : Scope dropdown : 'input field' item
  input field menu item label */
-"Input Field" = "Input Field";
+"Input Field" = "Campo de entrada";
 
 /* input field  doesn't support insertion of snippets. */
-"Input Field doesn't support insertion of snippets." = "Input Field doesn't support insertion of snippets.";
+"Input Field doesn't support insertion of snippets." = "El campo de entrada no soporta la inserción de fragmentos.";
 
 /* input field is not editable. */
 "Input Field is not editable." = "El campo de entrada no se puede editar.";
 
 /* Bundle Editor : Outline View : 'Input Field' item : tooltip */
-"Input Field Scope\ncommands will run on each text input field" = "Input Field Scope\ncommands will run on each text input field";
+"Input Field Scope\ncommands will run on each text input field" = "Ámbito campo de entrada\nlos comandos se ejecutarán en cada campo de entrada de texto";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
-"Insert as Snippet" = "Insert as Snippet";
+"Insert as Snippet" = "Insertar como fragmento";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as text' item */
-"Insert as Text" = "Insert as Text";
+"Insert as Text" = "Insertar como texto";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item : tooltip */
-"Installed Bundles" = "Installed Bundles";
+"Installed Bundles" = "Paquetes instalados";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
 "Installing Bundle" = "Instalando paquete";
@@ -1615,7 +1615,7 @@
 "Interpret data as:" = "Interpretar datos como:";
 
 /* Invalid database very short status message */
-"Invalid database" = "Invalid database";
+"Invalid database" = "Base de datos incorrecta";
 
 /* export : import settings : file error title */
 "Invalid file supplied!" = "Invalid file supplied!";
@@ -1624,10 +1624,10 @@
 "Invalid hexadecimal value" = "Invalid hexadecimal value";
 
 /* is deterministic label (Navigator) */
-"Is Deterministic" = "Is Deterministic";
+"Is Deterministic" = "Determinista";
 
 /* is nullable label (Navigator) */
-"Is Nullable" = "Is Nullable";
+"Is Nullable" = "Nulos";
 
 /* is updatable: %@ */
 "is updatable: %@" = "es actualizable: %@";
@@ -1642,7 +1642,7 @@
 "JavaScript Parsing Error" = "JavaScript Parsing Error";
 
 /* key label (Navigator) */
-"Key" = "Key";
+"Key" = "Clave";
 
 /* keyword label for color table (Prefs > Editor) */
 "Keyword" = "Palabra reservada";
@@ -1657,10 +1657,10 @@
 "Kill query?" = "¿Finalizar consulta?";
 
 /* Last Error Message */
-"Last Error Message" = "Last Error Message";
+"Last Error Message" = "Último mensaje de error";
 
 /* Last Used entry in favorites menu */
-"Last Used" = "Last Used";
+"Last Used" = "Último usado";
 
 /* range for json type */
 "Limited to @@max_allowed_packet" = "Limited to @@max_allowed_packet";
@@ -1716,7 +1716,7 @@
 "Make sure the file contains a X.509 client certificate and is using PEM encoding." = "Make sure the file contains a X.509 client certificate and is using PEM encoding.";
 
 /* match field menu item */
-"Match Field" = "Match Field";
+"Match Field" = "Incluir Campo";
 
 /* Shown when user inserts too many arguments (ContentFilterManager) */
 "Maximum number of arguments is 2!" = "¡El número máximo de argumentos es 2!";
@@ -1734,10 +1734,10 @@
 "Maximum text length is set to %llu. Inserted text was truncated." = "La longitud máxima del texto está establecida a %llu. El texto insertado fue truncado.";
 
 /* message column title */
-"Message" = "Message";
+"Message" = "Mensaje";
 
 /* mgtemplateengine error */
-"MGTemplateEngine Error" = "MGTemplateEngine Error";
+"MGTemplateEngine Error" = "Error de MGTemplateEngine";
 
 /* export filename date token */
 "Month" = "Month";
@@ -1764,7 +1764,7 @@
 "MySQL Help – Categories" = "Ayuda de MySQL – Categorías";
 
 /* mysql said message */
-"MySQL said:" = "MySQL said:";
+"MySQL said:" = "MySQL dijo:";
 
 /* shutdown server : error dialog : message */
 "MySQL said:\n%@" = "MySQL said:\n%@";
@@ -1788,28 +1788,28 @@
 "File Preferences" = "File Preferences";
 
 /* Bundle Editor : Default name for new bundle in the list on the left */
-"New Bundle" = "New Bundle";
+"New Bundle" = "Nuevo paquete";
 
 /* new column name placeholder string */
-"New Column Name" = "New Column Name";
+"New Column Name" = "Nuevo nombre de columna";
 
 /* new favorite name */
-"New Favorite" = "New Favorite";
+"New Favorite" = "Nuevo favorito";
 
 /* Content Filter Manager : Initial name for new filter */
-"New Filter" = "New Filter";
+"New Filter" = "Nuevo filtro";
 
 /* new folder placeholder name */
-"New Folder" = "New Folder";
+"New Folder" = "Nueva carpeta";
 
 /* Bundle Editor : Default name for a new bundle in the menu */
-"New Name" = "New Name";
+"New Name" = "Nuevo nombre";
 
 /* new table menu item */
 "New Table" = "Nueva tabla";
 
 /* error that no color theme found */
-"No color theme data found." = "No color theme data found.";
+"No color theme data found." = "No se encontraron datos de tema de color.";
 
 /* No compression export summary - within a sentence */
 "no compression" = "sin compresión";
@@ -1827,13 +1827,13 @@
 "No data found." = "No se encontraron datos.";
 
 /* No errors title */
-"No errors" = "No errors";
+"No errors" = "No hay errores";
 
 /* No favorites entry in favorites menu */
-"No Favorties" = "No Favorties";
+"No Favorties" = "No hay favoritos";
 
 /* All export files creation error title */
-"No files could be created" = "No files could be created";
+"No files could be created" = "No se han podido crear los archivos";
 
 /* no item found message */
 "No item found" = "No item found";
@@ -1845,13 +1845,13 @@
 "NO MATCHES" = "NO HAY RESULTADOS";
 
 /* no optimized field type found. message */
-"No optimized field type found." = "No optimized field type found.";
+"No optimized field type found." = "No se ha encontrado tipo óptimo de campo.";
 
 /* error that no query favorites found */
 "No query favorites found." = "No se encontraron consultas favoritas.";
 
 /* Mysql Help Viewer : Search : No results */
-"No results found." = "No results found.";
+"No results found." = "No se encontraron resultados.";
 
 /* Bundle Editor : Fallback Input source dropdown : 'none' item
  Bundle Editor : Scope=? : ? dropdown: 'None' item
@@ -1943,7 +1943,7 @@
 "Optimize %@" = "Optimizar %@";
 
 /* optimize selected items menu item */
-"Optimize Selected Items" = "Optimize Selected Items";
+"Optimize Selected Items" = "Optimizar ítems seleccionados";
 
 /* optimize table menu item */
 "Optimize Table" = "Optimizar tabla";
@@ -1952,7 +1952,7 @@
 "Optimize table failed." = "Optimización de tabla fallida.";
 
 /* Optimized type for field %@ */
-"Optimized type for field '%@'" = "Optimized type for field '%@'";
+"Optimized type for field '%@'" = "Tipo óptimo de campo '%@'";
 
 /* optional placeholder string */
 "optional" = "optional";
@@ -1964,22 +1964,22 @@
 "Permission Denied" = "Permission Denied";
 
 /* please choose a favorite connection view label */
-"Please choose a favorite" = "Please choose a favorite";
+"Please choose a favorite" = "Por favor, elija un favorito";
 
 /* message of panel when ssh details are incomplete */
 "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Por favor, introduzca el equipo del túnel SSH, o deshabilite el túnel SSH.";
 
 /* Please enter the password */
-"Please enter the password for ‘%@’:" = "Please enter the password for ‘%@’:";
+"Please enter the password for ‘%@’:" = "Por favor, introduzca la contraseña de ‘%@’:";
 
 /* print button */
-"Print" = "Print";
+"Print" = "Imprimir";
 
 /* print page menu item title */
-"Print Page…" = "Print Page…";
+"Print Page…" = "Imprimir página…";
 
 /* privileges label (Navigator) */
-"Privileges" = "Privileges";
+"Privileges" = "Privilegios";
 
 /* procedure */
 "procedure" = "procedimiento";
@@ -1991,7 +1991,7 @@
 "procedures" = "procedimientos";
 
 /* proceed button */
-"Proceed" = "Proceed";
+"Proceed" = "Continuar";
 
 /* header for procs & funcs list */
 "PROCS & FUNCS" = "PROCEDIMIENTOS & FUNCIONES";
@@ -2019,19 +2019,19 @@
 "Query logging is currently disabled" = "El registro de consultas está actualmente deshabitado";
 
 /* query result print heading */
-"Query Result" = "Query Result";
+"Query Result" = "Resultado de consulta";
 
 /* export source */
 "Query results" = "Query results";
 
 /* Query Status */
-"Query Status" = "Query Status";
+"Query Status" = "Estado de consulta";
 
 /* table status : row count query failed : error title */
 "Querying row count failed" = "Querying row count failed";
 
 /* Quick connect item label */
-"Quick Connect" = "Quick Connect";
+"Quick Connect" = "Conexión rápida";
 
 /* quote label for color table (Prefs > Editor) */
 "Quote" = "Comillas";
@@ -2076,7 +2076,7 @@
 "Relations for table: %@" = "Relaciones de tabla: %@";
 
 /* reload bundles menu item label */
-"Reload Bundles" = "Reload Bundles";
+"Reload Bundles" = "Volver a cargar paquetes";
 
 /* Reloading data task description */
 "Reloading data..." = "Volviendo a cargar datos...";
@@ -2107,13 +2107,13 @@
 "Remove selected query favorites?" = "¿Eliminar consultas favoritas seleccionadas?";
 
 /* removing field task status message */
-"Removing field..." = "Removing field...";
+"Removing field..." = "Eliminando campo...";
 
 /* removing index task status message */
-"Removing index..." = "Removing index...";
+"Removing index..." = "Eliminando índice...";
 
 /* rename database message */
-"Rename database '%@' to:" = "Rename database '%@' to:";
+"Rename database '%@' to:" = "Renombrar base de datos '%@' a:";
 
 /* rename func menu title */
 "Rename Function..." = "Renombrar función...";
@@ -2131,7 +2131,7 @@
 "Repair %@" = "Reparar %@";
 
 /* repair selected items menu item */
-"Repair Selected Items" = "Repair Selected Items";
+"Repair Selected Items" = "Reparar ítems seleccionados";
 
 /* repair table menu item */
 "Repair Table" = "Reparar tabla";
@@ -2140,13 +2140,13 @@
 "Repair table failed." = "Reparación de tabla fallida.";
 
 /* Replace button */
-"Replace" = "Replace";
+"Replace" = "Reemplazar";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace entire content' item */
 "Replace Entire Content" = "Reemplazar todo el contenido";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace selection' item */
-"Replace Selection" = "Replace Selection";
+"Replace Selection" = "Reemplazar selección";
 
 /* description of year */
 "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
@@ -2185,7 +2185,7 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion?" = "Reset AUTO_INCREMENT after deletion?";
+"Reset AUTO_INCREMENT after deletion?" = "¿Reiniciar AUTO_INCREMENT tras la eliminación?";
 
 /* Restoring session task description */
 "Restoring session..." = "Restaurando sesión...";
@@ -2218,7 +2218,7 @@
 "Run All" = "Ejecutar todo";
 
 /* Run All menu item title */
-"Run All Queries" = "Run All Queries";
+"Run All Queries" = "Ejecutar todas las consultas";
 
 /* Title of button to run current query in custom query view */
 "Run Current" = "Ejecutar actual";
@@ -2299,7 +2299,7 @@
 "Select Database" = "Seleccionar base de datos";
 
 /* selected items */
-"selected items" = "selected items";
+"selected items" = "ítems seleccionados";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "Filas seleccionadas (CSV)";
@@ -2311,7 +2311,7 @@
 "Selected Rows (TSV)" = "Filas seleccionadas (TSV)";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
-"Selected Text" = "Selected Text";
+"Selected Text" = "Texto seleccionado";
 
 /* selection label for color table (Prefs > Editor) */
 "Selection" = "Selección";
@@ -2340,7 +2340,7 @@
 "Server Processes on %@" = "Procesos de servidor en %@";
 
 /* Initial filename for 'Save session' file */
-"Session" = "Session";
+"Session" = "Sesión";
 
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as html' item
@@ -2409,10 +2409,10 @@
 "size: %@" = "tamaño: %@";
 
 /* skip existing button */
-"Skip existing" = "Skip existing";
+"Skip existing" = "Omitir existente";
 
 /* skip problems button */
-"Skip problems" = "Skip problems";
+"Skip problems" = "Omitir problemas";
 
 /* beta build label */
 "Beta Build" = "Beta Build";
@@ -2427,7 +2427,7 @@
 "Some of the target export folders are not writable.  Please select a new export location and try again." = "Algunas de las carpetas de destino no se pueden modificar.  Por favor, seleccione una nueva ubicación y vuelva a intentarlo.";
 
 /* Some export folders missing explanatory text */
-"Some of the target export folders no longer exist.  Please select a new export location and try again." = "Some of the target export folders no longer exist.  Please select a new export location and try again.";
+"Some of the target export folders no longer exist.  Please select a new export location and try again." = "Algunas de las carpetas de destino ya no existen.  Por favor, seleccione una nueva ubicación y vuelva a intentarlo.";
 
 /* Sorting table task description */
 "Sorting table..." = "Ordenando tabla...";
@@ -2436,7 +2436,7 @@
 "SPATIAL" = "SPATIAL";
 
 /* sql data access label (Navigator) */
-"SQL Data Access" = "SQL Data Access";
+"SQL Data Access" = "Datos de acceso SQL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH conectado";
@@ -2445,7 +2445,7 @@
 "SSH connecting..." = "conectando con SSH...";
 
 /* SSH connecting titlebar marker */
-"SSH Connecting…" = "SSH Connecting…";
+"SSH Connecting…" = "Conectando SSH…";
 
 /* SSH connection failed title */
 "SSH connection failed!" = "¡Conexión SSH fallida!";
@@ -2454,25 +2454,25 @@
 "SSH Disconnected" = "SSH desconectado";
 
 /* SSH key check error */
-"SSH Key not found" = "SSH Key not found";
+"SSH Key not found" = "Clave SSH no encontrada";
 
 /* title when ssh tunnel port forwarding failed */
 "SSH port forwarding failed" = "Falló el reenvío de puerto SSH";
 
 /* SSL certificate authority file check error */
-"SSL Certificate Authority File not found" = "SSL Certificate Authority File not found";
+"SSL Certificate Authority File not found" = "Archivo de certificado de autorización SSL no encontrado";
 
 /* SSL certificate file check error */
-"SSL Certificate File not found" = "SSL Certificate File not found";
+"SSL Certificate File not found" = "Archivo de certificado SSL no encontrado";
 
 /* SSL requested but not used title */
-"SSL connection not established" = "SSL connection not established";
+"SSL connection not established" = "Conexión SSL no establecida";
 
 /* SSL key file check error */
-"SSL Key File not found" = "SSL Key File not found";
+"SSL Key File not found" = "Archivo de clave SSL no encontrado";
 
 /* Standard memory export summary */
-"Standard memory" = "Standard memory";
+"Standard memory" = "Memoria estándar";
 
 /* started */
 "started" = "started";
@@ -2641,13 +2641,13 @@
 "TABLES & VIEWS" = "TABLAS & VISTAS";
 
 /* Connection test very short status message */
-"Testing connection..." = "Testing connection...";
+"Testing connection..." = "Comprobando conexión...";
 
 /* MySQL connection test very short status message */
-"Testing MySQL..." = "Testing MySQL...";
+"Testing MySQL..." = "Comprobando MySQL...";
 
 /* SSH testing very short status message */
-"Testing SSH..." = "Testing SSH...";
+"Testing SSH..." = "Comprobando SSH...";
 
 /* text label for color table (Prefs > Editor) */
 "Text" = "Texto";
@@ -2669,22 +2669,22 @@
 "In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In these files:\n\n%@\n\nDo you still want to install the bundle?";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file “%@” contains ‘%@’ data." = "The chosen file “%1$@” contains ‘%2$@’ data.";
+"The chosen file “%@” contains ‘%@’ data." = "El archivo elegido “%1$@” contiene ‘%2$@’ datos.";
 
 /* the color theme ‘%@’ already exists. */
-"The color theme ‘%@’ already exists." = "The color theme ‘%@’ already exists.";
+"The color theme ‘%@’ already exists." = "El tema de color ‘%@’ ya existe.";
 
 /* the connection is busy. please wait and try again tooltip */
-"The connection is busy. Please wait and try again." = "The connection is busy. Please wait and try again.";
+"The connection is busy. Please wait and try again." = "La conexión está ocupada. Por favor espere y vuelva a intentarlo.";
 
 /* the connection of the active connection window is not identical tooltip */
-"The connection of the active connection window is not identical." = "The connection of the active connection window is not identical.";
+"The connection of the active connection window is not identical." = "La conexión de la ventana activa no es idéntica.";
 
 /* Connection lost during import error message */
-"The connection to the server was lost during the import.  The import is only partially complete." = "The connection to the server was lost during the import.  The import is only partially complete.";
+"The connection to the server was lost during the import.  The import is only partially complete." = "La conexión con el servidor se perdió durante la importación.  La importación solo se completó parcialmente.";
 
 /* Create syntax permission denied detail */
-"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.";
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "La sintaxis de creación no se ha podido recuperar debido a un error de permisos.\n\nPor favor, compruebe sus permisos de usuario con un administrador.";
 
 /* CSV file open error */
 "The CSV file you selected could not be found or read." = "El archivo CSV seleccionado no se ha podido encontrar o leer.";
@@ -2693,19 +2693,19 @@
 "The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "El CSV leído contiene más de 512 columnas, más del máximo de columnas permitidas por razones de velocidad en Sequel Ace.\n\nEsto normalmente ocurre debido a errores de lectura en el CSV; por favor, compruebe el CSV que será importado además de los finales de línea y los caracteres de escape en la parte inferior del cuadro de diálogo de selección CSV.";
 
 /* unsaved theme informative message */
-"The current color theme is unsaved. Do you want to proceed without saving it?" = "The current color theme is unsaved. Do you want to proceed without saving it?";
+"The current color theme is unsaved. Do you want to proceed without saving it?" = "El tema de color actual no está guardado. ¿Desea continuar sin guardarlo?";
 
 /* Short important release note for swap of custom query buttons */
-"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped.";
+"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Las posiciones y los atajos de teclado de los botones \\"Ejecutar\\" y \\"Ejecutar todo\\" de la pestaña consulta personaliza se han intercambiado.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
 "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Los siguientes paquetes predeterminados fueron actualizados:\n%@\nSus modificaciones fueron almacenadas como “(user)”.";
 
 /* favorites export error informative message */
-"The following error occurred during the export process:\n\n%@" = "The following error occurred during the export process:\n\n%@";
+"The following error occurred during the export process:\n\n%@" = "Ha ocurrido el siguiente error durante el proceso de exportación:\n\n%@";
 
 /* favorites import error informative message */
-"The following error occurred during the import process:\n\n%@" = "The following error occurred during the import process:\n\n%@";
+"The following error occurred during the import process:\n\n%@" = "Ha ocurrido el siguiente error durante el proceso de importación:\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
 "The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "La relación de la clave ajena '%@' tiene una dependencia en este índice. Esta relación debe ser eliminada antes de que el índice pueda ser eliminado.\n\n¿Está seguro que desea eliminar la relación y el índice? Esta acción no se puede deshacer.";
@@ -2741,7 +2741,7 @@
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "El socket no se ha podido encontrar en ninguna ubicación. Por favor, proporcione la ubicación correcta del socket.\n\nMySQL dijo: %@";
 
 /* error creating relation informative message */
 "The specified relation could not be created.\n\nMySQL said: %@" = "The specified relation could not be created.\n\nMySQL said: %@";
@@ -2753,13 +2753,13 @@
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!";
 
 /* SQL file open error */
-"The SQL file you selected could not be found or read." = "The SQL file you selected could not be found or read.";
+"The SQL file you selected could not be found or read." = "El archivo SQL seleccionado no se ha podido encontrar o leer.";
 
 /* Prompt for SSH password when keychain fetch failed */
-"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "The SSH password could not be loaded from the keychain; please enter the SSH password for %@:";
+"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "La contraseña SSH no se ha podido cargar desde el llavero; por favor, introduzca la contraseña SSH de %@:";
 
 /* Prompt for SSH password when direct fetch failed */
-"The SSH password could not be loaded; please enter the SSH password for %@:" = "The SSH password could not be loaded; please enter the SSH password for %@:";
+"The SSH password could not be loaded; please enter the SSH password for %@:" = "La contraseña SSH no se ha podido cargar; por favor, introduzca la contraseña SSH de %@:";
 
 /* SSH tunnel authentication failed message */
 "The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "El túnel SSH no se ha podido autenticar con el equipo remoto. Por favor, compruebe su contraseña y asegúrese que todavía tiene acceso.";
@@ -2794,13 +2794,13 @@
 "Please select a new export location and try again." = "Please select a new export location and try again.";
 
 /* Export folder missing explanatory text */
-"The target export folder no longer exists.  Please select a new export location and try again." = "The target export folder no longer exists.  Please select a new export location and try again.";
+"The target export folder no longer exists.  Please select a new export location and try again." = "No existe la carpeta destino de la exportación.  Por favor, seleccione una nueva ubicación para exportar y vuelva a intentarlo.";
 
 /* theme name label */
-"Theme Name:" = "Theme Name:";
+"Theme Name:" = "Nombre de tema:";
 
 /* themes installation error */
-"Themes Installation Error" = "Themes Installation Error";
+"Themes Installation Error" = "Error al instalar los temas";
 
 /* message of panel when table content cannot be copied */
 "There have been errors while copying table content. Please control the new table." = "Se han producido errores al copiar el contenido de la tabla. Por favor, compruebe la nueva tabla.";
@@ -2863,7 +2863,7 @@
 "This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Este usuario no parece tener ningún equipo asociado y se eliminará a menos que un equipo sea añadido.";
 
 /* triggers not supported label */
-"This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2" = "This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2";
+"This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2" = "Esta versión de MySQL no soporta disparadores. El soporte para disparadores fue añadido en MySQL 5.0.2";
 
 /* shutdown server : confirmation dialog : message */
 "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!";
@@ -2896,10 +2896,10 @@
 "Truncate Tables" = "Truncar tablas";
 
 /* type label (Navigator) */
-"Type" = "Type";
+"Type" = "Tipo";
 
 /* type declaration header */
-"Type Declaration:" = "Type Declaration:";
+"Type Declaration:" = "Declaración de tipo:";
 
 /* add index error message */
 "Unable to add index" = "No se puede añadir el índice";
@@ -3001,7 +3001,7 @@
 "Unsupported version for export settings!" = "Unsupported version for export settings!";
 
 /* Name for an untitled connection */
-"Untitled" = "Untitled";
+"Untitled" = "Sin nombre";
 
 /* Title of a new Sequel Ace Document */
 "Untitled %ld" = "Sin nombre %ld";
@@ -3037,16 +3037,16 @@
 "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Falló al actualizar el contenido del campo. No se pudo identificar el campo de origen de forma precisa (%1$ld coincidencias). Probablemente este campo de la tabla `%2$@` fue modificado por otro usuario mientras se editaba.";
 
 /* updating field task description */
-"Updating field data..." = "Updating field data...";
+"Updating field data..." = "Actualizando datos de campo...";
 
 /* URL scheme command couldn't authenticated */
 "URL scheme command couldn't authenticated" = "URL scheme command couldn't authenticated";
 
 /* URL scheme command was terminated by user */
-"URL scheme command was terminated by user" = "URL scheme command was terminated by user";
+"URL scheme command was terminated by user" = "El comando de esquema URL fue finalizado por el usuario";
 
 /* URL scheme command “%@” unsupported */
-"URL scheme command “%@” unsupported" = "URL scheme command “%@” unsupported";
+"URL scheme command “%@” unsupported" = "Comando de esquema URL “%@” no soportado";
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Usar 127.0.0.1";
@@ -3076,46 +3076,46 @@
 "Version" = "Versión";
 
 /* view */
-"view" = "view";
+"view" = "vista";
 
 /* Release notes button title */
-"View full release notes" = "View full release notes";
+"View full release notes" = "Ver notas de versión";
 
 /* header for view info pane */
 "VIEW INFORMATION" = "INFORMACIÓN DE VISTA";
 
 /* view html source code menu item title */
-"View Source" = "View Source";
+"View Source" = "Ver código fuente";
 
 /* view structure print heading */
-"View Structure" = "View Structure";
+"View Structure" = "Estructura de vista";
 
 /* views */
 "views" = "views";
 
 /* warning */
-"Warning" = "Warning";
+"Warning" = "Advertencia";
 
 /* Short important release note for why password prompts may occur */
 "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Hemos cambiado la firma digital de Sequel Ace para la compatibilidad con GateKeeper; tendrá que permitir de nuevo el acceso a sus contraseñas.";
 
 /* Important release notes informational text, single change */
-"We've made a few changes but we thought you should know about one particularly important one:" = "We've made a few changes but we thought you should know about one particularly important one:";
+"We've made a few changes but we thought you should know about one particularly important one:" = "Hemos realizado algunos cambios, pero pensamos que usted debe saber acerca de uno especialmente importante:";
 
 /* Important release notes informational text, multiple changes */
-"We've made a few changes but we thought you should know about some particularly important ones:" = "We've made a few changes but we thought you should know about some particularly important ones:";
+"We've made a few changes but we thought you should know about some particularly important ones:" = "Hemos realizado algunos cambios, pero pensamos que usted debe saber acerca de algunos especialmente importantes:";
 
 /* WHERE clause not valid */
-"WHERE clause not valid" = "WHERE clause not valid";
+"WHERE clause not valid" = "Cláusula WHERE incorrecta";
 
 /* Title of filter preview area when the query WHERE is negated */
-"WHERE NOT query" = "WHERE NOT query";
+"WHERE NOT query" = "Consulta WHERE NOT";
 
 /* Title of filter preview area when the query WHERE is normal */
-"WHERE query" = "WHERE query";
+"WHERE query" = "Consulta WHERE";
 
 /* Generic working description */
-"Working..." = "Working...";
+"Working..." = "Trabajando...";
 
 /* export label showing app is writing data */
 "Writing data..." = "Escribiendo datos...";
@@ -3124,10 +3124,10 @@
 "Writing..." = "Escribiendo...";
 
 /* wrong data format or password */
-"Wrong data format or password." = "Wrong data format or password.";
+"Wrong data format or password." = "Formato de datos o contraseña incorrecta.";
 
 /* wrong data format */
-"Wrong data format." = "Wrong data format.";
+"Wrong data format." = "Formato de datos incorrecto.";
 
 /* export : import settings : spf content type error title */
 "Wrong SPF content type!" = "Wrong SPF content type!";
@@ -3136,7 +3136,7 @@
 "Year" = "Year";
 
 /* message of panel when trying to copy multiple rows */
-"You can only copy single rows." = "You can only copy single rows.";
+"You can only copy single rows." = "Solo puede copiar filas individuales.";
 
 /* message of panel when trying to edit tables without index and with hidden blob/text fields */
 "You can't hide blob and text fields when working with tables without index." = "No se puede ocultar los campos blob y text al trabajar con tablas sin índices.";
@@ -3148,7 +3148,7 @@
 "You have entered 'localhost' for a non-socket connection" = "Ha introducido 'localhost' en una conexión sin socket";
 
 /* SSL connection requested but not established error detail */
-"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.";
+"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Ha solicitado que la conexión debe establecerse usando SSL, pero MySQL realiza la conexión sin SSL.\n\nEsto puede deberse a que el servidor no admite conexiones SSL, o SSL está deshabilitado; o fueron proporcionado detalles insuficientes para establecer una conexión SSL.\n\nEsta conexión no está cifrada.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
 "‘%@’ based favorites" = "‘%@’ based favorites";
@@ -3157,13 +3157,13 @@
 "‘%@’ Fields Content Filters" = "‘%@’ Filtros de contenido de campos";
 
 /* Export file already exists message */
-"“%@” already exists. Do you want to replace it?" = "“%@” already exists. Do you want to replace it?";
+"“%@” already exists. Do you want to replace it?" = "“%@” ya existe. ¿Desea reemplazarlo?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
-"“%@” Bundle" = "“%@” Bundle";
+"“%@” Bundle" = "Paquete \\"%@”";
 
 /* Export file creation error title */
-"“%@” could not be created" = "“%@” could not be created";
+"“%@” could not be created" = "“%@” no se ha podido crear";
 
 /* “%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
 "“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "“%@” no se ha podido analizar. Puede editar la columna pero no se mostrará en la vista de contenido; por favor informe este problema al equipo de Sequel Ace utilizando la opción del menú Ayuda.";

@@ -2895,7 +2895,8 @@
 /* Begin PBXShellScriptBuildPhase section */
 		1A47995F2543320B00D29E6E /* Run Crashlytics */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
+			alwaysOutOfDate = 1;
+			buildActionMask = 8;
 			files = (
 			);
 			inputFileListPaths = (
@@ -2913,9 +2914,9 @@
 			);
 			outputPaths = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    \"${TARGET_BUILD_DIR}/../../../SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    SWIFT_PACKAGE_DIR=\"${PROJECT_TEMP_ROOT%/Build/*}\"\n    \"${SWIFT_PACKAGE_DIR}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
 		};
 		4E9CB7DA8C50DB518C64778D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2954,7 +2955,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $SCRIPTS_DIR\n#./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
+			shellScript = "cd $SCRIPTS_DIR\n./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3424,7 +3425,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3008;
+				CURRENT_PROJECT_VERSION = 3010;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -3733,7 +3734,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3008;
+				CURRENT_PROJECT_VERSION = 3010;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -4090,7 +4091,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3008;
+				CURRENT_PROJECT_VERSION = 3010;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -4170,7 +4171,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3008;
+				CURRENT_PROJECT_VERSION = 3010;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;

@@ -640,11 +640,6 @@
 			SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
 			NSWindow *newWindow = [newWindowController window];
 
-			// If window has more than 1 tab then set setHideForSingleTab to NO
-			// in order to avoid animation problems while opening tabs
-			if([[window objectForKey:@"tabs"] count] > 1)
-				[newWindowController setHideForSingleTab:NO];
-
 			// The first window should use autosaving; subsequent windows should cascade.
 			// So attempt to set the frame autosave name; this will succeed for the very
 			// first window, and fail for others.
@@ -707,14 +702,6 @@
 
 			// Select active tab
 			[newWindowController selectTabAtIndex:[[window objectForKey:@"selectedTabIndex"] intValue]];
-
-			// Reset setHideForSingleTab
-			if ([[NSUserDefaults standardUserDefaults] objectForKey:SPAlwaysShowWindowTabBar]) {
-				[newWindowController setHideForSingleTab:[[NSUserDefaults standardUserDefaults] boolForKey:SPAlwaysShowWindowTabBar]];
-			}
-			else {
-				[newWindowController setHideForSingleTab:YES];
-			}
 		}
 	}
 
@@ -1745,8 +1732,6 @@
 }
 
 - (void)rebuildMenus{
-
-	SPLog(@"JIMMY rebuildMenus");
 	// === Rebuild Bundles main menu item ===
 
 	// Get main menu "Bundles"'s submenu
