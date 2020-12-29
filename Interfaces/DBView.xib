@@ -1095,9 +1095,6 @@
                                                                             <font key="font" metaFont="system"/>
                                                                         </buttonCell>
                                                                         <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                                                        <connections>
-                                                                            <binding destination="1907" name="value" keyPath="values.EditInSheetEnabled" id="6351"/>
-                                                                        </connections>
                                                                     </button>
                                                                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="261">
                                                                         <rect key="frame" x="193" y="-4" width="362" height="22"/>
