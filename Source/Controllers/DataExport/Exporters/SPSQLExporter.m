@@ -529,7 +529,7 @@
 
 						// Otherwise add a quoted string with special characters escaped
 						else {
-							[sqlString appendString:[connection escapeAndQuoteString:object]];
+							[sqlString appendStringOrNil:[connection escapeAndQuoteString:object]];
 						}
 						
 						// Add the field separator if this isn't the last cell in the row
