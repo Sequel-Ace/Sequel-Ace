@@ -6,9 +6,9 @@
 //  Copyright © 2020 Sequel-Ace. All rights reserved.
 //
 
+import Firebase
 import Foundation
 import os.log
-import Firebase
 
 final class SecureBookmark: NSObject {
     private let bookmarkData: SecureBookmarkData
@@ -29,7 +29,7 @@ final class SecureBookmark: NSObject {
                 return codedData
             }
             catch{
-                os_log("Failed to encode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
+                os_log("Failed to encode data, Error: %@", log: OSLog.default, type: .error, error.localizedDescription)
                 Crashlytics.crashlytics().log("Failed to encode data, Error: \(error.localizedDescription)")
                 return nil
             }
@@ -48,7 +48,7 @@ final class SecureBookmark: NSObject {
                 return retData
             }
             catch{
-                os_log("Failed to decode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
+                os_log("Failed to decode data, Error: %@", log: OSLog.default, type: .error, error.localizedDescription)
                 Crashlytics.crashlytics().log("Failed to decode data, Error: \(error.localizedDescription)")
                 return emptySucureBookmarkData
             }
@@ -59,7 +59,7 @@ final class SecureBookmark: NSObject {
                 return retData
             }
             catch{
-                os_log("Failed to decode data, Error: %@", log: OSLog.`default`, type: .error, error.localizedDescription)
+                os_log("Failed to decode data, Error: %@", log: OSLog.default, type: .error, error.localizedDescription)
                 Crashlytics.crashlytics().log("Failed to encode data, Error: \(error.localizedDescription)")
                 return emptySucureBookmarkData
             }
