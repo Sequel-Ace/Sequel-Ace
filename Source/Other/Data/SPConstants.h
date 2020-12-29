@@ -425,10 +425,13 @@ extern NSString *SPFileNameTimeTokenName;
 extern NSString *SPFileName24HourTimeTokenName;
 extern NSString *SPFileNameFavoriteTokenName;
 extern NSString *SPFileNameTableTokenName;
-extern NSString *SPSecureBookmarks;
+extern NSString *SASecureBookmarks;
+extern NSString *SPSecureBookmarksOldFormat;
+extern NSString *SPSecureBookmarksHaveBeenMigrated;
 
 // Misc
 extern NSString *SPContentFilters;
+extern NSString *SPBookmarksChangedNotification;
 extern NSString *SPDocumentTaskEndNotification;
 extern NSString *SPDocumentTaskStartNotification;
 extern NSString *SPDocumentWillCloseNotification;
@@ -528,6 +531,7 @@ extern NSString *SPFavoriteSSLCACertFileLocationKey;
 extern NSString *SPFavoriteUseCompressionKey;
 extern NSString *SPConnectionFavoritesChangedNotification;
 extern NSString *SPConnectionShownSocketHelp;
+extern NSString *SPStaleBookmarksHelp;
 
 extern NSString *SPFFormatKey;
 extern NSString *SPFVersionKey;

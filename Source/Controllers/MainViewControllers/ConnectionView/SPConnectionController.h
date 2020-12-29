@@ -232,7 +232,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *connectionSSHKeychainItemAccount;
 @property (readwrite) BOOL useCompression;
 @property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
-@property (readwrite, strong) NSMutableArray<NSURL *> *resolvedBookmarks;
 
 @property (readonly) BOOL isConnecting;
 @property (readonly) BOOL isEditingConnection;
@@ -260,7 +259,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 -(BOOL)validateCertFile:(NSURL *)url error:(NSError **)outError;
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
 -(void)showValidationAlertForError:(NSError*)err;
--(void)reRequestSecureAccess;
 -(BOOL)connected;
 
 // Favorites interaction

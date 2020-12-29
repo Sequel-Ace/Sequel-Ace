@@ -29,15 +29,18 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFilePreferencePane.h"
+#import "sequel-ace-Swift.h"
+
 @import Firebase;
 
 @interface SPFilePreferencePane ()
+- (void)_refreshBookmarks;
+
 @end
 
 @implementation SPFilePreferencePane
 
 @synthesize bookmarks;
-@synthesize resolvedBookmarks;
 
 - (instancetype)init
 {
@@ -46,8 +49,9 @@
 	if (self) {
 		fileNames = [[NSMutableArray alloc] init];
 		bookmarks = [[NSMutableArray alloc] init];
-		resolvedBookmarks = [[NSMutableArray alloc] init];
-		
+        
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
+
 		[self loadBookmarks];
 	}
 	
@@ -56,10 +60,16 @@
 
 - (void)dealloc
 {
-	for(NSURL *url in resolvedBookmarks){
-		[url stopAccessingSecurityScopedResource];
-	}
+    SPLog(@"dealloc");
+    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 
+}
+
+- (void)_refreshBookmarks{
+    SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 }
 
 - (NSImage *)preferencePaneIcon {
@@ -93,19 +103,12 @@
 
 - (void)loadBookmarks
 {
-	id o;
-	
-	if((o = [prefs objectForKey:SPSecureBookmarks])){
-		[bookmarks setArray:o];
-	}
-	else{
-		SPLog(@"Could not load SPSecureBookmarks from prefs");
-		CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
-	}
-	
+ 
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+
 	// we need to re-request access to places we've been before..
-	[self reRequestSecureAccess];
-	
+    // not anymore, done at startup
+
 	// remove all saved filenames for the list view
 	[fileNames removeAllObjects];
 	
@@ -120,48 +123,17 @@
 			}
 			
 			// remove the file protocol
-			NSString *fileName = [key substringFromIndex:[@"file://" length]];
-			
-			// save the filename without the file protocol
-			[fileNames addObject:fileName];
+            if([key hasPrefixWithPrefix:@"file://" caseSensitive:YES] == YES){
+                NSString *fileName = [key substringFromIndex:[@"file://" length]];
+                // save the filename without the file protocol
+                [fileNames addObject:fileName];
+            }
 		}
 	}];
 	
 	// reset the table view for the files
 	[fileView deselectAll:nil];
 	[fileView reloadData];
-}
-
--(void)reRequestSecureAccess{
-	
-	SPLog(@"reRequestSecureAccess to saved bookmarks");
-
-	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-		
-		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
-			
-			NSError *error = nil;
-			
-			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
-													  options:NSURLBookmarkResolutionWithSecurityScope
-												relativeToURL:nil
-										  bookmarkDataIsStale:nil
-														error:&error];
-			
-			if(!error){
-				[tmpURL startAccessingSecurityScopedResource];
-				[resolvedBookmarks addObject:tmpURL];
-			}
-			else{
-				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
-				CLS_LOG(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
-			}
-		}];
-	}];
-
-	SPLog(@"resolvedBookmarks - %@",resolvedBookmarks);
-	CLS_LOG(@"resolvedBookmarks - %@",resolvedBookmarks);
-
 }
 
 #pragma mark -
@@ -174,21 +146,12 @@
 	// iterate through all selected indice
 	[indiceToRevoke enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
 		// retrieve the filename
-		NSString __block *fileName = [NSString  stringWithFormat:@"file://%@", fileNames[idx]];
+		NSString __block *fileName = [NSString stringWithFormat:@"file://%@", fileNames[idx]];
 		
-		[bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idxBookmarks, BOOL *stopBookmarks) {
-			NSEnumerator *keyEnumerator = [dict keyEnumerator];
-			id key;
-			
-			while (key = [keyEnumerator nextObject]) {
-				if (![key isEqualToString:fileName]) {
-					continue;
-				}
-				
-				[bookmarks removeObjectAtIndex:idxBookmarks];
-				[prefs setObject:bookmarks forKey:SPSecureBookmarks];
-			}
-		}];
+        if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
+            SPLog(@"refreshing bookmarks: %@", bookmarks);
+            [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+        }
 	}];
 	
 	// reload the bookmarks and reset the view
@@ -253,49 +216,10 @@
 		// for every selected file should be created in order to access them
 		// read-only.
 		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
-			// check if the file is out of the sandbox
-			if ([self->_currentFilePanel.URL startAccessingSecurityScopedResource] == YES) {
-                SPLog(@"got access to: %@", self->_currentFilePanel.URL.absoluteString);
-                CLS_LOG(@"got access to: %@", self->_currentFilePanel.URL.absoluteString);
 
-				BOOL __block beenHereBefore = NO;
-				
-				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-					// check, if a bookmark already exists
-					if (dict[url.absoluteString] != nil) {
-						beenHereBefore = YES;
-						*stop = YES;
-					}
-				}];
-				
-				// if no bookmark exist, create on
-				if (beenHereBefore == NO) {
-					NSError *error = nil;
-					
-					NSData *tmpAppScopedBookmark = [self->_currentFilePanel.URL
-													bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
-																			 |
-																			 NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
-													includingResourceValuesForKeys:nil
-													relativeToURL:nil
-													error:&error];
-					
-					// save the bookmark to the preferences in order to access
-					// them later in the SPConnectionController
-					if (tmpAppScopedBookmark && !error) {
-						[self->bookmarks addObject:@{url.absoluteString : tmpAppScopedBookmark}];
-						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-					}
-					else{
-						SPLog(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
-						CLS_LOG(@"Problem creating bookmark - %@ : %@",url.absoluteString, [error localizedDescription]);
-					}
-				}
-			}
-			else{
-				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
-				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",url.absoluteString);
-			}
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+                SPLog(@"addBookmarkForUrl success");
+            }
 		}];
 		
 		[self loadBookmarks];

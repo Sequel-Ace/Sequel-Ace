@@ -94,9 +94,12 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 {
 	[[self window] orderFront:nil];
 //	[[self window] makeKeyAndOrderFront:nil];
-	
-	// only do this if invoked with SPConnectionShownSocketHelp = YES in the displayOptions
-	if(displayOptions.count > 0 && [[displayOptions objectForKey:SPConnectionShownSocketHelp] boolValue] == YES){
+
+    BOOL shownSocketHelp = [[displayOptions objectForKey:SPConnectionShownSocketHelp] boolValue];
+    BOOL staleBookmarksHelp = [[displayOptions objectForKey:SPStaleBookmarksHelp] boolValue];
+
+	// only do this if invoked with SPConnectionShownSocketHelp = YES or SPStaleBookmarksHelp == YES in the displayOptions
+	if(displayOptions.count > 0 && (shownSocketHelp == YES || staleBookmarksHelp == YES )){
 		if([displayOptions objectForKey:@"frame"] != nil){
 			SPLog(@"Changing frame rect");
 
@@ -106,7 +109,8 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 			// save the current frame for restore
 			origFrame = CGRectMake(tmpFrame.origin.x,tmpFrame.origin.y, tmpFrame.size.width, tmpFrame.size.height );
 			restoreFrame = YES;
-			windowType = SPConnectionShownSocketHelp;
+            windowType = (shownSocketHelp == YES) ? SPConnectionShownSocketHelp : ((staleBookmarksHelp == YES) ? SPStaleBookmarksHelp : @"" );
+            SPLog(@"windowType: %@", windowType);
 			// set the new wider frame
 			[[self window] setFrame:CGRectMake([frameDict[@"x"] doubleValue], [frameDict[@"y"] doubleValue], [frameDict[@"w"] doubleValue], [frameDict[@"h"] doubleValue]) display:YES];
 			

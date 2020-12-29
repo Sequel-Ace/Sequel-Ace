@@ -47,7 +47,6 @@
 }
 
 @property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
-@property (readwrite, strong) NSMutableArray<NSURL *> *resolvedBookmarks;
 
 - (IBAction) revokeBookmark:(id)sender;
 - (IBAction) addBookmark:(id)sender;

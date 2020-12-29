@@ -66,9 +66,11 @@
 	NSToolbarItem *networkItem;
 	NSToolbarItem *editorItem;
 	NSToolbarItem *shortcutItem;
+    SPPreferenceFontChangeTarget fontChangeTarget;
+
+    @package
 	NSToolbarItem *fileItem;
 	
-	SPPreferenceFontChangeTarget fontChangeTarget;
 }
 
 @property (readonly) SPGeneralPreferencePane       *generalPreferencePane;

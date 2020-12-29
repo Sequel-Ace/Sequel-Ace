@@ -3176,3 +3176,21 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* text shown when there are App Sandbox Issues */
+"App Sandbox Issue" = "App Sandbox Issue";
+
+/* Stale Bookmarks error title */
+"Stale Bookmarks" = "Stale Bookmarks";
+
+/* Question to user to see if they would like to re-request access */
+"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?";
+
+/* The answer, yes */
+"Yes" = "Yes";
+
+/* Shown to remind users of their stale bookmarks */
+"A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "A reminder of your stale secure bookmarks:<br /><br />%@<br />";
+
+/* Title for Stale Secure Bookmarks help window */
+"Stale Secure Bookmarks" = "Stale Secure Bookmarks";

@@ -110,6 +110,7 @@
 		1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A199629257A624200F5B0F1 /* BundleExtension.swift */; };
 		1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
+		1A24B627258A2E9A00541E88 /* SecureBookmarkData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A24B626258A2E9A00541E88 /* SecureBookmarkData.swift */; };
 		1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2711CE2539D9B10066ED58 /* SPReachability.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */ = {isa = PBXBuildFile; fileRef = 1A2711E72539E2BB0066ED58 /* local-connection.html */; };
 		1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55025939B6400616E7E /* SPArrayAdditions.m */; };
@@ -121,6 +122,7 @@
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
+		1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */; };
 		1A6447912588CD8B00927DB3 /* License.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17CC993A10B4C9C80034CD7A /* License.rtf */; };
 		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
@@ -131,6 +133,7 @@
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
+		1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */; };
 		1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */ = {isa = PBXBuildFile; fileRef = 584192A0101E57BB0089807F /* NSMutableArray-MultipleSort.m */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
 		1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */; };
@@ -746,6 +749,7 @@
 		1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatterExtension.swift; sourceTree = "<group>"; };
 		1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatterExtension.swift; sourceTree = "<group>"; };
 		1A1EE986255131560056FECD /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
+		1A24B626258A2E9A00541E88 /* SecureBookmarkData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmarkData.swift; sourceTree = "<group>"; };
 		1A2711CD2539D9B10066ED58 /* SPReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPReachability.h; sourceTree = "<group>"; };
 		1A2711CE2539D9B10066ED58 /* SPReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPReachability.m; sourceTree = "<group>"; };
 		1A2711E72539E2BB0066ED58 /* local-connection.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "local-connection.html"; sourceTree = "<group>"; };
@@ -763,6 +767,8 @@
 		1A8B53562584520800526DED /* SPURLAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditions.m; sourceTree = "<group>"; };
 		1A8B53672584552F00526DED /* SPURLAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditionsTests.m; sourceTree = "<group>"; };
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
+		1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmark.swift; sourceTree = "<group>"; };
+		1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManager.swift; sourceTree = "<group>"; };
 		1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateComponentsFormatterExtension.swift; sourceTree = "<group>"; };
 		1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteHistoryManager.swift; sourceTree = "<group>"; };
 		1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPBundleManager.m; sourceTree = "<group>"; };
@@ -1523,6 +1529,9 @@
 		173E70D5107FF7AF008733C9 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */,
+				1A24B626258A2E9A00541E88 /* SecureBookmarkData.swift */,
+				1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */,
 				589235311020C1230011DE00 /* SPHistoryController.h */,
 				589235301020C1230011DE00 /* SPHistoryController.m */,
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
@@ -3053,6 +3062,7 @@
 				58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
+				1A24B627258A2E9A00541E88 /* SecureBookmarkData.swift in Sources */,
 				179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */,
 				B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */,
 				B57747D40F7A8974003B34F9 /* SPPreferenceController.m in Sources */,
@@ -3083,6 +3093,7 @@
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
+				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
@@ -3204,6 +3215,7 @@
 				50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */,
 				50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */,
 				513515E82593568B001E4533 /* PSMTabBarCell.m in Sources */,
+				1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */,
 				1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */,
 				9BE76F2886901784E4FD2321 /* SPFilterTableController.m in Sources */,
 				9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */,
