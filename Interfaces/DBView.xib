@@ -46,7 +46,6 @@
                 <outlet property="queryProgressBar" destination="858" id="860"/>
                 <outlet property="renameDatabaseButton" destination="6997" id="7011"/>
                 <outlet property="renameDatabaseMessageField" destination="6995" id="7041"/>
-                <outlet property="spHistoryControllerInstance" destination="6297" id="6298"/>
                 <outlet property="statusTableAccessoryView" destination="6885" id="6897"/>
                 <outlet property="statusTableCopyChecksum" destination="6901" id="6903"/>
                 <outlet property="statusTableView" destination="6889" id="6898"/>
@@ -1731,7 +1730,7 @@ Gw
                                                         </connections>
                                                     </splitView>
                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" preferredMaxLayoutWidth="578" translatesAutoresizingMaskIntoConstraints="NO" id="7967">
-                                                        <rect key="frame" x="76" y="12" width="609" height="17"/>
+                                                        <rect key="frame" x="103" y="12" width="582" height="17"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                         <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" id="7968">
                                                             <font key="font" metaFont="message" size="11"/>
@@ -2737,7 +2736,7 @@ Gw
                         </connections>
                     </textField>
                     <button verticalHuggingPriority="750" fixedFrame="YES" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="6939">
-                        <rect key="frame" x="262" y="13" width="102" height="28"/>
+                        <rect key="frame" x="261" y="13" width="103" height="28"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES"/>
                         <buttonCell key="cell" type="push" title="Duplicate" bezelStyle="rounded" alignment="center" controlSize="small" enabled="NO" borderStyle="border" tag="1" inset="2" id="6976">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -2994,18 +2993,18 @@ Gw
             <point key="canvasLocation" x="-632" y="-822"/>
         </window>
         <window title="Duplicate Table" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="501" userLabel="Duplicate Table Sheet">
-            <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
+            <windowStyleMask key="styleMask" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="356" y="461" width="260" height="127"/>
+            <rect key="contentRect" x="356" y="461" width="260" height="192"/>
             <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="260" height="127"/>
             <value key="maxSize" type="size" width="600" height="127"/>
             <view key="contentView" id="500">
-                <rect key="frame" x="0.0" y="0.0" width="260" height="127"/>
+                <rect key="frame" x="0.0" y="0.0" width="260" height="192"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="512">
-                        <rect key="frame" x="17" y="93" width="226" height="14"/>
+                        <rect key="frame" x="17" y="95" width="226" height="14"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="left" title="Duplicate table to" id="3830">
                             <font key="font" metaFont="message" size="11"/>
@@ -3053,7 +3052,7 @@ Gw
                         </connections>
                     </button>
                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zPq-c4-GfK">
-                        <rect key="frame" x="20" y="66" width="222" height="19"/>
+                        <rect key="frame" x="19" y="68" width="222" height="19"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="n3P-gU-pX8">
                             <font key="font" metaFont="message" size="11"/>
@@ -3064,9 +3063,45 @@ Gw
                             <outlet property="delegate" destination="68" id="FTJ-Fb-vbI"/>
                         </connections>
                     </textField>
+                    <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7VL-7D-xfr">
+                        <rect key="frame" x="16" y="145" width="226" height="14"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="left" title="Database:" id="vT5-w2-d4Q">
+                            <font key="font" metaFont="message" size="11"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <popUpButton identifier="Choose Database..." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="k8n-fU-Dw2">
+                        <rect key="frame" x="16" y="113" width="228" height="25"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <popUpButtonCell key="cell" type="push" title="Choose Database..." bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="hWc-oz-cX8" id="e0p-I1-Wif">
+                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="menu"/>
+                            <menu key="menu" title="Choose Database..." id="PWX-3H-T7u">
+                                <items>
+                                    <menuItem title="Choose Database..." state="on" id="hWc-oz-cX8">
+                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                    </menuItem>
+                                </items>
+                            </menu>
+                        </popUpButtonCell>
+                        <connections>
+                            <outlet property="menu" destination="PWX-3H-T7u" id="ge9-Id-WkQ"/>
+                        </connections>
+                    </popUpButton>
+                    <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qFa-PB-fjb">
+                        <rect key="frame" x="18" y="167" width="224" height="19"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="center" title="Duplicate Table" id="Q9m-lS-SH7">
+                            <font key="font" textStyle="title3" name=".SFNS-Regular"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="183" y="402.5"/>
+            <point key="canvasLocation" x="-96" y="193"/>
         </window>
         <window title="Key Sheet" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="409" userLabel="Key Sheet">
             <windowStyleMask key="styleMask" titled="YES"/>
@@ -4089,9 +4124,6 @@ Gw
                             <segment toolTip="Forward" image="NSGoRightTemplate" width="27" enabled="NO" tag="1"/>
                         </segments>
                     </segmentedCell>
-                    <connections>
-                        <action selector="historyControlClicked:" target="6297" id="6300"/>
-                    </connections>
                 </segmentedControl>
                 <popUpButton toolTip="Select a database to view (⇧⌘D)" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3995">
                     <rect key="frame" x="0.0" y="3" width="200" height="25"/>
@@ -4340,7 +4372,6 @@ Gw
                 <outlet property="reloadButton" destination="5176" id="6625"/>
                 <outlet property="removeButton" destination="5177" id="5190"/>
                 <outlet property="ruleFilterController" destination="ki9-Po-bdr" id="5od-0U-9xj"/>
-                <outlet property="spHistoryControllerInstance" destination="6297" id="6316"/>
                 <outlet property="tableContentContainer" destination="vcX-Xr-0cm" id="Xak-w0-y6x"/>
                 <outlet property="tableContentView" destination="36" id="142"/>
                 <outlet property="tableDataInstance" destination="4702" id="4712"/>
@@ -4382,6 +4413,7 @@ Gw
         <customObject id="68" userLabel="SPTablesList" customClass="SPTablesList">
             <connections>
                 <outlet property="addTableButton" destination="5328" id="5367"/>
+                <outlet property="chooseDatabaseButton" destination="k8n-fU-Dw2" id="tmD-Qu-M3g"/>
                 <outlet property="copyCreateSyntaxContextMenuItem" destination="7828" id="7830"/>
                 <outlet property="copyCreateSyntaxMenuItem" destination="7928" id="7950"/>
                 <outlet property="copyTableButton" destination="515" id="5705"/>
@@ -4389,6 +4421,7 @@ Gw
                 <outlet property="copyTableMessageField" destination="512" id="5427"/>
                 <outlet property="copyTableNameField" destination="zPq-c4-GfK" id="i9F-Er-ve6"/>
                 <outlet property="copyTableSheet" destination="501" id="521"/>
+                <outlet property="copyTableToNewDatabaseMessageField" destination="7VL-7D-xfr" id="MHU-zz-GNx"/>
                 <outlet property="customQueryInstance" destination="134" id="750"/>
                 <outlet property="databaseDataInstance" destination="5814" id="6209"/>
                 <outlet property="duplicateTableContextMenuItem" destination="6185" id="6201"/>
@@ -4411,7 +4444,6 @@ Gw
                 <outlet property="separatorTableMenuItem3" destination="7924" id="7953"/>
                 <outlet property="showCreateSyntaxContextMenuItem" destination="6923" id="6929"/>
                 <outlet property="showCreateSyntaxMenuItem" destination="7927" id="7949"/>
-                <outlet property="spHistoryControllerInstance" destination="6297" id="6302"/>
                 <outlet property="tableCollationButton" destination="8310" id="8314"/>
                 <outlet property="tableContentInstance" destination="67" id="143"/>
                 <outlet property="tableDataInstance" destination="4702" id="4707"/>
@@ -4563,12 +4595,6 @@ Gw
             </connections>
         </customObject>
         <customObject id="5814" userLabel="SPDatabaseData" customClass="SPDatabaseData"/>
-        <customObject id="6297" userLabel="SPHistoryController" customClass="SPHistoryController">
-            <connections>
-                <outlet property="historyControl" destination="6293" id="6299"/>
-                <outlet property="theDocument" destination="-2" id="6301"/>
-            </connections>
-        </customObject>
         <customObject id="7073" userLabel="SPIndexesController" customClass="SPIndexesController">
             <connections>
                 <outlet property="addIndexButton" destination="5150" id="7076"/>
@@ -4858,7 +4884,7 @@ Gw
                     </scroller>
                 </scrollView>
             </subviews>
-            <point key="canvasLocation" x="-318.5" y="-215.5"/>
+            <point key="canvasLocation" x="-422" y="-226"/>
         </customView>
         <window title="Type Info" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="NkY-EN-Fxn" userLabel="Structure Type Help" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" utility="YES" nonactivatingPanel="YES"/>
@@ -4907,7 +4933,7 @@ Gw
                     </scrollView>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="98" y="659.5"/>
+            <point key="canvasLocation" x="575" y="572"/>
         </window>
         <customView id="EmC-GF-Hfu">
             <rect key="frame" x="0.0" y="0.0" width="330" height="89"/>
