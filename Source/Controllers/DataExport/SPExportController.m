@@ -202,8 +202,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		exporters = [[NSMutableArray alloc] init];
 		exportFiles = [[NSMutableArray alloc] init];
 		operationQueue = [[NSOperationQueue alloc] init];
-		bookmarks = [[NSMutableArray alloc] init];
-		
+        bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
+
 		showAdvancedView = NO;
 		showCustomFilenameView = NO;
 		serverLowerCaseTableNameValue = NSNotFound;
@@ -288,16 +288,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
-	
-	id o;
-	if((o = [prefs objectForKey:SPSecureBookmarks])){
-		[bookmarks setArray:o];
-	}
-	else{
-		SPLog(@"Could not load SPSecureBookmarks from prefs");
-		CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
-	}
-	
+		
 	// overwrite defaults with user settings from last export
 	[self applySettingsFromDictionary:[prefs objectForKey:SPLastExportSettings] error:NULL];
 	
@@ -630,47 +621,11 @@ set_input:
 			}
 			
 			[self->exportPathField setStringValue:path];
-			
-			// the code always seems to go into this block as the
-			// user has selected the folder and we have com.apple.security.files.user-selected.read-write
-			if([self->changeExportOutputPathPanel.URL startAccessingSecurityScopedResource] == YES){
-                SPLog(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-                CLS_LOG(@"got access to: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-                
-				BOOL __block beenHereBefore = NO;
-				
-				// have we been here before?
-				[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-					
-					if(dict[self->changeExportOutputPathPanel.URL.absoluteString] != nil){
-						NSLog(@"beenHereBefore: %@", dict[self->changeExportOutputPathPanel.URL.absoluteString]);
-						beenHereBefore = YES;
-						*stop = YES;
-					}
-				}];
-				
-				if(beenHereBefore == NO){
-					// create a bookmark
-					NSError *error = nil;
-					NSData *tmpAppScopedBookmark = [self->changeExportOutputPathPanel.URL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope // this needs to be read-write
-																			 includingResourceValuesForKeys:nil
-																							  relativeToURL:nil
-																									  error:&error];
-					// save to prefs
-					if(tmpAppScopedBookmark && !error) {
-						[self->bookmarks addObject:@{self->changeExportOutputPathPanel.URL.absoluteString : tmpAppScopedBookmark}];
-						[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-					}
-					else{
-						SPLog(@"Problem creating bookmark - %@ : %@",self->changeExportOutputPathPanel.URL.absoluteString, [error localizedDescription]);
-						CLS_LOG(@"Problem creating bookmark - %@ : %@",self->changeExportOutputPathPanel.URL.absoluteString, [error localizedDescription]);
-					}
-				}
-			}
-			else{
-				SPLog(@"Problem startAccessingSecurityScopedResource for - %@",self->changeExportOutputPathPanel.URL.absoluteString);
-				CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",self->changeExportOutputPathPanel.URL.absoluteString);
-			}
+
+            // this needs to be read-write
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope)] == YES){
+                SPLog(@"addBookmarkForUrl success");
+            }
         }
     }];		
 }
@@ -3162,27 +3117,11 @@ set_input:
 	// look up that bookmark and request access
 	if(bookmarks.count > 0){
 		if((o = [dict objectForKey:@"exportPath"])) [exportPathField setStringValue:o];
-		
-		NSError __block *error = nil;
-		
-		[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict2, NSUInteger idx, BOOL *stop) {
-			
-			NSString *tmpStr = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
-			
-			if(dict2[tmpStr] != nil){
-				self.userChosenDirectory = [NSURL URLByResolvingBookmarkData:dict2[tmpStr]
-																	 options:NSURLBookmarkResolutionWithSecurityScope
-															   relativeToURL:nil
-														 bookmarkDataIsStale:nil
-																	   error:&error];
-				*stop = YES;
-			}
-		}];
-		
-		// if no bookmark was found this just calls against nil
-		if(!error){
-			[userChosenDirectory startAccessingSecurityScopedResource];
-		}
+
+        NSString *fileURLString = [NSURL fileURLWithPath:[exportPathField stringValue] isDirectory:YES].absoluteString;
+
+        // ret value can be nil
+        userChosenDirectory = [SecureBookmarkManager.sharedInstance bookmarkForFilename:fileURLString];
 	}
 	
 	SPExportType et;

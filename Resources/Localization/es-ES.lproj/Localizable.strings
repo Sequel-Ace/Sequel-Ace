@@ -3173,3 +3173,4 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+

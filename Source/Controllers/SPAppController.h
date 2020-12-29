@@ -85,7 +85,8 @@
 - (void)setSpfSessionDocData:(NSDictionary *)data;
 
 // Others
-
+- (NSString *)generateHTML:(NSString *)theTitle theHTML:(NSString *)someHTML;
+- (void)displayStaleBookmarkReminderWindow:(NSString *)staleBookmarksString;
 - (void)registerActivity:(NSDictionary *)commandDict;
 - (void)removeRegisteredActivity:(NSInteger)pid;
 - (NSArray *)runningActivities;

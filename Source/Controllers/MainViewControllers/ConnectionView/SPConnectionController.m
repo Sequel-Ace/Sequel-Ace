@@ -95,6 +95,8 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (void)_scrollToSelectedNode;
 - (void)_removeNode:(SPTreeNode *)node;
 - (void)_removeAllPasswordsForNode:(SPTreeNode *)node;
+- (void)_refreshBookmarks;
+
 
 - (NSNumber *)_createNewFavoriteID;
 - (SPTreeNode *)_favoriteNodeForFavoriteID:(NSInteger)favoriteID;
@@ -159,7 +161,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize sshPort;
 @synthesize useCompression;
 @synthesize bookmarks;
-@synthesize resolvedBookmarks;
 @synthesize allowSplitViewResizing;
 
 @synthesize connectionKeychainID = connectionKeychainID;
@@ -173,6 +174,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize errorShowing;
 
 + (void)initialize {
+
+
 }
 
 - (NSString *)keychainPassword
@@ -463,55 +466,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[keySelectionPanel setAccessoryViewDisclosed:YES];
 	}
 	[keySelectionPanel setDelegate:self];
-	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
-	{
-		NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
-		NSError *err=nil;
-		
-		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
-		
-            SPLog(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
-            CLS_LOG(@"got access to: %@", self->keySelectionPanel.URL.absoluteString);
+	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode){
 
-			// a bit of duplicated code here,
-			// same code is in the export controler
-			//TODO: put this in a utility/helper class
-			BOOL __block beenHereBefore = NO;
-			
-			// have we been here before?
-			[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-				
-				if(dict[self->keySelectionPanel.URL.absoluteString] != nil){
-					NSLog(@"beenHereBefore: %@", dict[self->keySelectionPanel.URL.absoluteString]);
-					beenHereBefore = YES;
-					*stop = YES;
-				}
-			}];
-			
-			if(beenHereBefore == NO){
-				// create a bookmark
-				NSError *error = nil;
-				// this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-				NSData *tmpAppScopedBookmark = [self->keySelectionPanel.URL bookmarkDataWithOptions:(NSURLBookmarkCreationWithSecurityScope
-																							   | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)
-															   includingResourceValuesForKeys:nil
-																				relativeToURL:nil
-																						error:&error];
-				// save to prefs
-				if(tmpAppScopedBookmark && !error) {
-					[self->bookmarks addObject:@{self->keySelectionPanel.URL.absoluteString : tmpAppScopedBookmark}];
-					[self->prefs setObject:self->bookmarks forKey:SPSecureBookmarks];
-				}
-				else{
-					SPLog(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
-					CLS_LOG(@"Problem creating bookmark - %@ : %@",self->keySelectionPanel.URL.absoluteString, [error localizedDescription]);
-				}
-			}
-		}
-		else{
-			SPLog(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
-			CLS_LOG(@"Problem startAccessingSecurityScopedResource for - %@",self->keySelectionPanel.URL.absoluteString);
-		}
+        NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
+        NSError *err=nil;
+
+        // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
+        if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+            SPLog(@"addBookmarkForUrl success");
+        }
+
 		// SSH key file selection
 		if (sender == self->sshSSHKeyButton) {
 			if (returnCode == NSModalResponseCancel) {
@@ -832,7 +796,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Clear the keychain referral items as appropriate
 	[self setConnectionKeychainID:nil];
-
+	
 	SPTreeNode *node = [self selectedFavoriteNode];
 	if ([node isGroup]) node = nil;
 	
@@ -1321,15 +1285,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// reload the bookmarks, when the observer detected a change in them
 	//
 	// thanks a lot to @jamesstout for pointing this out!
-	if ([keyPath isEqualToString:SPSecureBookmarks]) {
-		id o;
-
-		if((o = [prefs objectForKey:SPSecureBookmarks])){
-			[bookmarks setArray:o];
-		}
-
-		[self reRequestSecureAccess];
-	}
+    // no longer needed
+    // but for some reson there are other KVO registered, so need to keep the method...
 }
 
 #pragma mark -
@@ -2021,10 +1978,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[sshTunnel setConnectionStateChangeSelector:nil delegate:nil];
 	}
 	
-	
-	for(NSURL *url in resolvedBookmarks){
-		[url stopAccessingSecurityScopedResource];
-	}
+    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
+
 }
 
 #pragma mark - SPConnectionHandler
@@ -3227,6 +3182,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (instancetype)initWithDocument:(SPDatabaseDocument *)document
 {
+
+    SPLog(@"initWithDocument");
+
 	if ((self = [super init])) {
 
 		// Weak reference
@@ -3234,6 +3192,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		databaseConnectionSuperview = [dbDocument databaseView];
 		databaseConnectionView = dbDocument->contentViewSplitter;
+
 
 		// Keychain references
 		connectionKeychainItemName = nil;
@@ -3291,26 +3250,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		keychain = [[SPKeychain alloc] init];
 		prefs = [NSUserDefaults standardUserDefaults];
 		
-		bookmarks = [[NSMutableArray alloc] init];
-		resolvedBookmarks = [[NSMutableArray alloc] init];
+		bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
 
-		id o;
-		if((o = [prefs objectForKey:SPSecureBookmarks])){
-			[bookmarks setArray:o];
-		}
-		else{
-			SPLog(@"Could not load SPSecureBookmarks from prefs");
-			CLS_LOG(@"Could not load SPSecureBookmarks from prefs");
-		}
-		
-		// we need to re-request access to places we've been before..
-		[self reRequestSecureAccess];
-		
-		// add an observer to get re-read the bookmarks when they change
-		[prefs addObserver:self
-				forKeyPath:SPSecureBookmarks
-				options:NSKeyValueObservingOptionNew
-				   context:NULL];
+		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
+
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk
 		// and the tree to be constructed.
@@ -3350,6 +3294,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return self;
 }
 
+- (void)_refreshBookmarks{
+    SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
+
+    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+}
+
+
+
 // TODO: this is called once per connection screen - but the timezones don't change right? Should be static/class method?
 - (NSArray<NSMenuItem *> *)generateTimeZoneMenuItems
 {
@@ -3384,38 +3337,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	return timeZoneMenuItems;
 }
 
--(void)reRequestSecureAccess{
-	
-	SPLog(@"reRequestSecureAccess to saved bookmarks");
-
-	[self.bookmarks enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL *stop) {
-		
-		[dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSData *obj, BOOL *stop2) {
-			
-			NSError *error = nil;
-			
-			NSURL *tmpURL = [NSURL URLByResolvingBookmarkData:obj
-													  options:NSURLBookmarkResolutionWithSecurityScope
-												relativeToURL:nil
-										  bookmarkDataIsStale:nil
-														error:&error];
-			
-			if(!error){
-				[tmpURL startAccessingSecurityScopedResource];
-				[resolvedBookmarks addObject:tmpURL];
-			}
-			else{
-				SPLog(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
-				CLS_LOG(@"Problem resolving bookmark - %@ : %@",key, [error localizedDescription]);
-			}
-		}];
-	}];
-
-	SPLog(@"resolvedBookmarks - %@",resolvedBookmarks);
-	CLS_LOG(@"resolvedBookmarks - %@",resolvedBookmarks);
-
-}
-
 /**
  * Loads the connection controllers UI nib.
  */
@@ -3432,19 +3353,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)registerForNotifications
 {
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(_documentWillClose:)
-	                                             name:SPDocumentWillCloseNotification
-	                                           object:dbDocument];
+    NSNotificationCenter *nc = NSNotificationCenter.defaultCenter;
 
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(scrollViewFrameChanged:)
-	                                             name:NSViewFrameDidChangeNotification
-	                                           object:nil];
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(_processFavoritesDataChange:)
-	                                             name:SPConnectionFavoritesChangedNotification
-	                                           object:nil];
+    [nc addObserver:self
+           selector:@selector(_documentWillClose:)
+               name:SPDocumentWillCloseNotification
+             object:dbDocument];
+
+    [nc addObserver:self
+           selector:@selector(scrollViewFrameChanged:)
+               name:NSViewFrameDidChangeNotification
+             object:nil];
+    [nc addObserver:self
+           selector:@selector(_processFavoritesDataChange:)
+               name:SPConnectionFavoritesChangedNotification
+             object:nil];
 
 	// Registered to be notified of changes to connection information
 	[self addObserver:self
@@ -3745,32 +3668,31 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 
 	// Unregister observers
-	[self removeObserver:self forKeyPath:SPFavoriteTypeKey];
-	[self removeObserver:self forKeyPath:SPFavoriteNameKey];
-	[self removeObserver:self forKeyPath:SPFavoriteHostKey];
-	[self removeObserver:self forKeyPath:SPFavoriteUserKey];
-	[self removeObserver:self forKeyPath:SPFavoriteColorIndexKey];
-	[self removeObserver:self forKeyPath:SPFavoriteDatabaseKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSocketKey];
-	[self removeObserver:self forKeyPath:SPFavoritePortKey];
-	[self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
-	[self removeObserver:self forKeyPath:SPFavoriteEnableClearTextPluginKey];
-	[self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
-	[self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteTypeKey];
+    [self removeObserver:self forKeyPath:SPFavoriteNameKey];
+    [self removeObserver:self forKeyPath:SPFavoriteHostKey];
+    [self removeObserver:self forKeyPath:SPFavoriteUserKey];
+    [self removeObserver:self forKeyPath:SPFavoriteColorIndexKey];
+    [self removeObserver:self forKeyPath:SPFavoriteDatabaseKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSocketKey];
+    [self removeObserver:self forKeyPath:SPFavoritePortKey];
+    [self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
+    [self removeObserver:self forKeyPath:SPFavoriteEnableClearTextPluginKey];
+    [self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
+    [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
 
-	for(NSURL *url in resolvedBookmarks){
-		[url stopAccessingSecurityScopedResource];
-	}
+    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 
 	[self setConnectionKeychainID:nil];
 

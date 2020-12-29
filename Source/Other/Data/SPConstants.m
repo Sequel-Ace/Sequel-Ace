@@ -218,8 +218,9 @@ NSString *SPCSVImportLineTerminator              = @"CSVImportLineTerminator";
 NSString *SPCSVFieldImportMappingAlignment       = @"CSVFieldImportMappingAlignment";
 NSString *SPImportClipboardTempFileNamePrefix    = @"~/tmp/_SP_ClipBoard_Import_File_";
 NSString *SPLastExportSettings                   = @"LastExportSettings";
-NSString *SPSecureBookmarks      	             = @"SPSecureBookmarks";
-
+NSString *SASecureBookmarks                      = @"SPSecureBookmarks";
+NSString *SPSecureBookmarksOldFormat             = @"SPSecureBookmarksOldFormat";
+NSString *SPSecureBookmarksHaveBeenMigrated      = @"SPSecureBookmarksHaveBeenMigrated";
 // Export filename tokens
 NSString *SPFileNameDatabaseTokenName            = @"database";
 NSString *SPFileNameHostTokenName                = @"host";
@@ -235,6 +236,7 @@ NSString *SPFileNameTableTokenName               = @"table";
 // Misc
 NSString *SPContentFilters                       = @"ContentFilters";
 NSString *SPDocumentTaskEndNotification          = @"DocumentTaskEnded";
+NSString *SPBookmarksChangedNotification         = @"BookmarksChangedNotification";
 NSString *SPDocumentTaskStartNotification        = @"DocumentTaskStarted";
 NSString *SPDocumentWillCloseNotification        = @"DocumentWillClose";
 NSString *SPActivitiesUpdateNotification         = @"ActivitiesUpdateNotification";
@@ -340,7 +342,8 @@ NSString *SPFavoriteSSLCACertFileLocationEnabledKey      = @"sslCACertFileLocati
 NSString *SPFavoriteSSLCACertFileLocationKey             = @"sslCACertFileLocation";
 NSString *SPFavoriteUseCompressionKey                    = @"useCompression";
 NSString *SPConnectionFavoritesChangedNotification       = @"SPConnectionFavoritesChanged";
-NSString *SPConnectionShownSocketHelp			         = @"SPConnectionShownSocketHelp";
+NSString *SPConnectionShownSocketHelp                    = @"SPConnectionShownSocketHelp";
+NSString *SPStaleBookmarksHelp                           = @"SPStaleBookmarksHelp";
 
 NSString *SPFFormatKey = @"format";
 NSString *SPFVersionKey = @"version";
