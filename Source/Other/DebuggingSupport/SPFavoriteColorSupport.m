@@ -29,8 +29,12 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFavoriteColorSupport.h"
+#import "SPFunctions.h"
+
 
 @implementation SPFavoriteColorSupport
+
+@synthesize userColorList;
 
 static SPFavoriteColorSupport *_colorSupport = nil;
 
@@ -38,6 +42,13 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 {
     if ((self = [super init])) {
         prefs = [NSUserDefaults standardUserDefaults];
+        userColorList = [self populateUserColorList];
+
+        // I doubt the colours will ever change in prefs, but just in case....
+        [prefs addObserver:self
+                forKeyPath:SPFavoriteColorList
+                   options:NSKeyValueObservingOptionNew
+                   context:NULL];
     }
 
     return self;
@@ -45,40 +56,25 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 
 + (SPFavoriteColorSupport *)sharedInstance
 {
+    static dispatch_once_t onceToken;
+
 	if (!_colorSupport) {
-		_colorSupport = [[self allocWithZone:NULL] init];
+        dispatch_once_on_main_thread(&onceToken, ^{
+            _colorSupport = [[self allocWithZone:NULL] init];
+        });
 	}
 	
 	return _colorSupport;
 }
 
-+ (NSArray *)defaultColorList
-{
-	return [NSArray arrayWithObjects:
-			[NSColor colorWithDeviceRed:228.0 / 255.0 green: 116.0 / 255.0 blue:102.0 / 255.0 alpha:1.0],
-			[NSColor colorWithDeviceRed:237.0 / 255.0 green: 174.0 / 255.0 blue:107.0 / 255.0 alpha:1.0],
-			[NSColor colorWithDeviceRed:227.0 / 255.0 green: 213.0 / 255.0 blue:119.0 / 255.0 alpha:1.0],
-			[NSColor colorWithDeviceRed:175.0 / 255.0 green: 215.0 / 255.0 blue:119.0 / 255.0 alpha:1.0],
-			[NSColor colorWithDeviceRed:118.0 / 255.0 green: 185.0 / 255.0 blue:232.0 / 255.0 alpha:1.0],
-			[NSColor colorWithDeviceRed:202.0 / 255.0 green: 152.0 / 255.0 blue:224.0 / 255.0 alpha:1.0],
-			[NSColor colorWithDeviceRed:182.0 / 255.0 green: 182.0 / 255.0 blue:182.0 / 255.0 alpha:1.0],
-			nil];
-}
-
 - (NSColor *)colorForIndex:(NSInteger)colorIndex
 {
-	NSArray *colorList = [self userColorList];
-
-	// Check bounds
-	if (colorIndex < 0 || (NSUInteger)colorIndex >= [colorList count]) {
-		return nil;
-	}
-
-	return [colorList objectAtIndex:colorIndex];
+	return [userColorList safeObjectAtIndex:colorIndex];
 }
 
-- (NSArray *)userColorList
+- (NSArray<NSColor *>*)populateUserColorList
 {
+
 	if (@available(macOS 10.13, *)) {
 		return @[
 			[NSColor colorNamed:@"favoriteRed"],
@@ -102,6 +98,32 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 	}
 	
 	return [colorList copy];
+}
+
+#pragma mark -
+#pragma mark Key Value Observing
+
+/**
+ * I doubt the colours will ever change in prefs, but just in case....
+ */
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+    // reload the colours, when the observer detected a change in them
+    //
+    if ([keyPath isEqualToString:SPFavoriteColorList]) {
+
+        NSArray *archivedColors = [prefs objectForKey:SPFavoriteColorList];
+        NSMutableArray *colorList = [NSMutableArray arrayWithCapacity:[archivedColors count]];
+
+        for (NSData *archivedColor in archivedColors)
+        {
+            NSColor *color = [NSUnarchiver unarchiveObjectWithData:archivedColor];
+
+            [colorList addObject:color];
+        }
+
+        userColorList = [colorList copy];
+    }
 }
 
 @end
