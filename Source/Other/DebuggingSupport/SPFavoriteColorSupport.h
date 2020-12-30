@@ -33,19 +33,16 @@
 @interface SPFavoriteColorSupport : NSObject
 {
 	NSUserDefaults *prefs;
+
+    
 }
+
+@property (strong) NSArray<NSColor *> *userColorList;
 
 /** 
  * Get the single instance of this class
  */
 + (SPFavoriteColorSupport *)sharedInstance;
-
-/** 
- * Get the default list of colors supplied by Sequel Ace.
- * 
- * @return An array with NSColor * items.
- */
-+ (NSArray *)defaultColorList;
 
 /** 
  * Get the current color for a specific index.
@@ -59,6 +56,6 @@
  * 
  * @return An array with NSColor * items.
  */
-- (NSArray *)userColorList;
+- (NSArray<NSColor *>*)populateUserColorList;
 
 @end

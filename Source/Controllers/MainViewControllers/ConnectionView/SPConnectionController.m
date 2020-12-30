@@ -3212,7 +3212,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		[self loadNib];
 
-		NSArray *colorList = [[SPFavoriteColorSupport sharedInstance] userColorList];
+        NSArray *colorList = SPFavoriteColorSupport.sharedInstance.userColorList;
 		[sshColorField setColorList:colorList];
 		[sshColorField      bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
 		[standardColorField setColorList:colorList];
