@@ -241,8 +241,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	NSDictionary *statusFields = [tableDataInstance statusValues];
 
     CLS_LOG(@"tableTypePopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
-    CLS_LOG(@"tableEncodingPopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
-    CLS_LOG(@"tableCollationPopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
+    CLS_LOG(@"tableEncodingPopUpButton numberOfItems: %li", (long)tableEncodingPopUpButton.numberOfItems);
+    CLS_LOG(@"tableCollationPopUpButton numberOfItems: %li", (long)tableCollationPopUpButton.numberOfItems);
 
 	[tableTypePopUpButton removeAllItems];
 	[tableEncodingPopUpButton removeAllItems];
