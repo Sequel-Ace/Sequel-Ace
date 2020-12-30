@@ -354,16 +354,19 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		// Populate encoding popup button
 		for (NSDictionary *encoding in encodings)
 		{
-			NSString *menuItemTitle = (![encoding objectForKey:@"DESCRIPTION"]) ? [encoding objectForKey:@"CHARACTER_SET_NAME"] : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], [encoding objectForKey:@"CHARACTER_SET_NAME"]];
+            NSString *encDesc    = [encoding safeObjectForKey:@"DESCRIPTION"];
+            NSString *encCharset = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
 
-			[tableEncodingPopUpButton addItemWithTitle:menuItemTitle];
+			NSString *menuItemTitle = (!encDesc) ? encCharset : [NSString stringWithFormat:@"%@ (%@)", encDesc, encCharset];
 
-			if ([[tableDataInstance tableEncoding] isEqualToString:[encoding objectForKey:@"CHARACTER_SET_NAME"]]) {
+			if(menuItemTitle != nil) [tableEncodingPopUpButton addItemWithTitle:menuItemTitle];
+
+			if ([[tableDataInstance tableEncoding] isEqualToString:encCharset]) {
 				selectedTitle = menuItemTitle;
 			}
 		}
 
-		[tableEncodingPopUpButton selectItemWithTitle:selectedTitle];
+        if(selectedTitle != nil) [tableEncodingPopUpButton selectItemWithTitle:selectedTitle];
 		[tableEncodingPopUpButton setEnabled:enableInteraction];
 	}
 	else {

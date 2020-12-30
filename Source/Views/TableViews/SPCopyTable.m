@@ -563,22 +563,22 @@ static const NSInteger kBlobAsImageFile = 4;
 
 					// Convert numeric types to unquoted strings
 					case 0:
-						[rowValues addObject:[cellData description]];
+						[rowValues safeAddObject:[cellData description]];
 						break;
 
 					// Quote string, text and blob types appropriately
 					case 1:
 					case 2:
 						if ([cellData isKindOfClass:nsDataClass]) {
-							[rowValues addObject:[mySQLConnection escapeAndQuoteData:cellData]];
+							[rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:cellData]];
 						} else {
-							[rowValues addObject:[mySQLConnection escapeAndQuoteString:[cellData description]]];
+							[rowValues safeAddObject:[mySQLConnection escapeAndQuoteString:[cellData description]]];
 						}
 						break;
 
 					// GEOMETRY
 					case 3:
-						[rowValues addObject:[mySQLConnection escapeAndQuoteData:[cellData data]]];
+						[rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:[cellData data]]];
 						break;
 					// auto_inc
 					case 4:

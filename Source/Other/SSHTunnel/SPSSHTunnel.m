@@ -178,13 +178,30 @@ static unsigned short getRandomPort(void);
  */
 - (BOOL)setPasswordKeychainName:(NSString *)theName account:(NSString *)theAccount
 {
-	
+    BOOL error = NO;
+    passwordInKeychain = YES;
 
-	passwordInKeychain = YES;
-	keychainName = [[NSString alloc] initWithString:theName];
-	keychainAccount = [[NSString alloc] initWithString:theAccount];
+    if(theName != nil){
+        keychainName = [[NSString alloc] initWithString:theName];
+    }
+    else{
+        error = YES;
+    }
+    if(theAccount != nil){
+        keychainAccount = [[NSString alloc] initWithString:theAccount];
+    }
+    else{
+        error = YES;
+    }
 
-	return YES;
+    if(error == YES){
+        SPLog(@"keychainName or keychainAccount is nil");
+        // don't log account - contains private data
+        NSDictionary *userInfo = @{ NSLocalizedDescriptionKey : @"setPasswordKeychainName: keychainName or keychainAccount is nil"};
+        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"sshTunnel" code:1 userInfo:userInfo]];
+    }
+
+	return !error;
 }
 
 /*

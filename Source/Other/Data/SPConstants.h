@@ -719,3 +719,28 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 #define START_BENCH uint64_t dispatch_benchmark(size_t count, void (^block)(void)); size_t const iterations = 10000; uint64_t tt = dispatch_benchmark(iterations, ^{ @autoreleasepool {
 
 #define END_BENCH }}); SPLog(@"Benchmark Avg. Runtime: %llu ns", tt);
+
+#ifdef DEBUG
+#import <sys/time.h>
+/**
+ Profile time cost.
+ @param block     code to benchmark
+ @param complete  code time cost (millisecond)
+
+ Usage:
+    SABenchmark(^{
+        // code
+ }, ^(double ms) {
+     SPLog(@"time cost: %.2f ms",ms);
+ });
+
+ */
+static inline void SABenchmark(void (^block)(void), void (^complete)(double ms)) {
+    struct timeval t0, t1;
+    gettimeofday(&t0, NULL);
+    block();
+    gettimeofday(&t1, NULL);
+    double ms = (double)(t1.tv_sec - t0.tv_sec) * 1e3 + (double)(t1.tv_usec - t0.tv_usec) * 1e-3;
+    complete(ms);
+}
+#endif

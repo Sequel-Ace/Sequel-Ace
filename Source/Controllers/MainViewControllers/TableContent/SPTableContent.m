@@ -1634,8 +1634,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	isEditingRow = YES;
 	isEditingNewRow = YES;
 	currentlyEditingRow = [tableContentView selectedRow];
-	if ( [multipleLineEditingButton state] == NSOffState )
-		[tableContentView editColumn:0 row:[tableContentView numberOfRows]-1 withEvent:nil select:YES];
+    if ( [multipleLineEditingButton state] == NSOffState ){
+        NSInteger numRows = [tableContentView numberOfRows];
+        if(numRows-1 != 0){
+            [tableContentView editColumn:0 row:numRows-1 withEvent:nil select:YES];
+        }
+    }
 }
 
 /**
