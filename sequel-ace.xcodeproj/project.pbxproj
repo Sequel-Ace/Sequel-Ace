@@ -209,7 +209,6 @@
 		50EA92681AB23EFC008D3C4F /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
-		512FBAA7257ABDC800F4B358 /* SPTextStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512FBAA6257ABDC800F4B358 /* SPTextStorage.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
 		513515E42593568B001E4533 /* PSMProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071D11BD9B34000826E5 /* PSMProgressIndicator.m */; };
 		513515E52593568B001E4533 /* PSMTabDragAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072711BD9B34000826E5 /* PSMTabDragAssistant.m */; };
@@ -865,7 +864,6 @@
 		50E217B518174280009D3580 /* SPFavoriteColorSupport.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFavoriteColorSupport.m; sourceTree = "<group>"; };
 		50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseActionTest.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
-		512FBAA6257ABDC800F4B358 /* SPTextStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTextStorage.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
@@ -1759,7 +1757,6 @@
 				BC1847E90FE6EC8400094BFB /* SPEditSheetTextView.m */,
 				BC1944CE1297291800A236CD /* SPBundleCommandTextView.h */,
 				BC1944CF1297291800A236CD /* SPBundleCommandTextView.m */,
-				512FBAA6257ABDC800F4B358 /* SPTextStorage.swift */,
 			);
 			name = "Text Views";
 			path = TextViews;
@@ -3101,7 +3098,6 @@
 				4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */,
 				4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */,
 				4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */,
-				512FBAA7257ABDC800F4B358 /* SPTextStorage.swift in Sources */,
 				584192A1101E57BB0089807F /* NSMutableArray-MultipleSort.m in Sources */,
 				589235321020C1230011DE00 /* SPHistoryController.m in Sources */,
 				BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */,
@@ -3427,7 +3423,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3010;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -3736,7 +3732,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3010;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -4093,7 +4089,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3010;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -4173,7 +4169,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3010;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
