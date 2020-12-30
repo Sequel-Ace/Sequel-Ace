@@ -1955,9 +1955,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames safeObjectAtIndex:0]] objectForKey:@"datacolumnindex"] integerValue]];
 
 					if([keyValue isKindOfClass:[NSData class]])
-						[deleteQuery appendString:[mySQLConnection escapeAndQuoteData:keyValue]];
+						[deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteData:keyValue]];
 					else
-						[deleteQuery appendString:[mySQLConnection escapeAndQuoteString:[keyValue description]]];
+						[deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteString:[keyValue description]]];
 
 					// Split deletion query into 256k chunks
 					if([deleteQuery length] > 256000) {
