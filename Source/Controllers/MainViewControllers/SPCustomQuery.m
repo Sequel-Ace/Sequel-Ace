@@ -846,7 +846,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         // Update error text for the user
                         [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(i+1), errorString];
                         [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
-                        [[errorText onMainThread] setString:errors];
+                        [[errorText onMainThread] setStringOrNil:errors];
                         
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
@@ -887,7 +887,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                          errorString];
                     }
                 } else {
-                    [errors setString:errorString];
+                    [errors setStringOrNil:errorString];
                 }
             } else {
                 // Check if table/db list needs an update
@@ -925,7 +925,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if ( !queryCount ) {
             resultStore = [mySQLConnection resultStoreFromQueryString:@""];
             [resultStore cancelResultLoad];
-            [errors setString:[mySQLConnection lastErrorMessage]];
+            [errors setStringOrNil:[mySQLConnection lastErrorMessage]];
         }
         
         // add query to history
