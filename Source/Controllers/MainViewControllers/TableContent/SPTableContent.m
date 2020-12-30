@@ -368,6 +368,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[paginationNextButton setEnabled:NO];
 
 	// Disable table action buttons
+    CLS_LOG(@"Disable table action buttons. addButton = %@, duplicateButton = %@, removeButton = %@", addButton.description, duplicateButton.description, removeButton.description );
 	[addButton setEnabled:NO];
 	[duplicateButton setEnabled:NO];
 	[removeButton setEnabled:NO];
@@ -384,8 +385,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  * table details.
  * Should be called on the main thread.
  */
-- (void) setTableDetails:(NSDictionary *)tableDetails
+- (void)setTableDetails:(NSDictionary *)tableDetails
 {
+
+    SPLog(@"tableDetails: %@", tableDetails);
+    CLS_LOG(@"tableDetails: %@", tableDetails);
+
 	NSString *newTableName;
 	NSInteger sortColumnNumberToRestore = NSNotFound;
 	NSNumber *colWidth;
@@ -426,8 +431,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Otherwise store the newly selected table name and reset the data
 	} else {
-		
-		if (newTableName) selectedTable = [[NSString alloc] initWithString:newTableName];
+
+        if (newTableName){
+            SPLog(@"new table: %@", newTableName);
+            CLS_LOG(@"new table: %@", newTableName);
+            selectedTable = [[NSString alloc] initWithString:newTableName];
+        }
 		previousTableRowsCount = 0;
 		contentPage = 1;
 		[paginationViewController setPage:@1];
@@ -445,12 +454,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		maxNumRows = (rows && ![rows isNSNull])? [rows integerValue] : 0;
 		maxNumRowsIsEstimate = YES;
 	}
-	
+
 	// Reset data column store
 	[dataColumns removeAllObjects];
 
 	// If no table has been supplied, reset the view to a blank table and disabled elements.
 	if (!newTableName) {
+        CLS_LOG(@"no table has been supplied, reset the view to a blank table and disabled elements");
 		[self _setViewBlankState];
 		return;
 	}
@@ -1945,9 +1955,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames safeObjectAtIndex:0]] objectForKey:@"datacolumnindex"] integerValue]];
 
 					if([keyValue isKindOfClass:[NSData class]])
-						[deleteQuery appendString:[mySQLConnection escapeAndQuoteData:keyValue]];
+						[deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteData:keyValue]];
 					else
-						[deleteQuery appendString:[mySQLConnection escapeAndQuoteString:[keyValue description]]];
+						[deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteString:[keyValue description]]];
 
 					// Split deletion query into 256k chunks
 					if([deleteQuery length] > 256000) {

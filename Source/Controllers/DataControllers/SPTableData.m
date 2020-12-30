@@ -491,7 +491,7 @@
 	if (!syntaxResult) return nil;
 	
 	// A NULL value indicates that the user does not have permission to view the syntax
-	if ([[syntaxResult objectAtIndex:1] isNSNull]) {
+	if ([[syntaxResult safeObjectAtIndex:1] isNSNull] || [syntaxResult safeObjectAtIndex:1] == nil) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 		 
 		 if (changeEncoding) [mySQLConnection restoreStoredEncoding];

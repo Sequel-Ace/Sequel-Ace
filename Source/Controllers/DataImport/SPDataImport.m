@@ -955,14 +955,6 @@
                 if(fmaCount >= fmoCount){
                     SPLog(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
                     CLS_LOG(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
-
-                    NSDictionary *userInfo = @{
-                        NSLocalizedDescriptionKey: [NSString stringWithFormat:@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]",(unsigned long)fmaCount, (unsigned long)fmoCount],
-                        @"fieldMappingArray.count":@(fmaCount),
-                        @"fieldMapperOperator.count": @(fmoCount),
-                    };
-
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"import" code:5 userInfo:userInfo]];
                 }
 
 				for (i = 0; i < fmaCount; i++) {

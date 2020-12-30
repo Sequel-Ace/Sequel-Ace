@@ -33,6 +33,8 @@
 #import "SPServerSupport.h"
 #import "SPDatabaseData.h"
 
+@import Firebase;
+
 @interface SPCharsetCollationHelper ()
 
 - (void)charsetButtonClicked:(id)sender;
@@ -212,7 +214,13 @@
 		return;
 	
 	//get the charset id
-	NSString *charsetId = [[charsetButton selectedItem] representedObject];
+    NSString *charsetId = @"";
+    CLS_LOG(@"[charsetButton selectedItem] = %@", [charsetButton selectedItem]);
+    CLS_LOG(@"[charsetButton selectedItem] representedObject = %@", [[charsetButton selectedItem] representedObject]);
+
+    if([charsetButton selectedItem] != nil){
+        charsetId = [[charsetButton selectedItem] representedObject];
+    }
 	BOOL charsetIsInherited = ([self selectedCharset] == nil);
 
 	//now let's get the list of collations for the selected charset id
@@ -241,11 +249,16 @@
 	//add the real items
 	for (NSDictionary *collation in applicableCollations) 
 	{
-		NSString *collationName = [collation objectForKey:@"COLLATION_NAME"];
-		[collationButton addItemWithTitle:collationName];
-		
+		NSString *collationName = [collation safeObjectForKey:@"COLLATION_NAME"];
+        if(collationName != nil){
+            [collationButton addItemWithTitle:collationName];
+        }
+        else{
+            CLS_LOG(@"collationName == nil");
+        }
+
 		//is this the default collation for this charset and charset was given explicitly (ie. breaking inheritance)?
-		if(!charsetIsInherited && [[collation objectForKey:@"IS_DEFAULT"] isEqualToString:@"Yes"]) {
+		if(!charsetIsInherited && [[collation safeObjectForKey:@"IS_DEFAULT"] isEqualToString:@"Yes"]) {
 			NSString *defaultCollateTitle = [NSString stringWithFormat:fmtStrDefaultId,collationName];
 			//remove the dummy default item.
 			[collationButton removeItemAtIndex:0];
