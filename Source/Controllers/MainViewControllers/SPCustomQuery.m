@@ -1160,7 +1160,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                 break;
                             }
                         }
-                    } @catch(id ae) {}
+                    } @catch(id ae) {
+                        CLS_LOG(@"queryStartPosition %lu", (unsigned long)queryStartPosition);
+                        CLS_LOG(@"position %lu", (unsigned long)position);
+                        CLS_LOG(@"queryPosition %lu", (unsigned long)queryPosition);
+                        CLS_LOG(@"[textView string].length %lu", (unsigned long)[textView string].length);
+                        CLS_LOG(@"!positionAssociatedWithPreviousQuery try catch. Error: %@", ae);
+                    }
                 }
                 
                 // If there is a previous query and the position should be associated with it, do so.
