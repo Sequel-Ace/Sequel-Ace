@@ -179,6 +179,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (IBAction)updateTables:(nullable id)sender
 {
+
+    SPLog(@"updateTables, sender: %@", sender);
+    CLS_LOG(@"updateTables, sender: %@", sender);
+
 	SPMySQLResult *theResult;
 	NSString *previousSelectedTable = nil;
 	NSString *previousFilterString = nil;
