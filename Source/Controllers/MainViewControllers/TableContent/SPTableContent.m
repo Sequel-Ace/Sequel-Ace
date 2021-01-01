@@ -2995,7 +2995,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	if (data && contextInfo) {
-		NSTableColumn *theTableColumn = [[tableContentView tableColumns] objectAtIndex:column];
+		NSTableColumn *theTableColumn = [[tableContentView tableColumns] safeObjectAtIndex:column];
 		BOOL isFieldEditable = ([contextInfo objectForKey:@"isFieldEditable"]) ? YES : NO;
 		if (!isEditingRow && [tablesListInstance tableType] != SPTableTypeView) {
 			[oldRow setArray:[tableValues rowContentsAtIndex:row]];
