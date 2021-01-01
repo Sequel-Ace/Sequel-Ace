@@ -525,11 +525,29 @@ set_input:
 }
 
 /**
+ * Sets the sender to a dict for error display by the real cancelExport: method
+ */
+- (void)cancelExportForFile:(NSString*)fileName{
+
+    SPLog(@"self.exportOutputFile.fileHandleError == YES, cancelling. Filename: %@", fileName);
+    CLS_LOG(@"self.exportOutputFile.fileHandleError == YES, cancelling. Filename: %@", fileName);
+
+    [self cancelExport:@{ @"type" : SPExportFileHandleError, @"fileName" : fileName }];
+}
+
+/**
  * Cancel's the export operation by stopping the current table export loop and marking any current SPExporter
  * NSOperation subclasses as cancelled.
  */
 - (IBAction)cancelExport:(id)sender
 {
+    if ([sender isKindOfClass:[NSDictionary class]]) {
+        if([[sender safeObjectForKey:@"type"] isEqualToString:SPExportFileHandleError]){
+            NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Error while writing to the export file. Could not open file: %@", @"Error while writing to the export file"), [sender safeObjectForKey:@"fileName"]];
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Export Error", @"Export Error") message:message callback:nil];
+        }
+    }
+
 	[self setExportCancelled:YES];
 	
 	[exportProgressIndicator setIndeterminate:YES];
@@ -540,7 +558,9 @@ set_input:
 	[exportProgressText setStringValue:NSLocalizedString(@"Cleaning up...", @"cancelling export cleaning up message")];
 	
 	// Disable the cancel button
-	[sender setEnabled:NO];
+    if ([sender isKindOfClass:[NSButton class]]) {
+        [sender setEnabled:NO];
+    }
 	
 	// should we reliquish access here?
 	// user clicked cancel, they may just click export again
@@ -573,7 +593,9 @@ set_input:
 	[tableDocumentInstance setConnectionEncoding:[NSString stringWithFormat:@"%@%@", previousConnectionEncoding, (previousConnectionEncodingViaLatin1) ? @"-" : @""] reloadingViews:NO];
 
 	// Re-enable the cancel button for future exports
-	[sender setEnabled:YES];
+    if ([sender isKindOfClass:[NSButton class]]) {
+        [sender setEnabled:YES];
+    }
 	
 	// Finally get rid of all the exporters and files
 	[exportFiles removeAllObjects];
@@ -1232,15 +1254,15 @@ set_input:
  */
 - (void)exportEnded
 {
-	NSLog(@"Time to export: %f", -[startTime timeIntervalSinceNow]);
+    SPLog(@"Time to export: %f", -[startTime timeIntervalSinceNow]);
 	// if the export was really quick
 	if((-[startTime timeIntervalSinceNow]) < 2){
 		// give the user a second to see the progress
-		NSLog(@"give the user a second to see the progress");
+        SPLog(@"give the user a second to see the progress");
 		[self performSelector:@selector(_hideExportProgress) withObject:nil afterDelay:1.0];
 	}
 	else{
-		NSLog(@"hide instantly");
+		SPLog(@"hide instantly");
 		[self _hideExportProgress];
 	}
 	
@@ -1273,7 +1295,7 @@ set_input:
 	NSArray *dataArray = nil;
 
 	// Get rid of the cached connection encoding
-	
+
 
 	createCustomFilename = ([[exportCustomFilenameTokenField stringValue] length] > 0);
 

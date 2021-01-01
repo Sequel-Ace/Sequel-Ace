@@ -292,6 +292,8 @@
 - (IBAction)toggleSQLIncludeDropSyntax:(NSButton *)sender;
 - (IBAction)toggleNewFilePerTable:(NSButton *)sender;
 
+- (void)cancelExportForFile:(NSString*)fileName;
+
 #pragma mark - SPExportInitializer
 
 - (void)startExport;

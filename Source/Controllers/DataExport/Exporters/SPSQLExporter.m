@@ -35,6 +35,8 @@
 #import "SPExportFile.h"
 #import "SPTableData.h"
 #import "RegexKitLite.h"
+#import "SPExportController.h"
+#import "SPFunctions.h"
 
 #import <SPMySQL/SPMySQL.h>
 #include <stdlib.h>
@@ -260,6 +262,14 @@
 	// Loop through the selected tables
 	for (NSArray *table in tables) 
 	{
+
+        if(self.exportOutputFile.fileHandleError != nil){
+            SPMainQSync(^{
+                [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+            });
+            return;
+        }
+
 		// Check for cancellation flag
 		if ([self isCancelled]) {
 			[self endCleanup:oldSqlMode];
@@ -431,6 +441,14 @@
 				NSArray *row;
 				while ((row = [streamingResult getRowAsArray]))
 				{
+
+                    if(self.exportOutputFile.fileHandleError != nil){
+                        SPMainQSync(^{
+                            [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                        });
+                        return;
+                    }
+
 					// Check for cancellation flag
 					if ([self isCancelled]) {
 						[connection cancelCurrentQuery];
@@ -583,6 +601,14 @@
 				
 				for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
 				{
+
+                    if(self.exportOutputFile.fileHandleError != nil){
+                        SPMainQSync(^{
+                            [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                        });
+                        return;
+                    }
+
 					// Check for cancellation flag
 					if ([self isCancelled]) {
 						[self endCleanup:oldSqlMode];
@@ -626,6 +652,14 @@
 	// Process any deferred views, adding commands to delete the placeholder tables and add the actual views
 	for (NSString *viewName in viewSyntaxes)
 	{
+
+        if(self.exportOutputFile.fileHandleError != nil){
+            SPMainQSync(^{
+                [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+            });
+            return;
+        }
+
 		// Check for cancellation flag
 		if ([self isCancelled]) {
 			[self endCleanup:oldSqlMode];
@@ -645,6 +679,13 @@
 	// Export procedures and functions
 	for (NSString *procedureType in @[@"PROCEDURE", @"FUNCTION"])
 	{
+
+        if(self.exportOutputFile.fileHandleError != nil){
+            SPMainQSync(^{
+                [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+            });
+            return;
+        }
 		// Check for cancellation flag
 		if ([self isCancelled]) {
 			[self endCleanup:oldSqlMode];
@@ -674,6 +715,14 @@
 			// Loop through the definitions, exporting if enabled
 			for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
 			{
+                
+                if(self.exportOutputFile.fileHandleError != nil){
+                    SPMainQSync(^{
+                        [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                    });
+                    return;
+                }
+                
 				// Check for cancellation flag
 				if ([self isCancelled]) {
 					[self endCleanup:oldSqlMode];
@@ -689,6 +738,14 @@
 				BOOL sqlOutputIncludeDropSyntax = NO;
 				for (NSArray *item in items)
 				{
+
+                    if(self.exportOutputFile.fileHandleError != nil){
+                        SPMainQSync(^{
+                            [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                        });
+                        return;
+                    }
+
 					// Check for cancellation flag
 					if ([self isCancelled]) {
 						[self endCleanup:oldSqlMode];

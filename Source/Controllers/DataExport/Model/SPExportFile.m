@@ -46,6 +46,7 @@
 @synthesize exportFileNeedsXMLHeader;
 @synthesize exportFileHandleStatus;
 @synthesize exportFileNeedsUserChosenDir;
+@synthesize fileHandleError;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -74,8 +75,9 @@
 	if ((self = [super init])) {
 		
 		[self setExportFilePath:path];
-		
+
 		exportFileHandleStatus = -1;
+        fileHandleError = nil;
 		
 		[self setExportFileNeedsCSVHeader:NO];
 		[self setExportFileNeedsXMLHeader:NO];
@@ -129,11 +131,11 @@
 - (void)writeData:(NSData *)data
 {
 	if (![self exportFileHandle]) {
-        SPLog(@"Failed to get filehandle for: %@", [self exportFileHandle]);
-        CLS_LOG(@"Failed to get filehandle for: %@", [self exportFileHandle]);
-
-		[NSException raise:NSInternalInconsistencyException format:@"Attempting to write to an uninitialized file handle."];
-		
+        SPLog(@"Failed to get filehandle for: %@", exportFilePath);
+        CLS_LOG(@"Failed to get filehandle for: %@", exportFilePath);
+        SPLog(@"fileHandleError = YES");
+        // set the filename for error reporting
+        fileHandleError = exportFilePath;
 		return;
 	}
 			

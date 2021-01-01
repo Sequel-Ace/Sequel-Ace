@@ -151,7 +151,21 @@
 	} else {
 
 		// First check whether the application is in a modal state; if so, wait
-		while ([NSApp modalWindow]) usleep(100000);
+        do {
+            NSWindow __block *modalWindow = nil;
+            
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                modalWindow = [NSApp modalWindow];
+            });
+
+            if(modalWindow == nil){
+                break;
+            }
+            else{
+                usleep(100000);
+            }
+
+        } while(0);
 
 		[self performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection) withObject:nil waitUntilDone:YES];
 		[delegateDecisionLock lock];

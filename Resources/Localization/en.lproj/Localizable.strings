@@ -3194,3 +3194,9 @@
 
 /* Title for Stale Secure Bookmarks help window */
 "Stale Secure Bookmarks" = "Stale Secure Bookmarks";
+
+/* Title for Export Error alert */
+"Export Error" = "Export Error";
+
+/* Message for Export Error alert */
+"Error while writing to the export file. Could not open file: %@" = "Error while writing to the export file. Could not open file: %@";

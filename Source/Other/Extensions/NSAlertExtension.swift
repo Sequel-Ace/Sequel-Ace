@@ -113,7 +113,7 @@ import AppKit
 	/// Creates an alert with primary colored OK button that triggers callback
 	/// - Parameters:
 	///   - title: String for title of the alert
-	///   - message: tring for informative message
+	///   - message: string for informative message
 	///   - callback: Optional block that's invoked when user hits OK button
 	static func createWarningAlert(title: String,
 								   message: String,
