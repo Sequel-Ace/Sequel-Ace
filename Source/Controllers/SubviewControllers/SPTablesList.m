@@ -2032,7 +2032,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	// Reselect correct row and reload the table view display
 	if ([tablesListView numberOfRows] < (NSInteger)[filteredTables count]) [tablesListView noteNumberOfRowsChanged];
-	if (selectedTableName) [tablesListView selectRowIndexes:[NSIndexSet indexSetWithIndex:[filteredTables indexOfObject:selectedTableName]] byExtendingSelection:NO];
+
+    if (selectedTableName && [filteredTables indexOfObject:selectedTableName] < NSNotFound){
+        [tablesListView selectRowIndexes:[NSIndexSet indexSetWithIndex:[filteredTables indexOfObject:selectedTableName]] byExtendingSelection:NO];
+    }
 	[tablesListView reloadData];
 }
 
