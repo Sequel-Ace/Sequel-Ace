@@ -239,8 +239,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		}
 	}
 
-    SPLog(@"JIMMY HERE2");
-
 	isInitializing = NO;
 }
 
