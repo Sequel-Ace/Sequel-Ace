@@ -529,7 +529,7 @@ typedef enum {
 		case JsonSegment:
 			[usedSheet makeFirstResponder:jsonTextView];
 			if([[jsonTextView string] isEqualToString:@""]) {
-                if([sheetEditData isKindOfClass:[NSData class]]) {
+                if([sheetEditData isKindOfClass:[NSData class]] || [sheetEditData isKindOfClass:[NSString class]]) {
                     if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
                         NSError *error;
                         NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
@@ -553,9 +553,11 @@ typedef enum {
                     }
                 }
                 else{
-                    SPLog(@"sheetEditData not of NSData class: %@", [sheetEditData class]);
-                    CLS_LOG(@"sheetEditData not of NSData class: %@", [sheetEditData class]);
+                    SPLog(@"sheetEditData not of NSData or NSString class: %@", [sheetEditData class]);
+                    CLS_LOG(@"sheetEditData not of NSData or NSString class: %@", [sheetEditData class]);
                 }
+
+
 			}
 			[editTextView setHidden:YES];
 			[editTextScrollView setHidden:YES];
