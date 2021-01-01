@@ -724,8 +724,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	// Add sorting details if appropriate
-	if (sortCol) {
-		[queryString appendFormat:@" ORDER BY %@", [[[dataColumns objectAtIndex:[sortCol integerValue]] objectForKey:@"name"] backtickQuotedString]];
+	if (sortCol && [sortCol integerValue] < (NSInteger)dataColumns.count) {
+		[queryString appendFormat:@" ORDER BY %@", [[[dataColumns safeObjectAtIndex:[sortCol integerValue]] safeObjectForKey:@"name"] backtickQuotedString]];
 		if (isDesc) [queryString appendString:@" DESC"];
 	}
 
