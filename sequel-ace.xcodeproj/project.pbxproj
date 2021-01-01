@@ -152,6 +152,9 @@
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
+		1AF0DA7F259F5D8C00961974 /* SPPointerArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */; };
+		1AF0DA84259F631000961974 /* SPPointerArrayAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA83259F631000961974 /* SPPointerArrayAdditionsTests.m */; };
+		1AF0DA8B259F657200961974 /* SPPointerArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */; };
 		1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */; };
 		1AF5A262250AC401009885DF /* SPBrackets.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25F250AC401009885DF /* SPBrackets.m */; };
 		265446DF24A1616900376B48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
@@ -784,6 +787,9 @@
 		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
 		1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPDateAdditionsTests.m; sourceTree = "<group>"; };
+		1AF0DA7D259F5D3100961974 /* SPPointerArrayAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPointerArrayAdditions.h; sourceTree = "<group>"; };
+		1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPointerArrayAdditions.m; sourceTree = "<group>"; };
+		1AF0DA83259F631000961974 /* SPPointerArrayAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPointerArrayAdditionsTests.m; sourceTree = "<group>"; };
 		1AF5A25D250AC401009885DF /* SPBracketHighlighter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPBracketHighlighter.h; sourceTree = "<group>"; };
 		1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPBracketHighlighter.m; sourceTree = "<group>"; };
 		1AF5A25F250AC401009885DF /* SPBrackets.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPBrackets.m; sourceTree = "<group>"; };
@@ -1773,6 +1779,7 @@
 				1A2DD55025939B6400616E7E /* SPArrayAdditions.m */,
 				1A2DD55925939BEE00616E7E /* SPTestingUtils.m */,
 				1A2DD55F25939C1500616E7E /* SPTestingUtils.h */,
+				1AF0DA83259F631000961974 /* SPPointerArrayAdditionsTests.m */,
 			);
 			name = "Category Additions";
 			sourceTree = "<group>";
@@ -2514,6 +2521,8 @@
 				1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */,
 				1A8B53552584520800526DED /* SPURLAdditions.h */,
 				1A8B53562584520800526DED /* SPURLAdditions.m */,
+				1AF0DA7D259F5D3100961974 /* SPPointerArrayAdditions.h */,
+				1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */,
 			);
 			name = "Category Additions";
 			path = CategoryAdditions;
@@ -2978,12 +2987,14 @@
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
 				1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */,
 				51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */,
+				1AF0DA8B259F657200961974 /* SPPointerArrayAdditions.m in Sources */,
 				503B02CF1AE95C2C0060CAB1 /* SPTableFilterParserTest.m in Sources */,
 				50EA92681AB23EFC008D3C4F /* SPTableCopy.m in Sources */,
 				1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */,
 				1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */,
 				507FF1621BBF0D5000104523 /* SPTableCopyTest.m in Sources */,
 				1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */,
+				1AF0DA84259F631000961974 /* SPPointerArrayAdditionsTests.m in Sources */,
 				50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */,
 				1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */,
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
@@ -3180,6 +3191,7 @@
 				513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */,
 				BC68BFC7128D4EAE004907D9 /* SPBundleEditorController.m in Sources */,
 				BC1944D01297291800A236CD /* SPBundleCommandTextView.m in Sources */,
+				1AF0DA7F259F5D8C00961974 /* SPPointerArrayAdditions.m in Sources */,
 				BC77C5E4129AA69E009AD832 /* SPBundleHTMLOutputController.m in Sources */,
 				BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */,
 				BC0ED3DA12A9196C00088461 /* SPChooseMenuItemDialog.m in Sources */,

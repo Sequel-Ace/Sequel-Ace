@@ -36,5 +36,16 @@
     return randomSSHKeyArray;
 }
 
++ (NSPointerArray *)randomPointerArray{
+
+    NSPointerArray *newPointerArray = [[NSPointerArray alloc] init];
+
+    for (int i = 0; i < 10000; i++) {
+        NSArray *arr = @[@(i)];
+        [newPointerArray addPointer:(__bridge void * _Nullable)arr];
+    }
+
+    return newPointerArray;
+}
 
 @end
