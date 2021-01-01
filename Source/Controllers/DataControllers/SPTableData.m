@@ -882,16 +882,16 @@
 		[tableColumn removeAllObjects];
 
 		// Add the column index and name
-		[tableColumn setObject:[NSString stringWithFormat:@"%llu", (unsigned long long)[tableColumns count]] forKey:@"datacolumnindex"];
-		[tableColumn setObject:[NSString stringWithString:[resultRow objectForKey:@"Field"]] forKey:@"name"];
+		[tableColumn safeSetObject:[NSString stringWithFormat:@"%llu", (unsigned long long)[tableColumns count]] forKey:@"datacolumnindex"];
+		[tableColumn safeSetObject:[NSString stringWithString:[resultRow safeObjectForKey:@"Field"]] forKey:@"name"];
 
 		// Populate type, length, and other available details from the Type columns
-		[fieldParser setString:[resultRow objectForKey:@"Type"]];
+		[fieldParser setStringOrNil:[resultRow safeObjectForKey:@"Type"]];
 		[tableColumn addEntriesFromDictionary:[self parseFieldDefinitionStringParts:[fieldParser splitStringByCharacter:' ' skippingBrackets:YES]]];
 
 		// If there's a null column, use the details from it
-		if ([resultRow objectForKey:@"Null"]) {
-			if ([[[resultRow objectForKey:@"Null"] uppercaseString] isEqualToString:@"NO"]) {
+		if ([resultRow safeObjectForKey:@"Null"]) {
+			if ([[[resultRow safeObjectForKey:@"Null"] uppercaseString] isEqualToString:@"NO"]) {
 				[tableColumn setValue:@NO forKey:@"null"];
 			} else {
 				[tableColumn setValue:@YES forKey:@"null"];
@@ -899,11 +899,11 @@
 		}
 
 		// Select the column default if available
-		if ([resultRow objectForKey:@"Default"])
-			[tableColumn setObject:[resultRow objectForKey:@"Default"] forKey:@"default"];
+		if ([resultRow safeObjectForKey:@"Default"])
+			[tableColumn safeSetObject:[resultRow safeObjectForKey:@"Default"] forKey:@"default"];
 
 		// Add the column to the list
-		[tableColumns addObject:[NSDictionary dictionaryWithDictionary:tableColumn]];
+		[tableColumns safeAddObject:[NSDictionary dictionaryWithDictionary:tableColumn]];
 	}
 
 	// The character set has to be guessed at via the database encoding.
