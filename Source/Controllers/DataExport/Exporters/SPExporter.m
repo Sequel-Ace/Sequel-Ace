@@ -117,12 +117,16 @@
 
 - (void)writeString:(NSString *)input
 {
-	[[self exportOutputFile] writeData:[input dataUsingEncoding:[self exportOutputEncoding]]];
+    if([self exportOutputFile].fileHandleError == nil){
+        [[self exportOutputFile] writeData:[input dataUsingEncoding:[self exportOutputEncoding]]];
+    }
 }
 
 - (void)writeUTF8String:(NSString *)input
 {
-	[[self exportOutputFile] writeData:[input dataUsingEncoding:NSUTF8StringEncoding]];
+    if([self exportOutputFile].fileHandleError == nil){
+        [[self exportOutputFile] writeData:[input dataUsingEncoding:NSUTF8StringEncoding]];
+    }
 }
 
 /**
