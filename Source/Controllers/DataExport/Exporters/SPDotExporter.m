@@ -34,6 +34,8 @@
 #import "SPTableData.h"
 #import "SPExportUtilities.h"
 #import "SPExportFile.h"
+#import "SPExportController.h"
+#import "SPFunctions.h"
 
 @implementation SPDotExporter
 
@@ -110,6 +112,13 @@
 	// Process the tables
 	for (NSUInteger i = 0; i < [[self dotExportTables] count]; i++) 
 	{
+        if(self.exportOutputFile.fileHandleError != nil){
+            SPMainQSync(^{
+                [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+            });
+            return;
+        }
+
 		// Check for cancellation flag
 		if ([self isCancelled]) {
 			
@@ -158,7 +167,13 @@
 		if ([tableConstraints count]) {
 			
 			for (NSDictionary* constraint in tableConstraints) 
-			{
+            {
+                if(self.exportOutputFile.fileHandleError != nil){
+                    SPMainQSync(^{
+                        [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                    });
+                    return;
+                }
 				// Check for cancellation flag
 				if ([self isCancelled]) {
 					

@@ -32,7 +32,8 @@
 #import "SPExportFile.h"
 #import "SPFileHandle.h"
 #import "SPExportUtilities.h"
-
+#import "SPExportController.h"
+#import "SPFunctions.h"
 #import <SPMySQL/SPMySQL.h>
 
 @implementation SPXMLExporter
@@ -194,6 +195,14 @@
 		
 		while (1) 
 		{
+
+            if(self.exportOutputFile.fileHandleError != nil){
+                SPMainQSync(^{
+                    [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                });
+                return;
+            }
+            
 			// Check for cancellation flag
 			if ([self isCancelled]) {
 				if (streamingResult) {
@@ -223,6 +232,13 @@
 			
 			for (i = 0; i < xmlRowCount; i++) 
 			{
+                if(self.exportOutputFile.fileHandleError != nil){
+                    SPMainQSync(^{
+                        [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                    });
+                    return;
+                }
+                
 				// Check for cancellation flag
 				if ([self isCancelled]) {
 					if (streamingResult) {
