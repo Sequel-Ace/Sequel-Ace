@@ -34,6 +34,7 @@
 #import <SPMySQL/SPMySQLStreamingResultStore.h>
 #include <stdlib.h>
 #include <mach/mach_time.h>
+@import Firebase;
 
 @interface SPDataStorage ()
 
@@ -562,7 +563,21 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 - (void) _checkNewRow:(NSMutableArray *)aRow
 {
 	if ([aRow count] != numberOfColumns) {
-		[NSException raise:NSInternalInconsistencyException format:@"New row length (%llu) does not match store column	count (%llu)", (unsigned long long)[aRow count], (unsigned long long)numberOfColumns];
+
+        NSString *errString = [NSString stringWithFormat:@"New row length (%llu) does not match store column count (%llu)", (unsigned long long)[aRow count], (unsigned long long)numberOfColumns];
+
+        SPLog(@"%@", errString);
+        CLS_LOG(@"%@", errString);
+
+        NSDictionary *userInfo = @{
+            NSLocalizedDescriptionKey: errString
+        };
+
+        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"storage" code:1 userInfo:userInfo]];
+
+        // still throw for the moment
+        [NSException raise:NSInternalInconsistencyException format:@"%@", errString];
+
 	}
 }
 
