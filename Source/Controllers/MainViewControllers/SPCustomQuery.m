@@ -3265,11 +3265,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     {
         // this populates the menu with all matches
         if(sender == nil || stringValue.length < 1){
-            [[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", stringValue]])];
+            [[menu itemAtIndex:i] setHidden:(![[history safeObjectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", stringValue]])];
         }
         else{
             // this searches, without the regex
-            [[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] localizedCaseInsensitiveContainsString:stringValue])];
+            [[menu itemAtIndex:i] setHidden:(![[history safeObjectAtIndex:i - 7] localizedCaseInsensitiveContainsString:stringValue])];
             
         }
     }
