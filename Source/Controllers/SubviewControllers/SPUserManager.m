@@ -71,6 +71,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)contextWillSave:(NSNotification *)notice;
 - (void)_selectFirstChildOfParentNode;
 
+@property (nonatomic, assign) BOOL doneRecordError;
+
 @end
 
 @implementation SPUserManager
@@ -87,6 +89,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 @synthesize treeSortDescriptors;
 @synthesize serverSupport;
 @synthesize isInitializing = isInitializing;
+@synthesize doneRecordError;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -117,6 +120,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		availablePrivs = [[NSMutableArray alloc] init];
 		grantedSchemaPrivs = [[NSMutableArray alloc] init];
 		isSaving = NO;
+        doneRecordError = NO;
 	}
 	
 	return self;
@@ -439,9 +443,24 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		}
 
 		SPPrivilegesMO *dbPriv = [NSEntityDescription insertNewObjectForEntityForName:@"Privileges" inManagedObjectContext:[self managedObjectContext]];
-		
+
+        // some error checks
+        if (rowDict[@"Db"] && doneRecordError == NO){
+            doneRecordError = YES;
+            CLS_LOG(@"rowDict[DB] = %@", rowDict[@"DB"]);
+            SPLog(@"rowDict[DB] = %@", rowDict[@"DB"]);
+
+            NSDictionary *userInfo = @{
+                NSLocalizedDescriptionKey: @"rowDict contains the key 'DB'",
+                @"serverVersion" : connection.serverVersionString
+            };
+
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"users" code:1 userInfo:userInfo]];
+        }
+
 		for (__strong NSString *key in rowDict)
 		{
+
 			if ([key hasSuffix:@"_priv"]) {
 				
 				BOOL boolValue = [[rowDict objectForKey:key] boolValue];
@@ -453,7 +472,11 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 				
 				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:key];
 			} 
-			else if ([key isEqualToString:@"Db"]) {
+			else if ([key isEqualToString:@"Db"] || [key isEqualToString:@"DB"]) {
+                // some servers (which? - error above should tell us) return 'DB' for this key which
+                // causes crash: the entity Privileges is not key value coding-compliant for the key DB
+                // so we'll just override it here.
+                key = @"Db";
 				NSString *db = [[rowDict objectForKey:key] stringByReplacingOccurrencesOfString:@"\\_" withString:@"_"];
                 [dbPriv setValue:db forKey:key];
             } 
