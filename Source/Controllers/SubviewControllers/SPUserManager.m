@@ -36,6 +36,7 @@
 #import "SPServerSupport.h"
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
+@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
@@ -168,8 +169,22 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// Select users from the mysql.user table
 		SPMySQLResult *result = [connection queryString:@"SELECT * FROM mysql.user ORDER BY user"];
 		[result setReturnDataAsStrings:YES];
-		//TODO: improve user feedback
-		NSAssert(([[result fieldNames] firstObjectCommonWithArray:@[@"Password",@"authentication_string"]] != nil), @"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column!?");
+
+        if([[result fieldNames] firstObjectCommonWithArray:@[@"Password",@"authentication_string"]] == nil){
+
+            NSString *message = NSLocalizedString(@"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.", @"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.");
+
+            SPLog(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
+            CLS_LOG(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
+
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"User Data Error", @"User Data Error") message:message callback:^{
+                [self doCancel:nil];
+            }];
+
+            // return otherwise you get a load of mysql errors as it tries to continue without password
+            return;
+        }
+
 		requiresPost576PasswordHandling = ![[result fieldNames] containsObject:@"Password"];
 		[usersResultArray addObjectsFromArray:[result getAllRows]];
 
@@ -219,7 +234,9 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			}
 		}
 	}
-	
+
+    SPLog(@"JIMMY HERE2");
+
 	isInitializing = NO;
 }
 

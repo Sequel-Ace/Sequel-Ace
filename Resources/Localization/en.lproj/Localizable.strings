@@ -3194,3 +3194,14 @@
 
 /* Title for Stale Secure Bookmarks help window */
 "Stale Secure Bookmarks" = "Stale Secure Bookmarks";
+
+
+
+
+
+
+/* Message for User window error */
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
+
+/* Title for User window error */
+"User Data Error" = "User Data Error";
