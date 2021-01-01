@@ -73,6 +73,12 @@
 @property (readwrite, assign) BOOL exportFileNeedsUserChosenDir;
 
 /**
+ * @property fileHandleError
+ */
+@property (readwrite, copy) NSString *fileHandleError;
+
+
+/**
  * @property exportFileNeedsXMLHeader
  */
 @property (readwrite, assign) BOOL exportFileNeedsXMLHeader;
