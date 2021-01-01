@@ -211,6 +211,7 @@ NSString *SPAlphabeticalTableSorting             = @"AlphabeticalTableSorting";
 
 // Import and export
 NSString *SPCSVImportFieldEnclosedBy             = @"CSVImportFieldEnclosedBy";
+NSString *SPExportFileHandleError                = @"fileHandleError";
 NSString *SPCSVImportFieldEscapeCharacter        = @"CSVImportFieldEscapeCharacter";
 NSString *SPCSVImportFieldTerminator             = @"CSVImportFieldTerminator";
 NSString *SPCSVImportFirstLineIsHeader           = @"CSVImportFirstLineIsHeader";
