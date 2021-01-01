@@ -438,23 +438,23 @@ static unsigned short getRandomPort(void);
 		authenticationAppPath = [[NSBundle mainBundle] pathForAuxiliaryExecutable:@"SequelAceTunnelAssistant"];
 		taskEnvironment = [[NSMutableDictionary alloc] initWithDictionary:[[NSProcessInfo processInfo] environment]];
 
-		SPLog(@"taskEnvironment: %@",taskEnvironment);
-		CLS_LOG(@"taskEnvironment: %@",taskEnvironment);
-
-		[taskEnvironment setObject:authenticationAppPath forKey:@"SSH_ASKPASS"];
-		[taskEnvironment setObject:@":0" forKey:@"DISPLAY"];
-		[taskEnvironment setObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
-		[taskEnvironment setObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
+		[taskEnvironment safeSetObject:authenticationAppPath forKey:@"SSH_ASKPASS"];
+		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];
+		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
+		[taskEnvironment safeSetObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
 		if (passwordInKeychain) {
-			[taskEnvironment setObject:[[NSNumber numberWithInteger:SPSSHPasswordUsesKeychain] stringValue] forKey:@"SP_PASSWORD_METHOD"];
-			[taskEnvironment setObject:[keychainName stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
-			[taskEnvironment setObject:[keychainAccount stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
+            [taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordUsesKeychain] stringValue] forKey:@"SP_PASSWORD_METHOD"];
+			[taskEnvironment safeSetObject:[keychainName stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
+			[taskEnvironment safeSetObject:[keychainAccount stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
 		} else if (password) {
-			[taskEnvironment setObject:[[NSNumber numberWithInteger:SPSSHPasswordAsksUI] stringValue] forKey:@"SP_PASSWORD_METHOD"];
+			[taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordAsksUI] stringValue] forKey:@"SP_PASSWORD_METHOD"];
 		} else {
-			[taskEnvironment setObject:[[NSNumber numberWithInteger:SPSSHPasswordNone] stringValue] forKey:@"SP_PASSWORD_METHOD"];
+			[taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordNone] stringValue] forKey:@"SP_PASSWORD_METHOD"];
 		}
 		[task setEnvironment:taskEnvironment];
+
+        SPLog(@"taskEnvironment: %@",taskEnvironment);
+        CLS_LOG(@"taskEnvironment: %@",taskEnvironment);
 
 		// Add the connection details to the debug messages
 		[debugMessagesLock lock];
