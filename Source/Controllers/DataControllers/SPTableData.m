@@ -1106,10 +1106,12 @@
 			return YES;
 		}
 
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
 		SPRowCountQueryUsageLevels rowCountLevel = SPRowCountFetchAlways;
 		NSInteger rowCountCheapBoundary = 5242880;
-		rowCountLevel = (SPRowCountQueryUsageLevels)[[[NSUserDefaults standardUserDefaults] objectForKey:SPTableRowCountQueryLevel] integerValue];
-		rowCountCheapBoundary = [[[NSUserDefaults standardUserDefaults] objectForKey:SPTableRowCountCheapSizeBoundary] integerValue];
+		rowCountLevel = (SPRowCountQueryUsageLevels)[[defaults objectForKey:SPTableRowCountQueryLevel] integerValue];
+		rowCountCheapBoundary = [[defaults objectForKey:SPTableRowCountCheapSizeBoundary] integerValue];
 
 		if (rowCountLevel == SPRowCountFetchNever
 			|| (rowCountLevel == SPRowCountFetchIfCheap
@@ -1127,8 +1129,8 @@
 	}
 
 	// Store the number of rows
-	[status setObject:[[rowResult getRowAsArray] objectAtIndex:0] forKey:@"Rows"];
-	[status setObject:@"y" forKey:@"RowsCountAccurate"];
+	[status safeSetObject:[[rowResult getRowAsArray] objectAtIndex:0] forKey:@"Rows"];
+	[status safeSetObject:@"y" forKey:@"RowsCountAccurate"];
 
 	// Trigger an update to the table info pane and view
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableInfoChangedNotification object:tableDocumentInstance];
