@@ -143,6 +143,8 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
+    SPLog(@"_pingConnectionUsingLoopDelay");
+
 	if (state != SPMySQLConnected) return NO;
 
 	uint64_t pingStartTime_t;
@@ -153,6 +155,7 @@ end_cleanup:
 	[self _lockConnection];
 	//we might find ourselves at the losing end of a contest with -[self _disconnect]
 	if(!mySQLConnection) {
+        SPLog(@"!mySQLConnection, calling _unlockConnection, return NO");
 		[self _unlockConnection];
 		return NO;
 	}
@@ -173,6 +176,7 @@ end_cleanup:
 		.keepAlivePingThreadActivePointer = &keepAlivePingThreadActive,
         .parentId = (__bridge void *)(self)
 	};
+
 
 	// Create a pthread for the ping
 	pthread_t keepAlivePingThread_t;
@@ -209,7 +213,11 @@ end_cleanup:
 			keepAliveLastPingBlocked = YES;
 		}
 	} while (keepAlivePingThreadActive);
-	
+
+
+    SPLog(@"threadCancelled: %d", threadCancelled);
+    SPLog(@"pingElapsedTime: %f", pingElapsedTime);
+
 	//wait for thread to go away, otherwise pingDetails may go away before _pingThreadCleanup() finishes
 	pthread_join(keepAlivePingThread_t, NULL);
 
@@ -219,6 +227,8 @@ end_cleanup:
 
 	// Unlock the connection
 	[self _unlockConnection];
+
+    SPLog(@"keepAliveLastPingSuccess: %d", keepAliveLastPingSuccess);
 
 	return keepAliveLastPingSuccess;
 }
@@ -231,6 +241,8 @@ end_cleanup:
  */
 void _backgroundPingTask(void *ptr)
 {
+    SPLog(@"_backgroundPingTask");
+
 	SPMySQLConnectionPingDetails *pingDetails = (SPMySQLConnectionPingDetails *)ptr;
 	
 	char threadNameBuf[80];
@@ -245,6 +257,11 @@ void _backgroundPingTask(void *ptr)
 
 	// Set up a signal handler for SIGUSR1, to handle forced timeouts.
 	signal(SIGUSR1, _forceThreadExit);
+
+#ifdef DEBUG
+    BOOL ret = (BOOL)(!mysql_ping(pingDetails->mySQLConnection));
+    SPLog(@"mysql_ping retcode = %d", ret);
+#endif
 
 	// Perform a ping
 	*(pingDetails->keepAliveLastPingSuccessPointer) = (BOOL)(!mysql_ping(pingDetails->mySQLConnection));
@@ -286,6 +303,8 @@ void _pingThreadCleanup(void *pingDetails)
  */
 - (BOOL)_cancelKeepAlives
 {
+    SPLog(@"_cancelKeepAlives");
+
 	// If no keepalive thread is active, return
 	if (keepAliveThread) {
 
