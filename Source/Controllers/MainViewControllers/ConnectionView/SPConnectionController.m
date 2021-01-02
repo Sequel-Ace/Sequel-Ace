@@ -2324,9 +2324,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)sshTunnelCallback:(SPSSHTunnel *)theTunnel
 {
-	if (cancellingConnection) return;
+    if (cancellingConnection){
+        SPLog(@"cancellingConnection, returning");
+        CLS_LOG(@"cancellingConnection, returning");
+        return;
+    }
 
 	NSInteger newState = [theTunnel state];
+
+    SPLog(@"newState = %li", (long)newState);
+    CLS_LOG(@"newState = %li", (long)newState);
 
 	// If the user cancelled the password prompt dialog, continue with no further action.
 	if ([theTunnel passwordPromptCancelled]) {
