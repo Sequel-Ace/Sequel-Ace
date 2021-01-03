@@ -116,10 +116,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			@"Delete_history_priv":      @"Delete_versioning_rows_priv", // MariaDB only, since 10.3.5
 		};
 	
-		schemas = [[NSMutableArray alloc] init];
-		availablePrivs = [[NSMutableArray alloc] init];
-		grantedSchemaPrivs = [[NSMutableArray alloc] init];
-		isSaving = NO;
+        schemas = [[NSMutableArray alloc] init];
+        availablePrivs = [[NSMutableArray alloc] init];
+        grantedSchemaPrivs = [[NSMutableArray alloc] init];
+        isSaving = NO;
         doneRecordError = NO;
 	}
 	
