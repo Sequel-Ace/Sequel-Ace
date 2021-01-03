@@ -1012,7 +1012,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
     SPLog(@"_waitForNetworkConnectionWithTimeout: %f", timeoutSeconds);
 	// Set up the reachability target - the host is not important, and is not connected to.
-    SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, "dev.mysql.com"); //FIXME: is this the best to use?
+    SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, "google.com"); 
 
 	BOOL hostReachable;
 	// In a loop until success or the timeout, test reachability
