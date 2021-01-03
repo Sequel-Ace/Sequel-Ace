@@ -847,8 +847,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(i+1), errorString];
                         [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 
-                        if(errors.length>0)[[errorText onMainThread] setText:errors];
-                        
+                        if(errors.length>0){
+                            [[errorText onMainThread] setText:errors];
+                        }
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
                             if (![self->mySQLConnection lastQueryWasCancelled]) {
