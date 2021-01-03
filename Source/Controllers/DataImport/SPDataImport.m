@@ -180,10 +180,14 @@
 	[importFromClipboardTextView setVerticallyResizable:YES];
 	[importFromClipboardTextView setFont:[NSFont fontWithName:@"Monaco" size:11.0f]];
 	
-	if([[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] length] > 4000)
-		[importFromClipboardTextView setString:[[[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] substringToIndex:4000] stringByAppendingString:@"\n…"]];
-	else
-		if([[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] != nil)[importFromClipboardTextView setString:[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType]];
+    if([[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] length] > 4000){
+        [importFromClipboardTextView setString:[[[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] substringToIndex:4000] stringByAppendingString:@"\n…"]];
+    }
+    else{
+        if([[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] != nil){
+            [importFromClipboardTextView setString:[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType]];
+        }
+    }
 
 	// Preset the accessory view with prefs defaults
 	[importFieldsTerminatedField setStringValue:[prefs objectForKey:SPCSVImportFieldTerminator]];
