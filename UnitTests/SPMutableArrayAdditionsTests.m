@@ -30,6 +30,7 @@
 
 #import "SPMutableArrayAdditions.h"
 #import "NSMutableArray-MultipleSort.h"
+#import "SPTestingUtils.h"
 #import <XCTest/XCTest.h>
 
 /**
@@ -106,6 +107,71 @@
 			}
 		}
 	}];
+}
+
+- (void)testSafeReplaceObjectAtIndex {
+
+    NSMutableArray *testArray = [NSMutableArray arrayWithArray:@[@"first", @"second", @"third", @"fourth"]];
+
+    [testArray safeReplaceObjectAtIndex:0 withObject:@"fifth"];
+
+    XCTAssertEqual([testArray safeObjectAtIndex:0], @"fifth");
+
+    XCTAssertNoThrow([testArray safeReplaceObjectAtIndex:testArray.count withObject:@"fifth"]);
+    XCTAssertThrows([testArray replaceObjectAtIndex:testArray.count withObject:@"fifth"]);
+
+    NSMutableArray *testArrayCopy = [testArray copy];
+
+    XCTAssertNoThrow([testArray safeReplaceObjectAtIndex:0 withObject:nil]);
+
+    XCTAssertEqual([testArray safeObjectAtIndex:0], [testArrayCopy safeObjectAtIndex:0]);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+    XCTAssertThrows([testArray replaceObjectAtIndex:0 withObject:nil]);
+#pragma clang diagnostic pop
+
+    NSInteger anIndex = -1;
+
+    XCTAssertNoThrow([testArray safeReplaceObjectAtIndex:anIndex withObject:@"fifth"]);
+    XCTAssertThrows([testArray replaceObjectAtIndex:anIndex withObject:@"fifth"]);
+
+}
+
+//0.0271s
+- (void)testPerformanceSafeReplaceObjectAtIndex {
+
+    [self measureBlock:^{
+
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        NSUInteger iterations = randomArray.count;
+        for (NSUInteger i = 0, j = randomArray.count-1;
+             i < iterations && j > 0;
+             i++, j--) {
+            @autoreleasepool {
+                [randomArray safeReplaceObjectAtIndex:j withObject:@(i)];
+            }
+        }
+    }];
+}
+
+//0.0262s
+- (void)testPerformanceReplaceObjectAtIndex {
+
+    [self measureBlock:^{
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        NSUInteger iterations = randomArray.count;
+        for (NSUInteger i = 0, j = randomArray.count-1;
+             i < iterations && j > 0;
+             i++, j--) {
+            @autoreleasepool {
+                [randomArray replaceObjectAtIndex:j withObject:@(i)];
+            }
+        }
+
+    }];
 }
 
 @end

@@ -36,6 +36,7 @@
 #import "SPServerSupport.h"
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
+@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
@@ -70,6 +71,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)contextWillSave:(NSNotification *)notice;
 - (void)_selectFirstChildOfParentNode;
 
+@property (nonatomic, assign) BOOL doneRecordError;
+
 @end
 
 @implementation SPUserManager
@@ -86,6 +89,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 @synthesize treeSortDescriptors;
 @synthesize serverSupport;
 @synthesize isInitializing = isInitializing;
+@synthesize doneRecordError;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -112,10 +116,11 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			@"Delete_history_priv":      @"Delete_versioning_rows_priv", // MariaDB only, since 10.3.5
 		};
 	
-		schemas = [[NSMutableArray alloc] init];
-		availablePrivs = [[NSMutableArray alloc] init];
-		grantedSchemaPrivs = [[NSMutableArray alloc] init];
-		isSaving = NO;
+        schemas = [[NSMutableArray alloc] init];
+        availablePrivs = [[NSMutableArray alloc] init];
+        grantedSchemaPrivs = [[NSMutableArray alloc] init];
+        isSaving = NO;
+        doneRecordError = NO;
 	}
 	
 	return self;
@@ -168,8 +173,22 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// Select users from the mysql.user table
 		SPMySQLResult *result = [connection queryString:@"SELECT * FROM mysql.user ORDER BY user"];
 		[result setReturnDataAsStrings:YES];
-		//TODO: improve user feedback
-		NSAssert(([[result fieldNames] firstObjectCommonWithArray:@[@"Password",@"authentication_string"]] != nil), @"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column!?");
+
+        if([[result fieldNames] firstObjectCommonWithArray:@[@"Password",@"authentication_string"]] == nil){
+
+            NSString *message = NSLocalizedString(@"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.", @"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.");
+
+            SPLog(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
+            CLS_LOG(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
+
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"User Data Error", @"User Data Error") message:message callback:^{
+                [self doCancel:nil];
+            }];
+
+            // return otherwise you get a load of mysql errors as it tries to continue without password
+            return;
+        }
+
 		requiresPost576PasswordHandling = ![[result fieldNames] containsObject:@"Password"];
 		[usersResultArray addObjectsFromArray:[result getAllRows]];
 
@@ -219,7 +238,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			}
 		}
 	}
-	
+
 	isInitializing = NO;
 }
 
@@ -422,9 +441,24 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		}
 
 		SPPrivilegesMO *dbPriv = [NSEntityDescription insertNewObjectForEntityForName:@"Privileges" inManagedObjectContext:[self managedObjectContext]];
-		
+
+        // some error checks
+        if (rowDict[@"Db"] && doneRecordError == NO){
+            doneRecordError = YES;
+            CLS_LOG(@"rowDict[DB] = %@", rowDict[@"DB"]);
+            SPLog(@"rowDict[DB] = %@", rowDict[@"DB"]);
+
+            NSDictionary *userInfo = @{
+                NSLocalizedDescriptionKey: @"rowDict contains the key 'DB'",
+                @"serverVersion" : connection.serverVersionString
+            };
+
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"users" code:1 userInfo:userInfo]];
+        }
+
 		for (__strong NSString *key in rowDict)
 		{
+
 			if ([key hasSuffix:@"_priv"]) {
 				
 				BOOL boolValue = [[rowDict objectForKey:key] boolValue];
@@ -436,7 +470,11 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 				
 				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:key];
 			} 
-			else if ([key isEqualToString:@"Db"]) {
+			else if ([key isEqualToString:@"Db"] || [key isEqualToString:@"DB"]) {
+                // some servers (which? - error above should tell us) return 'DB' for this key which
+                // causes crash: the entity Privileges is not key value coding-compliant for the key DB
+                // so we'll just override it here.
+                key = @"Db";
 				NSString *db = [[rowDict objectForKey:key] stringByReplacingOccurrencesOfString:@"\\_" withString:@"_"];
                 [dbPriv setValue:db forKey:key];
             } 

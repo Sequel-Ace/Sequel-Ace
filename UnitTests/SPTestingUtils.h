@@ -13,6 +13,7 @@
 
 + (NSMutableArray *)randomHistArray;
 + (NSMutableArray *)randomSSHKeyArray;
++ (NSPointerArray *)randomPointerArray;
 
 
 @end

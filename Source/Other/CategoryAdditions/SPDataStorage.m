@@ -30,9 +30,11 @@
 
 #import "SPDataStorage.h"
 #import "SPObjectAdditions.h"
+#import "SPPointerArrayAdditions.h"
 #import <SPMySQL/SPMySQLStreamingResultStore.h>
 #include <stdlib.h>
 #include <mach/mach_time.h>
+@import Firebase;
 
 @interface SPDataStorage ()
 
@@ -359,10 +361,11 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	// we can't just store the passed in array as that would give an outsider too much control of our internal state
 	// (e.g. they could change the bounds after adding it, defeating the check below), so let's make a shallow copy.
 	NSMutableArray *newArray = [[NSMutableArray alloc] initWithArray:aRow];
+
 	@try {
 		@synchronized(self) {
 			[self _checkNewRow:newArray];
-			[editedRows replacePointerAtIndex:anIndex withPointer:(__bridge void * _Nullable)(newArray)];
+			[editedRows safeReplacePointerAtIndex:anIndex withPointer:(__bridge void * _Nullable)(newArray)];
 		}
 	}
 	@finally {
@@ -385,7 +388,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		// Make sure that the row in question is editable
 		if (editableRow == nil) {
 			editableRow = [self rowContentsAtIndex:rowIndex]; //already returns a copy, so we don't have to go via -replaceRowAtIndex:withRowContents:
-			[editedRows replacePointerAtIndex:rowIndex withPointer:(__bridge void * _Nullable)(editableRow)];
+			[editedRows safeReplacePointerAtIndex:rowIndex withPointer:(__bridge void * _Nullable)(editableRow)];
 		}
 	}
 
@@ -560,7 +563,21 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 - (void) _checkNewRow:(NSMutableArray *)aRow
 {
 	if ([aRow count] != numberOfColumns) {
-		[NSException raise:NSInternalInconsistencyException format:@"New row length (%llu) does not match store column	count (%llu)", (unsigned long long)[aRow count], (unsigned long long)numberOfColumns];
+
+        NSString *errString = [NSString stringWithFormat:@"New row length (%llu) does not match store column count (%llu)", (unsigned long long)[aRow count], (unsigned long long)numberOfColumns];
+
+        SPLog(@"%@", errString);
+        CLS_LOG(@"%@", errString);
+
+        NSDictionary *userInfo = @{
+            NSLocalizedDescriptionKey: errString
+        };
+
+        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"storage" code:1 userInfo:userInfo]];
+
+        // still throw for the moment
+        [NSException raise:NSInternalInconsistencyException format:@"%@", errString];
+
 	}
 }
 
