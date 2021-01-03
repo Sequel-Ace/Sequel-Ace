@@ -30,3 +30,10 @@ public extension Set {
 		return !isEmpty
 	}
 }
+
+public extension RangeReplaceableCollection where Element: Equatable {
+    mutating func appendIfNotContains(_ element: Element)  {
+        if !contains(element) { append(element) }
+    }
+}
+

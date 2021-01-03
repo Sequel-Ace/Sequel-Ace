@@ -426,6 +426,7 @@ extern NSString *SPFileName24HourTimeTokenName;
 extern NSString *SPFileNameFavoriteTokenName;
 extern NSString *SPFileNameTableTokenName;
 extern NSString *SASecureBookmarks;
+extern NSString *SPStaleSecureBookmarks;
 extern NSString *SPSecureBookmarksOldFormat;
 extern NSString *SPSecureBookmarksHaveBeenMigrated;
 
