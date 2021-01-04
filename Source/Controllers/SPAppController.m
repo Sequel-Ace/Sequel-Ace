@@ -213,7 +213,14 @@
 
         SPLog(@"We have stale bookmarks");
 
-        NSString *staleBookmarksString = [secureBookmarkManager.staleBookmarks componentsJoinedByString:@"\n\n"];
+        NSMutableString *staleBookmarksString = [[NSMutableString alloc] initWithCapacity:secureBookmarkManager.staleBookmarks.count];
+
+        for(NSString* staleFile in secureBookmarkManager.staleBookmarks){
+            [staleBookmarksString appendFormat:@"%@\n", staleFile.lastPathComponent];
+            SPLog(@"fileNames adding stale file: %@", staleFile.lastPathComponent);
+        }
+
+        [staleBookmarksString setString:[staleBookmarksString dropSuffixWithSuffix:@"\n"]];
 
         [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")
                                      message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString]
