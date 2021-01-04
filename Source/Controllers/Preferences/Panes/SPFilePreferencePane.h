@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPPreferencePane.h"
+#import "SPPanelOptions.h"
 
 /**
  * @class SPNetworkPreferencePane SPNetworkPreferencePane.h
