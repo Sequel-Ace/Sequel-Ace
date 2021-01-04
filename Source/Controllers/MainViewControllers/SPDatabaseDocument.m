@@ -2311,12 +2311,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)connect
 {
+    SPLog(@"connect in dbdoc");
+    CLS_LOG(@"connect in dbdoc");
+
 	if (mySQLVersion) return;
 	[connectionController initiateConnection:self];
 }
 
 - (void)closeConnection
 {
+    SPLog(@"closeConnection");
+    CLS_LOG(@"closeConnection");
 	[mySQLConnection disconnect];
 	_isConnected = NO;
 
@@ -6216,7 +6221,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)loadTable:(NSString *)aTable ofType:(SPTableType)aTableType
 {
 	// Ensure a connection is still present
-	if (![mySQLConnection isConnected]) return;
+    if (![mySQLConnection isConnected]){
+        SPLog(@"![mySQLConnection isConnected], returning");
+        CLS_LOG(@"![mySQLConnection isConnected], returning");
+        return;
+    }
 
 	// If the supplied table name was nil, clear the views.
 	if (!aTable) {

@@ -761,6 +761,7 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Source/SPMySQLFramework_Prefix.pch;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
 				INSTALL_PATH = "@executable_path/../Frameworks";
