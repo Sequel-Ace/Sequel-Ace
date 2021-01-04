@@ -107,6 +107,7 @@
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
+		1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */; };
 		1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53672584552F00526DED /* SPURLAdditionsTests.m */; };
 		1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A199629257A624200F5B0F1 /* BundleExtension.swift */; };
 		1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
@@ -750,6 +751,7 @@
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
 		1A11E4FC25A32789001CB721 /* SPPanelOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPanelOptions.h; sourceTree = "<group>"; };
 		1A11E50325A327F1001CB721 /* SPPanelOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPanelOptions.m; sourceTree = "<group>"; };
+		1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperlinkTextField.swift; sourceTree = "<group>"; };
 		1A199629257A624200F5B0F1 /* BundleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleExtension.swift; sourceTree = "<group>"; };
 		1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatterExtension.swift; sourceTree = "<group>"; };
 		1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatterExtension.swift; sourceTree = "<group>"; };
@@ -2528,6 +2530,7 @@
 				1A8B53562584520800526DED /* SPURLAdditions.m */,
 				1AF0DA7D259F5D3100961974 /* SPPointerArrayAdditions.h */,
 				1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */,
+				1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */,
 			);
 			name = "Category Additions";
 			path = CategoryAdditions;
@@ -3094,6 +3097,7 @@
 				296DC8BC0F909194002A3258 /* MGTemplateStandardFilters.m in Sources */,
 				5841423F0F97E11000A34B47 /* NoodleLineNumberView.m in Sources */,
 				BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */,
+				1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
 				17C058880FC9FC390077E9CF /* SPNarrowDownCompletion.m in Sources */,

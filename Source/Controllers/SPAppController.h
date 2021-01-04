@@ -54,6 +54,7 @@
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
 
+@property (weak) IBOutlet NSView *staleBookmarkHelpView;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;

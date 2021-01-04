@@ -222,16 +222,12 @@
 
         [staleBookmarksString setString:[staleBookmarksString dropSuffixWithSuffix:@"\n"]];
 
-        [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")
-                                     message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString]
-                          primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
-                        primaryButtonHandler:^{
-            
+        [NSAlert createAccessoryAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue") message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString] accessoryView:_staleBookmarkHelpView primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
+                          primaryButtonHandler:^{
             SPLog(@"re-request access now");
             [self->prefsController showWindow:self];
             [self->prefsController displayPreferencePane:self->prefsController->fileItem];
-
-        }                 cancelButtonHandler:^{
+        } cancelButtonHandler:^{
             SPLog(@"No not now");
         }];
     }
