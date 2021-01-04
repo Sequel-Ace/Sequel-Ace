@@ -724,8 +724,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	// Add sorting details if appropriate
-	if (sortCol) {
-		[queryString appendFormat:@" ORDER BY %@", [[[dataColumns objectAtIndex:[sortCol integerValue]] objectForKey:@"name"] backtickQuotedString]];
+	if (sortCol && [sortCol integerValue] < (NSInteger)dataColumns.count) {
+		[queryString appendFormat:@" ORDER BY %@", [[[dataColumns safeObjectAtIndex:[sortCol integerValue]] safeObjectForKey:@"name"] backtickQuotedString]];
 		if (isDesc) [queryString appendString:@" DESC"];
 	}
 
@@ -2995,7 +2995,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	if (data && contextInfo) {
-		NSTableColumn *theTableColumn = [[tableContentView tableColumns] objectAtIndex:column];
+		NSTableColumn *theTableColumn = [[tableContentView tableColumns] safeObjectAtIndex:column];
 		BOOL isFieldEditable = ([contextInfo objectForKey:@"isFieldEditable"]) ? YES : NO;
 		if (!isEditingRow && [tablesListInstance tableType] != SPTableTypeView) {
 			[oldRow setArray:[tableValues rowContentsAtIndex:row]];

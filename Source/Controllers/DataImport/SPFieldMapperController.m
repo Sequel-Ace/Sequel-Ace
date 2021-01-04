@@ -695,15 +695,15 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	switch([[alignByPopup selectedItem] tag]) {
 		case 0: // file order
 		for(j=0; j<possibleImports; j++) {
-			[fieldMappingArray replaceObjectAtIndex:j withObject:[NSNumber numberWithInteger:j]];
-			[fieldMappingOperatorArray replaceObjectAtIndex:j withObject:doImportKey];
+			[fieldMappingArray safeReplaceObjectAtIndex:j withObject:@(j)];
+			[fieldMappingOperatorArray safeReplaceObjectAtIndex:j withObject:doImportKey];
 		}
 		break;
 		case 1: // reversed file order
 		possibleImports--;
 		for(j=possibleImports; j>=0; j--) {
-			[fieldMappingArray replaceObjectAtIndex:possibleImports-j withObject:[NSNumber numberWithInteger:j]];
-			[fieldMappingOperatorArray replaceObjectAtIndex:possibleImports - j withObject:doImportKey];
+			[fieldMappingArray safeReplaceObjectAtIndex:possibleImports-j withObject:@(j)];
+			[fieldMappingOperatorArray safeReplaceObjectAtIndex:possibleImports - j withObject:doImportKey];
 		}
 		break;
 		case 2: // try to align header and table target field names via Levenshtein distance

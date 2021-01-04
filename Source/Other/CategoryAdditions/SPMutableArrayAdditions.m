@@ -58,5 +58,11 @@
 	}
 }
 
+- (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject{
+    if (anObject != nil && index < self.count) {
+        [self replaceObjectAtIndex:index withObject:anObject];
+    }
+}
+
 
 @end

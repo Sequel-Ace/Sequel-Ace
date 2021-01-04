@@ -846,8 +846,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         // Update error text for the user
                         [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(i+1), errorString];
                         [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
-                        [[errorText onMainThread] setStringOrNil:errors];
-                        
+
+                        if(errors.length>0){
+                            [[errorText onMainThread] setText:errors];
+                        }
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
                             if (![self->mySQLConnection lastQueryWasCancelled]) {
@@ -3265,11 +3267,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     {
         // this populates the menu with all matches
         if(sender == nil || stringValue.length < 1){
-            [[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", stringValue]])];
+            [[menu itemAtIndex:i] setHidden:(![[history safeObjectAtIndex:i - 7] isMatchedByRegex:[NSString stringWithFormat:@"(?i).*%@.*", stringValue]])];
         }
         else{
             // this searches, without the regex
-            [[menu itemAtIndex:i] setHidden:(![[history objectAtIndex:i - 7] localizedCaseInsensitiveContainsString:stringValue])];
+            [[menu itemAtIndex:i] setHidden:(![[history safeObjectAtIndex:i - 7] localizedCaseInsensitiveContainsString:stringValue])];
             
         }
     }

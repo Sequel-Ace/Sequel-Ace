@@ -40,5 +40,6 @@
 - (void)reverse;
 - (nullable id)safeObjectAtIndex:(NSUInteger)idx;
 - (void)safeAddObject:(nullable id)obj;
+- (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject;
 
 @end

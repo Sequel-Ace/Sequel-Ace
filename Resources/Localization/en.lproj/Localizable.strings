@@ -3200,3 +3200,9 @@
 
 /* Message for Export Error alert */
 "Error while writing to the export file. Could not open file: %@" = "Error while writing to the export file. Could not open file: %@";
+
+/* Message for User window error */
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
+
+/* Title for User window error */
+"User Data Error" = "User Data Error";

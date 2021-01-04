@@ -215,7 +215,7 @@
 
         NSString *staleBookmarksString = [secureBookmarkManager.staleBookmarks componentsJoinedByString:@"\n\n"];
 
-        [NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")]
+        [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")
                                      message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString]
                           primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
                         primaryButtonHandler:^{
