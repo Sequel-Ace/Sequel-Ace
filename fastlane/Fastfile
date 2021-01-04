@@ -81,8 +81,14 @@ platform :mac do
          title: "Prepare Beta release",
          body: changelog
       )
-      
-      sh "git checkout -- ."
+
+      reset_git_repo(
+         skip_clean: true,
+         force: true,
+         files: [
+            "CHANGELOG.md"
+         ]
+      )
    end
 
    desc "Creates new branch prepare_release, updates strings, increments app patch version, increments build version, generates changelog, creates a PR."
@@ -111,8 +117,14 @@ platform :mac do
          title: "Prepare Beta release",
          body: changelog
       )
-      
-      sh "git checkout -- ."
+
+      reset_git_repo(
+         skip_clean: true,
+         force: true,
+         files: [
+            "CHANGELOG.md"
+         ]
+      )
    end
 
    desc "Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR."
@@ -140,8 +152,14 @@ platform :mac do
          title: "Prepare Beta release",
          body: changelog
       )
-      
-      sh "git checkout -- ."
+
+      reset_git_repo(
+         skip_clean: true,
+         force: true,
+         files: [
+            "CHANGELOG.md"
+         ]
+      )
    end
 
    ############################## XCode ##############################
