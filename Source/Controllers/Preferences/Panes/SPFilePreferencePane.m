@@ -33,15 +33,6 @@
 
 @import Firebase;
 
-typedef struct {
-    NSString *title;
-    BOOL canChooseFiles;
-    BOOL canChooseDirectories;
-    BOOL allowsMultipleSelection;
-    BOOL isForStaleBookmark;
-    NSString *fileName;
-} PanelOptions;
-
 @interface SPFilePreferencePane ()
 - (void)_refreshBookmarks;
 
@@ -56,19 +47,19 @@ typedef struct {
 
 - (instancetype)init
 {
-	self = [super init];
-	
-	if (self) {
-		fileNames = [[NSMutableArray alloc] init];
+    self = [super init];
+
+    if (self) {
+        fileNames = [[NSMutableArray alloc] init];
         bookmarks = [[NSMutableArray alloc] init];
         staleBookmarks = [[NSMutableArray alloc] init];
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
-		[self loadBookmarks];
-	}
-	
-	return self;
+        [self loadBookmarks];
+    }
+
+    return self;
 }
 
 - (IBAction)doubleClick:(id)sender {
@@ -76,25 +67,60 @@ typedef struct {
     SPLog(@"clickedColumn = %li", (long)fileView.clickedColumn);
     SPLog(@"clickedRow = %li", (long)fileView.clickedRow);
 
+    NSIndexSet *selectedRows = [fileView selectedRowIndexes];
+
     if(fileView.clickedColumn >= 0 && fileView.clickedRow >= 0){
-        NSString *fileName = [fileNames safeObjectAtIndex:fileView.clickedRow];
-        SPLog(@"fileName: %@", fileName);
-        if(fileName != nil){
 
-            PanelOptions options = {
-                .title = @"Choose stale file",
-                .canChooseFiles = YES,
-                .canChooseDirectories = YES,
-                .allowsMultipleSelection = NO,
-                .isForStaleBookmark = YES,
-                .fileName = fileName
-            };
+        SPLog(@"selectedRows = %@", selectedRows);
 
+        PanelOptions *options = [[PanelOptions alloc] init];
+
+        options.allowsMultipleSelection = YES;
+        options.canChooseFiles = YES;
+        options.canChooseDirectories = YES;
+        options.isForStaleBookmark = YES;
+        options.title = @"Choose stale file";
+
+        BOOL __block match = NO;
+
+        [selectedRows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+            // retrieve the filename
+            NSString *fileName = [NSString stringWithFormat:@"file://%@", [fileNames safeObjectAtIndex:idx]];
+
+            // check they really clicked on a stale file
+            for(NSString* staleFile in staleBookmarks){
+                if([staleFile isEqualToString:fileName] == YES){
+                    match = YES;
+                    SPLog(@"breaking stale file MATCH = %@", fileName);
+                    break;
+                }
+            }
+
+            if(match == YES){
+                SPLog(@"fileName = %@", fileName);
+                if(fileName != nil){
+                    [options.fileNames addObject:fileName];
+                }
+                else{
+                    SPLog(@"ERROR: fileName is nil");
+                    CLS_LOG(@"ERROR: fileName is nil");
+                    // break?
+                }
+            }
+            else{
+                SPLog(@"Not a stale file");
+                [fileView deselectRow:idx];
+            }
+        }];
+
+        // only display panel if they clicked on a stale file.
+        if(match == YES){
+            SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+            CLS_LOG(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
             [self chooseFileWithOptions:options];
         }
         else{
-            SPLog(@"ERROR: fileName is nil");
-            CLS_LOG(@"ERROR: fileName is nil");
+            SPLog(@"No stale files selected");
         }
     }
 }
@@ -102,6 +128,7 @@ typedef struct {
 - (void)dealloc
 {
     SPLog(@"dealloc");
+    CLS_LOG(@"dealloc");
     [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess]; // FIXME: not sure about this... just because this pane is deallocated, we don't need to revoke access?
 }
 
@@ -226,16 +253,21 @@ typedef struct {
 
 - (IBAction)addBookmark:(id)sender
 {
-    PanelOptions options = {
-        .title = @"Choose ssh config",
-        .canChooseFiles = YES,
-        .canChooseDirectories = YES,
-        .allowsMultipleSelection = YES,
-        .isForStaleBookmark = NO,
-        .fileName = nil
-    };
 
-	[self chooseFileWithOptions:options];
+    PanelOptions *options = [[PanelOptions alloc] init];
+
+    options.allowsMultipleSelection = YES;
+    options.canChooseFiles = YES;
+    options.canChooseDirectories = YES;
+    options.isForStaleBookmark = YES;
+    options.isForStaleBookmark = NO;
+    options.title = @"Choose ssh config";
+    options.fileNames = nil;
+
+    SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+    CLS_LOG(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+    
+    [self chooseFileWithOptions:options];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -254,13 +286,15 @@ typedef struct {
 }
 
 
-- (void)chooseFileWithOptions:(PanelOptions)options
+- (void)chooseFileWithOptions:(PanelOptions*)options
 {
     // retrieve the file manager in order to fetch the current user's home
     // directory
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSURL *directory = nil;
-    if(options.fileName == nil){
+    if(options.fileNames.count == 0){
+        SPLog(@"standard adding new file");
+        CLS_LOG(@"standard adding new file");
         if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
             directory = [[fileManager homeDirectoryForCurrentUser] URLByAppendingPathComponent:@".ssh"];
         } else {
@@ -268,7 +302,12 @@ typedef struct {
         }
     }
     else{
-        NSString *staleFileDir = [options.fileName stringByDeletingLastPathComponent];
+        SPLog(@"refreshing stale bookmarks. count: %lu", (unsigned long)options.fileNames.count);
+        CLS_LOG(@"refreshing stale bookmarks. count: %lu", (unsigned long)options.fileNames.count);
+        // add on a trailing / to set the panel directory to the file
+        // this has the side effect of pre-selecting the file for the user
+        // see: https://stackoverflow.com/a/18931821/150772
+        NSString *staleFileDir = [NSString stringWithFormat:@"%@/", [options.fileNames safeObjectAtIndex:0]];
         SPLog(@"staleFileDir: %@", staleFileDir);
         directory = [NSURL fileURLWithPath:staleFileDir];
     }
@@ -288,6 +327,7 @@ typedef struct {
                options:NSKeyValueObservingOptionNew
                context:NULL];
 
+
     [_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode) {
         // only process data, when the user pressed ok
         if (returnCode != NSModalResponseOK) {
@@ -302,6 +342,11 @@ typedef struct {
             if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
                 SPLog(@"addBookmarkForUrl success");
                 CLS_LOG(@"addBookmarkForUrl success");
+                if(options.isForStaleBookmark == YES){
+                    SPLog(@"removing stale file from options.fileNames");
+                    CLS_LOG(@"removing stale file from options.fileNames");
+                    [options.fileNames removeObjectAtIndex:0];
+                }
             }
             else{
                 CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
@@ -309,9 +354,17 @@ typedef struct {
             }
         }];
 
-        [self loadBookmarks];
-
-        self->_currentFilePanel = nil;
+        if(options.fileNames.count> 0){
+            SPLog(@"User selected more than one file, call ourselves again");
+            CLS_LOG(@"showing chooseFileWithOptions");
+            [self chooseFileWithOptions:options];
+        }
+        else{
+            SPLog(@"End, reload bookmarks");
+            CLS_LOG(@"End, reload bookmarks");
+            [self loadBookmarks];
+            self->_currentFilePanel = nil;
+        }
     }];
 }
 
