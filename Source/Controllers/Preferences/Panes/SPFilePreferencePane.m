@@ -71,7 +71,8 @@
 
     SPLog(@"selectedRows = %@", selectedRows);
     SPLog(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
-
+    CLS_LOG(@"selectedRows = %@", selectedRows);
+    CLS_LOG(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
     SPLog(@"selectedRows firstIndex = %lu", (unsigned long)[selectedRows firstIndex]);
     SPLog(@"selectedRows lastIndex = %lu", (unsigned long)[selectedRows lastIndex]);
 
@@ -160,6 +161,7 @@
         }
         else{
             SPLog(@"No stale files selected");
+            CLS_LOG(@"No stale files selected");
         }
     }
 }
@@ -443,10 +445,13 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
     // really want to move the file panel to the front here
     // not sure how.
+    // update - now it seems to be frontmost .... ???
 
     [_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode) {
         // only process data, when the user pressed ok
         if (returnCode != NSModalResponseOK) {
+            SPLog(@"user pressed cancel");
+            CLS_LOG(@"user pressed cancel");
             return;
         }
 
@@ -504,6 +509,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
             // this shouldn't be needed, but just in case
             [self->selectedRows removeAllIndexes];
             SPLog(@"self->selectedRows: %@", self->selectedRows);
+            CLS_LOG(@"self->selectedRows: %@", self->selectedRows);
         }
     }];
 }
