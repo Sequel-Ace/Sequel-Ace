@@ -79,7 +79,7 @@
         options.canChooseFiles = YES;
         options.canChooseDirectories = YES;
         options.isForStaleBookmark = YES;
-        options.title = @"Choose stale file";
+        options.title = NSLocalizedString(@"Please re-select the file '%@' in order to restore Sequel Ace's access.", "Title for Stale Bookmark file selection dialog");
 
         BOOL __block match = NO;
 
@@ -261,7 +261,7 @@
     options.canChooseDirectories = YES;
     options.isForStaleBookmark = YES;
     options.isForStaleBookmark = NO;
-    options.title = @"Choose ssh config";
+    options.title = NSLocalizedString(@"Please choose a file or folder to grant Sequel Ace access to.", "Please choose a file or folder to grant Sequel Ace access to.");
     options.fileNames = nil;
 
     SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
@@ -292,6 +292,9 @@
     // directory
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSURL *directory = nil;
+
+    NSString *message = options.title;
+
     if(options.fileNames.count == 0){
         SPLog(@"standard adding new file");
         CLS_LOG(@"standard adding new file");
@@ -307,13 +310,16 @@
         // add on a trailing / to set the panel directory to the file
         // this has the side effect of pre-selecting the file for the user
         // see: https://stackoverflow.com/a/18931821/150772
-        NSString *staleFileDir = [NSString stringWithFormat:@"%@/", [options.fileNames safeObjectAtIndex:0]];
+        NSString *fileName =  [options.fileNames safeObjectAtIndex:0];
+        NSString *staleFileDir = [NSString stringWithFormat:@"%@/", fileName];
         SPLog(@"staleFileDir: %@", staleFileDir);
         directory = [NSURL fileURLWithPath:staleFileDir];
+        message = [NSString stringWithFormat:options.title, [fileName lastPathComponent]];
+        SPLog(@"staleFileDir: %@", staleFileDir);
     }
 
     _currentFilePanel = [NSOpenPanel openPanel];
-    [_currentFilePanel setTitle:options.title];
+    [_currentFilePanel setMessage:message];
     [_currentFilePanel setCanChooseFiles:options.canChooseFiles];
     [_currentFilePanel setCanChooseDirectories:options.canChooseDirectories];
     [_currentFilePanel setAllowsMultipleSelection:options.allowsMultipleSelection];

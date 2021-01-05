@@ -3206,3 +3206,12 @@
 
 /* Title for User window error */
 "User Data Error" = "User Data Error";
+
+/* Title for Stale Bookmark file selection dialog */
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";
+
+/* Title for File Preference file selection dialog */
+"Please choose a file or folder to grant Sequel Ace access to." = "Please choose a file or folder to grant Sequel Ace access to.";
+
+/* Title for Network Preference ssh config file selection dialog */
+"Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";

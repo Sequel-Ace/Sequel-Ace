@@ -263,7 +263,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	}
 }
 
-- (void) chooseSSHConfig
+- (void)chooseSSHConfig
 {
 	// retrieve the file manager in order to fetch the current user's home
 	// directory
@@ -276,7 +276,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	}
 
 	_currentFilePanel = [NSOpenPanel openPanel];
-	[_currentFilePanel setTitle:@"Choose ssh config"];
+    [_currentFilePanel setMessage:NSLocalizedString(@"Please choose your ssh config files(s)", "Please choose your ssh config files(s)")];
 	[_currentFilePanel setCanChooseFiles:YES];
 	[_currentFilePanel setCanChooseDirectories:NO];
 	[_currentFilePanel setAllowsMultipleSelection:YES];
