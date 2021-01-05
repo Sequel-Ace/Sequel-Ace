@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite, assign) BOOL canChooseDirectories;
 @property (readwrite, assign) BOOL allowsMultipleSelection;
 @property (readwrite, assign) BOOL isForStaleBookmark;
+@property (readwrite, assign) NSUInteger index;
 @property (readwrite, copy, nullable) NSMutableArray<NSString *> *fileNames;
 
 - (NSString *)jsonStringWithPrettyPrint:(BOOL)prettyPrint;
