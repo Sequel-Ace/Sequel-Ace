@@ -13,7 +13,7 @@
 
 Sequel Ace is distributed through the Mac App Store, therefore Sequel Ace adopts App Sandbox for your safety and peace of mind.
 
-App Sandbox is based on a basic principles: any resource the app requires must be requested and the user must allow or deny access. The app must define the resources it requires in an entitlements file.
+App Sandbox is based on a basic principle: any resource the app requires must be requested and the user must allow or deny access. The app must define the resources it requires in an entitlements file.
 
 **Access to any resource not explicitly requested in the entitlements file is rejected by the system at run time.**
 
