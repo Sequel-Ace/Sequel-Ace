@@ -242,6 +242,18 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}
 }
 
+- (void)testSafeSubstringWithRange{
+
+    NSString *str = @"These pretzels are making me thirsty...";
+    NSRange range = NSMakeRange(0, str.length+1);
+
+    XCTAssertThrows([str substringWithRange:range]);
+
+//    NSLog(@"res: %@", res);
+
+}
+
+
 /**
  * stringByRemovingCharactersInSet test case.
  */
