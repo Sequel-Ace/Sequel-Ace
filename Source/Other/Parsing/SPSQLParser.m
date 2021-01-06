@@ -192,7 +192,7 @@
 	}
 
 	// Trim the string appropriately
-	returnString = [NSMutableString stringWithString:[string substringWithRange:NSMakeRange(1, stringEndIndex-1)]];
+	returnString = [NSMutableString stringWithString:[string safeSubstringWithRange:NSMakeRange(1, stringEndIndex-1)]];
 	
 	// Remove escaped characters and escaped strings as appropriate
 	[returnString replaceOccurrencesOfString:[NSString stringWithFormat:@"%C%C", quoteCharacter, quoteCharacter] withString:[NSString stringWithFormat:@"%C", quoteCharacter] options:0 range:NSMakeRange(0, [returnString length])];
@@ -235,7 +235,7 @@
 	// Trim if necessary
 	if (whitespaceCharsAtStart || whitespaceCharsAtEnd) {
 		stringLength -= whitespaceCharsAtStart + whitespaceCharsAtEnd;
-		queryString = [queryString substringWithRange:NSMakeRange(whitespaceCharsAtStart, stringLength)];
+		queryString = [queryString safeSubstringWithRange:NSMakeRange(whitespaceCharsAtStart, stringLength)];
 	}
 
 	// Check for carriage returns in the string
@@ -383,7 +383,7 @@
 	if (stringIndex == NSNotFound) return nil;
 	
 	// If it has been found, return the appropriate string range
-	return [string substringWithRange:NSMakeRange(returnFromPosition, stringIndex + (inclusive?1:-delimiterLengthMinusOne) - returnFromPosition)];
+	return [string safeSubstringWithRange:NSMakeRange(returnFromPosition, stringIndex + (inclusive?1:-delimiterLengthMinusOne) - returnFromPosition)];
 }
 
 /**
@@ -418,7 +418,7 @@
 	if (stringIndex == NSNotFound) return nil;
 
 	// Select the appropriate string range, truncate the current string, and return the selected string
-	resultString = [NSString stringWithString:[string substringWithRange:NSMakeRange(returnFromPosition, stringIndex + (inclusiveReturn?1:-delimiterLengthMinusOne) - returnFromPosition)]];
+	resultString = [NSString stringWithString:[string safeSubstringWithRange:NSMakeRange(returnFromPosition, stringIndex + (inclusiveReturn?1:-delimiterLengthMinusOne) - returnFromPosition)]];
 	[self deleteCharactersInRange:NSMakeRange(0, stringIndex + (inclusiveTrim?1:-delimiterLengthMinusOne))];
 	return resultString;
 }
@@ -475,7 +475,7 @@
 	if (toCharacterIndex == NSNotFound) return nil;
 	
 	// Return the correct part of the string.
-	return [string substringWithRange:NSMakeRange(fromCharacterIndex + (inclusive?0:1), toCharacterIndex + (inclusive?1:-1) - fromCharacterIndex)];
+	return [string safeSubstringWithRange:NSMakeRange(fromCharacterIndex + (inclusive?0:1), toCharacterIndex + (inclusive?1:-1) - fromCharacterIndex)];
 }
 
 /**
@@ -528,7 +528,7 @@
 	if (toCharacterIndex == NSNotFound) return nil;
 	
 	// Select the correct part of the string, truncate the current string, and return the selected string.
-	resultString = [string substringWithRange:NSMakeRange(fromCharacterIndex + (inclusiveReturn?0:1), toCharacterIndex + (inclusiveReturn?1:-1) - fromCharacterIndex)];
+	resultString = [string safeSubstringWithRange:NSMakeRange(fromCharacterIndex + (inclusiveReturn?0:1), toCharacterIndex + (inclusiveReturn?1:-1) - fromCharacterIndex)];
 	[self deleteCharactersInRange:NSMakeRange(fromCharacterIndex + (inclusiveTrim?0:1), toCharacterIndex + (inclusiveTrim?1:-1) - fromCharacterIndex)];
 	return resultString;
 }
@@ -586,7 +586,7 @@
 		stringIndex++;
 		queryLength = nextIndex - stringIndex - delimiterLengthMinusOne;
 		if (queryLength > 0) {
-			[resultsArray addObject:[string substringWithRange:NSMakeRange(stringIndex, queryLength)]];
+			[resultsArray addObject:[string safeSubstringWithRange:NSMakeRange(stringIndex, queryLength)]];
 		}
 
 		stringIndex = nextIndex;
@@ -696,7 +696,7 @@
 		// Check for the ending character, and if it has been found and quoting/brackets is valid, return.
 		// If delimiter support is active and a delimiter is set, check for the delimiter
 		if (supportDelimiters && delimiter) {
-			if (currentStringIndex >= delimiterLengthMinusOne && [delimiter isEqualToString:[self substringWithRange:NSMakeRange(currentStringIndex - delimiterLengthMinusOne, delimiterLengthMinusOne + 1)]]) {
+			if (currentStringIndex >= delimiterLengthMinusOne && [delimiter isEqualToString:[self safeSubstringWithRange:NSMakeRange(currentStringIndex - delimiterLengthMinusOne, delimiterLengthMinusOne + 1)]]) {
 				if (!skipBrackets || bracketingLevel <= 0) {
 					parsedToPosition = currentStringIndex;
 					return currentStringIndex;
