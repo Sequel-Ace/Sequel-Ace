@@ -388,7 +388,8 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 - (NSString *)safeSubstringWithRange:(NSRange)aRange
 {
     // Raises an NSRangeException if (aRange.location - 1) or (aRange.location + aRange.length - 1) lies beyond the end of the receiver.
-    if(((aRange.location - 1) > self.length) || ((aRange.location + aRange.length - 1) > self.length )){
+
+    if((aRange.length >= self.length) || ((aRange.location > 0) && (aRange.location - 1) >= self.length) || ((aRange.location > 0) && (aRange.location + aRange.length - 1) >= self.length)){
         return self;
     }
 
