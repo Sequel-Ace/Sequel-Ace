@@ -40,12 +40,13 @@
 @property (readwrite, strong) NSMutableArray<NSString *> *staleBookmarks;
 @property (readwrite, strong) NSMutableIndexSet *selectedRows;
 @property (readwrite, assign) BOOL weHaveStaleBookmarks;
+@property (readwrite, assign) BOOL userClickedCancel;
 
 @end
 
 @implementation SPFilePreferencePane
 
-@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows;
+@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel;
 
 - (instancetype)init
 {
@@ -57,6 +58,7 @@
         staleBookmarks = [[NSMutableArray alloc] init];
         selectedRows = [NSMutableIndexSet indexSet];
         weHaveStaleBookmarks = NO;
+        userClickedCancel = NO;
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
     }
@@ -75,8 +77,21 @@
     CLS_LOG(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
     SPLog(@"selectedRows firstIndex = %lu", (unsigned long)[selectedRows firstIndex]);
     SPLog(@"selectedRows lastIndex = %lu", (unsigned long)[selectedRows lastIndex]);
+    SPLog(@"weHaveStaleBookmarks = %d", weHaveStaleBookmarks);
+    SPLog(@"userClickedCancel = %d", userClickedCancel);
 
-    if(weHaveStaleBookmarks == YES){
+    // what if the user clicks cancel, then double clicks just one file?
+    // or different files?
+    if (userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) {
+        SPLog(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
+        CLS_LOG(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
+        [selectedRows removeAllIndexes];
+        [selectedRows addIndexes:[fileView selectedRowIndexes]];
+    }
+
+    if((weHaveStaleBookmarks == YES && userClickedCancel == NO) || ((fileView.clickedColumn >= 0 && fileView.clickedRow >= 0) && userClickedCancel == YES )){
+
+        SPLog(@"IN, setting panel options");
 
         PanelOptions *options = [[PanelOptions alloc] init];
 
@@ -312,6 +327,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
  */
 
+
     NSUInteger index = bookmarks.count-1;
 
     // add on any stale bookmarks
@@ -328,7 +344,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     CLS_LOG(@"staleBookmarks.count: %lu", (unsigned long)staleBookmarks.count);
     CLS_LOG(@"fileNames.count: %lu", (unsigned long)fileNames.count);
 
-	// reset the table view for the files
+    // reset the table view for the files
 	[fileView deselectAll:nil];
 	[fileView reloadData];
 }
@@ -452,9 +468,12 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
         if (returnCode != NSModalResponseOK) {
             SPLog(@"user pressed cancel");
             CLS_LOG(@"user pressed cancel");
+            self->userClickedCancel = YES;
+            [self->selectedRows removeAllIndexes];
             return;
         }
 
+        
         [self->_currentFilePanel orderOut:nil];
         // since ssh configs are able to consist of multiple files, bookmarks
         // for every selected file should be created in order to access them
