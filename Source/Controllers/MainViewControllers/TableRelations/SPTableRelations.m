@@ -374,7 +374,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
-	id data = [[relationData objectAtIndex:rowIndex] objectForKey:[tableColumn identifier]];
+	id data = [[relationData safeObjectAtIndex:rowIndex] safeObjectForKey:[tableColumn identifier]];
 	//dim the database name if it matches the current database
 	if([[tableColumn identifier] isEqualToString:SPRelationFKDatabaseKey] && [[tableDocumentInstance database] isEqual:data]) {
 		NSDictionary *textAttributes = @{NSForegroundColorAttributeName: [NSColor lightGrayColor]};
