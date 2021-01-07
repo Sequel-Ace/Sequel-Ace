@@ -545,6 +545,7 @@
  */
 - (void)cancelCurrentQuery
 {
+    SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
 
@@ -589,10 +590,10 @@
 			lastQueryWasCancelled = YES;
 			return;
 		} else {
-            NSLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
+            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
 		}
 	} else if (!userTriggeredDisconnect) {
-        NSLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
+        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
 	}
 
 	// A full reconnect is required at this point to force a cancellation.  As the
