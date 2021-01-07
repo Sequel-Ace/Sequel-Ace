@@ -349,7 +349,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // The actual query strings have been already stored as tooltip
-        [textView insertAsSnippet:[[queryFavoritesButton selectedItem] toolTip] atRange:NSMakeRange([textView selectedRange].location, 0)];
+        [textView insertAsSnippet:[[queryFavoritesButton selectedItem] toolTip] atRange:NSMakeRange([textView selectedRange].location, 0) isFavourite:YES];
     }
 }
 

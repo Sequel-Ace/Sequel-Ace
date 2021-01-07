@@ -280,6 +280,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
  */
 - (IBAction)showCustomQueryFontPanel:(id)sender
 {
+
+    [[NSFontManager sharedFontManager] setAction:@selector(changeDefaultFont:)];
+    
 	[(SPPreferenceController *)[[[self view] window] delegate] setFontChangeTarget:SPPrefFontChangeTargetEditor];
 	
 	[[NSFontPanel sharedFontPanel] setPanelFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]] isMultiple:NO];
