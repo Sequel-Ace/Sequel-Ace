@@ -684,9 +684,13 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 			([parentConnection isConnected])
 				&& (theRow = mysql_fetch_row(resultSet))
 			) {
+
+            SPLog(@"[parentConnection isConnected] = %d", [parentConnection isConnected]);
+
 			// If the load has been cancelled, skip any processing - we're only interested
 			// in ensuring that mysql_fetch_row is called for all rows.
 			if (loadCancelled) {
+                SPLog(@"loadCancelled");
 				continue;
 			}
 
