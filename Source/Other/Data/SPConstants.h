@@ -693,6 +693,7 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 #define user_defaults_get_bool(key)         [[NSUserDefaults standardUserDefaults] boolForKey:key]
 #define user_defaults_get_bool_ud(key, ud)  [ud boolForKey:key]
 #define user_defaults_set_bool(key, b, ud)  [ud setBool:b forKey:key]
+#define is_big_sur()  [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){ .majorVersion = 11, .minorVersion = 0, .patchVersion = 0 }]
 
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
 

@@ -47,6 +47,17 @@ void SPMainQSync(void (^block)(void))
 	}
 }
 
+void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInSeconds){
+
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (dispatch_time_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void) {
+        if (block) {
+            block();
+        }
+    });
+}
+
+
 void SPMainLoopAsync(void (^block)(void))
 {
 	CFRunLoopPerformBlock(CFRunLoopGetMain(), NSDefaultRunLoopMode, block);
