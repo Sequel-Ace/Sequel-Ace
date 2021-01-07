@@ -1068,7 +1068,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	// If it's a function or procedure append () and if a argument list can be retieved insert them as snippets
 	else if([prefs boolForKey:SPCustomQueryFunctionCompletionInsertsArguments] && ([[[filtered objectAtIndex:[theTableView selectedRow]] objectForKey:@"image"] hasPrefix:@"func"] || [[[filtered objectAtIndex:[theTableView selectedRow]] objectForKey:@"image"] hasPrefix:@"proc"]) && ![aString hasSuffix:@")"]) {
 		NSString *functionArgumentSnippet = [NSString stringWithFormat:@"(%@)", [[SPQueryController sharedQueryController] argumentSnippetForFunction:aString]];
-		[theView insertAsSnippet:functionArgumentSnippet atRange:[theView selectedRange]];
+		[theView insertAsSnippet:functionArgumentSnippet atRange:[theView selectedRange] isFavourite:NO];
 		if([functionArgumentSnippet length] == 2) [theView performSelector:@selector(moveLeft:)];
 	}
 }
