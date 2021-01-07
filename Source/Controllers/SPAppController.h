@@ -54,6 +54,7 @@
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
 
+@property (weak) IBOutlet NSView *staleBookmarkHelpView;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;
@@ -85,8 +86,6 @@
 - (void)setSpfSessionDocData:(NSDictionary *)data;
 
 // Others
-- (NSString *)generateHTML:(NSString *)theTitle theHTML:(NSString *)someHTML;
-- (void)displayStaleBookmarkReminderWindow:(NSString *)staleBookmarksString;
 - (void)registerActivity:(NSDictionary *)commandDict;
 - (void)removeRegisteredActivity:(NSInteger)pid;
 - (NSArray *)runningActivities;

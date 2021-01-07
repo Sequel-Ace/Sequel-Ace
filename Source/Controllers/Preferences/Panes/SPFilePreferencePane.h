@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPPreferencePane.h"
+#import "SPPanelOptions.h"
 
 /**
  * @class SPNetworkPreferencePane SPNetworkPreferencePane.h
@@ -42,12 +43,13 @@
 
 @private
 	NSOpenPanel *_currentFilePanel;
-	NSMutableArray<NSString *> *fileNames;
-	
+    NSMutableArray<NSString *> *fileNames;
+
 }
 
-@property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (weak) IBOutlet NSTextField *staleLabel;
 
-- (IBAction) revokeBookmark:(id)sender;
-- (IBAction) addBookmark:(id)sender;
+- (IBAction)revokeBookmark:(id)sender;
+- (IBAction)addBookmark:(id)sender;
+- (IBAction)doubleClick:(id)sender;
 @end

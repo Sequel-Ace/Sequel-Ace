@@ -36,33 +36,156 @@
 @interface SPFilePreferencePane ()
 - (void)_refreshBookmarks;
 
+@property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (readwrite, strong) NSMutableArray<NSString *> *staleBookmarks;
+@property (readwrite, strong) NSMutableIndexSet *selectedRows;
+@property (readwrite, assign) BOOL weHaveStaleBookmarks;
+@property (readwrite, assign) BOOL userClickedCancel;
+
 @end
 
 @implementation SPFilePreferencePane
 
-@synthesize bookmarks;
+@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel;
 
 - (instancetype)init
 {
-	self = [super init];
-	
-	if (self) {
-		fileNames = [[NSMutableArray alloc] init];
-		bookmarks = [[NSMutableArray alloc] init];
-        
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
+    self = [super init];
 
-		[self loadBookmarks];
-	}
-	
-	return self;
+    if (self) {
+        fileNames = [[NSMutableArray alloc] init];
+        bookmarks = [[NSMutableArray alloc] init];
+        staleBookmarks = [[NSMutableArray alloc] init];
+        selectedRows = [NSMutableIndexSet indexSet];
+        weHaveStaleBookmarks = NO;
+        userClickedCancel = NO;
+
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
+    }
+
+    return self;
+}
+
+- (IBAction)doubleClick:(id)sender {
+
+    SPLog(@"clickedColumn = %li", (long)fileView.clickedColumn);
+    SPLog(@"clickedRow = %li", (long)fileView.clickedRow);
+
+    SPLog(@"selectedRows = %@", selectedRows);
+    SPLog(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
+    CLS_LOG(@"selectedRows = %@", selectedRows);
+    CLS_LOG(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
+    SPLog(@"selectedRows firstIndex = %lu", (unsigned long)[selectedRows firstIndex]);
+    SPLog(@"selectedRows lastIndex = %lu", (unsigned long)[selectedRows lastIndex]);
+    SPLog(@"weHaveStaleBookmarks = %d", weHaveStaleBookmarks);
+    SPLog(@"userClickedCancel = %d", userClickedCancel);
+
+    // what if the user clicks cancel, then double clicks just one file?
+    // or different files?
+    if (userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) {
+        SPLog(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
+        CLS_LOG(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
+        [selectedRows removeAllIndexes];
+        [selectedRows addIndexes:[fileView selectedRowIndexes]];
+    }
+
+    if((weHaveStaleBookmarks == YES && userClickedCancel == NO) || ((fileView.clickedColumn >= 0 && fileView.clickedRow >= 0) && userClickedCancel == YES )){
+
+        SPLog(@"IN, setting panel options");
+
+        PanelOptions *options = [[PanelOptions alloc] init];
+
+        options.allowsMultipleSelection = YES;
+        options.canChooseFiles = YES;
+        options.canChooseDirectories = YES;
+        options.isForStaleBookmark = YES;
+        options.title = NSLocalizedString(@"Please re-select the file '%@' in order to restore Sequel Ace's access.", "Title for Stale Bookmark file selection dialog");
+
+        BOOL __block match = NO;
+
+        /*
+            remember we added the stale files to the end of the fileNames array, so we need to go backwards
+            so we get the starting index in selectedRows that matches a file in fileNames.
+            This is options.index.
+
+            See the example in loadBookmarks. With that fileNames array and selectedRows indexset, the code below would go:
+
+            First iteration
+
+            idx = 5
+            fileName = StaleFile6.txt
+            options.index = 5
+
+            Second iteration
+
+            idx = 4
+            fileName = StaleFile5.txt
+            options.index = 4
+
+            Third and last iteration
+
+            idx = 3
+            fileName = StaleFile3.txt
+            options.index = 3
+
+            Thus we know the first index in selectedRows is 3
+
+            Er, just seen [selectedRows firstIndex] does the same!
+
+         */
+
+        [selectedRows enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger idx, BOOL *stop) {
+            // retrieve the filename
+            NSString *fileName = [NSString stringWithFormat:@"file://%@", [fileNames safeObjectAtIndex:idx]];
+
+            SPLog(@"idx = %lu", (unsigned long)idx);
+
+            // check they really clicked on a stale file
+            for(NSString* staleFile in staleBookmarks){
+                if([staleFile isEqualToString:fileName] == YES){
+                    match = YES;
+                    SPLog(@"breaking. stale file MATCH = %@", fileName);
+                    break;
+                }
+            }
+
+            if(match == YES){
+                SPLog(@"fileName = %@", fileName);
+                if(fileName != nil){
+                    [options.fileNames addObject:fileName];
+                    options.index = idx;
+                }
+                else{
+                    SPLog(@"ERROR: fileName is nil");
+                    CLS_LOG(@"ERROR: fileName is nil");
+                    // break?
+                }
+            }
+            else{
+                SPLog(@"Not a stale file");
+                [fileView deselectRow:idx];
+            }
+        }];
+
+
+        // only display panel if they clicked on a stale file.
+        if(match == YES){
+            SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+            CLS_LOG(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+            [self chooseFileWithOptions:options];
+        }
+        else{
+            SPLog(@"No stale files selected");
+            CLS_LOG(@"No stale files selected");
+        }
+    }
 }
 
 - (void)dealloc
 {
     SPLog(@"dealloc");
-    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
-
+    CLS_LOG(@"dealloc");
+    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess]; // FIXME: not sure about this... just because this pane is deallocated, we don't need to revoke access?
 }
 
 - (void)_refreshBookmarks{
@@ -70,6 +193,7 @@
     CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+    [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
 }
 
 - (NSImage *)preferencePaneIcon {
@@ -96,15 +220,41 @@
 	return [self view];
 }
 
+/**
+ * Called shortly before the preference pane will be made visible
+ *  so this is where we decide to show the stale file panel or not
+ */
 - (void)preferencePaneWillBeShown
 {
-	[self loadBookmarks];
+    SPLog(@"calling loadBookmarks");
+    CLS_LOG(@"calling loadBookmarks");
+    [self loadBookmarks];
+
+    if(weHaveStaleBookmarks == YES){
+        SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
+        CLS_LOG(@"weHaveStaleBookmarks == YES, calling doubleClick");
+        [self doubleClick:nil];
+    }
 }
 
 - (void)loadBookmarks
 {
- 
+    SPLog(@"loadBookmarks");
+    CLS_LOG(@"loadBookmarks");
+
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+    [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
+
+    if(staleBookmarks.count > 0){
+        staleLabel.hidden = NO;
+        weHaveStaleBookmarks = YES;
+    }
+    else{
+        staleLabel.hidden = YES;
+        weHaveStaleBookmarks = NO;
+        SPLog(@"weHaveStaleBookmarks == NO");
+        CLS_LOG(@"weHaveStaleBookmarks == NO");
+    }
 
 	// we need to re-request access to places we've been before..
     // not anymore, done at startup
@@ -122,16 +272,79 @@
 				continue;
 			}
 			
-			// remove the file protocol
-            if([key hasPrefixWithPrefix:@"file://" caseSensitive:YES] == YES){
-                NSString *fileName = [key substringFromIndex:[@"file://" length]];
-                // save the filename without the file protocol
-                [fileNames addObject:fileName];
-            }
+            // remove the file protocol
+            NSString *fileName = [key dropPrefixWithPrefix:@"file://"];
+            // save the filename without the file protocol
+            [fileNames addObject:fileName];
+            SPLog(@"fileNames adding: %@", fileName);
 		}
 	}];
-	
-	// reset the table view for the files
+
+/*
+ How to generate an indexset of stale file positions
+
+Example Good Bookmark list
+
+ File1.txt
+ File2.txt
+ File3.txt
+
+Add on stale files
+
+ StaleFile4.txt
+ StaleFile5.txt
+ StaleFile6.txt
+
+ This gives us a fileNames array of
+
+ "fileNames" : [
+    "file:File1.txt",
+    "file:File2.txt",
+    "file:File3.txt",
+    "file:StaleFile4.txt",
+    "file:StaleFile5.txt"
+    "file:StaleFile6.txt"
+ ]
+
+Thus, if the user selected the three stale files and double clicked,
+which is what we are trying to simulate, the selected rows in the table
+ would be 4, 5 and 6
+
+ In the fileNames array, these are at index 3, 4 and 5
+
+ Remember we took the bookmarks, and added on the stale files
+
+ So to create the indexset (selectedRows) we take the count of bookmarks
+ and for each additional stale file we increment the index.
+
+ StaleFile4.txt - add index bookmark.count     = 3
+ StaleFile5.txt - add index bookmark.count + 1 = 4
+ StaleFile6.txt - add index bookmark.count + 2 = 5
+
+thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
+
+ Which is what is used in doubleClick:
+
+ */
+
+
+    NSUInteger index = bookmarks.count-1;
+
+    // add on any stale bookmarks
+    for(NSString* staleFile in staleBookmarks){
+        [fileNames addObject:[staleFile dropPrefixWithPrefix:@"file://"]];
+        SPLog(@"fileNames adding stale file: %@", staleFile);
+        [selectedRows addIndex:++index];
+    }
+
+    SPLog(@"bookmarks.count: %lu", (unsigned long)bookmarks.count);
+    SPLog(@"staleBookmarks.count: %lu", (unsigned long)staleBookmarks.count);
+    SPLog(@"fileNames.count: %lu", (unsigned long)fileNames.count);
+    CLS_LOG(@"bookmarks.count: %lu", (unsigned long)bookmarks.count);
+    CLS_LOG(@"staleBookmarks.count: %lu", (unsigned long)staleBookmarks.count);
+    CLS_LOG(@"fileNames.count: %lu", (unsigned long)fileNames.count);
+
+    // reset the table view for the files
 	[fileView deselectAll:nil];
 	[fileView reloadData];
 }
@@ -146,11 +359,16 @@
 	// iterate through all selected indice
 	[indiceToRevoke enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
 		// retrieve the filename
-		NSString __block *fileName = [NSString stringWithFormat:@"file://%@", fileNames[idx]];
+		NSString *fileName = [NSString stringWithFormat:@"file://%@", fileNames[idx]];
 		
         if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
-            SPLog(@"refreshing bookmarks: %@", bookmarks);
             [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+            SPLog(@"revokeBookmarkWithFilename success. refreshing bookmarks: %@", bookmarks);
+            CLS_LOG(@"revokeBookmarkWithFilename success. refreshing bookmarks");
+        }
+        else{
+            SPLog(@"revokeBookmarkWithFilename failed: %@", fileName);
+            CLS_LOG(@"revokeBookmarkWithFilename failed: %@", fileName);
         }
 	}];
 	
@@ -160,7 +378,21 @@
 
 - (IBAction)addBookmark:(id)sender
 {
-	[self chooseFile];
+
+    PanelOptions *options = [[PanelOptions alloc] init];
+
+    options.allowsMultipleSelection = YES;
+    options.canChooseFiles = YES;
+    options.canChooseDirectories = YES;
+    options.isForStaleBookmark = YES;
+    options.isForStaleBookmark = NO;
+    options.title = NSLocalizedString(@"Please choose a file or folder to grant Sequel Ace access to.", "Please choose a file or folder to grant Sequel Ace access to.");
+    options.fileNames = nil;
+
+    SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+    CLS_LOG(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+    
+    [self chooseFileWithOptions:options];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -178,55 +410,129 @@
 	[_currentFilePanel setShowsHiddenFiles:[prefs boolForKey:SPHiddenKeyFileVisibilityKey]];
 }
 
-- (void) chooseFile
+
+- (void)chooseFileWithOptions:(PanelOptions*)options
 {
-	// retrieve the file manager in order to fetch the current user's home
-	// directory
-	NSFileManager *fileManager = [NSFileManager defaultManager];
-	NSURL *homeDirectory = nil;
-	if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
-		homeDirectory = [fileManager homeDirectoryForCurrentUser];
-	} else {
-		homeDirectory = [NSURL fileURLWithPath:NSHomeDirectory()];
-	}
+    // retrieve the file manager in order to fetch the current user's home
+    // directory
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *directory = nil;
 
-	_currentFilePanel = [NSOpenPanel openPanel];
-	[_currentFilePanel setTitle:@"Choose ssh config"];
-	[_currentFilePanel setCanChooseFiles:YES];
-	[_currentFilePanel setCanChooseDirectories:YES];
-	[_currentFilePanel setAllowsMultipleSelection:YES];
-	[_currentFilePanel setAccessoryView:hiddenFileView];
-	[_currentFilePanel setResolvesAliases:NO];
-	[_currentFilePanel setDirectoryURL:[homeDirectory URLByAppendingPathComponent:@".ssh"]];
-	[self updateHiddenFiles];
-	
-	[prefs addObserver:self
-			forKeyPath:SPHiddenKeyFileVisibilityKey
-			   options:NSKeyValueObservingOptionNew
-			   context:NULL];
-	
-	[_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode)
-	 {
-		// only process data, when the user pressed ok
-		if (returnCode != NSModalResponseOK) {
-			return;
-		}
+    NSString *message = options.title;
 
-		// since ssh configs are able to consist of multiple files, bookmarks
-		// for every selected file should be created in order to access them
-		// read-only.
-		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+    if(options.fileNames.count == 0){
+        SPLog(@"standard adding new file");
+        CLS_LOG(@"standard adding new file");
+        if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
+            directory = [[fileManager homeDirectoryForCurrentUser] URLByAppendingPathComponent:@".ssh"];
+        } else {
+            directory = [[NSURL fileURLWithPath:NSHomeDirectory()] URLByAppendingPathComponent:@".ssh"];
+        }
+    }
+    else{
+        SPLog(@"refreshing stale bookmarks. count: %lu", (unsigned long)options.fileNames.count);
+        CLS_LOG(@"refreshing stale bookmarks. count: %lu", (unsigned long)options.fileNames.count);
+        // add on a trailing / to set the panel directory to the file
+        // this has the side effect of pre-selecting the file for the user
+        // see: https://stackoverflow.com/a/18931821/150772
+        NSString *fileName =  [options.fileNames safeObjectAtIndex:0];
+        NSString *staleFileDir = [NSString stringWithFormat:@"%@/", fileName];
+        SPLog(@"staleFileDir: %@", staleFileDir);
+        directory = [NSURL fileURLWithPath:staleFileDir];
+        message = [NSString stringWithFormat:options.title, [fileName lastPathComponent]];
+    }
 
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess)] == YES){
+    _currentFilePanel = [NSOpenPanel openPanel];
+    [_currentFilePanel setMessage:message];
+    [_currentFilePanel setCanChooseFiles:options.canChooseFiles];
+    [_currentFilePanel setCanChooseDirectories:options.canChooseDirectories];
+    [_currentFilePanel setAllowsMultipleSelection:options.allowsMultipleSelection];
+    [_currentFilePanel setAccessoryView:hiddenFileView];
+    [_currentFilePanel setResolvesAliases:NO];
+    [_currentFilePanel setDirectoryURL:directory];
+
+    [self updateHiddenFiles];
+
+    [prefs addObserver:self
+            forKeyPath:SPHiddenKeyFileVisibilityKey
+               options:NSKeyValueObservingOptionNew
+               context:NULL];
+
+
+    // really want to move the file panel to the front here
+    // not sure how.
+    // update - now it seems to be frontmost .... ???
+
+    [_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode) {
+        // only process data, when the user pressed ok
+        if (returnCode != NSModalResponseOK) {
+            SPLog(@"user pressed cancel");
+            CLS_LOG(@"user pressed cancel");
+            self->userClickedCancel = YES;
+            [self->selectedRows removeAllIndexes];
+            return;
+        }
+
+        
+        [self->_currentFilePanel orderOut:nil];
+        // since ssh configs are able to consist of multiple files, bookmarks
+        // for every selected file should be created in order to access them
+        // read-only.
+        [self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
                 SPLog(@"addBookmarkForUrl success");
+                CLS_LOG(@"addBookmarkForUrl success");
+
+                if(options.isForStaleBookmark == YES){
+
+                    // Here we need to maintain the options filnames array
+                    // and the selectedRows index
+                    SPLog(@"options.fileNames: %@", options.fileNames);
+                    SPLog(@"self->selectedRows: %@", self->selectedRows);
+                    SPLog(@"removing stale file from options.fileNames at index 0");
+                    SPLog(@"removing stale file from self->selectedRows at index: %lu", (unsigned long)options.index);
+                    CLS_LOG(@"removing stale file from options.fileNames");
+
+                    SPLog(@"selectedRows count = %lu", (unsigned long)self->selectedRows.count);
+
+                    // we need to keep track of how many files there are to prompt for
+                    // so we remove from the filenames array. Index 0 is safe.
+                    [options.fileNames removeObjectAtIndex:0];
+                    // to keep things nice and tidy, remove the index?
+                    [self->selectedRows removeIndex:options.index];
+                    SPLog(@"options.fileNames: %@", options.fileNames);
+                    SPLog(@"self->selectedRows: %@", self->selectedRows);
+
+                    // increment for the next file
+                    options.index++;
+                }
             }
-		}];
-		
-		[self loadBookmarks];
-		
-		self->_currentFilePanel = nil;
-	}];
+            else{
+                CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+            }
+        }];
+
+        if(options.fileNames.count> 0){
+            SPLog(@"User selected more than one file, call ourselves again");
+            CLS_LOG(@"User selected more than one file, call ourselves again");
+            [self chooseFileWithOptions:options];
+        }
+        else{
+            SPLog(@"End, reload bookmarks");
+            CLS_LOG(@"End, reload bookmarks");
+            [self loadBookmarks];
+            self->_currentFilePanel = nil;
+
+            // this shouldn't be needed, but just in case
+            [self->selectedRows removeAllIndexes];
+            SPLog(@"self->selectedRows: %@", self->selectedRows);
+            CLS_LOG(@"self->selectedRows: %@", self->selectedRows);
+        }
+    }];
 }
+
 
 #pragma mark -
 #pragma mark Granted Files View
@@ -242,6 +548,26 @@
 - (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(nullable NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	return [fileNames objectAtIndex:rowIndex];
+}
+
+- (void)tableView:(NSTableView *)tableView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex{
+
+    // this could be optimised I think
+
+    if([cell isKindOfClass:[NSCell class]] == YES){
+        // default to controlTextColor
+        [cell setTextColor:[NSColor controlTextColor]];
+
+        if(weHaveStaleBookmarks == YES){
+            NSString *title = ((NSCell*)cell).title;
+
+            for(NSString* staleFile in staleBookmarks){
+                if([[staleFile dropPrefixWithPrefix:@"file://"] isEqualToString:title] == YES){
+                    [cell setTextColor:[NSColor redColor]];
+                }
+            }
+        }
+    }
 }
 
 @end

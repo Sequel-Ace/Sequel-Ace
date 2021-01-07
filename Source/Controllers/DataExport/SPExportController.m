@@ -645,8 +645,13 @@ set_input:
 			[self->exportPathField setStringValue:path];
 
             // this needs to be read-write
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope)] == YES){
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
                 SPLog(@"addBookmarkForUrl success");
+                CLS_LOG(@"addBookmarkForUrl success");
+            }
+            else{
+                CLS_LOG(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
+                SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
             }
         }
     }];		
