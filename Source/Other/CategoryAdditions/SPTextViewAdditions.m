@@ -745,8 +745,8 @@
 					}
 
 					else if([action isEqualToString:SPBundleOutputActionInsertAsSnippet]) {
-						if([self respondsToSelector:@selector(insertAsSnippet:atRange:)])
-							[(SPTextView *)self insertAsSnippet:output atRange:replaceRange];
+                        if([self respondsToSelector:@selector(insertAsSnippet:atRange:isFavourite:)])
+							[(SPTextView *)self insertAsSnippet:output atRange:replaceRange isFavourite:NO];
 						else
 							[SPTooltip showWithObject:NSLocalizedString(@"Input Field doesn't support insertion of snippets.", @"input field  doesn't support insertion of snippets.")];
 					}

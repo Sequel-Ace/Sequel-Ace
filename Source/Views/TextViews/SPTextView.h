@@ -157,7 +157,7 @@ typedef struct {
 - (void) processMirroredSnippets;
 
 - (BOOL)checkForCaretInsideSnippet;
-- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange;
+- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange isFavourite:(BOOL)isFave;
 
 - (void)showCompletionListFor:(NSString*)kind atRange:(NSRange)aRange fuzzySearch:(BOOL)fuzzySearchMode;
 

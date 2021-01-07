@@ -138,6 +138,7 @@
 		case SPPrefFontChangeTargetGeneral:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUserDefaults getFont]];
 			[NSUserDefaults saveFont:font];
+            [generalPreferencePane updateDisplayedFontName];
 			break;
 		case SPPrefFontChangeTargetEditor:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];

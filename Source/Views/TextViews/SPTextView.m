@@ -1668,7 +1668,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 /**
  * Inserts a chosen query favorite and initialze a snippet session if user defined any
  */
-- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange
+- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange isFavourite:(BOOL)isFave
 {
 
 	// Do not allow the insertion of a query favorite if snippets are active
@@ -1910,7 +1910,19 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		// Registering for undo
 		[self breakUndoCoalescing];
-		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:snip]];
+
+        NSMutableAttributedString *tmpAttStr = [[NSMutableAttributedString alloc] initWithString:snip];
+
+        // if we are inserting a favourite query,
+        // add the font
+        // FIXME: should this apply to all snippet inserts actually?
+        if(isFave == YES){
+            [tmpAttStr addAttribute:NSFontAttributeName
+                              value:self.font
+                              range:NSMakeRange(0, snip.length)];
+        }
+
+		[self.textStorage appendAttributedString:tmpAttStr];
 
 		// If autopair is enabled check whether snip begins with ( and ends with ), if so mark ) as pair-linked
 		if (
@@ -2159,7 +2171,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		if(snippetControlCounter < 0 && [tabTrigger length] && [tableDocumentInstance fileURL]) {
 			NSArray *snippets = [[SPQueryController sharedQueryController] queryFavoritesForFileURL:[tableDocumentInstance fileURL] andTabTrigger:tabTrigger includeGlobals:YES];
 			if([snippets count] > 0 && [(NSString*)[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] length]) {
-				[self insertAsSnippet:[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] atRange:targetRange];
+				[self insertAsSnippet:[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] atRange:targetRange isFavourite:NO];
 				return;
 			}
 		}
