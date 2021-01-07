@@ -28,6 +28,10 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+typedef void(^SAVoidCompletionBlock)(void);
+
+void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInSeconds);
+
 /**
  * Synchronously execute a block on the main thread.
  * This function can be called from a background thread as well as from
