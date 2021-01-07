@@ -80,6 +80,8 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 
 - (CGFloat)levenshteinDistanceWithWord:(NSString *)stringB;
 
+- (NSString *)safeSubstringWithRange:(NSRange)aRange;
+
 /**
  * Checks if the string other is contained in self on a per-character basis.
  * In regex-speak that would mean "abc" is matched as /a.*b.*c/ (not anchored).

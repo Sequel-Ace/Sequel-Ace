@@ -1621,29 +1621,31 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			[cell setTextColor:[NSColor controlTextColor]];
 		}
 
-		// If the schema has permissions set, highlight with a yellow background
-		BOOL enabledPermissions = NO;
-		SPUserMO *user = [[treeController selectedObjects] objectAtIndex:0];
-		NSArray *results = [self _fetchPrivsWithUser:[[user parent] valueForKey:@"user"]
-											  schema:[schemaName stringByReplacingOccurrencesOfString:@"_" withString:@"\\_"]
-												host:[user valueForKey:@"host"]];
-		if ([results count]) {
-			NSManagedObject *schemaPrivs = [results objectAtIndex:0];
-			for (NSString *itemKey in [[[schemaPrivs entity] attributesByName] allKeys]) {
-				if ([itemKey hasSuffix:@"_priv"] && [[schemaPrivs valueForKey:itemKey] boolValue]) {
-					enabledPermissions = YES;
-					break;
-				}
-			}
-		}
+        if ([[treeController selectedObjects] count] > 0) {
+            // If the schema has permissions set, highlight with a yellow background
+            BOOL enabledPermissions = NO;
+            SPUserMO *user = [[treeController selectedObjects] objectAtIndex:0];
+            NSArray *results = [self _fetchPrivsWithUser:[[user parent] valueForKey:@"user"]
+                                                  schema:[schemaName stringByReplacingOccurrencesOfString:@"_" withString:@"\\_"]
+                                                    host:[user valueForKey:@"host"]];
+            if ([results count]) {
+                NSManagedObject *schemaPrivs = [results objectAtIndex:0];
+                for (NSString *itemKey in [[[schemaPrivs entity] attributesByName] allKeys]) {
+                    if ([itemKey hasSuffix:@"_priv"] && [[schemaPrivs valueForKey:itemKey] boolValue]) {
+                        enabledPermissions = YES;
+                        break;
+                    }
+                }
+            }
 
-		if (enabledPermissions) {
-			[cell setDrawsBackground:YES];
-			[cell setBackgroundColor:[NSColor colorWithDeviceRed:1.f green:1.f blue:0.f alpha:0.2]];
-		} else {
-			[cell setDrawsBackground:NO];
-		}
-	}
+            if (enabledPermissions) {
+                [cell setDrawsBackground:YES];
+                [cell setBackgroundColor:[NSColor colorWithDeviceRed:1.f green:1.f blue:0.f alpha:0.2]];
+            } else {
+                [cell setDrawsBackground:NO];
+            }
+        }
+    }
 }
 
 #pragma mark -

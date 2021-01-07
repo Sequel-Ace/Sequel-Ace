@@ -233,14 +233,95 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 }
 
 - (void)testnumberLiterals{
-	int const iterations = 1000000;
-	
-	for (int i = -100; i < iterations; i++) {
-		@autoreleasepool {
-			XCTAssertEqualObjects(@(i), [NSNumber numberWithDouble:i]);
-		}
-	}
+
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        for (int i = -100; i < iterations; i++) {
+            @autoreleasepool {
+                XCTAssertEqualObjects(@(i), [NSNumber numberWithDouble:i]);
+            }
+        }
+    }];
 }
+
+// 0.198s
+- (void)testSafeSubstringWithRangePerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        NSString *str = @"These pretzels are making me thirsty...";
+
+        NSRange range = NSMakeRange(0, 14);
+        for (int i = -100; i < iterations; i++) {
+            @autoreleasepool {
+                NSString __unused *res2 = [str safeSubstringWithRange:range];
+            }
+        }
+    }];
+}
+
+//0.19s
+- (void)testSubstringWithRangePerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        NSString *str = @"These pretzels are making me thirsty...";
+
+        NSRange range = NSMakeRange(0, 14);
+        for (int i = -100; i < iterations; i++) {
+            @autoreleasepool {
+                NSString __unused *res2 = [str substringWithRange:range];
+            }
+        }
+    }];
+}
+
+- (void)testSafeSubstringWithRange{
+
+    NSString *str = @"These pretzels are making me thirsty...";
+    NSRange range = NSMakeRange(0, str.length+1);
+
+//    //Raises an NSRangeException if (aRange.location - 1) or (aRange.location + aRange.length - 1) lies beyond the end of the receiver
+    XCTAssertThrows([str substringWithRange:range]);
+    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+
+    range = NSMakeRange(str.length+1, 1);
+
+    XCTAssertThrows([str substringWithRange:range]);
+    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+
+    range = NSMakeRange(str.length/2, (str.length/2)+2);
+
+    XCTAssertThrows([str substringWithRange:range]);
+    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+
+    range = NSMakeRange(str.length-1, 2);
+
+    XCTAssertThrows([str substringWithRange:range]);
+    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+
+
+    range = NSMakeRange(0, 14);
+
+    NSString *res = [str substringWithRange:range];
+    NSString *res2 = [str safeSubstringWithRange:range];
+
+    NSLog(@"res: %@", res);
+
+    XCTAssertEqualObjects(res, res2);
+
+    range = NSMakeRange(str.length-1, 1);
+
+    res = [str substringWithRange:range];
+    res2 = [str safeSubstringWithRange:range];
+
+    NSLog(@"res: %@", res);
+
+    XCTAssertEqualObjects(res, res2);
+
+}
+
 
 /**
  * stringByRemovingCharactersInSet test case.

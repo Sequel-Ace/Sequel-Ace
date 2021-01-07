@@ -971,7 +971,7 @@
 				}
 				
 				// Set up the field names import string for INSERT or REPLACE INTO
-				[insertBaseString appendString:csvImportHeaderString];
+				[insertBaseString appendStringOrNil:csvImportHeaderString];
 				if(!importMethodIsUpdate) {
 					NSString *fieldName;
 					[insertBaseString appendFormat:@"%@ (", [selectedTableTarget backtickQuotedString]];
@@ -986,14 +986,14 @@
 								// Store column index for each geometry field to be able to apply ST_GeomFromText() while importing
 								if([geometryFields containsObject:fieldName = [fieldMappingTableColumnNames safeObjectAtIndex:i] ])
 									[geometryFieldsMapIndex addIndex:i];
-								[insertBaseString appendString:[fieldName backtickQuotedString]];
+								[insertBaseString appendStringOrNil:[fieldName backtickQuotedString]];
 							} else if([bitFields count]) {
 								// Store column index for each bit field to be able to wrap it into b'…' while importing
 								if([bitFields containsObject:fieldName = [fieldMappingTableColumnNames safeObjectAtIndex:i] ])
 									[bitFieldsMapIndex addIndex:i];
-								[insertBaseString appendString:[fieldName backtickQuotedString]];
+								[insertBaseString appendStringOrNil:[fieldName backtickQuotedString]];
 							} else {
-								[insertBaseString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
+								[insertBaseString appendStringOrNil:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 							}
 						}
 					}

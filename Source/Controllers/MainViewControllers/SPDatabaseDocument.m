@@ -399,14 +399,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	if ([self isUntitled]) [[parentWindow standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
 
 	// Get the mysql version
-	mySQLVersion = [[NSString alloc] initWithString:[mySQLConnection serverVersionString]];
+    mySQLVersion = [mySQLConnection serverVersionString] ;
 
-    [[FIRCrashlytics crashlytics] setCustomValue:mySQLVersion forKey:@"serverVersion"];
+    if(mySQLVersion != nil){
+        [[FIRCrashlytics crashlytics] setCustomValue:mySQLVersion forKey:@"serverVersion"];
+    }
+
+    NSString *tmpDb = [connectionController database];
 
 	// Update the selected database if appropriate
-	if ([connectionController database] && ![[connectionController database] isEqualToString:@""]) {
-		
-		selectedDatabase = [[NSString alloc] initWithString:[connectionController database]];
+	if (tmpDb != nil && ![tmpDb isEqualToString:@""]) {
+		selectedDatabase = tmpDb;
 		[spHistoryControllerInstance updateHistoryEntries];
 	}
 
