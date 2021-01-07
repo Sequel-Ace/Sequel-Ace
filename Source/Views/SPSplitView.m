@@ -240,13 +240,13 @@
 			animationDuration *= 10;
 		}
 
-		// Modify the duration by the proportion of any interrupted animation
-		CGFloat fullViewSize = [self _lengthOfView:[[viewToAnimate subviews] objectAtIndex:0]];
-		if (shouldCollapse) {
-			animationDuration *= animationStartSize / fullViewSize;
-		} else {
-			animationDuration *= (animationTargetSize - animationStartSize) / fullViewSize;
-		}
+        // don't divide by zero
+        CGFloat fullViewSize = [self _lengthOfView:[[viewToAnimate subviews] objectAtIndex:0]];
+        if (shouldCollapse) {
+            animationDuration *= (fullViewSize > 0) ? animationStartSize / fullViewSize : 0;
+        } else {
+            animationDuration *= (fullViewSize > 0) ? (animationTargetSize - animationStartSize) / fullViewSize : 0;
+        }
 
 		// Create an object to avoid NSTimer retain cycles
 		animationRetainCycleBypassObject = [[SPSplitViewAnimationRetainCycleBypass alloc] initWithParent:self]; // TODO: leaks
