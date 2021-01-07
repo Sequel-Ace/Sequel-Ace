@@ -114,15 +114,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
     // Collapse the pane if the last state was collapsed
+    // after a delay - to fix #719
     if(user_defaults_get_bool_ud(SPTableInformationPanelCollapsed, prefs) == YES){
-        if(is_big_sur() == YES){
-            executeOnMainThreadAfterADelay(^{
-                [self->tableListSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
-            }, 3);
-        }
-        else{
-            [tableListSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
-        }
+        executeOnMainThreadAfterADelay(^{
+            [self->tableListSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
+        }, 3);
     }
 
 	// Configure the table list filter, starting it collapsed
