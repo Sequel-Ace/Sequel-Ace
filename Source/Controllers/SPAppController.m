@@ -254,6 +254,13 @@
         NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
         FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
 
+        if(is_big_sur() == YES){
+            NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
+            [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];
+            [dbViewInfoPanelSplit addObject:@"0.000000, 586.500000, 359.500000, 190.500000, NO, NO"];
+            [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
+        }
+
         // set some keys to help us diagnose issues
         [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryAutoComplete, prefs)) forKey:@"CustomQueryAutoComplete"];
         [crashlytics setCustomValue:@(user_defaults_get_bool_ud(SPCustomQueryEnableSyntaxHighlighting, prefs)) forKey:@"CustomQueryEnableSyntaxHighlighting"];
