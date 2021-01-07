@@ -280,6 +280,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// If no table has been supplied, clear the table interface and return
 	if (!aTable || [aTable isEqualToString:@""]) {
+        SPLog(@"!aTable || [aTable isEqualToString:, calling setTableDetails:nil");
 		[[self onMainThread] setTableDetails:nil];
 		return;
 	}
@@ -287,6 +288,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Attempt to retrieve the table encoding; if that fails (indicating an error occurred
 	// while retrieving table data), or if the Rows variable is null, clear and return
 	if (![tableDataInstance tableEncoding] || [[tableDataInstance statusValueForKey:@"Rows"] isNSNull]) {
+        SPLog(@"![tableDataInstance tableEncoding] || [[tableDataInstance statusValueForKey:, calling setTableDetails:nil");
 		[[self onMainThread] setTableDetails:nil];
 		return;
 	}
@@ -301,6 +303,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 									[tableDataInstance columnNames], @"columnNames",
 									[tableDataInstance getConstraints], @"constraints",
 									nil];
+
+    SPLog(@"calling setTableDetails:%@", tableDetails);
 	[[self onMainThread] setTableDetails:tableDetails];
 
 	// Init copyTable with necessary information for copying selected rows as SQL INSERT
@@ -762,8 +766,23 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Ensure the number of columns are unchanged; if the column count has changed, abort the load
 	// and queue a full table reload.
+
+    NSArray __block *selectedItems = nil;
+
+    SPMainQSync(^{
+        selectedItems = [self->tablesListInstance selectedTableItems];
+    });
+
+    SPLog(@"[selectedItems count] = %lu", (unsigned long)[selectedItems count]);
+
 	BOOL fullTableReloadRequired = NO;
-	if (resultStore && [dataColumns count] != [resultStore numberOfFields]) {
+    // only do the column vs numfields check if selectedItems.count == 1
+    // otherwise, when selecting two (or more) tables to export, the code falls into this block when it shouldn't
+    // and cancels the current query, which always seems to fail, which then triggers the diabolical reconnect code
+	if (selectedItems.count == 1 && resultStore && ([dataColumns count] != [resultStore numberOfFields])) {\
+        SPLog(@"mySQLConnection cancelCurrentQuery");
+        SPLog(@"[dataColumns count] = %lu", (unsigned long)[dataColumns count]);
+        SPLog(@"[resultStore numberOfFields] = %lu", (unsigned long)[resultStore numberOfFields]);
 		[tableDocumentInstance disableTaskCancellation];
 		[mySQLConnection cancelCurrentQuery];
 		[resultStore cancelResultLoad];
@@ -911,7 +930,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	else
 	{
 		// Trigger a full reload if required
-		if (fullTableReloadRequired) [self reloadTable:self];
+        if (fullTableReloadRequired){
+            SPLog(@"Trigger a full reload");
+            [self reloadTable:self];
+
+        }
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
 }
