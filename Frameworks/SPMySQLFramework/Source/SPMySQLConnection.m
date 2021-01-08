@@ -633,6 +633,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// options, encodings and connection state.
 	bool falseMyBool = FALSE;
 	mysql_options(theConnection, MYSQL_OPT_RECONNECT, &falseMyBool);
+    
+    /* Connect via TCP, and not via Unix domain sockets */
+    if (!useSocket) {
+        const uint proto = MYSQL_PROTOCOL_TCP;
+        mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
+    }
 
 	// Set the connection timeout
 	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&timeout);
