@@ -533,7 +533,7 @@
 "auto_increment: %@" = "incremento: %@";
 
 /* Encoding autodetect menu item */
-"Autodetect" = "Autodetect";
+"Autodetect" = "Detectar automáticamente";
 
 /* background label for color table (Prefs > Editor) */
 "Background" = "Fondo";
@@ -610,7 +610,7 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Se han realizado modificaciones, que se perderán si la ventana se cierra. ¿Está seguro que desea continuar?";
 
 /* character set client: %@ */
-"character set client: %@" = "character set client: %@";
+"character set client: %@" = "conjunto de caracteres de cliente: %@";
 
 /* CHECK one or more tables - result title */
 "Check %@" = "Comprobar %@";
@@ -903,7 +903,7 @@
 "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!";
 
 /* customize file name label */
-"Customize Filename (%@)" = "Customize Filename (%@)";
+"Customize Filename (%@)" = "Personalizar nombre de archivo (%@)";
 
 /* data access: %@ (%@) */
 "data access: %@ (%@)" = "acceso a datos: %1$@ (%2$@)";
@@ -1194,7 +1194,7 @@
 "Error creating trigger" = "Error al crear el disparador";
 
 /* error for message */
-"Error for" = "Error for";
+"Error for" = "Error en";
 
 /* error for bash command ($1), $2=message */
 "Error for “%1$@”:\n%2$@" = "Error for “%1$@”:\n%2$@";
@@ -1203,7 +1203,7 @@
 "Error moving field" = "Error al trasladar el campo";
 
 /* error occurred */
-"error occurred" = "error occurred";
+"error occurred" = "se ha producido un error";
 
 /* error reading import file */
 "Error reading import file." = "Error al leer el archivo de importación.";
@@ -1296,7 +1296,7 @@
 "Error while saving “%@”." = "Error al guardar “%@”.";
 
 /* Errors title */
-"Errors" = "Errors";
+"Errors" = "Errores";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
 "Example:" = "Ejemplo:";
@@ -1636,10 +1636,10 @@
 "items" = "ítems";
 
 /* javascript exception */
-"JavaScript Exception" = "JavaScript Exception";
+"JavaScript Exception" = "Excepción javascript";
 
 /* javascript parsing error */
-"JavaScript Parsing Error" = "JavaScript Parsing Error";
+"JavaScript Parsing Error" = "Error analizando javascript";
 
 /* key label (Navigator) */
 "Key" = "Clave";
@@ -1678,7 +1678,7 @@
 "Loading page %lu..." = "Cargando página %lu...";
 
 /* Loading referece task string */
-"Loading reference..." = "Loading reference...";
+"Loading reference..." = "Cargando referencia...";
 
 /* Loading table data string */
 "Loading table data..." = "Cargando datos de la tabla...";
@@ -1836,7 +1836,7 @@
 "No files could be created" = "No se han podido crear los archivos";
 
 /* no item found message */
-"No item found" = "No item found";
+"No item found" = "Ítem no encontrado";
 
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No se ha podido asignar el puerto local al túnel SSH.";
@@ -1868,7 +1868,7 @@
 "None" = "Ninguno";
 
 /* not available label */
-"Not available" = "Not available";
+"Not available" = "No disponible";
 
 /* Argument count (ContentFilterManager) */
 "Number of arguments: %lu" = "Número de argumentos: %lu";
@@ -1955,13 +1955,13 @@
 "Optimized type for field '%@'" = "Tipo óptimo de campo '%@'";
 
 /* optional placeholder string */
-"optional" = "optional";
+"optional" = "opcional";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
-"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
+"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "El parámetro que se pasa no se puede interpretar. Única cadena o una matriz (con 2 elementos) se permite.";
 
 /* Permission Denied */
-"Permission Denied" = "Permission Denied";
+"Permission Denied" = "Permiso denegado";
 
 /* please choose a favorite connection view label */
 "Please choose a favorite" = "Por favor, elija un favorito";
@@ -2067,7 +2067,7 @@
 "Refresh Databases" = "Actualizar bases de datos";
 
 /* refresh list menu item */
-"Refresh List" = "Refresh List";
+"Refresh List" = "Actualizar lista";
 
 /* toolbar item label for switching to the Table Relations tab */
 "Relations" = "Relaciones";
@@ -2085,7 +2085,7 @@
 "Reloading..." = "Volviendo a cargar...";
 
 /* remote error */
-"Remote Error" = "Remote Error";
+"Remote Error" = "Error remoto";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
@@ -2170,7 +2170,7 @@
 "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line.";
 
 /* required placeholder string */
-"required" = "required";
+"required" = "requerido";
 
 /* description of smallint */
 "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range.";
@@ -2284,7 +2284,7 @@
 "Save View As..." = "Guardar vista como...";
 
 /* schema path header for completion tooltip */
-"Schema path:" = "Schema path:";
+"Schema path:" = "Ruta de esquema:";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Buscar en documentación de MySQL";
@@ -2475,7 +2475,7 @@
 "Standard memory" = "Memoria estándar";
 
 /* started */
-"started" = "started";
+"started" = "iniciado";
 
 /* status file for sequelace url scheme command couldn't be written error message */
 "Status file for sequelace url scheme command couldn't be written!" = "¡El archivo de estado para el esquema de comando URL de sequelace no se ha podido escribir!";
@@ -3061,7 +3061,7 @@
 "User has no hosts" = "El usuario no tiene equipos";
 
 /* user-defined value */
-"User-defined value" = "User-defined value";
+"User-defined value" = "Valor definido por el usuario";
 
 /* toolbar item label for switching to the User Manager tab */
 "Users" = "Usuarios";
@@ -3206,3 +3206,12 @@
 
 /* Title for User window error */
 "User Data Error" = "User Data Error";
+
+/* Title for Stale Bookmark file selection dialog */
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";
+
+/* Title for File Preference file selection dialog */
+"Please choose a file or folder to grant Sequel Ace access to." = "Please choose a file or folder to grant Sequel Ace access to.";
+
+/* Title for Network Preference ssh config file selection dialog */
+"Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
