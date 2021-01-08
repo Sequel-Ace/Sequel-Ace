@@ -848,7 +848,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 
                         if(errors.length>0){
-                            [[errorText onMainThread] setText:errors];
+                            [[errorText onMainThread] setString:errors];
                         }
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
