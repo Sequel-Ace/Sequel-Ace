@@ -1,3 +1,40 @@
+## [3.1.0]
+
+### Added
+01fa877d, Copy tables between databases 
+
+### Fixed
+9bd486ab,  table information eye symbol crash
+5ae47f9d,  exporting multiple tables 
+1bcfe5f4,  changing custom query font and respect font when inserting favourite
+d21af610,  some crashes
+c08f883b,  some crashes
+0738da94,  Two custom queries with syntax errors = crash  
+d6e987d9, Fix cutoff file names in Preferences 
+02b68274,   display json string properly in edit popup
+e424db42,  - SSHTunnel crash
+8cca7500,  more crashes
+9430b976, Improve query editor performance - Revert double click functionality by overriding NSTextStorage 
+dddf027d,  a few new crashes
+4030d3fb, Fix quick connect not clearing fields 
+
+### Changed
+da1c1c8c,  better handle stale bookmarks 
+5474b93f,  Better export error handling
+2664a177, Bookmarks improvements 
+460e706b, Always show tab bar as native macOS apps, cleanup tab bar code 
+
+### Removed
+
+
+### Infra
+ae7d0dd7, Improved clarity of bug report issue template 
+e254ba0e, More doc tweaks  
+4e8931d3, Doc tweaks 
+4044855c,  Connection logging
+dea19267, App Sandbox and Secure Bookmarks docs 
+051134ab,  fave colour support optimisation
+
 ## [3.0.2]
 
 ### Added
