@@ -3941,7 +3941,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             if ([queryWindow isVisible]) {
                 toolbarItem.image = showConsoleImage;
             } else {
-                 CLS_LOG(@"macOS < 11 and queryWindow is NOT Visible");
                 toolbarItem.image = hideConsoleImage;
             }
         }
