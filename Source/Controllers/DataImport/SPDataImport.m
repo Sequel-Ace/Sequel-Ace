@@ -1355,7 +1355,7 @@
 		// SET clause
 		if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0 ) {
 			if ([setString length] > 1) [setString appendString:@","];
-			[setString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
+			[setString appendStringOrNil:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 			[setString appendString:@"="];
 			// Append the data
 			// - check for global values
@@ -1400,7 +1400,7 @@
 				if ([cellData isNSNull]) {
 					[setString appendString:@"NULL"];
 				} else {
-					[setString appendString:[mySQLConnection escapeAndQuoteString:cellData]];
+					[setString appendStringOrNil:[mySQLConnection escapeAndQuoteString:cellData]];
 				}
 			}
 		}
@@ -1408,7 +1408,7 @@
 		else if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 2 )
 		{
 			if ([whereString length] > 7) [whereString appendString:@" AND "];
-			[whereString appendString:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
+			[whereString appendStringOrNil:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
 			// Append the data
 			// - check for global values
 			if(fieldMappingArrayHasGlobalVariables && mapColumn >= numberOfImportDataColumns) {
@@ -1453,7 +1453,7 @@
 					[whereString appendString:@" IS NULL"];
 				} else {
 					[whereString appendString:@"="];
-					[whereString appendString:[mySQLConnection escapeAndQuoteString:cellData]];
+					[whereString appendStringOrNil:[mySQLConnection escapeAndQuoteString:cellData]];
 				}
 			}
 		}
