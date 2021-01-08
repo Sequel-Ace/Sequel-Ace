@@ -2875,7 +2875,7 @@
 "Time" = "Time";
 
 /* message of error when using 'localhost' for a network connection */
-"To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'." = "To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'.";
+"To MySQL, 'localhost' is a special host which often means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should generally be used instead of 'localhost'." = "To MySQL, 'localhost' is a special host which often means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should generally be used instead of 'localhost'.";
 
 /* toolbar item label for switching to the Table Triggers tab */
 "Triggers" = "Triggers";
