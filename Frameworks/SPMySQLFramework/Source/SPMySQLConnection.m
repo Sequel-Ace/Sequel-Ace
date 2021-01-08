@@ -635,7 +635,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	mysql_options(theConnection, MYSQL_OPT_RECONNECT, &falseMyBool);
     
     /* Connect via TCP, and not via Unix domain sockets */
-    if (!useSocket) {
+    if (useSocket) {
+        const uint proto = MYSQL_PROTOCOL_SOCKET;
+        mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
+    } else {
         const uint proto = MYSQL_PROTOCOL_TCP;
         mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
     }
