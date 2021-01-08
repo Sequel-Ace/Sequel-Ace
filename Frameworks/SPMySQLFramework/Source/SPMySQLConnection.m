@@ -634,7 +634,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	bool falseMyBool = FALSE;
 	mysql_options(theConnection, MYSQL_OPT_RECONNECT, &falseMyBool);
     
-    /* Connect via TCP, and not via Unix domain sockets */
+    // Set the connection protocol properly (needed so localhost can be used for TCP/IP)
     if (useSocket) {
         const uint proto = MYSQL_PROTOCOL_SOCKET;
         mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
@@ -662,7 +662,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (enableClearTextPlugin) {
 		mysql_options(theConnection, MYSQL_ENABLE_CLEARTEXT_PLUGIN, [@"On" UTF8String]);
 	}
-
+    
 	// Set up the connection variables in the format MySQL needs, from the class-wide variables
 	const char *theHost = NULL;
 	const char *theUsername = "";
