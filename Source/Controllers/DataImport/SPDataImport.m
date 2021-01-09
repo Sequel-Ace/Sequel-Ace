@@ -1458,7 +1458,7 @@
                     NSString *tmpStr = [mySQLConnection escapeAndQuoteString:cellData];
                     if(tmpStr != nil){
                         [whereString appendString:@"="];
-                        [whereString appendStringOrNil:[mySQLConnection escapeAndQuoteString:cellData]];
+                        [whereString appendStringOrNil:tmpStr];
                     }
 				}
 			}
