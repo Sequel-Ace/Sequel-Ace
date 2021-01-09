@@ -30,7 +30,6 @@
 
 #import "SPTableFilterParser.h"
 #import "RegexKitLite.h"
-@import Firebase;
 
 @interface SPTableFilterParser ()
 + (NSString *)escapeFilterArgument:(NSString *)argument againstClause:(NSString *)clause;
@@ -82,7 +81,6 @@
 	[clause setString:_clause];
 
     SPLog(@"clause: %@", clause);
-    CLS_LOG(@"clause: %@", clause);
 
 	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY " withString:(caseSensitive) ? @"BINARY " : @""];
 	[clause flushCachedRegexData];
