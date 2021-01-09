@@ -956,7 +956,7 @@
                 NSUInteger fmaCount = fieldMappingArray.count;
                 NSUInteger fmoCount = fieldMapperOperator.count;
 
-                if(fmaCount >= fmoCount){
+                if(fmaCount > fmoCount){
                     SPLog(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
                     CLS_LOG(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
                 }
