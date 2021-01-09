@@ -3212,3 +3212,6 @@
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "Invalid JSON";
+
+/* Applying syntax highlighting task description */
+"Applying syntax highlighting..." = "Applying syntax highlighting...";
