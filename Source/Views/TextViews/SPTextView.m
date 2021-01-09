@@ -1052,6 +1052,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 - (void)printOperationDidRun:(NSPrintOperation *)printOperation  success:(BOOL)success  contextInfo:(void *)contextInfo
 {
 	// Refresh syntax highlighting
+    SPLog(@"Refresh syntax highlighting, calling doSyntaxHighlightingWithForce");
+
 	[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.01];
 }
 
@@ -2348,9 +2350,17 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 - (void)paste:(id)sender {
 	[super paste:sender];
 
+    unsigned long pasteLength = [[self string] length];
+
 	// CMD+V - paste
-    if ([[self string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+    if (pasteLength < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+	SPLog(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
+	CLS_LOG(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
         [self doSyntaxHighlightingWithForce:YES];
+    }
+    else{
+	SPLog(@"paste len %lu > %i, NOT calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
+	CLS_LOG(@"paste len %lu > %i, NOT calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
     }
 }
 
@@ -2593,6 +2603,10 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 }
 
 - (void)removeSyntaxHighlighting {
+
+    SPLog(@"removeSyntaxHighlighting called");
+    CLS_LOG(@"removeSyntaxHighlighting called");
+
 	if (self.syntaxHighlightingApplied) {
 		self.syntaxHighlightingApplied = NO;
 
@@ -2692,6 +2706,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		textRange = NSIntersectionRange(textRange, NSMakeRange(0, [textStore length]));
 
 		if (!textRange.length) {
+            SPLog(@"!textRange.length, returning");
 			return;
 		}
 	} else {
@@ -3250,8 +3265,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			textBufferSizeIncreased = NO;
 
 		if (delta < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+            SPLog(@"delta [%li] < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
+            CLS_LOG(@"delta [%li] < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
 			[self doSyntaxHighlightingWithForce:NO];
 		}
+        else{
+            SPLog(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], NOT calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
+            CLS_LOG(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], NOT calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
+        }
 
 	} else {
 		[customQueryInstance setTextViewWasChanged:NO];
@@ -3444,6 +3465,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		if (content) {
 			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+            SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
 		}
@@ -3451,6 +3473,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 		if (content) {
 			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+            SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
 		}

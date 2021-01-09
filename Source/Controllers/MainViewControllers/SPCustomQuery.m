@@ -1713,6 +1713,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView scrollRangeToVisible:NSMakeRange([query length], 0)];
     
     if ([[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+        SPLog(@"[[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH, calling doSyntaxHighlightingWithForce");
+        CLS_LOG(@"[[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH, calling doSyntaxHighlightingWithForce");
         [textView doSyntaxHighlightingWithForce:YES];
     }
 }
