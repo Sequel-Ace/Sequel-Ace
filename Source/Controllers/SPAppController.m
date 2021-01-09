@@ -747,7 +747,7 @@
 		connect = @YES;
 	}
 
-	if([[url host] length] && ![[url host] isEqualToString:@"localhost"])
+	if([[url host] length])
 		[details setObject:[url host] forKey:@"host"];
 	else
 		[details setObject:@"127.0.0.1" forKey:@"host"];

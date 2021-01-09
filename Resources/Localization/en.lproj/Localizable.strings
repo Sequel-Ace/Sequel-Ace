@@ -2874,9 +2874,6 @@
 /* export filename time token */
 "Time" = "Time";
 
-/* message of error when using 'localhost' for a network connection */
-"To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'." = "To MySQL, 'localhost' is a special host and means that a socket connection should be used.\n\nDid you mean to use a socket connection, or to connect to the local machine via a port?  If you meant to connect via a port, '127.0.0.1' should be used instead of 'localhost'.";
-
 /* toolbar item label for switching to the Table Triggers tab */
 "Triggers" = "Triggers";
 
@@ -3146,9 +3143,6 @@
 
 /* You cannot delete the last field in a table. Delete the table instead. */
 "You cannot delete the last field in a table. Delete the table instead." = "You cannot delete the last field in a table. Delete the table instead.";
-
-/* title of error when using 'localhost' for a network connection */
-"You have entered 'localhost' for a non-socket connection" = "You have entered 'localhost' for a non-socket connection";
 
 /* SSL connection requested but not established error detail */
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.";
