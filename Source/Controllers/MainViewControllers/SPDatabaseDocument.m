@@ -6490,7 +6490,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		});
 
 		// Add a history entry
-		[spHistoryControllerInstance updateHistoryEntries];
+        @synchronized(self) {
+            [spHistoryControllerInstance updateHistoryEntries];
+        }
 		// Empty the loading pool and exit the thread
 		[self endTask];
 		
