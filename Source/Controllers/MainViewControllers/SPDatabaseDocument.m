@@ -6020,13 +6020,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
-        if (![[self onMainThread] couldCommitCurrentViewActions]) {
-            [[self->mainToolbar onMainThread] setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
-        [[self->tableTabView onMainThread] selectTabViewItemAtIndex:0];
-        [[self->mainToolbar onMainThread] setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self->tableTabView selectTabViewItemAtIndex:0];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
