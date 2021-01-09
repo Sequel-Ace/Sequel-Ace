@@ -64,5 +64,12 @@
     }
 }
 
+- (void)safeRemoveObjectAtIndex:(NSUInteger)index{
+    id object = [self safeObjectAtIndex:index];
+    if (object != nil && object != [NSNull null]) {
+        [self removeObjectAtIndex:index];
+    }
+}
+
 
 @end

@@ -174,4 +174,46 @@
     }];
 }
 
+- (void)testSafeRemoveObjectAtIndex {
+
+    NSMutableArray *testArray = [NSMutableArray arrayWithArray:@[@"first", @"second", @"third", @"fourth"]];
+
+    [testArray safeRemoveObjectAtIndex:0];
+
+    XCTAssertTrue(testArray.count == 3);
+
+    XCTAssertNoThrow([testArray safeRemoveObjectAtIndex:testArray.count]);
+    XCTAssertThrows([testArray removeObjectAtIndex:testArray.count]);
+
+    XCTAssertNoThrow([testArray safeRemoveObjectAtIndex:-1]);
+    XCTAssertThrows([testArray removeObjectAtIndex:-1]);
+
+}
+// 0.0272s
+- (void)testPerformanceRemoveObjectAtIndex {
+
+    [self measureBlock:^{
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        for (NSUInteger i = randomArray.count-1; i > 0; i--) {
+            @autoreleasepool {
+                [randomArray removeObjectAtIndex:i];
+            }
+        }
+    }];
+}
+//0.0289s
+- (void)testPerformanceSafeRemoveObjectAtIndex {
+
+    [self measureBlock:^{
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        for (NSUInteger i = randomArray.count-1; i > 0; i--) {
+            @autoreleasepool {
+                [randomArray safeRemoveObjectAtIndex:i];
+            }
+        }
+    }];
+}
+
 @end
