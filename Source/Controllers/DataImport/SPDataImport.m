@@ -1355,8 +1355,11 @@
 		// SET clause
 		if ([[fieldMapperOperator safeObjectAtIndex:i] integerValue] == 0 ) {
 			if ([setString length] > 1) [setString appendString:@","];
-			[setString appendStringOrNil:[[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString]];
-			[setString appendString:@"="];
+            NSString *tmpStr = [[fieldMappingTableColumnNames safeObjectAtIndex:i] backtickQuotedString];
+            if(tmpStr != nil){
+                [setString appendStringOrNil:tmpStr];
+                [setString appendString:@"="];
+            }
 			// Append the data
 			// - check for global values
 			if(fieldMappingArrayHasGlobalVariables && mapColumn >= numberOfImportDataColumns) {
@@ -1452,8 +1455,11 @@
 				if ([cellData isNSNull]) {
 					[whereString appendString:@" IS NULL"];
 				} else {
-					[whereString appendString:@"="];
-					[whereString appendStringOrNil:[mySQLConnection escapeAndQuoteString:cellData]];
+                    NSString *tmpStr = [mySQLConnection escapeAndQuoteString:cellData];
+                    if(tmpStr != nil){
+                        [whereString appendString:@"="];
+                        [whereString appendStringOrNil:[mySQLConnection escapeAndQuoteString:cellData]];
+                    }
 				}
 			}
 		}
