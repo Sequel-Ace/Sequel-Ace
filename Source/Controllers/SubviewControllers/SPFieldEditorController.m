@@ -538,9 +538,20 @@ typedef enum {
                         if([NSJSONSerialization isValidJSONObject:jsonObject]){
                             NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
                             NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
-                            [jsonTextView setString:prettyPrintedJson];
-                        }else{
-                            [jsonTextView setString:sheetEditData];
+                            if(prettyJsonData != nil){
+                                [jsonTextView setString:prettyPrintedJson];
+                            }
+                            else{
+                                [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                            }
+                        }
+                        else{
+                            if(sheetEditData != nil){
+                                [jsonTextView setString:sheetEditData];
+                            }
+                            else{
+                                [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                            }
                         }
                     }
                     else{

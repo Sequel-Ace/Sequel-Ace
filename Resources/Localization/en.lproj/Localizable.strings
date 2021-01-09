@@ -3209,3 +3209,6 @@
 
 /* Title for Network Preference ssh config file selection dialog */
 "Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
+
+/* Message for field editor JSON segment when JSON is invalid */
+"Invalid JSON" = "Invalid JSON";
