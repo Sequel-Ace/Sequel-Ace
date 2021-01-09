@@ -258,6 +258,8 @@ import os.log
 
         // A file chosen from an NSOpen/SavePanel already has access
         // no need to start access again here again here
+        Crashlytics.crashlytics().log("Adding bookmark for: \(url.absoluteString)")
+
 
         for (index, bookmarkDict) in bookmarks.enumerated() {
             if bookmarkDict[url.absoluteString] != nil {
@@ -269,6 +271,7 @@ import os.log
                 else{
                     // JCS - Not sure we'll ever get here
                     os_log("Removing existing STALE bookmark for: %@", log: log, type: .debug, url.absoluteString)
+                    Crashlytics.crashlytics().log("Removing existing STALE bookmark for: \(url.absoluteString)")
                     if bookmarks[safe: index] != nil{
                         bookmarks.remove(at: index)
                     }
