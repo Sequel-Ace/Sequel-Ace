@@ -52,7 +52,6 @@
 @synthesize isMySQL6;
 @synthesize supportsCreateUser;
 @synthesize supportsRenameUser;
-@synthesize supportsDropUser;
 @synthesize supportsFullDropUser;
 @synthesize supportsUserMaxVars;
 @synthesize supportsShowPrivileges;
@@ -125,7 +124,6 @@
 	isMySQL5 = (serverMajorVersion == 5);
 	isMySQL6 = (serverMajorVersion == 6);
 	
-	
 	// The table information_schema.engines wasn't added until MySQL 5.1.5
 	supportsInformationSchemaEngines = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:1];
 	
@@ -134,9 +132,6 @@
 	
 	// The RENAME USER statement wasn't added until MySQL 5.0.2
 	supportsRenameUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
-	
-	// The DROP USER statement wasn't added until MySQL 4.1.1
-	supportsDropUser = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:1];
 	
 	// Similarly before MySQL 5.0.2 the DROP USER statement only removed users with no privileges
 	supportsFullDropUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
@@ -268,7 +263,6 @@
 
 	supportsCreateUser                      = NO;
 	supportsRenameUser                      = NO;
-	supportsDropUser                        = NO;
 	supportsFullDropUser                    = NO;
 	supportsUserMaxVars                     = NO;
 	supportsShowPrivileges                  = NO;

@@ -1083,14 +1083,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		if(![self _checkAndDisplayMySqlError]) return NO;
 	}
 	
-	// DROP USER was added in MySQL 4.1.1
-	if ([serverSupport supportsDropUser]) {
-		[connection queryString:[NSString stringWithFormat:@"DROP USER %@", droppedUser]];
-	}
-	// Otherwise manually remove the user rows from the mysql.user table
-	else {
-		[connection queryString:[NSString stringWithFormat:@"DELETE FROM mysql.user WHERE User = %@ and Host = %@", [[user valueForKey:@"user"] tickQuotedString], [[user valueForKey:@"host"] tickQuotedString]]];
-	}
+	// DROP USER
+    [connection queryString:[NSString stringWithFormat:@"DROP USER %@", droppedUser]];
 	
 	return [self _checkAndDisplayMySqlError];
 }

@@ -61,7 +61,6 @@ typedef struct {
 	// User account related
 	BOOL supportsCreateUser;
 	BOOL supportsRenameUser;
-	BOOL supportsDropUser;
 	BOOL supportsFullDropUser;
 	BOOL supportsUserMaxVars;
 	BOOL supportsShowPrivileges;
@@ -139,11 +138,6 @@ typedef struct {
  * @property supportsRenameUser Indicates if the server supports the RENAME USER statement
  */
 @property (readonly) BOOL supportsRenameUser;
-
-/**
- * @property supportsDropUser Indicates if the server supports the DROP USER statement
- */
-@property (readonly) BOOL supportsDropUser;
 
 /**
  * @property supportsFullDropUser Indicates if the server supports deleting a user's priveleges when issueing
