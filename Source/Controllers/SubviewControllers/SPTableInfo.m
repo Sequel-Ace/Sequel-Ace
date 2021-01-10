@@ -184,11 +184,6 @@
 			if (![[tableStatus objectForKey:@"Engine"] isNSNull]) {
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"engine: %@", @"Table Info Section : Table Engine"), [tableStatus objectForKey:@"Engine"]]];
 			}
-            
-            //Show Create_options
-            if (![[tableStatus objectForKey:@"Create_options"] isNSNull]) {
-                [info addObject:[NSString stringWithFormat:NSLocalizedString(@"notes: %@", @"Table Info Section : Table Notes"), [tableStatus objectForKey:@"Create_options"]]];
-            }
 
 			// Check for 'Rows' == NULL - information_schema database doesn't report row count for it's tables
 			if (![[tableStatus objectForKey:@"Rows"] isNSNull]) {
@@ -229,6 +224,12 @@
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"auto_increment: %@", @"Table Info Section : current value of auto_increment"),
 					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Auto_increment"] longLongValue]]]]];
 			}
+            
+            //Show create_options
+            NSString *tableCreateOptions = [tableStatus safeObjectForKey:@"Create_options"];
+            if([tableCreateOptions length]) {
+                [info addObject:[NSString stringWithFormat:NSLocalizedString(@"create_options: %@", @"Table Info Section : Table Create Options"), tableCreateOptions]];
+            }
 
 		}
 	}

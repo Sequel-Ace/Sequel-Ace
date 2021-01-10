@@ -877,6 +877,9 @@
 /* Create syntaxes for selected items label */
 "Create syntaxes for selected items" = "Create syntaxes for selected items";
 
+/* Table Info Section : table create options */
+"create_options: %@" = "create_options: %@";
+
 /* created: %@
  Table Info Section : time+date table was created at */
 "created: %@" = "created: %@";
@@ -1869,9 +1872,6 @@
 
 /* not available label */
 "Not available" = "Not available";
-
-/* Table Info Section : table notes */
-"notes: %@" = "notes: %@";
 
 /* Argument count (ContentFilterManager) */
 "Number of arguments: %lu" = "Number of arguments: %lu";
