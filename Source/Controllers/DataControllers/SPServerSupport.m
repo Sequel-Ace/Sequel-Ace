@@ -50,7 +50,6 @@
 @synthesize isMySQL4;
 @synthesize isMySQL5;
 @synthesize isMySQL6;
-@synthesize supportsInformationSchema;
 @synthesize supportsSpatialExtensions;
 @synthesize supportsShowCharacterSet;
 @synthesize supportsShowCollation;
@@ -131,8 +130,6 @@
 	isMySQL5 = (serverMajorVersion == 5);
 	isMySQL6 = (serverMajorVersion == 6);
 	
-	// The information schema database wasn't added until MySQL 5
-	supportsInformationSchema = (serverMajorVersion >= 5);
 	
 	// Support for spatial extensions wasn't added until MySQL 4.1
 	supportsSpatialExtensions = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
@@ -289,7 +286,6 @@
 	isMySQL5 = NO;
 	isMySQL6 = NO;
 	
-	supportsInformationSchema               = NO;
 	supportsSpatialExtensions               = NO;
 	supportsShowCharacterSet                = NO;
 	supportsShowCollation                   = NO;

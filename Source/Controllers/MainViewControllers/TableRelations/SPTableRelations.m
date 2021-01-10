@@ -249,36 +249,21 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	[refTablePopUpButton removeAllItems];
 
-	BOOL changeEncoding = ![[connection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[connection encoding] hasPrefix:@"utf8"];
 
 	// Use UTF8 for identifier-based queries
 	if (changeEncoding) {
 		[connection storeEncodingForRestoration];
-		[connection setEncoding:@"utf8"];
+		[connection setEncoding:@"utf8mb4"];
 	}
 
 	// Get all InnoDB tables in the current database
-	if ([[tableDocumentInstance serverSupport] supportsInformationSchema]) {
-		//MySQL 5.0+
-		SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [[tableDocumentInstance database] tickQuotedString]]];
-		[result setDefaultRowReturnType:SPMySQLResultRowAsArray];
-		[result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
-		for (NSArray *eachRow in result) {
-			[refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
-		}
-	}
-	else {
-		//this will work back to 3.23.0, innodb was added in 3.23.49
-		SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS FROM %@", [[tableDocumentInstance database] backtickQuotedString]]];
-		[result setDefaultRowReturnType:SPMySQLResultRowAsArray];
-		[result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
-		for (NSArray *eachRow in result) {
-			// col[1] was named "Type" < 4.1, "Engine" afterwards
-			if(![[[eachRow objectAtIndex:1] uppercaseString] isEqualToString:@"INNODB"]) continue;
-			// col[0] is the table name
-			[refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
-		}
-	}
+    SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [[tableDocumentInstance database] tickQuotedString]]];
+    [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
+    [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
+    for (NSArray *eachRow in result) {
+        [refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
+    }
 
 	// Reset other fields
 	[constraintName setStringValue:@""];

@@ -152,8 +152,8 @@
 		[metaString appendString:@"\xef\xbb\xbf"];
 	}
 
-	// we require utf8
-	[connection setEncoding:@"utf8"];
+	// we require utf8mb4
+	[connection setEncoding:@"utf8mb4"];
 	// …but utf8mb4 (aka "really" utf8) would be even better.
 	BOOL utf8mb4 = [connection setEncoding:@"utf8mb4"];
 	

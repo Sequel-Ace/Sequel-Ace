@@ -118,17 +118,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		if ([collations count] == 0) {
 			
 			// Try to retrieve the available collations from the database
-			if ([serverSupport supportsInformationSchema]) {
-				[collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];	
-			}
-			else if([serverSupport supportsShowCollation]) {
-				//use the 4.1-style query
-				NSArray *supportedCollations = [self _getDatabaseDataForQuery:@"SHOW COLLATION"];
-				//apply the sorting
-				supportedCollations = [supportedCollations sortedArrayUsingFunction:_sortMySQL4CollationEntry context:nil];
-				//convert the output to the information_schema style
-				[collations addObjectsFromArray:[SPDatabaseData _relabelCollationResult:supportedCollations]];
-			}
+            [collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];
 			
 			// If that failed, get the list of collations from the hard-coded list
 			if (![collations count]) {
@@ -162,17 +152,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			}
 
 			// Try to retrieve the available collations for the supplied encoding from the database
-			if ([serverSupport supportsInformationSchema]) {
-				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
-			}
-			else if([serverSupport supportsShowCollation]) {
-				//use the 4.1-style query (as every collation name starts with the charset name we can use the prefix search)
-				NSArray *supportedCollations = [self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SHOW COLLATION LIKE '%@%%'",characterSetEncoding]];
-				//apply the sorting
-				supportedCollations = [supportedCollations sortedArrayUsingFunction:_sortMySQL4CollationEntry context:nil];
-				
-				[characterSetCollations addObjectsFromArray:[SPDatabaseData _relabelCollationResult:supportedCollations]];
-			}
+            [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
 
 			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
 			if (![characterSetCollations count]) {
@@ -332,26 +312,7 @@ copy_return:
 			
 			// Try to retrieve the available character set encodings from the database
 			// Check the information_schema.character_sets table is accessible
-			if ([serverSupport supportsInformationSchema]) {
-				[characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
-			} 
-			else if ([serverSupport supportsShowCharacterSet]) {
-				NSArray *supportedEncodings = [self _getDatabaseDataForQuery:@"SHOW CHARACTER SET"];
-				
-				supportedEncodings = [supportedEncodings sortedArrayUsingFunction:_sortMySQL4CharsetEntry context:nil];
-				
-				for (NSDictionary *anEncoding in supportedEncodings) 
-				{
-					NSDictionary *convertedEncoding = [NSDictionary dictionaryWithObjectsAndKeys:
-						[anEncoding objectForKey:@"Charset"],           @"CHARACTER_SET_NAME",
-						[anEncoding objectForKey:@"Description"],       @"DESCRIPTION",
-						[anEncoding objectForKey:@"Default collation"], @"DEFAULT_COLLATE_NAME",
-						[anEncoding objectForKey:@"Maxlen"],            @"MAXLEN",
-					nil];
-					
-					[characterSetEncodings addObject:convertedEncoding];
-				}
-			}
+            [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
 
 			// If that failed, get the list of character set encodings from the hard-coded list
 			if (![characterSetEncodings count]) {			

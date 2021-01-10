@@ -81,11 +81,6 @@
  */
 - (BOOL)setEncoding:(NSString *)theEncoding
 {
-	// MySQL versions prior to 4.1 don't support encoding changes; return NO on those
-	// versions.
-	if (![self serverVersionIsGreaterThanOrEqualTo:4 minorVersion:1 releaseVersion:0]) {
-		return NO;
-	}
 
 	// If the supplied encoding is already set, return success
 	if ([encoding isEqualToString:theEncoding] && !encodingUsesLatin1Transport) {
@@ -203,7 +198,9 @@
 + (NSStringEncoding)stringEncodingForMySQLCharset:(const char *)mysqlCharset
 {
 	// Handle the most common cases first
-	if (!strcmp(mysqlCharset, "utf8")) {
+    if (!strcmp(mysqlCharset, "utf8mb4")) {
+        return NSUTF8StringEncoding;
+    } else if (!strcmp(mysqlCharset, "utf8")) {
 		return NSUTF8StringEncoding;
 	} else if (!strcmp(mysqlCharset, "latin1")) {
 		return NSWindowsCP1252StringEncoding; // Warning: This is NOT the same as ISO-8859-1 (aka "ISO Latin 1")
@@ -255,8 +252,6 @@
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSLatin2);
 	} else if (!strcmp(mysqlCharset, "latin7")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin7);
-	} else if (!strcmp(mysqlCharset, "utf8mb4")) {
-		return NSUTF8StringEncoding;
 	} else if (!strcmp(mysqlCharset, "cp1251")) {
 		return NSWindowsCP1251StringEncoding;
 	} else if (!strcmp(mysqlCharset, "utf16")) {

@@ -452,7 +452,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[createString appendFormat:@" ENGINE=%@", [prefs objectForKey:SPLastImportIntoNewTableType]];
 		if(![[prefs objectForKey:SPLastImportIntoNewTableEncoding] isEqualToString:@"Default"]) {
 			NSString *encodingName = [[prefs objectForKey:SPLastImportIntoNewTableEncoding] stringByMatching:@"\\((.*)\\)" capture:1L];
-			if (!encodingName) encodingName = @"utf8";
+			if (!encodingName) encodingName = @"utf8mb4";
 			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
 		}
 

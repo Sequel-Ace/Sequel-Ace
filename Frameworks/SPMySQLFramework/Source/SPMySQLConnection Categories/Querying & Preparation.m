@@ -560,7 +560,7 @@
 
 	// The query cancellation cannot occur on the connection actively running a query
 	// so set up a new connection to run the KILL command.
-	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8" isMasterConnection:NO];
+	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
 
 	// If the new connection was successfully set up, use it to run a KILL command.
 	if (killerConnection) {

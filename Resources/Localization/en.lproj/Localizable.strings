@@ -1870,6 +1870,9 @@
 /* not available label */
 "Not available" = "Not available";
 
+/* Table Info Section : table notes */
+"notes: %@" = "notes: %@";
+
 /* Argument count (ContentFilterManager) */
 "Number of arguments: %lu" = "Number of arguments: %lu";
 

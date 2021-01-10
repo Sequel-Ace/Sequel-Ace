@@ -59,7 +59,6 @@ typedef struct {
 	BOOL isMySQL6;
 	
 	// General
-	BOOL supportsInformationSchema;
 	BOOL supportsSpatialExtensions;
 	
 	// Encoding
@@ -139,11 +138,6 @@ typedef struct {
  * @property isMySQL6 Indicates if the server is MySQL version 6
  */
 @property (readonly) BOOL isMySQL6;
-
-/**
- * @property supportsInformationSchema Indicates if the server supports the information_schema database
- */
-@property (readonly) BOOL supportsInformationSchema;
 
 /**
  * @property supportsSpatialExtensions Indicates if the server supports spatial extensions
