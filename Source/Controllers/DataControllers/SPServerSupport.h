@@ -58,9 +58,6 @@ typedef struct {
 	BOOL isMySQL5;
 	BOOL isMySQL6;
 	
-	// General
-	BOOL supportsSpatialExtensions;
-	
 	// Encoding
 	BOOL supportsShowCharacterSet;
     BOOL supportsShowCollation;
@@ -138,11 +135,6 @@ typedef struct {
  * @property isMySQL6 Indicates if the server is MySQL version 6
  */
 @property (readonly) BOOL isMySQL6;
-
-/**
- * @property supportsSpatialExtensions Indicates if the server supports spatial extensions
- */
-@property (readonly) BOOL supportsSpatialExtensions;
 
 /**
  * @property supportsShowCharacterSet Indicates if the server supports the SHOW CHARACTER SET statement

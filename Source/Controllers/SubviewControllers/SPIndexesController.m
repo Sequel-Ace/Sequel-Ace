@@ -672,14 +672,12 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	// SPATIAL index types are only available using the MyISAM engine
 	if (isMyISAMTable) {
-		if ([[dbDocument serverSupport] supportsSpatialExtensions]) {
-			NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init];
-			
-			[spatialMenuItem setTitle:NSLocalizedString(@"SPATIAL", @"spatial index menu item title")];
-			[spatialMenuItem setTag:SPSpatialMenuTag];
-			
-			[[indexTypePopUpButton menu] addItem:spatialMenuItem];
-		}
+        NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init];
+        
+        [spatialMenuItem setTitle:NSLocalizedString(@"SPATIAL", @"spatial index menu item title")];
+        [spatialMenuItem setTag:SPSpatialMenuTag];
+        
+        [[indexTypePopUpButton menu] addItem:spatialMenuItem];
 	}
 	
 	// FULLTEXT only works with MyISAM and (InnoDB since 5.6.4)
