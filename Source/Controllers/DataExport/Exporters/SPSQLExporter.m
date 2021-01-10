@@ -154,8 +154,6 @@
 
 	// we require utf8mb4
 	[connection setEncoding:@"utf8mb4"];
-	// …but utf8mb4 (aka "really" utf8) would be even better.
-	BOOL utf8mb4 = [connection setEncoding:@"utf8mb4"];
 	
 	// Add the dump header to the dump file
 	[metaString appendString:@"# ************************************************************\n"];
@@ -167,20 +165,11 @@
 	[metaString appendFormat:@"# %@: %@\n", NSLocalizedString(@"Generation Time", @"export header generation time label"), [NSDate date]];
 	[metaString appendString:@"# ************************************************************\n\n\n"];
 	
-	// Add commands to store the client encodings used when importing and set to UTF8 to preserve data
+	// Add commands to store the client encodings used when importing and set to UTF8mb4 to preserve data
 	[metaString appendString:@"/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;\n"];
 	[metaString appendString:@"/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\n"];
 	[metaString appendString:@"/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\n"];
-	[metaString appendString:@"/*!40101 SET NAMES utf8 */;\n"];
-	if(utf8mb4) {
-		// !! This being outside of a conditional comment is FULLY INTENTIONAL !!
-		// We *absolutely* want that to fail if the export includes utf8mb4 data, but the server can't handle it.
-		// MySQL would _normally_ just drop-replace such characters with "?" (a literal questionmark) without any (visible) complaint.
-		// Since that means irreversible (and often hard to notice) data corruption,
-		//   the user should CONSCIOUSLY make a decision for that to happen!
-		//TODO we should link to a website explaining the risk here
-		[metaString appendString:@"SET NAMES utf8mb4;\n"];
-	}
+    [metaString appendString:@"SET NAMES utf8mb4;\n"];
 
 	[metaString appendString:@"/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\n"];
 
