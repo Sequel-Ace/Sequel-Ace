@@ -115,12 +115,6 @@
  */
 - (BOOL)setEncodingUsesLatin1Transport:(BOOL)useLatin1
 {
-	// MySQL versions prior to 4.1 don't support encoding changes; return NO on those
-	// versions.
-	if (![self serverVersionIsGreaterThanOrEqualTo:4 minorVersion:1 releaseVersion:0]) {
-		return NO;
-	}
-
 	// If the Latin1 mode is already set, return success
 	if (encodingUsesLatin1Transport == useLatin1) {
 		return YES;
