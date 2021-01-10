@@ -197,14 +197,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// Set up the array of privs supported by this server.
 		[[self privsSupportedByServer] removeAllObjects];
 
-		result = nil;
-
-		// Attempt to obtain user privileges if supported
-		if ([serverSupport supportsShowPrivileges]) {
-
-			result = [connection queryString:@"SHOW PRIVILEGES"];
-			[result setReturnDataAsStrings:YES];
-		}
+        result = [connection queryString:@"SHOW PRIVILEGES"];
+        [result setReturnDataAsStrings:YES];
 
 		if (result && [result numberOfRows]) {
 			while ((privRow = [result getRowAsArray]))
@@ -1056,11 +1050,13 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 							 host:[user valueForKey:@"host"]];
 		}
 		
-		if ([serverSupport supportsUserMaxVars]) {
-			if(![self updateResourcesForUser:user]) return NO;
-		}
+        if(![self updateResourcesForUser:user]) {
+            return NO;
+        }
 		
-		if(![self grantPrivilegesToUser:user]) return NO;
+        if(![self grantPrivilegesToUser:user]) {
+            return NO;
+        }
 	}
 	
 	return YES;
@@ -1164,9 +1160,9 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		[connection queryString:createStatement];
 		
 		if ([self _checkAndDisplayMySqlError]) {
-			if ([serverSupport supportsUserMaxVars]) {
-				if(![self updateResourcesForUser:user]) return NO;
-			}
+            if(![self updateResourcesForUser:user]) {
+                return NO;
+            }
 			// If we created the user with the GRANT statment (MySQL < 5), then revoke the
 			// privileges we gave the new user.
 			if(![serverSupport supportsCreateUser]) {
@@ -1675,13 +1671,9 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		// If this is the resources tab, enable or disable the controls based on the server's support for them
 		if ([[tabViewItem identifier] isEqualToString:SPResourcesTabIdentifier]) {
-
-			BOOL serverSupportsUserMaxVars = [serverSupport supportsUserMaxVars];
-
-			// Disable the fields according to the version
-			[maxUpdatesTextField setEnabled:serverSupportsUserMaxVars];
-			[maxConnectionsTextField setEnabled:serverSupportsUserMaxVars];
-			[maxQuestionsTextField setEnabled:serverSupportsUserMaxVars];
+			[maxUpdatesTextField setEnabled:YES];
+			[maxConnectionsTextField setEnabled:YES];
+			[maxQuestionsTextField setEnabled:YES];
 		}
 	}
 

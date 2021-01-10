@@ -52,24 +52,16 @@
 @synthesize supportsCreateUser;
 @synthesize supportsRenameUser;
 @synthesize supportsFullDropUser;
-@synthesize supportsUserMaxVars;
-@synthesize supportsShowPrivileges;
 @synthesize engineTypeQueryName;
 @synthesize supportsInformationSchemaEngines;
-@synthesize supportsPre41StorageEngines;
-@synthesize supportsBlackholeStorageEngine;
-@synthesize supportsArchiveStorageEngine;
-@synthesize supportsCSVStorageEngine;
 @synthesize supportsTriggers;
 @synthesize supportsEvents;
 @synthesize supportsIndexKeyBlockSize;
-@synthesize supportsQuotingEngineTypeInCreateSyntax;
 @synthesize supportsFractionalSeconds;
 @synthesize serverMajorVersion;
 @synthesize serverMinorVersion;
 @synthesize serverReleaseVersion;
 @synthesize supportsFulltextOnInnoDB;
-@synthesize supportsShowEngine;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -133,27 +125,9 @@
 	
 	// Similarly before MySQL 5.0.2 the DROP USER statement only removed users with no privileges
 	supportsFullDropUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
-	
-	// The maximum user variable columns (within mysql.user) weren't added until MySQL 4.0.2
-	supportsUserMaxVars = [self isEqualToOrGreaterThanMajorVersion:4 minor:0 release:2];
-	
-	// The SHOW PRIVILEGES statement wasn't added until MySQL 4.1.0
-	supportsShowPrivileges = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
 
 	// MySQL 4.0.18+ and 4.1.2+ changed the TYPE option to ENGINE, but 4.x supports both
 	engineTypeQueryName = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:0] ? @"ENGINE" : @"TYPE";
-
-	// Before MySQL 4.1 the MEMORY engine was known as HEAP and the ISAM engine was available
-	supportsPre41StorageEngines = (![self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0]);
-	
-	// The BLACKHOLE storage engine wasn't added until MySQL 4.1.11
-	supportsBlackholeStorageEngine = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:11];
-	
-	// The ARCHIVE storage engine wasn't added until MySQL 4.1.3
-	supportsArchiveStorageEngine = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:3];
-	
-	// The CSV storage engine wasn't added until MySQL 4.1.4
-	supportsCSVStorageEngine = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:4];
 	
 	// Support for triggers wasn't added until MySQL 5.0.2
 	supportsTriggers = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
@@ -164,32 +138,17 @@
 	// Support for specifying an index's key block size wasn't added until MySQL 5.1.10
 	supportsIndexKeyBlockSize = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:10];
 	
-	// MySQL 4.0 doesn't seem to like having the ENGINE/TYPE quoted in a table's create syntax
-	supportsQuotingEngineTypeInCreateSyntax = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
-	
 	// Fractional second support wasn't added until MySQL 5.6.4
 	supportsFractionalSeconds = [self isEqualToOrGreaterThanMajorVersion:5 minor:6 release:4];
 	supportsFulltextOnInnoDB  = supportsFractionalSeconds; //introduced in 5.6.4 too
-	
-	// The SHOW ENGINE query wasn't added until MySQL 4.1.2
-	supportsShowEngine = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:2];
 }
 
 - (SPInnoDBStatusQueryFormat)innoDBStatusQuery
 {
 	SPInnoDBStatusQueryFormat tuple = {nil,0};
 	
-	//if we have SHOW ENGINE go with that
-	if(supportsShowEngine) {
-		tuple.queryString = @"SHOW ENGINE INNODB STATUS";
-		tuple.columnIndex = 2;
-	}
-	//up to mysql 5.5 we could also use the old SHOW INNODB STATUS
-	if([self isEqualToOrGreaterThanMajorVersion:3 minor:23 release:52] &&
-	   ![self isEqualToOrGreaterThanMajorVersion:5 minor:5 release:0]) {
-		tuple.queryString = @"SHOW INNODB STATUS";
-		tuple.columnIndex = 0;
-	}
+    tuple.queryString = @"SHOW ENGINE INNODB STATUS";
+    tuple.columnIndex = 2;
 	
 	return tuple;
 }
@@ -261,21 +220,13 @@
 	supportsCreateUser                      = NO;
 	supportsRenameUser                      = NO;
 	supportsFullDropUser                    = NO;
-	supportsUserMaxVars                     = NO;
-	supportsShowPrivileges                  = NO;
 	engineTypeQueryName                     = @"ENGINE";
 	supportsInformationSchemaEngines        = NO;
-	supportsPre41StorageEngines             = NO;
-	supportsBlackholeStorageEngine          = NO;
-	supportsArchiveStorageEngine            = NO;
-	supportsCSVStorageEngine                = NO;
 	supportsTriggers                        = NO;
 	supportsEvents                          = NO;
 	supportsIndexKeyBlockSize               = NO;
-	supportsQuotingEngineTypeInCreateSyntax = NO;
 	supportsFractionalSeconds               = NO;
 	supportsFulltextOnInnoDB                = NO;
-	supportsShowEngine                      = NO;
 }
 
 /**

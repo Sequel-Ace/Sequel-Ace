@@ -61,18 +61,10 @@ typedef struct {
 	BOOL supportsCreateUser;
 	BOOL supportsRenameUser;
 	BOOL supportsFullDropUser;
-	BOOL supportsUserMaxVars;
-	BOOL supportsShowPrivileges;
 	
 	// Storage engines
 	NSString *engineTypeQueryName;
 	BOOL supportsInformationSchemaEngines;
-	BOOL supportsPre41StorageEngines;
-	BOOL supportsBlackholeStorageEngine;
-	BOOL supportsArchiveStorageEngine;
-	BOOL supportsCSVStorageEngine;
-	BOOL supportsQuotingEngineTypeInCreateSyntax;
-	BOOL supportsShowEngine;
 	
 	// Triggers
 	BOOL supportsTriggers;
@@ -140,16 +132,6 @@ typedef struct {
 @property (readonly) BOOL supportsFullDropUser;
 
 /**
- * @property supportsUserMaxVars Indicates if the server supports setting a user's maximum variables
- */
-@property (readonly) BOOL supportsUserMaxVars;
-
-/**
- * @property supportsShowPrivileges Indicates if the server supports the SHOW PRIVILEGES statement
- */
-@property (readonly) BOOL supportsShowPrivileges;
-
-/**
  * @property engineTypeQueryName Returns the appropriate query part for specifying table engine - ENGINE or TYPE
  */
 @property (readonly) NSString *engineTypeQueryName;
@@ -158,27 +140,6 @@ typedef struct {
  * @property supportsInformationSchemaEngines Indicates if the server supports the information_schema.engines table
  */
 @property (readonly) BOOL supportsInformationSchemaEngines;
-
-/**
- * @property supportsPre41StorageEngines Indicates if the server supports storage engines available prior 
- *                                       to MySQL 4.1 
- */
-@property (readonly) BOOL supportsPre41StorageEngines;
-
-/**
- * @property supportsBlackholeStorageEngine Indicates if the server supports the BLACKHOLE storage engine
- */
-@property (readonly) BOOL supportsBlackholeStorageEngine;
-
-/**
- * @property supportsArchiveStorageEngine Indicates if the server supports the ARCHIVE storage engine
- */
-@property (readonly) BOOL supportsArchiveStorageEngine;
-
-/**
- * @property supportsCSVStorageEngine Indicates if the server supports the CSV storage engine
- */
-@property (readonly) BOOL supportsCSVStorageEngine;
 
 /**
  * @property supportsTriggers Indicates if the server supports table triggers
@@ -196,12 +157,6 @@ typedef struct {
 @property (readonly) BOOL supportsIndexKeyBlockSize;
 
 /**
- * @property supportsQuotingEngineTypeInCreateSyntax Indicates whether the server supports quoting the engine
- *                                                   type in the create syntax.
- */
-@property (readonly) BOOL supportsQuotingEngineTypeInCreateSyntax;
-
-/**
  * @property supportsFractionalSeconds Indicates whether the server supports fractional seconds in date/time data types.
  */
 @property (readonly) BOOL supportsFractionalSeconds;
@@ -210,11 +165,6 @@ typedef struct {
  * @property supportsFulltextOnInnoDB Indicates whether the server supports FULLTEXT indexes with the InnoDb engine.
  */
 @property (readonly) BOOL supportsFulltextOnInnoDB;
-
-/**
- * @property supportsShowEngine Indicates whether the server supports the "SHOW ENGINE x {LOGS|STATUS}" query.
- */
-@property (readonly) BOOL supportsShowEngine;
 
 - (instancetype)initWithMajorVersion:(NSInteger)majorVersion minor:(NSInteger)minorVersion release:(NSInteger)releaseVersion;
 
