@@ -51,7 +51,6 @@
 @synthesize supportsCreateUser;
 @synthesize supportsRenameUser;
 @synthesize supportsFullDropUser;
-@synthesize engineTypeQueryName;
 @synthesize supportsInformationSchemaEngines;
 @synthesize supportsEvents;
 @synthesize supportsIndexKeyBlockSize;
@@ -122,9 +121,6 @@
 	
 	// Similarly before MySQL 5.0.2 the DROP USER statement only removed users with no privileges
 	supportsFullDropUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
-
-	// MySQL 4.0.18+ and 4.1.2+ changed the TYPE option to ENGINE, but 4.x supports both
-	engineTypeQueryName = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:0] ? @"ENGINE" : @"TYPE";
 
 	// Support for events wasn't added until MySQL 5.1.6
 	supportsEvents = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:6];
@@ -213,7 +209,6 @@
 	supportsCreateUser                      = NO;
 	supportsRenameUser                      = NO;
 	supportsFullDropUser                    = NO;
-	engineTypeQueryName                     = @"ENGINE";
 	supportsInformationSchemaEngines        = NO;
 	supportsEvents                          = NO;
 	supportsIndexKeyBlockSize               = NO;

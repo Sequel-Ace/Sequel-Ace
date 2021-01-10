@@ -638,7 +638,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (void)_changeCurrentTableTypeFrom:(NSString *)currentType to:(NSString *)newType
 {
 	// Alter table's storage type
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ %@ = %@", [selectedTable backtickQuotedString], [[tableDocumentInstance serverSupport] engineTypeQueryName], newType]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [selectedTable backtickQuotedString], newType]];
 	
 	if ([connection queryErrored]) {
 

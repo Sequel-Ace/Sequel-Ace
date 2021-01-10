@@ -62,7 +62,6 @@ typedef struct {
 	BOOL supportsFullDropUser;
 	
 	// Storage engines
-	NSString *engineTypeQueryName;
 	BOOL supportsInformationSchemaEngines;
 	
 	// Indexes
@@ -121,11 +120,6 @@ typedef struct {
  *                                the DROP USER statement.
  */
 @property (readonly) BOOL supportsFullDropUser;
-
-/**
- * @property engineTypeQueryName Returns the appropriate query part for specifying table engine - ENGINE or TYPE
- */
-@property (readonly) NSString *engineTypeQueryName;
 
 /**
  * @property supportsInformationSchemaEngines Indicates if the server supports the information_schema.engines table
