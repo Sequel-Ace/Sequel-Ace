@@ -53,7 +53,6 @@
 @synthesize supportsFullDropUser;
 @synthesize engineTypeQueryName;
 @synthesize supportsInformationSchemaEngines;
-@synthesize supportsTriggers;
 @synthesize supportsEvents;
 @synthesize supportsIndexKeyBlockSize;
 @synthesize supportsFractionalSeconds;
@@ -126,9 +125,6 @@
 
 	// MySQL 4.0.18+ and 4.1.2+ changed the TYPE option to ENGINE, but 4.x supports both
 	engineTypeQueryName = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:0] ? @"ENGINE" : @"TYPE";
-	
-	// Support for triggers wasn't added until MySQL 5.0.2
-	supportsTriggers = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
 
 	// Support for events wasn't added until MySQL 5.1.6
 	supportsEvents = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:6];
@@ -219,7 +215,6 @@
 	supportsFullDropUser                    = NO;
 	engineTypeQueryName                     = @"ENGINE";
 	supportsInformationSchemaEngines        = NO;
-	supportsTriggers                        = NO;
 	supportsEvents                          = NO;
 	supportsIndexKeyBlockSize               = NO;
 	supportsFractionalSeconds               = NO;

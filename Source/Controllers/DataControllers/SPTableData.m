@@ -150,9 +150,9 @@
 	// If processing is already in action, wait for it to complete
 	[self _loopWhileWorking];	
 
-	// If triggers is nil, the triggers need to be loaded - if a table is selected on MySQL >= 5.0.2
+	// If triggers is nil, the triggers need to be loaded
 	if (!triggers) {
-		if (([tableListInstance tableType] == SPTableTypeTable) && [[tableDocumentInstance serverSupport] supportsTriggers]) {
+		if (([tableListInstance tableType] == SPTableTypeTable)) {
 			[self updateTriggersForCurrentTable];
 		} 
 		else {

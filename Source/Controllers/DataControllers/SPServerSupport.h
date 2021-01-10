@@ -65,9 +65,6 @@ typedef struct {
 	NSString *engineTypeQueryName;
 	BOOL supportsInformationSchemaEngines;
 	
-	// Triggers
-	BOOL supportsTriggers;
-	
 	// Indexes
 	BOOL supportsIndexKeyBlockSize;
 	BOOL supportsFulltextOnInnoDB;
@@ -134,11 +131,6 @@ typedef struct {
  * @property supportsInformationSchemaEngines Indicates if the server supports the information_schema.engines table
  */
 @property (readonly) BOOL supportsInformationSchemaEngines;
-
-/**
- * @property supportsTriggers Indicates if the server supports table triggers
- */
-@property (readonly) BOOL supportsTriggers;
 
 /**
 * @property supportsEvents Indicates if the server supports scheduled events
