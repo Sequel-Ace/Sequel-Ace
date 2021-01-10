@@ -50,7 +50,6 @@
 @synthesize isMySQL4;
 @synthesize isMySQL5;
 @synthesize isMySQL6;
-@synthesize supportsShowCharacterSet;
 @synthesize supportsShowCollation;
 @synthesize supportsCharacterSetAndCollationVars;
 @synthesize supportsPost41CharacterSetHandling;
@@ -128,9 +127,6 @@
 	isMySQL4 = (serverMajorVersion == 4);
 	isMySQL5 = (serverMajorVersion == 5);
 	isMySQL6 = (serverMajorVersion == 6);
-	
-	// The SHOW CHARACTER SET statement wasn't added until MySQL 4.1.0
-	supportsShowCharacterSet = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
 
 	// The SHOW COLLATION statement wasn't added until MySQL 4.1.0
 	supportsShowCollation = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
@@ -281,7 +277,6 @@
 	isMySQL5 = NO;
 	isMySQL6 = NO;
 	
-	supportsShowCharacterSet                = NO;
 	supportsShowCollation                   = NO;
 	supportsCharacterSetAndCollationVars    = NO;
 	supportsPost41CharacterSetHandling      = NO;
