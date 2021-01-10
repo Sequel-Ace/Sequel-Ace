@@ -607,8 +607,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableTypePopUpButton setEnabled:(!isSystemSchemaDb)];
 	}
 
-	if ([[databaseDataInstance getDatabaseCharacterSetEncodings] count] && [tableDataInstance tableEncoding] && 
-		[[tableDocumentInstance serverSupport] supportsPost41CharacterSetHandling]) 
+	if ([[databaseDataInstance getDatabaseCharacterSetEncodings] count] && [tableDataInstance tableEncoding])
 	{
 		[tableEncodingPopUpButton setEnabled:(!isSystemSchemaDb)];
 	}

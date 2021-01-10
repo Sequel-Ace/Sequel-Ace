@@ -58,9 +58,6 @@ typedef struct {
 	BOOL isMySQL5;
 	BOOL isMySQL6;
 	
-	// Encoding
-	BOOL supportsPost41CharacterSetHandling;
-	
 	// User account related
 	BOOL supportsCreateUser;
 	BOOL supportsRenameUser;
@@ -132,12 +129,6 @@ typedef struct {
  * @property isMySQL6 Indicates if the server is MySQL version 6
  */
 @property (readonly) BOOL isMySQL6;
-
-/**
- * @property supportsPost41CharacterSetHandling Indicates whether the server supports post 4.1 character set
- *                                              handling.
- */
-@property (readonly) BOOL supportsPost41CharacterSetHandling;
 
 /**
  * @property supportsCreateUser Indicates if the server supports the CREATE USER statement

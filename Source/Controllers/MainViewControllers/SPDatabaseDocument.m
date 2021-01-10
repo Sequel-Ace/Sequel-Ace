@@ -3338,7 +3338,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	
 	// Can only be enabled on mysql 4.1+
 	if (action == @selector(alterDatabase:)) {
-		return (([self database] != nil) && [serverSupport supportsPost41CharacterSetHandling]);
+		return (([self database] != nil));
 	}
 	
 	// Table specific actions

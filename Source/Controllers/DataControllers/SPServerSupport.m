@@ -50,7 +50,6 @@
 @synthesize isMySQL4;
 @synthesize isMySQL5;
 @synthesize isMySQL6;
-@synthesize supportsPost41CharacterSetHandling;
 @synthesize supportsCreateUser;
 @synthesize supportsRenameUser;
 @synthesize supportsDropUser;
@@ -126,8 +125,6 @@
 	isMySQL5 = (serverMajorVersion == 5);
 	isMySQL6 = (serverMajorVersion == 6);
 	
-	// As of MySQL 4.1 encoding support was greatly improved
-	supportsPost41CharacterSetHandling = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
 	
 	// The table information_schema.engines wasn't added until MySQL 5.1.5
 	supportsInformationSchemaEngines = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:1];
@@ -269,7 +266,6 @@
 	isMySQL5 = NO;
 	isMySQL6 = NO;
 
-	supportsPost41CharacterSetHandling      = NO;
 	supportsCreateUser                      = NO;
 	supportsRenameUser                      = NO;
 	supportsDropUser                        = NO;

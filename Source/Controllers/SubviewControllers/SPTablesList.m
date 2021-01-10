@@ -452,12 +452,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[tableCollationButton menu] addItem:[NSMenuItem separatorItem]];
 	}
 	
-	//if the server actually has support for charsets & collations we will now get a list of all collations
-	//for the current charset. Even if the default charset is kept by the user he can change the default collation
-	//so we search in that case, too.
-	if(![[tableDocumentInstance serverSupport] supportsPost41CharacterSetHandling])
-		return;
-	
 	//get the charset id the lazy way
 	NSString *charsetName = [[tableEncodingButton title] stringByMatching:@"\\((.*)\\)\\Z" capture:1L];
 	//this should not fail as even default is "Default (charset)" - if it does there's nothing we can do
