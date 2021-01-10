@@ -299,8 +299,8 @@
 			(
 				!viewIsTheSame ||
 				(
-					(![currentHistoryEntry objectForKey:@"contentFilterV2"] && !contentFilter) ||
-					[[currentHistoryEntry objectForKey:@"contentFilterV2"] isEqualToDictionary:contentFilter]
+					(![currentHistoryEntry safeObjectForKey:@"contentFilterV2"] && !contentFilter) ||
+					[[currentHistoryEntry safeObjectForKey:@"contentFilterV2"] isEqualToDictionary:contentFilter]
 				)
 			)
 		) {
@@ -314,8 +314,8 @@
 			(
 				viewIsTheSame ||
 				(
-					(![currentHistoryEntry objectForKey:@"contentFilterV2"] && contentFilter) ||
-					![[currentHistoryEntry objectForKey:@"contentFilterV2"] isEqualToDictionary:contentFilter]
+					(![currentHistoryEntry safeObjectForKey:@"contentFilterV2"] && contentFilter) ||
+					![[currentHistoryEntry safeObjectForKey:@"contentFilterV2"] isEqualToDictionary:contentFilter]
 				)
 			)
 		) {
@@ -325,7 +325,7 @@
 		// Special case: if the last history item is currently active, and has no table,
 		// but the new selection does - delete the last entry, in order to replace it.
 		// This improves history flow.
-		else if (databaseIsTheSame && ![currentHistoryEntry objectForKey:@"table"]) {
+		else if (databaseIsTheSame && ![currentHistoryEntry safeObjectForKey:@"table"]) {
 			[history removeLastObject];
 		}
 	}

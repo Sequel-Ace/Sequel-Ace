@@ -456,10 +456,10 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 {
 
 	if (tableView == indexesTableView) {
-	 	return [[indexes objectAtIndex:rowIndex] objectForKey:[tableColumn identifier]];
+	 	return [[indexes safeObjectAtIndex:rowIndex] safeObjectForKey:[tableColumn identifier]];
 	}
 	else {
-		id object = [[indexedFields objectAtIndex:rowIndex] objectForKey:[tableColumn identifier]];
+		id object = [[indexedFields safeObjectAtIndex:rowIndex] safeObjectForKey:[tableColumn identifier]];
 		
 		if ([[tableColumn identifier] isEqualToString:@"Size"] && object) {
 			object = [NSNumber numberWithLongLong:[object longLongValue]];
