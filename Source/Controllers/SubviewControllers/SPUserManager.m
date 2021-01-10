@@ -1065,19 +1065,11 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (BOOL)deleteUser:(SPUserMO *)user
 {
 	// users without hosts are for display only
-	if(isInitializing || ![user valueForKey:@"host"]) return YES;
+    if(isInitializing || ![user valueForKey:@"host"]) {
+        return YES;
+    }
 	
 	NSString *droppedUser = [NSString stringWithFormat:@"%@@%@", [[user valueForKey:@"user"] tickQuotedString], [[user valueForKey:@"host"] tickQuotedString]];
-	
-	// Before MySQL 5.0.2 DROP USER just removed users with no privileges, so revoke
-	// all their privileges first. Also, REVOKE ALL PRIVILEGES was added in MySQL 4.1.2, so use the
-	// old multiple query approach (damn, I wish there were only one MySQL version!).
-	if (![serverSupport supportsFullDropUser]) {
-		[connection queryString:[NSString stringWithFormat:@"REVOKE ALL PRIVILEGES ON *.* FROM %@", droppedUser]];
-		if(![self _checkAndDisplayMySqlError]) return NO;
-		[connection queryString:[NSString stringWithFormat:@"REVOKE GRANT OPTION ON *.* FROM %@", droppedUser]];
-		if(![self _checkAndDisplayMySqlError]) return NO;
-	}
 	
 	// DROP USER
     [connection queryString:[NSString stringWithFormat:@"DROP USER %@", droppedUser]];
@@ -1141,17 +1133,13 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			idString = [NSString stringWithFormat:@"IDENTIFIED BY %@%@",(passwordIsHash? @"PASSWORD " : @""), password];
 		}
 		
-		createStatement = ([serverSupport supportsCreateUser]) ?
-		[NSString stringWithFormat:@"CREATE USER %@@%@ %@", username, host, idString] :
-		[NSString stringWithFormat:@"GRANT SELECT ON mysql.* TO %@@%@ %@", username, host, idString];
+        createStatement = [NSString stringWithFormat:@"CREATE USER %@@%@ %@", username, host, idString];
 	}
 	else if ([user parent] && [[user parent] valueForKey:@"user"]) {
 		
 		NSString *username = [[[user parent] valueForKey:@"user"] tickQuotedString];
 		
-		createStatement = ([serverSupport supportsCreateUser]) ?
-		[NSString stringWithFormat:@"CREATE USER %@@%@", username, host] :
-		[NSString stringWithFormat:@"GRANT SELECT ON mysql.* TO %@@%@", username, host];
+		createStatement = [NSString stringWithFormat:@"CREATE USER %@@%@", username, host];
 	}
 	
 	if (createStatement) {
@@ -1163,13 +1151,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
             if(![self updateResourcesForUser:user]) {
                 return NO;
             }
-			// If we created the user with the GRANT statment (MySQL < 5), then revoke the
-			// privileges we gave the new user.
-			if(![serverSupport supportsCreateUser]) {
-				[connection queryString:[NSString stringWithFormat:@"REVOKE SELECT ON mysql.* FROM %@@%@", [[[user parent] valueForKey:@"user"] tickQuotedString], host]];
-				
-				if (![self _checkAndDisplayMySqlError]) return NO;
-			}
 			
 			return [self grantPrivilegesToUser:user skippingRevoke:YES];
 		}
@@ -1490,50 +1471,14 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (BOOL)_renameUserFrom:(NSString *)originalUser host:(NSString *)originalHost to:(NSString *)newUser host:(NSString *)newHost
 {
-	NSString *renameQuery = nil;
-	
-	if ([serverSupport supportsRenameUser]) {
-		renameQuery = [NSString stringWithFormat:@"RENAME USER %@@%@ TO %@@%@",
+	NSString *renameQuery = [NSString stringWithFormat:@"RENAME USER %@@%@ TO %@@%@",
 					   [originalUser tickQuotedString],
 					   [originalHost tickQuotedString],
 					   [newUser tickQuotedString],
 					   [newHost tickQuotedString]];
-	}
-	else {
-		// mysql.user is keyed on user and host so there should only ever be one result, 
-		// but double check before we do the update.
-		QKQuery *query = [QKQuery selectQueryFromTable:@"user"];
-		
-		[query setDatabase:SPMySQLDatabase];
-		[query addField:@"COUNT(1)"];
-		
-		[query addParameter:@"User" operator:QKEqualityOperator value:originalUser];
-		[query addParameter:@"Host" operator:QKEqualityOperator value:originalHost];
-		
-		SPMySQLResult *result = [connection queryString:[query query]];
-		
-		if ([[[result getRowAsArray] objectAtIndex:0] integerValue] == 1) {
-			QKQuery *updateQuery = [QKQuery queryTable:@"user"];
-			
-			[updateQuery setQueryType:QKUpdateQuery];
-			[updateQuery setDatabase:SPMySQLDatabase];
-			
-			[updateQuery addFieldToUpdate:@"User" toValue:newUser];
-			[updateQuery addFieldToUpdate:@"Host" toValue:newHost];
-			
-			[updateQuery addParameter:@"User" operator:QKEqualityOperator value:originalUser];
-			[updateQuery addParameter:@"Host" operator:QKEqualityOperator value:originalHost];
-			
-			renameQuery = [updateQuery query];
-		}
-	}
 	
-	if (renameQuery) {
-		[connection queryString:renameQuery];
-		return [self _checkAndDisplayMySqlError];
-	}
-	
-	return YES;
+    [connection queryString:renameQuery];
+    return [self _checkAndDisplayMySqlError];
 }
 
 #pragma mark - SPUserManagerDelegate

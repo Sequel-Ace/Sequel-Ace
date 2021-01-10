@@ -219,9 +219,8 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// as it's the default anyway.
 	[indexStorageTypePopUpButton setEnabled:(!(isMyISAMTable || isInnoDBTable))];
 
-	// The ability to specify an index's key block size was added in MySQL 5.1.10 so disable the textfield
-	// if it's not supported.
-	[indexKeyBlockSizeTextField setEnabled:[[dbDocument serverSupport] supportsIndexKeyBlockSize]];
+	// The ability to specify an index's key block size was added in MySQL 5.1.10 so is supported by all supported mysql versions now
+	[indexKeyBlockSizeTextField setEnabled:YES];
 
 	// Begin the sheet
 	[[dbDocument parentWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {

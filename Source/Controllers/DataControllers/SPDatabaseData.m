@@ -224,32 +224,14 @@ copy_return:
 - (NSArray *)getDatabaseStorageEngines
 {	
 	if ([storageEngines count] == 0) {
-        if ([serverSupport supportsInformationSchemaEngines])
-        {
-            // Check the information_schema.engines table is accessible
-            SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
+        // Check the information_schema.engines table is accessible
+        SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
+        
+        if ([result numberOfRows] == 1) {
             
-            if ([result numberOfRows] == 1) {
-                
-                // Table is accessible so get available storage engines
-                // Note, that the case of the column names specified in this query are important.
-                [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
-            }
-        }
-        else {
-            // Get storage engines
-            NSArray *engines = [self _getDatabaseDataForQuery:@"SHOW STORAGE ENGINES"];
-            
-            // We only want to include engines that are supported
-            for (NSDictionary *engine in engines)
-            {
-                if (([[engine objectForKey:@"Support"] isEqualToString:@"DEFAULT"] ||
-                    [[engine objectForKey:@"Support"] isEqualToString:@"YES"]) &&
-                    ![[engine objectForKey:@"Engine"] isEqualToString:@"PERFORMANCE_SCHEMA"])
-                {
-                    [storageEngines addObject:engine];
-                }
-            }
+            // Table is accessible so get available storage engines
+            // Note, that the case of the column names specified in this query are important.
+            [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
         }
 	}
 	

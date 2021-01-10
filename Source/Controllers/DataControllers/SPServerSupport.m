@@ -48,12 +48,6 @@
 
 @synthesize isMySQL5;
 @synthesize isMySQL8;
-@synthesize supportsCreateUser;
-@synthesize supportsRenameUser;
-@synthesize supportsFullDropUser;
-@synthesize supportsInformationSchemaEngines;
-@synthesize supportsEvents;
-@synthesize supportsIndexKeyBlockSize;
 @synthesize supportsFractionalSeconds;
 @synthesize serverMajorVersion;
 @synthesize serverMinorVersion;
@@ -110,37 +104,9 @@
 	isMySQL5 = (serverMajorVersion == 5);
     isMySQL8 = (serverMajorVersion == 8);
 	
-	// The table information_schema.engines wasn't added until MySQL 5.1.5
-	supportsInformationSchemaEngines = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:1];
-	
-	// The CREATE USER statement wasn't added until MySQL 5.0.2
-	supportsCreateUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
-	
-	// The RENAME USER statement wasn't added until MySQL 5.0.2
-	supportsRenameUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
-	
-	// Similarly before MySQL 5.0.2 the DROP USER statement only removed users with no privileges
-	supportsFullDropUser = [self isEqualToOrGreaterThanMajorVersion:5 minor:0 release:2];
-
-	// Support for events wasn't added until MySQL 5.1.6
-	supportsEvents = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:6];
-	
-	// Support for specifying an index's key block size wasn't added until MySQL 5.1.10
-	supportsIndexKeyBlockSize = [self isEqualToOrGreaterThanMajorVersion:5 minor:1 release:10];
-	
 	// Fractional second support wasn't added until MySQL 5.6.4
 	supportsFractionalSeconds = [self isEqualToOrGreaterThanMajorVersion:5 minor:6 release:4];
-	supportsFulltextOnInnoDB  = supportsFractionalSeconds; //introduced in 5.6.4 too
-}
-
-- (SPInnoDBStatusQueryFormat)innoDBStatusQuery
-{
-	SPInnoDBStatusQueryFormat tuple = {nil,0};
-	
-    tuple.queryString = @"SHOW ENGINE INNODB STATUS";
-    tuple.columnIndex = 2;
-	
-	return tuple;
+    supportsFulltextOnInnoDB  = [self isEqualToOrGreaterThanMajorVersion:5 minor:6 release:4];
 }
 
 /**
@@ -206,12 +172,6 @@
 	isMySQL5 = NO;
     isMySQL8 = NO;
 
-	supportsCreateUser                      = NO;
-	supportsRenameUser                      = NO;
-	supportsFullDropUser                    = NO;
-	supportsInformationSchemaEngines        = NO;
-	supportsEvents                          = NO;
-	supportsIndexKeyBlockSize               = NO;
 	supportsFractionalSeconds               = NO;
 	supportsFulltextOnInnoDB                = NO;
 }

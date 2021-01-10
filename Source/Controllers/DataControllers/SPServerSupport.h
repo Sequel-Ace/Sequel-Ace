@@ -28,11 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-typedef struct {
-	NSString *queryString;
-	NSUInteger columnIndex;
-} SPInnoDBStatusQueryFormat;
-
 /**
  * @class SPServerSupport SPServerSupport.h
  *
@@ -56,20 +51,8 @@ typedef struct {
 	BOOL isMySQL5;
     BOOL isMySQL8;
 	
-	// User account related
-	BOOL supportsCreateUser;
-	BOOL supportsRenameUser;
-	BOOL supportsFullDropUser;
-	
-	// Storage engines
-	BOOL supportsInformationSchemaEngines;
-	
 	// Indexes
-	BOOL supportsIndexKeyBlockSize;
 	BOOL supportsFulltextOnInnoDB;
-
-	// Events
-	BOOL supportsEvents;
 	
 	// Data types
 	BOOL supportsFractionalSeconds;
@@ -106,37 +89,6 @@ typedef struct {
 @property (readonly) BOOL isMySQL8;
 
 /**
- * @property supportsCreateUser Indicates if the server supports the CREATE USER statement
- */
-@property (readonly) BOOL supportsCreateUser;
-
-/**
- * @property supportsRenameUser Indicates if the server supports the RENAME USER statement
- */
-@property (readonly) BOOL supportsRenameUser;
-
-/**
- * @property supportsFullDropUser Indicates if the server supports deleting a user's priveleges when issueing
- *                                the DROP USER statement.
- */
-@property (readonly) BOOL supportsFullDropUser;
-
-/**
- * @property supportsInformationSchemaEngines Indicates if the server supports the information_schema.engines table
- */
-@property (readonly) BOOL supportsInformationSchemaEngines;
-
-/**
-* @property supportsEvents Indicates if the server supports scheduled events
-*/
-@property (readonly) BOOL supportsEvents;
-
-/**
- * @property supportsIndexKeyBlockSize Indicates if the server supports specifying an index's key block size
- */
-@property (readonly) BOOL supportsIndexKeyBlockSize;
-
-/**
  * @property supportsFractionalSeconds Indicates whether the server supports fractional seconds in date/time data types.
  */
 @property (readonly) BOOL supportsFractionalSeconds;
@@ -151,9 +103,4 @@ typedef struct {
 - (void)evaluate;
 - (BOOL)isEqualToOrGreaterThanMajorVersion:(NSInteger)majorVersion minor:(NSInteger)minorVersion release:(NSInteger)releaseVersion;
 
-/**
- * @return The correct query to get the InnoDB engine status. queryString is nil for unsupported versions.
- *         The columnIndex tells the index of the column (starting with 0) in which the status text is returned.
- */
-- (SPInnoDBStatusQueryFormat)innoDBStatusQuery;
 @end
