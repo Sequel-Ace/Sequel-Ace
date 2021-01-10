@@ -47,7 +47,6 @@
 @implementation SPServerSupport
 
 @synthesize isMySQL5;
-@synthesize isMySQL6;
 @synthesize isMySQL8;
 @synthesize supportsCreateUser;
 @synthesize supportsRenameUser;
@@ -111,7 +110,6 @@
 	[self _invalidate];
 	
 	isMySQL5 = (serverMajorVersion == 5);
-	isMySQL6 = (serverMajorVersion == 6);
     isMySQL8 = (serverMajorVersion == 8);
 	
 	// The table information_schema.engines wasn't added until MySQL 5.1.5
@@ -214,7 +212,6 @@
 - (void)_invalidate
 {
 	isMySQL5 = NO;
-	isMySQL6 = NO;
     isMySQL8 = NO;
 
 	supportsCreateUser                      = NO;

@@ -54,7 +54,6 @@ typedef struct {
 {
 	// Convenience vars
 	BOOL isMySQL5;
-	BOOL isMySQL6;
     BOOL isMySQL8;
 	
 	// User account related
@@ -106,12 +105,7 @@ typedef struct {
 @property (readonly) BOOL isMySQL5;
 
 /**
- * @property isMySQL6 Indicates if the server is MySQL version 6
- */
-@property (readonly) BOOL isMySQL6;
-
-/**
- * @property isMySQL6 Indicates if the server is MySQL version 8
+ * @property isMySQL8 Indicates if the server is MySQL version 8
  */
 @property (readonly) BOOL isMySQL8;
 
