@@ -335,9 +335,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!defaultCharacterSetEncoding) {
-			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_database" : @"character_set";
-			
-			defaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
+			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database"];
 		}
 		
 		return [defaultCharacterSetEncoding copy];
@@ -354,7 +352,7 @@ copy_return:
 - (NSString *)getDatabaseDefaultCollation
 {
 	@synchronized(charsetCollationLock) {
-		if (!defaultCollation && [serverSupport supportsCharacterSetAndCollationVars]) {
+		if (!defaultCollation) {
 			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
 		}
 			
@@ -373,9 +371,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!serverDefaultCharacterSetEncoding) {
-			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_server" : @"character_set";
-			
-			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
+			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_server"];
 		}
 		
 		return [serverDefaultCharacterSetEncoding copy];

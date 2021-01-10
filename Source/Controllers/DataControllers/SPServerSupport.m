@@ -50,7 +50,6 @@
 @synthesize isMySQL4;
 @synthesize isMySQL5;
 @synthesize isMySQL6;
-@synthesize supportsCharacterSetAndCollationVars;
 @synthesize supportsPost41CharacterSetHandling;
 @synthesize supportsCreateUser;
 @synthesize supportsRenameUser;
@@ -126,9 +125,6 @@
 	isMySQL4 = (serverMajorVersion == 4);
 	isMySQL5 = (serverMajorVersion == 5);
 	isMySQL6 = (serverMajorVersion == 6);
-	
-	// The variables 'character_set_*' and 'collation_*' weren't added until MySQL 4.1.1
-	supportsCharacterSetAndCollationVars = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:1];
 	
 	// As of MySQL 4.1 encoding support was greatly improved
 	supportsPost41CharacterSetHandling = [self isEqualToOrGreaterThanMajorVersion:4 minor:1 release:0];
@@ -272,8 +268,7 @@
 	isMySQL4 = NO;
 	isMySQL5 = NO;
 	isMySQL6 = NO;
-	
-	supportsCharacterSetAndCollationVars    = NO;
+
 	supportsPost41CharacterSetHandling      = NO;
 	supportsCreateUser                      = NO;
 	supportsRenameUser                      = NO;
