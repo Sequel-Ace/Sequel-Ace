@@ -53,10 +53,9 @@ typedef struct {
 @interface SPServerSupport : NSObject 
 {
 	// Convenience vars
-	BOOL isMySQL3;
-	BOOL isMySQL4;
 	BOOL isMySQL5;
 	BOOL isMySQL6;
+    BOOL isMySQL8;
 	
 	// User account related
 	BOOL supportsCreateUser;
@@ -110,16 +109,6 @@ typedef struct {
 @property (readwrite, assign) NSInteger serverReleaseVersion;
 
 /**
- * @property isMySQL3 Indicates if the server is MySQL version 3
- */
-@property (readonly) BOOL isMySQL3;
-
-/**
- * @property isMySQL4 Indicates if the server is MySQL version 4
- */
-@property (readonly) BOOL isMySQL4;
-
-/**
  * @property isMySQL5 Indicates if the server is MySQL version 5
  */
 @property (readonly) BOOL isMySQL5;
@@ -128,6 +117,11 @@ typedef struct {
  * @property isMySQL6 Indicates if the server is MySQL version 6
  */
 @property (readonly) BOOL isMySQL6;
+
+/**
+ * @property isMySQL6 Indicates if the server is MySQL version 8
+ */
+@property (readonly) BOOL isMySQL8;
 
 /**
  * @property supportsCreateUser Indicates if the server supports the CREATE USER statement

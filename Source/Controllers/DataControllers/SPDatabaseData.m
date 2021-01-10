@@ -224,71 +224,33 @@ copy_return:
 - (NSArray *)getDatabaseStorageEngines
 {	
 	if ([storageEngines count] == 0) {
-		if ([serverSupport isMySQL3] || [serverSupport isMySQL4]) {
-			[storageEngines addObject:@{@"Engine" : @"MyISAM"}];
-			
-			// Check if InnoDB support is enabled
-			NSString *result = [self _getSingleVariableValue:@"have_innodb"];
-			
-			if (result && [result isEqualToString:@"YES"])
-			{
-				[storageEngines addObject:@{@"Engine" : @"InnoDB"}];
-			}
-			
-			// Before MySQL 4.1 the MEMORY engine was known as HEAP and the ISAM engine was included
-			if ([serverSupport supportsPre41StorageEngines]) {
-				[storageEngines addObject:@{@"Engine" : @"HEAP"}];
-				[storageEngines addObject:@{@"Engine" : @"ISAM"}];
-			}
-			else {
-				[storageEngines addObject:@{@"Engine" : @"MEMORY"}];
-			}
-			
-			// BLACKHOLE storage engine was added in MySQL 4.1.11
-			if ([serverSupport supportsBlackholeStorageEngine]) {
-				[storageEngines addObject:@{@"Engine" : @"BLACKHOLE"}];
-			}
-				
-			// ARCHIVE storage engine was added in MySQL 4.1.3
-			if ([serverSupport supportsArchiveStorageEngine]) {
-				[storageEngines addObject:@{@"Engine" : @"ARCHIVE"}];
-			}
-			
-			// CSV storage engine was added in MySQL 4.1.4
-			if ([serverSupport supportsCSVStorageEngine]) {
-				[storageEngines addObject:@{@"Engine" : @"CSV"}];
-			}
-		}
-		// The table information_schema.engines didn't exist until MySQL 5.1.5
-		else {
-			if ([serverSupport supportsInformationSchemaEngines])
-			{
-				// Check the information_schema.engines table is accessible
-				SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
-				
-				if ([result numberOfRows] == 1) {
-					
-					// Table is accessible so get available storage engines
-					// Note, that the case of the column names specified in this query are important.
-					[storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
-				}
-			}
-			else {				
-				// Get storage engines
-				NSArray *engines = [self _getDatabaseDataForQuery:@"SHOW STORAGE ENGINES"];
-				
-				// We only want to include engines that are supported
-				for (NSDictionary *engine in engines) 
-				{				
-					if (([[engine objectForKey:@"Support"] isEqualToString:@"DEFAULT"] ||
-						[[engine objectForKey:@"Support"] isEqualToString:@"YES"]) &&
-						![[engine objectForKey:@"Engine"] isEqualToString:@"PERFORMANCE_SCHEMA"])
-					{
-						[storageEngines addObject:engine];
-					}
-				}				
-			}
-		}
+        if ([serverSupport supportsInformationSchemaEngines])
+        {
+            // Check the information_schema.engines table is accessible
+            SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
+            
+            if ([result numberOfRows] == 1) {
+                
+                // Table is accessible so get available storage engines
+                // Note, that the case of the column names specified in this query are important.
+                [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
+            }
+        }
+        else {
+            // Get storage engines
+            NSArray *engines = [self _getDatabaseDataForQuery:@"SHOW STORAGE ENGINES"];
+            
+            // We only want to include engines that are supported
+            for (NSDictionary *engine in engines)
+            {
+                if (([[engine objectForKey:@"Support"] isEqualToString:@"DEFAULT"] ||
+                    [[engine objectForKey:@"Support"] isEqualToString:@"YES"]) &&
+                    ![[engine objectForKey:@"Engine"] isEqualToString:@"PERFORMANCE_SCHEMA"])
+                {
+                    [storageEngines addObject:engine];
+                }
+            }
+        }
 	}
 	
 	return [storageEngines sortedArrayUsingFunction:_sortStorageEngineEntry context:nil];
