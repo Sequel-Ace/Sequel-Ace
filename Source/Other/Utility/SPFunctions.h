@@ -37,13 +37,13 @@ void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInS
  * This function can be called from a background thread as well as from
  * the main thread.
  */
-void SPMainQSync(void (^block)(void));
+void SPMainQSync(SAVoidCompletionBlock block);
 
 /**
  * Asynchronously execute a block on the main run loop.
  * This function is equivalent to calling -[[NSRunLoop mainRunLoop] performBlock:] on 10.12+
  */
-void SPMainLoopAsync(void (^block)(void));
+void SPMainLoopAsync(SAVoidCompletionBlock block);
 
 /**
  * Helper to ensure code runs on main thread
@@ -74,8 +74,8 @@ NSUInteger SPIntS2U(NSInteger i);
  */
 id SPBoxNil(id object);
 
-void executeOnBackgroundThread(void (^block)(void));
-void executeOnBackgroundThreadSync(void (^block)(void));
+void executeOnBackgroundThread(SAVoidCompletionBlock block);
+void executeOnBackgroundThreadSync(SAVoidCompletionBlock block);
 
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement);
 
