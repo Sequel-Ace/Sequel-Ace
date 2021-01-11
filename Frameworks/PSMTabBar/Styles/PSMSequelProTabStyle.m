@@ -25,7 +25,7 @@
 #import "PSMTabBarControl.h"
 #import "NSBezierPath_AMShading.h"
 #import "PSMTabDragAssistant.h"
-
+@import Firebase;
 #import "sequel-ace-Swift.h"
 
 #define kPSMSequelProObjectCounterRadius 7.0f
@@ -569,7 +569,12 @@
 - (NSColor *)fillColorForCell:(PSMTabBarCell *)cell
 {
 	NSColor *fillColor = nil;
+    NSColor *cellBackgroundColor = [[cell backgroundColor] copy]; // seems to be almost always nil, but take a copy as we've seen memory issues
 
+    if(cellBackgroundColor){
+        SPLog(@"cellBackgroundColor not nil: %@", cellBackgroundColor.description);
+        CLS_LOG(@"cellBackgroundColor not nil: %@", cellBackgroundColor.description);
+    }
 	// Set up colours
 	if (([[tabBar window] isMainWindow] || [[[tabBar window] attachedSheet] isMainWindow]) && [NSApp isActive]) {
 		if ([cell state] == NSOnState) { //active window, active cell
@@ -579,8 +584,8 @@
 			
 			fillColor = [NSColor colorWithCalibratedWhite:tabWhiteComponent alpha:1.0f];
 			
-			if([cell backgroundColor]) {
-				fillColor = [self isInDarkMode] ? [[cell backgroundColor] shadowWithLevel:0.25] : [cell backgroundColor];;
+			if(cellBackgroundColor) {
+				fillColor = [self isInDarkMode] ? [cellBackgroundColor shadowWithLevel:0.25] : cellBackgroundColor;
 			}
 		} else { //active window, background cell
 			float tabWhiteComponent = 0.68f;
@@ -588,9 +593,9 @@
 			
 			fillColor = [NSColor colorWithCalibratedWhite:tabWhiteComponent alpha:1.0f];
 			
-			if([cell backgroundColor]) {
+			if(cellBackgroundColor) {
 				//should be a slightly darker variant of the color
-				fillColor = [self isInDarkMode] ? [[cell backgroundColor] shadowWithLevel:0.40] : [[cell backgroundColor] shadowWithLevel:0.15];
+				fillColor = [self isInDarkMode] ? [cellBackgroundColor shadowWithLevel:0.40] : [cellBackgroundColor shadowWithLevel:0.15];
 				
 				// also desaturate the color
 				fillColor = [NSColor colorWithCalibratedHue:fillColor.hueComponent saturation:fillColor.saturationComponent * 0.4 brightness:fillColor.brightnessComponent alpha:1.0f];
@@ -604,7 +609,7 @@
 
 			//create a slightly desaturated variant (gray can't be desaturated so we instead make it brighter)
 			if (cell.backgroundColor) {
-				NSColor *backgroundRgb = [cell.backgroundColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+				NSColor *backgroundRgb = [cellBackgroundColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
 				fillColor = [NSColor colorWithCalibratedHue:backgroundRgb.hueComponent saturation:backgroundRgb.saturationComponent brightness:(backgroundRgb.brightnessComponent * 1.28f) alpha:1.0f];
 			} else {
 				fillColor = [NSColor colorWithCalibratedWhite:tabWhiteComponent alpha:1.0f];
@@ -617,13 +622,13 @@
 			fillColor = [NSColor colorWithCalibratedWhite:tabWhiteComponent alpha:1.0f];
 			
 			//make it dark first, then desaturate
-			if (cell.backgroundColor) {
-				NSColor *dark = [[cell.backgroundColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace] shadowWithLevel:0.15];
+			if (cellBackgroundColor) {
+				NSColor *dark = [[cellBackgroundColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace] shadowWithLevel:0.15];
 				fillColor = [NSColor colorWithCalibratedHue:dark.hueComponent saturation:dark.saturationComponent * 0.15 brightness:(dark.brightnessComponent * 1.28) alpha:1.0f];
 			}
 		}
 	}
-	
+
 	return fillColor;
 }
 

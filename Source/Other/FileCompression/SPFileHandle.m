@@ -304,6 +304,8 @@ struct SPRawFileHandles {
  */
 - (void)writeData:(NSData *)data
 {
+    SPLog(@"in writeData, fileIsClosed: %d", fileIsClosed);
+    CLS_LOG(@"in writeData, fileIsClosed: %d", fileIsClosed);
 	// Throw an exception if the file is closed
 	if (fileIsClosed) [NSException raise:NSInternalInconsistencyException format:@"Cannot write to a file handle after it has been closed"];
 
@@ -350,6 +352,8 @@ struct SPRawFileHandles {
  */
 - (void)closeFile
 {
+    SPLog(@"in closeFile, fileIsClosed: %d", fileIsClosed);
+    CLS_LOG(@"in closeFile, fileIsClosed: %d", fileIsClosed);
 	if (!fileIsClosed) {
 		[self synchronizeFile];
 		[self _closeFileHandles];
@@ -363,6 +367,8 @@ struct SPRawFileHandles {
 		
 		fileIsClosed = YES;
 	}
+    SPLog(@"leaving closeFile, fileIsClosed: %d", fileIsClosed);
+    CLS_LOG(@"leaving closeFile, fileIsClosed: %d", fileIsClosed);
 }
 
 #pragma mark -
@@ -474,6 +480,8 @@ struct SPRawFileHandles {
  */
 - (void)dealloc
 {
+    SPLog(@"calling closeFile");
+    CLS_LOG(@"calling closeFile");
 	[self closeFile];
 
 	free(wrappedFile);

@@ -336,7 +336,9 @@
  */
 - (void) resetStatusData
 {
-	[status removeAllObjects];
+    if(status){
+        [status removeAllObjects];
+    }
 }
 
 /**
@@ -344,8 +346,12 @@
  */
 - (void) resetColumnData
 {
-	[columns removeAllObjects];
-	[columnNames removeAllObjects];
+    if(columns){
+        [columns removeAllObjects];
+    }
+    if(columnNames){
+        [columnNames removeAllObjects];
+    }
 }
 
 /**

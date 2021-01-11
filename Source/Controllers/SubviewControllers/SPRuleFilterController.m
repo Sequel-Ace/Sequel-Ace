@@ -35,6 +35,7 @@
 #import "SPContentFilterManager.h"
 #import "SPFunctions.h"
 #import "SPTableFilterParser.h"
+@import Firebase;
 
 typedef NS_ENUM(NSInteger, RuleNodeType) {
 	RuleNodeTypeColumn,
@@ -1182,6 +1183,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
                     // the regex below is causing a crash:
                     // https://console.firebase.google.com/u/0/project/com-sequel-ace/crashlytics/app/ios:com.sequel-ace.sequel-ace/issues/8754587eadf991cbb11ccc83b9fe0b5b
                     // so I've added logging to RegexLite exception generation.
+
+                    SPLog(@"tip: %@", tip);
+                    CLS_LOG(@"tip: %@", tip);
+
+                    // FIXME: oh ... is the regex is wrong.
+                    // (?<foo>bar) = Define a named group named "foo" consisting of pattern bar.
+                    // so (?<!\\\\)\\$CURRENT_FIELD" looks like the start of a group name,
 					[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[[colNode name] backtickQuotedString]];
 					[tip flushCachedRegexData];
 					tooltip = [NSString stringWithString:tip];

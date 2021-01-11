@@ -1142,8 +1142,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) startTaskWithDescription:(NSString *)description
 {
+    SPLog(@"startTaskWithDescription: %@", description);
+    CLS_LOG(@"startTaskWithDescription: %@", description);
+
 	// Ensure a call on the main thread
-	if (![NSThread isMainThread]) return [[self onMainThread] startTaskWithDescription:description];
+    if (![NSThread isMainThread]){
+        SPLog(@"not on main thread, calling self again on main");
+        return [[self onMainThread] startTaskWithDescription:description];
+    }
 
 	// Set the task text. If a nil string was supplied, a generic query notification is occurring -
 	// if a task is not already active, use default text.
@@ -1175,7 +1181,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		[[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
 		[mainToolbar validateVisibleItems];
 		[chooseDatabaseButton setEnabled:NO];
-				
+
+        SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
+        CLS_LOG(@"Schedule appearance of the task window in the near future, using a frame timer");
+
 		// Schedule appearance of the task window in the near future, using a frame timer.
 		taskFadeInStartDate = [[NSDate alloc] init];
 		queryStartDate = [[NSDate alloc] init];
@@ -1193,7 +1202,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	double timeSinceQueryStarted = [[NSDate date] timeIntervalSinceDate:queryStartDate];
 
 	NSString *queryRunningTime = [NSDateComponentsFormatter.hourMinSecFormatter stringFromTimeInterval:timeSinceQueryStarted];
-	
+
+    SPLog(@"showQueryExecutionTime: %@", queryRunningTime);
+
 	NSShadow *textShadow = [[NSShadow alloc] init];
 	[textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
 	[textShadow setShadowOffset:NSMakeSize(1.0f, -1.0f)];
@@ -1206,7 +1217,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	NSAttributedString *queryRunningTimeString = [[NSAttributedString alloc] initWithString:queryRunningTime attributes:attributes];
 	
 	[taskDurationTime setAttributedStringValue:queryRunningTimeString];
-	
+
 }
 
 /**
@@ -1214,6 +1225,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) fadeInTaskProgressWindow:(NSTimer *)theTimer
 {
+    SPLog(@"fadeInTaskProgressWindow");
+
 	double timeSinceFadeInStart = [[NSDate date] timeIntervalSinceDate:taskFadeInStartDate];
 
 	// Keep the window hidden for the first ~0.5 secs
@@ -1224,6 +1237,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// If the task progress window is still hidden, center it before revealing it
 	if (alphaValue == 0) [self centerTaskWindow];
 
+    SPLog(@"Fade in the task window over 0.6 seconds");
+    CLS_LOG(@"Fade in the task window over 0.6 seconds");
+
 	// Fade in the task window over 0.6 seconds
 	alphaValue = (float)(timeSinceFadeInStart - 0.5) / 0.6f;
 	if (alphaValue > 1.0f) alphaValue = 1.0f;
@@ -1232,8 +1248,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// If the window has been fully faded in, clean up the timer.
 	if (alphaValue == 1.0) {
 		[taskDrawTimer invalidate];
-		
-		
 	}
 }
 
@@ -1263,6 +1277,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskPercentage:(CGFloat)taskPercentage
 {
+
+    SPLog(@"setTaskPercentage = %f", taskPercentage);
 
 	// If the task display is currently indeterminate, set it to determinate on the main thread.
 	if (taskDisplayIsIndeterminate) {
@@ -1297,6 +1313,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskProgressToIndeterminateAfterDelay:(BOOL)afterDelay
 {
+    SPLog(@"setTaskProgressToIndeterminateAfterDelay");
+
 	if (afterDelay) {
 		[self performSelector:@selector(setTaskProgressToIndeterminateAfterDelay:) withObject:nil afterDelay:0.5];
 		return;
@@ -1315,12 +1333,18 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) endTask
 {
+    SPLog(@"endTask");
+
 	// Ensure a call on the main thread
 	if (![NSThread isMainThread]) return [[self onMainThread] endTask];
+
+    SPLog(@"_isWorkingLevel = %li", (long)_isWorkingLevel);
 
 	// Decrement the working level
 	_isWorkingLevel--;
 	assert(_isWorkingLevel >= 0);
+
+    SPLog(@"_isWorkingLevel = %li", (long)_isWorkingLevel);
 
 	// Ensure cancellation interface is reset
 	[self disableTaskCancellation];
@@ -1328,22 +1352,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// If all tasks have ended, re-enable the interface
 	if (!_isWorkingLevel) {
 
+        SPLog(@"!_isWorkingLevel, all tasks have ended");
+        CLS_LOG(@"!_isWorkingLevel, all tasks have ended");
+
 		// Cancel the draw timer if it exists
 		if (taskDrawTimer) {
+            SPLog(@"Cancel the draw timer if it exists");
 			[taskDrawTimer invalidate];
-			
-			
 		}
 
 		if (queryExecutionTimer) {
 			queryStartDate = [[NSDate alloc] init];
+            SPLog(@"self showQueryExecutionTime");
 			[self showQueryExecutionTime];
+            SPLog(@"queryExecutionTimer invalidate");
 			[queryExecutionTimer invalidate];
-			
 		}
 		
 		// Hide the task interface and reset to indeterminate
-		if (taskDisplayIsIndeterminate) [taskProgressIndicator stopAnimation:self];
+        if (taskDisplayIsIndeterminate){
+            SPLog(@"taskDisplayIsIndeterminate,stopAnimation ");
+            CLS_LOG(@"taskDisplayIsIndeterminate,stopAnimation");
+            [taskProgressIndicator stopAnimation:self];
+        }
 		[taskProgressWindow setAlphaValue:0.0f];
 		taskDisplayIsIndeterminate = YES;
 		[taskProgressIndicator setIndeterminate:YES];
@@ -3941,7 +3972,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             if ([queryWindow isVisible]) {
                 toolbarItem.image = showConsoleImage;
             } else {
-                 CLS_LOG(@"macOS < 11 and queryWindow is NOT Visible");
                 toolbarItem.image = hideConsoleImage;
             }
         }
@@ -5990,13 +6020,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
-        if (![[self onMainThread] couldCommitCurrentViewActions]) {
-            [[self->mainToolbar onMainThread] setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+        if (![self couldCommitCurrentViewActions]) {
+            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
-        [[self->tableTabView onMainThread] selectTabViewItemAtIndex:0];
-        [[self->mainToolbar onMainThread] setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self->tableTabView selectTabViewItemAtIndex:0];
+        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
@@ -6460,7 +6490,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		});
 
 		// Add a history entry
-		[spHistoryControllerInstance updateHistoryEntries];
+        @synchronized(self) {
+            [spHistoryControllerInstance updateHistoryEntries];
+        }
 		// Empty the loading pool and exit the thread
 		[self endTask];
 		

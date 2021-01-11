@@ -848,7 +848,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 
                         if(errors.length>0){
-                            [[errorText onMainThread] setText:errors];
+                            [[errorText onMainThread] setString:errors];
                         }
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
@@ -1713,6 +1713,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView scrollRangeToVisible:NSMakeRange([query length], 0)];
     
     if ([[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+        SPLog(@"[[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH, calling doSyntaxHighlightingWithForce");
+        CLS_LOG(@"[[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH, calling doSyntaxHighlightingWithForce");
         [textView doSyntaxHighlightingWithForce:YES];
     }
 }

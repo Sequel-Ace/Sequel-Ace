@@ -1247,11 +1247,11 @@ set_input:
 	previousConnectionEncodingViaLatin1 = [connection encodingUsesLatin1Transport];
 
 	// Add the first exporter to the operation queue
-	[operationQueue addOperation:[exporters objectAtIndex:0]];
+	[operationQueue addOperation:[exporters safeObjectAtIndex:0]];
 
 	// Remove the exporter we just added to the operation queue from our list of exporters
 	// so we know it's already been done.
-	[exporters removeObjectAtIndex:0];
+	[exporters safeRemoveObjectAtIndex:0];
 }
 
 /**

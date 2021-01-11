@@ -34,6 +34,7 @@
 #import "SPGroupNode.h"
 #import "SPThreadAdditions.h"
 #import "pthread.h"
+@import Firebase;
 
 static SPFavoritesController *sharedFavoritesController = nil;
 
@@ -304,28 +305,38 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	}
 		
 	NSDictionary *root = [favoritesData objectForKey:SPFavoritesRootKey];
-	
-	SPGroupNode *rootGroupNode = [[SPGroupNode alloc] init];
-	SPGroupNode *favoritesGroupNode = [[SPGroupNode alloc] initWithName:[[root objectForKey:SPFavoritesGroupNameKey] uppercaseString]];
-	
-	[favoritesGroupNode setNodeIsExpanded:[[root objectForKey:SPFavoritesGroupIsExpandedKey] boolValue]];
-	
-	SPTreeNode *rootNode = [[SPTreeNode alloc] initWithRepresentedObject:rootGroupNode];
-	SPTreeNode *favoritesNode = [[SPTreeNode alloc] initWithRepresentedObject:favoritesGroupNode];
-		
-	[rootNode setIsGroup:YES];
-	[favoritesNode setIsGroup:YES];
-	
-	for (NSDictionary *favorite in [root objectForKey:SPFavoriteChildrenKey])
-	{
-		SPTreeNode *node = [self _constructBranchForNodeData:favorite];
-				
-		[[favoritesNode mutableChildNodes] addObject:node];
-	}
-	
-	[[rootNode mutableChildNodes] addObject:favoritesNode];
-	
-	favoritesTree = rootNode;
+
+    SPLog(@"root class: %@", root.class);
+    CLS_LOG(@"root class: %@", root.class);
+
+    if([root isKindOfClass:[NSDictionary class]]){
+
+        SPGroupNode *rootGroupNode = [[SPGroupNode alloc] init];
+        SPGroupNode *favoritesGroupNode = [[SPGroupNode alloc] initWithName:[[root safeObjectForKey:SPFavoritesGroupNameKey] uppercaseString]];
+
+        [favoritesGroupNode setNodeIsExpanded:[[root safeObjectForKey:SPFavoritesGroupIsExpandedKey] boolValue]];
+
+        SPTreeNode *rootNode = [[SPTreeNode alloc] initWithRepresentedObject:rootGroupNode];
+        SPTreeNode *favoritesNode = [[SPTreeNode alloc] initWithRepresentedObject:favoritesGroupNode];
+
+        [rootNode setIsGroup:YES];
+        [favoritesNode setIsGroup:YES];
+
+        for (NSDictionary *favorite in [root safeObjectForKey:SPFavoriteChildrenKey])
+        {
+            SPTreeNode *node = [self _constructBranchForNodeData:favorite];
+
+            [[favoritesNode mutableChildNodes] addObject:node];
+        }
+
+        [[rootNode mutableChildNodes] addObject:favoritesNode];
+
+        favoritesTree = rootNode;
+    }
+    else{
+        SPLog(@"ERROR root is not NSDictionary");
+        CLS_LOG(@"ERROR root is not NSDictionary");
+    }
 		
 	pthread_mutex_unlock(&favoritesLock);
 }
