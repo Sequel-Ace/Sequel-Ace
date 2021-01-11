@@ -79,7 +79,9 @@
 	// Retrieve actual WHERE clause
 	NSMutableString *clause = [[NSMutableString alloc] init];
 	[clause setString:_clause];
-	
+
+    SPLog(@"clause: %@", clause);
+
 	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY " withString:(caseSensitive) ? @"BINARY " : @""];
 	[clause flushCachedRegexData];
 	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:(_currentField) ? [_currentField backtickQuotedString] : @""];
@@ -88,7 +90,7 @@
 	// Escape % sign for format insertion ie if number of arguments is greater than 0
 	if(numberOfArguments > 0) [clause replaceOccurrencesOfRegex:@"%" withString:@"%%"];
 	[clause flushCachedRegexData];
-	
+
 	// Replace placeholder ${} by %@
 	NSRange matchedRange;
 	NSString *re = @"(?<!\\\\)\\$\\{.*?\\}";

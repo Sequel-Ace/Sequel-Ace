@@ -1385,17 +1385,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                 if(title == nil || [title isNSNull]){
                     SPLog(@"title is nil");
                     CLS_LOG(@"title is nil");
-
-                    NSDictionary *userInfo = @{
-                        NSLocalizedDescriptionKey: @"loadTable: title is nil, check CHARACTER_SET_NAME",
-                        @"encodingName":encodingName,
-                        @"encoding": encoding,
-                    };
-
                     // default to empty string?
                     title = @"";
-
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:7 userInfo:userInfo]];
                 }
 
 				[self->encodingPopupCell addItemWithTitle:title];

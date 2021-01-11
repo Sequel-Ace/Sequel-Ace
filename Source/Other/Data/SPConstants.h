@@ -690,6 +690,19 @@ typedef NS_ENUM(NSInteger,SPErrorCode) { // error codes in SPErrorDomain
 	SPErrorWrongContentVersion = 110003,
 };
 
+inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject *cfObj)
+{
+    if ([cfObj isKindOfClass:[NSString class]]){
+        return (NSString *)cfObj;
+    }
+    if ([cfObj isKindOfClass:[NSNumber class]]){
+        return [(NSNumber *)cfObj stringValue];
+    }
+    else{
+        return @"";
+    }
+}
+
 #define user_defaults_get_bool(key)         [[NSUserDefaults standardUserDefaults] boolForKey:key]
 #define user_defaults_get_bool_ud(key, ud)  [ud boolForKey:key]
 #define user_defaults_set_bool(key, b, ud)  [ud setBool:b forKey:key]

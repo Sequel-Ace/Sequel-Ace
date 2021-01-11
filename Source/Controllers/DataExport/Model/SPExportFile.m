@@ -96,7 +96,10 @@
 - (void)close
 {
 	if (![self exportFileHandle]) return;
-	
+
+    SPLog(@"calling closeFile");
+    CLS_LOG(@"calling closeFile");
+
 	[[self exportFileHandle] closeFile];
 }
 

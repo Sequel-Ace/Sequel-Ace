@@ -768,6 +768,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			[resultingClauseLabel setStringValue:@"SELECT * FROM <table> WHERE"];
 			NSMutableString *c = [[NSMutableString alloc] init];
 			[c setString:[contentFilterTextView string]];
+            SPLog(@"c: %@", c);
+            CLS_LOG(@"c: %@", c);
 			[c replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY" withString:@"[BINARY]"];
 			[c flushCachedRegexData];
 			[c replaceOccurrencesOfRegex:@"(?<!\\\\)(\\$\\{.*?\\})" withString:@"[arg]"];

@@ -302,7 +302,7 @@
 		for (NSDictionary *aTableDict in tablesAndViews) {
 
 			// Extract the name
-			NSString *aTableName = [aTableDict objectForKey:@"name"];
+			NSString *aTableName = [aTableDict safeObjectForKey:@"name"];
 
 			if(![aTableName isKindOfClass:[NSString class]] || ![aTableName length]) continue;
 

@@ -155,6 +155,7 @@ typedef struct {
 - (NSArray *)suggestionsForSQLCompletionWith:(NSString *)currentWord dictMode:(BOOL)isDictMode browseMode:(BOOL)dbBrowseMode withTableName:(NSString*)aTableName withDbName:(NSString*)aDbName;
 - (IBAction) selectCurrentQuery:(id)sender;
 - (void) processMirroredSnippets;
+- (void)doSyntaxHighlightingWithForceWrapper:(NSString*)keyPath;
 
 - (BOOL)checkForCaretInsideSnippet;
 - (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange isFavourite:(BOOL)isFave;

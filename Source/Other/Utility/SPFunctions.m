@@ -32,7 +32,7 @@
 #import <Security/SecRandom.h>
 #import <objc/runtime.h>
 
-void SPMainQSync(void (^block)(void))
+void SPMainQSync(SAVoidCompletionBlock block)
 {
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
@@ -58,7 +58,7 @@ void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInS
 }
 
 
-void SPMainLoopAsync(void (^block)(void))
+void SPMainLoopAsync(SAVoidCompletionBlock block)
 {
 	CFRunLoopPerformBlock(CFRunLoopGetMain(), NSDefaultRunLoopMode, block);
 }
@@ -78,7 +78,7 @@ void dispatch_once_on_main_thread(dispatch_once_t *predicate,
 	}
 }
 
-void executeOnBackgroundThreadSync(void (^block)(void))
+void executeOnBackgroundThreadSync(SAVoidCompletionBlock block)
 {
 	static dispatch_once_t onceToken5;
 	   dispatch_once(&onceToken5, ^{
@@ -93,7 +93,7 @@ void executeOnBackgroundThreadSync(void (^block)(void))
 	}
 }
 
-void executeOnBackgroundThread(void (^block)(void))
+void executeOnBackgroundThread(SAVoidCompletionBlock block)
 {
 	static dispatch_once_t onceToken3;
 	dispatch_once(&onceToken3, ^{

@@ -187,13 +187,35 @@
 
 			// Check for 'Rows' == NULL - information_schema database doesn't report row count for it's tables
 			if (![[tableStatus objectForKey:@"Rows"] isNSNull]) {
+
+                id obj = [tableStatus objectForKey:@"Rows"];
+
+                long long tableStatusRowsAsLong = 0;
+
+                if([obj isKindOfClass:[NSString class]]){
+                    tableStatusRowsAsLong = [obj longLongValue];
+                }
+
+                SPLog(@"tableStatusRowsAsLong = %lld", tableStatusRowsAsLong);
+
 				[info addObject:[NSString stringWithFormat:[[tableStatus objectForKey:@"RowsCountAccurate"] boolValue] ? NSLocalizedString(@"rows: %@", @"Table Info Section : number of rows (exact value)") : NSLocalizedString(@"rows: ~%@", @"Table Info Section : number of rows (estimated value)"),
-					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Rows"] longLongValue]]]]];
+					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:tableStatusRowsAsLong]]]];
 			}
 			
 			// Check for 'Data_Length' == NULL (see PR #2606)
 			if([[tableStatus objectForKey:@"Data_length"] unboxNull]) {
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:[[tableStatus objectForKey:@"Data_length"] longLongValue]]]];
+
+                id obj = [tableStatus objectForKey:@"Data_length"];
+
+                long long tableStatusDataLengthAsLong = 0;
+
+                if([obj isKindOfClass:[NSString class]]){
+                    tableStatusDataLengthAsLong = [obj longLongValue];
+                }
+
+                SPLog(@"tableStatusDataLengthAsLong = %lld", tableStatusDataLengthAsLong);
+
+				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:tableStatusDataLengthAsLong]]];
 			}
 
             if([[tableStatus objectForKey:@"Collation"] isNSNull]){
@@ -221,8 +243,19 @@
 			}
 			
 			if (![[tableStatus objectForKey:@"Auto_increment"] isNSNull]) {
+
+                id obj = [tableStatus objectForKey:@"Auto_increment"];
+
+                long long tableStatusAutoIncrementAsLong = 0;
+
+                if([obj isKindOfClass:[NSString class]]){
+                    tableStatusAutoIncrementAsLong = [obj longLongValue];
+                }
+
+                SPLog(@"tableStatusAutoIncrementAsLong = %lld", tableStatusAutoIncrementAsLong);
+
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"auto_increment: %@", @"Table Info Section : current value of auto_increment"),
-					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[[tableStatus objectForKey:@"Auto_increment"] longLongValue]]]]];
+					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:tableStatusAutoIncrementAsLong]]]];
 			}
             
             //Show create_options

@@ -467,9 +467,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
         NSError *err=nil;
 
+        SPLog(@"calling addBookmarkForUrl");
+        CLS_LOG(@"calling addBookmarkForUrl");
         // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
         if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
             SPLog(@"addBookmarkForUrl success");
+            CLS_LOG(@"addBookmarkForUrl success");
+        }
+        else{
+            SPLog(@"addBookmarkForUrl failed");
+            CLS_LOG(@"addBookmarkForUrl failed");
         }
 
 		// SSH key file selection

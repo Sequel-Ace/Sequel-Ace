@@ -14,7 +14,7 @@
 #import "PSMSequelProTabStyle.h"
 #import "PSMTabDragAssistant.h"
 #import "PSMTabBarController.h"
-
+@import Firebase;
 #include <Carbon/Carbon.h> /* for GetKeys() and KeyMap */
 #include <bitstring.h>
 
@@ -670,20 +670,26 @@
     if ([[self subviews] containsObject:[cell indicator]]) {
         [[cell indicator] removeFromSuperview];
     }
-    // remove tracking
-    [[NSNotificationCenter defaultCenter] removeObserver:cell];
-	
-    if ([cell closeButtonTrackingTag] != 0) {
-        [self removeTrackingRect:[cell closeButtonTrackingTag]];
-		[cell setCloseButtonTrackingTag:0];
-    }
-    if ([cell cellTrackingTag] != 0) {
-        [self removeTrackingRect:[cell cellTrackingTag]];
-		[cell setCellTrackingTag:0];
-    }
+    if(cell != nil){
+        // remove tracking
+        [[NSNotificationCenter defaultCenter] removeObserver:cell];
 
-    // pull from collection
-    [_cells removeObject:cell];
+        if ([cell closeButtonTrackingTag] != 0) {
+            [self removeTrackingRect:[cell closeButtonTrackingTag]];
+            [cell setCloseButtonTrackingTag:0];
+        }
+        if ([cell cellTrackingTag] != 0) {
+            [self removeTrackingRect:[cell cellTrackingTag]];
+            [cell setCellTrackingTag:0];
+        }
+
+        // pull from collection
+        [_cells removeObject:cell];
+    }
+    else{
+        SPLog(@"cell is nil");
+        CLS_LOG(@"cell is nil");
+    }
 
     [self update];
 }
