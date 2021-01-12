@@ -12,7 +12,7 @@
 //      Jamie Kirkpatrick
 
 #import <Cocoa/Cocoa.h>
-#import "SRCommon.h"
+#import <ShortcutRecorder/SRCommon.h>
 
 #define SRMinWidth 50
 #define SRMaxHeight 22

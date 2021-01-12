@@ -323,7 +323,7 @@
 "An error occurred while trying to delete the index.\n\nMySQL said: %@" = "An error occurred while trying to delete the index.\n\nMySQL said: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for “%@”.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "An error occurred while trying to rename the database '%1$@' to '%2$@'.";
@@ -463,8 +463,8 @@
 /* clear global history list informative message */
 "Are you sure you want to clear the global history list? This action cannot be undone." = "¿Está seguro que desea vaciar la lista del historial global? Esta acción no se puede deshacer.";
 
-/* clear history list for “%@” informative message */
-"Are you sure you want to clear the history list for “%@”? This action cannot be undone." = "¿Está seguro que desea vaciar “%@” de la lista del historial? Esta acción no se puede deshacer.";
+/* clear history list for %@ informative message */
+"Are you sure you want to clear the history list for %@? This action cannot be undone." = "¿Está seguro que desea vaciar %@ de la lista del historial? Esta acción no se puede deshacer.";
 
 /* truncate tables informative message */
 "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "¿Está seguro que desea eliminar TODOS los registros de las tablas seleccionadas? Esta operación no se puede deshacer.";
@@ -566,7 +566,7 @@
 "BUNDLES" = "PAQUETES";
 
 /* Bundle Editor : Outline View : Menu Category item : tooltip */
-"Bundles in category “%@”" = "Paquetes en categoría “%@”";
+"Bundles in category %@" = "Paquetes en categoría %@";
 
 /* bundles installation error */
 "Bundles Installation Error" = "Error al instalar los paquetes";
@@ -666,8 +666,8 @@
 /* clear global history menu item title */
 "Clear Global History" = "Vaciar historial global";
 
-/* clear history for “%@” menu title */
-"Clear History for “%@”" = "Vaciar historial de “%@”";
+/* clear history for %@ menu title */
+"Clear History for %@" = "Vaciar historial de %@";
 
 /* clear history message */
 "Clear History?" = "¿Vaciar historial?";
@@ -730,7 +730,7 @@
 "Connection data file couldn't be read." = "El archivo de conexión no se ha podido leer.";
 
 /* message error while reading connection data file and suggesting to save it under a differnet name */
-"Connection data file “%@” couldn't be read. Please try to save the document under a different name." = "El archivo de conexión “%@” no se ha podido leer. Por favor, intente guardar el documento con un nombre distinto.";
+"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "El archivo de conexión %@ no se ha podido leer. Por favor, intente guardar el documento con un nombre distinto.";
 
 /* connection failed title */
 "Connection failed!" = "¡Conexión fallida!";
@@ -1150,7 +1150,7 @@
 "Enter connection details below, or choose a favorite" = "Introduzca los detalles de la conexión a continuación, o elija un favorito";
 
 /* SSH key password prompt */
-"Enter your password for the SSH key\n\"%@\"" = "Introduzca la contraseña de la clave SSH\n\\"%@\\"";
+"Enter your password for the SSH key\n\"%@\"" = "Introduzca la contraseña de la clave SSH\n'%@";
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
@@ -1270,9 +1270,9 @@
 "Error while installing color theme file" = "Error al instalar el archivo de tema de color";
 
 /* Bundle Editor : Trash-Bundle(s)-Error : error dialog title
- error while moving “%@” to trash
+ error while moving %@ to trash
  Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version. */
-"Error while moving “%@” to Trash." = "Error al trasladar “%@” a la papelera.";
+"Error while moving %@ to Trash." = "Error al trasladar %@ a la papelera.";
 
 /* error while optimizing selected items message */
 "Error while optimizing selected items" = "Error al optimizar los elementos seleccionados";
@@ -1293,7 +1293,7 @@
 "Error while saving the Bundle." = "Error al guardar el paquete.";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
-"Error while saving “%@”." = "Error al guardar “%@”.";
+"Error while saving %@." = "Error al guardar %@.";
 
 /* Errors title */
 "Errors" = "Errores";
@@ -1474,7 +1474,7 @@
 "Gzip compression" = "Compresión gzip";
 
 /* MySQL Help Viewer : Results list : Page title */
-"Help topics for “%@”" = "Temas de ayuda para “%@”";
+"Help topics for %@" = "Temas de ayuda para %@";
 
 /* hide console */
 "Hide Console" = "Ocultar consola";
@@ -1936,8 +1936,8 @@
  Tables List : Gear Menu : Duplicate connection to new window */
 "Open View in New Window" = "Abrir vista en nueva ventana";
 
-/* menu item open “%@” in new window */
-"Open “%@” in New Window" = "Abrir “%@” en nueva ventana";
+/* menu item open %@ in new window */
+"Open %@ in New Window" = "Abrir %@ en nueva ventana";
 
 /* OPTIMIZE one or more tables - result title */
 "Optimize %@" = "Optimizar %@";
@@ -2379,7 +2379,7 @@
 "Show Detail" = "Mostrar detalle";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
-"Show MySQL help for “%@”" = "Mostrar ayuda de MySQL para “%@”";
+"Show MySQL help for %@" = "Mostrar ayuda de MySQL para %@";
 
 /* show navigator */
 "Show Navigator" = "Mostrar navegador";
@@ -2669,7 +2669,7 @@
 "In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In these files:\n\n%@\n\nDo you still want to install the bundle?";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file “%@” contains ‘%@’ data." = "El archivo elegido “%1$@” contiene ‘%2$@’ datos.";
+"The chosen file %@ contains ‘%@’ data." = "El archivo elegido “%1$@” contiene ‘%2$@’ datos.";
 
 /* the color theme ‘%@’ already exists. */
 "The color theme ‘%@’ already exists." = "El tema de color ‘%@’ ya existe.";
@@ -2696,7 +2696,7 @@
 "The current color theme is unsaved. Do you want to proceed without saving it?" = "El tema de color actual no está guardado. ¿Desea continuar sin guardarlo?";
 
 /* Short important release note for swap of custom query buttons */
-"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Las posiciones y los atajos de teclado de los botones \\"Ejecutar\\" y \\"Ejecutar todo\\" de la pestaña consulta personaliza se han intercambiado.";
+"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Las posiciones y los atajos de teclado de los botones Ejecutar y Ejecutar todo de la pestaña consulta personaliza se han intercambiado.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
 "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Los siguientes paquetes predeterminados fueron actualizados:\n%@\nSus modificaciones fueron almacenadas como “(user)”.";
@@ -2836,22 +2836,22 @@
 "This is an alias for TINYINT(1)." = "This is an alias for TINYINT(1).";
 
 /* Table Structure : Collation dropdown : database marker tooltip */
-"This is the default collation of database “%@”." = "This is the default collation of database “%@”.";
+"This is the default collation of database %@." = "This is the default collation of database %@.";
 
 /* Table Structure : Collation dropdown : default marker tooltip */
-"This is the default collation of encoding “%@”." = "This is the default collation of encoding “%@”.";
+"This is the default collation of encoding %@." = "This is the default collation of encoding %@.";
 
 /* Table Structure : Collation dropdown : table marker tooltip */
-"This is the default collation of table “%@”." = "This is the default collation of table “%@”.";
+"This is the default collation of table %@." = "This is the default collation of table %@.";
 
 /* Table Structure : Collation dropdown : server marker tooltip */
 "This is the default collation of this server." = "This is the default collation of this server.";
 
 /* Table Structure : Encoding dropdown : database marker tooltip */
-"This is the default encoding of database “%@”." = "This is the default encoding of database “%@”.";
+"This is the default encoding of database %@." = "This is the default encoding of database %@.";
 
 /* Table Structure : Encoding dropdown : table marker tooltip */
-"This is the default encoding of table “%@”." = "This is the default encoding of table “%@”.";
+"This is the default encoding of table %@." = "This is the default encoding of table %@.";
 
 /* Table Structure : Encoding dropdown : server marker tooltip */
 "This is the default encoding of this server." = "This is the default encoding of this server.";
@@ -3048,8 +3048,8 @@
 /* URL scheme command was terminated by user */
 "URL scheme command was terminated by user" = "El comando de esquema URL fue finalizado por el usuario";
 
-/* URL scheme command “%@” unsupported */
-"URL scheme command “%@” unsupported" = "Comando de esquema URL “%@” no soportado";
+/* URL scheme command %@ unsupported */
+"URL scheme command %@ unsupported" = "Comando de esquema URL %@ no soportado";
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Usar 127.0.0.1";
@@ -3160,22 +3160,22 @@
 "‘%@’ Fields Content Filters" = "‘%@’ Filtros de contenido de campos";
 
 /* Export file already exists message */
-"“%@” already exists. Do you want to replace it?" = "“%@” ya existe. ¿Desea reemplazarlo?";
+"%@ already exists. Do you want to replace it?" = "%@ ya existe. ¿Desea reemplazarlo?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
-"“%@” Bundle" = "Paquete \\"%@”";
+"%@ Bundle" = "Paquete %@";
 
 /* Export file creation error title */
-"“%@” could not be created" = "“%@” no se ha podido crear";
+"%@ could not be created" = "%@ no se ha podido crear";
 
-/* “%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"“%@” couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "“%@” no se ha podido analizar. Puede editar la columna pero no se mostrará en la vista de contenido; por favor informe este problema al equipo de Sequel Ace utilizando la opción del menú Ayuda.";
+/* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ no se ha podido analizar. Puede editar la columna pero no se mostrará en la vista de contenido; por favor informe este problema al equipo de Sequel Ace utilizando la opción del menú Ayuda.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
-"“%@” is not a valid client certificate file." = "“%@” is not a valid client certificate file.";
+"%@ is not a valid client certificate file." = "%@ is not a valid client certificate file.";
 
 /* connection view : ssl : key file picker : wrong format error title */
-"“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+"%@ is not a valid private key file." = "%@ is not a valid private key file.";
 
 /* text shown when there are App Sandbox Issues */
 "App Sandbox Issue" = "App Sandbox Issue";
