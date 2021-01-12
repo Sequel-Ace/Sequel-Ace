@@ -414,7 +414,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	// Ensure the connection encoding is set to utf8 for database/table name retrieval
-	[mySQLConnection setEncoding:@"utf8"];
+	[mySQLConnection setEncoding:@"utf8mb4"];
 
 	// Update the database list
 	[self setDatabases:self];
@@ -1512,7 +1512,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Special-case UTF-8 over latin 1 to allow viewing/editing of mangled data.
 	if ([mysqlEncoding isEqualToString:@"utf8-"]) {
 		useLatin1Transport = YES;
-		mysqlEncoding = @"utf8";
+		mysqlEncoding = @"utf8mb4";
 	}
 
 	// Set the connection encoding
@@ -1621,7 +1621,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 									nil];
 	NSString *mysqlEncoding = [translationMap valueForKey:[NSString stringWithFormat:@"%i", [encodingTag intValue]]];
 
-	if (!mysqlEncoding) return @"utf8";
+	if (!mysqlEncoding) return @"utf8mb4";
 
 	return mysqlEncoding;
 }
@@ -3369,7 +3369,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	
 	// Can only be enabled on mysql 4.1+
 	if (action == @selector(alterDatabase:)) {
-		return (([self database] != nil) && [serverSupport supportsPost41CharacterSetHandling]);
+		return (([self database] != nil));
 	}
 	
 	// Table specific actions
@@ -5036,7 +5036,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 			if(doSyntaxHighlighting && [params count] < 3) return;
 
-			BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+			BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
+            
 
 			NSArray *items = [params subarrayWithRange:NSMakeRange(1, [params count]-( (doSyntaxHighlighting) ? 2 : 1) )];
 			NSArray *availableItems = [tablesListInstance tables];
@@ -5093,7 +5094,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 				// Ensure that queries are made in UTF8
 				if (changeEncoding) {
 					[mySQLConnection storeEncodingForRestoration];
-					[mySQLConnection setEncoding:@"utf8"];
+					[mySQLConnection setEncoding:@"utf8mb4"];
 				}
 
 				// Get create syntax
@@ -5692,7 +5693,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	}
 
 	// As we're amending identifiers, ensure UTF8
-	if (![[mySQLConnection encoding] isEqualToString:@"utf8"]) [mySQLConnection setEncoding:@"utf8"];
+    if (![[mySQLConnection encoding] hasPrefix:@"utf8"]) {
+        [mySQLConnection setEncoding:@"utf8mb4"];
+    }
 	
 	SPDatabaseAction *dbAction = [[SPDatabaseAction alloc] init];
 	[dbAction setConnection:mySQLConnection];
@@ -6402,11 +6405,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 		// Ensure status and details are fetched using UTF8
 		NSString *previousEncoding = [mySQLConnection encoding];
-		BOOL changeEncoding = ![previousEncoding isEqualToString:@"utf8"];
+		BOOL changeEncoding = ![previousEncoding hasPrefix:@"utf8"];
 
 		if (changeEncoding) {
 			[mySQLConnection storeEncodingForRestoration];
-			[mySQLConnection setEncoding:@"utf8"];
+			[mySQLConnection setEncoding:@"utf8mb4"];
 		}
 
 		// Cache status information on the working thread

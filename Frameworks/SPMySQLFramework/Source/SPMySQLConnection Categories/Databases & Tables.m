@@ -239,11 +239,13 @@
 - (BOOL)_storeAndAlterEncodingToUTF8IfRequired
 {
 	// If the encoding is already UTF8, no change is required.
-	if ([encoding isEqualToString:@"utf8"] && !encodingUsesLatin1Transport) return NO;
+    if ([encoding hasPrefix:@"utf8"] && !encodingUsesLatin1Transport) {
+        return NO;
+    }
 
 	// Store the current encoding for restoration afterwards, and update encoding
 	[self storeEncodingForRestoration];
-	[self setEncoding:@"utf8"];
+	[self setEncoding:@"utf8mb4"];
 
 	return YES;
 }

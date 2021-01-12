@@ -137,13 +137,13 @@
 {
 	// Note that mysql_kill has been deprecated, so use a query to perform this task.
 	NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
+    
+    //Special suppot for TiDB SQL variant
 	if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
 		[killQuery appendString:@" TIDB"];
 	}
-	else if ([self serverVersionIsGreaterThanOrEqualTo:5 minorVersion:0 releaseVersion:0]) {
-		[killQuery appendString:@" QUERY"];
-	}
-	[killQuery appendFormat:@" %lu", theThreadID];
+
+	[killQuery appendFormat:@" QUERY %lu", theThreadID];
 
 	// Run the query
 	[self queryString:killQuery];

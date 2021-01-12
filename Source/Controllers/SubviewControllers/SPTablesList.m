@@ -190,7 +190,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	NSString *previousSelectedTable = nil;
 	NSString *previousFilterString = nil;
 	BOOL previousTableListIsSelectable = tableListIsSelectable;
-	BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
 	if (selectedTableName) previousSelectedTable = [[NSString alloc] initWithString:selectedTableName];
 
@@ -221,7 +221,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Use UTF8 for identifier-based queries
 		if (changeEncoding) {
 			[mySQLConnection storeEncodingForRestoration];
-			[mySQLConnection setEncoding:@"utf8"];
+			[mySQLConnection setEncoding:@"utf8mb4"];
 		}
 
 		// Select the table list for the current database.  On MySQL versions after 5 this will include
@@ -286,30 +286,28 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		 * Using information_schema gives us more info (for information window perhaps?) but breaks
 		 * backward compatibility with pre 4 I believe. I left the other methods below, in case.
 		 */
-		if ([[tableDocumentInstance serverSupport] supportsInformationSchema]) {
-			NSString *pQuery = [NSString stringWithFormat:@"SELECT * FROM information_schema.routines WHERE routine_schema = %@ ORDER BY routine_name", [[tableDocumentInstance database] tickQuotedString]];
-			theResult = [mySQLConnection queryString:pQuery];
-			[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
-			[theResult setReturnDataAsStrings:YES]; //see tables above
-			
-			// Check for mysql errors - if information_schema is not accessible for some reasons
-			// omit adding procedures and functions
-			if(![mySQLConnection queryErrored] && theResult != nil && [theResult numberOfRows] && [theResult numberOfFields] > 3) {
+        NSString *pQuery = [NSString stringWithFormat:@"SELECT * FROM information_schema.routines WHERE routine_schema = %@ ORDER BY routine_name", [[tableDocumentInstance database] tickQuotedString]];
+        theResult = [mySQLConnection queryString:pQuery];
+        [theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
+        [theResult setReturnDataAsStrings:YES]; //see tables above
+        
+        // Check for mysql errors - if information_schema is not accessible for some reasons
+        // omit adding procedures and functions
+        if(![mySQLConnection queryErrored] && theResult != nil && [theResult numberOfRows] && [theResult numberOfFields] > 3) {
 
-				// Add the header row
-				[tables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
-				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
+            // Add the header row
+            [tables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
+            [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 
-				for (NSArray *eachRow in theResult) {
-					[tables addObject:[eachRow safeObjectAtIndex:3]];
-					if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
-						[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
-					} else {
-						[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
-					}
-				}
-			}
-		}
+            for (NSArray *eachRow in theResult) {
+                [tables addObject:[eachRow safeObjectAtIndex:3]];
+                if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
+                    [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
+                } else {
+                    [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
+                }
+            }
+        }
 
 		// Restore encoding if appropriate
 		if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -453,12 +451,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		//add the separator for the real items
 		[[tableCollationButton menu] addItem:[NSMenuItem separatorItem]];
 	}
-	
-	//if the server actually has support for charsets & collations we will now get a list of all collations
-	//for the current charset. Even if the default charset is kept by the user he can change the default collation
-	//so we search in that case, too.
-	if(![[tableDocumentInstance serverSupport] supportsPost41CharacterSetHandling])
-		return;
 	
 	//get the charset id the lazy way
 	NSString *charsetName = [[tableEncodingButton title] stringByMatching:@"\\((.*)\\)\\Z" capture:1L];
@@ -2280,11 +2272,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSString *tableType = [tableDetails objectForKey:SPNewTableType];
 
 		// Ensure the use of UTF8 when creating new tables
-		BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+		BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
 		if (changeEncoding) {
 			[mySQLConnection storeEncodingForRestoration];
-			[mySQLConnection setEncoding:@"utf8"];
+			[mySQLConnection setEncoding:@"utf8mb4"];
 		}
 
 		// If there is an encoding selected other than the default we must specify it in CREATE TABLE statement
@@ -2299,7 +2291,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// If there is a type selected other than the default we must specify it in CREATE TABLE statement
 		if (tableType) {
-			engineStatement = [NSString stringWithFormat:@"%@ = %@", [[tableDocumentInstance serverSupport] engineTypeQueryName], [[tableDocumentInstance serverSupport] supportsQuotingEngineTypeInCreateSyntax] ? [tableType backtickQuotedString] : tableType];
+			engineStatement = [NSString stringWithFormat:@"ENGINE = %@", [tableType backtickQuotedString]];
 		}
 
 		NSString *createStatement = [NSString stringWithFormat:@"CREATE TABLE %@ (id INT(11) UNSIGNED NOT NULL%@) %@ %@ %@", [tableName backtickQuotedString], [tableType isEqualToString:@"CSV"] ? @"" : @" PRIMARY KEY AUTO_INCREMENT", charSetStatement, collationStatement, engineStatement];

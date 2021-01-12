@@ -581,8 +581,8 @@
 	// Attempt a connection
 	if (![mySQLConnection connect]) return NO;
 
-	// Ensure the encoding is set to UTF8
-	[mySQLConnection setEncoding:@"utf8"];
+	// Ensure the encoding is set to UTF8mb4
+	[mySQLConnection setEncoding:@"utf8mb4"];
 
 	// Return success
 	return YES;

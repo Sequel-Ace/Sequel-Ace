@@ -877,6 +877,9 @@
 /* Create syntaxes for selected items label */
 "Create syntaxes for selected items" = "Create syntaxes for selected items";
 
+/* Table Info Section : table create options */
+"create_options: %@" = "create_options: %@";
+
 /* created: %@
  Table Info Section : time+date table was created at */
 "created: %@" = "created: %@";
@@ -2864,9 +2867,6 @@
 
 /* error removing host informative message */
 "This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "This user doesn't seem to have any associated hosts and will be removed unless a host is added.";
-
-/* triggers not supported label */
-"This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2" = "This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2";
 
 /* shutdown server : confirmation dialog : message */
 "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!";

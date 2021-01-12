@@ -452,7 +452,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[createString appendFormat:@" ENGINE=%@", [prefs objectForKey:SPLastImportIntoNewTableType]];
 		if(![[prefs objectForKey:SPLastImportIntoNewTableEncoding] isEqualToString:@"Default"]) {
 			NSString *encodingName = [[prefs objectForKey:SPLastImportIntoNewTableEncoding] stringByMatching:@"\\((.*)\\)" capture:1L];
-			if (!encodingName) encodingName = @"utf8";
+			if (!encodingName) encodingName = @"utf8mb4";
 			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
 		}
 
@@ -1005,15 +1005,15 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	NSArray *encodings  = [databaseDataInstance getDatabaseCharacterSetEncodings];
 	NSString *utf8MenuItemTitle = nil;
 	
-	if ([encodings count] > 0 && ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:4 minorVersion:1 releaseVersion:0]))
+	if ([encodings count] > 0)
 	{
 		[[newTableInfoEncodingPopup menu] addItem:[NSMenuItem separatorItem]];
 		for (NSDictionary *encoding in encodings) {
 			NSString *menuItemTitle = (![encoding objectForKey:@"DESCRIPTION"]) ? [encoding objectForKey:@"CHARACTER_SET_NAME"] : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], [encoding objectForKey:@"CHARACTER_SET_NAME"]];
 			[newTableInfoEncodingPopup addItemWithTitle:menuItemTitle];
 
-			// If the UTF8 entry has been encountered, store the menu title
-			if ([[encoding objectForKey:@"CHARACTER_SET_NAME"] isEqualToString:@"utf8"]) {
+			// If the UTF8 entry has been encountered, store the menu title - prefer utf8mb4 if that specifically is found
+            if ([[encoding objectForKey:@"CHARACTER_SET_NAME"] hasPrefix:@"utf8"] && (!utf8MenuItemTitle || [[encoding objectForKey:@"CHARACTER_SET_NAME"] isEqualToString:@"utf8mb4"])) {
 				utf8MenuItemTitle = [NSString stringWithString:menuItemTitle];
 			}
 		}

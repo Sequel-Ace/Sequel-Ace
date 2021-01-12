@@ -159,7 +159,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 		keepAliveLastPingBlocked = NO;
 
 		// Set up default encoding variables
-        encoding = @"utf8";
+        encoding = @"utf8mb4";
 		stringEncoding = NSUTF8StringEncoding;
 		encodingUsesLatin1Transport = NO;
 		encodingToRestore = nil;

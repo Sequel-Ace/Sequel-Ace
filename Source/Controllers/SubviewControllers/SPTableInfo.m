@@ -257,6 +257,12 @@
 				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"auto_increment: %@", @"Table Info Section : current value of auto_increment"),
 					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:tableStatusAutoIncrementAsLong]]]];
 			}
+            
+            //Show create_options
+            NSString *tableCreateOptions = [tableStatus safeObjectForKey:@"Create_options"];
+            if([tableCreateOptions length]) {
+                [info addObject:[NSString stringWithFormat:NSLocalizedString(@"create_options: %@", @"Table Info Section : Table Create Options"), tableCreateOptions]];
+            }
 
 		}
 	}
