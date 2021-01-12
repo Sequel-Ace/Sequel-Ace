@@ -86,6 +86,8 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse);
 - (void)_setTextSelectionColor:(NSColor *)newSelectionColor onBackgroundColor:(NSColor *)aBackgroundColor;
 - (void)_positionCompletionPopup:(SPNarrowDownCompletion *)aPopup relativeToTextAtLocation:(NSUInteger)aLocation;
 
+@property (assign) NSUInteger taskCount;
+
 @end
 
 // some helper functions for handling rectangles and points
@@ -114,6 +116,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize completionIsOpen;
 @synthesize completionWasReinvokedAutomatically;
 @synthesize syntaxHighlightingApplied;
+@synthesize taskCount;
 
 - (void) awakeFromNib
 {
@@ -137,6 +140,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	completionIsOpen = NO;
 	isProcessingMirroredSnippets = NO;
 	completionWasRefreshed = NO;
+    // keep track of tasks we start and stop, otherwise we get an assert error
+    taskCount = 0;
 
 	lineNumberView = [[NoodleLineNumberView alloc] initWithScrollView:scrollView];
 	[scrollView setVerticalRulerView:lineNumberView];
@@ -262,42 +267,42 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	} else if ([keyPath isEqualToString:SPCustomQueryEnableSyntaxHighlighting]) {
 		[self setEnableSyntaxHighlighting:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
 		[self setNeedsDisplayInRect:[self bounds]];
-		[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+        [self doSyntaxHighlightingWithForceWrapper:keyPath];
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
 		[self setCommentColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorQuoteColor]) {
 		[self setQuoteColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorSQLKeywordColor]) {
 		[self setKeywordColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorBacktickColor]) {
 		[self setBacktickColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorNumericColor]) {
 		[self setNumericColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorVariableColor]) {
 		[self setVariableColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTextColor]) {
 		[self setOtherTextColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setTextColor:[self otherTextColor]];
 		if ([self isEditable]) {
-			[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:0.1];
+            [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
@@ -306,6 +311,30 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	} else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
+}
+
+- (void)doSyntaxHighlightingWithForceWrapper:(NSString*)keyPath{
+
+    SPLog("%@ changed.", keyPath);
+    CLS_LOG("%@ changed.", keyPath);
+
+    unsigned long strLen = self.string.length;
+
+    NSTimeInterval delay = 0.1;
+
+    SPLog(@"strlength = %lu", strLen);
+
+    // only start a task if the string is > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING
+    if(strLen > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING){
+        taskCount++;
+        SPLog("startTaskWithDescription. Count = %lu", (unsigned long)taskCount);
+        CLS_LOG("startTaskWithDescription. Count = %lu", (unsigned long)taskCount);
+        [tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Applying syntax highlighting...", @"Applying syntax highlighting task description")];
+        // wait a bit longer than 0.1s, so the progress window can display
+        delay = 2.0;
+    }
+    [self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:delay];
+
 }
 
 /**
@@ -510,7 +539,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 							if(![field hasPrefix:@"  "]) {
 								NSString *fieldpath = [field substringFromIndex:[field rangeOfString:SPUniqueSchemaDelimiter].location];
 								NSArray *def = [theTable objectForKey:field];
-								NSString *typ = [NSString stringWithFormat:@"%@ %@ %@", [def objectAtIndex:0], [def objectAtIndex:3], [def objectAtIndex:5]];
+								NSString *typ = [NSString stringWithFormat:@"%@ %@ %@", [def safeObjectAtIndex:0], [def safeObjectAtIndex:3], [def safeObjectAtIndex:5]];
 								// Check if type definition contains a , if so replace the bracket content by … and add
 								// the bracket content as "list" key to prevend the token field to split them by ,
 								if(typ && [typ rangeOfString:@","].length) {
@@ -1052,6 +1081,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 - (void)printOperationDidRun:(NSPrintOperation *)printOperation  success:(BOOL)success  contextInfo:(void *)contextInfo
 {
 	// Refresh syntax highlighting
+    SPLog(@"Refresh syntax highlighting, calling doSyntaxHighlightingWithForce");
+
 	[self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:nil afterDelay:0.01];
 }
 
@@ -1101,7 +1132,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	NSPasteboard *pb = [NSPasteboard generalPasteboard];
 	NSTextStorage *textStorage = [self textStorage];
 	NSData *rtf = [textStorage RTFFromRange:[self selectedRange] documentAttributes:@{}];
-	
+
 	if (rtf)
 	{
 		[pb declareTypes:@[NSRTFPboardType] owner:self];
@@ -2348,9 +2379,17 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 - (void)paste:(id)sender {
 	[super paste:sender];
 
+    unsigned long pasteLength = [[self string] length];
+
 	// CMD+V - paste
-    if ([[self string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+    if (pasteLength < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
+        SPLog(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
+        CLS_LOG(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
         [self doSyntaxHighlightingWithForce:YES];
+    }
+    else{
+        SPLog(@"paste len %lu > %i, NOT calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
+        CLS_LOG(@"paste len %lu > %i, NOT calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
     }
 }
 
@@ -2593,6 +2632,10 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 }
 
 - (void)removeSyntaxHighlighting {
+
+    SPLog(@"removeSyntaxHighlighting called");
+    CLS_LOG(@"removeSyntaxHighlighting called");
+
 	if (self.syntaxHighlightingApplied) {
 		self.syntaxHighlightingApplied = NO;
 
@@ -2611,17 +2654,28 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
  */
 - (void)doSyntaxHighlightingWithForce:(BOOL)forced {
 
+    SPLog(@"doSyntaxHighlightingWithForce called");
+
 	if (![self enableSyntaxHighlighting]) {
 		// the point of disabling syntax highlighting is to get the min input lag
 		[self removeSyntaxHighlighting];
+        if(taskCount > 0){
+            SPLog(@"syntaxHighlighting removed, calling endtask. Count: %lu", (unsigned long)taskCount);
+            [tableDocumentInstance endTask];
+            taskCount--;
+        }
 		return;
 	}
-	
+
 	NSTextStorage *textStore = [self textStorage];
 	NSString *selfstr = [self string];
 	NSUInteger strlength = [selfstr length];
 
+    SPLog(@"strlength = %lu", (unsigned long)strlength);
+
 	if (strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING && !forced) {
+        SPLog(@"strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING && !forced, returning");
+        CLS_LOG(@"strlength > SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING && !forced, returning");
 		return;
 	}
 
@@ -2636,9 +2690,31 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		// Get the text range currently displayed in the view port
 		NSRect visibleRect = [[[self enclosingScrollView] contentView] documentVisibleRect];
-		NSRange visibleRange = [[self layoutManager] glyphRangeForBoundingRectWithoutAdditionalLayout:visibleRect inTextContainer:[self textContainer]];
+        NSRange visibleRange;
 
-		if(!visibleRange.length) return;
+        SPLog(@"textStore.mask = %lu", (unsigned long)textStore.editedMask);
+
+        /*
+         FB: 5bd264a2ea5ccd2291f1d3911b41e1e7
+
+         -[NSLayoutManager _fillGlyphHoleForCharacterRange:startGlyphIndex:desiredNumberOfCharacters:] *** attempted glyph generation while textStorage is editing. It is not valid to cause the layoutManager to do glyph generation while the textStorage is editing (ie the textStorage has been sent a beginEditing message without a matching endEditing.)
+
+         textStore doesn't have a property saying if it's currently being edited or not
+         I think editedMask should be a good enough indicator. Maybe?
+         */
+        if(textStore.editedMask != 1){
+            SPLog(@"textStore.editedMask != 1, calling glyphRangeForBoundingRectWithoutAdditionalLayout");
+            CLS_LOG(@"textStore.editedMask != 1, calling glyphRangeForBoundingRectWithoutAdditionalLayout");
+            visibleRange = [[self layoutManager] glyphRangeForBoundingRectWithoutAdditionalLayout:visibleRect inTextContainer:[self textContainer]];
+        }
+        else{
+            SPLog(@"textStore.editedMask. == 1, returning");
+            CLS_LOG(@"textStore.editedMask. == 1, returning");
+        }
+
+        if(!visibleRange.length){
+            return;
+        }
 
 		// Take roughly the middle position in the current view port
 		NSUInteger curPos = visibleRange.location+(NSUInteger)(visibleRange.length/2);
@@ -2692,6 +2768,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		textRange = NSIntersectionRange(textRange, NSMakeRange(0, [textStore length]));
 
 		if (!textRange.length) {
+            SPLog(@"!textRange.length, returning");
 			return;
 		}
 	} else {
@@ -2811,7 +2888,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	self.syntaxHighlightingApplied = YES;
 
+    if(taskCount > 0){
+        SPLog(@"syntaxHighlightingApplied, calling endtask. Count: %lu", (unsigned long)taskCount);
+        [tableDocumentInstance endTask];
+        taskCount--;
+    }
 	[self setNeedsDisplayInRect:[self bounds]];
+
 }
 
 - (void)setTabStops {
@@ -3250,8 +3333,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			textBufferSizeIncreased = NO;
 
 		if (delta < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+            SPLog(@"delta [%li] < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
+            CLS_LOG(@"delta [%li] < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
 			[self doSyntaxHighlightingWithForce:NO];
 		}
+        else{
+            SPLog(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], NOT calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
+            CLS_LOG(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], NOT calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
+        }
 
 	} else {
 		[customQueryInstance setTextViewWasChanged:NO];
@@ -3444,6 +3533,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		if (content) {
 			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+            SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
 		}
@@ -3451,6 +3541,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 		if (content) {
 			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+            SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
 		}

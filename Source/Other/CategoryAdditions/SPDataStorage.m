@@ -68,9 +68,14 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	@synchronized(self) {
 		oldDataStorage = dataStorage;
 
+        SPLog(@"oldDataStorage: %@", oldDataStorage.debugDescription);
+        SPLog(@"newDataStorage: %@", newDataStorage.debugDescription);
+        CLS_LOG(@"oldDataStorage: %@", oldDataStorage.debugDescription);
+        CLS_LOG(@"newDataStorage: %@", newDataStorage.debugDescription);
+
 		if (oldDataStorage) {
 			// If the table is reloading data, link to the current data store for smoother loads
-			if (updateExistingStore) {
+			if (updateExistingStore && newDataStorage != nil && [newDataStorage respondsToSelector:@selector(replaceExistingResultStore:)]) {
 				[newDataStorage replaceExistingResultStore:oldDataStorage];
 			}
 		}

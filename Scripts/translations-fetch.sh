@@ -74,6 +74,16 @@ for CURRENT_DIR in */ ; do
 
   # This will hold the name that we want the language to be
   TARGET_DIR=$CURRENT_DIR
+  
+  if [ "$TARGET_DIR" = "es-ES.lproj/" ]; then
+    echo "Converting Crowdin Spain spanish into Xcode compatible universal spanish code"
+    TARGET_DIR="es.lproj/"
+    DIRECTORY="${OUTPUT_DIR}${TARGET_DIR}"
+    cp -f "${CURRENT_DIR}Localizable.strings" "${DIRECTORY}Localizable.strings"
+  fi
+
+  # This will hold the name that we want the language to be
+  TARGET_DIR=$CURRENT_DIR
 
   DIRECTORY="${OUTPUT_DIR}${TARGET_DIR}"
 

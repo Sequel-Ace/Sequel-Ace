@@ -378,7 +378,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		// Populate collation popup button
 		for (NSDictionary *collation in collations)
 		{
-			[tableCollationPopUpButton addItemWithTitle:[collation objectForKey:@"COLLATION_NAME"]];
+			[tableCollationPopUpButton addItemWithTitle:[collation safeObjectForKey:@"COLLATION_NAME"]];
 		}
 
 		[tableCollationPopUpButton selectItemWithTitle:[statusFields objectForKey:SPMySQLCollationField]];
