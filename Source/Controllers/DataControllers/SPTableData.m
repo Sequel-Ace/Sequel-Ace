@@ -150,9 +150,9 @@
 	// If processing is already in action, wait for it to complete
 	[self _loopWhileWorking];	
 
-	// If triggers is nil, the triggers need to be loaded - if a table is selected on MySQL >= 5.0.2
+	// If triggers is nil, the triggers need to be loaded
 	if (!triggers) {
-		if (([tableListInstance tableType] == SPTableTypeTable) && [[tableDocumentInstance serverSupport] supportsTriggers]) {
+		if (([tableListInstance tableType] == SPTableTypeTable)) {
 			[self updateTriggersForCurrentTable];
 		} 
 		else {
@@ -444,7 +444,7 @@
  */
 - (NSDictionary *) informationForTable:(NSString *)tableName
 {
-	BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
 	// Catch unselected tables and return nil
 	if ([tableName isEqualToString:@""] || !tableName) return nil;
@@ -452,7 +452,7 @@
 	// Ensure the encoding is set to UTF8
 	if (changeEncoding) {
 		[mySQLConnection storeEncodingForRestoration];
-		[mySQLConnection setEncoding:@"utf8"];
+		[mySQLConnection setEncoding:@"utf8mb4"];
 	}
 
 	// In cases where this method is called directly instead of via -updateInformationForCurrentTable
@@ -817,7 +817,7 @@
 	NSMutableArray *tableColumns;
 	NSDictionary *resultRow;
 	NSMutableDictionary *tableColumn, *viewData;
-	BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
 	// Catch unselected views and return nil
 	if ([viewName isEqualToString:@""] || !viewName) return nil;
@@ -825,7 +825,7 @@
 	// Ensure that queries are made in UTF8
 	if (changeEncoding) {
 		[mySQLConnection storeEncodingForRestoration];
-		[mySQLConnection setEncoding:@"utf8"];
+		[mySQLConnection setEncoding:@"utf8mb4"];
 	}
 
 	// Retrieve the CREATE TABLE syntax for the table
@@ -931,7 +931,7 @@
 {
 	pthread_mutex_lock(&dataProcessingLock);
 
-	BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
 	// Catch unselected tables and return false
 	if (![tableListInstance tableName]) {
@@ -939,10 +939,10 @@
 		return NO;
 	}
 
-	// Ensure queries are run as UTF8
+	// Ensure queries are run as UTF8mb4
 	if (changeEncoding) {
 		[mySQLConnection storeEncodingForRestoration];
-		[mySQLConnection setEncoding:@"utf8"];
+		[mySQLConnection setEncoding:@"utf8mb4"];
 	}
 
 	// Run the status query and retrieve as a dictionary.
@@ -1054,10 +1054,10 @@
 	pthread_mutex_lock(&dataProcessingLock);
 
 	// Ensure queries are made in UTF8
-	BOOL changeEncoding = ![[mySQLConnection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 	if (changeEncoding) {
 		[mySQLConnection storeEncodingForRestoration];
-		[mySQLConnection setEncoding:@"utf8"];
+		[mySQLConnection setEncoding:@"utf8mb4"];
 	}
 
 	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */",

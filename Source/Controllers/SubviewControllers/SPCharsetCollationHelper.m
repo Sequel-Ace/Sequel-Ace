@@ -134,7 +134,7 @@
 	
 	NSMenuItem *selectedRef = nil;
 	
-	if (([encodings count] > 0) && [serverSupport supportsPost41CharacterSetHandling]) {
+	if (([encodings count] > 0)) {
 		
 		NSUInteger utf8encounters = 0;
 		
@@ -206,12 +206,6 @@
 	//  b) the server told us which was the default
 	//if neither works (old mysql / forks ?) we at least have the dummy default.
 	[collationButton addItemWithTitle:fmtStrDefaultUnknown];
-	
-	//if the server actually has support for charsets & collations we will now get a list of all collations
-	//for the current charset. Even if the default charset is kept by the user he can change the default collation
-	//so we search in that case, too.
-	if(![serverSupport supportsPost41CharacterSetHandling])
-		return;
 	
 	//get the charset id
     NSString *charsetId = @"";

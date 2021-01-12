@@ -171,11 +171,6 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	[refreshTriggersButton setEnabled:NO];
 	[triggersTableView setEnabled:NO];
 	[labelTextField setStringValue:@""];
-
-	// Show a warning if the version of MySQL is too low to support triggers
-	if (![[tableDocumentInstance serverSupport] supportsTriggers]) {
-		[labelTextField setStringValue:NSLocalizedString(@"This version of MySQL does not support triggers. Support for triggers was added in MySQL 5.0.2", @"triggers not supported label")];
-	}
 }
 
 #pragma mark -
@@ -541,10 +536,9 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 			[tableDataInstance updateTriggersForCurrentTable];
 		}
 		
-		NSArray *triggers = ([[tableDocumentInstance serverSupport] supportsTriggers]) ? [tableDataInstance triggers] : nil;
 		NSCharacterSet *nulSet = [NSCharacterSet characterSetWithCharactersInString:[NSString stringWithFormat:@"%C", (unsigned short)'\0']];
 		
-		for (NSDictionary *trigger in triggers)
+		for (NSDictionary *trigger in [tableDataInstance triggers])
 		{
 
 			// Trim nul bytes off the Statement, as some versions of MySQL can add these, preventing easy editing

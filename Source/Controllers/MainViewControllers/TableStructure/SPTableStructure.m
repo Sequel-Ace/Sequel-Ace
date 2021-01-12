@@ -852,11 +852,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// we "see" JSON as a string, but it is not internally to MySQL and so doesn't allow CHARACTER SET/BINARY/COLLATE either.
 		}
 		else if ([fieldValidation isFieldTypeString:theRowType]) {
-			BOOL charsetSupport = [[tableDocumentInstance serverSupport] supportsPost41CharacterSetHandling];
-
 			// Add CHARSET
 			NSString *fieldEncoding = [theRow objectForKey:@"encodingName"];
-			if(charsetSupport && [fieldEncoding length]) {
+			if([fieldEncoding length]) {
 				[queryString appendFormat:@"\n CHARACTER SET %@", fieldEncoding];
 			}
 
@@ -867,7 +865,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				// ADD COLLATE
 				// Note: a collate without charset is valid in MySQL. The charset can be determined from a collation.
 				NSString *fieldCollation = [theRow objectForKey:@"collationName"];
-				if(charsetSupport && [fieldCollation length]) {
+				if([fieldCollation length]) {
 					[queryString appendFormat:@"\n COLLATE %@", fieldCollation];
 				}
 			}
@@ -2102,13 +2100,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 		// Only string fields allow encoding settings, but JSON only uses utf8mb4
 		if (([[tableColumn identifier] isEqualToString:@"encoding"])) {
-			[aCell setEnabled:(![rowType isEqualToString:@"JSON"] && [fieldValidation isFieldTypeString:rowType] && [[tableDocumentInstance serverSupport] supportsPost41CharacterSetHandling])];
+			[aCell setEnabled:(![rowType isEqualToString:@"JSON"] && [fieldValidation isFieldTypeString:rowType])];
 		}
 
 		// Only string fields allow collation settings and string field is not set to BINARY since BINARY sets the collation to *_bin
 		else if ([[tableColumn identifier] isEqualToString:@"collation"]) {
 			// JSON always uses utf8mb4_bin which is already covered by this logic
-			[aCell setEnabled:([fieldValidation isFieldTypeString:rowType] && [[row objectForKey:@"binary"] integerValue] == 0 && [[tableDocumentInstance serverSupport] supportsPost41CharacterSetHandling])];
+			[aCell setEnabled:([fieldValidation isFieldTypeString:rowType] && [[row objectForKey:@"binary"] integerValue] == 0)];
 		}
 
 		// Check if UNSIGNED and ZEROFILL is allowed

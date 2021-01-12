@@ -118,17 +118,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		if ([collations count] == 0) {
 			
 			// Try to retrieve the available collations from the database
-			if ([serverSupport supportsInformationSchema]) {
-				[collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];	
-			}
-			else if([serverSupport supportsShowCollation]) {
-				//use the 4.1-style query
-				NSArray *supportedCollations = [self _getDatabaseDataForQuery:@"SHOW COLLATION"];
-				//apply the sorting
-				supportedCollations = [supportedCollations sortedArrayUsingFunction:_sortMySQL4CollationEntry context:nil];
-				//convert the output to the information_schema style
-				[collations addObjectsFromArray:[SPDatabaseData _relabelCollationResult:supportedCollations]];
-			}
+            [collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];
 			
 			// If that failed, get the list of collations from the hard-coded list
 			if (![collations count]) {
@@ -162,17 +152,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			}
 
 			// Try to retrieve the available collations for the supplied encoding from the database
-			if ([serverSupport supportsInformationSchema]) {
-				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
-			}
-			else if([serverSupport supportsShowCollation]) {
-				//use the 4.1-style query (as every collation name starts with the charset name we can use the prefix search)
-				NSArray *supportedCollations = [self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SHOW COLLATION LIKE '%@%%'",characterSetEncoding]];
-				//apply the sorting
-				supportedCollations = [supportedCollations sortedArrayUsingFunction:_sortMySQL4CollationEntry context:nil];
-				
-				[characterSetCollations addObjectsFromArray:[SPDatabaseData _relabelCollationResult:supportedCollations]];
-			}
+            [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
 
 			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
 			if (![characterSetCollations count]) {
@@ -244,71 +224,15 @@ copy_return:
 - (NSArray *)getDatabaseStorageEngines
 {	
 	if ([storageEngines count] == 0) {
-		if ([serverSupport isMySQL3] || [serverSupport isMySQL4]) {
-			[storageEngines addObject:@{@"Engine" : @"MyISAM"}];
-			
-			// Check if InnoDB support is enabled
-			NSString *result = [self _getSingleVariableValue:@"have_innodb"];
-			
-			if (result && [result isEqualToString:@"YES"])
-			{
-				[storageEngines addObject:@{@"Engine" : @"InnoDB"}];
-			}
-			
-			// Before MySQL 4.1 the MEMORY engine was known as HEAP and the ISAM engine was included
-			if ([serverSupport supportsPre41StorageEngines]) {
-				[storageEngines addObject:@{@"Engine" : @"HEAP"}];
-				[storageEngines addObject:@{@"Engine" : @"ISAM"}];
-			}
-			else {
-				[storageEngines addObject:@{@"Engine" : @"MEMORY"}];
-			}
-			
-			// BLACKHOLE storage engine was added in MySQL 4.1.11
-			if ([serverSupport supportsBlackholeStorageEngine]) {
-				[storageEngines addObject:@{@"Engine" : @"BLACKHOLE"}];
-			}
-				
-			// ARCHIVE storage engine was added in MySQL 4.1.3
-			if ([serverSupport supportsArchiveStorageEngine]) {
-				[storageEngines addObject:@{@"Engine" : @"ARCHIVE"}];
-			}
-			
-			// CSV storage engine was added in MySQL 4.1.4
-			if ([serverSupport supportsCSVStorageEngine]) {
-				[storageEngines addObject:@{@"Engine" : @"CSV"}];
-			}
-		}
-		// The table information_schema.engines didn't exist until MySQL 5.1.5
-		else {
-			if ([serverSupport supportsInformationSchemaEngines])
-			{
-				// Check the information_schema.engines table is accessible
-				SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
-				
-				if ([result numberOfRows] == 1) {
-					
-					// Table is accessible so get available storage engines
-					// Note, that the case of the column names specified in this query are important.
-					[storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
-				}
-			}
-			else {				
-				// Get storage engines
-				NSArray *engines = [self _getDatabaseDataForQuery:@"SHOW STORAGE ENGINES"];
-				
-				// We only want to include engines that are supported
-				for (NSDictionary *engine in engines) 
-				{				
-					if (([[engine objectForKey:@"Support"] isEqualToString:@"DEFAULT"] ||
-						[[engine objectForKey:@"Support"] isEqualToString:@"YES"]) &&
-						![[engine objectForKey:@"Engine"] isEqualToString:@"PERFORMANCE_SCHEMA"])
-					{
-						[storageEngines addObject:engine];
-					}
-				}				
-			}
-		}
+        // Check the information_schema.engines table is accessible
+        SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
+        
+        if ([result numberOfRows] == 1) {
+            
+            // Table is accessible so get available storage engines
+            // Note, that the case of the column names specified in this query are important.
+            [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
+        }
 	}
 	
 	return [storageEngines sortedArrayUsingFunction:_sortStorageEngineEntry context:nil];
@@ -332,26 +256,7 @@ copy_return:
 			
 			// Try to retrieve the available character set encodings from the database
 			// Check the information_schema.character_sets table is accessible
-			if ([serverSupport supportsInformationSchema]) {
-				[characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
-			} 
-			else if ([serverSupport supportsShowCharacterSet]) {
-				NSArray *supportedEncodings = [self _getDatabaseDataForQuery:@"SHOW CHARACTER SET"];
-				
-				supportedEncodings = [supportedEncodings sortedArrayUsingFunction:_sortMySQL4CharsetEntry context:nil];
-				
-				for (NSDictionary *anEncoding in supportedEncodings) 
-				{
-					NSDictionary *convertedEncoding = [NSDictionary dictionaryWithObjectsAndKeys:
-						[anEncoding objectForKey:@"Charset"],           @"CHARACTER_SET_NAME",
-						[anEncoding objectForKey:@"Description"],       @"DESCRIPTION",
-						[anEncoding objectForKey:@"Default collation"], @"DEFAULT_COLLATE_NAME",
-						[anEncoding objectForKey:@"Maxlen"],            @"MAXLEN",
-					nil];
-					
-					[characterSetEncodings addObject:convertedEncoding];
-				}
-			}
+            [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
 
 			// If that failed, get the list of character set encodings from the hard-coded list
 			if (![characterSetEncodings count]) {			
@@ -374,9 +279,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!defaultCharacterSetEncoding) {
-			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_database" : @"character_set";
-			
-			defaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
+			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database"];
 		}
 		
 		return [defaultCharacterSetEncoding copy];
@@ -393,7 +296,7 @@ copy_return:
 - (NSString *)getDatabaseDefaultCollation
 {
 	@synchronized(charsetCollationLock) {
-		if (!defaultCollation && [serverSupport supportsCharacterSetAndCollationVars]) {
+		if (!defaultCollation) {
 			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
 		}
 			
@@ -412,9 +315,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!serverDefaultCharacterSetEncoding) {
-			NSString *variable = [serverSupport supportsCharacterSetAndCollationVars] ? @"character_set_server" : @"character_set";
-			
-			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:variable];
+			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_server"];
 		}
 		
 		return [serverDefaultCharacterSetEncoding copy];

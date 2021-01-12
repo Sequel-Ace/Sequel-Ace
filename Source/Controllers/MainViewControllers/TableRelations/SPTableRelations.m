@@ -185,21 +185,18 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		// most common are 121 (name probably in use) and 150 (types don't exactly match).
 		// Retrieve the InnoDB status and extract the most recent error for more helpful text.
 		if ([connection lastErrorID] == 1005) {
-			SPInnoDBStatusQueryFormat status = [[tableDocumentInstance serverSupport] innoDBStatusQuery];
-			if (status.queryString) {
-				NSString *statusText = [[[connection queryString:status.queryString] getRowAsArray] objectAtIndex:status.columnIndex];
-				NSString *detailErrorString = [statusText stringByMatching:@"latest foreign key error\\s+-----*\\s+[0-9: ]*(.*?)\\s+-----" options:(RKLCaseless | RKLDotAll) inRange:NSMakeRange(0, [statusText length]) capture:1L error:NULL];
-				if (detailErrorString) {
-					accessoryView = detailErrorView;
-					[detailErrorText setString:[detailErrorString stringByReplacingOccurrencesOfString:@"\n" withString:@" "]];
-				}
-				
-				// Detect name duplication if appropriate
-				if ([errorText isMatchedByRegex:@"errno: 121"] && [errorText isMatchedByRegex:@"already exists"]) {
-					[takenConstraintNames addObject:[[constraintName stringValue] lowercaseString]];
-					[self controlTextDidChange:[NSNotification notificationWithName:@"dummy" object:constraintName]];
-				}
-			}
+            NSString *statusText = [[[connection queryString:@"SHOW ENGINE INNODB STATUS"] getRowAsArray] objectAtIndex:2];
+            NSString *detailErrorString = [statusText stringByMatching:@"latest foreign key error\\s+-----*\\s+[0-9: ]*(.*?)\\s+-----" options:(RKLCaseless | RKLDotAll) inRange:NSMakeRange(0, [statusText length]) capture:1L error:NULL];
+            if (detailErrorString) {
+                accessoryView = detailErrorView;
+                [detailErrorText setString:[detailErrorString stringByReplacingOccurrencesOfString:@"\n" withString:@" "]];
+            }
+            
+            // Detect name duplication if appropriate
+            if ([errorText isMatchedByRegex:@"errno: 121"] && [errorText isMatchedByRegex:@"already exists"]) {
+                [takenConstraintNames addObject:[[constraintName stringValue] lowercaseString]];
+                [self controlTextDidChange:[NSNotification notificationWithName:@"dummy" object:constraintName]];
+            }
 		}
 
 		if (accessoryView) {
@@ -249,36 +246,21 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	[refTablePopUpButton removeAllItems];
 
-	BOOL changeEncoding = ![[connection encoding] isEqualToString:@"utf8"];
+	BOOL changeEncoding = ![[connection encoding] hasPrefix:@"utf8"];
 
 	// Use UTF8 for identifier-based queries
 	if (changeEncoding) {
 		[connection storeEncodingForRestoration];
-		[connection setEncoding:@"utf8"];
+		[connection setEncoding:@"utf8mb4"];
 	}
 
 	// Get all InnoDB tables in the current database
-	if ([[tableDocumentInstance serverSupport] supportsInformationSchema]) {
-		//MySQL 5.0+
-		SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [[tableDocumentInstance database] tickQuotedString]]];
-		[result setDefaultRowReturnType:SPMySQLResultRowAsArray];
-		[result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
-		for (NSArray *eachRow in result) {
-			[refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
-		}
-	}
-	else {
-		//this will work back to 3.23.0, innodb was added in 3.23.49
-		SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS FROM %@", [[tableDocumentInstance database] backtickQuotedString]]];
-		[result setDefaultRowReturnType:SPMySQLResultRowAsArray];
-		[result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
-		for (NSArray *eachRow in result) {
-			// col[1] was named "Type" < 4.1, "Engine" afterwards
-			if(![[[eachRow objectAtIndex:1] uppercaseString] isEqualToString:@"INNODB"]) continue;
-			// col[0] is the table name
-			[refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
-		}
-	}
+    SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [[tableDocumentInstance database] tickQuotedString]]];
+    [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
+    [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
+    for (NSArray *eachRow in result) {
+        [refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
+    }
 
 	// Reset other fields
 	[constraintName setStringValue:@""];
