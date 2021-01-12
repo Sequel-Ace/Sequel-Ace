@@ -9,6 +9,7 @@
 import Firebase
 import Foundation
 import os.log
+import FMDB
 
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 

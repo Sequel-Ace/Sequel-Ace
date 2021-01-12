@@ -34,7 +34,8 @@
 #import "SPFunctions.h"
 #import "pthread.h"
 #import "SPCopyTable.h"
-#import <fmdb/FMDB.h>
+
+@import FMDB;
 
 #import "sequel-ace-Swift.h"
 
