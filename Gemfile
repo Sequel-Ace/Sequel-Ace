@@ -2,5 +2,4 @@
 # Copyright © 2020 Sequel-Ace. All rights reserved.
 
 source 'https://rubygems.org'
-gem 'cocoapods', '~> 1.10'
 gem 'fastlane', '~> 2.168'
