@@ -32,10 +32,6 @@ brew install --cask sequel-ace
 
 To run Sequel Ace locally from XCode, please:
 - download `.zip` archive of this repo / clone locally
-- make sure you have `Bundler` installed ([more info](https://bundler.io))
-- open `Terminal` and `cd` to the project folder
-- run `bundle install` to install CocoaPods and dependencies
-- run `bundle exec pod install --repo-update` to install CocoaPods and dependencies
 - open `sequel-ace.xcworkspace` and run `Sequel Ace Local Testing` schema
 
 If you encounter any issue, let us know by creating a new Issue.
