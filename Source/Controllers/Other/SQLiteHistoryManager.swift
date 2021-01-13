@@ -29,7 +29,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     private var newSchemaVersion: Int32 = 0
 
     override private init() {
-        log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "database")
+	log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "queryDatabase")
 
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
