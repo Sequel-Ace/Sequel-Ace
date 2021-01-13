@@ -40,6 +40,19 @@ extension String {
 				return self.lowercased().hasSuffix(suffix.lowercased())
 		}
 	}
+
+    func separatedIntoLines() -> [String] {
+        var lines: [String] = []
+        let wholeString = self.startIndex..<self.endIndex
+        self.enumerateSubstrings(in: wholeString, options: .byLines) {
+            (substring, range, enclosingRange, stopPointer) in
+            if let line = substring {
+                lines.append(line)
+            }
+        }
+        return lines
+    }
+    
 	
 	// stringByReplacingPercentEscapesUsingEncoding is deprecated
 	// Use -stringByRemovingPercentEncoding
