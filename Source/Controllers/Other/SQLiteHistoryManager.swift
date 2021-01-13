@@ -103,21 +103,65 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                 }
 
                 self.newSchemaVersion = Int32(schemaVersion + 1)
+                os_log("self.newSchemaVersion = %d", log: self.log, type: .debug, self.newSchemaVersion)
 
                 os_log("database created successfully", log: self.log, type: .info)
             } else {
                 os_log("schemaVersion >= 1, not creating database", log: self.log, type: .info)
+                // need to do this here in case, a user has the first version of the db
+                self.newSchemaVersion = Int32(schemaVersion)
             }
 
-            // If you wanted to change the schema in a later app version, you'd add something like this here:
             /*
-             if schemaVersion < 3 {
-             do {
-                try db.executeUpdate("ALTER TABLE QueryHistory ADD COLUMN lastModified INTEGER NULL", values: nil)
-             }
-             self.newSchemaVersion = Int32(schemaVersion + 1)
-              }
-              */
+
+             JCS - we want to add an auto_inc primary key called 'id'
+                 - you can't so that with ALTER TABLE in sqlite
+                 - so need to rename, re-create, copy data, drop
+
+             ALTER TABLE QueryHistory RENAME TO QueryHistory_Old;
+
+             CREATE TABLE IF NOT EXISTS QueryHistory (
+               "query" text NOT NULL,
+               createdTime real NOT NULL,
+               id integer PRIMARY KEY AUTOINCREMENT NOT NULL
+             );
+
+             INSERT INTO QueryHistory(query, createdTime) SELECT query, createdTime FROM QueryHistory_Old;
+
+             DROP TABLE QueryHistory_Old
+
+             CREATE UNIQUE INDEX query_idx ON QueryHistory ("query");
+
+             */
+
+            if self.newSchemaVersion < 2 {
+                os_log("schemaVersion = %d", log: self.log, type: .debug, self.newSchemaVersion)
+                os_log("schemaVersion < 2, altering database", log: self.log, type: .info)
+
+                do {
+                    try db.executeUpdate("ALTER TABLE QueryHistory RENAME TO QueryHistory_Old", values: nil)
+
+                    let createTableSQL = "CREATE TABLE QueryHistory ("
+                        + "    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                        + "    query        TEXT NOT NULL,"
+                        + "    createdTime  REAL NOT NULL)"
+
+                    try db.executeUpdate(createTableSQL, values: nil)
+                    try db.executeUpdate("INSERT INTO QueryHistory(query, createdTime) SELECT query, createdTime FROM QueryHistory_Old", values: nil)
+                    try db.executeUpdate("DROP TABLE QueryHistory_Old", values: nil)
+                    try db.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS query_idx ON QueryHistory (query)", values: nil)
+                }
+                catch {
+                    db.rollback()
+                    self.failed(error: error)
+                }
+                self.newSchemaVersion = self.newSchemaVersion + 1
+                os_log("newSchemaVersion = %d", log: self.log, type: .debug, self.newSchemaVersion)
+
+            }
+            else {
+               os_log("schemaVersion >= 2, not altering database", log: self.log, type: .info)
+           }
 
             db.commit()
         }
@@ -159,11 +203,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
-                // select by _rowid_ desc to get latest first, limit to max pref
-                let rs = try db.executeQuery("SELECT rowid, query FROM QueryHistory order by _rowid_ desc LIMIT (?)", values: [prefs.integer(forKey: SPCustomQueryMaxHistoryItems)])
+                // select by id desc to get latest first, limit to max pref
+                let rs = try db.executeQuery("SELECT id, query FROM QueryHistory order by id desc LIMIT (?)", values: [prefs.integer(forKey: SPCustomQueryMaxHistoryItems)])
 
                 while rs.next() {
-                    queryHist[rs.longLongInt(forColumn: "rowid")] = rs.string(forColumn: "query")
+                    queryHist[rs.longLongInt(forColumn: "id")] = rs.string(forColumn: "query")
                 }
                 rs.close()
             } catch {
