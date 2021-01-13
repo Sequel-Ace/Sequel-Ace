@@ -988,8 +988,14 @@ static SPQueryController *sharedQueryController = nil;
 
         SPLog(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
 
+        // add current history
 		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];
-		[uniquifier insertItemWithTitle:history atIndex:0];
+
+        // add new history
+        NSArray *histArr = [_SQLiteHistoryManager normalizeQueryHistoryWithArrayToNormalise:@[history] doLogging:YES];
+        for(NSString *str in histArr){
+            [uniquifier insertItemWithTitle:str atIndex:0];
+        }
 
 		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)
 		{
