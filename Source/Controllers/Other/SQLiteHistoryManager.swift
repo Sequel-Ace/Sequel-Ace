@@ -199,7 +199,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Loads the query history from the SQLite database.
     private func loadQueryHistory() {
         os_log("loading Query History. SPCustomQueryMaxHistoryItems: %i", log: log, type: .debug, prefs.integer(forKey: SPCustomQueryMaxHistoryItems))
-
+        Crashlytics.crashlytics().log("loading Query History. SPCustomQueryMaxHistoryItems: \(prefs.integer(forKey: SPCustomQueryMaxHistoryItems))")
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
@@ -220,6 +220,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Reloads the query history from the SQLite database.
     private func reloadQueryHistory() {
         os_log("reloading Query History", log: log, type: .debug)
+        Crashlytics.crashlytics().log("reloading Query History")
         queryHist.removeAll()
         loadQueryHistory()
     }
@@ -255,6 +256,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
 
         os_log("migrateQueriesFromPrefs", log: log, type: .debug)
+        Crashlytics.crashlytics().log("migrateQueriesFromPrefs")
 
         let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
@@ -318,6 +320,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Deletes all query history from the db
     @objc func deleteQueryHistory() {
         os_log("deleteQueryHistory", log: log, type: .debug)
+        Crashlytics.crashlytics().log("deleteQueryHistory")
         queue.inDatabase { db in
             db.traceExecution = traceExecution
             do {
@@ -337,7 +340,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
     @objc func execSQLiteVacuum() {
         os_log("execSQLiteVacuum", log: log, type: .debug)
-
+        Crashlytics.crashlytics().log("execSQLiteVacuum")
         queue.inDatabase { db in
             db.traceExecution = traceExecution
             do {
