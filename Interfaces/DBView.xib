@@ -46,6 +46,7 @@
                 <outlet property="queryProgressBar" destination="858" id="860"/>
                 <outlet property="renameDatabaseButton" destination="6997" id="7011"/>
                 <outlet property="renameDatabaseMessageField" destination="6995" id="7041"/>
+                <outlet property="spHistoryControllerInstance" destination="6297" id="6298"/>
                 <outlet property="statusTableAccessoryView" destination="6885" id="6897"/>
                 <outlet property="statusTableCopyChecksum" destination="6901" id="6903"/>
                 <outlet property="statusTableView" destination="6889" id="6898"/>
@@ -4124,6 +4125,9 @@ Gw
                             <segment toolTip="Forward" image="NSGoRightTemplate" width="27" enabled="NO" tag="1"/>
                         </segments>
                     </segmentedCell>
+                    <connections>
+                        <action selector="historyControlClicked:" target="6297" id="6300"/>
+                    </connections>
                 </segmentedControl>
                 <popUpButton toolTip="Select a database to view (⇧⌘D)" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3995">
                     <rect key="frame" x="0.0" y="3" width="200" height="25"/>
@@ -4372,6 +4376,7 @@ Gw
                 <outlet property="reloadButton" destination="5176" id="6625"/>
                 <outlet property="removeButton" destination="5177" id="5190"/>
                 <outlet property="ruleFilterController" destination="ki9-Po-bdr" id="5od-0U-9xj"/>
+                <outlet property="spHistoryControllerInstance" destination="6297" id="6316"/>
                 <outlet property="tableContentContainer" destination="vcX-Xr-0cm" id="Xak-w0-y6x"/>
                 <outlet property="tableContentView" destination="36" id="142"/>
                 <outlet property="tableDataInstance" destination="4702" id="4712"/>
@@ -4444,6 +4449,7 @@ Gw
                 <outlet property="separatorTableMenuItem3" destination="7924" id="7953"/>
                 <outlet property="showCreateSyntaxContextMenuItem" destination="6923" id="6929"/>
                 <outlet property="showCreateSyntaxMenuItem" destination="7927" id="7949"/>
+                <outlet property="spHistoryControllerInstance" destination="6297" id="6302"/>
                 <outlet property="tableCollationButton" destination="8310" id="8314"/>
                 <outlet property="tableContentInstance" destination="67" id="143"/>
                 <outlet property="tableDataInstance" destination="4702" id="4707"/>
@@ -4595,6 +4601,12 @@ Gw
             </connections>
         </customObject>
         <customObject id="5814" userLabel="SPDatabaseData" customClass="SPDatabaseData"/>
+        <customObject id="6297" userLabel="SPHistoryController" customClass="SPHistoryController">
+            <connections>
+                <outlet property="historyControl" destination="6293" id="6299"/>
+                <outlet property="theDocument" destination="-2" id="6301"/>
+            </connections>
+        </customObject>
         <customObject id="7073" userLabel="SPIndexesController" customClass="SPIndexesController">
             <connections>
                 <outlet property="addIndexButton" destination="5150" id="7076"/>

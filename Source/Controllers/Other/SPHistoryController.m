@@ -243,6 +243,7 @@
 - (void) updateHistoryEntries
 {
 
+    SPLog(@"updateHistoryEntries");
 	// Don't modify anything if we're in the process of restoring an old history state
 	if (modifyingState) return;
 
@@ -282,7 +283,10 @@
 
 	// If there's any items after the current history position, remove them
 	if (historyPosition != NSNotFound && historyPosition < [history count] - 1) {
-		[history removeObjectsInRange:NSMakeRange(historyPosition + 1, [history count] - historyPosition - 1)];
+        SPLog(@"If there's any items after the current history position, remove them");
+        NSRange tmpRange = NSMakeRange(historyPosition + 1, [history count] - historyPosition - 1);
+        SPLog(@"tmpRange.location=%lu tmpRange.length=%lu", (unsigned long)tmpRange.location, (unsigned long)tmpRange.length);
+		[history removeObjectsInRange:tmpRange];
 
 	} else if (historyPosition != NSNotFound && historyPosition == [history count] - 1) {
 		NSMutableDictionary *currentHistoryEntry = [history objectAtIndex:historyPosition];
@@ -326,6 +330,7 @@
 		// but the new selection does - delete the last entry, in order to replace it.
 		// This improves history flow.
 		else if (databaseIsTheSame && ![currentHistoryEntry safeObjectForKey:@"table"]) {
+            SPLog(@"history removeLastObject");
 			[history removeLastObject];
 		}
 	}
@@ -344,12 +349,17 @@
 	if (contentSelectedRows) [newEntry setObject:contentSelectedRows forKey:@"contentSelection"];
 	if (contentFilter) [newEntry setObject:contentFilter forKey:@"contentFilterV2"];
 
+    SPLog(@"history addObject: %@", newEntry);
 	[history addObject:newEntry];
 
 	// If there are now more than fifty history entries, remove one from the start
-	if ([history count] > 50) [history removeObjectAtIndex:0];
+    if ([history count] > 50){
+        SPLog(@"[history count] > 50, removeLastObject");
+        [history removeObjectAtIndex:0];
+    }
 
 	historyPosition = [history count] - 1;
+
 	[[self onMainThread] updateToolbarItem];
 }
 
