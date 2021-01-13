@@ -2227,7 +2227,6 @@
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
-				932A5F065352D9445A8F3FA0 /* Pods */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -2464,13 +2463,6 @@
 				73F70A951E4E547500636550 /* SPJSONFormatter.m */,
 			);
 			path = Parsing;
-			sourceTree = "<group>";
-		};
-		932A5F065352D9445A8F3FA0 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		96D494B8249C07940092F335 /* SSH Helpers */ = {
