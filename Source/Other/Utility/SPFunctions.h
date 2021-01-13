@@ -73,6 +73,7 @@ NSUInteger SPIntS2U(NSInteger i);
  * @see -[SPObjectAdditions unboxNull]
  */
 id SPBoxNil(id object);
+NSInteger intSort(id num1, id num2, void *context);
 
 void executeOnBackgroundThread(SAVoidCompletionBlock block);
 void executeOnBackgroundThreadSync(SAVoidCompletionBlock block);

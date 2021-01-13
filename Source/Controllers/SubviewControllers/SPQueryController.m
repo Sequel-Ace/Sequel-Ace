@@ -59,7 +59,6 @@ static NSUInteger SPMessageTruncateCharacterLength = 256;
 - (BOOL)_messageMatchesCurrentFilters:(NSString *)message;
 - (NSString *)_getConsoleStringWithTimeStamps:(BOOL)timeStamps connections:(BOOL)connections databases:(BOOL)databases;
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database;
-NSInteger intSort(id num1, id num2, void *context);
 
 @property (readwrite, strong) SQLiteHistoryManager *_SQLiteHistoryManager ;
 
@@ -790,20 +789,6 @@ static SPQueryController *sharedQueryController = nil;
 }
 
 #pragma mark - SPQueryDocumentsController
-
-NSInteger intSort(id num1, id num2, void *context)
-{
-	// JCS not: I want descending, so I've swapped the return values
-	// from the ifs
-	int v1 = [num1 intValue];
-	int v2 = [num2 intValue];
-	if (v1 < v2)
-		return NSOrderedDescending;
-	else if (v1 > v2)
-		return NSOrderedAscending;
-	else
-		return NSOrderedSame;
-}
 
 - (NSURL *)registerDocumentWithFileURL:(NSURL *)fileURL andContextInfo:(NSMutableDictionary *)contextInfo
 {
