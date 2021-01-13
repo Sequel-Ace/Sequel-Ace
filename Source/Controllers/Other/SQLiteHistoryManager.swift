@@ -395,7 +395,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// "SELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT COUNT(*) FROM `HKWarningsLog`;"
     /// Should return this array:
     /// [( "SELECT * FROM `HKWarningsLog` LIMIT 1000", "SELECT COUNT(*) FROM `HKWarningsLog`")]
-    private func normalizeQueryHistory(arrayToNormalise: [String], doLogging: Bool = false) -> [String] {
+   @objc func normalizeQueryHistory(arrayToNormalise: [String], doLogging: Bool = false) -> [String] {
 
         var normalisedQueryArray: [String] = []
 
