@@ -29,7 +29,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     private var newSchemaVersion: Int32 = 0
 
     override private init() {
-	log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "queryDatabase")
+        log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "queryDatabase")
 
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
@@ -294,11 +294,27 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - Parameters:
     ///   - newHist: Array of Strings - the Strings being the new history to update
     /// - Returns: Nothing
+    /// - NOTE
+    ///  Sometimes (when saving the entire query editor string on closing the tab)
+    /// The incoming array is one line, separated by \n, and still has the trailing ';'
+    /// - see SPCustomQuery.m L234: queries = [queryParser splitStringByCharacter:';'];
+    /// We need to handle that scenario. See normalizeQueryHistory()
     @objc func updateQueryHistory(newHist: [String]) {
         os_log("updateQueryHistory", log: log, type: .debug)
+        Crashlytics.crashlytics().log("updateQueryHistory")
+
+        var newHistMutArray: [String] = []
+
+        newHistMutArray = normalizeQueryHistory(arrayToNormalise: newHist)
+
+        os_log("newHist passed in: [%@]", log: log, type: .debug, newHist)
+        os_log("newHistMut to be saved to db: [%@]", log: log, type: .debug, newHistMutArray)
+        Crashlytics.crashlytics().log("newHist passed in: [\(newHist)]")
+        Crashlytics.crashlytics().log("newHistMut to be saved to db: [\(newHistMutArray)]")
+
 
         // dont delete any history, keep it all?
-        for query in newHist where query.isNotEmpty {
+        for query in newHistMutArray where query.isNotEmpty {
             let newDate = Date()
 
             queue.inDatabase { db in
@@ -368,5 +384,45 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     func logDBError(_ error: Error) {
         Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
         os_log("Query failed: %@", log: log, type: .error, error.localizedDescription)
+    }
+
+    /// separates multiline query into individual lines.
+    ///  - Parameters:
+    ///   - arrayToNormalise: the array of strings/queries to normalise
+    ///   - doLogging: bool switches on/off logging. Default off
+    /// - Returns: the normalised array of queries
+    /// For example, an array with one entry like this:
+    /// "SELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT COUNT(*) FROM `HKWarningsLog`;"
+    /// Should return this array:
+    /// [( "SELECT * FROM `HKWarningsLog` LIMIT 1000", "SELECT COUNT(*) FROM `HKWarningsLog`")]
+    private func normalizeQueryHistory(arrayToNormalise: [String], doLogging: Bool = false) -> [String] {
+
+        var normalisedQueryArray: [String] = []
+
+        for query in arrayToNormalise where query.isNotEmpty {
+            if query.contains("\n"){
+                if doLogging{os_log("query contains newline: [%@]", log: log, type: .debug, query)}
+
+                // an array where each entry contains the value from
+                // the history query, delimited by a new line
+                let lines = query.separatedIntoLines()
+
+                if doLogging{ os_log("line: [%@]", log: log, type: .debug, lines) }
+
+                for line in lines  where line.isNotEmpty  {
+                    normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
+                }
+            }
+            else{
+                normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
+            }
+        }
+
+        if doLogging{
+            os_log("arrayToNormalise: [%@]", log: log, type: .debug, arrayToNormalise)
+            os_log("normalisedQueryArray: [%@]", log: log, type: .debug, normalisedQueryArray)
+        }
+
+        return normalisedQueryArray
     }
 }
