@@ -101,4 +101,9 @@ extension String {
 	public func isPercentEncoded() -> Bool {
 		return (self as String).isPercentEncoded
 	}
+
+    public func separatedIntoLinesObjc() -> [NSString] {
+        return (self as String).separatedIntoLines() as [NSString]
+    }
+
 }
