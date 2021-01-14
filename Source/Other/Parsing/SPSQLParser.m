@@ -30,6 +30,7 @@
 
 #import "SPSQLParser.h"
 #import "RegexKitLite.h"
+@import Firebase;
 
 @interface SPSQLParser ()
 
@@ -1009,6 +1010,10 @@
 	return [string length];
 }
 - (unichar) characterAtIndex:(NSUInteger)anIndex {
+    if(anIndex >= string.length){
+        CLS_LOG(@"ERROR: anIndex: [%lu] >= string.len: [%lu]. string = %@", (unsigned long)anIndex, (unsigned long)string.length, safeString(string));
+        return (unichar)0x00; // FIXME: what should this return?
+    }
 	return CFStringGetCharacterAtIndex((CFStringRef)string, anIndex);
 }
 - (id) description {
