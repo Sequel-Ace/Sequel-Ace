@@ -7,6 +7,8 @@
 //
 
 #import "SPFunctions.h"
+#import "SPTestingUtils.h"
+
 #import <XCTest/XCTest.h>
 
 @interface SPFunctionsTests : XCTestCase
@@ -182,6 +184,40 @@
                 if (testSet != nil && [testSet count] > 0){
                     BOOL __unused res = YES;
                 }
+            }
+        }
+    }];
+}
+
+// 0.0292 s
+- (void)testPerformanceNormalForLoop {
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+
+        int const iterations = 100;
+
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                for(NSString* __unused obj in randomArray){}
+            }
+        }
+    }];
+}
+
+// 0.047 s 
+- (void)testPerformanceMacroForLoop {
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+
+        int const iterations = 100;
+
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                foreach(object, randomArray ){}
             }
         }
     }];
