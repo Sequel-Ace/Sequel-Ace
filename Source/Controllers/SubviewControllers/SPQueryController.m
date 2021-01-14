@@ -808,7 +808,7 @@ static SPQueryController *sharedQueryController = nil;
 
 				// we want the values, sorted by the reverse of the key order
 				// remember allKey specifies no order, so we need to sort.
-				NSArray *sortedKeys = [[_SQLiteHistoryManager.queryHist allKeys] sortedArrayUsingFunction:intSort context:NULL];
+				NSArray *sortedKeys = [[_SQLiteHistoryManager.queryHist allKeys] sortedArrayUsingFunction:intSortDesc context:NULL];
 
 				NSMutableArray *sortedValues = [NSMutableArray array];
 				for (NSNumber *key in sortedKeys){

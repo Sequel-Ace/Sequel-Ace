@@ -159,7 +159,7 @@ id DumpObjCMethods(Class clz) {
     return arr;
 }
 
-NSInteger intSort(id num1, id num2, void *context)
+NSInteger intSortDesc(id num1, id num2, void *context)
 {
     // JCS not: I want descending, so I've swapped the return values
     // from the ifs
