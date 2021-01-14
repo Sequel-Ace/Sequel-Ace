@@ -118,6 +118,7 @@
 		1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55025939B6400616E7E /* SPArrayAdditions.m */; };
 		1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55925939BEE00616E7E /* SPTestingUtils.m */; };
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
+		1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */; };
 		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
@@ -763,6 +764,7 @@
 		1A2DD55025939B6400616E7E /* SPArrayAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPArrayAdditions.m; sourceTree = "<group>"; };
 		1A2DD55925939BEE00616E7E /* SPTestingUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPTestingUtils.m; sourceTree = "<group>"; };
 		1A2DD55F25939C1500616E7E /* SPTestingUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTestingUtils.h; sourceTree = "<group>"; };
+		1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneralSwiftTests.swift; sourceTree = "<group>"; };
 		1A47996E2543343A00D29E6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Plists/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
 		1A479B19254375D200D29E6E /* Pods-Sequel Ace-acknowledgements.markdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "Pods-Sequel Ace-acknowledgements.markdown"; sourceTree = "<group>"; };
@@ -2274,6 +2276,7 @@
 			isa = PBXGroup;
 			children = (
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
+				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
@@ -2959,6 +2962,7 @@
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
 				1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
+				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
 				1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */,

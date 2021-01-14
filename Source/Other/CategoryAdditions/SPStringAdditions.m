@@ -121,6 +121,11 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	return [[NSUUID UUID] UUIDString];
 }
 
+- (BOOL)contains:(NSString *)needle
+{
+    return ([self rangeOfString:needle].location != NSNotFound);
+}
+
 /**
  * Returns the ROT13 representation of self.
  */

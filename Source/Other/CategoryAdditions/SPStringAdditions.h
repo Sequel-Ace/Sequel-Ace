@@ -57,6 +57,8 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 + (NSString *)stringForTimeInterval:(double)timeInterval;
 + (NSString *)stringWithNewUUID;
 
+- (BOOL)contains:(NSString *)needle;
+
 - (NSString *)rot13;
 - (NSString *)HTMLEscapeString;
 - (NSString *)backtickQuotedString;
