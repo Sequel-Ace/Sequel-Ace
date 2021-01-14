@@ -323,6 +323,61 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 }
 
 
+- (void)testSeparatedIntoLines{
+
+    NSString *str = @"SELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\n";
+    NSArray *expectedArray = @[@"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000"];
+
+    NSArray *arr = [str separatedIntoLinesObjc];
+
+    XCTAssertEqualObjects(expectedArray, arr);
+
+    NSLog(@"arr: %@", arr);
+
+}
+
+- (void)testContains{
+
+    NSString *str = @"When I say ATMOS, you say FEAR.";
+
+    XCTAssertTrue([str contains:@"ATMOS"]);
+    XCTAssertTrue([str contains:@"."]);
+    XCTAssertFalse([str contains:@"JIMMY"]);
+    XCTAssertFalse([str contains:@"ATMOS say"]);
+    XCTAssertFalse([str contains:@"Say"]);
+
+}
+
+// 0.145 s
+- (void)testContainsPerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        NSString *str = @"When I say ATMOS, you say FEAR.";
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                BOOL __unused res = [str contains:@"ATMOS"];
+            }
+        }
+    }];
+}
+
+// 0.13 s
+- (void)testContainsStringPerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        NSString *str = @"When I say ATMOS, you say FEAR.";
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                BOOL __unused res = [str containsString:@"ATMOS"];
+            }
+        }
+    }];
+}
+
 /**
  * stringByRemovingCharactersInSet test case.
  */

@@ -1334,8 +1334,9 @@
 {
 	BOOL shouldSaveFavorites = NO;
 
-	[SQLiteHistoryManager.sharedInstance execSQLiteVacuum];
-	
+    // removing vacuum here. See: https://www.sqlite.org/lang_vacuum.html
+    // The VACUUM command may change the ROWIDs of entries in any tables that do not have an explicit INTEGER PRIMARY KEY.
+
 	if (lastBundleBlobFilesDirectory != nil) {
 		[fileManager removeItemAtPath:lastBundleBlobFilesDirectory error:nil];
 	}
