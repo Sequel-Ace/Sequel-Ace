@@ -751,7 +751,7 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
  });
 
  */
-static inline void SABenchmark(void (^block)(void), void (^complete)(double ms)) {
+static inline __attribute__((always_inline)) void SABenchmark(void (^block)(void), void (^complete)(double ms)) {
     struct timeval t0, t1;
     gettimeofday(&t0, NULL);
     block();
