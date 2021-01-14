@@ -80,3 +80,16 @@ void executeOnBackgroundThreadSync(SAVoidCompletionBlock block);
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement);
 
 id DumpObjCMethods(Class clz);
+
+/*
+ http://blog.wilshipley.com/2005/10/pimp-my-code-interlude-free-code.html
+ Essentially, if you're wondering if an NSString or NSData or NSAttributedString
+ or NSArray or NSSet has actual useful data in it, this is your macro.
+ Instead of checking things like "if (inputString == nil || [inputString length] == 0)"
+ you just say, "if (IsEmpty(inputString))".
+ */
+static inline __attribute__((always_inline)) BOOL IsEmpty(id thing) {
+    return thing == nil ||
+            ([thing respondsToSelector:@selector(length)] && [(NSData *)thing length] == 0) ||
+            ([thing respondsToSelector:@selector(count)]  && [(NSArray *)thing count] == 0);
+}
