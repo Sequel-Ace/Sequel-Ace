@@ -761,6 +761,7 @@ static inline __attribute__((always_inline)) void SABenchmark(void (^block)(void
 }
 #endif
 
+inline __attribute__((always_inline)) NSString *safeString(NSString *str) { return str ?: @""; }
 
 #define foreachGetEnumerator(c) \
     ([c respondsToSelector:@selector(objectEnumerator)] ? \
