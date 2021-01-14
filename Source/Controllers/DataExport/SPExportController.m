@@ -644,14 +644,22 @@ set_input:
 			
 			[self->exportPathField setStringValue:path];
 
-            // this needs to be read-write
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
-                SPLog(@"addBookmarkForUrl success");
-                CLS_LOG(@"addBookmarkForUrl success");
+            // check it's really a URL
+            if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
+                SPLog(@"self->changeExportOutputPathPanel.URL is not a URL");
+                CLS_LOG(@"self->changeExportOutputPathPanel.URL is not a URL");
+                // JCS - should we stop here?
             }
             else{
-                CLS_LOG(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
-                SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
+                // this needs to be read-write
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
+                    SPLog(@"addBookmarkForUrl success");
+                    CLS_LOG(@"addBookmarkForUrl success");
+                }
+                else{
+                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
+                    SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
+                }
             }
         }
     }];		

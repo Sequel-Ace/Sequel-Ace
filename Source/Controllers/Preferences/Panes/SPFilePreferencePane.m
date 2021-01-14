@@ -480,37 +480,45 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
         // read-only.
         [self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
-                SPLog(@"addBookmarkForUrl success");
-                CLS_LOG(@"addBookmarkForUrl success");
-
-                if(options.isForStaleBookmark == YES){
-
-                    // Here we need to maintain the options filnames array
-                    // and the selectedRows index
-                    SPLog(@"options.fileNames: %@", options.fileNames);
-                    SPLog(@"self->selectedRows: %@", self->selectedRows);
-                    SPLog(@"removing stale file from options.fileNames at index 0");
-                    SPLog(@"removing stale file from self->selectedRows at index: %lu", (unsigned long)options.index);
-                    CLS_LOG(@"removing stale file from options.fileNames");
-
-                    SPLog(@"selectedRows count = %lu", (unsigned long)self->selectedRows.count);
-
-                    // we need to keep track of how many files there are to prompt for
-                    // so we remove from the filenames array. Index 0 is safe.
-                    [options.fileNames removeObjectAtIndex:0];
-                    // to keep things nice and tidy, remove the index?
-                    [self->selectedRows removeIndex:options.index];
-                    SPLog(@"options.fileNames: %@", options.fileNames);
-                    SPLog(@"self->selectedRows: %@", self->selectedRows);
-
-                    // increment for the next file
-                    options.index++;
-                }
+            // check it's really a URL
+            if(![self->_currentFilePanel.URL isKindOfClass:[NSURL class]]){
+                SPLog(@"self->_currentFilePanel.URL is not a URL");
+                CLS_LOG(@"self->_currentFilePanel.URL is not a URL");
+                // JCS - should we stop here?
             }
             else{
-                CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
-                SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
+                    SPLog(@"addBookmarkForUrl success");
+                    CLS_LOG(@"addBookmarkForUrl success");
+
+                    if(options.isForStaleBookmark == YES){
+
+                        // Here we need to maintain the options filnames array
+                        // and the selectedRows index
+                        SPLog(@"options.fileNames: %@", options.fileNames);
+                        SPLog(@"self->selectedRows: %@", self->selectedRows);
+                        SPLog(@"removing stale file from options.fileNames at index 0");
+                        SPLog(@"removing stale file from self->selectedRows at index: %lu", (unsigned long)options.index);
+                        CLS_LOG(@"removing stale file from options.fileNames");
+
+                        SPLog(@"selectedRows count = %lu", (unsigned long)self->selectedRows.count);
+
+                        // we need to keep track of how many files there are to prompt for
+                        // so we remove from the filenames array. Index 0 is safe.
+                        [options.fileNames removeObjectAtIndex:0];
+                        // to keep things nice and tidy, remove the index?
+                        [self->selectedRows removeIndex:options.index];
+                        SPLog(@"options.fileNames: %@", options.fileNames);
+                        SPLog(@"self->selectedRows: %@", self->selectedRows);
+
+                        // increment for the next file
+                        options.index++;
+                    }
+                }
+                else{
+                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                    SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                }
             }
         }];
 

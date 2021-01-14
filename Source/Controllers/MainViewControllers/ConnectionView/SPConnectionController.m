@@ -467,16 +467,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
         NSError *err=nil;
 
-        SPLog(@"calling addBookmarkForUrl");
-        CLS_LOG(@"calling addBookmarkForUrl");
-        // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-        if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
-            SPLog(@"addBookmarkForUrl success");
-            CLS_LOG(@"addBookmarkForUrl success");
+        // check it's really a URL
+        if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
+            SPLog(@"self->keySelectionPanel.URL is not a URL");
+            CLS_LOG(@"self->keySelectionPanel.URL is not a URL");
+            // JCS - should we stop here?
         }
         else{
-            SPLog(@"addBookmarkForUrl failed");
-            CLS_LOG(@"addBookmarkForUrl failed");
+            SPLog(@"calling addBookmarkForUrl");
+            CLS_LOG(@"calling addBookmarkForUrl");
+            // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
+                SPLog(@"addBookmarkForUrl success");
+                CLS_LOG(@"addBookmarkForUrl success");
+            }
+            else{
+                SPLog(@"addBookmarkForUrl failed");
+                CLS_LOG(@"addBookmarkForUrl failed");
+                // JCS - should we stop here?
+            }
         }
 
 		// SSH key file selection
@@ -2315,12 +2324,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// If the user cancelled the password prompt dialog, continue with no further action.
 	if ([theTunnel passwordPromptCancelled]) {
+        SPLog(@"user cancelled the password prompt dialog, continue with no further action");
+        CLS_LOG(@"user cancelled the password prompt dialog, continue with no further action");
 		[self _restoreConnectionInterface];
 
 		return;
 	}
 
 	if (newState == SPMySQLProxyIdle) {
+        SPLog(@"SPMySQLProxyIdle, failing");
+        CLS_LOG(@"SPMySQLProxyIdle, failing");
 
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
 
@@ -2330,6 +2343,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		                                rawErrorText:[theTunnel lastError]];
 	}
 	else if (newState == SPMySQLProxyConnected) {
+        SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
+        CLS_LOG(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Connected", @"SSH connected titlebar marker")];
 
 		[self initiateMySQLConnection];

@@ -300,16 +300,24 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		// since ssh configs are able to consist of multiple files, bookmarks
 		// for every selected file should be created in order to access them
 		// read-only.
-		[self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
-			// check if the file is out of the sandbox
+        [self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
+            // check if the file is out of the sandbox
 
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
-                SPLog(@"addBookmarkForUrl success");
-                CLS_LOG(@"addBookmarkForUrl success");
+            // check it's really a URL
+            if(![self->_currentFilePanel.URL isKindOfClass:[NSURL class]]){
+                SPLog(@"self->_currentFilePanel.URL is not a URL");
+                CLS_LOG(@"self->_currentFilePanel.URL is not a URL");
+                // JCS - should we stop here?
             }
             else{
-                CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
-                SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
+                    SPLog(@"addBookmarkForUrl success");
+                    CLS_LOG(@"addBookmarkForUrl success");
+                }
+                else{
+                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                    SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                }
             }
 
 			// set the config path to the first selected file
