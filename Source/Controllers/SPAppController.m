@@ -68,6 +68,7 @@
 
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
+@property (assign) BOOL didPreviouslyCrash;
 
 @end
 
@@ -76,6 +77,7 @@
 @synthesize lastBundleBlobFilesDirectory;
 @synthesize fileManager;
 @synthesize sharedSPBundleManager;
+@synthesize didPreviouslyCrash;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -90,7 +92,7 @@
 		aboutController = nil;
 		lastBundleBlobFilesDirectory = nil;
 		_spfSessionDocData = [[NSMutableDictionary alloc] init];
-
+        didPreviouslyCrash = NO;
 		runningActivitiesArray = [[NSMutableArray alloc] init];
 		fileManager = [NSFileManager defaultManager];
 
@@ -195,7 +197,7 @@
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
-	
+
 	[FIRApp configure]; // default options read from Google service plist
 	
 #ifdef DEBUG
@@ -254,6 +256,8 @@
         NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
         FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
 
+        self->didPreviouslyCrash = crashlytics.didCrashDuringPreviousExecution;
+        
         // fake the dbViewInfoPanelSplit being open
         NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
         [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];
