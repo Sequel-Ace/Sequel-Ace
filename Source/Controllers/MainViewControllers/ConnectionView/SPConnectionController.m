@@ -469,9 +469,20 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // check it's really a URL
         if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
-            SPLog(@"self->keySelectionPanel.URL is not a URL: %@", self->keySelectionPanel.URL.class);
-            CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", self->keySelectionPanel.URL.class);
+            NSMutableString *classStr = [NSMutableString string];
+            [classStr appendStringOrNil:NSStringFromClass(self->keySelectionPanel.URL.class)];
+
+            SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
+            CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
             // JCS - should we stop here?
+
+            NSDictionary *userInfo = @{
+                NSLocalizedDescriptionKey: @"self->keySelectionPanel.URL is not a URL",
+                @"class": classStr
+            };
+
+            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
+
         }
         else{
             SPLog(@"calling addBookmarkForUrl");
@@ -485,6 +496,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 SPLog(@"addBookmarkForUrl failed");
                 CLS_LOG(@"addBookmarkForUrl failed");
                 // JCS - should we stop here?
+                // No just the act of selecting the file in the NSOpenPanel calls startAccessingSecurityScopedResource
+                // the only downside of this failing is that we won't have a bookmark,
+                // and therefore no access on the next app start
             }
         }
 

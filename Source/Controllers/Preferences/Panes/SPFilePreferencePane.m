@@ -482,9 +482,20 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
             // check it's really a URL
             if(![self->_currentFilePanel.URL isKindOfClass:[NSURL class]]){
-                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", self->_currentFilePanel.URL.class);
-                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", self->_currentFilePanel.URL.class);
+                NSMutableString *classStr = [NSMutableString string];
+                [classStr appendStringOrNil:NSStringFromClass(self->_currentFilePanel.URL.class)];
+
+                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
+                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
                 // JCS - should we stop here?
+
+                NSDictionary *userInfo = @{
+                    NSLocalizedDescriptionKey: @"self->keySelectionPanel.URL is not a URL",
+                    @"class": classStr,
+                    @"URLs" : self->_currentFilePanel.URLs
+                };
+
+                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
             }
             else{
                 if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){

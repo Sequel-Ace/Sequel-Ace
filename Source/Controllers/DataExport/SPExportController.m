@@ -646,9 +646,19 @@ set_input:
 
             // check it's really a URL
             if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
-                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", self->changeExportOutputPathPanel.URL.class);
-                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", self->changeExportOutputPathPanel.URL.class);
+                NSMutableString *classStr = [NSMutableString string];
+                [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
+
+                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
+                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
                 // JCS - should we stop here?
+
+                NSDictionary *userInfo = @{
+                    NSLocalizedDescriptionKey: @"self->changeExportOutputPathPanel.URL is not a URL",
+                    @"class": classStr
+                };
+
+                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
             }
             else{
                 // this needs to be read-write
