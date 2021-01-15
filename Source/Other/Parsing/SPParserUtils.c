@@ -78,9 +78,9 @@ size_t utf8strlen(const char * _s)
 	for (; ; s += SIZET) {
 		/* Prefetch 256 bytes ahead. */
 		__builtin_prefetch(&s[256], 0, 0);
-		
+
 		/* Grab 4 or 8 bytes of UTF-8 data. */
-		u = *(size_t *)(s);
+		u = *(size_t *)(s); // FIXME: AddressSanitizer: heap-buffer-overflow - GitHub issue: #792
 		
 		/* Exit the loop if there are any zero bytes. */
 		if ((u - ONEMASK) & (~u) & ONEMASK8)
@@ -95,7 +95,7 @@ size_t utf8strlen(const char * _s)
 		u = ((u & ONEMASK8) >> 7) & ((~u) >> 6);
 		
 		count += (u * ONEMASK) >> SBYTE;
-		
+
 	}
 	
 	/* Take care of any left-over bytes. */
