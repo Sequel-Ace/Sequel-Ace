@@ -48,6 +48,7 @@
 #import "SPHelpViewerClient.h"
 #import "SPTableData.h"
 #import "SPBundleManager.h"
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -87,6 +88,9 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse);
 - (void)_positionCompletionPopup:(SPNarrowDownCompletion *)aPopup relativeToTextAtLocation:(NSUInteger)aLocation;
 
 @property (assign) NSUInteger taskCount;
+@property (assign) BOOL haveDataDir;
+@property (readwrite, strong) NSFileManager *fileManager;
+@property (readwrite, strong) NSString *dataPath;
 
 @end
 
@@ -117,6 +121,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize completionWasReinvokedAutomatically;
 @synthesize syntaxHighlightingApplied;
 @synthesize taskCount;
+@synthesize fileManager;
+@synthesize dataPath;
+@synthesize haveDataDir;
 
 - (void) awakeFromNib
 {
@@ -140,6 +147,18 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	completionIsOpen = NO;
 	isProcessingMirroredSnippets = NO;
 	completionWasRefreshed = NO;
+    fileManager = [NSFileManager defaultManager];
+    haveDataDir = YES;
+
+    NSError *error = nil;
+    dataPath = [fileManager applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error];
+
+    if (error) {
+        haveDataDir = NO;
+        SPLog(@"Error creating SPDataSupportFolder: %@", error.localizedDescription);
+        CLS_LOG(@"Error creating SPDataSupportFolder: %@", error.localizedDescription);
+    }
+
     // keep track of tasks we start and stop, otherwise we get an assert error
     taskCount = 0;
 
@@ -2631,6 +2650,40 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 }
 
+- (void)writeQueriesToFile{
+
+    if(haveDataDir == NO){
+        SPLog(@"No dataDir, returning");
+        CLS_LOG(@"No dataDir, returning");
+        return;
+    }
+
+    NSString *tblDocName = [[[[tableDocumentInstance fileURL] absoluteString] stringByRemovingPercentEncoding] lastPathComponent];
+
+    NSString *queryFile = [[dataPath stringByAppendingPathComponent:tblDocName] stringByAppendingPathExtension:@"sql"];
+
+    NSString __block *content = nil;
+
+    SPMainQSync(^{
+        content = [self string];
+    });
+
+    NSError *error = nil;
+    //save content to the documents directory
+    [content writeToFile:queryFile
+                     atomically:YES
+                       encoding:NSUTF8StringEncoding
+                          error:&error];
+
+    if (error) {
+        SPLog(@"Error writing to %@. Error: %@", queryFile, error.localizedDescription);
+        CLS_LOG(@"Error writing to %@. Error: %@", queryFile, error.localizedDescription);
+        return;
+    }
+
+    SPLog(@"queryFile: %@", queryFile);
+
+}
 - (void)removeSyntaxHighlighting {
 
     SPLog(@"removeSyntaxHighlighting called");
@@ -3341,6 +3394,16 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
             SPLog(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], NOT calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
             CLS_LOG(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING [%i], NOT calling doSyntaxHighlightingWithForce", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING);
         }
+        if((delta > SP_TEXT_SIZE_TRIGGER_FOR_SAVING_TO_FILE) || (textBufferSizeIncreased == NO && (delta*-1 > SP_TEXT_SIZE_TRIGGER_FOR_SAVING_TO_FILE))){
+            SPLog(@"delta [%li] > SP_TEXT_SIZE_TRIGGER_FOR_SAVING_TO_FILE [%i], calling writeQueriesToFile", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_SAVING_TO_FILE);
+            executeOnBackgroundThread(^{
+                [self writeQueriesToFile];
+            });
+        }
+        else{
+            SPLog(@"delta [%li] < SP_TEXT_SIZE_TRIGGER_FOR_SAVING_TO_FILE [%i], NOT calling writeQueriesToFile", (long)delta, SP_TEXT_SIZE_TRIGGER_FOR_SAVING_TO_FILE);
+        }
+        
 
 	} else {
 		[customQueryInstance setTextViewWasChanged:NO];
