@@ -308,9 +308,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		// Disable all tables
 		for (NSMutableArray *table in tables)
 		{
-			[table replaceObjectAtIndex:1 withObject:@NO];
-			[table replaceObjectAtIndex:2 withObject:@NO];
-			[table replaceObjectAtIndex:3 withObject:@NO];
+			[table safeReplaceObjectAtIndex:1 withObject:@NO];
+			[table safeReplaceObjectAtIndex:2 withObject:@NO];
+			[table safeReplaceObjectAtIndex:3 withObject:@NO];
 		}
 		
 		// Select the supplied tables
@@ -319,9 +319,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			for (NSString *exportTable in exportTables)
 			{
 				if ([exportTable isEqualToString:[table objectAtIndex:0]]) {
-					[table replaceObjectAtIndex:1 withObject:@YES];
-					[table replaceObjectAtIndex:2 withObject:@YES];
-					[table replaceObjectAtIndex:3 withObject:@YES];
+					[table safeReplaceObjectAtIndex:1 withObject:@YES];
+					[table safeReplaceObjectAtIndex:2 withObject:@YES];
+					[table safeReplaceObjectAtIndex:3 withObject:@YES];
 				}
 			}
 		}
@@ -676,13 +676,13 @@ set_input:
 	if (sender) {
 		for (NSMutableArray *item in tables)
 		{
-			[tableDict setObject:[NSArray arrayWithObjects:
-								  [item objectAtIndex:1], 
-								  [item objectAtIndex:2], 
-								  [item objectAtIndex:3],
-								  [item objectAtIndex:4],
+			[tableDict safeSetObject:[NSArray arrayWithObjects:
+								  [item safeObjectAtIndex:1],
+								  [item safeObjectAtIndex:2],
+								  [item safeObjectAtIndex:3],
+								  [item safeObjectAtIndex:4],
 								  nil] 
-						  forKey:[item objectAtIndex:0]];
+						  forKey:[item safeObjectAtIndex:0]];
 		}
 	}
 	
@@ -693,7 +693,7 @@ set_input:
 		NSArray *tablesAndViews = [tablesListInstance allTableAndViewNames];
 
 		for (id itemName in tablesAndViews) {
-			[tables addObject:[NSMutableArray arrayWithObjects:
+			[tables safeAddObject:[NSMutableArray arrayWithObjects:
 					            itemName,
 			                    @YES,
 			                    @YES,
@@ -710,7 +710,7 @@ set_input:
 			NSArray *procedures = [tablesListInstance allProcedureNames];
 
 			for (id procName in procedures) {
-				[tables addObject:[NSMutableArray arrayWithObjects:
+				[tables safeAddObject:[NSMutableArray arrayWithObjects:
 				                    procName,
 				                    @YES,
 				                    @YES,
@@ -724,7 +724,7 @@ set_input:
 			NSArray *functions = [tablesListInstance allFunctionNames];
 
 			for (id funcName in functions) {
-				[tables addObject:[NSMutableArray arrayWithObjects:
+				[tables safeAddObject:[NSMutableArray arrayWithObjects:
 				                    funcName,
 				                    @YES,
 				                    @YES,
@@ -739,15 +739,15 @@ set_input:
 		// Restore the user's table selection
 		for (NSUInteger i = 0; i < [tables count]; i++)
 		{
-			NSMutableArray *oldSelection = [tableDict objectForKey:[[tables objectAtIndex:i] objectAtIndex:0]];
+			NSMutableArray *oldSelection = [tableDict objectForKey:[[tables safeObjectAtIndex:i] safeObjectAtIndex:0]];
 			
 			if (oldSelection) {
 				
 				NSMutableArray *newItem = [[NSMutableArray alloc] initWithArray:oldSelection];
 				
-				[newItem insertObject:[[tables objectAtIndex:i] objectAtIndex:0] atIndex:0];
+				[newItem insertObject:[[tables safeObjectAtIndex:i] safeObjectAtIndex:0] atIndex:0];
 				
-				[tables replaceObjectAtIndex:i withObject:newItem];
+				[tables safeReplaceObjectAtIndex:i withObject:newItem];
 			}
 		}
 	}
@@ -773,11 +773,11 @@ set_input:
 
 	for (NSMutableArray *table in tables)
 	{
-		if (toggleStructure) [table replaceObjectAtIndex:1 withObject:[NSNumber numberWithBool:[sender tag]]];
+		if (toggleStructure) [table safeReplaceObjectAtIndex:1 withObject:[NSNumber numberWithBool:[sender tag]]];
 		
-		[table replaceObjectAtIndex:2 withObject:[NSNumber numberWithBool:[sender tag]]];
+		[table safeReplaceObjectAtIndex:2 withObject:[NSNumber numberWithBool:[sender tag]]];
 		
-		if (toggleDropTable) [table replaceObjectAtIndex:3 withObject:[NSNumber numberWithBool:[sender tag]]];
+		if (toggleDropTable) [table safeReplaceObjectAtIndex:3 withObject:[NSNumber numberWithBool:[sender tag]]];
 	}
 	
 	[exportTableList reloadData];
@@ -1090,7 +1090,7 @@ set_input:
 			
 			for (NSMutableArray *eachTable in tables) 
 			{
-				if ([[eachTable objectAtIndex:2] boolValue]) numberOfTables++;
+				if ([[eachTable safeObjectAtIndex:2] boolValue]) numberOfTables++;
 			}
 			
 			if (numberOfTables <= 1) break;
@@ -1331,30 +1331,30 @@ set_input:
 			for (NSMutableArray *table in tables)
 			{
 				if (exportType == SPSQLExport) {
-					if ([[table objectAtIndex:1] boolValue] || [[table objectAtIndex:2] boolValue] || [[table objectAtIndex:3] boolValue]) {
+					if ([[table safeObjectAtIndex:1] boolValue] || [[table safeObjectAtIndex:2] boolValue] || [[table safeObjectAtIndex:3] boolValue]) {
 
 						// Check the overall export settings
-						if ([[table objectAtIndex:1] boolValue] && (![exportSQLIncludeStructureCheck state])) {
-							[table replaceObjectAtIndex:1 withObject:@NO];
+						if ([[table safeObjectAtIndex:1] boolValue] && (![exportSQLIncludeStructureCheck state])) {
+							[table safeReplaceObjectAtIndex:1 withObject:@NO];
 						}
 
-						if ([[table objectAtIndex:2] boolValue] && (![exportSQLIncludeContentCheck state])) {
-							[table replaceObjectAtIndex:2 withObject:@NO];
+						if ([[table safeObjectAtIndex:2] boolValue] && (![exportSQLIncludeContentCheck state])) {
+							[table safeReplaceObjectAtIndex:2 withObject:@NO];
 						}
 
-						if ([[table objectAtIndex:3] boolValue] && (![exportSQLIncludeDropSyntaxCheck state])) {
-							[table replaceObjectAtIndex:3 withObject:@NO];
+						if ([[table safeObjectAtIndex:3] boolValue] && (![exportSQLIncludeDropSyntaxCheck state])) {
+							[table safeReplaceObjectAtIndex:3 withObject:@NO];
 						}
 
-						[exportTables addObject:table];
+						[exportTables safeAddObject:table];
 					}
 				}
 				else if (exportType == SPDotExport) {
-					[exportTables addObject:[table objectAtIndex:0]];
+					[exportTables safeAddObject:[table safeObjectAtIndex:0]];
 				}
 				else {
-					if ([[table objectAtIndex:2] boolValue]) {
-						[exportTables addObject:[table objectAtIndex:0]];
+					if ([[table safeObjectAtIndex:2] boolValue]) {
+						[exportTables safeAddObject:[table safeObjectAtIndex:0]];
 					}
 				}
 			}
@@ -1434,7 +1434,7 @@ set_input:
 		if ((![self exportToMultipleFiles]) || (exportSource == SPFilteredExport) || (exportSource == SPQueryExport)) {
 			NSString *selectedTableName = nil;
 
-			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables objectAtIndex:0];
+			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables safeObjectAtIndex:0];
 
 			[exportFilename setString:createCustomFilename ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
 
@@ -1506,7 +1506,7 @@ set_input:
 		[sqlExporter setSqlExportTables:exportTables];
 
 		// Create custom filename if required
-		NSString *selectedTableName = (exportSource == SPTableExport && [exportTables count] == 1)? [[exportTables objectAtIndex:0] objectAtIndex:0] : nil;
+		NSString *selectedTableName = (exportSource == SPTableExport && [exportTables count] == 1)? [[exportTables safeObjectAtIndex:0] safeObjectAtIndex:0] : nil;
 		[exportFilename setString:(createCustomFilename) ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
 
 		// Only append the extension if necessary
@@ -1531,7 +1531,7 @@ set_input:
 		// export, create the single file now and assign it to all subsequently created exporters.
 		if ((![self exportToMultipleFiles]) || (exportSource == SPFilteredExport) || (exportSource == SPQueryExport)) {
 			NSString *selectedTableName = nil;
-			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables objectAtIndex:0];
+			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables safeObjectAtIndex:0];
 
 			[exportFilename setString:(createCustomFilename) ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
 
@@ -1833,7 +1833,7 @@ set_input:
 					  lineEnding,
 					  lineEnding,
 					  NSLocalizedString(@"Table", @"csv export table heading"),
-					  [[tables objectAtIndex:0] objectAtIndex:0],
+					  [[tables safeObjectAtIndex:0] safeObjectAtIndex:0],
 					  lineEnding,
 					  lineEnding] dataUsingEncoding:[connection stringEncoding]]];
 }
@@ -1942,7 +1942,7 @@ set_input:
 		NSString *additionalErrors = filesFailed ? NSLocalizedString(@"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)", @"Additional export file errors") : @"";
 
 		if (filesAlreadyExisting == 1) {
-			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” already exists. Do you want to replace it?", @"Export file already exists message"), [[[files objectAtIndex:0] exportFilePath] lastPathComponent]]];
+			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” already exists. Do you want to replace it?", @"Export file already exists message"), [[[files safeObjectAtIndex:0] exportFilePath] lastPathComponent]]];
 			[alert setInformativeText:[NSString stringWithFormat:@"%@%@", NSLocalizedString(@"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents.", @"Export file already exists explanatory text"), additionalErrors]];
 		}
 		else if (filesAlreadyExisting == [exportFiles count]) {
@@ -1973,7 +1973,7 @@ set_input:
 	// If one or multiple files failed, but only due to unhandled errors, show a short dialog
 	else {
 		if (filesFailed == 1) {
-			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” could not be created", @"Export file creation error title"), [[[files objectAtIndex:0] exportFilePath] lastPathComponent]]];
+			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” could not be created", @"Export file creation error title"), [[[files safeObjectAtIndex:0] exportFilePath] lastPathComponent]]];
 			if (parentFoldersMissing) {
 				[alert setInformativeText:NSLocalizedString(@"The target export folder no longer exists.  Please select a new export location and try again.", @"Export folder missing explanatory text")];
 			} else if (parentFoldersNotWritable) {
@@ -2032,9 +2032,9 @@ set_input:
 			// Use a numerically controlled loop to avoid mutating the collection while enumerating
 			NSUInteger i;
 			for (i = 0; i < [exporters count]; i++) {
-				SPExporter *exporter = [exporters objectAtIndex:i];
+				SPExporter *exporter = [exporters safeObjectAtIndex:i];
 				if ([[exporter exportOutputFile] isEqualTo:file]) {
-					[exporters removeObjectAtIndex:i];
+					[exporters safeRemoveObjectAtIndex:i];
 					i--;
 				}
 			}
@@ -2523,12 +2523,12 @@ set_input:
 
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
-    return [[tables objectAtIndex:rowIndex] safeObjectAtIndex:[exportTableList columnWithIdentifier:[tableColumn identifier]]];
+    return [[tables safeObjectAtIndex:rowIndex] safeObjectAtIndex:[exportTableList columnWithIdentifier:[tableColumn identifier]]];
 }
 
 - (void)tableView:(NSTableView *)tableView setObjectValue:(id)anObject forTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
-	[[tables objectAtIndex:rowIndex] replaceObjectAtIndex:[exportTableList columnWithIdentifier:[tableColumn identifier]] withObject:anObject];
+	[[tables safeObjectAtIndex:rowIndex] safeReplaceObjectAtIndex:[exportTableList columnWithIdentifier:[tableColumn identifier]] withObject:anObject];
 
 	[self updateAvailableExportFilenameTokens];
 	[self _toggleExportButtonOnBackgroundThread];
@@ -2578,11 +2578,11 @@ set_input:
 
 	for(id item in objects) {
 		if(IS_TOKEN(item)) {
-			[mixed addObject:@{@"tokenId": [item tokenId]}];
+			[mixed safeAddObject:@{@"tokenId": [item tokenId]}];
 			[flatted appendFormat:@"{%@}",[item tokenId]];
 		}
 		else if(IS_STRING(item)) {
-			[mixed addObject:item];
+			[mixed safeAddObject:item];
 			[flatted appendString:item];
 		}
 		else {
@@ -2603,13 +2603,13 @@ set_input:
 		NSMutableArray *res = [NSMutableArray arrayWithCapacity:[items count]];
 		for (id item in items) {
 			if (IS_STRING(item)) {
-				[res addObject:item];
+				[res safeAddObject:item];
 			}
 			else if([item isKindOfClass:[NSDictionary class]]) {
-				NSString *name = [item objectForKey:@"tokenId"];
+				NSString *name = [item safeObjectForKey:@"tokenId"];
 				if(name) {
 					SPExportFileNameTokenObject *tok = [SPExportFileNameTokenObject tokenWithId:name];
-					[res addObject:tok];
+					[res safeAddObject:tok];
 				}
 			}
 			else {
@@ -2695,16 +2695,16 @@ set_input:
 	for (id inputToken in tokens)
 	{
 		if(IS_TOKEN(inputToken)) {
-			[mergedTokens addObject:inputToken];
+			[mergedTokens safeAddObject:inputToken];
 		}
 		else if(IS_STRING(inputToken)) {
 			id prev = [mergedTokens lastObject];
 			if(IS_STRING(prev)) {
 				[mergedTokens removeLastObject];
-				[mergedTokens addObject:[prev stringByAppendingString:inputToken]];
+				[mergedTokens safeAddObject:[prev stringByAppendingString:inputToken]];
 			}
 			else {
-				[mergedTokens addObject:inputToken];
+				[mergedTokens safeAddObject:inputToken];
 			}
 		}
 	}
@@ -2713,14 +2713,14 @@ set_input:
 	NSMutableDictionary *replacement = [NSMutableDictionary dictionary];
 	for (SPExportFileNameTokenObject *realToken in [exportCustomFilenameTokenPool objectValue]) {
 		NSString *serializedName = [NSString stringWithFormat:@"{%@}",[realToken tokenId]];
-		[replacement setObject:realToken forKey:serializedName];
+		[replacement safeSetObject:realToken forKey:serializedName];
 	}
 
 	//now we can look for real tokens to convert inside the strings
 	NSMutableArray *processedTokens = [NSMutableArray array];
 	for (id token in mergedTokens) {
 		if(IS_TOKEN(token)) {
-			[processedTokens addObject:token];
+			[processedTokens safeAddObject:token];
 			continue;
 		}
 
@@ -2732,7 +2732,7 @@ set_input:
 			}
 			NSString *before = [remainder substringToIndex:openCurl.location];
 			if([before length]) {
-				[processedTokens addObject:before];
+				[processedTokens safeAddObject:before];
 			}
 			remainder = [remainder substringFromIndex:openCurl.location];
 			NSRange closeCurl = [remainder rangeOfString:@"}"];
@@ -2742,15 +2742,15 @@ set_input:
 			NSString *tokenString = [remainder substringToIndex:closeCurl.location+1];
 			SPExportFileNameTokenObject *tokenObject = [replacement objectForKey:[tokenString lowercaseString]];
 			if(tokenObject) {
-				[processedTokens addObject:tokenObject];
+				[processedTokens safeAddObject:tokenObject];
 			}
 			else {
-				[processedTokens addObject:tokenString]; // no token with this name, add it as string
+				[processedTokens safeAddObject:tokenString]; // no token with this name, add it as string
 			}
 			remainder = [remainder substringFromIndex:closeCurl.location+1];
 		}
 		if([remainder length]) {
-			[processedTokens addObject:remainder];
+			[processedTokens safeAddObject:remainder];
 		}
 	}
 
@@ -3084,17 +3084,17 @@ set_input:
 		NSMutableDictionary *perObjectSettings = [NSMutableDictionary dictionaryWithCapacity:[tables count]];
 
 		for (NSMutableArray *table in tables) {
-			NSString *key = [table objectAtIndex:0];
+			NSString *key = [table safeObjectAtIndex:0];
 			id settings = [self exporterSpecificSettingsForSchemaObject:key ofType:SPTableTypeTable];
 			if(settings)
-				[perObjectSettings setObject:settings forKey:key];
+				[perObjectSettings safeSetObject:settings forKey:key];
 		}
 
-		[root setObject:perObjectSettings forKey:@"schemaObjects"];
+		[root safeSetObject:perObjectSettings forKey:@"schemaObjects"];
 	}
 
-	[root setObject:IsOn(exportProcessLowMemoryButton) forKey:@"lowMemoryStreaming"];
-	[root setObject:[[self class] describeCompressionFormat:(SPFileCompressionFormat)[exportOutputCompressionFormatPopupButton indexOfSelectedItem]] forKey:@"compressionFormat"];
+	[root safeSetObject:IsOn(exportProcessLowMemoryButton) forKey:@"lowMemoryStreaming"];
+	[root safeSetObject:[[self class] describeCompressionFormat:(SPFileCompressionFormat)[exportOutputCompressionFormatPopupButton indexOfSelectedItem]] forKey:@"compressionFormat"];
 
 	return root;
 }
@@ -3160,42 +3160,42 @@ set_input:
 	}
 	
 	SPExportType et;
-	if((o = [dict objectForKey:@"exportType"]) && [[self class] copyExportTypeForDescription:o to:&et]) {
+	if((o = [dict safeObjectForKey:@"exportType"]) && [[self class] copyExportTypeForDescription:o to:&et]) {
 		[exportTypeTabBar selectTabViewItemAtIndex:et];
 	}
 
 	//exportType should be changed first, as exportSource depends on it
 	SPExportSource es;
-	if((o = [dict objectForKey:@"exportSource"]) && [[self class] copyExportSourceForDescription:o to:&es]) {
+	if((o = [dict safeObjectForKey:@"exportSource"]) && [[self class] copyExportSourceForDescription:o to:&es]) {
 		[self setExportInput:es]; //try to set it. might fail e.g. if the settings were saved with "query result" but right now no custom query result exists
 	}
 
 	// set exporter specific settings
-	[self applyExporterSettings:[dict objectForKey:@"settings"]];
+	[self applyExporterSettings:[dict safeObjectForKey:@"settings"]];
 
 	// load schema object settings
 	if(exportSource == SPTableExport) {
-		NSDictionary *perObjectSettings = [dict objectForKey:@"schemaObjects"];
+		NSDictionary *perObjectSettings = [dict safeObjectForKey:@"schemaObjects"];
 
 		for (NSString *table in [perObjectSettings allKeys]) {
-			id settings = [perObjectSettings objectForKey:table];
+			id settings = [perObjectSettings safeObjectForKey:table];
 			[self applyExporterSpecificSettings:settings forSchemaObject:table ofType:SPTableTypeTable];
 		}
 
 		[exportTableList reloadData];
 	}
 
-	if((o = [dict objectForKey:@"lowMemoryStreaming"])) [exportProcessLowMemoryButton setState:([o boolValue] ? NSOnState : NSOffState)];
+	if((o = [dict safeObjectForKey:@"lowMemoryStreaming"])) [exportProcessLowMemoryButton setState:([o boolValue] ? NSOnState : NSOffState)];
 
 	SPFileCompressionFormat cf;
-	if((o = [dict objectForKey:@"compressionFormat"]) && [[self class] copyCompressionFormatForDescription:o to:&cf]) [exportOutputCompressionFormatPopupButton selectItemAtIndex:cf];
+	if((o = [dict safeObjectForKey:@"compressionFormat"]) && [[self class] copyCompressionFormatForDescription:o to:&cf]) [exportOutputCompressionFormatPopupButton selectItemAtIndex:cf];
 
 	// might have changed
 	[self _updateExportAdvancedOptionsLabel];
 
 	// token pool is only valid once the schema object selection is done
 	[self updateAvailableExportFilenameTokens];
-	if((o = [dict objectForKey:@"customFilename"]) && [o isKindOfClass:[NSArray class]]) [self setCustomFilenameFromArray:o];
+	if((o = [dict safeObjectForKey:@"customFilename"]) && [o isKindOfClass:[NSArray class]]) [self setCustomFilenameFromArray:o];
 
 	return YES;
 }
@@ -3258,15 +3258,15 @@ set_input:
 - (void)applyCsvSettings:(NSDictionary *)settings
 {
 	id o;
-	if((o = [settings objectForKey:@"exportToMultipleFiles"])) SetOnOff(o,exportFilePerTableCheck);
+	if((o = [settings safeObjectForKey:@"exportToMultipleFiles"])) SetOnOff(o,exportFilePerTableCheck);
 	[self toggleNewFilePerTable:nil];
 
-	if((o = [settings objectForKey:@"CSVIncludeFieldNames"]))  SetOnOff(o, exportCSVIncludeFieldNamesCheck);
-	if((o = [settings objectForKey:@"CSVFieldsTerminated"]))   [exportCSVFieldsTerminatedField setStringValue:o];
-	if((o = [settings objectForKey:@"CSVFieldsWrapped"]))      [exportCSVFieldsWrappedField setStringValue:o];
-	if((o = [settings objectForKey:@"CSVLinesTerminated"]))    [exportCSVLinesTerminatedField setStringValue:o];
-	if((o = [settings objectForKey:@"CSVFieldsEscaped"]))      [exportCSVFieldsEscapedField setStringValue:o];
-	if((o = [settings objectForKey:@"CSVNULLValuesAsText"]))   [exportCSVNULLValuesAsTextField setStringValue:o];
+	if((o = [settings safeObjectForKey:@"CSVIncludeFieldNames"]))  SetOnOff(o, exportCSVIncludeFieldNamesCheck);
+	if((o = [settings safeObjectForKey:@"CSVFieldsTerminated"]))   [exportCSVFieldsTerminatedField setStringValue:o];
+	if((o = [settings safeObjectForKey:@"CSVFieldsWrapped"]))      [exportCSVFieldsWrappedField setStringValue:o];
+	if((o = [settings safeObjectForKey:@"CSVLinesTerminated"]))    [exportCSVLinesTerminatedField setStringValue:o];
+	if((o = [settings safeObjectForKey:@"CSVFieldsEscaped"]))      [exportCSVFieldsEscapedField setStringValue:o];
+	if((o = [settings safeObjectForKey:@"CSVNULLValuesAsText"]))   [exportCSVNULLValuesAsTextField setStringValue:o];
 }
 
 - (NSDictionary *)dotSettings
@@ -3295,13 +3295,13 @@ set_input:
 {
 	id o;
 	SPXMLExportFormat xmlf;
-	if((o = [settings objectForKey:@"exportToMultipleFiles"]))     SetOnOff(o, exportFilePerTableCheck);
+	if((o = [settings safeObjectForKey:@"exportToMultipleFiles"]))     SetOnOff(o, exportFilePerTableCheck);
 	[self toggleNewFilePerTable:nil];
 
-	if((o = [settings objectForKey:@"XMLFormat"]) && [[self class] copyXMLExportFormatForDescription:o to:&xmlf]) [exportXMLFormatPopUpButton selectItemAtIndex:xmlf];
-	if((o = [settings objectForKey:@"XMLOutputIncludeStructure"])) SetOnOff(o, exportXMLIncludeStructure);
-	if((o = [settings objectForKey:@"XMLOutputIncludeContent"]))   SetOnOff(o, exportXMLIncludeContent);
-	if((o = [settings objectForKey:@"XMLNULLString"]))             [exportXMLNULLValuesAsTextField setStringValue:o];
+	if((o = [settings safeObjectForKey:@"XMLFormat"]) && [[self class] copyXMLExportFormatForDescription:o to:&xmlf]) [exportXMLFormatPopUpButton selectItemAtIndex:xmlf];
+	if((o = [settings safeObjectForKey:@"XMLOutputIncludeStructure"])) SetOnOff(o, exportXMLIncludeStructure);
+	if((o = [settings safeObjectForKey:@"XMLOutputIncludeContent"]))   SetOnOff(o, exportXMLIncludeContent);
+	if((o = [settings safeObjectForKey:@"XMLNULLString"]))             [exportXMLNULLValuesAsTextField setStringValue:o];
 
 	[self toggleXMLOutputFormat:exportXMLFormatPopUpButton];
 }
@@ -3336,24 +3336,24 @@ set_input:
 	id o;
 	SPSQLExportInsertDivider div;
 
-	if((o = [settings objectForKey:@"SQLIncludeContent"]))   SetOnOff(o, exportSQLIncludeContentCheck);
+	if((o = [settings safeObjectForKey:@"SQLIncludeContent"]))   SetOnOff(o, exportSQLIncludeContentCheck);
 	[self toggleSQLIncludeContent:exportSQLIncludeContentCheck];
 
-	if((o = [settings objectForKey:@"SQLIncludeDROP"]))    SetOnOff(o, exportSQLIncludeDropSyntaxCheck);
+	if((o = [settings safeObjectForKey:@"SQLIncludeDROP"]))    SetOnOff(o, exportSQLIncludeDropSyntaxCheck);
 	[self toggleSQLIncludeDropSyntax:exportSQLIncludeDropSyntaxCheck];
 
-	if((o = [settings objectForKey:@"SQLIncludeStructure"])) SetOnOff(o, exportSQLIncludeStructureCheck);
+	if((o = [settings safeObjectForKey:@"SQLIncludeStructure"])) SetOnOff(o, exportSQLIncludeStructureCheck);
 	[self toggleSQLIncludeStructure:exportSQLIncludeStructureCheck];
 
-	if((o = [settings objectForKey:@"SQLIncludeErrors"]))    SetOnOff(o, exportSQLIncludeErrorsCheck);
-	if((o = [settings objectForKey:@"SQLUseUTF8BOM"]))       SetOnOff(o, exportUseUTF8BOMButton);
-	if((o = [settings objectForKey:@"SQLBLOBFieldsAsHex"]))  SetOnOff(o, exportSQLBLOBFieldsAsHexCheck);
-	if((o = [settings objectForKey:@"SQLInsertNValue"]))     [exportSQLInsertNValueTextField setIntegerValue:[o integerValue]];
-	if((o = [settings objectForKey:@"SQLInsertDivider"]) && [[self class] copySQLExportInsertDividerForDescription:o to:&div]) [exportSQLInsertDividerPopUpButton selectItemAtIndex:div];
+	if((o = [settings safeObjectForKey:@"SQLIncludeErrors"]))    SetOnOff(o, exportSQLIncludeErrorsCheck);
+	if((o = [settings safeObjectForKey:@"SQLUseUTF8BOM"]))       SetOnOff(o, exportUseUTF8BOMButton);
+	if((o = [settings safeObjectForKey:@"SQLBLOBFieldsAsHex"]))  SetOnOff(o, exportSQLBLOBFieldsAsHexCheck);
+	if((o = [settings safeObjectForKey:@"SQLInsertNValue"]))     [exportSQLInsertNValueTextField setIntegerValue:[o integerValue]];
+	if((o = [settings safeObjectForKey:@"SQLInsertDivider"]) && [[self class] copySQLExportInsertDividerForDescription:o to:&div]) [exportSQLInsertDividerPopUpButton selectItemAtIndex:div];
 
 	if([exportSQLIncludeStructureCheck state] == NSOnState) {
-		if((o = [settings objectForKey:@"SQLIncludeAutoIncrementValue"]))  SetOnOff(o, exportSQLIncludeAutoIncrementValueButton);
-		if((o = [settings objectForKey:@"SQLIncludeDropSyntax"]))  SetOnOff(o, exportSQLIncludeDropSyntaxCheck);
+		if((o = [settings safeObjectForKey:@"SQLIncludeAutoIncrementValue"]))  SetOnOff(o, exportSQLIncludeAutoIncrementValueButton);
+		if((o = [settings safeObjectForKey:@"SQLIncludeDropSyntax"]))  SetOnOff(o, exportSQLIncludeDropSyntaxCheck);
 	}
 }
 
@@ -3416,8 +3416,8 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views' rows to find the current checkbox value...
 		for (NSArray *table in tables) {
-			if([[table objectAtIndex:0] isEqualTo:name]) {
-				return @([[table objectAtIndex:2] boolValue]);
+			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+				return @([[table safeObjectAtIndex:2] boolValue]);
 			}
 		}
 	}
@@ -3430,8 +3430,8 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views' rows to find the appropriate table...
 		for (NSMutableArray *table in tables) {
-			if([[table objectAtIndex:0] isEqualTo:name]) {
-				[table replaceObjectAtIndex:2 withObject:@([settings boolValue])];
+			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+				[table safeReplaceObjectAtIndex:2 withObject:@([settings boolValue])];
 				return;
 			}
 		}
@@ -3444,8 +3444,8 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views rows to find the current checkbox value...
 		for (NSArray *table in tables) {
-			if([[table objectAtIndex:0] isEqualTo:name]) {
-				return @([[table objectAtIndex:2] boolValue]);
+			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+				return @([[table safeObjectAtIndex:2] boolValue]);
 			}
 		}
 	}
@@ -3458,8 +3458,8 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views' rows to find the appropriate table...
 		for (NSMutableArray *table in tables) {
-			if([[table objectAtIndex:0] isEqualTo:name]) {
-				[table replaceObjectAtIndex:2 withObject:@([settings boolValue])];
+			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+				[table safeReplaceObjectAtIndex:2 withObject:@([settings boolValue])];
 				return;
 			}
 		}
@@ -3476,19 +3476,19 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views rows to find the current checkbox value...
 		for (NSArray *table in tables) {
-			if([[table objectAtIndex:0] isEqualTo:name]) {
+			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
 				NSMutableArray *flags = [NSMutableArray arrayWithCapacity:3];
 
-				if (structure && [[table objectAtIndex:1] boolValue]) {
-					[flags addObject:@"structure"];
+				if (structure && [[table safeObjectAtIndex:1] boolValue]) {
+					[flags safeAddObject:@"structure"];
 				}
 
-				if (content && [[table objectAtIndex:2] boolValue]) {
-					[flags addObject:@"content"];
+				if (content && [[table safeObjectAtIndex:2] boolValue]) {
+					[flags safeAddObject:@"content"];
 				}
 
-				if (drop && [[table objectAtIndex:3] boolValue]) {
-					[flags addObject:@"drop"];
+				if (drop && [[table safeObjectAtIndex:3] boolValue]) {
+					[flags safeAddObject:@"drop"];
 				}
 
 				return flags;
@@ -3511,9 +3511,9 @@ set_input:
 			if([[table objectAtIndex:0] isEqualTo:name]) {
 				NSArray *flags = settings;
 
-				[table replaceObjectAtIndex:1 withObject:@((structure && [flags containsObject:@"structure"]))];
-				[table replaceObjectAtIndex:2 withObject:@((content   && [flags containsObject:@"content"]))];
-				[table replaceObjectAtIndex:3 withObject:@((drop      && [flags containsObject:@"drop"]))];
+				[table safeReplaceObjectAtIndex:1 withObject:@((structure && [flags containsObject:@"structure"]))];
+				[table safeReplaceObjectAtIndex:2 withObject:@((content   && [flags containsObject:@"content"]))];
+				[table safeReplaceObjectAtIndex:3 withObject:@((drop      && [flags containsObject:@"drop"]))];
 				return;
 			}
 		}
@@ -3560,7 +3560,7 @@ set_input:
 													 [exporter csvLineEndingString],
 													 [exporter csvLineEndingString],
 													 NSLocalizedString(@"Table", @"csv export table heading"),
-													 [(SPCSVExporter *)[exporters objectAtIndex:0] csvTableName],
+													 [(SPCSVExporter *)[exporters safeObjectAtIndex:0] csvTableName],
 													 [exporter csvLineEndingString],
 													 [exporter csvLineEndingString]] dataUsingEncoding:[exporter exportOutputEncoding]]];
 		}
@@ -3570,11 +3570,11 @@ set_input:
 			[[exporter exportOutputFile] close];
 		}
 
-		[operationQueue addOperation:[exporters objectAtIndex:0]];
+		[operationQueue addOperation:[exporters safeObjectAtIndex:0]];
 
 		// Remove the exporter we just added to the operation queue from our list of exporters
 		// so we know it's already been done.
-		[exporters removeObjectAtIndex:0];
+		[exporters safeRemoveObjectAtIndex:0];
 	}
 	// Otherwise if the exporter list is empty, close the progress sheet
 	else {
@@ -3702,11 +3702,11 @@ set_input:
 			[[exporter exportOutputFile] close];
 		}
 
-		[operationQueue addOperation:[exporters objectAtIndex:0]];
+		[operationQueue addOperation:[exporters safeObjectAtIndex:0]];
 
 		// Remove the exporter we just added to the operation queue from our list of exporters
 		// so we know it's already been done.
-		[exporters removeObjectAtIndex:0];
+		[exporters safeRemoveObjectAtIndex:0];
 	}
 	// Otherwise if the exporter list is empty, close the progress sheet
 	else {
