@@ -469,8 +469,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // check it's really a URL
         if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
-            SPLog(@"self->keySelectionPanel.URL is not a URL");
-            CLS_LOG(@"self->keySelectionPanel.URL is not a URL");
+            SPLog(@"self->keySelectionPanel.URL is not a URL: %@", self->keySelectionPanel.URL.class);
+            CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", self->keySelectionPanel.URL.class);
             // JCS - should we stop here?
         }
         else{

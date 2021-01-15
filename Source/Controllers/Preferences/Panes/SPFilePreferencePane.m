@@ -482,8 +482,8 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
             // check it's really a URL
             if(![self->_currentFilePanel.URL isKindOfClass:[NSURL class]]){
-                SPLog(@"self->_currentFilePanel.URL is not a URL");
-                CLS_LOG(@"self->_currentFilePanel.URL is not a URL");
+                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", self->_currentFilePanel.URL.class);
+                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", self->_currentFilePanel.URL.class);
                 // JCS - should we stop here?
             }
             else{

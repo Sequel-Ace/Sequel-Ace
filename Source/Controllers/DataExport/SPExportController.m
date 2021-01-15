@@ -646,8 +646,8 @@ set_input:
 
             // check it's really a URL
             if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
-                SPLog(@"self->changeExportOutputPathPanel.URL is not a URL");
-                CLS_LOG(@"self->changeExportOutputPathPanel.URL is not a URL");
+                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", self->changeExportOutputPathPanel.URL.class);
+                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", self->changeExportOutputPathPanel.URL.class);
                 // JCS - should we stop here?
             }
             else{
