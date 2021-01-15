@@ -1469,7 +1469,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             }
 
 			// Set BINARY if collation ends with _bin for convenience
-			if ([collation hasSuffix:@"_bin"]) {
+			if (![collation isNSNull] && [collation hasSuffix:@"_bin"]) {
 				[theField setObject:@1 forKey:@"binary"];
 			}
 		}

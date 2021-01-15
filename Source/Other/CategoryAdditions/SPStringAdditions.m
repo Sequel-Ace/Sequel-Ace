@@ -629,5 +629,13 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c)
 {
 	[self appendString:(aString? aString : @"")];
 }
+- (void)safeDeleteCharactersInRange:(NSRange)aRange
+{
+    if (aRange.location == NSNotFound || NSMaxRange(aRange) > [self length]) {
+        return;
+    }
+
+    [self deleteCharactersInRange:aRange];
+}
 
 @end

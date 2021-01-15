@@ -534,23 +534,44 @@ typedef enum {
                         NSError *error;
                         NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
                         id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
-                        
-                        if([NSJSONSerialization isValidJSONObject:jsonObject]){
-                            NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
-                            NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
-                            if(prettyJsonData != nil){
-                                [jsonTextView setString:prettyPrintedJson];
-                            }
-                            else{
-                                [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                            }
+
+                        if(error != nil){
+                            SPLog(@"JSONObjectWithData error : %@", error.localizedDescription);
+                            CLS_LOG(@"JSONObjectWithData error : %@", error.localizedDescription);
+                            [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
                         }
                         else{
-                            if(sheetEditData != nil){
-                                [jsonTextView setString:sheetEditData];
+                            if([NSJSONSerialization isValidJSONObject:jsonObject]){
+                                SPLog(@"isValidJSONObject : %@", jsonObject);
+                                CLS_LOG(@"isValidJSONObject : %@", jsonObject);
+                                NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
+
+                                if(error != nil){
+                                    SPLog(@"dataWithJSONObject error : %@", error.localizedDescription);
+                                    CLS_LOG(@"dataWithJSONObject error : %@", error.localizedDescription);
+                                    [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                                }
+                                else{
+                                    NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
+                                    if(prettyPrintedJson != nil){
+                                        SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
+                                        CLS_LOG(@"prettyPrintedJson : %@", prettyPrintedJson);
+                                        [jsonTextView setString:prettyPrintedJson];
+                                    }
+                                    else{
+                                        SPLog(@"prettyPrintedJson is nil");
+                                        CLS_LOG(@"prettyPrintedJson is nil");
+                                        [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                                    }
+                                }
                             }
                             else{
-                                [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                                if(sheetEditData != nil){
+                                    [jsonTextView setString:sheetEditData];
+                                }
+                                else{
+                                    [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                                }
                             }
                         }
                     }

@@ -751,7 +751,7 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
  });
 
  */
-static inline void SABenchmark(void (^block)(void), void (^complete)(double ms)) {
+static inline __attribute__((always_inline)) void SABenchmark(void (^block)(void), void (^complete)(double ms)) {
     struct timeval t0, t1;
     gettimeofday(&t0, NULL);
     block();
@@ -760,3 +760,25 @@ static inline void SABenchmark(void (^block)(void), void (^complete)(double ms))
     complete(ms);
 }
 #endif
+
+inline __attribute__((always_inline)) NSString *safeString(NSString *str) { return str ?: @""; }
+
+#define foreachGetEnumerator(c) \
+    ([c respondsToSelector:@selector(objectEnumerator)] ? \
+     [c objectEnumerator] : \
+     c)
+#define foreacht(type, object, collection) \
+for ( id foreachCollection = collection; \
+      foreachCollection; \
+      foreachCollection = nil ) \
+    for ( id foreachEnum = foreachGetEnumerator(foreachCollection); \
+          foreachEnum; \
+          foreachEnum = nil ) \
+        for ( IMP foreachNext = [foreachEnum methodForSelector:@selector(nextObject)]; \
+              foreachNext; \
+              foreachNext = NULL ) \
+            for ( type object = foreachNext(foreachEnum, @selector(nextObject)); \
+                  object; \
+                  object = foreachNext(foreachEnum, @selector(nextObject)) )
+
+#define foreach(object, collection) foreacht(id, object, (collection))
