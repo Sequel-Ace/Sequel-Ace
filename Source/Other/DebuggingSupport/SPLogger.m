@@ -222,6 +222,7 @@ int _isSPLeaksLog(const struct direct *entry);
 	else {
 		if (![fileManager createFileAtPath:logFilePath contents:[NSData data] attributes:nil]) {
 			initializedSuccessfully = NO;
+            SPLog(@"Could not create log file for writing; no debug log will be generated");
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Could not create log file for writing; no debug log will be generated!", "") callback:nil];
 		}
 	}
@@ -232,6 +233,8 @@ int _isSPLeaksLog(const struct direct *entry);
 		
 		if (!logFileHandle) {
 			initializedSuccessfully = NO;
+            SPLog(@"Could not open log file for writing; no debug log will be generated");
+
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Logging error", @"") message:NSLocalizedString(@"Could not open log file for writing; no debug log will be generated!", "") callback:nil];
 		} 
 		else {
@@ -239,7 +242,8 @@ int _isSPLeaksLog(const struct direct *entry);
 			
 			NSString *bundleName = [fileManager displayNameAtPath:[[NSBundle mainBundle] bundlePath]];
 			NSMutableString *logStart = [NSMutableString stringWithString:@"\n\n\n==========================================================================\n\n"];
-			
+            SPLog(@"writing");
+
 			[logStart appendFormat:@"%@ (r%ld)\n", bundleName, (long)[[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] integerValue]];
 			[logFileHandle writeData:[logStart dataUsingEncoding:NSUTF8StringEncoding]];
 		}
