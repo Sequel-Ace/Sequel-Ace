@@ -738,7 +738,7 @@ static SPQueryController *sharedQueryController = nil;
 
 	if (!identifier) return returnValue;
 
-	id object = [[messagesVisibleSet objectAtIndex:row] valueForKey:identifier];
+    id object = [[messagesVisibleSet safeObjectAtIndex:row] valueForKey:identifier];
 
 	if ([[tableColumn identifier] isEqualToString:SPTableViewDateColumnID]) {
 
@@ -761,7 +761,7 @@ static SPQueryController *sharedQueryController = nil;
 	}
 
 	// If this is an error message give it a red colour
-	if ([(SPConsoleMessage *)[messagesVisibleSet objectAtIndex:row] isError]) {
+	if ([(SPConsoleMessage *)[messagesVisibleSet safeObjectAtIndex:row] isError]) {
 		if (stringAtributes) {
 			[stringAtributes setObject:[NSColor redColor] forKey:NSForegroundColorAttributeName];
 		}

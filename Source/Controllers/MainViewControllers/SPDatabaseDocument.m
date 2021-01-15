@@ -109,6 +109,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *hideConsoleImage;
 @property (nonatomic, strong) NSImage *showConsoleImage;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
+@property (assign) BOOL appIsTerminating;
+
 
 - (void)_addDatabase;
 - (void)_alterDatabase;
@@ -154,6 +156,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize hideConsoleImage;
 @synthesize showConsoleImage;
 @synthesize textAndCommandMacwindowImage;
+@synthesize appIsTerminating;
 
 #pragma mark -
 
@@ -188,6 +191,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		statusLoaded = NO;
 		triggersLoaded = NO;
 		relationsLoaded = NO;
+        appIsTerminating = NO;
 
         hideConsoleImage = [NSImage imageNamed:@"hideconsole"];
         showConsoleImage = [NSImage imageNamed:@"showconsole"];
@@ -2641,6 +2645,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)applicationWillTerminate:(NSNotification *)notification
 {
+
+    SPLog(@"applicationWillTerminate");
+    CLS_LOG(@"applicationWillTerminate");
+    appIsTerminating = YES;
 	// Auto-save preferences to spf file based connection
 	if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
 		if (_isConnected && ![self saveDocumentWithFilePath:nil inBackground:YES onlyPreferences:YES contextInfo:nil]) {
@@ -6608,11 +6616,18 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (SPMySQLConnectionLostDecision)connectionLost:(id)connection
 {
+
+    SPLog(@"connectionLost");
+    CLS_LOG(@"connectionLost");
+
 	SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
 	// Only display the reconnect dialog if the window is visible
-	if ([self parentWindow] && [[self parentWindow] isVisible]) {
+    // and we are not terminating
+	if ([self parentWindow] && [[self parentWindow] isVisible] && appIsTerminating == NO) {
 
+        SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
+        CLS_LOG(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
 		// Ensure the window isn't miniaturized
 		if ([[self parentWindow] isMiniaturized]) [[self parentWindow] deminiaturize:self];
 

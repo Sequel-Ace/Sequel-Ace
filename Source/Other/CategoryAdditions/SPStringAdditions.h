@@ -121,4 +121,6 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
  * nil will be interpreted as @"" instead of throwing an exception
  */
 - (void)appendStringOrNil:(NSString *)aString;
+
+- (void)safeDeleteCharactersInRange:(NSRange)aRange;
 @end

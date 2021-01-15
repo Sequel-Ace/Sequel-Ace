@@ -864,8 +864,8 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 				if([mutablePrefix length] == 0 || commaInsertionMode) break;
 
 				spaceCounter = 0;
-				[mutablePrefix deleteCharactersInRange:NSMakeRange([mutablePrefix length]-1, 1)];
-				[originalFilterString deleteCharactersInRange:NSMakeRange([originalFilterString length]-1, 1)];
+				[mutablePrefix safeDeleteCharactersInRange:NSMakeRange([mutablePrefix length]-1, 1)];
+				[originalFilterString safeDeleteCharactersInRange:NSMakeRange([originalFilterString length]-1, 1)];
 				theCharRange.length--;
 				theParseRange.length--;
 				[self filter];

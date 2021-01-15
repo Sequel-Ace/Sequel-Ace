@@ -322,6 +322,71 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 }
 
+- (void)testSafeDeleteCharactersInRange{
+
+    NSMutableString *str = [[NSMutableString alloc] initWithString:@"How far will you go for 15 seconds of fame?"];
+    NSMutableString *expectedStr = [[NSMutableString alloc] initWithString:@"How far will you go for 15 seconds of fame"];
+
+    NSUInteger startLoc = [str length]-1;
+
+    NSRange tmpRange = NSMakeRange(startLoc, 1);
+
+    NSLog(@"tmpRange: %@", NSStringFromRange(tmpRange));
+    NSLog(@"str.len: %lu", (unsigned long)str.length);
+
+    [str safeDeleteCharactersInRange:tmpRange];
+
+    NSLog(@"str: %@", str);
+    NSLog(@"str.len: %lu", (unsigned long)str.length);
+
+    XCTAssertTrue(str.length == startLoc);
+
+    XCTAssertEqualObjects(str, expectedStr);
+
+
+    tmpRange = NSMakeRange(str.length+2, 1);
+
+    XCTAssertThrows([str deleteCharactersInRange:tmpRange]);
+    XCTAssertNoThrow([str safeDeleteCharactersInRange:tmpRange]);
+
+
+}
+
+//0.328 s
+- (void)testSafeDeleteCharactersInRangePerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+        
+        for (int i = 0; i < iterations; i++) {
+            NSMutableString *str = [[NSMutableString alloc] initWithString:@"A man's gotta have a code..."];
+            
+            NSUInteger startLoc = [str length]-1;
+            
+            NSRange tmpRange = NSMakeRange(startLoc, 1);
+            @autoreleasepool {
+                [str safeDeleteCharactersInRange:tmpRange];
+            }
+        }
+    }];
+}
+
+//0.33 s
+- (void)testDeleteCharactersInRangePerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                NSMutableString *str = [[NSMutableString alloc] initWithString:@"A man's gotta have a code..."];
+
+                NSUInteger startLoc = [str length]-1;
+
+                NSRange tmpRange = NSMakeRange(startLoc, 1);
+                [str deleteCharactersInRange:tmpRange];
+            }
+        }
+    }];
+}
 
 - (void)testSeparatedIntoLines{
 

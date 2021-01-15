@@ -2694,6 +2694,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
         SPLog(@"textStore.mask = %lu", (unsigned long)textStore.editedMask);
 
+        NSTextContainer *textContainer = [self textContainer];
+
+        CLS_LOG(@"visibleRect: %@", NSStringFromRect(visibleRect));
+        SPLog(@"visibleRect: %@", NSStringFromRect(visibleRect));
+        SPLog(@"textContainer.size: %@", NSStringFromSize(textContainer.size));
+        CLS_LOG(@"textContainer.size: %@", NSStringFromSize(textContainer.size));
+
         /*
          FB: 5bd264a2ea5ccd2291f1d3911b41e1e7
 
@@ -2705,7 +2712,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         if(textStore.editedMask != 1){
             SPLog(@"textStore.editedMask != 1, calling glyphRangeForBoundingRectWithoutAdditionalLayout");
             CLS_LOG(@"textStore.editedMask != 1, calling glyphRangeForBoundingRectWithoutAdditionalLayout");
-            visibleRange = [[self layoutManager] glyphRangeForBoundingRectWithoutAdditionalLayout:visibleRect inTextContainer:[self textContainer]];
+
+            visibleRange = [[self layoutManager] glyphRangeForBoundingRectWithoutAdditionalLayout:visibleRect inTextContainer:textContainer];
+
+            SPLog(@"visibleRange: %@", NSStringFromRange(visibleRange));
+            CLS_LOG(@"visibleRange: %@", NSStringFromRange(visibleRange));
+
         }
         else{
             SPLog(@"textStore.editedMask. == 1, returning");
@@ -2713,6 +2725,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         }
 
         if(!visibleRange.length){
+            SPLog(@"!visibleRange.length, returning");
+            CLS_LOG(@"!visibleRange.length, returning");
             return;
         }
 
@@ -3251,6 +3265,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	if (textStorage != [self textStorage]) {
 		return;
 	}
+
+    SPLog(@"editedRange: %@", NSStringFromRange(editedRange));
+    CLS_LOG(@"editedRange: %@", NSStringFromRange(editedRange));
 
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
