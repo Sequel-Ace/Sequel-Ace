@@ -110,7 +110,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *showConsoleImage;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
 @property (assign) BOOL appIsTerminating;
-
+@property (readwrite, strong) NSFileManager *fileManager;
 
 - (void)_addDatabase;
 - (void)_alterDatabase;
@@ -157,6 +157,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize showConsoleImage;
 @synthesize textAndCommandMacwindowImage;
 @synthesize appIsTerminating;
+@synthesize fileManager;
 
 #pragma mark -
 
@@ -251,6 +252,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		[nibLoader instantiateWithOwner:self topLevelObjects:&dbViewTopLevelObjects];
 
 		databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
+
+        fileManager = [NSFileManager defaultManager];
+
 	}
 	
 	return self;
@@ -398,9 +402,62 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 	// Set the fileURL and init the preferences (query favs, filters, and history) if available for that URL
 	NSURL *newURL = [[SPQueryController sharedQueryController] registerDocumentWithFileURL:[self fileURL] andContextInfo:spfPreferences];
 	[self setFileURL:newURL];
-	
-	// ...but hide the icon while the document is temporary
-	if ([self isUntitled]) [[parentWindow standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
+
+    SPLog(@"newURL: %@", newURL.absoluteString);
+    SPLog(@"did crash: %d", SPAppDelegate.didPreviouslyCrash);
+    CLS_LOG(@"newURL: %@", newURL.absoluteString);
+    CLS_LOG(@"did crash: %d", SPAppDelegate.didPreviouslyCrash);
+
+    // ...but hide the icon while the document is temporary
+    if ([self isUntitled]){
+        [[parentWindow standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
+
+        if(SPAppDelegate.didPreviouslyCrash == YES){
+            if([customQueryInstance valueForKeyPath:@"textView"]){
+
+                SPTextView *tmpTV = [customQueryInstance valueForKeyPath:@"textView"];
+
+                SPLog(@"self isUntitled && didPreviouslyCrash.");
+                CLS_LOG(@"self isUntitled && didPreviouslyCrash.");
+
+                NSString *fileURL = [self fileURL].absoluteString;
+
+                if([fileManager doesQueryRescueFileExist:fileURL]){
+                    SPLog(@"QueryRescueFileExists");
+                    CLS_LOG(@"QueryRescueFileExists");
+                    if([[tmpTV textStorage] string]) {
+
+                        NSString *tmpStr = [fileManager loadQueryRescueFile:fileURL];
+
+                        if(tmpStr != nil){
+                            CLS_LOG(@"Loaded QueryRescueFile, inserting as snippet");
+                            SPLog(@"Loaded QueryRescueFile, inserting as snippet");
+                            tmpTV.isRestoringQueryFromFile = YES;
+                            [tmpTV insertAsSnippet:tmpStr atRange:NSMakeRange(0, 0) isFavourite:YES];
+                            [fileManager deleteQueryRescueFile:fileURL];
+                            tmpTV.isRestoringQueryFromFile = NO;
+                        }
+                        else{
+                            SPLog(@"QueryRescueFile string is nil");
+                            CLS_LOG(@"QueryRescueFile string is nil");
+                        }
+                    }
+                }
+                else{
+                    SPLog(@"QueryRescueFile does NOT Exist");
+                    CLS_LOG(@"QueryRescueFile does NOT Exist");
+                }
+            }
+            else{
+                SPLog(@"customQueryInstance valueForKeyPath:@textView == nil");
+                CLS_LOG(@"customQueryInstance valueForKeyPath:@textView == nil");
+            }
+        }
+        else{
+            SPLog(@"didPreviouslyCrash == NO");
+            CLS_LOG(@"didPreviouslyCrash == NO");
+        }
+    }
 
 	// Get the mysql version
     mySQLVersion = [mySQLConnection serverVersionString] ;
@@ -2901,8 +2958,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 			if(!fileName || ![fileName length]) return;
 
-			NSFileManager *fileManager = [NSFileManager defaultManager];
-
 			// If bundle exists remove it
 			if([fileManager fileExistsAtPath:fileName]) {
 				[fileManager removeItemAtPath:fileName error:&error];
@@ -4993,7 +5048,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 	if([command isEqualToString:@"ReloadContentTableWithWHEREClause"]) {
 		NSString *queryFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fileManager = [NSFileManager defaultManager];
 		BOOL isDir;
 		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 			NSError *inError = nil;
@@ -5008,7 +5062,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 	if([command isEqualToString:@"RunQueryInQueryEditor"]) {
 		NSString *queryFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fileManager = [NSFileManager defaultManager];
 		BOOL isDir;
 		if([fileManager fileExistsAtPath:queryFileName isDirectory:&isDir] && !isDir) {
 			NSError *inError = nil;
@@ -5029,7 +5082,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 			NSString *resultFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], docProcessID];
 			NSString *metaFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], docProcessID];
 			NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], docProcessID];
-			NSFileManager *fileManager = [NSFileManager defaultManager];
 			NSString *status = @"0";
 			BOOL userTerminated = NO;
 			BOOL doSyntaxHighlighting = NO;
@@ -5167,7 +5219,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 		NSString *resultFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultPathHeader stringByExpandingTildeInPath], docProcessID];
 		NSString *metaFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], docProcessID];
 		NSString *statusFileName = [NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], docProcessID];
-		NSFileManager *fileManager = [NSFileManager defaultManager];
 		NSString *status = @"0";
 		BOOL isDir;
 		BOOL userTerminated = NO;
