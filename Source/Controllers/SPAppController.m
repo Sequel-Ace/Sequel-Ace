@@ -68,7 +68,6 @@
 
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
-@property (assign) BOOL didPreviouslyCrash;
 
 @end
 
@@ -257,7 +256,7 @@
         FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
 
         self->didPreviouslyCrash = crashlytics.didCrashDuringPreviousExecution;
-        
+
         // fake the dbViewInfoPanelSplit being open
         NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
         [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];

@@ -53,7 +53,7 @@
 }
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
-
+@property (assign) BOOL didPreviouslyCrash;
 @property (weak) IBOutlet NSView *staleBookmarkHelpView;
 
 // IBAction methods
