@@ -571,10 +571,6 @@
 	NSColor *fillColor = nil;
     NSColor *cellBackgroundColor = [[cell backgroundColor] copy]; // seems to be almost always nil, but take a copy as we've seen memory issues
 
-    if(cellBackgroundColor){
-        SPLog(@"cellBackgroundColor not nil: %@", cellBackgroundColor.description);
-        CLS_LOG(@"cellBackgroundColor not nil: %@", cellBackgroundColor.description);
-    }
 	// Set up colours
 	if (([[tabBar window] isMainWindow] || [[[tabBar window] attachedSheet] isMainWindow]) && [NSApp isActive]) {
 		if ([cell state] == NSOnState) { //active window, active cell
