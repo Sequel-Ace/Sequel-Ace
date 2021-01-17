@@ -248,13 +248,10 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	
 	NSError *error = nil;
 	NSFileManager *fileManager = [NSFileManager defaultManager];
+
+	NSString *dataPath = [fileManager pathForSPDataSupportFolder];
 	
-	
-	
-	NSString *dataPath = [fileManager applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error];
-	
-	if (error) {
-		NSLog(@"Error retrieving data directory path: %@", [error localizedDescription]);
+	if (!dataPath) {
 		pthread_mutex_unlock(&favoritesLock);
 		return;
 	}
@@ -275,7 +272,7 @@ static SPFavoritesController *sharedFavoritesController = nil;
 																	  options:0
 																		error:&error];
 		if (error) {
-			NSLog(@"Error converting default favorites data to plist format: %@", error);
+            SPLog(@"Error converting default favorites data to plist format: %@", error);
 			pthread_mutex_unlock(&favoritesLock);
 			return;
 		}
@@ -283,7 +280,7 @@ static SPFavoritesController *sharedFavoritesController = nil;
 			[plistData writeToFile:favoritesFile options:NSAtomicWrite error:&error];
 			
 			if (error) {
-				NSLog(@"Error writing default favorites data: %@", error);
+                SPLog(@"Error writing default favorites data: %@", error);
 			}
 		}
 		
@@ -408,17 +405,16 @@ static SPFavoritesController *sharedFavoritesController = nil;
 		                                                              options:0
 		                                                                error:&error];
 		if (error) {
-			NSLog(@"Error converting favorites data to plist format: %@", error);
+            SPLog(@"Error converting favorites data to plist format: %@", error);
 			pthread_mutex_unlock(&writeLock);
 			return;
 		}
 
 		NSFileManager *fileManager = [NSFileManager defaultManager];
 
-		NSString *dataPath = [fileManager applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error];
+        NSString *dataPath = [fileManager pathForSPDataSupportFolder];
 
-		if (error) {
-			NSLog(@"Error retrieving data directory path: %@", [error localizedDescription]);
+		if (!dataPath) {
 			pthread_mutex_unlock(&writeLock);
 			return;
 		}
@@ -432,13 +428,13 @@ static SPFavoritesController *sharedFavoritesController = nil;
 		}
 
 		if (error) {
-			NSLog(@"Unable to backup (move) existing favorites data file during save. Deleting instead: %@", [error localizedDescription]);
+            SPLog(@"Unable to backup (move) existing favorites data file during save. Deleting instead: %@", [error localizedDescription]);
 
 			error = nil;
 
 			// We can't move it so try and delete it
 			if (![fileManager removeItemAtPath:favoritesFile error:&error] && error) {
-				NSLog(@"Unable to delete existing favorites data file during save. Something is wrong, permissions perhaps: %@", [error localizedDescription]);
+                SPLog(@"Unable to delete existing favorites data file during save. Something is wrong, permissions perhaps: %@", [error localizedDescription]);
 				pthread_mutex_unlock(&writeLock);
 				return;
 			}
@@ -448,7 +444,7 @@ static SPFavoritesController *sharedFavoritesController = nil;
 		[plistData writeToFile:favoritesFile options:NSAtomicWrite error:&error];
 
 		if (error) {
-			NSLog(@"Error writing favorites data. Restoring backup if available: %@", [error localizedDescription]);
+            SPLog(@"Error writing favorites data. Restoring backup if available: %@", [error localizedDescription]);
 
 			// Restore the original data file
 			error = nil;
@@ -456,7 +452,7 @@ static SPFavoritesController *sharedFavoritesController = nil;
 			[fileManager moveItemAtPath:favoritesBackupFile toPath:favoritesFile error:&error];
 
 			if (error) {
-				NSLog(@"Could not restore backup; favorites.plist left renamed as %@ due to error (%@)", favoritesBackupFile, [error localizedDescription]);
+                SPLog(@"Could not restore backup; favorites.plist left renamed as %@ due to error (%@)", favoritesBackupFile, [error localizedDescription]);
 			}
 		}
 		else {

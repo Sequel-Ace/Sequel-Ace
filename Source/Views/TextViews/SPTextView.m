@@ -124,6 +124,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize fileManager;
 @synthesize dataPath;
 @synthesize haveDataDir;
+@synthesize isRestoringQueryFromFile;
 
 - (void) awakeFromNib
 {
@@ -148,15 +149,17 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	isProcessingMirroredSnippets = NO;
 	completionWasRefreshed = NO;
     fileManager = [NSFileManager defaultManager];
-    haveDataDir = YES;
+    isRestoringQueryFromFile = NO;
 
-    NSError *error = nil;
-    dataPath = [fileManager applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error];
+    dataPath = [fileManager pathForSPDataSupportFolder];
 
-    if (error) {
+    if (!dataPath) {
         haveDataDir = NO;
-        SPLog(@"Error creating SPDataSupportFolder: %@", error.localizedDescription);
-        CLS_LOG(@"Error creating SPDataSupportFolder: %@", error.localizedDescription);
+        SPLog(@"Error creating SPDataSupportFolder");
+        CLS_LOG(@"Error creating SPDataSupportFolder");
+    }
+    else{
+        haveDataDir = YES;
     }
 
     // keep track of tasks we start and stop, otherwise we get an assert error
@@ -2655,6 +2658,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
     if(haveDataDir == NO){
         SPLog(@"No dataDir, returning");
         CLS_LOG(@"No dataDir, returning");
+        return;
+    }
+
+    if(isRestoringQueryFromFile == YES){
+        SPLog(@"isRestoringQueryFromFile, returning");
+        CLS_LOG(@"isRestoringQueryFromFile, returning");
         return;
     }
 

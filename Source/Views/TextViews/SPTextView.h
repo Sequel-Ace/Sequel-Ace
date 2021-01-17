@@ -124,6 +124,7 @@ typedef struct {
 @property (assign) BOOL syntaxHighlightingApplied;
 @property (assign) BOOL completionIsOpen;
 @property (assign) BOOL completionWasReinvokedAutomatically;
+@property (assign) BOOL isRestoringQueryFromFile;
 
 - (IBAction)showMySQLHelpForCurrentWord:(id)sender;
 
