@@ -34,4 +34,9 @@
 - (NSString *)applicationSupportDirectoryForSubDirectory:(NSString*)subDirectory createIfNotExists:(BOOL)create error:(NSError **)errorOut;
 - (NSStringEncoding)detectEncodingforFileAtPath:(NSString *)aPath;
 + (NSString *)temporaryDirectory;
+- (BOOL)doesQueryRescueFileExist:(NSString*)fileName;
+- (NSString*)pathForSPDataSupportFolder;
+- (NSString*)loadQueryRescueFile:(NSString*)fileName;
+- (BOOL)deleteQueryRescueFile:(NSString*)fileName;
+
 @end

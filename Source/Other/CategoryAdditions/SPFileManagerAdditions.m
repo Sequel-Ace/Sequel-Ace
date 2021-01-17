@@ -43,6 +43,85 @@ static NSString *DirectoryLocationDomain = @"DirectoryLocationDomain";
 
 @implementation NSFileManager (SPFileManagerAdditions)
 
+
+- (NSString*)pathForSPDataSupportFolder{
+
+    static NSString *dataPath = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSError *error = nil;
+        SPLog(@"pathForSPDataSupportFolder");
+        dataPath = [self applicationSupportDirectoryForSubDirectory:SPDataSupportFolder error:&error];
+        if (error){
+            SPLog(@"Error retrieving data directory path: %@", [error localizedDescription]);
+            CLS_LOG(@"Error retrieving data directory path: %@", [error localizedDescription]);
+        }
+    });
+
+    return (dataPath) ?:nil;
+
+}
+
+- (BOOL)doesQueryRescueFileExist:(NSString*)fileName{
+
+    NSString *queryFile = [[[self pathForSPDataSupportFolder] stringByAppendingPathComponent:[[fileName stringByRemovingPercentEncoding] lastPathComponent]] stringByAppendingPathExtension:@"sql"];
+
+    if ([self fileExistsAtPath:queryFile isDirectory:nil]) {
+        SPLog(@"queryFile EXISTS: %@", queryFile);
+        CLS_LOG(@"queryFile EXISTS: %@", queryFile);
+        return YES;
+    }
+    else{
+        SPLog(@"queryFile does NOT exist: %@", queryFile);
+        CLS_LOG(@"queryFile does NOT exist: %@", queryFile);
+        return NO;
+    }
+
+}
+
+- (NSString*)loadQueryRescueFile:(NSString*)fileName{
+
+    NSString *queryFile = [[[self pathForSPDataSupportFolder] stringByAppendingPathComponent:[[fileName stringByRemovingPercentEncoding] lastPathComponent]] stringByAppendingPathExtension:@"sql"];
+
+    NSError *error = nil;
+
+    NSString *tmpStr = [[NSString alloc] initWithContentsOfFile:queryFile encoding:NSUTF8StringEncoding error:&error];
+
+    if(!error){
+        SPLog(@"loaded QueryRescueFile: %@", tmpStr);
+        return tmpStr;
+    }
+    else{
+        SPLog(@"Error reading from %@. Error: %@", queryFile, error.localizedDescription);
+        CLS_LOG(@"Error reading from %@. Error: %@", queryFile, error.localizedDescription);
+        return nil;
+    }
+
+}
+
+- (BOOL)deleteQueryRescueFile:(NSString*)fileName{
+
+    NSString *queryFile = [[[self pathForSPDataSupportFolder] stringByAppendingPathComponent:[[fileName stringByRemovingPercentEncoding] lastPathComponent]] stringByAppendingPathExtension:@"sql"];
+
+    SPLog(@"Deleting: %@", queryFile);
+    CLS_LOG(@"Deleting: %@", queryFile);
+
+    NSError *error = nil;
+
+    [self removeItemAtPath:queryFile error:&error];
+
+    if(!error){
+        SPLog(@"queryFile deleted: %@", queryFile);
+        CLS_LOG(@"queryFile deleted: %@", queryFile);
+        return YES;
+    }
+    else{
+        SPLog(@"Error deleting %@. Error: %@", queryFile, error.localizedDescription);
+        CLS_LOG(@"Error deleting %@. Error: %@", queryFile, error.localizedDescription);
+        return NO;
+    }
+}
+
 /**
  * Return the application support folder of the current application for 'subDirectory'.
  * If this folder doesn't exist it will be created. If 'subDirectory' == nil it only returns
