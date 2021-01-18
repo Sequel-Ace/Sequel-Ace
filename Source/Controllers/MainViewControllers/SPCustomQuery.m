@@ -582,6 +582,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     [tableDocumentInstance startTaskWithDescription:taskString];
     [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
+    // reset colour
+    [errorText setTextColor:[NSColor controlTextColor]];
     [errorText setString:taskString];
     [affectedRowsText setStringValue:@""];
     
@@ -755,6 +757,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         SPQueryProgressUpdateDecoupling *progressUpdater = [[SPQueryProgressUpdateDecoupling alloc] initWithBlock:^(QueryProgress *qp) {
             NSString *taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %ld of %lu...", @"Running multiple queries string"), (long)(qp->query+1), (unsigned long)(qp->total)];
             [self->tableDocumentInstance setTaskDescription:taskString];
+            // reset text colour
+            [self->errorText setTextColor:[NSColor controlTextColor]];
             [self->errorText setString:taskString];
         }];
         
@@ -848,7 +852,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
 
                         if(errors.length>0){
-                            [[errorText onMainThread] setString:errors];
+                            SPMainQSync(^{
+                                [self->errorText setString:errors];
+                                // set text colour to red
+                                [self->errorText setTextColor:[NSColor redColor]];
+                            });
                         }
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
@@ -891,7 +899,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 } else {
                     [errors setStringOrNil:errorString];
                 }
-            } else {
+            } // end of query errored
+            else {
                 // Check if table/db list needs an update
                 // The regex is a compromise between speed and usefullness. TODO: further improvements are needed
                 if (!tableListNeedsReload && [query isMatchedByRegex:@"(?i)^\\s*\\b(create|alter|drop|rename)\\b\\s+."]) {
@@ -901,10 +910,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                     databaseWasChanged = YES;
                 }
             }
+
+            // write errors to console
+            [tableDocumentInstance queryGaveError:errors connection:nil];
             // If the query was cancelled, end all queries.
             if ([mySQLConnection lastQueryWasCancelled]) break;
         }
-        
         // Reload table list if at least one query began with drop, alter, rename, or create
         if(tableListNeedsReload || databaseWasChanged) {
             // Build database pulldown menu
@@ -1384,12 +1395,20 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void) updateStatusInterfaceWithDetails:(NSDictionary *)errorDetails
 {
+
+    if (![NSThread isMainThread]) {
+        SPLog(@"NOT main thread, calling self on main");
+        [[self onMainThread] updateStatusInterfaceWithDetails:errorDetails];
+        return;
+    }
+
     NSString *errorsString = [errorDetails objectForKey:@"errorString"];
     NSInteger firstErrorOccurredInQuery = [[errorDetails objectForKey:@"firstErrorQueryNumber"] integerValue];
     
     // If errors occur, display them
     if ( [mySQLConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
         // set the error text
+        [errorText setTextColor:[NSColor redColor]];
         [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
         [errorText setString:[errorsString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
         [[errorTextScrollView verticalScroller] setFloatValue:1.0f];
@@ -1452,9 +1471,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
     } else if ( [errorsString length] && queryIsTableSorter ) {
         [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        // set text colour to red
+        [errorText setTextColor:[NSColor redColor]];
         [errorText setString:NSLocalizedString(@"Couldn't sort column.", @"text shown if an error occurred while sorting the result table")];
         NSBeep();
     } else {
+        // reset text colour
+        [errorText setTextColor:[NSColor controlTextColor]];
         [errorText setString:NSLocalizedString(@"There were no errors.", @"text shown when query was successfull")];
     }
     
@@ -1713,8 +1736,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView scrollRangeToVisible:NSMakeRange([query length], 0)];
     
     if ([[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
-        SPLog(@"[[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH, calling doSyntaxHighlightingWithForce");
-        CLS_LOG(@"[[textView string] length] < SP_TEXT_SIZE_MAX_PASTE_LENGTH, calling doSyntaxHighlightingWithForce");
         [textView doSyntaxHighlightingWithForce:YES];
     }
 }
@@ -2036,6 +2057,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     if(!tableForColumn || ![tableForColumn length]) {
         [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        // set text colour to red
+        [errorText setTextColor:[NSColor redColor]];
         [errorText setString:[NSString stringWithFormat:NSLocalizedString(@"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.", @"Custom Query result editing error - could not identify a corresponding column"), [columnDefinition objectForKey:@"name"]]];
         NSBeep();
         return;
