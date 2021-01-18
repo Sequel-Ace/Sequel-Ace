@@ -158,7 +158,7 @@ typedef struct {
 - (void)doSyntaxHighlightingWithForceWrapper:(NSString*)keyPath;
 
 - (BOOL)checkForCaretInsideSnippet;
-- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange isFavourite:(BOOL)isFave;
+- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange;
 
 - (void)showCompletionListFor:(NSString*)kind atRange:(NSRange)aRange fuzzySearch:(BOOL)fuzzySearchMode;
 

@@ -1699,7 +1699,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 /**
  * Inserts a chosen query favorite and initialze a snippet session if user defined any
  */
-- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange isFavourite:(BOOL)isFave
+- (void)insertAsSnippet:(NSString*)theSnippet atRange:(NSRange)targetRange
 {
 
 	// Do not allow the insertion of a query favorite if snippets are active
@@ -1944,14 +1944,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
         NSMutableAttributedString *tmpAttStr = [[NSMutableAttributedString alloc] initWithString:snip];
 
-        // if we are inserting a favourite query,
+        // if we are inserting a query,
         // add the font
-        // FIXME: should this apply to all snippet inserts actually?
-        if(isFave == YES){
-            [tmpAttStr addAttribute:NSFontAttributeName
-                              value:self.font
-                              range:NSMakeRange(0, snip.length)];
-        }
+
+        [tmpAttStr addAttribute:NSFontAttributeName
+                          value:self.font
+                          range:NSMakeRange(0, snip.length)];
 
 		[self.textStorage appendAttributedString:tmpAttStr];
 
@@ -2202,7 +2200,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		if(snippetControlCounter < 0 && [tabTrigger length] && [tableDocumentInstance fileURL]) {
 			NSArray *snippets = [[SPQueryController sharedQueryController] queryFavoritesForFileURL:[tableDocumentInstance fileURL] andTabTrigger:tabTrigger includeGlobals:YES];
 			if([snippets count] > 0 && [(NSString*)[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] length]) {
-				[self insertAsSnippet:[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] atRange:targetRange isFavourite:NO];
+				[self insertAsSnippet:[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] atRange:targetRange];
 				return;
 			}
 		}
