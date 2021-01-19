@@ -8,7 +8,6 @@
 
 import Firebase
 import Foundation
-import os.log
 import OSLog
 
 /*
