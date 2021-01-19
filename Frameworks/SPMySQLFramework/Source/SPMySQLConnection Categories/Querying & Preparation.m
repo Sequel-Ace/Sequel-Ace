@@ -396,9 +396,6 @@
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
 		theSqlstate = @"70100";
-
-        [self _unlockConnection];
-        [self checkConnection];
 	}
 
 	// Unlock the connection if appropriate - if not a streaming result type.
