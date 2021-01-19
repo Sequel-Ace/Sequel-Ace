@@ -127,15 +127,6 @@ extension OSLog {
             #endif
         }()
 
-        /// If `false`,  nothing is logged.
-        public static var doLogging: Bool = {
-            #if DEBUG
-            return true
-            #else
-            return false
-            #endif
-        }()
-
 
         /// If `false`,  the filename is not logged.
         public static var logFileName: Bool = {
@@ -334,9 +325,6 @@ extension OSLog {
 
     @usableFromInline
     internal func _etcetera_log(value: Any, privacy: Privacy, includeSourceLocation: Bool, file: String, function: String, line: Int, type: OSLogType) {
-        if Options.doLogging == false {
-            return
-        }
         var fileName = file
         if Options.logFileName == false {
             fileName = ""
