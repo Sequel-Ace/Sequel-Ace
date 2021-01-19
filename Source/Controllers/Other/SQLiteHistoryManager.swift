@@ -10,6 +10,7 @@ import Firebase
 import Foundation
 import os.log
 import FMDB
+import OSLog
 
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
@@ -17,19 +18,20 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     @objc static let sharedInstance = SQLiteHistoryManager()
 
     @objc public var migratedPrefsToDB: Bool
+    @objc public var showLogging: Bool = false
     @objc public var queryHist: [Int64: String] = [:]
     @objc public var queue: FMDatabaseQueue
+    private let maxSizeForCrashlyticsLog: Int = 64000
     private var traceExecution: Bool
     private let sqlitePath: String
     private var dbSizeHumanReadable: String = ""
     private var dbSize: Double = 0
+    private var additionalHistArraySize: Int = 0
     private let prefs: UserDefaults = UserDefaults.standard
-    private let log: OSLog
-
+    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "queryDatabase")
     private var newSchemaVersion: Int32 = 0
 
     override private init() {
-        log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "queryDatabase")
 
         migratedPrefsToDB = prefs.bool(forKey: SPMigratedQueriesFromPrefs)
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
@@ -38,7 +40,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         do {
             tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
         } catch {
-            os_log("Could not get path to applicationSupportDirectory. Error: %@", log: log, type: .error, error as CVarArg)
+            Log.error("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
             Crashlytics.crashlytics().log("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
@@ -51,7 +53,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         sqlitePath = tmpPath + "/" + "queryHistory.db"
 
         if !FileManager.default.fileExists(atPath: sqlitePath) {
-            os_log("db doesn't exist, they can't have migrated", log: log, type: .info)
+            Log.info("db doesn't exist, they can't have migrated")
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
         }
@@ -60,10 +62,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         // aborts here though if queue is nil?
         queue = FMDatabaseQueue(path: sqlitePath)!
 
-        os_log("sqlitePath = %@", log: log, type: .info, sqlitePath)
-        let str = "Is SQLite compiled with it's thread safe options turned on? : " + String(FMDatabase.isSQLiteThreadSafe())
-        os_log("%@", log: log, type: .info, str)
-        os_log("sqliteLibVersion = %@", log: log, type: .info, FMDatabase.sqliteLibVersion())
+        Log.info("sqlitePath = \(sqlitePath)")
+        Log.info("Is SQLite compiled with it's thread safe options turned on? : \(FMDatabase.isSQLiteThreadSafe())")
+        Log.info("sqliteLibVersion = \(FMDatabase.sqliteLibVersion())")
 
         super.init()
 
@@ -76,6 +77,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
 
         getDBsize()
+
     }
 
     /// creates the database schema
@@ -83,12 +85,12 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     private func setupQueryHistoryDatabase() {
         // this block creates the database, if needed
         // can also be used to modify schema
-        let schemaBlock: SASchemaBuilder = { db, schemaVersion in
+        let schemaBlock: SASchemaBuilder = { [self] db, schemaVersion in
 
             db.beginTransaction()
 
             if schemaVersion < 1 {
-                os_log("schemaVersion < 1, creating database", log: self.log, type: .info)
+                Log.info("schemaVersion < 1, creating database")
 
                 let createTableSQL = "CREATE TABLE QueryHistory ("
                     + "    query        TEXT NOT NULL,"
@@ -102,14 +104,14 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     self.failed(error: error)
                 }
 
-                self.newSchemaVersion = Int32(schemaVersion + 1)
-                os_log("self.newSchemaVersion = %d", log: self.log, type: .debug, self.newSchemaVersion)
+                newSchemaVersion = Int32(schemaVersion + 1)
+                Log.debug("self.newSchemaVersion \(newSchemaVersion)")
 
-                os_log("database created successfully", log: self.log, type: .info)
+                Log.info("database created successfully")
             } else {
-                os_log("schemaVersion >= 1, not creating database", log: self.log, type: .info)
+                Log.info("schemaVersion >= 1, not creating database")
                 // need to do this here in case, a user has the first version of the db
-                self.newSchemaVersion = Int32(schemaVersion)
+                newSchemaVersion = Int32(schemaVersion)
             }
 
             /*
@@ -134,9 +136,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
              */
 
-            if self.newSchemaVersion < 2 {
-                os_log("schemaVersion = %d", log: self.log, type: .debug, self.newSchemaVersion)
-                os_log("schemaVersion < 2, altering database", log: self.log, type: .info)
+            if newSchemaVersion < 2 {
+                Log.debug("schemaVersion = \(newSchemaVersion)")
+                Log.info("schemaVersion < 2, altering database")
 
                 do {
                     try db.executeUpdate("ALTER TABLE QueryHistory RENAME TO QueryHistory_Old", values: nil)
@@ -155,12 +157,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     db.rollback()
                     self.failed(error: error)
                 }
-                self.newSchemaVersion = self.newSchemaVersion + 1
-                os_log("newSchemaVersion = %d", log: self.log, type: .debug, self.newSchemaVersion)
-
+                newSchemaVersion = newSchemaVersion + 1
+                Log.debug("schemaVersion = \(newSchemaVersion)")
             }
             else {
-               os_log("schemaVersion >= 2, not altering database", log: self.log, type: .info)
+                Log.info("schemaVersion >= 2, not altering database")
            }
 
             db.commit()
@@ -176,7 +177,8 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                 if rs.next() {
                     startingSchemaVersion = rs.int(forColumnIndex: 0)
                     startingSchemaVersion = Int32(rs.long(forColumnIndex: 0))
-                    os_log("startingSchemaVersion = %d", log: self.log, type: .debug, startingSchemaVersion)
+                    Log.debug("startingSchemaVersion = \(startingSchemaVersion)")
+
                 }
                 rs.close()
 
@@ -184,27 +186,30 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
                 if newSchemaVersion != startingSchemaVersion, newSchemaVersion > 0 {
                     let query = "PRAGMA user_version = " + String(newSchemaVersion)
-                    os_log("query: %@", log: self.log, type: .debug, query)
+                    Log.debug("query = \(query)")
                     try db.executeUpdate(query, values: nil)
-                } else {
-                    os_log("db schema did not need an update", log: self.log, type: .info)
+                }
+                else {
+                    Log.info("db schema did not need an update")
                 }
             } catch {
                 Crashlytics.crashlytics().log("Something went wrong: \(error.localizedDescription)")
-                os_log("Something went wrong. Error: %@", log: self.log, type: .error, error as CVarArg)
+                Log.error("Something went wrong: \(error.localizedDescription)")
             }
         }
     }
 
     /// Loads the query history from the SQLite database.
     private func loadQueryHistory() {
-        os_log("loading Query History. SPCustomQueryMaxHistoryItems: %i", log: log, type: .debug, prefs.integer(forKey: SPCustomQueryMaxHistoryItems))
-        Crashlytics.crashlytics().log("loading Query History. SPCustomQueryMaxHistoryItems: \(prefs.integer(forKey: SPCustomQueryMaxHistoryItems))")
+
+        let maxHistItems = prefs.integer(forKey: SPCustomQueryMaxHistoryItems)
+        Log.debug("loading Query History. SPCustomQueryMaxHistoryItems: \(maxHistItems)")
+        Crashlytics.crashlytics().log("loading Query History. SPCustomQueryMaxHistoryItems: \(maxHistItems)")
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
                 // select by id desc to get latest first, limit to max pref
-                let rs = try db.executeQuery("SELECT id, query FROM QueryHistory order by id desc LIMIT (?)", values: [prefs.integer(forKey: SPCustomQueryMaxHistoryItems)])
+                let rs = try db.executeQuery("SELECT id, query FROM QueryHistory order by id desc LIMIT (?)", values: [maxHistItems])
 
                 while rs.next() {
                     queryHist[rs.longLongInt(forColumn: "id")] = rs.string(forColumn: "query")
@@ -219,7 +224,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Reloads the query history from the SQLite database.
     private func reloadQueryHistory() {
-        os_log("reloading Query History", log: log, type: .debug)
+        Log.debug("reloading Query History")
         Crashlytics.crashlytics().log("reloading Query History")
         queryHist.removeAll()
         loadQueryHistory()
@@ -227,7 +232,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Gets the size of the SQLite database.
     private func getDBsize() {
-        os_log("getDBsize", log: log, type: .debug)
 
         queue.inDatabase { db in
             db.traceExecution = traceExecution
@@ -244,19 +248,21 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             }
         }
         queue.close()
+        Log.debug("dbSize = \(dbSizeHumanReadable)")
     }
 
     /// Migrates existing query history in the prefs plist to the SQLite db.
     private func migrateQueriesFromPrefs() {
         guard prefs.object(forKey: SPQueryHistory) != nil else {
-            os_log("no query history?", log: log, type: .error)
+            Log.error("no query history?")
+            Crashlytics.crashlytics().log("no query history?")
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
             return
         }
 
-        os_log("migrateQueriesFromPrefs", log: log, type: .debug)
         Crashlytics.crashlytics().log("migrateQueriesFromPrefs")
+        Log.debug("migrateQueriesFromPrefs")
 
         let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
 
@@ -265,11 +271,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         // we want to insert in the opposite order
         // so that drop down displays by latest created
         for query in queryHistoryArray.reversed() where query.isNotEmpty {
-            os_log("query: [%@]", log: log, type: .debug, query)
+            Log.debug("query: [\(query)]")
 
             let newDate = Date()
 
-            os_log("date: %@", log: log, type: .debug, newDate as CVarArg)
+            Log.debug("date: \(query)")
 
             queue.inDatabase { db in
                 db.traceExecution = traceExecution
@@ -284,7 +290,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
         // JCS note: at the moment I'm not deleting the queryHistory key from prefs
         // in case something goes horribly wrong.
-        os_log("migrated prefs query hist to db", log: log, type: .info)
+        Log.info("migrated prefs query hist to db")
         migratedPrefsToDB = true
         prefs.set(true, forKey: SPMigratedQueriesFromPrefs)
         reloadQueryHistory()
@@ -300,18 +306,19 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - see SPCustomQuery.m L234: queries = [queryParser splitStringByCharacter:';'];
     /// We need to handle that scenario. See normalizeQueryHistory()
     @objc func updateQueryHistory(newHist: [String]) {
-        os_log("updateQueryHistory", log: log, type: .debug)
+        Log.debug("updateQueryHistory")
         Crashlytics.crashlytics().log("updateQueryHistory")
 
         var newHistMutArray: [String] = []
 
         newHistMutArray = normalizeQueryHistory(arrayToNormalise: newHist)
 
-        os_log("newHist passed in: [%@]", log: log, type: .debug, newHist)
-        os_log("newHistMut to be saved to db: [%@]", log: log, type: .debug, newHistMutArray)
-        Crashlytics.crashlytics().log("newHist passed in: [\(newHist)]")
-        Crashlytics.crashlytics().log("newHistMut to be saved to db: [\(newHistMutArray)]")
+        Log.debug("newHist passed in: [\(newHist)]")
+        Log.debug("newHistMut to be saved to db: [\(newHistMutArray)]")
 
+        if additionalHistArraySize < maxSizeForCrashlyticsLog {
+            Crashlytics.crashlytics().log("newHistMut to be saved to db: [\(newHistMutArray)]")
+        }
 
         // dont delete any history, keep it all?
         for query in newHistMutArray where query.isNotEmpty {
@@ -335,7 +342,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
     /// Deletes all query history from the db
     @objc func deleteQueryHistory() {
-        os_log("deleteQueryHistory", log: log, type: .debug)
+        Log.debug("deleteQueryHistory")
         Crashlytics.crashlytics().log("deleteQueryHistory")
         queue.inDatabase { db in
             db.traceExecution = traceExecution
@@ -355,7 +362,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Executes the vacuum command on the db
     /// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
     @objc func execSQLiteVacuum() {
-        os_log("execSQLiteVacuum", log: log, type: .debug)
+        Log.debug("execSQLiteVacuum")
         Crashlytics.crashlytics().log("execSQLiteVacuum")
         queue.inDatabase { db in
             db.traceExecution = traceExecution
@@ -383,33 +390,34 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - Returns: nothing
     func logDBError(_ error: Error) {
         Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
-        os_log("Query failed: %@", log: log, type: .error, error.localizedDescription)
+        Log.error("Query failed: \(error.localizedDescription)")
     }
 
     /// separates multiline query into individual lines.
     ///  - Parameters:
     ///   - arrayToNormalise: the array of strings/queries to normalise
-    ///   - doLogging: bool switches on/off logging. Default off
     /// - Returns: the normalised array of queries
     /// For example, an array with one entry like this:
     /// "SELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT COUNT(*) FROM `HKWarningsLog`;"
     /// Should return this array:
     /// [( "SELECT * FROM `HKWarningsLog` LIMIT 1000", "SELECT COUNT(*) FROM `HKWarningsLog`")]
-   @objc func normalizeQueryHistory(arrayToNormalise: [String], doLogging: Bool = false) -> [String] {
+    @objc func normalizeQueryHistory(arrayToNormalise: [String]) -> [String] {
 
+        Log.debug("normalizeQueryHistory")
         var normalisedQueryArray: [String] = []
+
+        additionalHistArraySize = 0;
 
         for query in arrayToNormalise where query.isNotEmpty {
             if query.contains("\n"){
-                if doLogging{os_log("query contains newline: [%@]", log: log, type: .debug, query)}
-
+                Log.debug("query contains newline: [\(query)]")
                 // an array where each entry contains the value from
                 // the history query, delimited by a new line
                 let lines = query.separatedIntoLines()
 
-                if doLogging{ os_log("line: [%@]", log: log, type: .debug, lines) }
+                Log.debug("lines: [\(lines)]")
 
-                for line in lines  where line.isNotEmpty  {
+                for line in lines where line.isNotEmpty {
                     normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
                 }
             }
@@ -418,10 +426,15 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             }
         }
 
-        if doLogging{
-            os_log("arrayToNormalise: [%@]", log: log, type: .debug, arrayToNormalise)
-            os_log("normalisedQueryArray: [%@]", log: log, type: .debug, normalisedQueryArray)
+        Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
+        Log.debug("normalisedQueryArray: [\(normalisedQueryArray)]")
+
+        // keep a rough track of array size by counting string len
+        for arr in normalisedQueryArray {
+            additionalHistArraySize = additionalHistArraySize + arr.count
         }
+
+        Log.debug("additionalHistArraySize: [\(additionalHistArraySize)]")
 
         return normalisedQueryArray
     }

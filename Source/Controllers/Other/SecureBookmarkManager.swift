@@ -9,6 +9,7 @@
 import Firebase
 import Foundation
 import os.log
+import OSLog
 
 /*
  reRequestSecureAccess
@@ -29,37 +30,35 @@ import os.log
     private let URLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let URLBookmarkCreationWithSecurityScope = URL.BookmarkCreationOptions(rawValue: 1 << 11)
 
-    private let log: OSLog
     private let prefs: UserDefaults = UserDefaults.standard
     private var observer: NSKeyValueObservation?
 
     private var iChangedTheBookmarks: Bool = false
     private var bookmarksHaveBeenMigrated: Bool = false
+    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "secureBookmarks")
+
 
     override init() {
-        if let bundleID = Bundle.main.bundleIdentifier {
-            log = OSLog(subsystem: bundleID, category: "secureBookmarks")
-        }
-        else{
-            log = OSLog.default
-        }
 
-        os_log("SecureBookmarkManager init.", log: log, type: .info)
+        Log.info("SecureBookmarkManager init.")
+        Log.info("OSLog.Options.defaultPrivacy: \(OSLog.Options.defaultPrivacy)")
+        Log.info("OSLog.Options.logFileName: \(OSLog.Options.logFileName)")
+        
         Crashlytics.crashlytics().log("SecureBookmarkManager init.")
 
         super.init()
 
         // this manager *should* be the only thing changing the bookmarks pref, but in case...
-        observer = UserDefaults.standard.observe(\.SPSecureBookmarks, options: [.new, .old], changeHandler: { _, change in
+        observer = UserDefaults.standard.observe(\.SPSecureBookmarks, options: [.new, .old], changeHandler: { [self] _, change in
 
-            if self.iChangedTheBookmarks == false {
-                os_log("SPSecureBookmarks changed, but NOT by SecureBookmarkManager.", log: self.log, type: .debug)
+            if iChangedTheBookmarks == false {
+                Log.debug("SPSecureBookmarks changed, but NOT by SecureBookmarkManager.")
                 Crashlytics.crashlytics().log("SPSecureBookmarks changed, but NOT by SecureBookmarkManager.")
-                self.bookmarks.removeAll()
-                self.bookmarks = change.newValue!
+                bookmarks.removeAll()
+                bookmarks = change.newValue!
             }
             // reset
-            self.iChangedTheBookmarks = false
+            iChangedTheBookmarks = false
 
             // post notificay for ConnectionController
             NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
@@ -67,7 +66,7 @@ import os.log
         })
 
         guard let secureBookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]], secureBookmarks.isNotEmpty else {
-            os_log("Could not get secureBookmarks from prefs.", log: log, type: .error)
+            Log.error("Could not get secureBookmarks from prefs.")
             Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
             return
         }
@@ -76,10 +75,10 @@ import os.log
 
         bookmarks = secureBookmarks
 
-        os_log("bookmarks = %@", log: log, type: .info, bookmarks)
+        Log.info("bookmarks = \(bookmarks)")
 
         let bookmarksHaveBeenMigrated = prefs.bool(forKey: SPSecureBookmarksHaveBeenMigrated)
-        os_log("bookmarksHaveBeenMigrated: %d", log: log, type: .debug, bookmarksHaveBeenMigrated)
+        Log.debug("bookmarksHaveBeenMigrated = \(bookmarksHaveBeenMigrated)")
 
         if bookmarksHaveBeenMigrated == false {
             if migrateBookmarks() == true {
@@ -92,8 +91,8 @@ import os.log
             reRequestSecureAccessToBookmarks()
         }
 
-        os_log("resolvedBookmarks count = %i", log: log, type: .info, resolvedBookmarks.count)
-        os_log("staleBookmarks count = %i", log: log, type: .info, staleBookmarks.count)
+        Log.info("resolvedBookmarks count = \(resolvedBookmarks.count)")
+        Log.info("staleBookmarks count = \(staleBookmarks.count)")
 
         Crashlytics.crashlytics().log("resolvedBookmarks count = \(resolvedBookmarks.count)")
         Crashlytics.crashlytics().log("staleBookmarks count = \(staleBookmarks.count)")
@@ -107,56 +106,56 @@ import os.log
     // Attempt to getEncodedData for object
     // Add to bookmarks and save to prefs
     private func migrateBookmarks() -> Bool {
-        os_log("migrating old format Bookmarks", log: log, type: .debug)
+        Log.debug("migrating old format Bookmarks.")
 
         var migratedBookmarks: [Dictionary<String, Data>] = []
 
         for bookmarkDict in bookmarks {
             for (key, urlData) in bookmarkDict {
-                os_log("Bookmark URL = %@", log: log, type: .info, key)
+                Log.info("Bookmark URL = \(key)")
 
                 var bookmarkDataIsStale = false
 
                 do {
-                    os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                    Log.debug("Attempting to resolve bookmark data for \(key)")
                     Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                     // always resolve with just URLBookmarkResolutionWithSecurityScope
                     let urlForBookmark = try URL(resolvingBookmarkData: urlData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
                     if bookmarkDataIsStale {
-                        os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
+                        Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
                         Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
                         staleBookmarks.appendIfNotContains(key)
                         continue
                     } else {
-                        os_log("Resolved bookmark: %@", log: log, type: .info, key)
+                        Log.info("Resolved bookmark: \(key)")
                         Crashlytics.crashlytics().log("Resolved bookmark: \(key)")
                     }
 
-                    os_log("Attempting to create SecureBookmark object for %@", log: log, type: .debug, urlForBookmark.absoluteString)
+                    Log.debug("Attempting to create SecureBookmark object for: \(urlForBookmark.absoluteString)")
                     Crashlytics.crashlytics().log("Attempting to create SecureBookmark object for: \(urlForBookmark.absoluteString)")
                     // NSURLBookmarkCreationWithSecurityScope is a guess .. could be read only, BUT read only fails to resolve! so it has to be securityScope
                     let sp = SecureBookmark(data: urlData, options: Double(URLBookmarkCreationWithSecurityScope.rawValue), url: urlForBookmark)
 
-                    os_log("Attempting to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
+                    Log.debug("Attempting getEncodedData for: \(sp.debugDescription)")
                     Crashlytics.crashlytics().log("Attempting getEncodedData for: \(sp.debugDescription)")
 
                     guard let spData = sp.getEncodedData() else {
-                        os_log("Failed to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
                         Crashlytics.crashlytics().log("Failed to getEncodedData for: \(sp.debugDescription)")
+                        Log.error("Failed to getEncodedData for: \(sp.debugDescription)")
                         staleBookmarks.appendIfNotContains(key)
                         continue
                     }
 
-                    os_log("SUCCESS: Migrated %@", log: log, type: .debug, urlForBookmark.absoluteString)
                     Crashlytics.crashlytics().log("SUCCESS: Migrated: \(urlForBookmark.absoluteString)")
+                    Log.debug("SUCCESS: Migrated: \(urlForBookmark.absoluteString)")
                     migratedBookmarks.append([urlForBookmark.absoluteString: spData])
 
                 }
                 catch {
                     staleBookmarks.appendIfNotContains(key)
-                    os_log("Error resolving bookmark: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
                     Crashlytics.crashlytics().log("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
+                    Log.error("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
                     continue
                 }
             }
@@ -183,8 +182,8 @@ import os.log
 
         // re-read - must do this after migration, could put it in an if, but it only happens once per app start.
         guard let secureBookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]], secureBookmarks.isNotEmpty else {
-            os_log("Could not get secureBookmarks from prefs.", log: log, type: .error)
             Crashlytics.crashlytics().log("Could not get secureBookmarks from prefs.")
+            Log.error("Could not get secureBookmarks from prefs.")
             return
         }
 
@@ -197,16 +196,16 @@ import os.log
 
         for bookmarkDict in bmCopy {
             for (key, urlData) in bookmarkDict {
-                os_log("Bookmark URL = %@", log: log, type: .info, key)
+                Log.info("Bookmark URL = \(key)")
 
                 do {
                     var bookmarkDataIsStale = false
 
-                    os_log("Attempting to getDecodedData for %@", log: log, type: .debug, key)
                     Crashlytics.crashlytics().log("Attempting to getDecodedData for: \(key)")
+                    Log.debug("Attempting to getDecodedData for: \(key)")
                     let spData = SecureBookmark.getDecodedData(encodedData: urlData)
 
-                    os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                    Log.debug("Attempting to resolve bookmark data for: \(key)")
                     Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                     // always resolve with just URLBookmarkResolutionWithSecurityScope
                     let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
@@ -215,28 +214,28 @@ import os.log
                     //in many months, macOS has been upgraded, the app was
                     //re-installed, the app's preferences .plist file was deleted, etc.
                     if bookmarkDataIsStale {
-                        os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
+                        Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
                         Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
                         staleBookmarks.appendIfNotContains(key)
                     } else {
-                        os_log("Resolved bookmark: %@", log: log, type: .info, key)
                         Crashlytics.crashlytics().log("Resolved bookmark: \(key)")
+                        Log.info("Resolved bookmark: \(key)")
                         let res = urlForBookmark.startAccessingSecurityScopedResource()
                         if res == true {
-                            os_log("success: startAccessingSecurityScopedResource for: %@", log: log, type: .info, key)
                             Crashlytics.crashlytics().log("success: startAccessingSecurityScopedResource for: \(key)")
+                            Log.info("success: startAccessingSecurityScopedResource for: \(key)")
                             resolvedBookmarks.append(urlForBookmark)
                             bookmarks.append([urlForBookmark.absoluteString: urlData])
                         } else {
-                            os_log("ERROR: startAccessingSecurityScopedResource for: %@", log: log, type: .info, key)
                             Crashlytics.crashlytics().log("ERROR: startAccessingSecurityScopedResource for: \(key)")
+                            Log.error("ERROR: startAccessingSecurityScopedResource for: \(key)")
                             staleBookmarks.appendIfNotContains(key)
                         }
                     }
                 } catch {
                     staleBookmarks.appendIfNotContains(key)
-                    os_log("Error resolving bookmark: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
                     Crashlytics.crashlytics().log("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
+                    Log.error("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
                 }
             }
         }
@@ -264,14 +263,14 @@ import os.log
         for (index, bookmarkDict) in bookmarks.enumerated() {
             if bookmarkDict[url.absoluteString] != nil {
                 if isForStaleBookmark == false {
-                    os_log("Existing bookmark for: %@", log: log, type: .debug, url.absoluteString)
                     Crashlytics.crashlytics().log("Existing bookmark for: \(url.absoluteString)")
+                    Log.debug("Existing bookmark for: \(url.absoluteString)")
                     return true
                 }
                 else{
                     // JCS - Not sure we'll ever get here
-                    os_log("Removing existing STALE bookmark for: %@", log: log, type: .debug, url.absoluteString)
                     Crashlytics.crashlytics().log("Removing existing STALE bookmark for: \(url.absoluteString)")
+                    Log.debug("Removing existing STALE bookmark for: \(url.absoluteString)")
                     if bookmarks[safe: index] != nil{
                         bookmarks.remove(at: index)
                     }
@@ -282,35 +281,35 @@ import os.log
 
         do {
             // any errors are caught below in the catch{}
-            os_log("Attempting to create secure bookmark for %@ - with bookmarkCreationOptions: %i", log: log, type: .debug, url.absoluteString, bookmarkCreationOptions.rawValue)
             Crashlytics.crashlytics().log("Attempting to create secure bookmark for: \(url.absoluteString) - with bookmarkCreationOptions:\(bookmarkCreationOptions.rawValue)")
+            Log.debug("Attempting to create secure bookmark for: \(url.absoluteString) - with bookmarkCreationOptions:\(bookmarkCreationOptions.rawValue)")
             let bookmarkData = try url.bookmarkData(options: [bookmarkCreationOptions], includingResourceValuesForKeys: nil, relativeTo: nil)
 
-            os_log("Attempting to create SecureBookmark object for %@", log: log, type: .debug, url.absoluteString)
+            Log.debug("Attempting to create SecureBookmark object for: \(url.absoluteString)")
             Crashlytics.crashlytics().log("Attempting to create SecureBookmark object for: \(url.absoluteString)")
             let sp = SecureBookmark(data: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), url: url)
 
-            os_log("Attempting to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
             Crashlytics.crashlytics().log("Attempting getEncodedData for: \(sp.debugDescription)")
+            Log.debug("Attempting getEncodedData for: \(sp.debugDescription)")
             guard let spData = sp.getEncodedData() else {
-                os_log("Failed to getEncodedData for %@", log: log, type: .debug, sp.debugDescription)
+                Log.error("Failed to getEncodedData for: \(sp.debugDescription)")
                 Crashlytics.crashlytics().log("Failed to getEncodedData for: \(sp.debugDescription)")
                 return false
             }
 
-            os_log("SUCCESS: Adding %@ to bookmarks", log: log, type: .debug, url.absoluteString)
+            Log.debug("SUCCESS: Adding \(url.absoluteString) to bookmarks")
             Crashlytics.crashlytics().log("SUCCESS: Adding \(url.absoluteString) to bookmarks")
             bookmarks.append([url.absoluteString: spData])
             resolvedBookmarks.append(url)
 
             if(staleBookmarks.contains(url.absoluteString)){
-                os_log("Removing stale bookmark for: %@", log: log, type: .debug, url.absoluteString)
-                os_log("staleBookmarks count = %i", log: log, type: .info, staleBookmarks.count)
+                Log.debug("Removing stale bookmark for: \(url.absoluteString)")
+                Log.debug("staleBookmarks count = \(staleBookmarks.count)")
                 staleBookmarks.removeAll(where: { $0 == url.absoluteString })
-                os_log("staleBookmarks count = %i", log: log, type: .info, staleBookmarks.count)
+                Log.debug("staleBookmarks count = \(staleBookmarks.count)")
             }
 
-            os_log("Updating UserDefaults", log: log, type: .debug)
+            Log.debug("Updating UserDefaults")
             Crashlytics.crashlytics().log("Updating UserDefaults")
             iChangedTheBookmarks = true
             prefs.set(bookmarks, forKey: SASecureBookmarks)
@@ -319,7 +318,7 @@ import os.log
             return true
 
         } catch {
-            os_log("Error creating secure Bookmark For: key = %@. Error: %@", log: log, type: .error, url.absoluteString, error.localizedDescription)
+            Log.error("Error creating secure Bookmark For: key = \(url.absoluteString). Error: \(error.localizedDescription)")
             Crashlytics.crashlytics().log("Error creating secure Bookmark For: key = \(url.absoluteString). Error: \(error.localizedDescription)")
             return false
         }
@@ -330,27 +329,27 @@ import os.log
     ///     - filename: file URL to generate secure bookmark for
     /// - Returns: the resolved URL or nil
     @objc func bookmarkFor(filename: String) -> URL? {
-        os_log("filename %@", log: log, type: .debug, filename)
+        Log.debug("filename: \(filename)")
 
         for bookmarkDict in bookmarks {
             for (key, urlData) in bookmarkDict {
-                os_log("Bookmark URL = %@", log: log, type: .info, key)
+                Log.info("Bookmark URL = \(key)")
 
                 if key == filename {
                     do {
                         var bookmarkDataIsStale = false
 
-                        os_log("Attempting to getDecodedData for %@", log: log, type: .debug, key)
+                        Log.debug("Attempting to getDecodedData for: \(key)")
                         Crashlytics.crashlytics().log("Attempting to getDecodedData for: \(key)")
                         let spData = SecureBookmark.getDecodedData(encodedData: urlData)
 
-                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                        Log.debug("Attempting to resolve bookmark data for: \(key)")
                         Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                         // always resolve with just URLBookmarkResolutionWithSecurityScope
                         let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
 
                         if bookmarkDataIsStale {
-                            os_log("The bookmark is outdated and needs to be regenerated: key = %@", log: log, type: .error, key)
+                            Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
                             Crashlytics.crashlytics().log("The bookmark is outdated and needs to be regenerated: key = \(key)")
                             staleBookmarks.appendIfNotContains(key)
                             prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
@@ -359,13 +358,13 @@ import os.log
                                 resolvedBookmarks.append(urlForBookmark)
                                 return urlForBookmark
                             } else {
-                                os_log("Error startAccessingSecurityScopedResource For: key = %@.", log: log, type: .error, urlForBookmark.absoluteString)
+                                Log.error("Error startAccessingSecurityScopedResource For: key = \(urlForBookmark.absoluteString).")
                                 Crashlytics.crashlytics().log("Error startAccessingSecurityScopedResource For: key = \(urlForBookmark.absoluteString).")
                                 return nil
                             }
                         }
                     } catch {
-                        os_log("Error resolving bookmark: filename = %@. Error: %@", log: log, type: .error, filename, error.localizedDescription)
+                        Log.error("Error resolving bookmark: filename = \(filename). Error: \(error.localizedDescription)")
                         Crashlytics.crashlytics().log("Error resolving bookmark: filename = \(filename). Error: \(error.localizedDescription)")
                         return nil
                     }
@@ -373,7 +372,7 @@ import os.log
             }
         }
 
-        os_log("No bookmark found for %@", log: log, type: .info, filename)
+        Log.info("No bookmark found for: \(filename)")
         Crashlytics.crashlytics().log("No bookmark found for: \(filename)")
         return nil
     }
@@ -393,17 +392,16 @@ import os.log
                     found = true
 
                     do {
-                        os_log("Revoking bookmark for: %@", log: log, type: .debug, filename)
+                        Log.debug("Revoking bookmark for: \(filename)")
                         Crashlytics.crashlytics().log("Revoking bookmark for: \(filename)")
-
-                        os_log("bookmarks[%i]: %@", log: log, type: .debug, index, bookmarks[index])
+                        Log.debug("bookmarks[\(index)]: \(bookmarks[index])")
 
                         var bookmarkDataIsStale = false
 
                         // need to get the proper URL
                         let spData = SecureBookmark.getDecodedData(encodedData: urlData)
 
-                        os_log("Attempting to resolve bookmark data for %@", log: log, type: .debug, key)
+                        Log.debug("Attempting to resolve bookmark data for: \(key)")
                         Crashlytics.crashlytics().log("Attempting to resolve bookmark data for: \(key)")
                         // always resolve with just URLBookmarkResolutionWithSecurityScope
                         let urlForBookmark = try URL(resolvingBookmarkData: spData.bookmarkData, options: [URLBookmarkResolutionWithSecurityScope], relativeTo: nil, bookmarkDataIsStale: &bookmarkDataIsStale)
@@ -418,21 +416,21 @@ import os.log
                         }
                         iChangedTheBookmarks = true
                         prefs.set(bookmarks, forKey: SASecureBookmarks)
-                        os_log("Successfully revoked bookmark for: %@", log: log, type: .debug, filename)
+                        Log.debug("Successfully revoked bookmark for: \(filename)")
                         Crashlytics.crashlytics().log("Successfully revoked bookmark for: \(filename)")
 
                         // if it was in stalebookmarks, remove
                         if(staleBookmarks.contains(key)){
-                            os_log("Removing stale bookmark for: %@", log: log, type: .debug, key)
+                            Log.debug("Removing stale bookmark for: \(key)")
                             staleBookmarks.removeAll(where: { $0 == key })
                             prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
                         }
 
                         return true
                     } catch {
-                        os_log("Error resolving bookmark: key = %@. Error: %@", log: log, type: .error, key, error.localizedDescription)
+                        Log.error("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
                         Crashlytics.crashlytics().log("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
-                        os_log("Failed to revoke bookmark for: %@", log: log, type: .debug, filename)
+                        Log.error("Failed to revoke bookmark for: \(filename)")
                         Crashlytics.crashlytics().log("Failed to revoke bookmark for: \(filename)")
                         // should we remove from bookmarks here?
 
@@ -443,12 +441,12 @@ import os.log
         }
 
         if found == false{
-            os_log("No bookmark found for %@", log: log, type: .info, filename)
             Crashlytics.crashlytics().log("No bookmark found for: \(filename)")
+            Log.info("No bookmark found for: \(filename)")
 
             // it's not in bookmarks, but is in staleBookmarks, just remove it
             if(staleBookmarks.contains(filename)){
-                os_log("Removing stale bookmark for: %@", log: log, type: .debug, filename)
+                Log.debug("Removing stale bookmark for: \(filename)")
                 staleBookmarks.removeAll(where: { $0 == filename })
                 prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
                 return true
@@ -457,19 +455,18 @@ import os.log
 
         // if you try to revoke a stale bookmark ... you get to here
         // and can never remove it...
-        os_log("Failed to revoke bookmark for: %@", log: log, type: .debug, filename)
-        os_log("found: %d", log: log, type: .debug, found)
+        Log.debug("found: \(found)")
+        Log.error("Failed to revoke bookmark for: \(filename)")
         Crashlytics.crashlytics().log("Failed to revoke bookmark for: \(filename)")
         return false
     }
 
     // revoke secure access to all bookmarks
     @objc func stopAllSecurityScopedAccess() {
-
-        os_log("stopAllSecurityScopedAccess called", log: log, type: .debug)
-        Crashlytics.crashlytics().log("stopAllSecurityScopedAccess called")
+        Log.debug("stopAllSecurityScopedAccess called")
+        Log.debug("resolvedBookmarks count = \(resolvedBookmarks.count)")
         Crashlytics.crashlytics().log("resolvedBookmarks count = \(resolvedBookmarks.count)")
-        os_log("resolvedBookmarks count = %i", log: log, type: .info, resolvedBookmarks.count)
+        Crashlytics.crashlytics().log("stopAllSecurityScopedAccess called")
 
         for url in resolvedBookmarks {
             resolvedBookmarks.removeAll(where: { $0 == url })
