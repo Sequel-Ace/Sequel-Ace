@@ -156,10 +156,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
                                             [thatDatabase backtickQuotedString],
                                             [thatTable backtickQuotedString],
                                             [thatColumn backtickQuotedString]]];
-//    query = [query stringByAppendingString:[NSString stringWithFormat:@"FOREIGN KEY (%@) REFERENCES %@ (%@)",
-//                                            [thisColumn backtickQuotedString],
-//                                            [thatTable backtickQuotedString],
-//                                            [thatColumn backtickQuotedString]]];
 
 	NSArray *onActions = @[@"RESTRICT", @"CASCADE", @"SET NULL", @"NO ACTION"];
 	
@@ -173,7 +169,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		query = [query stringByAppendingString:[NSString stringWithFormat:@" ON UPDATE %@", [onActions objectAtIndex:[onUpdatePopUpButton selectedTag]]]];
 	}
 	
-    NSLog(@"FOREIGN KEY --> %@", query);
 	// Execute query
 	[connection queryString:query];
 
