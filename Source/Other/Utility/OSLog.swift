@@ -1,5 +1,13 @@
 //
 //  OSLog.swift
+//  Sequel Ace
+//
+//  Created by James on 19/1/2021.
+//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//
+
+//
+//  OSLog.swift
 //  Etcetera
 //
 //  Created by Jared Sinclair on 8/15/15.
@@ -96,6 +104,7 @@ extension OSLog {
 
     // MARK: - Nested Types
 
+
     /// The default arguments passed to the methods below.
     public enum Options {
 
@@ -116,6 +125,21 @@ extension OSLog {
             #else
             return false
             #endif
+        }()
+
+        /// If `false`,  nothing is logged.
+        public static var doLogging: Bool = {
+            #if DEBUG
+            return true
+            #else
+            return false
+            #endif
+        }()
+
+
+        /// If `false`,  the filename is not logged.
+        public static var logFileName: Bool = {
+            return true
         }()
 
     }
@@ -310,8 +334,15 @@ extension OSLog {
 
     @usableFromInline
     internal func _etcetera_log(value: Any, privacy: Privacy, includeSourceLocation: Bool, file: String, function: String, line: Int, type: OSLogType) {
+        if Options.doLogging == false {
+            return
+        }
+        var fileName = file
+        if Options.logFileName == false {
+            fileName = ""
+        }
         let loggable = (value as? CustomLogRepresentable) ?? AnyLoggable(value)
-        let representation = loggable.logRepresentation(includeSourceLocation: includeSourceLocation, privacy: privacy, file: file, function: function, line: line)
+        let representation = loggable.logRepresentation(includeSourceLocation: includeSourceLocation, privacy: privacy, file: fileName, function: function, line: line)
         _etcetera_log(representation: representation, type: type)
     }
 
@@ -324,16 +355,16 @@ extension OSLog {
         let f = representation.format
         let a = representation.args
         switch a.count {
-        case 9: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8])
-        case 8: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7])
-        case 7: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5], a[6])
-        case 6: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5])
-        case 5: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4])
-        case 4: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3])
-        case 3: os_log(f, log: self, type: type, a[0], a[1], a[2])
-        case 2: os_log(f, log: self, type: type, a[0], a[1])
-        case 1: os_log(f, log: self, type: type, a[0])
-        default: os_log(f, log: self, type: type)
+            case 9: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8])
+            case 8: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7])
+            case 7: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5], a[6])
+            case 6: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4], a[5])
+            case 5: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3], a[4])
+            case 4: os_log(f, log: self, type: type, a[0], a[1], a[2], a[3])
+            case 3: os_log(f, log: self, type: type, a[0], a[1], a[2])
+            case 2: os_log(f, log: self, type: type, a[0], a[1])
+            case 1: os_log(f, log: self, type: type, a[0])
+            default: os_log(f, log: self, type: type)
         }
     }
 
