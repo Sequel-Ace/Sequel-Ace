@@ -140,6 +140,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	
 	NSString *thisTable  = [tablesListInstance tableName];
 	NSString *thisColumn = [columnPopUpButton titleOfSelectedItem];
+    NSString *thatDatabase = [refDatabasePopUpButton titleOfSelectedItem];
 	NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
 	NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
 	
@@ -150,11 +151,16 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		query = [query stringByAppendingString:[NSString stringWithFormat:@"CONSTRAINT %@ ", [[constraintName stringValue] backtickQuotedString]]];
 	}
 	
-	query = [query stringByAppendingString:[NSString stringWithFormat:@"FOREIGN KEY (%@) REFERENCES %@ (%@)",
-												[thisColumn backtickQuotedString],
-												[thatTable backtickQuotedString],
-												[thatColumn backtickQuotedString]]];
-	
+	query = [query stringByAppendingString:[NSString stringWithFormat:@"FOREIGN KEY (%@) REFERENCES %@.%@ (%@)",
+                                            [thisColumn backtickQuotedString],
+                                            [thatDatabase backtickQuotedString],
+                                            [thatTable backtickQuotedString],
+                                            [thatColumn backtickQuotedString]]];
+//    query = [query stringByAppendingString:[NSString stringWithFormat:@"FOREIGN KEY (%@) REFERENCES %@ (%@)",
+//                                            [thisColumn backtickQuotedString],
+//                                            [thatTable backtickQuotedString],
+//                                            [thatColumn backtickQuotedString]]];
+
 	NSArray *onActions = @[@"RESTRICT", @"CASCADE", @"SET NULL", @"NO ACTION"];
 	
 	// If required add ON DELETE
@@ -167,6 +173,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		query = [query stringByAppendingString:[NSString stringWithFormat:@" ON UPDATE %@", [onActions objectAtIndex:[onUpdatePopUpButton selectedTag]]]];
 	}
 	
+    NSLog(@"FOREIGN KEY --> %@", query);
 	// Execute query
 	[connection queryString:query];
 
@@ -222,6 +229,16 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 }
 
 /**
+ * Updates the available tables and columns when the user selects a database.
+ */
+- (IBAction)selectReferenceDatabase:(id)sender {
+    // Update available tables...
+    [self _updateAvailableTables];
+    // ...then update available table columns
+    [self _updateAvailableTableColumns];
+}
+
+/**
  * Updates the available columns when the user selects a table.
  */
 - (IBAction)selectReferenceTable:(id)sender
@@ -244,6 +261,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	NSArray *columnTitles = ([prefs boolForKey:SPAlphabeticalTableSorting])? [[tableDataInstance columnNames] sortedArrayUsingSelector:@selector(compare:)] : [tableDataInstance columnNames];
 	[columnPopUpButton addItemsWithTitles:columnTitles];
 
+    [refDatabasePopUpButton removeAllItems];
 	[refTablePopUpButton removeAllItems];
 
 	BOOL changeEncoding = ![[connection encoding] hasPrefix:@"utf8"];
@@ -254,13 +272,30 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[connection setEncoding:@"utf8mb4"];
 	}
 
-	// Get all InnoDB tables in the current database
-    SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [[tableDocumentInstance database] tickQuotedString]]];
-    [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
-    [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
-    for (NSArray *eachRow in result) {
-        [refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
+    // Get all InnoDB Databases
+    
+    NSArray *theDatabaseList = [connection databases];
+    NSMutableArray *allDatabases;
+    allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
+    for (NSString *databaseName in theDatabaseList)
+    {
+        // If the database is either information_schema or mysql then it is classed as a
+        // system database; similarly, performance_schema in 5.5.3+ and sys in 5.7.7+
+        if (![databaseName isEqualToString:SPMySQLDatabase] &&
+            ![databaseName isEqualToString:SPMySQLInformationSchemaDatabase] &&
+            ![databaseName isEqualToString:SPMySQLPerformanceSchemaDatabase] &&
+            ![databaseName isEqualToString:SPMySQLSysDatabase]) {
+             [allDatabases addObject:databaseName];
+        }
     }
+    if (allDatabases != nil) {
+        [refDatabasePopUpButton addItemsWithTitles:allDatabases];
+        // Set selected item to the current database
+        [refDatabasePopUpButton selectItemWithTitle:[tableDocumentInstance database]];
+    }
+
+	// Get all InnoDB tables in the current database
+    [self _updateAvailableTables];
 
 	// Reset other fields
 	[constraintName setStringValue:@""];
@@ -564,15 +599,47 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[relationsTableView reloadData];
 }
 
+
 /**
  * Updates the available table columns that the reference is pointing to. Available columns are those that are
  * within the selected table and are of the same data type as the column the reference is from.
+ */
+- (void)_updateAvailableTables
+{
+    // Get selected database
+    NSString *database = [refDatabasePopUpButton titleOfSelectedItem];
+
+    [refTablePopUpButton setEnabled:NO];
+    [refColumnPopUpButton setEnabled:NO];
+    [confirmAddRelationButton setEnabled:NO];
+
+    // Get all InnoDB tables in the current database
+    [refTablePopUpButton removeAllItems];
+    if (database != nil && database.length != 0) {
+        SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [database tickQuotedString]]];
+        [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
+        [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
+        for (NSArray *eachRow in result) {
+            [refTablePopUpButton addItemWithTitle:[eachRow objectAtIndex:0]];
+        }
+    }
+    
+    [refTablePopUpButton setEnabled:YES];
+    [refColumnPopUpButton setEnabled:YES];
+    [confirmAddRelationButton setEnabled:YES];
+
+}
+
+/**
+ * Updates the available table columns that the reference is pointing to. Available columns are those that are
+ * within the selected database and table and are of the same data type as the column the reference is from.
  */
 - (void)_updateAvailableTableColumns
 {
 	NSString *column = [columnPopUpButton titleOfSelectedItem];
 	NSString *table = [refTablePopUpButton titleOfSelectedItem];
-	
+    NSString *database = [refDatabasePopUpButton titleOfSelectedItem];
+
 	[tableDataInstance resetAllData];
 	[tableDataInstance updateInformationForCurrentTable];
 	
@@ -584,7 +651,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[refColumnPopUpButton removeAllItems];
 	
 	[tableDataInstance resetAllData];
-	NSDictionary *tableInfo = [tableDataInstance informationForTable:table];
+    NSDictionary *tableInfo = [tableDataInstance informationForTable:table fromDatabase:database];
+	//NSDictionary *tableInfo = [tableDataInstance informationForTable:table];
 	
 	NSArray *columns = [tableInfo objectForKey:@"columns"];
 	
