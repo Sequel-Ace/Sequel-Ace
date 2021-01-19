@@ -270,8 +270,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     // Get all InnoDB Databases
     
     NSArray *theDatabaseList = [connection databases];
-    NSMutableArray *allDatabases;
-    allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
+    NSMutableArray *allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
     for (NSString *databaseName in theDatabaseList)
     {
         // If the database is either information_schema or mysql then it is classed as a
@@ -283,11 +282,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
              [allDatabases addObject:databaseName];
         }
     }
-    if (allDatabases != nil) {
-        [refDatabasePopUpButton addItemsWithTitles:allDatabases];
-        // Set selected item to the current database
-        [refDatabasePopUpButton selectItemWithTitle:[tableDocumentInstance database]];
-    }
+    [refDatabasePopUpButton addItemsWithTitles:allDatabases];
+    // Set selected item to the current database
+    [refDatabasePopUpButton selectItemWithTitle:[tableDocumentInstance database]];
 
 	// Get all InnoDB tables in the current database
     [self _updateAvailableTables];
@@ -647,7 +644,6 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	
 	[tableDataInstance resetAllData];
     NSDictionary *tableInfo = [tableDataInstance informationForTable:table fromDatabase:database];
-	//NSDictionary *tableInfo = [tableDataInstance informationForTable:table];
 	
 	NSArray *columns = [tableInfo objectForKey:@"columns"];
 	
