@@ -4021,16 +4021,30 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (BOOL)parentTabShouldClose
 {
+    SPLog(@"parentTabShouldClose");
+    CLS_LOG(@"parentTabShouldClose");
 
 	// If no connection is available, always return YES.  Covers initial setup and disconnections.
-	if(!_isConnected) return YES;
+    if(!_isConnected){
+        SPLog(@"!_isConnected, return yes");
+        CLS_LOG(@"!_isConnected, return yes");
+        return YES;
+    }
 
-	// If tasks are active, return NO to allow tasks to complete
-	if (_isWorkingLevel) return NO;
+    // If tasks are active, return NO to allow tasks to complete
+    if(_isWorkingLevel){
+        SPLog(@"_isWorkingLevel, return NO");
+        CLS_LOG(@"_isWorkingLevel, return NO");
+        return NO;
+    }
 
 	// If the table list considers itself to be working, return NO. This catches open alerts, and
 	// edits in progress in various views.
-	if ( ![tablesListInstance selectionShouldChangeInTableView:nil] ) return NO;
+    if ( ![tablesListInstance selectionShouldChangeInTableView:nil] ) {
+        SPLog(@"![tablesListInstance selectionShouldChangeInTableView, return NO");
+        CLS_LOG(@"![tablesListInstance selectionShouldChangeInTableView, return NO");
+        return NO;
+    }
 
 	// Auto-save spf file based connection and return if the save was not successful
 	if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {

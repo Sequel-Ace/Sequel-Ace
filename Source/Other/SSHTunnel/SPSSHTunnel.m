@@ -584,20 +584,17 @@ static unsigned short getRandomPort(void);
 
 		// If the task closed unexpectedly, alert appropriately
 		if (connectionState != SPMySQLProxyIdle) {
+            SPLog(@"SSH Tunnel has unexpectedly closed. connectionState: %i", connectionState);
+            CLS_LOG(@"SSH Tunnel has unexpectedly closed.connectionState: %i", connectionState);
 			connectionState = SPMySQLProxyIdle;
 			taskExitedUnexpectedly = YES;
 			[self setLastError:NSLocalizedString(@"The SSH Tunnel has unexpectedly closed.", @"SSH tunnel unexpectedly closed")];
-            SPLog(@"SSH Tunnel has unexpectedly closed");
-            CLS_LOG(@"SSH Tunnel has unexpectedly closed");
 
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 		}
 
 		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
 		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
-
-		
-		
 	}
 }
 
