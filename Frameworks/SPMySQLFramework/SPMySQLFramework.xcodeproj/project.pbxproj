@@ -10,6 +10,7 @@
 		177916A21E88733000EE3043 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 177916A01E88733000EE3043 /* LICENSE */; };
 		17E3A57B1885A286009CF372 /* SPMySQLDataTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E3A5791885A286009CF372 /* SPMySQLDataTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E3A57C1885A286009CF372 /* SPMySQLDataTypes.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E3A57A1885A286009CF372 /* SPMySQLDataTypes.m */; };
+		1A7120D125B881D3001B1127 /* psgrep.sh in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A7120CF25B881A9001B1127 /* psgrep.sh */; };
 		269BA7EB249FDC97005E4896 /* libcrypto.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; };
 		269BA7ED249FDCB1005E4896 /* libssl.1.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */; };
 		26F0BF1124A0052B00A43B20 /* libcrypto.1.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -107,6 +108,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		1A7120D025B881BB001B1127 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				1A7120D125B881D3001B1127 /* psgrep.sh in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		26F0BF1024A0052100A43B20 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +139,7 @@
 		177916A11E88733000EE3043 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		17E3A5791885A286009CF372 /* SPMySQLDataTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLDataTypes.h; path = Source/SPMySQLDataTypes.h; sourceTree = "<group>"; };
 		17E3A57A1885A286009CF372 /* SPMySQLDataTypes.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLDataTypes.m; path = Source/SPMySQLDataTypes.m; sourceTree = "<group>"; };
+		1A7120CF25B881A9001B1127 /* psgrep.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = psgrep.sh; sourceTree = "<group>"; };
 		269BA7EA249FDC97005E4896 /* libcrypto.1.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libcrypto.1.1.dylib; sourceTree = "<group>"; };
 		269BA7EC249FDCB1005E4896 /* libssl.1.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libssl.1.1.dylib; sourceTree = "<group>"; };
 		32DBCF5E0370ADEE00C91783 /* SPMySQLFramework_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLFramework_Prefix.pch; path = Source/SPMySQLFramework_Prefix.pch; sourceTree = "<group>"; };
@@ -397,6 +409,7 @@
 		58428DF514BA5A03000F8438 /* Scripts */ = {
 			isa = PBXGroup;
 			children = (
+				1A7120CF25B881A9001B1127 /* psgrep.sh */,
 				58428DF614BA5A13000F8438 /* build-mysql-client.sh */,
 			);
 			name = Scripts;
@@ -581,6 +594,7 @@
 				26F0BF1024A0052100A43B20 /* CopyFiles */,
 				26F0BF1324A0053E00A43B20 /* ShellScript */,
 				26F0BF1424A0069300A43B20 /* ShellScript */,
+				1A7120D025B881BB001B1127 /* CopyFiles */,
 			);
 			buildRules = (
 			);

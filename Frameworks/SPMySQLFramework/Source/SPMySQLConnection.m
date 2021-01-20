@@ -38,6 +38,9 @@
 @interface SPMySQLConnection ()
 
 @property (readwrite, copy) NSString *timeZoneIdentifier;
+@property (readwrite, assign) BOOL killSSHScriptInstalled;
+@property (readwrite, strong) NSUserDefaults *prefs;
+@property(assign, readwrite) NSUInteger killSSHScriptInstallCount;
 
 @end
 
@@ -55,6 +58,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 // List of permissible ciphers to use for SSL connections
 const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:AES128-SHA:AES256-RMD:AES128-RMD:DES-CBC3-RMD:DHE-RSA-AES256-RMD:DHE-RSA-AES128-RMD:DHE-RSA-DES-CBC3-RMD:RC4-SHA:RC4-MD5:DES-CBC3-SHA:DES-CBC-SHA:EDH-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC-SHA";
+
+static NSString *SPKillSSHScriptInstalled  = @"SPKillSSHScriptInstalled";
 
 @implementation SPMySQLConnection
 
@@ -83,6 +88,9 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 @synthesize delegateQueryLogging;
 @synthesize lastQueryWasCancelled;
 @synthesize clientFlags = clientFlags;
+@synthesize killSSHScriptInstalled;
+@synthesize prefs;
+@synthesize killSSHScriptInstallCount;
 
 #pragma mark -
 #pragma mark Getters and Setters
@@ -132,8 +140,12 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 		reconnectingThread = NULL;
 		mysqlConnectionThreadId = 0;
 		initialConnectTime = 0;
-
 		port = 3306;
+
+        prefs = [NSUserDefaults standardUserDefaults];
+
+        killSSHScriptInstalled = [prefs boolForKey:SPKillSSHScriptInstalled];
+        killSSHScriptInstallCount = 0;
 
 		_timeZoneIdentifier = @"";
 
@@ -298,6 +310,39 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 #pragma mark -
 #pragma mark Connection state
+
+- (BOOL)isMaybeConnectedViaSSHTunnel{
+
+    BOOL isTCP = NO;
+    BOOL notDefaultPort = NO;
+    BOOL isLocalhost = NO;
+
+    SPLog(@"port: %lu", (unsigned long)self.port);
+    SPLog(@"host: %@", self.host);
+    SPLog(@"host_info: %s", mySQLConnection->host_info);
+
+    if(strcmp(mySQLConnection->host_info,"127.0.0.1 via TCP/IP") == 0){
+        SPLog(@"isTCP = YES");
+        isTCP = YES;
+    }
+
+    if(port != MYSQL_PORT){
+        SPLog(@"notDefaultPort = YES");
+        notDefaultPort = YES;
+    }
+
+    if([host isEqualToString:@"127.0.0.1"]){
+        isLocalhost = YES;
+        SPLog(@"isLocalhost = YES");
+    }
+
+    if(isLocalhost == YES && isTCP == YES && notDefaultPort == YES){
+        return YES;
+    }
+    else{
+        return NO;
+    }
+}
 
 /**
  * Retrieve whether the connection instance is connected to the remote host.
@@ -497,6 +542,122 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
     }
 }
 
+- (void)installSSHKillScript{
+
+    SPLog(@"installSSHKillScript");
+
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+
+    NSError *error;
+    NSURL *directoryURL = [fileManager URLForDirectory:NSApplicationScriptsDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:&error];
+    NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+    [openPanel setDirectoryURL:directoryURL];
+    [openPanel setCanChooseDirectories:YES];
+    [openPanel setCanChooseFiles:NO];
+    [openPanel setPrompt:NSLocalizedString(@"Select Script Folder", @"Select Script Folder")];
+    [openPanel setMessage:NSLocalizedString(@"Please select the User > Library > Application Scripts > com.sequel-ace.sequel-ace", @"Please select the User > Library > Application Scripts > com.sequel-ace.sequel-ace")];
+
+    [openPanel beginWithCompletionHandler:^(NSInteger result) {
+        self->killSSHScriptInstallCount++;
+        if (result == NSFileHandlingPanelOKButton) {
+            NSURL *selectedURL = [openPanel URL];
+            if ([selectedURL isEqual:directoryURL]) {
+                NSURL *destinationURL = [selectedURL URLByAppendingPathComponent:@"psgrep.sh"];
+                NSURL *sourceURL = [[NSBundle bundleWithIdentifier:@"com.sequel-ace.spmysql"] URLForResource:@"psgrep" withExtension:@"sh"];
+                SPLog(@"sourceURL = %@", sourceURL.absoluteString);
+                SPLog(@"destinationURL = %@", destinationURL.absoluteString);
+                NSError *error2;
+                BOOL success = [fileManager copyItemAtURL:sourceURL toURL:destinationURL error:&error2];
+                if (success) {
+                    NSAlert *alert = [[NSAlert alloc] init];
+                    alert.messageText = NSLocalizedString(@"Script Installed", @"Script Installed");
+                    alert.informativeText = NSLocalizedString(@"The kill script was installed succcessfully.", @"The kill script was installed succcessfully.");
+                    [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+                    [alert runModal];
+                    self->killSSHScriptInstalled = YES;
+                    [self->prefs setBool:YES forKey:SPKillSSHScriptInstalled];
+                    SPLog(@"script was installed succcessfully, calling terminateSSHProcess.");
+                    [self performSelector:@selector(terminateSSHProcess) withObject:nil afterDelay:1.0];
+                }
+                else {
+                    SPLog(@"Error = %@", error2.localizedDescription);
+
+                    if ([error2 code] == NSFileWriteFileExistsError) {
+                        // this is where you could update the script, by removing the old one and copying in a new one
+                        SPLog(@"NSFileWriteFileExists, calling terminateSSHProcess");
+                        self->killSSHScriptInstalled = YES;
+                        [self->prefs setBool:YES forKey:SPKillSSHScriptInstalled];
+                        [self performSelector:@selector(terminateSSHProcess) withObject:nil afterDelay:1.0];
+
+                    }
+                    else {
+                        // the item couldn't be copied, try again
+                        SPLog(@"the item couldn't be copied, try again");
+                        if(self->killSSHScriptInstallCount < 4){
+                            [self performSelector:@selector(installSSHKillScript) withObject:nil afterDelay:0.0];
+                        }
+                    }
+                }
+            }
+            else {
+                // try again because the user changed the folder path
+                SPLog(@"try again because the user changed the folder path");
+                if(self->killSSHScriptInstallCount < 4){
+                    [self performSelector:@selector(installSSHKillScript) withObject:nil afterDelay:0.0];
+                }
+            }
+        }
+    }];
+
+}
+
+- (void)terminateSSHProcess{
+
+    SPLog(@"_terminateSSHProcess");
+
+    if(killSSHScriptInstalled == NO){
+        SPLog(@"killSSHScriptInstalled == NO, calling installSSHKillScript");
+        [self installSSHKillScript];
+        return;
+    }
+
+    SPLog(@"killSSHScriptInstalled == YES, continuing");
+
+    NSError *error;
+
+    NSURL *scriptsDirectory = [[NSFileManager defaultManager] URLForDirectory:NSApplicationScriptsDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:&error];
+
+    SPLog(@"scriptsDirectory: %@", scriptsDirectory);
+
+    NSUserUnixTask *result = nil;
+
+    NSFileHandle *stdOut = [NSFileHandle fileHandleWithStandardOutput];
+
+    if (scriptsDirectory) {
+            NSURL *scriptURL = [scriptsDirectory URLByAppendingPathComponent:@"psgrep.sh"];
+            result = [[NSUserUnixTask alloc] initWithURL:scriptURL error:&error];
+            if (!result) {
+                SPLog(@"No UserUnix task error = %@", error.localizedDescription);
+            }
+            else{
+                result.standardOutput = stdOut;
+                [result executeWithArguments:@[[NSString stringWithFormat:@"%lu", (unsigned long)port]] completionHandler:^(NSError * _Nullable error2) {
+                    if(error2 != nil){
+                        SPLog(@"Script task error = %@", error2.localizedDescription);
+                    }
+                    else{
+                        SPLog(@"Script task SUCCESS");
+                    }
+                }];
+            }
+        }
+        else {
+            // NOTE: if you're not running in a sandbox, the directory URL will always be nil
+            SPLog(@"No Application Scripts folder error = %@", error.localizedDescription);
+        }
+
+}
+
 @end
 
 #pragma mark -
@@ -518,6 +679,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If a connection is already active in some form, throw an exception
 	if (state != SPMySQLDisconnected && state != SPMySQLConnectionLostInBackground) {
+        SPLog(@"a connection is already active in some form, throw an exception");
 		@synchronized (self) {
 			double diff = _timeIntervalSinceMonotonicTime(initialConnectTime);
 			asprintf(&__crashreporter_info__, "Attempted to connect a connection that is not disconnected (SPMySQLConnectionState=%d).\nIf state==2: Previous connection made %lfs ago from: %s", state, diff, [_debugLastConnectedEvent cStringUsingEncoding:NSUTF8StringEncoding]);
@@ -1062,6 +1224,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 {
     SPLog(@"_disconnect");
 
+    BOOL isMaybeSSHTunnel = [self isMaybeConnectedViaSSHTunnel];
+
+    SPLog(@"isMaybeSSHTunnel: %d", isMaybeSSHTunnel);
+
+    if(isMaybeSSHTunnel == YES){
+        [self terminateSSHProcess];
+    }
+
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
 		state = SPMySQLDisconnected;
@@ -1069,6 +1239,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Only continue if a connection is active
 	if (state != SPMySQLConnected && state != SPMySQLConnecting) {
+        SPLog(@"Only continue if a connection is active, returning");
 		return;
 	}
 

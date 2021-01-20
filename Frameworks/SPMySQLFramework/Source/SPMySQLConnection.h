@@ -205,6 +205,10 @@
 - (BOOL)userTriggeredDisconnect;
 - (BOOL)isNotMariadb103;
 
+- (BOOL)isMaybeConnectedViaSSHTunnel;
+- (void)terminateSSHProcess;
+- (void)installSSHKillScript;
+
 #pragma mark -
 #pragma mark Connection utility
 

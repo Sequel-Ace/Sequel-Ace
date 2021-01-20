@@ -3215,3 +3215,15 @@
 
 /* Applying syntax highlighting task description */
 "Applying syntax highlighting..." = "Applying syntax highlighting...";
+
+/* Button text on file open panel when installing kill script */
+"Select Script Folder" = "Select Script Folder";
+
+/* Alert title when installing kill script succeeds */
+"Script Installed" = "Script Installed";
+
+/* Alert message text when installing kill script succeeds */
+"The kill script was installed succcessfully" = "The kill script was installed succcessfully";
+
+/* Title for file open panel when installing kill script */
+"Please select the User > Library > Application Scripts > com.sequel-ace.sequel-ace" = "Please select the User > Library > Application Scripts > com.sequel-ace.sequel-ace";
