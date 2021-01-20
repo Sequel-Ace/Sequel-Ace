@@ -2400,6 +2400,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if(queryString.length < 1){
 		SPLog(@"no query str: %@", queryString);
 		[[SPQueryController sharedQueryController] showErrorInConsole:NSLocalizedString(@"/* WARNING: No rows have been affected */\n", @"warning shown in the console when no rows have been affected after writing to the db") connection:[tableDocumentInstance name] database:[tableDocumentInstance database]];
+        isSavingRow = NO;
 		return NO;
 	}
 
@@ -2435,6 +2436,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		[[SPQueryController sharedQueryController] showErrorInConsole:NSLocalizedString(@"/* WARNING: No rows have been affected */\n", @"warning shown in the console when no rows have been affected after writing to the db") connection:[tableDocumentInstance name] database:[tableDocumentInstance database]];
 
+        isSavingRow = NO;
 		return YES;
 
 	// On success...
@@ -2482,6 +2484,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 		currentlyEditingRow = -1;
 
+        isSavingRow = NO;
 		return YES;
 	} else { // Report errors which have occurred
 		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
@@ -2493,6 +2496,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[self cancelRowEditing];
 			[self->tableContentView reloadData];
 		}];
+        isSavingRow = NO;
 		return NO;
 	}
 }
@@ -2643,7 +2647,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 	
 	BOOL __block returnCode = NO;
-	
+
+    isSavingRow = YES;
+
 	// check for new flag, if set to no, just exec queries
 	if ([prefs boolForKey:SPQueryWarningEnabled] == YES) {
 		
@@ -2717,17 +2723,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// If no rows are currently being edited, or a save is in progress, return success at once.
 	if (!isEditingRow || isSavingRow) return YES;
 	
-	isSavingRow = YES;
-
 	// Attempt to save the row, and return YES if the save succeeded.
 	if ([self saveRowToTable]) {
-		isSavingRow = NO;
 		return YES;
 	}
 
 	// Saving failed - return failure.
-	isSavingRow = NO;
-	
+
 	return NO;
 }
 
