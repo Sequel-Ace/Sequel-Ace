@@ -203,9 +203,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (IBAction)runSelectedQueries:(id)sender
 {
     NSArray *queries;
-    NSString *query = nil;
     NSRange selectedRange = [textView selectedRange];
-    SPSQLParser *queryParser;
     
     // Prevent multiple runs by holding the keys down
     if ([tableDocumentInstance isWorking]) return;
@@ -217,25 +215,24 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // If the current selection is a single caret position, run the current query.
     if (selectedRange.length == 0) {
-        // BOOL doLookBehind = YES;
-        // query = [self queryAtPosition:selectedRange.location lookBehind:&doLookBehind];
-        if(currentQueryRange.length  && [textView string].length > currentQueryRange.length)
-            query = [[textView string] substringWithRange:currentQueryRange];
-        if (!query) {
+        if(!currentQueryRange.length  || [textView string].length < currentQueryRange.length) {
             NSBeep();
+            NSLog(@"Could not find a query range suitable to run query");
+            CLS_LOG(@"Could not find a query range suitable to run query");
             return;
         }
-        queries = @[[SPSQLParser normaliseQueryForExecution:query]];
+        queries = @[[SPSQLParser normaliseQueryForExecution:[[textView string] substringWithRange:currentQueryRange]]];
         
         // Otherwise, run the selected text.
     } else {
-        queryParser = [[SPSQLParser alloc] initWithString:[[textView string] substringWithRange:selectedRange]];
+        SPSQLParser *queryParser = [[SPSQLParser alloc] initWithString:[[textView string] substringWithRange:selectedRange]];
         [queryParser setDelimiterSupport:YES];
         queries = [queryParser splitStringByCharacter:';'];
         
         // If carriage returns were found, normalise the queries
         if ([queryParser containsCarriageReturns]) {
             NSMutableArray *normalisedQueries = [NSMutableArray arrayWithCapacity:[queries count]];
+            NSString *query = nil;
             for (query in queries) {
                 [normalisedQueries addObject:[SPSQLParser normaliseQueryForExecution:query]];
             }
@@ -1118,8 +1115,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSCharacterSet *whitespaceSet           = [NSCharacterSet whitespaceCharacterSet];
     
     // If the supplied position is beyond the end of the string, return nil.
-    if (position > [[textView string] length])
+    if (position > [[textView string] length]) {
         return NSMakeRange(NSNotFound, 0);
+    }
     
     // Split the current text into ranges of queries
     // only if the textView was really changed, otherwise use the cache
