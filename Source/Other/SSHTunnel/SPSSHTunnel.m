@@ -198,9 +198,7 @@ static unsigned short getRandomPort(void);
 
     if(error == YES){
         SPLog(@"keychainName or keychainAccount is nil");
-        // don't log account - contains private data
-        NSDictionary *userInfo = @{ NSLocalizedDescriptionKey : @"setPasswordKeychainName: keychainName or keychainAccount is nil"};
-        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"sshTunnel" code:1 userInfo:userInfo]];
+        CLS_LOG(@"keychainName or keychainAccount is nil");
     }
 
 	return !error;
