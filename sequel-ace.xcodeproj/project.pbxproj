@@ -123,6 +123,7 @@
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
+		1A4CE30D25B976AA00A6795C /* naughty_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1A4CE30C25B976AA00A6795C /* naughty_strings.txt */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */; };
@@ -2166,6 +2167,7 @@
 		1AB0688D24A355B500E2AAC2 /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				1A4CE30C25B976AA00A6795C /* naughty_strings.txt */,
 				1AB0688E24A355B500E2AAC2 /* certs */,
 				1AB0689424A355B500E2AAC2 /* keys */,
 			);
@@ -2712,6 +2714,7 @@
 			files = (
 				1AB068A824A355CC00E2AAC2 /* client-cert-crlf.pem in Resources */,
 				1AB068A924A355CC00E2AAC2 /* client-cert-bad-end.pem in Resources */,
+				1A4CE30D25B976AA00A6795C /* naughty_strings.txt in Resources */,
 				1AB068AA24A355CC00E2AAC2 /* client-cert-lf.pem in Resources */,
 				1AB068AB24A355CC00E2AAC2 /* client-cert-cr.pem in Resources */,
 				1AB068AC24A355CC00E2AAC2 /* client-cert-bad-start.pem in Resources */,
