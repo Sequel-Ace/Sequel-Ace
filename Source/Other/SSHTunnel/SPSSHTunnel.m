@@ -42,7 +42,6 @@
 #import "sequel-ace-Swift.h"
 
 #import <netinet/in.h>
-#import <CommonCrypto/CommonDigest.h>
 
 static unsigned short getRandomPort(void);
 
@@ -396,10 +395,8 @@ static unsigned short getRandomPort(void);
 			// Set a custom control path to isolate connection sharing to Sequel Ace, to prevent picking up
 			// existing masters without forwarding enabled and to isolate from interactive sessions.  Use a short
 			// hashed path to aid length limit issues.
-			unsigned char hashedPathResult[16];
 			NSString *pathString = [NSString stringWithFormat:@"%@@%@:%ld", sshLogin?sshLogin:@"", sshHost, (long)(sshPort?sshPort:0)];
-			CC_MD5([pathString UTF8String], (unsigned int)strlen([pathString UTF8String]), hashedPathResult);
-			NSString *hashedString = [[[NSData dataWithBytes:hashedPathResult length:16] dataToHexString] substringToIndex:8];
+			NSString *hashedString = [pathString.sha256Hash substringToIndex:8];
 			TA(@"-o",([NSString stringWithFormat:@"ControlPath=%@/SPSSH-%@", [NSFileManager temporaryDirectory], hashedString]));
 		}
 		else {
