@@ -48,6 +48,7 @@
 #import "SPHelpViewerClient.h"
 #import "SPTableData.h"
 #import "SPBundleManager.h"
+#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -2384,6 +2385,16 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         SPLog(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
         CLS_LOG(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
         [self doSyntaxHighlightingWithForce:YES];
+
+        // pasting first time doesn't always trigger
+        // full syntax highlighting, e.g. UPPERCASE KEYWORDS
+        // this adds a space to the end that
+        // triggers a text change notification
+        // which fully formats the query
+        executeOnMainThreadAfterADelay(^{
+            [self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@" "]];
+        }, 0.5);
+
     }
     else{
         SPLog(@"paste len %lu > %i, NOT calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
