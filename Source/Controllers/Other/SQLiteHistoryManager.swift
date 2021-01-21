@@ -14,21 +14,20 @@ import OSLog
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
 @objc final class SQLiteHistoryManager: NSObject {
-    @objc static let sharedInstance = SQLiteHistoryManager()
-
+    @objc static let sharedInstance             = SQLiteHistoryManager()
     @objc public var migratedPrefsToDB: Bool
-    @objc public var showLogging: Bool = false
+    @objc public var showLogging: Bool          = false
     @objc public var queryHist: [Int64: String] = [:]
     @objc public var queue: FMDatabaseQueue
-    private let maxSizeForCrashlyticsLog: Int = 64000
+    private let maxSizeForCrashlyticsLog: Int   = 64000
     private var traceExecution: Bool
     private let sqlitePath: String
-    private var dbSizeHumanReadable: String = ""
-    private var dbSize: Double = 0
-    private var additionalHistArraySize: Int = 0
-    private let prefs: UserDefaults = UserDefaults.standard
-    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "queryDatabase")
-    private var newSchemaVersion: Int32 = 0
+    private var dbSizeHumanReadable: String     = ""
+    private var dbSize: Double                  = 0
+    private var additionalHistArraySize: Int    = 0
+    private let prefs: UserDefaults             = UserDefaults.standard
+    private let Log                             = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "queryDatabase")
+    private var newSchemaVersion: Int32         = 0
 
     override private init() {
 
