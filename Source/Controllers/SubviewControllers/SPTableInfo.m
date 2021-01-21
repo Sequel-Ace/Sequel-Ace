@@ -224,9 +224,10 @@
                 NSDictionary *userInfo = @{
                     NSLocalizedDescriptionKey: @"tableStatus Collation is NSNull" ,
                     @"serverVersion" : tableDocumentInstance.mySQLVersion,
+                    @"tableStatus" : tableStatus
                 };
 
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
+                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:1 userInfo:userInfo]];
             }
 
             SPLog(@"tableStatus: %@", tableStatus);
