@@ -36,6 +36,8 @@
 #import "SPServerSupport.h"
 #import "SPFunctions.h"
 
+@import Firebase;
+
 #import "sequel-ace-Swift.h"
 
 #import <pthread.h>
@@ -929,6 +931,9 @@
  */
 - (BOOL)updateStatusInformationForCurrentTable
 {
+
+    SPLog(@"updateStatusInformationForCurrentTable called");
+
 	pthread_mutex_lock(&dataProcessingLock);
 
 	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
@@ -936,11 +941,15 @@
 	// Catch unselected tables and return false
 	if (![tableListInstance tableName]) {
 		pthread_mutex_unlock(&dataProcessingLock);
+        SPLog(@"No table selected, returning");
+        CLS_LOG(@"No table selected, returning");
 		return NO;
 	}
 
 	// Ensure queries are run as UTF8mb4
 	if (changeEncoding) {
+        SPLog(@"changeEncoding to utf8mb4 from utf8");
+        CLS_LOG(@"changeEncoding to utf8mb4 from utf8");
 		[mySQLConnection storeEncodingForRestoration];
 		[mySQLConnection setEncoding:@"utf8mb4"];
 	}

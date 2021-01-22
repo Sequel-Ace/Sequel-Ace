@@ -437,7 +437,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		SPPrivilegesMO *dbPriv = [NSEntityDescription insertNewObjectForEntityForName:@"Privileges" inManagedObjectContext:[self managedObjectContext]];
 
         // some error checks
-        if (rowDict[@"Db"] && doneRecordError == NO){
+        if (rowDict[@"DB"] && doneRecordError == NO){
             doneRecordError = YES;
             CLS_LOG(@"rowDict[DB] = %@", rowDict[@"DB"]);
             SPLog(@"rowDict[DB] = %@", rowDict[@"DB"]);

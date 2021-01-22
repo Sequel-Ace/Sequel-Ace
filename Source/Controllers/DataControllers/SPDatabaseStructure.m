@@ -338,12 +338,6 @@
 			// Loop through the fields, extracting details for each
 			for (NSArray *row in theResult) {
 
-                if (row.count < 7){
-                    CLS_LOG(@"row count < 7. the row: %@", row);
-                    SPLog(@"row count < 7. the row: %@", row);
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:7 userInfo:userInfo]];
-                }
-
 				NSString *field = [row safeObjectAtIndex:0];
 				NSString *type = [row safeObjectAtIndex:1];
 				NSString *type_display = [type stringByReplacingOccurrencesOfRegex:@"\\(.*?,.*?\\)" withString:@"(…)"];

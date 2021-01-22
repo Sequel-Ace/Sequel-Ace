@@ -34,6 +34,7 @@
 #import "SPArrayAdditions.h"
 #import "sequel-ace-Swift.h"
 #import "SPTestingUtils.h"
+#import "SPFunctions.h"
 
 #import <XCTest/XCTest.h>
 
@@ -277,48 +278,96 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     }];
 }
 
+- (void)testSHA256{
+
+    NSString *str = @"A gold violin. Perfect in every way. But can't make music.";
+
+    NSString *hashedString = @"39F01E659AEF48299039F8975BC7BEB2";
+
+    NSString *newHashedStr = [str.sha256Hash substringToIndex:32];
+
+    NSLog(@"newHashedStr    : %@", newHashedStr);
+    NSLog(@"hashedString    : %@", hashedString);
+
+    XCTAssertEqualObjects(@"39F01E659AEF48299039F8975BC7BEB2", newHashedStr);
+
+}
+
+- (void)testSHA256Naughty{
+
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"naughty_strings" ofType:@"txt"];
+
+    NSLog(@"path: %@", path);
+
+    NSError *inError = nil;
+    NSString *content = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&inError];
+
+    [content enumerateLinesUsingBlock:^(NSString * _Nonnull line, BOOL * _Nonnull stop) {
+        NSString *sha256 = line.sha256Hash;
+        XCTAssertEqual(sha256.length, 64);
+    }];
+
+}
+
+
+// 0.95 s
+- (void)testSHA256Perf{
+    [self measureBlock:^{
+        int const iterations = 100000;
+
+        NSString *str = @"The student's eyes don't perceive the lies...";
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                NSString __unused *newHashedStr = [str.sha256Hash substringToIndex:32];
+            }
+        }
+    }];
+}
+
+
 - (void)testSafeSubstringWithRange{
 
-    NSString *str = @"These pretzels are making me thirsty...";
-    NSRange range = NSMakeRange(0, str.length+1);
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"naughty_strings" ofType:@"txt"];
 
-//    //Raises an NSRangeException if (aRange.location - 1) or (aRange.location + aRange.length - 1) lies beyond the end of the receiver
-    XCTAssertThrows([str substringWithRange:range]);
-    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+    NSError *inError = nil;
+    NSString *content = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&inError];
 
-    range = NSMakeRange(str.length+1, 1);
+    [content enumerateLinesUsingBlock:^(NSString * _Nonnull str, BOOL * _Nonnull stop) {
 
-    XCTAssertThrows([str substringWithRange:range]);
-    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+        NSRange range = NSMakeRange(0, str.length+1);
 
-    range = NSMakeRange(str.length/2, (str.length/2)+2);
+        //    //Raises an NSRangeException if (aRange.location - 1) or (aRange.location + aRange.length - 1) lies beyond the end of the receiver
+        XCTAssertThrows([str substringWithRange:range]);
+        XCTAssertNoThrow([str safeSubstringWithRange:range]);
 
-    XCTAssertThrows([str substringWithRange:range]);
-    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+        range = NSMakeRange(str.length+1, 1);
 
-    range = NSMakeRange(str.length-1, 2);
+        XCTAssertThrows([str substringWithRange:range]);
+        XCTAssertNoThrow([str safeSubstringWithRange:range]);
 
-    XCTAssertThrows([str substringWithRange:range]);
-    XCTAssertNoThrow([str safeSubstringWithRange:range]);
+        range = NSMakeRange(str.length/2, (str.length/2)+2);
+
+        XCTAssertThrows([str substringWithRange:range]);
+        XCTAssertNoThrow([str safeSubstringWithRange:range]);
+
+        range = NSMakeRange(str.length-1, 2);
+
+        XCTAssertThrows([str substringWithRange:range]);
+        XCTAssertNoThrow([str safeSubstringWithRange:range]);
 
 
-    range = NSMakeRange(0, 14);
 
-    NSString *res = [str substringWithRange:range];
-    NSString *res2 = [str safeSubstringWithRange:range];
+        range = NSMakeRange(str.length-1, 1);
 
-    NSLog(@"res: %@", res);
+        NSString *res = [str substringWithRange:range];
+        NSString *res2 = [str safeSubstringWithRange:range];
 
-    XCTAssertEqualObjects(res, res2);
+        NSLog(@"res: %@", res);
 
-    range = NSMakeRange(str.length-1, 1);
+        if(res.length > 1) XCTAssertEqualObjects(res, res2);
 
-    res = [str substringWithRange:range];
-    res2 = [str safeSubstringWithRange:range];
-
-    NSLog(@"res: %@", res);
-
-    XCTAssertEqualObjects(res, res2);
+    }];
 
 }
 

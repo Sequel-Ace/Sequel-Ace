@@ -31,6 +31,7 @@
 #import "SPStringAdditions.h"
 #import "RegexKitLite.h"
 #include <stdlib.h>
+#import <CommonCrypto/CommonDigest.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -126,6 +127,12 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
     return ([self rangeOfString:needle].location != NSNotFound);
 }
 
+- (NSString *)sha256Hash{
+    NSData *data = [self dataUsingEncoding:NSUTF8StringEncoding];
+    NSMutableData *sha256Data = [NSMutableData dataWithLength:CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(data.bytes, (CC_LONG)data.length, sha256Data.mutableBytes);
+    return [sha256Data dataToHexString];
+}
 /**
  * Returns the ROT13 representation of self.
  */

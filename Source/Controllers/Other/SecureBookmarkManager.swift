@@ -20,21 +20,21 @@ import OSLog
  */
 
 @objc final class SecureBookmarkManager: NSObject {
-    @objc static let sharedInstance = SecureBookmarkManager()
+    @objc static let sharedInstance                    = SecureBookmarkManager()
 
-    @objc var bookmarks: [Dictionary<String, Data>] = []
-    @objc var staleBookmarks: [String] = []
+    @objc var bookmarks: [Dictionary<String, Data>]    = []
+    @objc var staleBookmarks: [String]                 = []
 
-    private var resolvedBookmarks: [URL] = []
+    private var resolvedBookmarks: [URL]               = []
     private let URLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
-    private let URLBookmarkCreationWithSecurityScope = URL.BookmarkCreationOptions(rawValue: 1 << 11)
+    private let URLBookmarkCreationWithSecurityScope   = URL.BookmarkCreationOptions(rawValue: 1 << 11)
 
-    private let prefs: UserDefaults = UserDefaults.standard
+    private let prefs: UserDefaults                    = UserDefaults.standard
     private var observer: NSKeyValueObservation?
 
-    private var iChangedTheBookmarks: Bool = false
-    private var bookmarksHaveBeenMigrated: Bool = false
-    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "secureBookmarks")
+    private var iChangedTheBookmarks: Bool             = false
+    private var bookmarksHaveBeenMigrated: Bool        = false
+    private let Log                                    = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "secureBookmarks")
 
 
     override init() {
