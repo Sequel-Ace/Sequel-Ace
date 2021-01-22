@@ -78,17 +78,17 @@ static SPBundleManager *sharedSPBundleManager = nil;
 {
 	if ((self = [super init])) {
 
-		fileManager = [NSFileManager defaultManager];
-		alreadyBeeped = [[NSMutableDictionary alloc] init];
-		badBundles = [[NSMutableArray alloc] init];
-		migratedLegacyBundles = [[NSMutableArray alloc] init];
-		bundleItems = [[NSMutableDictionary alloc] initWithCapacity:1];
-		bundleCategories = [[NSMutableDictionary alloc] initWithCapacity:1];
-		bundleTriggers = [[NSMutableDictionary alloc] initWithCapacity:1];
-		bundleUsedScopes = [[NSMutableArray alloc] initWithCapacity:1];
+        fileManager                = [NSFileManager defaultManager];
+        alreadyBeeped              = [[NSMutableDictionary alloc] init];
+        badBundles                 = [[NSMutableArray alloc] init];
+        migratedLegacyBundles      = [[NSMutableArray alloc] init];
+        bundleItems                = [[NSMutableDictionary alloc] initWithCapacity:1];
+        bundleCategories           = [[NSMutableDictionary alloc] initWithCapacity:1];
+        bundleTriggers             = [[NSMutableDictionary alloc] initWithCapacity:1];
+        bundleUsedScopes           = [[NSMutableArray alloc] initWithCapacity:1];
 		bundleHTMLOutputController = [[NSMutableArray alloc] initWithCapacity:1];
-		bundleKeyEquivalents = [[NSMutableDictionary alloc] initWithCapacity:1];
-		installedBundleUUIDs = [[NSMutableDictionary alloc] initWithCapacity:1];
+        bundleKeyEquivalents       = [[NSMutableDictionary alloc] initWithCapacity:1];
+        installedBundleUUIDs       = [[NSMutableDictionary alloc] initWithCapacity:1];
 
 
 

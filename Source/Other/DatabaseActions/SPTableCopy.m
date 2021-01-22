@@ -147,8 +147,10 @@
     if([tableName respondsToSelector:@selector(backtickQuotedString)] == NO || [sourceDatabase respondsToSelector:@selector(backtickQuotedString)] == NO){
         NSDictionary *userInfo = @{
             NSLocalizedDescriptionKey: @"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString",
-            @"tableName":tableName.class,
-            @"sourceDatabase":sourceDatabase.class
+            @"tableName class":tableName.class,
+            @"sourceDatabase class":sourceDatabase.class,
+            @"tableName string":safeString(tableName),
+            @"sourceDatabase string":safeString(sourceDatabase)
         };
 
         CLS_LOG(@"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString");

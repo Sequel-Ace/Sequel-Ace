@@ -60,6 +60,7 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 - (BOOL)contains:(NSString *)needle;
 
 - (NSString *)rot13;
+- (NSString *)sha256Hash;
 - (NSString *)HTMLEscapeString;
 - (NSString *)backtickQuotedString;
 - (NSString *)tickQuotedString;
