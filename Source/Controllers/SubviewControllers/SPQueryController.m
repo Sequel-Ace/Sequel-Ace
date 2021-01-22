@@ -992,7 +992,7 @@ static SPQueryController *sharedQueryController = nil;
 		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];
 
         // add new history
-        NSArray *histArr = [_SQLiteHistoryManager normalizeQueryHistoryWithArrayToNormalise:@[history] doLogging:YES];
+        NSArray *histArr = [_SQLiteHistoryManager normalizeQueryHistoryWithArrayToNormalise:@[history]];
         for(NSString *str in histArr){
             [uniquifier insertItemWithTitle:str atIndex:0];
         }

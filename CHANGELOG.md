@@ -1,3 +1,30 @@
+## [3.1.1]
+
+### Added
+- ebe453a7, Add Chinese localizations 
+- edd5e4eb, Add support for generic Spanish language next to Spanish (Spain) language 
+
+### Fixed
+- b7578c22, Fix Broken run current query button 
+- 74fd2acb,  syntax highlighting not being properly applied after pasting
+- f220ccb3,  Some crashes
+- a53198a7,  Query history duplicates and order
+- 100cd2db,  Table history buttons not working
+- cb7f9022, Fix reconnect timeout - accept SSH password after network connection reset  
+- 056bb81a,  some more crashes
+
+### Changed
+- 3350b13d, apply custom font to all inserted snippets  
+- 5df7a388, highlight errors in red in the query status field 
+- 8f91391c, Get rid of CocoaPods, switch FMDB to SPM, enable Swift standard libraries 
+- 656cc948, Consistently use encoding utf8mb4 
+
+### Removed
+
+
+### Infra
+- 056e7e9e, os_log wrapper for swift 
+
 ## [3.1.0]
 
 ### Added
