@@ -34,6 +34,7 @@
 @class SPDatabaseDocument;
 @class SPBundleEditorController;
 @class SPWindowController;
+@class HyperlinkTextField;
 
 @import Firebase;
 
@@ -55,6 +56,8 @@
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
 
 @property (weak) IBOutlet NSView *staleBookmarkHelpView;
+@property (weak) IBOutlet HyperlinkTextField *staleBookmarkTextField;
+@property (weak) IBOutlet NSTextFieldCell *staleBookmarkTextFieldCell;
 
 // IBAction methods
 - (IBAction)openAboutPanel:(id)sender;
