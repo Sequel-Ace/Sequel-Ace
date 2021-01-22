@@ -275,7 +275,8 @@ NSString *SPCopyContentOnTableCopy                    = @"CopyContentOnTableCopy
 // URLs
 NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@";
 NSString *SPDevURL                               = @"https://github.com/Sequel-Ace/Sequel-Ace";
-NSString *SPDocsSocketConnection 				 = @"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection";
+NSString *SPDocsSocketConnection                 = @"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection";
+NSString *SPDocsAppSandbox                       = @"https://sequel-ace.com/ref/bookmarks.html#a-quick-introduction-to-app-sandbox";
 // Toolbar constants
 
 // Main window toolbar
