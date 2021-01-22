@@ -948,8 +948,8 @@
 
 	// Ensure queries are run as UTF8mb4
 	if (changeEncoding) {
-        SPLog(@"changeEncoding to utf8mb4");
-        CLS_LOG(@"changeEncoding to utf8mb4");
+        SPLog(@"changeEncoding to utf8mb4 from utf8");
+        CLS_LOG(@"changeEncoding to utf8mb4 from utf8");
 		[mySQLConnection storeEncodingForRestoration];
 		[mySQLConnection setEncoding:@"utf8mb4"];
 	}
