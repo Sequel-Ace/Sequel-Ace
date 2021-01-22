@@ -34,6 +34,8 @@
 #include <pthread.h>
 #include <SystemConfiguration/SCNetworkReachability.h>
 #import "SPMySQLUtilities.h"
+#import "SPMySQLArrayAdditions.h"
+#import "SPMySQLMutableDictionaryAdditions.h"
 
 @interface SPMySQLConnection ()
 
@@ -1128,7 +1130,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
 	NSMutableDictionary *variables = [NSMutableDictionary new];
 	for (NSArray *variableRow in theResult) {
-		[variables setObject:[variableRow objectAtIndex:1] forKey:[variableRow objectAtIndex:0]];
+		[variables SPsafeSetObject:[variableRow SPsafeObjectAtIndex:1] forKey:[variableRow SPsafeObjectAtIndex:0]];
 	}
 
 	// Get the connection encoding.  Although a specific encoding may have been requested on

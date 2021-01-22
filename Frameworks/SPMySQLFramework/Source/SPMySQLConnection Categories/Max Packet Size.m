@@ -30,6 +30,7 @@
 
 #import "Max Packet Size.h"
 #import "SPMySQL Private APIs.h"
+#import "SPMySQLArrayAdditions.h"
 
 @implementation SPMySQLConnection (Max_Packet_Size)
 
@@ -108,7 +109,7 @@
 	[result setReturnDataAsStrings:YES];
 
 	// Get the maximum size string
-	NSString *maxQuerySizeString = [[result getRowAsArray] objectAtIndex:colIdx];
+	NSString *maxQuerySizeString = [[result getRowAsArray] SPsafeObjectAtIndex:colIdx];
 
 	NSInteger _maxQuerySize = maxQuerySizeString ? [maxQuerySizeString integerValue] : 0;
 
