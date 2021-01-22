@@ -267,22 +267,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[connection setEncoding:@"utf8mb4"];
 	}
 
-    // Get all InnoDB Databases
-    
-    NSArray *theDatabaseList = [connection databases];
-    NSMutableArray *allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
-    for (NSString *databaseName in theDatabaseList)
-    {
-        // If the database is either information_schema or mysql then it is classed as a
-        // system database; similarly, performance_schema in 5.5.3+ and sys in 5.7.7+
-        if (![databaseName isEqualToString:SPMySQLDatabase] &&
-            ![databaseName isEqualToString:SPMySQLInformationSchemaDatabase] &&
-            ![databaseName isEqualToString:SPMySQLPerformanceSchemaDatabase] &&
-            ![databaseName isEqualToString:SPMySQLSysDatabase]) {
-             [allDatabases addObject:databaseName];
-        }
-    }
-    [refDatabasePopUpButton addItemsWithTitles:allDatabases];
+    // Set all databases exxcept system database
+    [refDatabasePopUpButton addItemsWithTitles:[tableDocumentInstance allDatabaseNames]];
     // Set selected item to the current database
     [refDatabasePopUpButton selectItemWithTitle:[tableDocumentInstance database]];
 

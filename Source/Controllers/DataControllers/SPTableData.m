@@ -446,6 +446,8 @@
 {
     BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
+    NSLog(@"--------> %@-%@", database, [tableDocumentInstance database]);
+
     // Catch unselected tables and return nil
     if ([tableName isEqualToString:@""] || !tableName) return nil;
 
