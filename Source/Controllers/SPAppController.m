@@ -68,6 +68,7 @@
 
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
+@property (nonatomic, strong, readwrite) SPWindowController *rootWindowController;
 
 @end
 
@@ -312,9 +313,8 @@
         return NO;
     }
 
-    if ([menuItem action] == @selector(newTab:))
-    {
-        return ([[self frontDocumentWindow] attachedSheet] == nil);
+    if ([menuItem action] == @selector(newTab:)) {
+        return ([[self.rootWindowController window] attachedSheet] == nil);
     }
 
     if ([menuItem action] == @selector(duplicateTab:))
@@ -377,9 +377,9 @@
     [panel setAllowedFileTypes:@[SPFileExtensionDefault, SPFileExtensionSQL, SPBundleFileExtension]];
 
     // Check if at least one document exists, if so show a sheet
-    if ([self frontDocumentWindow]) {
+    if ([self.rootWindowController window]) {
 
-        [panel beginSheetModalForWindow:[self frontDocumentWindow] completionHandler:^(NSInteger returnCode) {
+        [panel beginSheetModalForWindow:[self.rootWindowController window] completionHandler:^(NSInteger returnCode) {
             if (returnCode) {
                 [panel orderOut:self];
 
@@ -1197,7 +1197,7 @@
  */
 - (SPDatabaseDocument *) frontDocument
 {
-    return [[self frontController] selectedTableDocument];
+    return [self.rootWindowController selectedTableDocument];
 }
 
 /**
@@ -1557,39 +1557,33 @@
 /**
  * Create a new tab in the frontmost window.
  */
-- (IBAction)newTab:(id)sender
-{
-    SPWindowController *frontController = [self frontController];
-
+- (IBAction)newTab:(id)sender {
     // If no window was found, create a new one
-    if (!frontController) {
+    if (!self.rootWindowController) {
         [self newWindow:self];
-    }
-    else {
-        if ([[frontController window] isMiniaturized]) {
-            [[frontController window] deminiaturize:self];
+    } else {
+        if ([[self.rootWindowController window] isMiniaturized]) {
+            [[self.rootWindowController window] deminiaturize:self];
         }
-
-        [frontController addNewConnection:self];
+        [self.rootWindowController addNewConnection:self];
     }
 }
 
-- (SPDatabaseDocument *)makeNewConnectionTabOrWindow
-{
-    SPWindowController *frontController = [self frontController];
+- (SPDatabaseDocument *)makeNewConnectionTabOrWindow {
 
     SPDatabaseDocument *frontDocument;
     // If no window was found or the front most window has no tabs, create a new one
-    if (!frontController || [[frontController valueForKeyPath:@"tabView"] numberOfTabViewItems] == 1) {
-        frontController = [self newWindow];
-        frontDocument = [frontController selectedTableDocument];
+    if (!self.rootWindowController || [[self.rootWindowController valueForKeyPath:@"tabView"] numberOfTabViewItems] == 1) {
+        self.rootWindowController = [self newWindow];
+        frontDocument = [self.rootWindowController selectedTableDocument];
     }
     // Open the spf file in a new tab if the tab bar is visible
     else {
-        if ([[frontController window] isMiniaturized]) [[frontController window] deminiaturize:self];
-        frontDocument = [frontController addNewConnection];
+        if ([[self.rootWindowController window] isMiniaturized]) {
+            [[self.rootWindowController window] deminiaturize:self];
+        }
+        frontDocument = [self.rootWindowController addNewConnection];
     }
-
     return frontDocument;
 }
 
@@ -1603,11 +1597,11 @@
     if (!theFrontDocument) return [self newTab:sender];
 
     // Add a new tab to the window
-    if ([[self frontDocumentWindow] isMiniaturized]) {
-        [[self frontDocumentWindow] deminiaturize:self];
+    if ([[self.rootWindowController window] isMiniaturized]) {
+        [[self.rootWindowController window] deminiaturize:self];
     }
 
-    SPDatabaseDocument *newConnection = [[self frontController] addNewConnection];
+    SPDatabaseDocument *newConnection = [self.rootWindowController addNewConnection];
 
     // Get the state of the previously-frontmost document
     NSDictionary *allStateDetails = @{
@@ -1625,25 +1619,6 @@
 
     // Set the connection on the new tab
     [newConnection setState:frontState];
-}
-
-/**
- * Retrieve the frontmost document window; returns nil if not found.
- */
-- (NSWindow *)frontDocumentWindow
-{
-    return [[self frontController] window];
-}
-
-- (SPWindowController *)frontController
-{
-    for (NSWindow *aWindow in [NSApp orderedWindows]) {
-        id ctr = [aWindow windowController];
-        if ([ctr isMemberOfClass:[SPWindowController class]]) {
-            return ctr;
-        }
-    }
-    return nil;
 }
 
 /**

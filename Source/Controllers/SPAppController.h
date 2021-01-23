@@ -54,6 +54,8 @@
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
 
+@property (nonatomic, strong, readonly) SPWindowController *rootWindowController;
+
 @property (weak) IBOutlet NSView *staleBookmarkHelpView;
 
 // IBAction methods
@@ -114,9 +116,7 @@
 
 - (SPWindowController *)newWindow;
 - (SPDatabaseDocument *)makeNewConnectionTabOrWindow;
-- (SPWindowController *)frontController;
 
-- (NSWindow *)frontDocumentWindow;
 - (void)tabDragStarted:(id)sender;
 
 @end

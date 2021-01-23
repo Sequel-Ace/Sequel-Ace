@@ -792,7 +792,7 @@
 		[menu removeItem:bItem];
 	}
 
-	if ([[[(SPWindowController *)[[SPAppDelegate frontDocumentWindow] delegate] selectedTableDocument] connectionID] isEqualToString:@"_"]) return menu;
+	if ([[[(SPWindowController *)[[SPAppDelegate.rootWindowController window] delegate] selectedTableDocument] connectionID] isEqualToString:@"_"]) return menu;
 
 	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
 
