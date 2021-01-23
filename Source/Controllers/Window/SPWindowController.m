@@ -63,13 +63,6 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (instancetype)initWithDelegate:(id<SPWindowControllerDelegate>)delegate {
-    if (self = [super init]) {
-        _delegate = delegate;
-    }
-    return self;
-}
-
 - (void)awakeFromNib {
 	[self _switchOutSelectedTableDocument:nil];
 	
