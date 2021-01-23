@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFilePreferencePane.h"
+#import "SPAppController.h"
 #import "sequel-ace-Swift.h"
 
 @import Firebase;
@@ -41,12 +42,13 @@
 @property (readwrite, strong) NSMutableIndexSet *selectedRows;
 @property (readwrite, assign) BOOL weHaveStaleBookmarks;
 @property (readwrite, assign) BOOL userClickedCancel;
+@property (readwrite, assign) BOOL userClickedAddFilesAfterCancel;
 
 @end
 
 @implementation SPFilePreferencePane
 
-@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel;
+@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel, userClickedAddFilesAfterCancel;
 
 - (instancetype)init
 {
@@ -59,6 +61,7 @@
         selectedRows = [NSMutableIndexSet indexSet];
         weHaveStaleBookmarks = NO;
         userClickedCancel = NO;
+        userClickedAddFilesAfterCancel = NO;
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
     }
@@ -82,14 +85,14 @@
 
     // what if the user clicks cancel, then double clicks just one file?
     // or different files?
-    if (userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) {
+    if ((userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) || userClickedAddFilesAfterCancel == YES) {
         SPLog(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
         CLS_LOG(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
         [selectedRows removeAllIndexes];
         [selectedRows addIndexes:[fileView selectedRowIndexes]];
     }
 
-    if((weHaveStaleBookmarks == YES && userClickedCancel == NO) || ((fileView.clickedColumn >= 0 && fileView.clickedRow >= 0) && userClickedCancel == YES )){
+    if((weHaveStaleBookmarks == YES && userClickedCancel == NO) || ((fileView.clickedColumn >= 0 && fileView.clickedRow >= 0) && userClickedCancel == YES ) || (weHaveStaleBookmarks == YES && userClickedAddFilesAfterCancel == YES)){
 
         SPLog(@"IN, setting panel options");
 
@@ -379,12 +382,19 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 - (IBAction)addBookmark:(id)sender
 {
 
+    if(weHaveStaleBookmarks == YES && userClickedCancel == YES){
+        SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
+        CLS_LOG(@"weHaveStaleBookmarks == YES, calling doubleClick");
+        userClickedAddFilesAfterCancel = YES;
+        [self doubleClick:nil];
+        return;
+    }
+
     PanelOptions *options = [[PanelOptions alloc] init];
 
     options.allowsMultipleSelection = YES;
     options.canChooseFiles = YES;
     options.canChooseDirectories = YES;
-    options.isForStaleBookmark = YES;
     options.isForStaleBookmark = NO;
     options.title = NSLocalizedString(@"Please choose a file or folder to grant Sequel Ace access to.", "Please choose a file or folder to grant Sequel Ace access to.");
     options.fileNames = nil;
@@ -473,32 +483,50 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
             return;
         }
 
-        
         [self->_currentFilePanel orderOut:nil];
+
         // since ssh configs are able to consist of multiple files, bookmarks
         // for every selected file should be created in order to access them
         // read-only.
+        SPLog(@"self->_currentFilePanel.URLs: %@", self->_currentFilePanel.URLs);
+
         [self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
 
+            NSMutableString *classStr = [NSMutableString string];
+            [classStr appendStringOrNil:NSStringFromClass(url.class)];
+
+            SPLog(@"Block URL class: %@", classStr);
+            SPLog(@"Block URL str: %@", url.absoluteString);
+            SPLog(@"Block URL add: %p", &url);
+
             // check it's really a URL
-            if(![self->_currentFilePanel.URL isKindOfClass:[NSURL class]]){
-                NSMutableString *classStr = [NSMutableString string];
-                [classStr appendStringOrNil:NSStringFromClass(self->_currentFilePanel.URL.class)];
+            if(![url isKindOfClass:[NSURL class]]){
+                SPLog(@"selected file is not a valid URL: %@", classStr);
+                CLS_LOG(@"selected file is not a valid URL: %@", classStr);
 
-                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                // JCS - should we stop here?
+                NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 
-                NSDictionary *userInfo = @{
-                    NSLocalizedDescriptionKey: @"self->keySelectionPanel.URL is not a URL",
-                    @"class": classStr,
-                    @"URLs" : self->_currentFilePanel.URLs
-                };
+                NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
+                                          classStr];
 
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
+                [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"File Selection Error", @"error while selecting file message") message:alertMessage accessoryView:helpView callback:^{
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"selected file is not a valid URL",
+                        @"class": classStr,
+                        @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
+                        @"URLs" : (self->_currentFilePanel.URLs) ?: @""
+                    };
+
+                    SPLog(@"userInfo: %@", userInfo);
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileFilePrefs" code:1 userInfo:userInfo]];
+                }];
             }
             else{
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
+                // use url from the block, not self->_currentFilePanel.URL
+                // From Apple docs: The NSOpenPanel subclass sets this property to nil
+                // when the selection contains multiple items.
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
                     SPLog(@"addBookmarkForUrl success");
                     CLS_LOG(@"addBookmarkForUrl success");
 
@@ -527,8 +555,8 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                     }
                 }
                 else{
-                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
-                    SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                    CLS_LOG(@"addBookmarkForUrl failed: %@", url.absoluteString);
+                    SPLog(@"addBookmarkForUrl failed: %@", url.absoluteString);
                 }
             }
         }];

@@ -1019,6 +1019,8 @@ CQ
         <customObject id="213" userLabel="SPAppController" customClass="SPAppController">
             <connections>
                 <outlet property="staleBookmarkHelpView" destination="Ipz-ua-fp5" id="psg-8l-YU5"/>
+                <outlet property="staleBookmarkTextField" destination="Bea-mS-nZN" id="m3E-QZ-KCA"/>
+                <outlet property="staleBookmarkTextFieldCell" destination="jQo-Yb-Hvj" id="8Ts-TE-F5t"/>
             </connections>
         </customObject>
         <menu id="956" userLabel="Dock Menu">

@@ -8,7 +8,8 @@
 
 import XCTest
 
-class GeneralSwiftTests: XCTestCase {
+// added private so that this class is not in the generated -Swift.h
+private final class GeneralSwiftTests: XCTestCase {
 
     // 0.242s
     func testPerformanceComponents() throws {
