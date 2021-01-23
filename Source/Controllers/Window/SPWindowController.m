@@ -92,8 +92,9 @@
 	// Because we are a document-based app we automatically adopt window restoration on 10.7+.
 	// However that causes a race condition with our own window setup code.
 	// Remove this when we actually support restoration.
-	if([window respondsToSelector:@selector(setRestorable:)])
+    if ([window respondsToSelector:@selector(setRestorable:)]) {
 		[window setRestorable:NO];
+    }
 }
 
 #pragma mark -
@@ -484,7 +485,7 @@
 	}
 
 	// Remove global session data if the last window of a session will be closed
-	if ([SPAppDelegate sessionURL] && [[SPAppDelegate orderedDatabaseConnectionWindows] count] == 1) {
+	if ([SPAppDelegate sessionURL] && [[SPAppDelegate windowControllers] count] == 1) {
 		[SPAppDelegate setSessionURL:nil];
 		[SPAppDelegate setSpfSessionDocData:nil];
 	}
@@ -596,7 +597,9 @@
 	[self _switchOutSelectedTableDocument:[tabViewItem databaseDocument]];
 	[self.selectedTableDocument didBecomeActiveTabInWindow];
 
-	if ([[self window] isKeyWindow]) [self.selectedTableDocument tabDidBecomeKey];
+    if ([[self window] isKeyWindow]) {
+        [self.selectedTableDocument tabDidBecomeKey];
+    }
 
 	[self updateAllTabTitles:self];
 }
@@ -664,7 +667,9 @@
 	}
 
 	// Check the window and move it to front if it's key (eg for new window creation)
-	if ([[tabBarControl window] isKeyWindow]) [[tabBarControl window] orderFront:self];
+    if ([[tabBarControl window] isKeyWindow]) {
+        [[tabBarControl window] orderFront:self];
+    }
 
 	// workaround bug where "source list" table views are broken in the new window. See https://github.com/sequelpro/sequelpro/issues/2863
 	SPWindowController *newWindowController = tabBarControl.window.windowController;

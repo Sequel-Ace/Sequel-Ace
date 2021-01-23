@@ -2958,7 +2958,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [info setObject:@"connection bundle" forKey:SPFFormatKey];
 
             // Loop through all windows
-            for(NSWindow *window in [SPAppDelegate orderedDatabaseConnectionWindows]) {
+            for (SPWindowController *windowController in [SPAppDelegate windowControllers]) {
 
                 // First window is always the currently key window
 
@@ -2968,7 +2968,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 // Loop through all tabs of a given window
                 NSInteger tabCount = 0;
                 NSInteger selectedTabItem = 0;
-                for(SPDatabaseDocument *doc in [[window windowController] documents]) {
+                for (SPDatabaseDocument *doc in [windowController documents]) {
 
                     // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
                     if(![doc mySQLVersion]) continue;
@@ -2991,13 +2991,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                         [tabData setObject:[[doc fileURL] path] forKey:@"path"];
                     }
                     [tabs addObject:tabData];
-                    if([[window windowController] selectedTableDocument] == doc) selectedTabItem = tabCount;
+                    if ([windowController selectedTableDocument] == doc) selectedTabItem = tabCount;
                     tabCount++;
                 }
-                if(![tabs count]) continue;
+                if (![tabs count]) continue;
                 [win setObject:tabs forKey:@"tabs"];
                 [win setObject:[NSNumber numberWithInteger:selectedTabItem] forKey:@"selectedTabIndex"];
-                [win setObject:NSStringFromRect([window frame]) forKey:@"frame"];
+                [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
                 [windows addObject:win];
             }
             [info setObject:windows forKey:@"windows"];

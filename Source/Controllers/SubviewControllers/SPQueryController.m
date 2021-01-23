@@ -34,6 +34,7 @@
 #import "SPFunctions.h"
 #import "pthread.h"
 #import "SPCopyTable.h"
+#import "SPDatabaseDocument.h"
 
 @import FMDB;
 
@@ -883,15 +884,16 @@ static SPQueryController *sharedQueryController = nil;
 	NSArray *allDocs = [SPAppDelegate orderedDocuments];
 	NSMutableArray *allURLs = [NSMutableArray array];
 
-	for (id doc in allDocs)
+	for (SPDatabaseDocument *databaseDocument in allDocs)
 	{
-		if (![doc fileURL]) continue;
+        if (![databaseDocument fileURL]) {
+            continue;
+        }
 
-		if ([allURLs containsObject:[doc fileURL]]) {
+		if ([allURLs containsObject:[databaseDocument fileURL]]) {
 			return;
-		}
-		else {
-			[allURLs addObject:[doc fileURL]];
+		} else {
+			[allURLs addObject:[databaseDocument fileURL]];
 		}
 	}
 
