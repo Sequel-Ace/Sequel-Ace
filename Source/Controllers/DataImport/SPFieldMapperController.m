@@ -524,7 +524,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Retrieve the information for the newly selected table using a SPTableData instance
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
-	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem]];
+	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:nil];
 	targetTableHasPrimaryKey = NO;
 	BOOL isReplacePossible = NO;
 

@@ -344,7 +344,7 @@
 		// Add the table content if required
 		if (sqlOutputIncludeContent && (tableType == SPTableTypeTable)) {
 			// Retrieve the table details via the data class, and use it to build an array containing column numeric status
-			NSDictionary *tableDetails = [NSDictionary dictionaryWithDictionary:[sqlTableDataInstance informationForTable:tableName]];
+			NSDictionary *tableDetails = [NSDictionary dictionaryWithDictionary:[sqlTableDataInstance informationForTable:tableName fromDatabase:nil]];
 
 			NSUInteger colCount = [[tableDetails objectForKey:@"columns"] count];
 			NSMutableArray *rawColumnNames = [NSMutableArray arrayWithCapacity:colCount];

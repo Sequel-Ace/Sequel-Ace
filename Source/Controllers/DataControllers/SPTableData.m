@@ -373,7 +373,7 @@
 	[primaryKeyColumns removeAllObjects];
 
 	if( [tableListInstance tableType] == SPTableTypeTable || [tableListInstance tableType] == SPTableTypeView ) {
-		tableData = [self informationForTable:[tableListInstance tableName]];
+		tableData = [self informationForTable:[tableListInstance tableName] fromDatabase:[tableListInstance selectedDatabase]];
 	}
 
 	// If nil is returned, return failure.
@@ -440,6 +440,8 @@
 /**
  * Retrieve the CREATE statement for a table/view and return extracted table
  * structure information.
+ * @param tableName tablename from current database or depending the second param if not nil.
+ * @param database database name owning the tablename, can be nil.
  * @attention This method will interact with the UI on errors/connection loss!
  */
 - (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database
@@ -515,16 +517,6 @@
     if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
     return tableData;
-}
-
-/**
- * Retrieve the CREATE statement for a table/view and return extracted table
- * structure information.
- * @attention This method will interact with the UI on errors/connection loss!
- */
-- (NSDictionary *) informationForTable:(NSString *)tableName
-{
-    return [self informationForTable:tableName fromDatabase:nil];
 }
 
 /**

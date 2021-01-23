@@ -74,7 +74,6 @@
 - (void) resetColumnData;
 - (BOOL) updateInformationForCurrentTable;
 - (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database;
-- (NSDictionary *) informationForTable:(NSString *)tableName;
 - (BOOL) updateInformationForCurrentView;
 - (NSDictionary *) informationForView:(NSString *)viewName;
 - (BOOL) updateStatusInformationForCurrentTable;
