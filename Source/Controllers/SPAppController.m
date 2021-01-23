@@ -57,7 +57,7 @@
 
 #import "sequel-ace-Swift.h"
 
-@interface SPAppController ()
+@interface SPAppController () <SPWindowControllerDelegate>
 
 - (void)_copyDefaultThemes;
 
@@ -549,29 +549,25 @@
     [frontDocument setSqlFileEncoding:sqlEncoding];
 }
 
-- (void)openSessionBundleAtPath:(NSString *)filePath
-{
+- (void)openSessionBundleAtPath:(NSString *)filePath {
+    NSError *error = nil;
+    NSData *pData = [NSData dataWithContentsOfFile:[filePath stringByAppendingPathComponent:@"info.plist"]
+                                           options:NSUncachedRead
+                                             error:&error];
+
     NSDictionary *spfs = nil;
-    {
-        NSError *error = nil;
+    if (pData && !error) {
+        spfs = [NSPropertyListSerialization propertyListWithData:pData
+                                                         options:NSPropertyListImmutable
+                                                          format:NULL
+                                                           error:&error];
+    }
 
-        NSData *pData = [NSData dataWithContentsOfFile:[filePath stringByAppendingPathComponent:@"info.plist"]
-                                               options:NSUncachedRead
-                                                 error:&error];
+    if (!spfs || error) {
+        NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file") message:message callback:nil];
 
-        if(pData && !error) {
-            spfs = [NSPropertyListSerialization propertyListWithData:pData
-                                                             options:NSPropertyListImmutable
-                                                              format:NULL
-                                                               error:&error];
-        }
-
-        if (!spfs || error) {
-            NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Connection data file couldn't be read. (%@)", @"error while reading connection data file"), [error localizedDescription]];
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file") message:message callback:nil];
-
-            return;
-        }
+        return;
     }
 
     if([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
@@ -589,10 +585,10 @@
         [SPAppDelegate setSessionURL:filePath];
 
         // Loop through each defined window in reversed order to reconstruct the last active window
-        for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects])
-        {
+        for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
             // Create a new window controller, and set up a new connection view within it.
             SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+            [self.windowControllers addObject:newWindowController];
             NSWindow *newWindow = [newWindowController window];
 
             // The first window should use autosaving; subsequent windows should cascade.
@@ -1296,7 +1292,7 @@
 {
     // Only create a new document (without auto-connect) when there are already no documents open.
     if (![self frontDocument]) {
-        [self createNewWindowController];
+        [self newWindowController];
         return NO;
     }
     // Return YES to the automatic opening
@@ -1474,18 +1470,19 @@
 - (IBAction)newWindow:(id)sender
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self createNewWindowController];
+        [self newWindowController];
     });
 }
 
 /**
  * Create a new window, containing a single tab.
  */
-- (void)createNewWindowController {
+- (SPWindowController *)newWindowController {
     static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
     // Create a new window controller, and set up a new connection view within it.
     SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    newWindowController.delegate = self;
     NSWindow *newWindow = [newWindowController window];
 
     // Cascading defaults to on - retrieve the window origin automatically assigned by cascading,
@@ -1516,6 +1513,8 @@
     [[newWindowController selectedTableDocument] didBecomeActiveTabInWindow];
 
     [self.windowControllers addObject:newWindowController];
+
+    return newWindowController;
 }
 
 /**
@@ -1525,7 +1524,7 @@
 
     // No root window means
     if (!self.activeWindowController) {
-        [self createNewWindowController];
+        [self newWindowController];
     } else {
         if ([[self.activeWindowController window] isMiniaturized]) {
             [[self.activeWindowController window] deminiaturize:self];
@@ -1540,7 +1539,7 @@
 
     // If no window was found or the front most window has no tabs, create a new one
     if (!self.activeWindowController || [[[self activeWindowController] valueForKeyPath:@"tabView"] numberOfTabViewItems] == 1) {
-        [self createNewWindowController];
+        [self newWindowController];
         databaseDocument = [self.activeWindowController selectedTableDocument];
     }
     // Open the spf file in a new tab if the tab bar is visible
@@ -1746,6 +1745,16 @@
 
         k++;
     }
+}
+
+#pragma mark - SPWindowControllerDelegate
+
+- (void)windowControllerDidCreateNewWindowController:(SPWindowController *)newWindowController {
+    [self.windowControllers addObject:newWindowController];
+}
+
+- (void)windowControllerDidClose:(SPWindowController *)windowController {
+    [self.windowControllers removeObject:windowController];
 }
 
 @end

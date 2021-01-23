@@ -63,6 +63,13 @@
 #pragma mark -
 #pragma mark Initialisation
 
+- (instancetype)initWithDelegate:(id<SPWindowControllerDelegate>)delegate {
+    if (self = [super init]) {
+        _delegate = delegate;
+    }
+    return self;
+}
+
 - (void)awakeFromNib {
 	[self _switchOutSelectedTableDocument:nil];
 	
@@ -167,12 +174,15 @@
 	// If there are multiple tabs, close the front tab.
 	if ([tabView numberOfTabViewItems] > 1) {
 		// Return if the selected tab shouldn't be closed
-		if (![self.selectedTableDocument parentTabShouldClose]) return;
+        if (![self.selectedTableDocument parentTabShouldClose]) {
+            return;
+        }
 		[tabView removeTabViewItem:[tabView selectedTabViewItem]];
 	} 
 	else {
 		//trying to close the window will itself call parentTabShouldClose for all tabs in windowShouldClose:
 		[[self window] performClose:self];
+        [self.delegate windowControllerDidClose:self];
 	}
 }
 
@@ -205,8 +215,7 @@
 /**
  * Move the currently selected tab to a new window.
  */
-- (IBAction)moveSelectedTabInNewWindow:(id)sender
-{
+- (IBAction)moveSelectedTabInNewWindow:(id)sender {
 	static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
 	NSTabViewItem *selectedTabViewItem = [tabView selectedTabViewItem];
@@ -214,6 +223,7 @@
 	PSMTabBarCell *selectedCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:selectedTabViewItem]];
 
 	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    [self.delegate windowControllerDidCreateNewWindowController:newWindowController];
 	NSWindow *newWindow = [newWindowController window];
 
 	CGFloat toolbarHeight = 0;
@@ -474,8 +484,7 @@
  * Go through the tabs in this window, and ask the database connection view
  * in each one if it can be closed, returning YES only if all can be closed.
  */
-- (BOOL)windowShouldClose:(NSWindow *)sender
-{
+- (BOOL)windowShouldClose:(NSWindow *)sender {
 	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
 		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 
@@ -489,7 +498,7 @@
 		[SPAppDelegate setSessionURL:nil];
 		[SPAppDelegate setSpfSessionDocData:nil];
 	}
-	[sender setReleasedWhenClosed:YES];
+    [self.delegate windowControllerDidClose:self];
 	return YES;
 }
 
@@ -758,10 +767,10 @@
  * When a tab is dragged off a tab bar, create a new window containing a new
  * (empty) tab bar to hold it.
  */
-- (PSMTabBarControl *)tabView:(NSTabView *)aTabView newTabBarForDraggedTabViewItem:(NSTabViewItem *)tabViewItem atPoint:(NSPoint)point
-{
+- (PSMTabBarControl *)tabView:(NSTabView *)aTabView newTabBarForDraggedTabViewItem:(NSTabViewItem *)tabViewItem atPoint:(NSPoint)point {
 	// Create the new window controller, with no tabs
 	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    [self.delegate windowControllerDidCreateNewWindowController:newWindowController];
 	NSWindow *newWindow = [newWindowController window];
 
 	CGFloat toolbarHeight = 0;

@@ -110,8 +110,6 @@
 - (IBAction)newTab:(id)sender;
 - (IBAction)duplicateTab:(id)sender;
 
-//- (SPWindowController *)newWindow;
-
 - (void)tabDragStarted:(id)sender;
 
 @end
