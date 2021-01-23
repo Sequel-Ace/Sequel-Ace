@@ -63,8 +63,7 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (void)awakeFromNib
-{
+- (void)awakeFromNib {
 	[self _switchOutSelectedTableDocument:nil];
 	
 	NSWindow *window = [self window];
@@ -151,7 +150,7 @@
 {
 	for (NSTabViewItem *eachItem in [tabView tabViewItems]) 
 	{
-		SPDatabaseDocument *eachDocument = [eachItem identifier];
+		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 		
 		if (eachDocument != sender) {
 			[eachDocument updateWindowTitle:self];
@@ -294,11 +293,10 @@
 /**
  * Retrieve the documents associated with this window.
  */
-- (NSArray *)documents
-{
+- (NSArray *)documents {
 	NSMutableArray *documentsArray = [NSMutableArray array];
 	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
-		[documentsArray addObject:[eachItem identifier]];
+		[documentsArray safeAddObject:[eachItem databaseDocument]];
 	}
 	return documentsArray;
 }
@@ -427,7 +425,7 @@
 	
 	[[theCell indicator] setControlSize:NSControlSizeSmall];
 	
-	SPDatabaseDocument *theDocument = [theItem identifier];
+	SPDatabaseDocument *theDocument = [theItem databaseDocument];
 	
 	[[theCell indicator] setHidden:NO];
 	
@@ -446,14 +444,16 @@
 	NSAssert([NSThread isMainThread], @"Switching the selectedTableDocument via a background thread is not supported!");
 	
 	// shortcut if there is nothing to do
-	if(self.selectedTableDocument == newDoc) return;
+    if (self.selectedTableDocument == newDoc) {
+        return;
+    }
 	
 	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	if(self.selectedTableDocument) {
+	if (self.selectedTableDocument) {
 		[nc removeObserver:self name:SPDocumentWillCloseNotification object:self.selectedTableDocument];
 		self.selectedTableDocument = nil;
 	}
-	if(newDoc) {
+	if (newDoc) {
 		[nc addObserver:self selector:@selector(_selectedTableDocumentDeallocd:) name:SPDocumentWillCloseNotification object:newDoc];
 		self.selectedTableDocument = newDoc;
 	}
@@ -475,11 +475,12 @@
  */
 - (BOOL)windowShouldClose:(NSWindow *)sender
 {
-	for (NSTabViewItem *eachItem in [tabView tabViewItems])
-	{
-		SPDatabaseDocument *eachDocument = [eachItem identifier];
+	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 
-		if (![eachDocument parentTabShouldClose]) return NO;
+        if (![eachDocument parentTabShouldClose]) {
+            return NO;
+        }
 	}
 
 	// Remove global session data if the last window of a session will be closed
@@ -553,11 +554,8 @@
  */
 - (void)windowDidResize:(NSNotification *)notification
 {
-	for (NSTabViewItem *eachItem in [tabView tabViewItems])
-	{
-		SPDatabaseDocument *eachDocument = [eachItem identifier];
-
-		[eachDocument tabDidResize];
+	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+		[[eachItem databaseDocument] tabDidResize];
 	}
 }
 
@@ -595,7 +593,7 @@
 {
 	if ([[PSMTabDragAssistant sharedDragAssistant] isDragging]) return;
 
-	[self _switchOutSelectedTableDocument:[tabViewItem identifier]];
+	[self _switchOutSelectedTableDocument:[tabViewItem databaseDocument]];
 	[self.selectedTableDocument didBecomeActiveTabInWindow];
 
 	if ([[self window] isKeyWindow]) [self.selectedTableDocument tabDidBecomeKey];
@@ -610,10 +608,11 @@
  */
 - (BOOL)tabView:(NSTabView *)aTabView shouldCloseTabViewItem:(NSTabViewItem *)tabViewItem
 {
-	SPDatabaseDocument *theDocument = [tabViewItem identifier];
+	SPDatabaseDocument *theDocument = [tabViewItem databaseDocument];
 
-	if (![theDocument parentTabShouldClose]) return NO;
-
+    if (![theDocument parentTabShouldClose]) {
+        return NO;
+    }
 	return YES;
 }
 
@@ -622,7 +621,7 @@
  */
 - (void)tabView:(NSTabView *)aTabView didCloseTabViewItem:(NSTabViewItem *)tabViewItem
 {
-	SPDatabaseDocument *theDocument = [tabViewItem identifier];
+	SPDatabaseDocument *theDocument = [tabViewItem databaseDocument];
 
 	[theDocument removeObserver:self forKeyPath:@"isProcessing"];
 	[theDocument parentTabDidClose];
@@ -641,7 +640,7 @@
  */
 - (void)tabView:(NSTabView*)aTabView didDropTabViewItem:(NSTabViewItem *)tabViewItem inTabBar:(PSMTabBarControl *)tabBarControl
 {
-	SPDatabaseDocument *draggedDocument = [tabViewItem identifier];
+	SPDatabaseDocument *draggedDocument = [tabViewItem databaseDocument];
 
 	// Grab a reference to the old window
 	NSWindow *draggedFromWindow = [draggedDocument parentWindowControllerWindow];
@@ -684,7 +683,7 @@
  */
 - (void)draggingEvent:(id <NSDraggingInfo>)dragEvent enteredTabBar:(PSMTabBarControl *)tabBarControl tabView:(NSTabViewItem *)tabViewItem
 {
-	SPDatabaseDocument *theDocument = [tabViewItem identifier];
+	SPDatabaseDocument *theDocument = [tabViewItem databaseDocument];
 
 	if (![theDocument isCustomQuerySelected] && [[[dragEvent draggingPasteboard] types] indexOfObject:NSStringPboardType] != NSNotFound)
 	{
@@ -721,11 +720,7 @@
 	}
 	// if cell is not selected show full title plus MySQL version is enabled as tooltip
 	else {
-		if ([[tabViewItem identifier] respondsToSelector:@selector(tabTitleForTooltip)]) {
-			return [[tabViewItem identifier] tabTitleForTooltip];
-		}
-
-		return @"";
+		return [[tabViewItem databaseDocument] tabTitleForTooltip];
 	}
 }
 
@@ -784,7 +779,7 @@
 	[newWindow setDelegate:newWindowController];
 
 	// Set window title
-	[newWindow setTitle:[[[tabViewItem identifier] parentWindowControllerWindow] title]];
+	[newWindow setTitle:[[[tabViewItem databaseDocument] parentWindowControllerWindow] title]];
 
 	// Return the window's tab bar
 	return newWindowController.tabBar;

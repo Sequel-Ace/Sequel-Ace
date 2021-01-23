@@ -499,7 +499,7 @@
     // icon
     if ([cell hasIcon]) {
         NSRect iconRect = [self iconRectForTabCell:cell];
-        NSImage *icon = [(id)[[cell representedObject] identifier] icon];
+        NSImage *icon = [[[cell representedObject] identifier] icon];
         
         // center in available space (in case icon image is smaller than kPSMTabBarIconWidth)
         if ([icon size].width < kPSMTabBarIconWidth) {
