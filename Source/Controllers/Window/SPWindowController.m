@@ -38,6 +38,8 @@
 #import "PSMTabBarControl.h"
 #import "PSMTabStyle.h"
 
+#import "sequel-ace-Swift.h"
+
 @interface SPWindowController ()
 
 - (void)_setUpTabBar;
@@ -134,7 +136,7 @@
  */
 - (void)updateSelectedTableDocument
 {
-	[self _switchOutSelectedTableDocument:[[tabView selectedTabViewItem] identifier]];
+	[self _switchOutSelectedTableDocument:[[tabView selectedTabViewItem] databaseDocument]];
 	
 	[self.selectedTableDocument didBecomeActiveTabInWindow];
 }
@@ -207,8 +209,8 @@
 {
 	static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
-	SPDatabaseDocument *selectedDocument = [[tabView selectedTabViewItem] identifier];
 	NSTabViewItem *selectedTabViewItem = [tabView selectedTabViewItem];
+    SPDatabaseDocument *selectedDocument = [selectedTabViewItem databaseDocument];
 	PSMTabBarCell *selectedCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:selectedTabViewItem]];
 
 	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
@@ -233,7 +235,7 @@
 	[newWindow setDelegate:newWindowController];
 
 	// Set window title
-	[newWindow setTitle:[[[[tabView selectedTabViewItem] identifier] parentWindowControllerWindow] title]];
+	[newWindow setTitle:[[selectedDocument parentWindowControllerWindow] title]];
 
 	// New window's tabBar control
 	PSMTabBarControl *control = newWindowController.tabBar;

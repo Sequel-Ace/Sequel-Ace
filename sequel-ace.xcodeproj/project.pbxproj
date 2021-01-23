@@ -218,6 +218,7 @@
 		50EA92681AB23EFC008D3C4F /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
+		511C466A25BC768E001AA1BD /* NSTabViewItemExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511C466925BC768E001AA1BD /* NSTabViewItemExtension.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
 		513515E42593568B001E4533 /* PSMProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071D11BD9B34000826E5 /* PSMProgressIndicator.m */; };
 		513515E52593568B001E4533 /* PSMTabDragAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072711BD9B34000826E5 /* PSMTabDragAssistant.m */; };
@@ -884,6 +885,7 @@
 		50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseActionTest.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
 		511B309F25ABBC6500D010E3 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		511C466925BC768E001AA1BD /* NSTabViewItemExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSTabViewItemExtension.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
@@ -2370,6 +2372,7 @@
 				58B9072E11BD9B34000826E5 /* PSMTabStyle.h */,
 				58B9072F11BD9B34000826E5 /* Styles */,
 				58B906F911BD9B34000826E5 /* Images */,
+				511C466925BC768E001AA1BD /* NSTabViewItemExtension.swift */,
 			);
 			name = PSMTabBar;
 			path = Frameworks/PSMTabBar;
@@ -3189,6 +3192,7 @@
 				BC77C5E4129AA69E009AD832 /* SPBundleHTMLOutputController.m in Sources */,
 				BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */,
 				BC0ED3DA12A9196C00088461 /* SPChooseMenuItemDialog.m in Sources */,
+				511C466A25BC768E001AA1BD /* NSTabViewItemExtension.swift in Sources */,
 				583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */,
 				1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */,
 				582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */,
