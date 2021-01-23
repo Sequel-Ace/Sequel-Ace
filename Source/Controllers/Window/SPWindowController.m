@@ -109,27 +109,24 @@
 - (SPDatabaseDocument *)addNewConnection
 {
 	// Create a new database connection view
-	SPDatabaseDocument *newTableDocument = [[SPDatabaseDocument alloc] init];
-	
-	[newTableDocument setParentWindowController:self];
-	[newTableDocument setParentWindow:[self window]];
+	SPDatabaseDocument *databaseDocument = [[SPDatabaseDocument alloc] initWithWindowController:self];
 
 	// Set up a new tab with the connection view as the identifier, add the view, and add it to the tab view
-    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:newTableDocument];
+    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:databaseDocument];
 	
-	[newItem setView:[newTableDocument databaseView]];
+	[newItem setView:[databaseDocument databaseView]];
     [tabView addTabViewItem:newItem];
     [tabView selectTabViewItem:newItem];
-	[newTableDocument setParentTabViewItem:newItem];
+	[databaseDocument setParentTabViewItem:newItem];
 
 	// Tell the new database connection view to set up the window and update titles
-	[newTableDocument didBecomeActiveTabInWindow];
-	[newTableDocument updateWindowTitle:self];
+	[databaseDocument didBecomeActiveTabInWindow];
+	[databaseDocument updateWindowTitle:self];
 
 	// Bind the tab bar's progress display to the document
 	[self _updateProgressIndicatorForItem:newItem];
 	
-	return newTableDocument;
+	return databaseDocument;
 }
 
 /**
@@ -236,7 +233,7 @@
 	[newWindow setDelegate:newWindowController];
 
 	// Set window title
-	[newWindow setTitle:[[[[tabView selectedTabViewItem] identifier] parentWindow] title]];
+	[newWindow setTitle:[[[[tabView selectedTabViewItem] identifier] parentWindowControllerWindow] title]];
 
 	// New window's tabBar control
 	PSMTabBarControl *control = newWindowController.tabBar;
@@ -645,7 +642,7 @@
 	SPDatabaseDocument *draggedDocument = [tabViewItem identifier];
 
 	// Grab a reference to the old window
-	NSWindow *draggedFromWindow = [draggedDocument parentWindow];
+	NSWindow *draggedFromWindow = [draggedDocument parentWindowControllerWindow];
 
 	// If the window changed, perform additional processing.
 	if (draggedFromWindow != [tabBarControl window]) {
@@ -656,8 +653,7 @@
 
 		// Update the item's document's window and controller
 		[draggedDocument willResignActiveTabInWindow];
-		[draggedDocument setParentWindowController:[[tabBarControl window] windowController]];
-		[draggedDocument setParentWindow:[tabBarControl window]];
+        [draggedDocument updateParentWindowController:[[tabBarControl window] windowController]];
 		[draggedDocument didBecomeActiveTabInWindow];
 
 		// Update window controller's active tab, and update the document's isProcessing observation
@@ -786,7 +782,7 @@
 	[newWindow setDelegate:newWindowController];
 
 	// Set window title
-	[newWindow setTitle:[[[tabViewItem identifier] parentWindow] title]];
+	[newWindow setTitle:[[[tabViewItem identifier] parentWindowControllerWindow] title]];
 
 	// Return the window's tab bar
 	return newWindowController.tabBar;

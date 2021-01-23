@@ -115,7 +115,6 @@
 - (IBAction)duplicateTab:(id)sender;
 
 - (SPWindowController *)newWindow;
-- (SPDatabaseDocument *)makeNewConnectionTabOrWindow;
 
 - (void)tabDragStarted:(id)sender;
 

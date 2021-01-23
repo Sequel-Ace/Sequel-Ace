@@ -384,7 +384,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	if ((![tableSourceInstance saveRowOnDeselect]) || (![tableContentInstance saveRowOnDeselect]) || (![tableDocumentInstance database])) return;
 
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
 	// Populate the table type (engine) popup button
 	[tableTypeButton removeAllItems];
@@ -415,7 +415,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Set the focus to the name field
 	[tableSheet makeFirstResponder:tableNameField];
 
-	[[tableDocumentInstance parentWindow] beginSheet:tableSheet completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:tableSheet completionHandler:^(NSModalResponse returnCode) {
 		[self->addTableCharsetHelper setEnabled:NO];
 		if (returnCode == NSModalResponseOK) {
 			[self _addTable];
@@ -504,7 +504,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return;
 	}
 
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
 	NSString *alertTitle = @"";
 	NSString *alertInformativeText = @"";
@@ -592,7 +592,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[[self onMainThread] setDatabases:nil];
 
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
 	NSInteger objectType = [[filteredTableTypes objectAtIndex:[tablesListView selectedRow]] integerValue];
 
@@ -623,7 +623,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[copyTableButton setEnabled:[self isTableNameValid:[copyTableNameField stringValue] forType:[self tableType]]];
 
-	[[tableDocumentInstance parentWindow] beginSheet:copyTableSheet completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:copyTableSheet completionHandler:^(NSModalResponse returnCode) {
 		if (returnCode == NSModalResponseOK) {
 			[self _copyTable];
 		}
@@ -670,7 +670,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return;
 	}
 
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
     if ([tablesListView numberOfSelectedRows] != 1) return;
     if (![[self tableName] length]) return;
@@ -686,7 +686,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return;
 	}
 
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
 	NSString *alertTitle = @"";
 	NSString *alertInformativeText = @"";
@@ -710,7 +710,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (IBAction)openTableInNewTab:(id)sender
 {
 	// Add a new tab to the window
-	[[[tableDocumentInstance parentWindow] windowController] addNewConnection:self];
+	[[tableDocumentInstance parentWindowController] addNewConnection:self];
 	
 	[self _duplicateConnectionToFrontTab];
 }
@@ -1661,7 +1661,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if (!tableListIsSelectable) return NO;
 
 	// End editing (otherwise problems when user hits reload button)
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
 	// We have to be sure that document views have finished editing
 	return [tableDocumentInstance couldCommitCurrentViewActions];
@@ -1936,10 +1936,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void) makeTableListFilterHaveFocus
 {
 	if([tables count] > 20) {
-		[[tableDocumentInstance parentWindow] makeFirstResponder:listFilterField];
+		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:listFilterField];
 	}
 	else {
-		[[tableDocumentInstance parentWindow] makeFirstResponder:tablesListView];
+		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:tablesListView];
 	}
 }
 
@@ -1948,7 +1948,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void) makeTableListHaveFocus
 {
-	[[tableDocumentInstance parentWindow] makeFirstResponder:tablesListView];
+	[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:tablesListView];
 }
 
 /**

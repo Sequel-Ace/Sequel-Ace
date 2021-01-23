@@ -462,7 +462,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[keySelectionPanel setAccessoryViewDisclosed:YES];
 	}
 	[keySelectionPanel setDelegate:self];
-	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode){
+	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSInteger returnCode){
 
         NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
         NSError *err=nil;
@@ -565,7 +565,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	alert.messageText = [err localizedDescription];
 	alert.informativeText = [err localizedRecoverySuggestion];
 	[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-	[alert beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:nil];
+	[alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:nil];
 }
 
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError{
@@ -1215,7 +1215,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	[openPanel setAllowedFileTypes:@[@"plist"]];
 
-	[openPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
+	[openPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSInteger returnCode)
 	{
 		if (returnCode == NSModalResponseOK) {
 			SPFavoritesImporter *importer = [[SPFavoritesImporter alloc] init];
@@ -1245,7 +1245,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[savePanel setAccessoryView:exportPanelAccessoryView];
 	[savePanel setNameFieldStringValue:fileName];
 
-	[savePanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
+	[savePanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSInteger returnCode)
 	{
 		if (returnCode == NSModalResponseOK) {
 			SPFavoritesExporter *exporter = [[SPFavoritesExporter alloc] init];
@@ -1700,17 +1700,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	{
 		case SPTCPIPConnection:
 			if (![[standardPasswordField stringValue] length]) {
-				[[dbDocument parentWindow] makeFirstResponder:standardPasswordField];
+				[[dbDocument parentWindowControllerWindow] makeFirstResponder:standardPasswordField];
 			}
 			break;
 		case SPSocketConnection:
 			if (![[socketPasswordField stringValue] length]) {
-				[[dbDocument parentWindow] makeFirstResponder:socketPasswordField];
+				[[dbDocument parentWindowControllerWindow] makeFirstResponder:socketPasswordField];
 			}
 			break;
 		case SPSSHTunnelConnection:
 			if (![[sshPasswordField stringValue] length]) {
-				[[dbDocument parentWindow] makeFirstResponder:sshPasswordField];
+				[[dbDocument parentWindowControllerWindow] makeFirstResponder:sshPasswordField];
 			}
 			break;
 	}
@@ -2241,7 +2241,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		return;
 	}
 	
-	[sshTunnel setParentWindow:[dbDocument parentWindow]];
+	[sshTunnel setParentWindow:[dbDocument parentWindowControllerWindow]];
 
     // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
     if ((isTestingConnection || !connectionSSHKeychainItemName || (connectionSSHKeychainItemName && ![[self sshPassword] isEqualToString:@"SequelAceSecretPassword"])) && [self sshPassword]) {
@@ -2379,7 +2379,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[databaseConnectionView setHidden:NO];
 
 	// Restore the toolbar icons
-	NSArray *toolbarItems = [[[dbDocument parentWindow] toolbar] items];
+	NSArray *toolbarItems = [[[dbDocument parentWindowControllerWindow] toolbar] items];
 
 	for (NSUInteger i = 0; i < [toolbarItems count]; i++) [[toolbarItems objectAtIndex:i] setEnabled:YES];
 
@@ -2434,7 +2434,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	// Only display the connection error message if there is a window visible
-	if ([[dbDocument parentWindow] isVisible]) {
+	if ([[dbDocument parentWindowControllerWindow] isVisible]) {
         errorShowing = YES;
 		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:theTitle];
@@ -3159,7 +3159,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		// jamesstout notes
 		// API_DEPRECATED("Use -beginSheetModalForWindow:completionHandler: instead" - - NSAlert.h L136
-		[alert beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:nil];
+		[alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:nil];
 	}
 }
 

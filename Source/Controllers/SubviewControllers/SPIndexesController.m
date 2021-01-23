@@ -223,7 +223,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	[indexKeyBlockSizeTextField setEnabled:YES];
 
 	// Begin the sheet
-	[[dbDocument parentWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
+	[[dbDocument parentWindowControllerWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
 		if (returnCode == NSModalResponseOK) {
 			[self->dbDocument startTaskWithDescription:NSLocalizedString(@"Adding index...", @"adding index task status message")];
 

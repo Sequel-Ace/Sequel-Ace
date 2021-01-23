@@ -263,7 +263,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if ([tableDocumentInstance isUntitled]) {
             [saveQueryFavoriteGlobal setState:NSOnState];
         }
-        [[tableDocumentInstance parentWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
+        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
             if (returnCode == NSModalResponseOK) {
                 
                 // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
@@ -305,7 +305,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if ([tableDocumentInstance isUntitled]) {
             [saveQueryFavoriteGlobal setState:NSOnState];
         }
-        [[tableDocumentInstance parentWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
+        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
             if (returnCode == NSModalResponseOK) {
                 
                 // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
@@ -332,7 +332,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
         
         // Open query favorite manager
-        [[tableDocumentInstance parentWindow] beginSheet:[favoritesManager window] completionHandler:nil];
+        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:[favoritesManager window] completionHandler:nil];
     } else if ([queryFavoritesButton indexOfSelectedItem] > 5) {
         // Choose favorite
         BOOL replaceContent = [prefs boolForKey:SPQueryFavoriteReplacesContent];
@@ -509,7 +509,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [encodingPopUp setEnabled:YES];
     
     [panel setNameFieldStringValue:@"history"];
-    [panel beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+    [panel beginSheetModalForWindow:[tableDocumentInstance parentWindowControllerWindow] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
             NSError *error = nil;
             
@@ -568,7 +568,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSString *taskString;
     
     //ensure there is no pending edit, which could be messed up (#2113)
-    [[tableDocumentInstance parentWindow] endEditingFor:nil];
+    [[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
     
     if ([queries count] > 1) {
         taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %i of %lu...", @"Running multiple queries string"), 1, (unsigned long)[queries count]];
@@ -1063,8 +1063,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             // Restore selection indexes if appropriate
-            if (selectionIndexToRestore) [customQueryView selectRowIndexes:selectionIndexToRestore byExtendingSelection:NO];
-            if (reloadingExistingResult) [[tableDocumentInstance parentWindow] makeFirstResponder:customQueryView];
+            if (selectionIndexToRestore) {
+                [customQueryView selectRowIndexes:selectionIndexToRestore byExtendingSelection:NO];
+            }
+            if (reloadingExistingResult) {
+                [[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:customQueryView];
+            }
         });
     }
 }
@@ -2580,7 +2584,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                           usingEncoding:[mySQLConnection stringEncoding]
                            isObjectBlob:isBlob
                              isEditable:isFieldEditable
-                             withWindow:[tableDocumentInstance parentWindow]
+                             withWindow:[tableDocumentInstance parentWindowControllerWindow]
                                  sender:self
                             contextInfo:[NSDictionary dictionaryWithObjectsAndKeys:
                                          [NSNumber numberWithInteger:rowIndex], @"rowIndex",
@@ -3202,7 +3206,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     }
     
     // Preserve focus and restore selection indexes if appropriate
-    [[tableDocumentInstance parentWindow] makeFirstResponder:customQueryView];
+    [[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:customQueryView];
     if (selectionIndexToRestore)
         [customQueryView selectRowIndexes:selectionIndexToRestore byExtendingSelection:NO];
     
@@ -3325,7 +3329,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSInteger numberOfPossibleUpdateRows = [[editStatus safeObjectAtIndex:0] integerValue];
     
     NSPoint customQueryViewPoint = [customQueryView convertPoint:[customQueryView frameOfCellAtColumn:column row:row].origin toView:nil];
-    NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(customQueryViewPoint.x, customQueryViewPoint.y, 0,0)];
+    NSRect screenRect = [[tableDocumentInstance parentWindowControllerWindow] convertRectToScreen:NSMakeRect(customQueryViewPoint.x, customQueryViewPoint.y, 0,0)];
     NSPoint pos = NSMakePoint(screenRect.origin.x, screenRect.origin.y);
     
     pos.y -= 20;
@@ -3399,10 +3403,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             
             // Send moveDown/Up to the popup menu
             NSEvent *arrowEvent;
-            if(command == @selector(moveDown:))
-                arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
-            else
-                arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
+            if (command == @selector(moveDown:)) {
+                arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindowControllerWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
+            } else {
+                arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindowControllerWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
+            }
             [NSApp postEvent:arrowEvent atStart:NO];
             return YES;
             
@@ -3422,7 +3427,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [control abortEditing];
             
             // Preserve the focus
-            [[tableDocumentInstance parentWindow] makeFirstResponder:customQueryView];
+            [[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:customQueryView];
             
             return YES;
         }

@@ -1253,7 +1253,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	contentFilterManager = [[SPContentFilterManager alloc] initWithDatabaseDocument:tableDocumentInstance forFilterType:filterType];
 
 	// Open query favorite manager
-	[[tableDocumentInstance parentWindow] beginSheet:[contentFilterManager window] completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:[contentFilterManager window] completionHandler:nil];
 }
 
 - (void)_contentFiltersHaveBeenUpdated:(NSNotification *)notification

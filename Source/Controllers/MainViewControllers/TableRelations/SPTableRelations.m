@@ -118,7 +118,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
  * Opens the relation sheet, in its current state (without any reset of fields)
  */
 - (IBAction)openRelationSheet:(id)sender {
-	[[tableDocumentInstance parentWindow] beginSheet:addRelationPanel completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:addRelationPanel completionHandler:nil];
 }
 
 /**
