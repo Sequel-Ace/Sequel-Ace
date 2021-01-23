@@ -467,22 +467,34 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
         NSError *err=nil;
 
+        NSMutableString *classStr = [NSMutableString string];
+        [classStr appendStringOrNil:NSStringFromClass(self->keySelectionPanel.URL.class)];
+
+        SPLog(@"self->keySelectionPanel.URL.class: %@", classStr);
+
         // check it's really a URL
         if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
-            NSMutableString *classStr = [NSMutableString string];
-            [classStr appendStringOrNil:NSStringFromClass(self->keySelectionPanel.URL.class)];
 
-            SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-            CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-            // JCS - should we stop here?
+            SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
+            CLS_LOG(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
-            NSDictionary *userInfo = @{
-                NSLocalizedDescriptionKey: @"self->keySelectionPanel.URL is not a URL",
-                @"class": classStr
-            };
+            NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
 
-            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
+            NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
+                                      classStr];
 
+            [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"File Selection Error", @"error while selecting file message") message:alertMessage accessoryView:helpView callback:^{
+
+                NSDictionary *userInfo = @{
+                    NSLocalizedDescriptionKey: @"self->keySelectionPanel.URL is not a valid URL",
+                    @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
+                    @"class": classStr
+                };
+
+                SPLog(@"userInfo: %@", userInfo);
+
+                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileConnectionController" code:1 userInfo:userInfo]];
+            }];
         }
         else{
             SPLog(@"calling addBookmarkForUrl");

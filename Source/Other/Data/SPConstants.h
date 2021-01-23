@@ -533,6 +533,7 @@ extern NSString *SPFavoriteUseCompressionKey;
 extern NSString *SPConnectionFavoritesChangedNotification;
 extern NSString *SPConnectionShownSocketHelp;
 extern NSString *SPStaleBookmarksHelp;
+extern NSString *SPDocsAppSandbox;
 
 extern NSString *SPFFormatKey;
 extern NSString *SPFVersionKey;

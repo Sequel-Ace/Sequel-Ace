@@ -36,6 +36,9 @@
 #import "SPExportFileNameTokenObject.h"
 #import "SPDatabaseDocument.h"
 #import "SPThreadAdditions.h"
+#import "SPPreferenceController.h"
+#import "SPGeneralPreferencePane.h"
+#import "SPAppController.h"
 #import "SPCustomQuery.h"
 #import "SPCSVExporter.h"
 #import "SPSQLExporter.h"
@@ -644,21 +647,33 @@ set_input:
 			
 			[self->exportPathField setStringValue:path];
 
+            NSMutableString *classStr = [NSMutableString string];
+            [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
+
+            SPLog(@"self->changeExportOutputPathPanel.URL.class: %@", classStr);
+
             // check it's really a URL
             if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
-                NSMutableString *classStr = [NSMutableString string];
-                [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
 
-                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                // JCS - should we stop here?
+                SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
+                CLS_LOG(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
 
-                NSDictionary *userInfo = @{
-                    NSLocalizedDescriptionKey: @"self->changeExportOutputPathPanel.URL is not a URL",
-                    @"class": classStr
-                };
+                NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
 
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
+                NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
+                                          classStr];
+
+                [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"File Selection Error", @"error while selecting file message") message:alertMessage accessoryView:helpView callback:^{
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"self->changeExportOutputPathPanel.URL is not a valid URL",
+                        @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
+                        @"class": classStr
+                    };
+
+                    SPLog(@"userInfo: %@", userInfo);
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileExportController" code:1 userInfo:userInfo]];
+                }];
             }
             else{
                 // this needs to be read-write

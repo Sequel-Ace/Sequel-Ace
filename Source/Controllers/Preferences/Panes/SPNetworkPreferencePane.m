@@ -303,31 +303,49 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
         [self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
             // check if the file is out of the sandbox
 
+            NSMutableString *classStr = [NSMutableString string];
+            [classStr appendStringOrNil:NSStringFromClass(url.class)];
+
+            SPLog(@"Block URL class: %@", classStr);
+            SPLog(@"Block URL str: %@", url.absoluteString);
+            SPLog(@"Block URL add: %p", &url);
+            SPLog(@"_currentFilePanel.URL add: %p", self->_currentFilePanel.URL);
+            
             // check it's really a URL
-            if(![self->_currentFilePanel.URL isKindOfClass:[NSURL class]]){
-                NSMutableString *classStr = [NSMutableString string];
-                [classStr appendStringOrNil:NSStringFromClass(self->_currentFilePanel.URL.class)];
+            if(![url isKindOfClass:[NSURL class]]){
+                SPLog(@"selected file is not a valid URL: %@", classStr);
+                CLS_LOG(@"selected file is not a valid URL: %@", classStr);
 
-                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                // JCS - should we stop here?
+                NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 
-                NSDictionary *userInfo = @{
-                    NSLocalizedDescriptionKey: @"self->keySelectionPanel.URL is not a URL",
-                    @"class": classStr,
-                    @"URLs" : self->_currentFilePanel.URLs
-                };
+                NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
+                                          classStr];
 
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
+                [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"File Selection Error", @"error while selecting file message") message:alertMessage accessoryView:helpView callback:^{
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"selected file is not a valid URL",
+                        @"class": classStr,
+                        @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
+                        @"URLs" : (self->_currentFilePanel.URLs) ?: @""
+                    };
+
+                    SPLog(@"userInfo: %@", userInfo);
+
+                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileNetworkPrefs" code:1 userInfo:userInfo]];
+                }];
             }
             else{
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->_currentFilePanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
+                // use url from the block, not self->_currentFilePanel.URL
+                // From Apple docs: The NSOpenPanel subclass sets this property to nil
+                // when the selection contains multiple items.
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
                     SPLog(@"addBookmarkForUrl success");
                     CLS_LOG(@"addBookmarkForUrl success");
                 }
                 else{
-                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
-                    SPLog(@"addBookmarkForUrl failed: %@", self->_currentFilePanel.URL.absoluteString);
+                    CLS_LOG(@"addBookmarkForUrl failed: %@", url.absoluteString);
+                    SPLog(@"addBookmarkForUrl failed: %@", url.absoluteString);
                 }
             }
 
