@@ -293,8 +293,8 @@
 /**
  * Retrieve the documents associated with this window.
  */
-- (NSArray *)documents {
-	NSMutableArray *documentsArray = [NSMutableArray array];
+- (NSArray <SPDatabaseDocument *> *)documents {
+	NSMutableArray <SPDatabaseDocument *> *documentsArray = [NSMutableArray array];
 	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
 		[documentsArray safeAddObject:[eachItem databaseDocument]];
 	}
@@ -847,16 +847,14 @@
  * When tab drags start, show all the tab bars.  This allows adding tabs to windows
  * containing only one tab - where the bar is normally hidden.
  */
-- (void)tabDragStarted:(id)sender
-{
+- (void)tabDragStarted:(id)sender {
     
 }
 
 /**
  * When tab drags stop, set tab bars to automatically hide again for only one tab.
  */
-- (void)tabDragStopped:(id)sender
-{
+- (void)tabDragStopped:(id)sender {
 
 }
 

@@ -1183,11 +1183,13 @@
  * Provide a method to retrieve an ordered list of the database
  * connection windows currently open in the application.
  */
-- (NSArray *) orderedDatabaseConnectionWindows
+- (NSArray *)orderedDatabaseConnectionWindows
 {
     NSMutableArray *orderedDatabaseConnectionWindows = [NSMutableArray array];
-    for (NSWindow *aWindow in [NSApp orderedWindows]) {
-        if ([[aWindow windowController] isMemberOfClass:[SPWindowController class]]) [orderedDatabaseConnectionWindows addObject:aWindow];
+    for (NSWindow *window in [NSApp orderedWindows]) {
+        if ([[window windowController] isMemberOfClass:[SPWindowController class]]) {
+            [orderedDatabaseConnectionWindows addObject:window];
+        }
     }
     return orderedDatabaseConnectionWindows;
 }
@@ -1195,24 +1197,21 @@
 /**
  * Retrieve the frontmost document; returns nil if not found.
  */
-- (SPDatabaseDocument *) frontDocument
-{
+- (SPDatabaseDocument *)frontDocument {
     return [self.rootWindowController selectedTableDocument];
 }
 
 /**
  * Retrieve the session URL. Return nil if no session is opened
  */
-- (NSURL *)sessionURL
-{
+- (NSURL *)sessionURL {
     return _sessionURL;
 }
 
 /**
  * Set the global session URL used for Save (As) Session.
  */
-- (void)setSessionURL:(NSString *)urlString
-{
+- (void)setSessionURL:(NSString *)urlString {
 
     if(urlString)
         _sessionURL = [NSURL fileURLWithPath:urlString];

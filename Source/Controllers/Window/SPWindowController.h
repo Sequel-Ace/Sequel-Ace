@@ -59,7 +59,7 @@
 - (IBAction)closeTab:(id)sender;
 - (IBAction)selectNextDocumentTab:(id)sender;
 - (IBAction)selectPreviousDocumentTab:(id)sender;
-- (NSArray *)documents;
+- (NSArray <SPDatabaseDocument *> *)documents;
 - (void)selectTabAtIndex:(NSInteger)index;
 - (void)updateTabBar;
 
