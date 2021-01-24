@@ -218,7 +218,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if(!currentQueryRange.length  || [textView string].length < currentQueryRange.length) {
             NSBeep();
             NSLog(@"Could not find a query range suitable to run query");
-            CLS_LOG(@"Could not find a query range suitable to run query");
             return;
         }
         queries = @[[SPSQLParser normaliseQueryForExecution:[[textView string] substringWithRange:currentQueryRange]]];
@@ -1176,11 +1175,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                             }
                         }
                     } @catch(id ae) {
-                        CLS_LOG(@"queryStartPosition %lu", (unsigned long)queryStartPosition);
-                        CLS_LOG(@"position %lu", (unsigned long)position);
-                        CLS_LOG(@"queryPosition %lu", (unsigned long)queryPosition);
-                        CLS_LOG(@"[textView string].length %lu", (unsigned long)[textView string].length);
-                        CLS_LOG(@"!positionAssociatedWithPreviousQuery try catch. Error: %@", ae);
+                        SPLog(@"queryStartPosition %lu", (unsigned long)queryStartPosition);
+                        SPLog(@"position %lu", (unsigned long)position);
+                        SPLog(@"queryPosition %lu", (unsigned long)queryPosition);
+                        SPLog(@"[textView string].length %lu", (unsigned long)[textView string].length);
+                        SPLog(@"!positionAssociatedWithPreviousQuery try catch. Error: %@", ae);
                     }
                 }
                 

@@ -38,7 +38,6 @@
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
 #import "sequel-ace-Swift.h"
-@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -240,9 +239,9 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	// Retrieve the table status information via the table data cache
 	NSDictionary *statusFields = [tableDataInstance statusValues];
 
-    CLS_LOG(@"tableTypePopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
-    CLS_LOG(@"tableEncodingPopUpButton numberOfItems: %li", (long)tableEncodingPopUpButton.numberOfItems);
-    CLS_LOG(@"tableCollationPopUpButton numberOfItems: %li", (long)tableCollationPopUpButton.numberOfItems);
+    SPLog(@"tableTypePopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
+    SPLog(@"tableEncodingPopUpButton numberOfItems: %li", (long)tableEncodingPopUpButton.numberOfItems);
+    SPLog(@"tableCollationPopUpButton numberOfItems: %li", (long)tableCollationPopUpButton.numberOfItems);
 
 	[tableTypePopUpButton removeAllItems];
 	[tableEncodingPopUpButton removeAllItems];
@@ -326,8 +325,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
             NSString *tmpEngine = [engine safeObjectForKey:SPMySQLEngineField];
 
             if(tmpEngine == nil){
-                SPLog(@"engine string is nil: %@",engine );
-                CLS_LOG(@"engine string is nil: %@", engine);
+                SPLog(@"engine string is nil: %@",engine);
                 // raise Crashyltics error?
                 continue;
             }
@@ -692,12 +690,11 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		}
 	}
 
-    if(value.length){
+    if (value.length){
         return value;
-    }
-    else{
-        CLS_LOG(@"Unable to format key: %@", key);
-        CLS_LOG(@"infoDict: %@", infoDict);
+    } else{
+        SPLog(@"Unable to format key: %@", key);
+        SPLog(@"infoDict: %@", infoDict);
         return NSLocalizedString(@"Not available", @"not available label");;
     }
 }

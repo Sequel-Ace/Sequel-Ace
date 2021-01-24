@@ -501,7 +501,6 @@
 - (void)windowWillClose:(NSNotification *)notification
 {
     SPLog(@"windowWillClose, notification: %@", notification);
-    CLS_LOG(@"windowWillClose, notification: %@", notification);
 	for (NSTabViewItem *eachItem in [tabView tabViewItems])
 	{
 		[tabView removeTabViewItem:eachItem];

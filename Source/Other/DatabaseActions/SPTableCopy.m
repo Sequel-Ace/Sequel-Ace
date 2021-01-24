@@ -31,7 +31,6 @@
 #import "SPTableCopy.h"
 
 #import <SPMySQL/SPMySQL.h>
-#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 
 @interface SPTableCopy ()
 
@@ -145,18 +144,7 @@
 {
 
     if([tableName respondsToSelector:@selector(backtickQuotedString)] == NO || [sourceDatabase respondsToSelector:@selector(backtickQuotedString)] == NO){
-        NSDictionary *userInfo = @{
-            NSLocalizedDescriptionKey: @"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString",
-            @"tableName class":tableName.class,
-            @"sourceDatabase class":sourceDatabase.class,
-            @"tableName string":safeString(tableName),
-            @"sourceDatabase string":safeString(sourceDatabase)
-        };
-
-        CLS_LOG(@"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString");
         SPLog(@"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString");
-        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:9 userInfo:userInfo]];
-
         return  nil;
     }
 

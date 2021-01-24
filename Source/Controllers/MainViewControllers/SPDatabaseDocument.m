@@ -407,10 +407,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Get the mysql version
     mySQLVersion = [mySQLConnection serverVersionString] ;
 
-    if(mySQLVersion != nil){
-        [[FIRCrashlytics crashlytics] setCustomValue:mySQLVersion forKey:@"serverVersion"];
-    }
-
     NSString *tmpDb = [connectionController database];
 
     // Update the selected database if appropriate
@@ -447,27 +443,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     } else {
         [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[mySQLConnection encoding]]];
     }
-
-    executeOnBackgroundThread(^{
-
-        // set a few more keys
-        FIRCrashlytics *crashlytics = FIRCrashlytics.crashlytics;
-
-        [crashlytics setCustomValue:self->mySQLConnection.encoding forKey:@"encoding"];
-        [crashlytics setCustomValue:self->mySQLConnection.timeZoneIdentifier forKey:@"timeZoneIdentifier"];
-
-        switch(self->connectionController.type) {
-            case SPSocketConnection:
-                [crashlytics setCustomValue:@"SocketConnection" forKey:@"connectionType"];
-                break;
-            case SPTCPIPConnection:
-                [crashlytics setCustomValue:@"TCPIPConnection" forKey:@"connectionType"];
-                break;
-            case SPSSHTunnelConnection:
-                [crashlytics setCustomValue:@"SSHTunnelConnection" forKey:@"connectionType"];
-                break;
-        }
-    });
 
     // For each of the main controllers, assign the current connection
     [tableSourceInstance setConnection:mySQLConnection];
@@ -1149,7 +1124,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void) startTaskWithDescription:(NSString *)description
 {
     SPLog(@"startTaskWithDescription: %@", description);
-    CLS_LOG(@"startTaskWithDescription: %@", description);
 
     // Ensure a call on the main thread
     if (![NSThread isMainThread]){
@@ -1189,7 +1163,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [chooseDatabaseButton setEnabled:NO];
 
         SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
-        CLS_LOG(@"Schedule appearance of the task window in the near future, using a frame timer");
 
         // Schedule appearance of the task window in the near future, using a frame timer.
         taskFadeInStartDate = [[NSDate alloc] init];
@@ -1244,7 +1217,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (alphaValue == 0) [self centerTaskWindow];
 
     SPLog(@"Fade in the task window over 0.6 seconds");
-    CLS_LOG(@"Fade in the task window over 0.6 seconds");
 
     // Fade in the task window over 0.6 seconds
     alphaValue = (float)(timeSinceFadeInStart - 0.5) / 0.6f;
@@ -1359,7 +1331,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isWorkingLevel) {
 
         SPLog(@"!_isWorkingLevel, all tasks have ended");
-        CLS_LOG(@"!_isWorkingLevel, all tasks have ended");
 
         // Cancel the draw timer if it exists
         if (taskDrawTimer) {
@@ -1378,7 +1349,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Hide the task interface and reset to indeterminate
         if (taskDisplayIsIndeterminate){
             SPLog(@"taskDisplayIsIndeterminate,stopAnimation ");
-            CLS_LOG(@"taskDisplayIsIndeterminate,stopAnimation");
             [taskProgressIndicator stopAnimation:self];
         }
         [taskProgressWindow setAlphaValue:0.0f];
@@ -2351,7 +2321,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)connect
 {
     SPLog(@"connect in dbdoc");
-    CLS_LOG(@"connect in dbdoc");
 
     if (mySQLVersion) return;
     [connectionController initiateConnection:self];
@@ -2360,7 +2329,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)closeConnection
 {
     SPLog(@"closeConnection");
-    CLS_LOG(@"closeConnection");
     [mySQLConnection disconnect];
     _isConnected = NO;
 
@@ -2648,7 +2616,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
 
     SPLog(@"applicationWillTerminate");
-    CLS_LOG(@"applicationWillTerminate");
     appIsTerminating = YES;
     // Auto-save preferences to spf file based connection
     if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
@@ -5163,7 +5130,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 SPFileHandle *fh = [SPFileHandle fileHandleForWritingAtPath:resultFileName];
                 if(!fh){
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
-                    CLS_LOG(@"Couldn't create file handle to %@", resultFileName);
                 }
 
                 SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
@@ -6000,11 +5966,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark Tab view control and delegate methods
 
 //WARNING: Might be called from code in background threads
-- (IBAction)viewStructure:(id)sender
-{
-    if (![NSThread isMainThread]) {
-        CLS_LOG(@"Calling viewStructure from background thread");
-    }
+- (IBAction)viewStructure:(id)sender {
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
@@ -6021,12 +5983,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     });
 }
 
-- (IBAction)viewContent:(id)sender
-{
-    if (![NSThread isMainThread]) {
-        CLS_LOG(@"Calling viewContent from background thread");
-    }
-    
+- (IBAction)viewContent:(id)sender {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -6041,11 +5998,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     });
 }
 
-- (IBAction)viewQuery:(id)sender
-{
-    if (![NSThread isMainThread]) {
-        CLS_LOG(@"Calling viewQuery from background thread");
-    }
+- (IBAction)viewQuery:(id)sender {
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
@@ -6068,11 +6021,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (IBAction)viewStatus:(id)sender
 {
-    
-    if (![NSThread isMainThread]) {
-        CLS_LOG(@"Calling viewStatus from background thread");
-    }
-    
+
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -6097,9 +6046,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (IBAction)viewRelations:(id)sender
 {
-    if (![NSThread isMainThread]) {
-        CLS_LOG(@"Calling viewStatus from background thread");
-    }
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
@@ -6119,9 +6065,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (IBAction)viewTriggers:(id)sender
 {
-    if (![NSThread isMainThread]) {
-        CLS_LOG(@"Calling viewTriggers from background thread");
-    }
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
@@ -6244,7 +6187,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Ensure a connection is still present
     if (![mySQLConnection isConnected]){
         SPLog(@"![mySQLConnection isConnected], returning");
-        CLS_LOG(@"![mySQLConnection isConnected], returning");
         return;
     }
 
@@ -6595,7 +6537,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
 
     SPLog(@"connectionLost");
-    CLS_LOG(@"connectionLost");
 
     SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
@@ -6604,7 +6545,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
 
         SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
-        CLS_LOG(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
         // Ensure the window isn't miniaturized
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];

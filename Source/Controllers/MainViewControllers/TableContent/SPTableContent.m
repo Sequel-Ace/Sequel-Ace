@@ -372,7 +372,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[paginationNextButton setEnabled:NO];
 
 	// Disable table action buttons
-    CLS_LOG(@"Disable table action buttons. addButton = %@, duplicateButton = %@, removeButton = %@", addButton.description, duplicateButton.description, removeButton.description );
+    SPLog(@"Disable table action buttons. addButton = %@, duplicateButton = %@, removeButton = %@", addButton.description, duplicateButton.description, removeButton.description );
 	[addButton setEnabled:NO];
 	[duplicateButton setEnabled:NO];
 	[removeButton setEnabled:NO];
@@ -389,11 +389,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  * table details.
  * Should be called on the main thread.
  */
-- (void)setTableDetails:(NSDictionary *)tableDetails
-{
-
+- (void)setTableDetails:(NSDictionary *)tableDetails {
     SPLog(@"tableDetails: %@", tableDetails);
-    CLS_LOG(@"tableDetails: %@", tableDetails);
 
 	NSString *newTableName;
 	NSInteger sortColumnNumberToRestore = NSNotFound;
@@ -438,7 +435,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
         if (newTableName){
             SPLog(@"new table: %@", newTableName);
-            CLS_LOG(@"new table: %@", newTableName);
             selectedTable = [[NSString alloc] initWithString:newTableName];
         }
 		previousTableRowsCount = 0;
@@ -464,7 +460,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// If no table has been supplied, reset the view to a blank table and disabled elements.
 	if (!newTableName) {
-        CLS_LOG(@"no table has been supplied, reset the view to a blank table and disabled elements");
+        SPLog(@"no table has been supplied, reset the view to a blank table and disabled elements");
 		[self _setViewBlankState];
 		return;
 	}
@@ -2572,16 +2568,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				}
 			}
 		}
-
-        NSDictionary *userInfo = @{
-            NSLocalizedDescriptionKey: @"deriveQueryString fieldValue is nil",
-            @"rowObject":[rowObject description],
-        };
         
         if (fieldValue == nil || [fieldValue isNSNull]){
-            CLS_LOG(@"fieldValue is nil: %@", fieldValue);
             SPLog(@"fieldValue is nil: %@", fieldValue);
-            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:6 userInfo:userInfo]];
         }
 
 		// Store the key and value in the ordered arrays for saving.
@@ -4025,15 +4014,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 
     if (database == nil || table == nil){
-        CLS_LOG(@"database or table is nil");
         SPLog(@"database or table is nil");
-        NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] initWithCapacity:3];
-
-        [userInfo setObject:@"tableViewColumnDidResize: database or table is nil" forKey:NSLocalizedDescriptionKey];
-        [userInfo safeSetObject:@"database" forKey:database];
-        [userInfo safeSetObject:@"table" forKey:table];
-
-        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:8 userInfo:userInfo]];
     }
 
 	// Get tableColumnWidths object

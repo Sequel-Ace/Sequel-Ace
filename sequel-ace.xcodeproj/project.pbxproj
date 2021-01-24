@@ -120,7 +120,6 @@
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */; };
 		1A445DAA25BACBE5004E9A77 /* naughty_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1A445DA925BACBE5004E9A77 /* naughty_strings.txt */; };
-		1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A47996E2543343A00D29E6E /* GoogleService-Info.plist */; };
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
@@ -131,7 +130,6 @@
 		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A8B53572584520800526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
-		1A8B53732584573500526DED /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8B53722584573500526DED /* FirebaseCrashlytics */; };
 		1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A94988E25516057000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
@@ -270,10 +268,11 @@
 		5135161F25935699001E4533 /* AquaTabCloseDirty_Front_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070011BD9B34000826E5 /* AquaTabCloseDirty_Front_Rollover.png */; };
 		5135162025935699001E4533 /* SequelProTabDirty_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAF11EA772C000D8427 /* SequelProTabDirty_Rollover.png */; };
 		5135162125935699001E4533 /* SequelProTabDirty_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAE11EA772C000D8427 /* SequelProTabDirty_Pressed.png */; };
+		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
+		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
 		517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */ = {isa = PBXBuildFile; fileRef = 5174122F2573E10C00EB6935 /* SPPrintUtility.m */; };
 		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
-		5187ADE7257A60A200FF3A9A /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5187ADE6257A60A200FF3A9A /* FirebaseCrashlytics */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
@@ -770,9 +769,7 @@
 		1A2DD55F25939C1500616E7E /* SPTestingUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTestingUtils.h; sourceTree = "<group>"; };
 		1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneralSwiftTests.swift; sourceTree = "<group>"; };
 		1A445DA925BACBE5004E9A77 /* naughty_strings.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = naughty_strings.txt; sourceTree = "<group>"; };
-		1A47996E2543343A00D29E6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Plists/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
-		1A479B19254375D200D29E6E /* Pods-Sequel Ace-acknowledgements.markdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "Pods-Sequel Ace-acknowledgements.markdown"; sourceTree = "<group>"; };
 		1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringRegexExtension.swift; sourceTree = "<group>"; };
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
@@ -1237,7 +1234,6 @@
 				51DCBEF0257134190098E303 /* libz.tbd in Frameworks */,
 				502D22151BA62FA5000D4CE7 /* Security.framework in Frameworks */,
 				1717F9DB1558114D0065C036 /* OCMock.framework in Frameworks */,
-				1A8B53732584573500526DED /* FirebaseCrashlytics in Frameworks */,
 				1717FA43155831600065C036 /* libicucore.dylib in Frameworks */,
 				50EA92671AB23EE1008D3C4F /* SPMySQL.framework in Frameworks */,
 			);
@@ -1263,8 +1259,9 @@
 				8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */,
 				296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */,
 				96B0A1512493DF3E007BB270 /* ShortcutRecorder.framework in Frameworks */,
+				515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */,
+				515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */,
 				9651262224926F1200E65B53 /* QueryKit.framework in Frameworks */,
-				5187ADE7257A60A200FF3A9A /* FirebaseCrashlytics in Frameworks */,
 				179ECECA11F265FC009C6A40 /* libbz2.dylib in Frameworks */,
 				9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */,
 				51D9527625AE2B5300574BEB /* FMDB in Frameworks */,
@@ -1584,7 +1581,6 @@
 			isa = PBXGroup;
 			children = (
 				517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */,
-				1A47996E2543343A00D29E6E /* GoogleService-Info.plist */,
 				17E641F60EF02088001BC333 /* Info.plist */,
 				96B0A1532493F43B007BB270 /* TunnelAssistant-Info.plist */,
 				17DA04EA0FC1A7DA00D66140 /* Unit Tests-Info.plist */,
@@ -1848,7 +1844,6 @@
 				96D494B8249C07940092F335 /* SSH Helpers */,
 				1A479B15254375BD00D29E6E /* License.md */,
 				517E44FB257A94C400ED333B /* Credits.rtf */,
-				1A479B19254375D200D29E6E /* Pods-Sequel Ace-acknowledgements.markdown */,
 				17CC993A10B4C9C80034CD7A /* License.rtf */,
 				583A278D23F06F1000FBE97B /* Colors.xcassets */,
 				51A709382565B99F001F1D2F /* Images.xcassets */,
@@ -2554,9 +2549,6 @@
 				518402D924A3FF4F004693B0 /* PBXTargetDependency */,
 			);
 			name = "Unit Tests";
-			packageProductDependencies = (
-				1A8B53722584573500526DED /* FirebaseCrashlytics */,
-			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -2604,7 +2596,6 @@
 				96B0A162249416B1007BB270 /* Copy SequelAceTunnelAssistant and sign */,
 				4DECC4940EC2B447008D359E /* Copy Frameworks */,
 				9691789224A562330012ED42 /* Copy Default Themes and Default Bundles */,
-				1A47995F2543320B00D29E6E /* Run Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -2614,8 +2605,9 @@
 			);
 			name = "Sequel Ace";
 			packageProductDependencies = (
-				5187ADE6257A60A200FF3A9A /* FirebaseCrashlytics */,
 				51D9527525AE2B5300574BEB /* FMDB */,
+				515D303E25BD7DE60021CF1E /* AppCenterCrashes */,
+				515D304025BD7DE60021CF1E /* AppCenterAnalytics */,
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = "sequel-pro";
@@ -2654,8 +2646,8 @@
 			);
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
 			packageReferences = (
-				5187ADE5257A60A200FF3A9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
+				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -2774,7 +2766,6 @@
 				51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
 				513515FE25935699001E4533 /* SequelProTabDirty_Rollover@2x.png in Resources */,
-				1A47996F2543343A00D29E6E /* GoogleService-Info.plist in Resources */,
 				51CD0BE3258D06D8009E2484 /* DBView.xib in Resources */,
 				B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */,
 				5135160D25935699001E4533 /* overflowImagePressed.png in Resources */,
@@ -2914,31 +2905,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		1A47995F2543320B00D29E6E /* Run Crashlytics */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 8;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
-				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
-				"${DWARF_DSYM_FOLDER_PATH}/SequelAceTunnelAssistant.dSYM/Contents/Resources/DWARF/SequelAceTunnelAssistant",
-				"${DWARF_DSYM_FOLDER_PATH}/PSMTabBar.framework.dSYM/Contents/Resources/DWARF/PSMTabBar",
-				"${DWARF_DSYM_FOLDER_PATH}/SPMySQL.framework.dSYM/Contents/Resources/DWARF/SPMySQL",
-				"${DWARF_DSYM_FOLDER_PATH}/xibLocalizationPostprocessor.dSYM/Contents/Resources/DWARF/xibLocalizationPostprocessor",
-			);
-			name = "Run Crashlytics";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    SWIFT_PACKAGE_DIR=\"${PROJECT_TEMP_ROOT%/Build/*}\"\n    \"${SWIFT_PACKAGE_DIR}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
-		};
 		517E44F4257A8FB700ED333B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3510,21 +3476,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/Firebase\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCore\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCoreDiagnostics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCrashlytics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseInstallations\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleDataTransport\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleUtilities\"",
-					"\"${PODS_ROOT}/Headers/Public/PromisesObjC\"",
-					"\"${PODS_ROOT}/Headers/Public/nanopb\"",
-					"\"${PODS_ROOT}/Firebase/CoreOnly/Sources\"",
-					"\"${PODS_TARGET_SRCROOT}/Sources/FBLPromises/include\"",
-				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3827,21 +3778,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/Firebase\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCore\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCoreDiagnostics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCrashlytics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseInstallations\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleDataTransport\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleUtilities\"",
-					"\"${PODS_ROOT}/Headers/Public/PromisesObjC\"",
-					"\"${PODS_ROOT}/Headers/Public/nanopb\"",
-					"\"${PODS_ROOT}/Firebase/CoreOnly/Sources\"",
-					"\"${PODS_TARGET_SRCROOT}/Sources/FBLPromises/include\"",
-				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3982,21 +3918,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/Firebase\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCore\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCoreDiagnostics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCrashlytics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseInstallations\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleDataTransport\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleUtilities\"",
-					"\"${PODS_ROOT}/Headers/Public/PromisesObjC\"",
-					"\"${PODS_ROOT}/Headers/Public/nanopb\"",
-					"\"${PODS_ROOT}/Firebase/CoreOnly/Sources\"",
-					"\"${PODS_TARGET_SRCROOT}/Sources/FBLPromises/include\"",
-				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4046,21 +3967,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/Firebase\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCore\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCoreDiagnostics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseCrashlytics\"",
-					"\"${PODS_ROOT}/Headers/Public/FirebaseInstallations\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleDataTransport\"",
-					"\"${PODS_ROOT}/Headers/Public/GoogleUtilities\"",
-					"\"${PODS_ROOT}/Headers/Public/PromisesObjC\"",
-					"\"${PODS_ROOT}/Headers/Public/nanopb\"",
-					"\"${PODS_ROOT}/Firebase/CoreOnly/Sources\"",
-					"\"${PODS_TARGET_SRCROOT}/Sources/FBLPromises/include\"",
-				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4313,12 +4219,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		5187ADE5257A60A200FF3A9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 7.2.0;
+				minimumVersion = 4.1.0;
 			};
 		};
 		51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */ = {
@@ -4332,15 +4238,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		1A8B53722584573500526DED /* FirebaseCrashlytics */ = {
+		515D303E25BD7DE60021CF1E /* AppCenterCrashes */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 5187ADE5257A60A200FF3A9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
+			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
+			productName = AppCenterCrashes;
 		};
-		5187ADE6257A60A200FF3A9A /* FirebaseCrashlytics */ = {
+		515D304025BD7DE60021CF1E /* AppCenterAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 5187ADE5257A60A200FF3A9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
+			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
+			productName = AppCenterAnalytics;
 		};
 		51D9527525AE2B5300574BEB /* FMDB */ = {
 			isa = XCSwiftPackageProductDependency;

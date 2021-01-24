@@ -30,7 +30,8 @@
 
 #import "SPExportFile.h"
 #import "SPFileHandle.h"
-@import Firebase;
+
+#import "sequel-ace-Swift.h"
 
 @interface SPExportFile ()
 
@@ -98,7 +99,6 @@
 	if (![self exportFileHandle]) return;
 
     SPLog(@"calling closeFile");
-    CLS_LOG(@"calling closeFile");
 
 	[[self exportFileHandle] closeFile];
 }
@@ -135,7 +135,6 @@
 {
 	if (![self exportFileHandle]) {
         SPLog(@"Failed to get filehandle for: %@", exportFilePath);
-        CLS_LOG(@"Failed to get filehandle for: %@", exportFilePath);
         SPLog(@"fileHandleError = YES");
         // set the filename for error reporting
         fileHandleError = exportFilePath;
@@ -219,7 +218,6 @@
 	
 	if (![fileManager createFileAtPath:[self exportFilePath] contents:[NSData data] attributes:nil]) {
         SPLog(@"createFileAtPath failed: %@",[self exportFilePath] );
-        CLS_LOG(@"createFileAtPath failed: %@",[self exportFilePath] );
 
 		return SPExportFileHandleFailed;
 	}
@@ -228,8 +226,7 @@
 	exportFileHandle = [SPFileHandle fileHandleForWritingAtPath:[self exportFilePath]];
 	
 	if (!exportFileHandle) {
-        SPLog(@"fileHandleForWritingAtPath failed: %@",[self exportFilePath] );
-        CLS_LOG(@"fileHandleForWritingAtPath failed: %@",[self exportFilePath] );
+        SPLog(@"fileHandleForWritingAtPath failed: %@",[self exportFilePath]);
 		[fileManager removeItemAtPath:[self exportFilePath] error:nil];
 		
 		return SPExportFileHandleFailed;

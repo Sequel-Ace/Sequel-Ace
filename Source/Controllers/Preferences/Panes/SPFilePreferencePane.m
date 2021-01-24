@@ -30,9 +30,8 @@
 
 #import "SPFilePreferencePane.h"
 #import "SPAppController.h"
-#import "sequel-ace-Swift.h"
 
-@import Firebase;
+#import "sequel-ace-Swift.h"
 
 @interface SPFilePreferencePane ()
 - (void)_refreshBookmarks;
@@ -76,8 +75,6 @@
 
     SPLog(@"selectedRows = %@", selectedRows);
     SPLog(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
-    CLS_LOG(@"selectedRows = %@", selectedRows);
-    CLS_LOG(@"selectedRows count = %lu", (unsigned long)selectedRows.count);
     SPLog(@"selectedRows firstIndex = %lu", (unsigned long)[selectedRows firstIndex]);
     SPLog(@"selectedRows lastIndex = %lu", (unsigned long)[selectedRows lastIndex]);
     SPLog(@"weHaveStaleBookmarks = %d", weHaveStaleBookmarks);
@@ -87,7 +84,6 @@
     // or different files?
     if ((userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) || userClickedAddFilesAfterCancel == YES) {
         SPLog(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
-        CLS_LOG(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
         [selectedRows removeAllIndexes];
         [selectedRows addIndexes:[fileView selectedRowIndexes]];
     }
@@ -160,7 +156,6 @@
                 }
                 else{
                     SPLog(@"ERROR: fileName is nil");
-                    CLS_LOG(@"ERROR: fileName is nil");
                     // break?
                 }
             }
@@ -174,12 +169,10 @@
         // only display panel if they clicked on a stale file.
         if(match == YES){
             SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
-            CLS_LOG(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
             [self chooseFileWithOptions:options];
         }
         else{
             SPLog(@"No stale files selected");
-            CLS_LOG(@"No stale files selected");
         }
     }
 }
@@ -187,13 +180,11 @@
 - (void)dealloc
 {
     SPLog(@"dealloc");
-    CLS_LOG(@"dealloc");
     [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess]; // FIXME: not sure about this... just because this pane is deallocated, we don't need to revoke access?
 }
 
 - (void)_refreshBookmarks{
     SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
-    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
     [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
@@ -230,12 +221,10 @@
 - (void)preferencePaneWillBeShown
 {
     SPLog(@"calling loadBookmarks");
-    CLS_LOG(@"calling loadBookmarks");
     [self loadBookmarks];
 
     if(weHaveStaleBookmarks == YES){
         SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
-        CLS_LOG(@"weHaveStaleBookmarks == YES, calling doubleClick");
         [self doubleClick:nil];
     }
 }
@@ -243,7 +232,6 @@
 - (void)loadBookmarks
 {
     SPLog(@"loadBookmarks");
-    CLS_LOG(@"loadBookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
     [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
@@ -256,7 +244,6 @@
         staleLabel.hidden = YES;
         weHaveStaleBookmarks = NO;
         SPLog(@"weHaveStaleBookmarks == NO");
-        CLS_LOG(@"weHaveStaleBookmarks == NO");
     }
 
 	// we need to re-request access to places we've been before..
@@ -343,9 +330,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     SPLog(@"bookmarks.count: %lu", (unsigned long)bookmarks.count);
     SPLog(@"staleBookmarks.count: %lu", (unsigned long)staleBookmarks.count);
     SPLog(@"fileNames.count: %lu", (unsigned long)fileNames.count);
-    CLS_LOG(@"bookmarks.count: %lu", (unsigned long)bookmarks.count);
-    CLS_LOG(@"staleBookmarks.count: %lu", (unsigned long)staleBookmarks.count);
-    CLS_LOG(@"fileNames.count: %lu", (unsigned long)fileNames.count);
 
     // reset the table view for the files
 	[fileView deselectAll:nil];
@@ -367,11 +351,9 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
         if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
             [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
             SPLog(@"revokeBookmarkWithFilename success. refreshing bookmarks: %@", bookmarks);
-            CLS_LOG(@"revokeBookmarkWithFilename success. refreshing bookmarks");
         }
         else{
             SPLog(@"revokeBookmarkWithFilename failed: %@", fileName);
-            CLS_LOG(@"revokeBookmarkWithFilename failed: %@", fileName);
         }
 	}];
 	
@@ -384,7 +366,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
     if(weHaveStaleBookmarks == YES && userClickedCancel == YES){
         SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
-        CLS_LOG(@"weHaveStaleBookmarks == YES, calling doubleClick");
         userClickedAddFilesAfterCancel = YES;
         [self doubleClick:nil];
         return;
@@ -400,7 +381,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     options.fileNames = nil;
 
     SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
-    CLS_LOG(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
     
     [self chooseFileWithOptions:options];
 }
@@ -432,7 +412,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
     if(options.fileNames.count == 0){
         SPLog(@"standard adding new file");
-        CLS_LOG(@"standard adding new file");
         if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
             directory = [[fileManager homeDirectoryForCurrentUser] URLByAppendingPathComponent:@".ssh"];
         } else {
@@ -441,7 +420,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     }
     else{
         SPLog(@"refreshing stale bookmarks. count: %lu", (unsigned long)options.fileNames.count);
-        CLS_LOG(@"refreshing stale bookmarks. count: %lu", (unsigned long)options.fileNames.count);
         // add on a trailing / to set the panel directory to the file
         // this has the side effect of pre-selecting the file for the user
         // see: https://stackoverflow.com/a/18931821/150772
@@ -477,7 +455,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
         // only process data, when the user pressed ok
         if (returnCode != NSModalResponseOK) {
             SPLog(@"user pressed cancel");
-            CLS_LOG(@"user pressed cancel");
             self->userClickedCancel = YES;
             [self->selectedRows removeAllIndexes];
             return;
@@ -502,7 +479,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
             // check it's really a URL
             if(![url isKindOfClass:[NSURL class]]){
                 SPLog(@"selected file is not a valid URL: %@", classStr);
-                CLS_LOG(@"selected file is not a valid URL: %@", classStr);
 
                 NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 
@@ -519,7 +495,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                     };
 
                     SPLog(@"userInfo: %@", userInfo);
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileFilePrefs" code:1 userInfo:userInfo]];
                 }];
             }
             else{
@@ -528,7 +503,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                 // when the selection contains multiple items.
                 if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
                     SPLog(@"addBookmarkForUrl success");
-                    CLS_LOG(@"addBookmarkForUrl success");
 
                     if(options.isForStaleBookmark == YES){
 
@@ -538,7 +512,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                         SPLog(@"self->selectedRows: %@", self->selectedRows);
                         SPLog(@"removing stale file from options.fileNames at index 0");
                         SPLog(@"removing stale file from self->selectedRows at index: %lu", (unsigned long)options.index);
-                        CLS_LOG(@"removing stale file from options.fileNames");
 
                         SPLog(@"selectedRows count = %lu", (unsigned long)self->selectedRows.count);
 
@@ -555,7 +528,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                     }
                 }
                 else{
-                    CLS_LOG(@"addBookmarkForUrl failed: %@", url.absoluteString);
                     SPLog(@"addBookmarkForUrl failed: %@", url.absoluteString);
                 }
             }
@@ -563,19 +535,16 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
         if(options.fileNames.count> 0){
             SPLog(@"User selected more than one file, call ourselves again");
-            CLS_LOG(@"User selected more than one file, call ourselves again");
             [self chooseFileWithOptions:options];
         }
         else{
             SPLog(@"End, reload bookmarks");
-            CLS_LOG(@"End, reload bookmarks");
             [self loadBookmarks];
             self->_currentFilePanel = nil;
 
             // this shouldn't be needed, but just in case
             [self->selectedRows removeAllIndexes];
             SPLog(@"self->selectedRows: %@", self->selectedRows);
-            CLS_LOG(@"self->selectedRows: %@", self->selectedRows);
         }
     }];
 }

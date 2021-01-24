@@ -33,7 +33,7 @@
 #import "SPServerSupport.h"
 #import "SPDatabaseData.h"
 
-@import Firebase;
+#import "sequel-ace-Swift.h"
 
 @interface SPCharsetCollationHelper ()
 
@@ -209,8 +209,8 @@
 	
 	//get the charset id
     NSString *charsetId = @"";
-    CLS_LOG(@"[charsetButton selectedItem] = %@", [charsetButton selectedItem]);
-    CLS_LOG(@"[charsetButton selectedItem] representedObject = %@", [[charsetButton selectedItem] representedObject]);
+    SPLog(@"[charsetButton selectedItem] = %@", [charsetButton selectedItem]);
+    SPLog(@"[charsetButton selectedItem] representedObject = %@", [[charsetButton selectedItem] representedObject]);
 
     if([charsetButton selectedItem] != nil){
         charsetId = [[charsetButton selectedItem] representedObject];
@@ -248,7 +248,7 @@
             [collationButton addItemWithTitle:collationName];
         }
         else{
-            CLS_LOG(@"collationName == nil");
+            SPLog(@"collationName == nil");
         }
 
 		//is this the default collation for this charset and charset was given explicitly (ie. breaking inheritance)?

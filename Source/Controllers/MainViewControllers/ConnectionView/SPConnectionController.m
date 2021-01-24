@@ -56,7 +56,6 @@
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
-@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -476,7 +475,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
 
             SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
-            CLS_LOG(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
             NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
 
@@ -490,23 +488,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
                     @"class": classStr
                 };
-
                 SPLog(@"userInfo: %@", userInfo);
-
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileConnectionController" code:1 userInfo:userInfo]];
             }];
         }
         else{
             SPLog(@"calling addBookmarkForUrl");
-            CLS_LOG(@"calling addBookmarkForUrl");
             // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
             if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
                 SPLog(@"addBookmarkForUrl success");
-                CLS_LOG(@"addBookmarkForUrl success");
             }
             else{
                 SPLog(@"addBookmarkForUrl failed");
-                CLS_LOG(@"addBookmarkForUrl failed");
                 // JCS - should we stop here?
                 // No just the act of selecting the file in the NSOpenPanel calls startAccessingSecurityScopedResource
                 // the only downside of this failing is that we won't have a bookmark,
@@ -2339,19 +2331,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     if (cancellingConnection){
         SPLog(@"cancellingConnection, returning");
-        CLS_LOG(@"cancellingConnection, returning");
         return;
     }
 
 	NSInteger newState = [theTunnel state];
 
     SPLog(@"newState = %li", (long)newState);
-    CLS_LOG(@"newState = %li", (long)newState);
 
 	// If the user cancelled the password prompt dialog, continue with no further action.
 	if ([theTunnel passwordPromptCancelled]) {
         SPLog(@"user cancelled the password prompt dialog, continue with no further action");
-        CLS_LOG(@"user cancelled the password prompt dialog, continue with no further action");
 		[self _restoreConnectionInterface];
 
 		return;
@@ -2359,7 +2348,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	if (newState == SPMySQLProxyIdle) {
         SPLog(@"SPMySQLProxyIdle, failing");
-        CLS_LOG(@"SPMySQLProxyIdle, failing");
 
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
 
@@ -2370,7 +2358,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 	else if (newState == SPMySQLProxyConnected) {
         SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
-        CLS_LOG(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
 		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Connected", @"SSH connected titlebar marker")];
 
 		[self initiateMySQLConnection];
@@ -2425,8 +2412,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			isSSHTunnelBindError = YES;
 		}
 	}
-
-    CLS_LOG(@"errorDetail: %@", errorDetail);
     
 	if (errorDetail && [errorDetail length] > 0) [errorDetailText setString:errorDetail];
 
@@ -3268,7 +3253,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
 
-		CLS_LOG(@"prefs: %@", prefs.dictionaryRepresentation);
+        SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
@@ -3312,12 +3297,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_refreshBookmarks{
     SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
-    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 }
-
-
 
 // TODO: this is called once per connection screen - but the timezones don't change right? Should be static/class method?
 - (NSArray<NSMenuItem *> *)generateTimeZoneMenuItems

@@ -32,7 +32,6 @@
 #import "bzlib.h"
 #import <zlib.h>
 #import "pthread.h"
-@import Firebase;
 
 // Define the maximum size of the background write buffer before the writing thread
 // waits until some has been written out.  This can affect speed and memory usage.
@@ -176,7 +175,6 @@ struct SPRawFileHandles {
 + (id)fileHandleForWritingAtPath:(NSString *)path
 {
     SPLog(@"Getting filehandle for: %@", path);
-    CLS_LOG(@"Getting filehandle for: %@", path);
 	return [self fileHandleForPath:path mode:O_WRONLY];
 }
 
@@ -191,7 +189,6 @@ struct SPRawFileHandles {
 	const char *pathRepresentation = [path fileSystemRepresentation];
     if (!pathRepresentation){
         SPLog(@"Failed to get fileSystemRepresentation for: %@", path);
-        CLS_LOG(@"Failed to get fileSystemRepresentation for: %@", path);
         return nil;
     }
 
@@ -202,13 +199,11 @@ struct SPRawFileHandles {
 	
     if (file == NULL) {
         SPLog(@"Failed to get open: %@", path);
-        CLS_LOG(@"Failed to get open for: %@", path);
         return nil;
 
     };
 
     SPLog(@"Got filehandle for: %@", path);
-    CLS_LOG(@"Got filehandle for: %@", path);
 
 	// Return an autoreleased file handle
 	return [[self alloc] initWithFile:file fromPath:pathRepresentation mode:mode];
@@ -305,7 +300,6 @@ struct SPRawFileHandles {
 - (void)writeData:(NSData *)data
 {
     SPLog(@"in writeData, fileIsClosed: %d", fileIsClosed);
-    CLS_LOG(@"in writeData, fileIsClosed: %d", fileIsClosed);
 	// Throw an exception if the file is closed
 	if (fileIsClosed) [NSException raise:NSInternalInconsistencyException format:@"Cannot write to a file handle after it has been closed"];
 
@@ -353,7 +347,6 @@ struct SPRawFileHandles {
 - (void)closeFile
 {
     SPLog(@"in closeFile, fileIsClosed: %d", fileIsClosed);
-    CLS_LOG(@"in closeFile, fileIsClosed: %d", fileIsClosed);
 	if (!fileIsClosed) {
 		[self synchronizeFile];
 		[self _closeFileHandles];
@@ -368,7 +361,6 @@ struct SPRawFileHandles {
 		fileIsClosed = YES;
 	}
     SPLog(@"leaving closeFile, fileIsClosed: %d", fileIsClosed);
-    CLS_LOG(@"leaving closeFile, fileIsClosed: %d", fileIsClosed);
 }
 
 #pragma mark -
@@ -481,7 +473,6 @@ struct SPRawFileHandles {
 - (void)dealloc
 {
     SPLog(@"calling closeFile");
-    CLS_LOG(@"calling closeFile");
 	[self closeFile];
 
 	free(wrappedFile);

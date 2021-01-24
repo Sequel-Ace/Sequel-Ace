@@ -769,7 +769,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			NSMutableString *c = [[NSMutableString alloc] init];
 			[c setString:[contentFilterTextView string]];
             SPLog(@"c: %@", c);
-            CLS_LOG(@"c: %@", c);
 			[c replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY" withString:@"[BINARY]"];
 			[c flushCachedRegexData];
 			[c replaceOccurrencesOfRegex:@"(?<!\\\\)(\\$\\{.*?\\})" withString:@"[arg]"];

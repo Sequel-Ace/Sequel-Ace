@@ -718,8 +718,6 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
 #   define SPLog(...)
 #endif
 
-#define CLS_LOG(__FORMAT__, ...) [[FIRCrashlytics crashlytics] logWithFormat:@"%s line %d $ " __FORMAT__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__]
-
 // See http://stackoverflow.com/questions/4415524
 #define COUNT_OF(x) (NSInteger)((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 

@@ -30,8 +30,6 @@
 
 #import "SPNetworkPreferencePane.h"
 #import "sequel-ace-Swift.h"
-@import Firebase;
-
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
@@ -70,7 +68,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (void)_refreshBookmarks{
     SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
-    CLS_LOG(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
 }
@@ -314,7 +311,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
             // check it's really a URL
             if(![url isKindOfClass:[NSURL class]]){
                 SPLog(@"selected file is not a valid URL: %@", classStr);
-                CLS_LOG(@"selected file is not a valid URL: %@", classStr);
 
                 NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 
@@ -331,8 +327,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                     };
 
                     SPLog(@"userInfo: %@", userInfo);
-
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileNetworkPrefs" code:1 userInfo:userInfo]];
                 }];
             }
             else{
@@ -341,10 +335,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 // when the selection contains multiple items.
                 if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
                     SPLog(@"addBookmarkForUrl success");
-                    CLS_LOG(@"addBookmarkForUrl success");
                 }
                 else{
-                    CLS_LOG(@"addBookmarkForUrl failed: %@", url.absoluteString);
                     SPLog(@"addBookmarkForUrl failed: %@", url.absoluteString);
                 }
             }
