@@ -199,7 +199,6 @@
     [MSACAppCenter setMaxStorageSize:(30 * 1024 * 1024) completionHandler:nil];
     [MSACAppCenter start:@"65535bfb-1763-40fd-896b-a3aaae06227f" withServices:@[[MSACAnalytics class], [MSACCrashes class]]];
 
-    // has to be after FIRApp configure
     // this reRequests access to all bookmarks
     SecureBookmarkManager *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
 
@@ -244,6 +243,15 @@
             }
         }
     }
+    executeOnBackgroundThread(^{
+        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+
+        // fake the dbViewInfoPanelSplit being open
+        NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
+        [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];
+        [dbViewInfoPanelSplit addObject:@"0.000000, 586.500000, 359.500000, 190.500000, NO, NO"];
+        [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
+    });
 
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 

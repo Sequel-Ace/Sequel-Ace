@@ -1279,7 +1279,9 @@
         }
     }
     
-	if(item)[tabView removeTabViewItem:item];
+    if(item) {
+        [tabView removeTabViewItem:item];
+    }
 }
 
 - (void)tabClick:(id)sender
