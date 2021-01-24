@@ -999,7 +999,6 @@
 
 		if(bundleVersion.longValue < SPBundleCurrentVersion){
 			SPLog(@"Got v1 bundle! : %@", bundleName);
-			CLS_LOG(@"Got v1 bundle! : %@", bundleName);
 		}
 
 		SPLog(@"bundleVersion = %@", bundleVersion);
@@ -1069,7 +1068,6 @@
 		[saveDict writeToURL:[NSURL fileURLWithPath:cmdFilePath] error:&error];
 		if(error){
 			SPLog(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
-			CLS_LOG(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
 		}
 
 	} else {

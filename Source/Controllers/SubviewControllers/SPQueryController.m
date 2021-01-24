@@ -979,7 +979,6 @@ static SPQueryController *sharedQueryController = nil;
 
     NSString *fileURLStr = [fileURL absoluteString];
 
-    CLS_LOG(@"fileURLStr = %@", fileURLStr);
     SPLog(@"fileURLStr = %@", fileURLStr);
 
 	// Save each history item due to its document source

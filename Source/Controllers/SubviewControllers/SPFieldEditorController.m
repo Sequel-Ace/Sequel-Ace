@@ -38,7 +38,6 @@
 #import "SPCustomQuery.h"
 #import "SPTableContent.h"
 #import "SPJSONFormatter.h"
-@import Firebase;
 #import <SPMySQL/SPMySQL.h>
 #import "SPFunctions.h"
 
@@ -537,30 +536,25 @@ typedef enum {
 
                         if(error != nil){
                             SPLog(@"JSONObjectWithData error : %@", error.localizedDescription);
-                            CLS_LOG(@"JSONObjectWithData error : %@", error.localizedDescription);
                             [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
                         }
                         else{
                             if([NSJSONSerialization isValidJSONObject:jsonObject]){
                                 SPLog(@"isValidJSONObject : %@", jsonObject);
-                                CLS_LOG(@"isValidJSONObject : %@", jsonObject);
                                 NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
 
                                 if(error != nil){
                                     SPLog(@"dataWithJSONObject error : %@", error.localizedDescription);
-                                    CLS_LOG(@"dataWithJSONObject error : %@", error.localizedDescription);
                                     [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
                                 }
                                 else{
                                     NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
                                     if(prettyPrintedJson != nil){
                                         SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
-                                        CLS_LOG(@"prettyPrintedJson : %@", prettyPrintedJson);
                                         [jsonTextView setString:prettyPrintedJson];
                                     }
                                     else{
                                         SPLog(@"prettyPrintedJson is nil");
-                                        CLS_LOG(@"prettyPrintedJson is nil");
                                         [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
                                     }
                                 }
@@ -577,7 +571,6 @@ typedef enum {
                     }
                     else{
                         SPLog(@"sheetEditData does not respond to dataUsingEncoding: %@", [sheetEditData class]);
-                        CLS_LOG(@"sheetEditData does not respond dataUsingEncoding: %@", [sheetEditData class]);
 #ifdef DEBUG
                         NSArray *arr = DumpObjCMethods(sheetEditData);
                         SPLog(@"sheetEditData class methods = %@", arr);
@@ -586,7 +579,6 @@ typedef enum {
                 }
                 else{
                     SPLog(@"sheetEditData not of NSData or NSString class: %@", [sheetEditData class]);
-                    CLS_LOG(@"sheetEditData not of NSData or NSString class: %@", [sheetEditData class]);
                 }
 
 

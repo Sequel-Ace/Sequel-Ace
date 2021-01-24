@@ -53,7 +53,6 @@
 #import "SPPDFExporterProtocol.h"
 #import "SPHTMLExporterProtocol.h"
 #import "sequel-ace-Swift.h"
-@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -435,7 +434,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// if they clicked export
 	// Cancel tag = 0
 	// Export tag = 1
-	if([sender tag] == 1){
+	if ([sender tag] == 1){
 		// but nothing is in the export path field
 		if([exportPathField stringValue] == nil || [[exportPathField stringValue] isEqualToString:@""] ){
 			NSLog(@"ERROR: no path!");
@@ -533,8 +532,6 @@ set_input:
 - (void)cancelExportForFile:(NSString*)fileName{
 
     SPLog(@"self.exportOutputFile.fileHandleError == YES, cancelling. Filename: %@", fileName);
-    CLS_LOG(@"self.exportOutputFile.fileHandleError == YES, cancelling. Filename: %@", fileName);
-
     [self cancelExport:@{ @"type" : SPExportFileHandleError, @"fileName" : fileName }];
 }
 
@@ -656,7 +653,6 @@ set_input:
             if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
 
                 SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
-                CLS_LOG(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
 
                 NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
 
@@ -672,17 +668,13 @@ set_input:
                     };
 
                     SPLog(@"userInfo: %@", userInfo);
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFileExportController" code:1 userInfo:userInfo]];
                 }];
             }
             else{
                 // this needs to be read-write
                 if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
                     SPLog(@"addBookmarkForUrl success");
-                    CLS_LOG(@"addBookmarkForUrl success");
-                }
-                else{
-                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
+                } else{
                     SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
                 }
             }

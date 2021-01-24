@@ -14,7 +14,6 @@
 #import "PSMSequelProTabStyle.h"
 #import "PSMTabDragAssistant.h"
 #import "PSMTabBarController.h"
-@import Firebase;
 #include <Carbon/Carbon.h> /* for GetKeys() and KeyMap */
 #include <bitstring.h>
 
@@ -677,7 +676,6 @@
     }
     else{
         SPLog(@"cell is nil");
-        CLS_LOG(@"cell is nil");
     }
 
     [self update];

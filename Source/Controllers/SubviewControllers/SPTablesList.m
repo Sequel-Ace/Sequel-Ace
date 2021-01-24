@@ -184,7 +184,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 
     SPLog(@"updateTables, sender: %@", sender);
-    CLS_LOG(@"updateTables, sender: %@", sender);
 
 	SPMySQLResult *theResult;
 	NSString *previousSelectedTable = nil;

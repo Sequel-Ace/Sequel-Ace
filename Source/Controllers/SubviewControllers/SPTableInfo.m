@@ -161,12 +161,11 @@
 			NSDictionary *tableStatus = [tableDataInstance statusValues];
 
 			// Check for errors
-			if (![tableStatus count]) {
-				[info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
-		SPLog(@"tableDataInstance TABLE INFORMATION statusValues error, returning");
-		CLS_LOG(@"tableDataInstance TABLE INFORMATION statusValues error, returning");
-				return;
-			}
+            if (![tableStatus count]) {
+                [info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
+                SPLog(@"tableDataInstance TABLE INFORMATION statusValues error, returning");
+                return;
+            }
 
 			// Check for 'Create_time' == NULL
 			if (![[tableStatus objectForKey:@"Create_time"] isNSNull]) {
@@ -220,18 +219,7 @@
 				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:tableStatusDataLengthAsLong]]];
 			}
 
-            if([[tableStatus objectForKey:@"Collation"] isNSNull]){
-                NSDictionary *userInfo = @{
-                    NSLocalizedDescriptionKey: @"tableStatus Collation is NSNull" ,
-                    @"serverVersion" : tableDocumentInstance.mySQLVersion,
-                    @"tableStatus" : tableStatus
-                };
-
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:1 userInfo:userInfo]];
-            }
-
             SPLog(@"tableStatus: %@", tableStatus);
-            CLS_LOG(@"tableStatus: %@", tableStatus);
 
 			NSString *tableEnc = [tableDataInstance tableEncoding];
 			NSString *tableColl = [tableStatus safeObjectForKey:@"Collation"];
@@ -285,7 +273,6 @@
 			// Check for errors
 			if (![tableStatus count]) {
                 SPLog(@"tableDataInstance PROCEDURE/FUNCTION INFORMATION statusValues error, returning");
-                CLS_LOG(@"tableDataInstance PROCEDURE/FUNCTION INFORMATION statusValues error, returning");
 				[info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
 				return;
 			}
@@ -341,7 +328,6 @@
 			// Check for errors
 			if (![tableStatus count]) {
                 SPLog(@"tableDataInstance VIEW INFORMATION statusValues error, returning");
-                CLS_LOG(@"tableDataInstance VIEW INFORMATION statusValues error, returning");
 				[info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
 				return;
 			}

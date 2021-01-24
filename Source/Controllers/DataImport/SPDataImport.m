@@ -47,7 +47,6 @@
 #import "SPQueryController.h"
 #import "SPConstants.h"
 #import "SPWindowController.h"
-@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -959,7 +958,6 @@
 
                 if(fmaCount > fmoCount){
                     SPLog(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
-                    CLS_LOG(@"fieldMappingArray [%lu] has more entries than fieldMapperOperator [%lu]", (unsigned long)fmaCount, (unsigned long)fmoCount);
                 }
 
 				for (i = 0; i < fmaCount; i++) {

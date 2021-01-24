@@ -48,7 +48,6 @@
 #import "SPPillAttachmentCell.h"
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
-@import Firebase;
 
 #import "sequel-ace-Swift.h"
 
@@ -1382,9 +1381,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				NSString *encodingName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
 				NSString *title = (![encoding safeObjectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding safeObjectForKey:@"DESCRIPTION"], encodingName];
 
-                if(title == nil || [title isNSNull]){
-                    SPLog(@"title is nil");
-                    CLS_LOG(@"title is nil");
+                if(title == nil || [title isNSNull]) {
                     // default to empty string?
                     title = @"";
                 }
@@ -1458,14 +1455,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             }
             else{
                 SPLog(@"collation was nil");
-                CLS_LOG(@"collation was nil");
             }
             if(encoding != nil){
                 [theField safeSetObject:encoding forKey:@"encodingName"];
             }
             else{
                 SPLog(@"encoding was nil");
-                CLS_LOG(@"encoding was nil");
             }
 
 			// Set BINARY if collation ends with _bin for convenience

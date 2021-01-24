@@ -36,7 +36,6 @@
 #import "SPServerSupport.h"
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
-@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 #import <QueryKit/QueryKit.h>
@@ -179,7 +178,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
             NSString *message = NSLocalizedString(@"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.", @"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.");
 
             SPLog(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
-            CLS_LOG(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
 
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"User Data Error", @"User Data Error") message:message callback:^{
                 [self doCancel:nil];
@@ -439,15 +437,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
         // some error checks
         if (rowDict[@"DB"] && doneRecordError == NO){
             doneRecordError = YES;
-            CLS_LOG(@"rowDict[DB] = %@", rowDict[@"DB"]);
             SPLog(@"rowDict[DB] = %@", rowDict[@"DB"]);
-
-            NSDictionary *userInfo = @{
-                NSLocalizedDescriptionKey: @"rowDict contains the key 'DB'",
-                @"serverVersion" : connection.serverVersionString
-            };
-
-            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"users" code:1 userInfo:userInfo]];
         }
 
 		for (__strong NSString *key in rowDict)

@@ -459,8 +459,8 @@ static const NSInteger kBlobAsImageFile = 4;
                 }
             }
             else{
-                CLS_LOG(@"object does not respond to boolForKey. obj class: %@\n Description: %@", [obj class], [obj description]);
-                CLS_LOG(@"columnDefinitions: %@", columnDefinitions);
+                SPLog(@"object does not respond to boolForKey. obj class: %@\n Description: %@", [obj class], [obj description]);
+                SPLog(@"columnDefinitions: %@", columnDefinitions);
             }
 		}
 

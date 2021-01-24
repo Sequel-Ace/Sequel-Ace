@@ -219,7 +219,6 @@
     // FB: 5c541e5508e7cdd4a925295cabfbf398
     //
     SPLog(@"ARG_MAX: %d", ARG_MAX);
-    CLS_LOG(@"ARG_MAX: %d", ARG_MAX);
 
     unsigned long argArrLen = 0;
     NSArray *argArr = nil;
@@ -228,19 +227,15 @@
     if([shellEnvironment objectForKey:SPBundleShellVariableInputFilePath]){
         argArr = [NSArray arrayWithObjects:@"-c", [NSString stringWithFormat:@"%@ > %@ < %@", [scriptHeaderArguments componentsJoinedByString:@" "], stdoutFilePath, [shellEnvironment objectForKey:SPBundleShellVariableInputFilePath]], nil];
         SPLog(@"argArr: %@", argArr);
-        CLS_LOG(@"argArr: %@", argArr);
         argArrLen = (unsigned long)[argArr componentsJoinedByString:@""].length;
         SPLog(@"argArr len: %lu", argArrLen);
-        CLS_LOG(@"argArr len: %lu", argArrLen);
 		[bashTask setArguments:argArr];
     }
     else{
         argArr = [NSArray arrayWithObjects:@"-c", [NSString stringWithFormat:@"%@ > %@", [scriptHeaderArguments componentsJoinedByString:@" "], stdoutFilePath], nil];
         SPLog(@"argArr: %@", argArr);
-        CLS_LOG(@"argArr: %@", argArr);
         argArrLen = (unsigned long)[argArr componentsJoinedByString:@""].length;
         SPLog(@"argArr len: %lu", argArrLen);
-        CLS_LOG(@"argArr len: %lu", argArrLen);
         [bashTask setArguments:argArr];
     }
 
@@ -253,25 +248,10 @@
 
     SPLog(@"envStr: %@", envStr);
     SPLog(@"envStr len: %lu", (unsigned long)envStr.length);
-    CLS_LOG(@"envStr: %@", envStr);
-    CLS_LOG(@"envStr len: %lu", (unsigned long)envStr.length);
     SPLog(@"envStr len + arg len: %lu", (unsigned long)envStr.length + argArrLen);
-    CLS_LOG(@"envStr len + arg len: %lu", (unsigned long)envStr.length + argArrLen);
 
     if(argArrLen + envStr.length > ARG_MAX){
         SPLog(@"env + argument length > ARG_MAX");
-        CLS_LOG(@"env + argument length > ARG_MAX");
-
-        NSDictionary *userInfo = @{
-            NSLocalizedDescriptionKey: @"env + argument length > ARG_MAX",
-            @"argArr" : argArr,
-            @"argArrLength" : @([argArr componentsJoinedByString:@""].length),
-            @"ARG_MAX" : @(ARG_MAX),
-            @"env" : theEnv,
-            @"envLength" : @(envStr.length)
-        };
-
-        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"bashCommand" code:1 userInfo:userInfo]];
     }
 
 	NSPipe *stderr_pipe = [NSPipe pipe];

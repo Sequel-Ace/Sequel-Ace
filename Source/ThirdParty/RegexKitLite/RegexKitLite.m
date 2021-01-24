@@ -58,10 +58,9 @@
 #include <os/lock.h>
 
 #import "SPConstants.h"
-#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
-
 #import "RegexKitLite.h"
 
+#import "sequel-ace-Swift.h"
 
 #pragma mark Compile time tunables
 
@@ -1727,10 +1726,7 @@ static NSError *rkl_makeNSError(RKLUserInfoOptions userInfoOptions, NSString *re
     NSError *error = [NSError errorWithDomain:RKLICURegexErrorDomain code:(NSInteger)status userInfo:rkl_userInfoDictionary(userInfoOptions, regexString, options, parseError, status, matchString, matchRange, replacementString, replacedString, replacedCount, enumerationOptions, errorDescription, @"NSLocalizedDescription", NULL)];
 
     SPLog(@"Error: %@", error.localizedDescription);
-    CLS_LOG(@"Error: %@", error.localizedDescription);
-    [FIRCrashlytics.crashlytics recordError:error];
-
-	return(error);
+	return error;
 }
 
 static NSException *rkl_NSExceptionForRegex(NSString *regexString, RKLRegexOptions options, const UParseError *parseError, int32_t status) {
@@ -1740,10 +1736,9 @@ static NSException *rkl_NSExceptionForRegex(NSString *regexString, RKLRegexOptio
     // will this leak?
     NSDictionary *userInfoDict = rkl_userInfoDictionary((RKLUserInfoOptions)RKLUserInfoNone, regexString, options, parseError, status, NULL, NSNotFoundRange, NULL, NULL, 0L, (RKLRegexEnumerationOptions)RKLRegexEnumerationNoOptions, NULL);
 
-    CLS_LOG(@"RKLICURegexException. Reason: %@. userInfo: %@", reasonString, userInfoDict);
     SPLog(@"RKLICURegexException. Reason: %@. userInfo: %@", reasonString, userInfoDict);
 
-	return([NSException exceptionWithName:RKLICURegexException reason:reasonString userInfo:userInfoDict]);
+	return [NSException exceptionWithName:RKLICURegexException reason:reasonString userInfo:userInfoDict];
 }
 
 static NSDictionary *rkl_makeAssertDictionary(const char *function, const char *file, int line, NSString *format, ...) {
@@ -2622,10 +2617,8 @@ exitNow2:
 
 - (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement
 {
-    SPLog(@"Regex: %@", regex );
-    CLS_LOG(@"Regex: %@", regex);
+    SPLog(@"Regex: %@", regex);
     SPLog(@"replacement: %@", replacement);
-    CLS_LOG(@"replacement: %@", replacement);
 
 	NSRange    searchRange   = NSMaxiumRange;
 	NSInteger replacedCount = -1L;
@@ -2635,10 +2628,8 @@ exitNow2:
 
 - (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement range:(NSRange)searchRange
 {
-    SPLog(@"Regex: %@", regex );
-    CLS_LOG(@"Regex: %@", regex);
+    SPLog(@"Regex: %@", regex);
     SPLog(@"replacement: %@", replacement);
-    CLS_LOG(@"replacement: %@", replacement);
 
 	NSInteger replacedCount = -1L;
 	rkl_performRegexOp(self, _cmd, (RKLRegexOp)(RKLReplaceOp | RKLReplaceMutable), regex, RKLNoOptions, 0L, self, &searchRange, replacement, NULL,  (void **)((void *)&replacedCount), 0UL, NULL, NULL);
@@ -2647,10 +2638,8 @@ exitNow2:
 
 - (NSInteger)RKL_METHOD_PREPEND(replaceOccurrencesOfRegex):(NSString *)regex withString:(NSString *)replacement options:(RKLRegexOptions)options range:(NSRange)searchRange error:(NSError **)error
 {
-    SPLog(@"Regex: %@", regex );
-    CLS_LOG(@"Regex: %@", regex);
+    SPLog(@"Regex: %@", regex);
     SPLog(@"replacement: %@", replacement);
-    CLS_LOG(@"replacement: %@", replacement);
     
 	NSInteger replacedCount = -1L;
 	rkl_performRegexOp(self, _cmd, (RKLRegexOp)(RKLReplaceOp | RKLReplaceMutable), regex, options,      0L, self, &searchRange, replacement, error, (void **)((void *)&replacedCount), 0UL, NULL, NULL);

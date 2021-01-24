@@ -718,8 +718,6 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
 #   define SPLog(...)
 #endif
 
-#define CLS_LOG(__FORMAT__, ...) [[FIRCrashlytics crashlytics] logWithFormat:@"%s line %d $ " __FORMAT__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__]
-
 // See http://stackoverflow.com/questions/4415524
 #define COUNT_OF(x) (NSInteger)((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
@@ -763,23 +761,3 @@ static inline __attribute__((always_inline)) void SABenchmark(void (^block)(void
 #endif
 
 inline __attribute__((always_inline)) NSString *safeString(NSString *str) { return str ?: @""; }
-
-#define foreachGetEnumerator(c) \
-    ([c respondsToSelector:@selector(objectEnumerator)] ? \
-     [c objectEnumerator] : \
-     c)
-#define foreacht(type, object, collection) \
-for ( id foreachCollection = collection; \
-      foreachCollection; \
-      foreachCollection = nil ) \
-    for ( id foreachEnum = foreachGetEnumerator(foreachCollection); \
-          foreachEnum; \
-          foreachEnum = nil ) \
-        for ( IMP foreachNext = [foreachEnum methodForSelector:@selector(nextObject)]; \
-              foreachNext; \
-              foreachNext = NULL ) \
-            for ( type object = foreachNext(foreachEnum, @selector(nextObject)); \
-                  object; \
-                  object = foreachNext(foreachEnum, @selector(nextObject)) )
-
-#define foreach(object, collection) foreacht(id, object, (collection))

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2009-2014 Erik Doernenburg and contributors
+ *  Copyright (c) 2009-2020 Erik Doernenburg and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use these files except in compliance with the License. You may obtain
@@ -36,6 +36,10 @@
 
 + (id *)setTo:(id)value;
 + (void *)setToValue:(NSValue *)value;
++ (id)invokeBlock;
++ (id)invokeBlockWithArgs:(id)first,... NS_REQUIRES_NIL_TERMINATION;
+
++ (id)defaultValue;
 
 // internal use only
 
@@ -51,3 +55,4 @@
 #else
   #define OCMOCK_VALUE(variable) [NSValue value:&variable withObjCType:@encode(__typeof__(variable))]
 #endif
+
