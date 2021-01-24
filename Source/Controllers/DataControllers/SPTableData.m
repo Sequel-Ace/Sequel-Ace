@@ -375,7 +375,7 @@
 	[primaryKeyColumns removeAllObjects];
 
 	if( [tableListInstance tableType] == SPTableTypeTable || [tableListInstance tableType] == SPTableTypeView ) {
-		tableData = [self informationForTable:[tableListInstance tableName]];
+		tableData = [self informationForTable:[tableListInstance tableName] fromDatabase:[tableListInstance selectedDatabase]];
 	}
 
 	// If nil is returned, return failure.
@@ -442,77 +442,83 @@
 /**
  * Retrieve the CREATE statement for a table/view and return extracted table
  * structure information.
+ * @param tableName tablename from current database or depending the second param if not nil.
+ * @param database database name owning the tablename, can be nil.
  * @attention This method will interact with the UI on errors/connection loss!
  */
-- (NSDictionary *) informationForTable:(NSString *)tableName
+- (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database
 {
-	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
+    BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
 
-	// Catch unselected tables and return nil
-	if ([tableName isEqualToString:@""] || !tableName) return nil;
+    // Catch unselected tables and return nil
+    if ([tableName isEqualToString:@""] || !tableName) return nil;
 
-	// Ensure the encoding is set to UTF8
-	if (changeEncoding) {
-		[mySQLConnection storeEncodingForRestoration];
-		[mySQLConnection setEncoding:@"utf8mb4"];
-	}
+    // Ensure the encoding is set to UTF8
+    if (changeEncoding) {
+        [mySQLConnection storeEncodingForRestoration];
+        [mySQLConnection setEncoding:@"utf8mb4"];
+    }
 
-	// In cases where this method is called directly instead of via -updateInformationForCurrentTable
-	// (for example, from the exporters) clear the list of constraints to prevent the previous call's table
-	// constraints being included in the table information (issue 1206).
-	[constraints removeAllObjects];
+    // In cases where this method is called directly instead of via -updateInformationForCurrentTable
+    // (for example, from the exporters) clear the list of constraints to prevent the previous call's table
+    // constraints being included in the table information (issue 1206).
+    [constraints removeAllObjects];
 
-	// Retrieve the CREATE TABLE syntax for the table
-	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]]];
-	[theResult setReturnDataAsStrings:YES];
+    // Retrieve the CREATE TABLE syntax for the table
+    SPMySQLResult *theResult;
+    if (database)
+        theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [database backtickQuotedString], [tableName backtickQuotedString]]];
+    else
+        theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]]];
+    [theResult setReturnDataAsStrings:YES];
 
-	// Check for any errors, but only display them if a connection still exists
-	if ([mySQLConnection queryErrored]) {
-		if ([mySQLConnection isConnected]) {
-			NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
-					   tableName, [mySQLConnection lastErrorMessage]];
+    // Check for any errors, but only display them if a connection still exists
+    if ([mySQLConnection queryErrored]) {
+        if ([mySQLConnection isConnected]) {
+            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+                       tableName, [mySQLConnection lastErrorMessage]];
 
-			// If the current table doesn't exist anymore reload table list
-			if ([mySQLConnection lastErrorID] == 1146) {
+            // If the current table doesn't exist anymore reload table list
+            if ([mySQLConnection lastErrorID] == 1146) {
 
-				// Release the table loading lock to allow reselection/reloading to requery the database.
-				pthread_mutex_unlock(&dataProcessingLock);
+                // Release the table loading lock to allow reselection/reloading to requery the database.
+                pthread_mutex_unlock(&dataProcessingLock);
 
-				[tableListInstance deselectAllTables];
-				[tableListInstance updateTables:self];
-			}
-			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
-			});
-			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
-		}
+                [tableListInstance deselectAllTables];
+                [tableListInstance updateTables:self];
+            }
+            SPMainQSync(^{
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
+            });
+            if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+        }
 
-		return nil;
-	}
+        return nil;
+    }
 
-	// Retrieve the table syntax string
-	NSArray *syntaxResult = [theResult getRowAsArray];
-	NSArray *resultFieldNames = [theResult fieldNames];
+    // Retrieve the table syntax string
+    NSArray *syntaxResult = [theResult getRowAsArray];
+    NSArray *resultFieldNames = [theResult fieldNames];
 
-	// Only continue if syntaxResult is not nil. This accommodates causes where the above query caused the
-	// connection reconnect dialog to appear and the user chose to close the connection.
-	if (!syntaxResult) return nil;
-	
-	// A NULL value indicates that the user does not have permission to view the syntax
-	if ([[syntaxResult safeObjectAtIndex:1] isNSNull] || [syntaxResult safeObjectAtIndex:1] == nil) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
-		 
-		 if (changeEncoding) [mySQLConnection restoreStoredEncoding];
-		 return nil;
-	}
+    // Only continue if syntaxResult is not nil. This accommodates causes where the above query caused the
+    // connection reconnect dialog to appear and the user chose to close the connection.
+    if (!syntaxResult) return nil;
+    
+    // A NULL value indicates that the user does not have permission to view the syntax
+    if ([[syntaxResult safeObjectAtIndex:1] isNSNull] || [syntaxResult safeObjectAtIndex:1] == nil) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
+         
+         if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+         return nil;
+    }
 
-	tableCreateSyntax = [[NSString alloc] initWithString:[syntaxResult objectAtIndex:1]];
-	
-	NSDictionary *tableData = [self parseCreateStatement:tableCreateSyntax ofType:[resultFieldNames objectAtIndex:0]];
-	
-	if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+    tableCreateSyntax = [[NSString alloc] initWithString:[syntaxResult objectAtIndex:1]];
+    
+    NSDictionary *tableData = [self parseCreateStatement:tableCreateSyntax ofType:[resultFieldNames objectAtIndex:0]];
+    
+    if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
-	return tableData;
+    return tableData;
 }
 
 /**

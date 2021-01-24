@@ -1308,7 +1308,7 @@
 	// Store target table definitions
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
-	NSDictionary *targetTableDetails = [selectedTableData informationForTable:selectedTableTarget];
+	NSDictionary *targetTableDetails = [selectedTableData informationForTable:selectedTableTarget fromDatabase:nil];
 
 	// Store all field names which are of typegrouping 'geometry' and 'bit', and check if
 	// numeric columns can hold NULL values to map empty strings to.

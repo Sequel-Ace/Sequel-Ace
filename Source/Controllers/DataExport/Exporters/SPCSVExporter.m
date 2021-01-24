@@ -134,7 +134,7 @@
 		if ([queryResult numberOfRows]) {
 			id object = [[queryResult getRowAsDictionary] objectForKey:@"Create View"];
 			
-			tableDetails = [[NSDictionary alloc] initWithDictionary:(object) ? [[self csvTableData] informationForView:[self csvTableName]] : [[self csvTableData] informationForTable:[self csvTableName]]];
+			tableDetails = [[NSDictionary alloc] initWithDictionary:(object) ? [[self csvTableData] informationForView:[self csvTableName]] : [[self csvTableData] informationForTable:[self csvTableName] fromDatabase:nil]];
 		}
 		
 		// Retrieve the table details via the data class, and use it to build an array containing column numeric status

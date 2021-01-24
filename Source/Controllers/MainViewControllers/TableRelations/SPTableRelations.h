@@ -51,7 +51,8 @@
 	IBOutlet NSTextField         *constraintName;
 	IBOutlet NSBox               *addRelationTableBox;
 	IBOutlet NSPopUpButton       *columnPopUpButton;
-	IBOutlet NSPopUpButton       *refTablePopUpButton;
+    IBOutlet NSPopUpButton       *refDatabasePopUpButton;
+    IBOutlet NSPopUpButton       *refTablePopUpButton;
 	IBOutlet NSPopUpButton       *refColumnPopUpButton;
 	IBOutlet NSPopUpButton       *onUpdatePopUpButton;
 	IBOutlet NSPopUpButton       *onDeletePopUpButton;
@@ -79,6 +80,7 @@
 - (IBAction)closeRelationSheet:(id)sender;
 - (IBAction)confirmAddRelation:(id)sender;
 - (IBAction)selectTableColumn:(id)sender;
+- (IBAction)selectReferenceDatabase:(id)sender;
 - (IBAction)selectReferenceTable:(id)sender;
 - (IBAction)refreshRelations:(id)sender;
 
