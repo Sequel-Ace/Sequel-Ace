@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2009-2020 Erik Doernenburg and contributors
+ *  Copyright (c) 2014-2020 Erik Doernenburg and contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use these files except in compliance with the License. You may obtain
@@ -16,11 +16,13 @@
 
 #import <Foundation/Foundation.h>
 
-@class OCObserverMockObject;
+
+#if defined(__cplusplus)
+#define OCMOCK_EXTERN extern "C"
+#else
+#define OCMOCK_EXTERN extern
+#endif
 
 
-@interface NSNotificationCenter(OCMAdditions)
-
-- (void)addMockObserver:(OCObserverMockObject *)notificationObserver name:(NSString *)notificationName object:(id)notificationSender;
-
-@end
+OCMOCK_EXTERN BOOL OCMIsObjectType(const char *objCType);
+OCMOCK_EXTERN BOOL OCMIsSubclassOfMockClass(Class cls);
