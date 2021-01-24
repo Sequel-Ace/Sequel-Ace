@@ -1418,10 +1418,11 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 {
 	NSUInteger i, value;
 
-	if (!fieldMappingArray)
+    if (!fieldMappingArray) {
 		fieldMappingArray = [[NSMutableArray alloc] init];
-    else
+    } else {
         [fieldMappingArray removeAllObjects];
+    }
     NSArray *currentRowValues = [fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow];
     for (i = 0; i < [fieldMappingTableColumnNames count]; i++) {
         if (i < [currentRowValues count]) {
