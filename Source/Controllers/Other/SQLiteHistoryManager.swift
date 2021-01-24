@@ -389,26 +389,36 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         additionalHistArraySize = 0;
 
-        for query in arrayToNormalise where query.isNotEmpty {
-            if query.contains("\n"){
-                Log.debug("query contains newline: [\(query)]")
-                // an array where each entry contains the value from
-                // the history query, delimited by a new line
-                let lines = query.separatedIntoLines()
+        let saveHistoryIndividually = prefs.bool(forKey: SPCustomQuerySaveHistoryIndividually)
 
-                Log.debug("lines: [\(lines)]")
 
-                for line in lines where line.isNotEmpty {
-                    normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
+        if saveHistoryIndividually == true {
+            Log.debug("saveHistoryIndividually: [\(saveHistoryIndividually)]")
+            for query in arrayToNormalise where query.isNotEmpty {
+                if query.contains("\n"){
+                    Log.debug("query contains newline: [\(query)]")
+                    // an array where each entry contains the value from
+                    // the history query, delimited by a new line
+                    let lines = query.separatedIntoLines()
+
+                    Log.debug("lines: [\(lines)]")
+
+                    for line in lines where line.isNotEmpty {
+                        normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
+                    }
+                }
+                else{
+                    normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
                 }
             }
-            else{
-                normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
-            }
+            Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
+            Log.debug("normalisedQueryArray: [\(normalisedQueryArray)]")
         }
-
-        Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
-        Log.debug("normalisedQueryArray: [\(normalisedQueryArray)]")
+        else{
+            Log.debug("saveHistoryIndividually: [\(saveHistoryIndividually)], setting normalisedQueryArray = arrayToNormalise")
+            normalisedQueryArray = arrayToNormalise
+            Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
+        }
 
         // keep a rough track of array size by counting string len
         for arr in normalisedQueryArray {

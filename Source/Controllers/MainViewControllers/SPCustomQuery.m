@@ -927,7 +927,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // if(!queriesSeparatedByDelimiter) // TODO: How to combine queries delimited by DELIMITER?
-        usedQuery = [NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]];
+	usedQuery = [NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]]; // MARK: JCS - this is where the queries are split, by ";\n"
         lastExecutedQuery = [tempQueries lastObject];
         
         // Perform empty query if no query is given
