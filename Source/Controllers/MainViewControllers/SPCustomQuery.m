@@ -335,17 +335,27 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     } else if ([queryFavoritesButton indexOfSelectedItem] > 5) {
         // Choose favorite
         BOOL replaceContent = [prefs boolForKey:SPQueryFavoriteReplacesContent];
-        
-        if([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand))
-            replaceContent = !replaceContent;
-        if(replaceContent) {
-            [textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
-            [textView breakUndoCoalescing];
-            [textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@""]];
-        }
-        
+        [textView breakUndoCoalescing];
+
         // The actual query strings have been already stored as tooltip
-        [textView insertAsSnippet:[[queryFavoritesButton selectedItem] toolTip] atRange:NSMakeRange([textView selectedRange].location, 0)];
+        NSMutableString *selectedFaveQueryStr = [[[queryFavoritesButton selectedItem] toolTip] mutableCopy];
+
+        if([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand)){
+            replaceContent = !replaceContent;
+        }
+        if(replaceContent) {
+            SPLog(@"replaceContent == YES");
+            [textView.textStorage setAttributedString:[[NSAttributedString alloc] initWithString:@""]];
+            [textView insertAsSnippet:selectedFaveQueryStr atRange:NSMakeRange(0, selectedFaveQueryStr.length)];
+            [textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
+        }
+        else{
+            SPLog(@"replaceContent == NO");
+            NSUInteger startStringLen = [[textView string] length];
+            [selectedFaveQueryStr insertString:@"\n" atIndex:0];
+            [textView insertAsSnippet:selectedFaveQueryStr atRange:NSMakeRange(startStringLen, selectedFaveQueryStr.length)];
+            [textView setSelectedRange:NSMakeRange(startStringLen+1, selectedFaveQueryStr.length)];
+        }
     }
 }
 
@@ -356,15 +366,30 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     // Choose history item
     if ([queryHistoryButton indexOfSelectedItem] > 6) {
-        
+
+        NSMutableString *selectedHistoryQueryStr = [[[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] safeObjectAtIndex:[queryHistoryButton indexOfSelectedItem]-7] mutableCopy];
+
         BOOL replaceContent = [prefs boolForKey:SPQueryHistoryReplacesContent];
         [textView breakUndoCoalescing];
-        if([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand))
+
+        if([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagShift|NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand)){
             replaceContent = !replaceContent;
-        if(replaceContent)
+        }
+
+        if(replaceContent){
+            SPLog(@"replaceContent == YES");
+            [textView.textStorage setAttributedString:[[NSAttributedString alloc] initWithString:@""]];
+            [textView insertAsSnippet:selectedHistoryQueryStr atRange:NSMakeRange(0, selectedHistoryQueryStr.length)];
             [textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
-        
-        [textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:[queryHistoryButton indexOfSelectedItem]-7]]];
+        }
+        else{
+            SPLog(@"replaceContent == NO");
+            NSUInteger startStringLen = [[textView string] length];
+            [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
+            [textView insertAsSnippet:selectedHistoryQueryStr atRange:NSMakeRange(startStringLen, selectedHistoryQueryStr.length)];
+            [textView setSelectedRange:NSMakeRange(startStringLen+1, selectedHistoryQueryStr.length)];
+        }
+
     }
 }
 
@@ -927,7 +952,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // if(!queriesSeparatedByDelimiter) // TODO: How to combine queries delimited by DELIMITER?
-	usedQuery = [NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]]; // MARK: JCS - this is where the queries are split, by ";\n"
+        usedQuery = [NSString stringWithString:[tempQueries componentsJoinedByString:@";\n"]]; // MARK: JCS - this is where the queries are split, by ";\n"
         lastExecutedQuery = [tempQueries lastObject];
         
         // Perform empty query if no query is given
