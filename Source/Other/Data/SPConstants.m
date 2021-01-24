@@ -114,6 +114,7 @@ NSString *SPDefaultEncoding                      = @"DefaultEncodingTag";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
 NSString *SPCustomQueryMaxHistoryItems           = @"CustomQueryMaxHistoryItems";
+NSString *SPCustomQuerySaveHistoryIndividually   = @"CustomQuerySaveHistoryIndividually";
 NSString *SPAppearance                           = @"Appearance";
 
 // Tables Prefpane
