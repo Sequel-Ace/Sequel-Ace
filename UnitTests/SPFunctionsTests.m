@@ -206,21 +206,4 @@
     }];
 }
 
-// 0.047 s 
-- (void)testPerformanceMacroForLoop {
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-
-        int const iterations = 100;
-
-        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
-
-        for (int i = 0; i < iterations; i++) {
-            @autoreleasepool {
-                foreach(object, randomArray ){}
-            }
-        }
-    }];
-}
-
 @end

@@ -242,8 +242,6 @@
 	NSInteger confirmCopyDatabaseReturnCode;
 
 	// Properties
-	SPWindowController *parentWindowController;
-	NSWindow *parentWindow;
 	NSTabViewItem *parentTabViewItem;
 	BOOL isProcessing;
 	NSString *processID;
@@ -257,11 +255,11 @@
 @property (nonatomic, strong) NSTableView *dbTablesTableView;
 @property (readwrite, strong) NSURL *sqlFileURL;
 @property (readwrite) NSStringEncoding sqlFileEncoding;
-@property (readwrite, strong) SPWindowController *parentWindowController;
 @property (readwrite, strong) NSTabViewItem *parentTabViewItem;
 @property (readwrite) BOOL isProcessing;
 @property (readwrite, copy) NSString *processID;
 
+@property (nonatomic, strong, readonly) SPWindowController *parentWindowController;
 @property (readonly, strong) SPServerSupport *serverSupport;
 @property (readonly, strong) SPDatabaseStructure *databaseStructureRetrieval;
 @property (readonly, strong) SPDataImport *tableDumpInstance;
@@ -270,6 +268,8 @@
 @property (readonly, strong) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;
 
 @property (readonly) int64_t instanceId;
+
+- (instancetype)initWithWindowController:(SPWindowController *)windowController;
 
 - (SPHelpViewerClient *)helpViewerClient;
 
@@ -426,8 +426,9 @@
 
 - (void)setIsProcessing:(BOOL)value;
 - (BOOL)isProcessing;
-- (void)setParentWindow:(NSWindow *)aWindow;
-- (NSWindow *)parentWindow;
+
+- (void)updateParentWindowController:(SPWindowController *)windowController;
+- (NSWindow *)parentWindowControllerWindow;
 
 // Scripting
 - (void)handleSchemeCommand:(NSDictionary*)commandDict;

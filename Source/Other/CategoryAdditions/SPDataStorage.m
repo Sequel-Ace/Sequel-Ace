@@ -34,7 +34,7 @@
 #import <SPMySQL/SPMySQLStreamingResultStore.h>
 #include <stdlib.h>
 #include <mach/mach_time.h>
-@import Firebase;
+#import "sequel-ace-Swift.h"
 
 @interface SPDataStorage ()
 
@@ -70,8 +70,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 
         SPLog(@"oldDataStorage: %@", oldDataStorage.debugDescription);
         SPLog(@"newDataStorage: %@", newDataStorage.debugDescription);
-        CLS_LOG(@"oldDataStorage: %@", oldDataStorage.debugDescription);
-        CLS_LOG(@"newDataStorage: %@", newDataStorage.debugDescription);
 
 		if (oldDataStorage) {
 			// If the table is reloading data, link to the current data store for smoother loads
@@ -572,13 +570,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
         NSString *errString = [NSString stringWithFormat:@"New row length (%llu) does not match store column count (%llu)", (unsigned long long)[aRow count], (unsigned long long)numberOfColumns];
 
         SPLog(@"%@", errString);
-        CLS_LOG(@"%@", errString);
-
-        NSDictionary *userInfo = @{
-            NSLocalizedDescriptionKey: errString
-        };
-
-        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"storage" code:1 userInfo:userInfo]];
 
         // still throw for the moment
         [NSException raise:NSInternalInconsistencyException format:@"%@", errString];

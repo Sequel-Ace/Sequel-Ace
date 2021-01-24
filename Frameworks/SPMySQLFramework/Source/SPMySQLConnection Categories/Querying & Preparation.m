@@ -30,6 +30,7 @@
 
 #import "SPMySQLConnection.h"
 #import "SPMySQL Private APIs.h"
+#import "SPMySQLArrayAdditions.h"
 
 @implementation SPMySQLConnection (Querying_and_Preparation)
 
@@ -439,7 +440,7 @@
  */
 - (id)getFirstFieldFromQuery:(NSString *)theQueryString
 {
-	return [[[self queryString:theQueryString] getRowAsArray] objectAtIndex:0];
+	return [[[self queryString:theQueryString] getRowAsArray] SPsafeObjectAtIndex:0];
 }
 
 #pragma mark -

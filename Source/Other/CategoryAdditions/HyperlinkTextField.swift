@@ -42,4 +42,20 @@ class HyperlinkTextField: NSTextField {
             NSWorkspace.shared.open(localHref)
         }
     }
+
+    @objc public func reapplyAttributes() {
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key.foregroundColor: NSColor.linkColor,
+            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue as AnyObject
+        ]
+        attributedStringValue = NSAttributedString(string: self.stringValue, attributes: attributes)
+
+        isBezeled = false
+        drawsBackground = false
+        isEditable = false
+        isSelectable = true
+        allowsEditingTextAttributes = true
+
+    }
 }

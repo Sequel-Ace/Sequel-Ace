@@ -34,7 +34,8 @@
 #import "SPGroupNode.h"
 #import "SPThreadAdditions.h"
 #import "pthread.h"
-@import Firebase;
+
+#import "sequel-ace-Swift.h"
 
 static SPFavoritesController *sharedFavoritesController = nil;
 
@@ -307,7 +308,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
 	NSDictionary *root = [favoritesData objectForKey:SPFavoritesRootKey];
 
     SPLog(@"root class: %@", root.class);
-    CLS_LOG(@"root class: %@", root.class);
 
     if([root isKindOfClass:[NSDictionary class]]){
 
@@ -335,7 +335,6 @@ static SPFavoritesController *sharedFavoritesController = nil;
     }
     else{
         SPLog(@"ERROR root is not NSDictionary");
-        CLS_LOG(@"ERROR root is not NSDictionary");
     }
 		
 	pthread_mutex_unlock(&favoritesLock);

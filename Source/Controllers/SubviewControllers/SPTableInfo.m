@@ -140,7 +140,7 @@
 
 	if (![tableListInstance tableName]) {
 		[info addObject:NSLocalizedString(@"INFORMATION", @"header for blank info pane")];
-		
+
 		if ([[tableListInstance selectedTableItems] count]) {
 			[info addObject:NSLocalizedString(@"multiple selection", @"multiple selection")];
 		}
@@ -161,28 +161,29 @@
 			NSDictionary *tableStatus = [tableDataInstance statusValues];
 
 			// Check for errors
-			if (![tableStatus count]) {
-				[info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
-				return;
-			}
+            if (![tableStatus count]) {
+                [info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
+                SPLog(@"tableDataInstance TABLE INFORMATION statusValues error, returning");
+                return;
+            }
 
 			// Check for 'Create_time' == NULL
 			if (![[tableStatus objectForKey:@"Create_time"] isNSNull]) {
 
 				// Add the creation date to the infoTable
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"Table Info Section : time+date table was created at"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Create_time"]]]];
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"Table Info Section : time+date table was created at"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Create_time"]]]];
 			}
 
 			// Check for 'Update_time' == NULL - InnoDB tables don't have an update time
 			if (![[tableStatus objectForKey:@"Update_time"] isNSNull]) {
 
 				// Add the update date to the infoTable
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Update_time"]]]];
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Update_time"]]]];
 			}
 			
 			// Check for 'Engine' == NULL - should not happen (at least not with MySQL)
 			if (![[tableStatus objectForKey:@"Engine"] isNSNull]) {
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"engine: %@", @"Table Info Section : Table Engine"), [tableStatus objectForKey:@"Engine"]]];
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"engine: %@", @"Table Info Section : Table Engine"), [tableStatus objectForKey:@"Engine"]]];
 			}
 
 			// Check for 'Rows' == NULL - information_schema database doesn't report row count for it's tables
@@ -198,7 +199,7 @@
 
                 SPLog(@"tableStatusRowsAsLong = %lld", tableStatusRowsAsLong);
 
-				[info addObject:[NSString stringWithFormat:[[tableStatus objectForKey:@"RowsCountAccurate"] boolValue] ? NSLocalizedString(@"rows: %@", @"Table Info Section : number of rows (exact value)") : NSLocalizedString(@"rows: ~%@", @"Table Info Section : number of rows (estimated value)"),
+				[info safeAddObject:[NSString stringWithFormat:[[tableStatus objectForKey:@"RowsCountAccurate"] boolValue] ? NSLocalizedString(@"rows: %@", @"Table Info Section : number of rows (exact value)") : NSLocalizedString(@"rows: ~%@", @"Table Info Section : number of rows (estimated value)"),
 					[NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:tableStatusRowsAsLong]]]];
 			}
 			
@@ -215,20 +216,10 @@
 
                 SPLog(@"tableStatusDataLengthAsLong = %lld", tableStatusDataLengthAsLong);
 
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:tableStatusDataLengthAsLong]]];
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:tableStatusDataLengthAsLong]]];
 			}
 
-            if([[tableStatus objectForKey:@"Collation"] isNSNull]){
-                NSDictionary *userInfo = @{
-                    NSLocalizedDescriptionKey: @"tableStatus Collation is NSNull" ,
-                    @"serverVersion" : tableDocumentInstance.mySQLVersion,
-                };
-
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
-            }
-
             SPLog(@"tableStatus: %@", tableStatus);
-            CLS_LOG(@"tableStatus: %@", tableStatus);
 
 			NSString *tableEnc = [tableDataInstance tableEncoding];
 			NSString *tableColl = [tableStatus safeObjectForKey:@"Collation"];
@@ -281,6 +272,7 @@
 
 			// Check for errors
 			if (![tableStatus count]) {
+                SPLog(@"tableDataInstance PROCEDURE/FUNCTION INFORMATION statusValues error, returning");
 				[info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
 				return;
 			}
@@ -335,6 +327,7 @@
 
 			// Check for errors
 			if (![tableStatus count]) {
+                SPLog(@"tableDataInstance VIEW INFORMATION statusValues error, returning");
 				[info addObject:NSLocalizedString(@"error occurred", @"error occurred")];
 				return;
 			}
@@ -389,17 +382,6 @@
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (tableView == infoTable) {
-        if(info.count <= (NSUInteger)rowIndex){
-            NSDictionary *userInfo = @{
-                NSLocalizedDescriptionKey: @"info.count <= (NSUInteger)rowIndex",
-                @"info.count":@(info.count),
-                @"rowIndex":@(rowIndex),
-                @"info":info
-            };
-            CLS_LOG(@"info.count <= (NSUInteger)rowIndex: [%lu] vs [%li]", (unsigned long)info.count, (long)rowIndex);
-            SPLog(@"info.count <= (NSUInteger)rowIndex: [%lu] vs [%li]", (unsigned long)info.count, (long)rowIndex);
-            [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:4 userInfo:userInfo]];
-        }
 		return [info safeObjectAtIndex:rowIndex];
 	} 
 	else {
@@ -413,8 +395,7 @@
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
             NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
 			SPActivityTextFieldCell *c = [[SPActivityTextFieldCell alloc] init];
-			
-			[c setActivityName:[[dict objectForKey:@"contextInfo"] objectForKey:@"name"]];
+			[c setActivityName:[[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"]];
 			
 			if ([dict objectForKey:@"type"] && [[dict objectForKey:@"type"] isEqualToString:@"bashcommand"]) {
 				[c setContextInfo:[NSDictionary dictionaryWithObjectsAndKeys:[dict objectForKey:@"type"], @"type", [dict objectForKey:@"pid"], @"pid", nil]];
@@ -492,11 +473,9 @@
 		}
 
         NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
-		if ([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"]) {
-			return [[dict objectForKey:@"contextInfo"] objectForKey:@"name"];
-		}
-		
-		return @"";
+
+        return (([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"])) ?: @"";
+
 	}
 	
 	return nil;

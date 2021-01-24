@@ -37,12 +37,10 @@
 #import "SPAppController.h"
 #import "SPDatabaseDocument.h"
 #import "SPFunctions.h"
-@import Firebase;
 
 #import "sequel-ace-Swift.h"
 
 #import <netinet/in.h>
-#import <CommonCrypto/CommonDigest.h>
 
 static unsigned short getRandomPort(void);
 
@@ -199,9 +197,6 @@ static unsigned short getRandomPort(void);
 
     if(error == YES){
         SPLog(@"keychainName or keychainAccount is nil");
-        // don't log account - contains private data
-        NSDictionary *userInfo = @{ NSLocalizedDescriptionKey : @"setPasswordKeychainName: keychainName or keychainAccount is nil"};
-        [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"sshTunnel" code:1 userInfo:userInfo]];
     }
 
 	return !error;
@@ -259,13 +254,11 @@ static unsigned short getRandomPort(void);
 - (void)connect
 {
     SPLog(@"connect in ssh tunnel connection state = %i", connectionState);
-    CLS_LOG(@"connect in ssh tunnel connection state = %i", connectionState);
 
 	localPort = 0;
 
     if (connectionState != SPMySQLProxyIdle){
         SPLog(@"connect ssh connection state != SPMySQLProxyIdle, returning");
-        CLS_LOG(@"connect ssh connection state != SPMySQLProxyIdle, returning");
         return;
     }
 
@@ -285,32 +278,12 @@ static unsigned short getRandomPort(void);
  * tunnel to the remote server.
  * Sets up and tears down as appropriate for usage in a background thread.
  */
-- (void)launchTask:(id) dummy
-{
-
-    SPMainQSync(^{
-        NSArray *allDocs = [SPAppDelegate orderedDocuments];
-        for (SPDatabaseDocument *doc in allDocs)
-        {
-            SPLog(@"host= %@",doc.getConnection.host );
-            SPLog(@"lastErrorMessage = %@",doc.getConnection.lastErrorMessage );
-            SPLog(@"isConnected = %d",doc.getConnection.isConnected );
-            SPLog(@"isProxy = %d",doc.getConnection.isProxy );
-            SPLog(@"timeout = %lu",(unsigned long)doc.getConnection.timeout );
-            CLS_LOG(@"host= %@",doc.getConnection.host );
-            CLS_LOG(@"lastErrorMessage = %@",doc.getConnection.lastErrorMessage );
-            CLS_LOG(@"isConnected = %d",doc.getConnection.isConnected );
-            CLS_LOG(@"isProxy = %d",doc.getConnection.isProxy );
-            CLS_LOG(@"timeout = %lu",(unsigned long)doc.getConnection.timeout );
-        }
-    });
+- (void)launchTask:(id) dummy {
     
     SPLog(@"connection state = %i", connectionState);
-    CLS_LOG(@"connection state = %i", connectionState);
 
     if (connectionState != SPMySQLProxyIdle || task){
         SPLog(@"connection state != SPMySQLProxyIdle || task, returning");
-        CLS_LOG(@"connection state != SPMySQLProxyIdle || task, returning");
         return;
     }
 
@@ -328,7 +301,6 @@ static unsigned short getRandomPort(void);
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
             SPLog(@"launchTask SSH Tunnel started without a parent window, returning");
-            CLS_LOG(@"launchTask SSH Tunnel started without a parent window, returning");
 			return;
 		}
 
@@ -352,7 +324,6 @@ static unsigned short getRandomPort(void);
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
                 SPLog(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
-                CLS_LOG(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
 
 				return;
 			}
@@ -396,10 +367,8 @@ static unsigned short getRandomPort(void);
 			// Set a custom control path to isolate connection sharing to Sequel Ace, to prevent picking up
 			// existing masters without forwarding enabled and to isolate from interactive sessions.  Use a short
 			// hashed path to aid length limit issues.
-			unsigned char hashedPathResult[16];
 			NSString *pathString = [NSString stringWithFormat:@"%@@%@:%ld", sshLogin?sshLogin:@"", sshHost, (long)(sshPort?sshPort:0)];
-			CC_MD5([pathString UTF8String], (unsigned int)strlen([pathString UTF8String]), hashedPathResult);
-			NSString *hashedString = [[[NSData dataWithBytes:hashedPathResult length:16] dataToHexString] substringToIndex:8];
+			NSString *hashedString = [pathString.sha256Hash substringToIndex:8];
 			TA(@"-o",([NSString stringWithFormat:@"ControlPath=%@/SPSSH-%@", [NSFileManager temporaryDirectory], hashedString]));
 		}
 		else {
@@ -437,9 +406,8 @@ static unsigned short getRandomPort(void);
 		
 		TA(@"-F", sshConfigFile);
 
-		if(![SPFileHandle fileHandleForReadingAtPath:sshConfigFile]){
+		if(![SPFileHandle fileHandleForReadingAtPath:sshConfigFile]) {
 			SPLog(@"Cannot read sshConfigFile: %@",sshConfigFile);
-			CLS_LOG(@"Cannot read sshConfigFile: %@",sshConfigFile);
 		}
 
 		// Specify an identity file if available
@@ -494,7 +462,6 @@ static unsigned short getRandomPort(void);
 		[task setEnvironment:taskEnvironment];
 
         SPLog(@"taskEnvironment: %@",taskEnvironment);
-        CLS_LOG(@"taskEnvironment: %@",taskEnvironment);
 
 		// Add the connection details to the debug messages
 		[debugMessagesLock lock];
@@ -564,14 +531,12 @@ static unsigned short getRandomPort(void);
 		@catch (NSException *e) {
 			connectionState = SPMySQLProxyLaunchFailed;
             SPLog(@"launchTask SSH Tunnel NSException, connectionState = SPMySQLProxyLaunchFailed");
-            CLS_LOG(@"launchTask SSH Tunnel NSException, connectionState = SPMySQLProxyLaunchFailed");
 
 			// Log the exception. Could be improved by showing a dedicated alert instead
 			[debugMessagesLock lock];
 			[debugMessages addObject:[NSString stringWithFormat:@"%@: %@\n", [e name], [e reason]]];
 			[debugMessagesLock unlock];
             SPLog(@"launchTask SSH Tunnel NSException debugMessages = %@", [self debugMessages]);
-            CLS_LOG(@"launchTask SSH Tunnel NSException debugMessages = %@", [self debugMessages]);
 
 		}
 
@@ -588,7 +553,6 @@ static unsigned short getRandomPort(void);
 			taskExitedUnexpectedly = YES;
 			[self setLastError:NSLocalizedString(@"The SSH Tunnel has unexpectedly closed.", @"SSH tunnel unexpectedly closed")];
             SPLog(@"SSH Tunnel has unexpectedly closed");
-            CLS_LOG(@"SSH Tunnel has unexpectedly closed");
 
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 		}
@@ -607,11 +571,9 @@ static unsigned short getRandomPort(void);
 - (void)disconnect
 {
     SPLog(@"ssh tunnel disconnect");
-    CLS_LOG(@"ssh tunnel disconnect");
 
     if (connectionState == SPMySQLProxyIdle){
         SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
-        CLS_LOG(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
         return;
     }
 
@@ -625,7 +587,6 @@ static unsigned short getRandomPort(void);
 	// suddenly disappear as a result of network disconnections. 
     if ([task isRunning]){
         SPLog(@"disconnect ssh task isRunning, calling terminate");
-        CLS_LOG(@"disconnect ssh task isRunning, calling terminate");
         [task terminate];
     }
 }
@@ -834,7 +795,6 @@ static unsigned short getRandomPort(void);
 	} 
 	else {
         SPLog(@"key not found in [%@]", theQuery);
-        CLS_LOG(@"key not found in [%@]", theQuery);
 		[sshPasswordText setStringValue:theQuery];
 		[sshPasswordKeychainCheckbox setHidden:YES];
 		currentKeyName = nil;

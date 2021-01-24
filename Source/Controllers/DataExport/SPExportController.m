@@ -36,6 +36,9 @@
 #import "SPExportFileNameTokenObject.h"
 #import "SPDatabaseDocument.h"
 #import "SPThreadAdditions.h"
+#import "SPPreferenceController.h"
+#import "SPGeneralPreferencePane.h"
+#import "SPAppController.h"
 #import "SPCustomQuery.h"
 #import "SPCSVExporter.h"
 #import "SPSQLExporter.h"
@@ -50,7 +53,6 @@
 #import "SPPDFExporterProtocol.h"
 #import "SPHTMLExporterProtocol.h"
 #import "sequel-ace-Swift.h"
-@import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -334,7 +336,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[self _updateExportAdvancedOptionsLabel];
 	[self setExportInput:source];
 
-	[[tableDocumentInstance parentWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
 		// Perform the export
 		if (returnCode == NSModalResponseOK) {
 
@@ -366,7 +368,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[errorsTextView setString:@""];
 	[errorsTextView setString:errors];
 
-	[[tableDocumentInstance parentWindow] beginSheet:errorsWindow completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:errorsWindow completionHandler:nil];
 }
 
 /**
@@ -432,7 +434,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// if they clicked export
 	// Cancel tag = 0
 	// Export tag = 1
-	if([sender tag] == 1){
+	if ([sender tag] == 1){
 		// but nothing is in the export path field
 		if([exportPathField stringValue] == nil || [[exportPathField stringValue] isEqualToString:@""] ){
 			NSLog(@"ERROR: no path!");
@@ -443,7 +445,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			[alert setMessageText:NSLocalizedString(@"No directory selected.", @"No directory selected.")];
 			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
 			
-			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindowControllerWindow] completionHandler:^(NSInteger returnCode) {
 				[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
 			}];
 			
@@ -530,8 +532,6 @@ set_input:
 - (void)cancelExportForFile:(NSString*)fileName{
 
     SPLog(@"self.exportOutputFile.fileHandleError == YES, cancelling. Filename: %@", fileName);
-    CLS_LOG(@"self.exportOutputFile.fileHandleError == YES, cancelling. Filename: %@", fileName);
-
     [self cancelExport:@{ @"type" : SPExportFileHandleError, @"fileName" : fileName }];
 }
 
@@ -644,30 +644,37 @@ set_input:
 			
 			[self->exportPathField setStringValue:path];
 
+            NSMutableString *classStr = [NSMutableString string];
+            [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
+
+            SPLog(@"self->changeExportOutputPathPanel.URL.class: %@", classStr);
+
             // check it's really a URL
             if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
-                NSMutableString *classStr = [NSMutableString string];
-                [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
 
-                SPLog(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                CLS_LOG(@"self->keySelectionPanel.URL is not a URL: %@", classStr);
-                // JCS - should we stop here?
+                SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
 
-                NSDictionary *userInfo = @{
-                    NSLocalizedDescriptionKey: @"self->changeExportOutputPathPanel.URL is not a URL",
-                    @"class": classStr
-                };
+                NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
 
-                [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"chooseFile" code:1 userInfo:userInfo]];
+                NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
+                                          classStr];
+
+                [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"File Selection Error", @"error while selecting file message") message:alertMessage accessoryView:helpView callback:^{
+
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"self->changeExportOutputPathPanel.URL is not a valid URL",
+                        @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
+                        @"class": classStr
+                    };
+
+                    SPLog(@"userInfo: %@", userInfo);
+                }];
             }
             else{
                 // this needs to be read-write
                 if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
                     SPLog(@"addBookmarkForUrl success");
-                    CLS_LOG(@"addBookmarkForUrl success");
-                }
-                else{
-                    CLS_LOG(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
+                } else{
                     SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
                 }
             }
@@ -1257,7 +1264,7 @@ set_input:
 
 	// If it's not already displayed, open the progress sheet
 	if (![exportProgressWindow isVisible]) {
-		[[tableDocumentInstance parentWindow] beginSheet:exportProgressWindow completionHandler:nil];
+		[[tableDocumentInstance parentWindowControllerWindow] beginSheet:exportProgressWindow completionHandler:nil];
 	}
 
 	// cache the current connection encoding so the exporter can do what it wants.
@@ -1432,7 +1439,7 @@ set_input:
 	[exportProgressIndicator setUsesThreadedAnimation:YES];
 
 	// Open the progress sheet
-	[[tableDocumentInstance parentWindow] beginSheet:exportProgressWindow completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:exportProgressWindow completionHandler:nil];
 
 	// CSV export
 	if (exportType == SPCSVExport) {
@@ -2108,7 +2115,7 @@ set_input:
  * Re-open the export sheet without resetting the interface - for use on error.
  */
 - (void)_reopenExportSheet {
-	[[tableDocumentInstance parentWindow] beginSheet:self.window completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:nil];
 }
 
 #pragma mark - SPExportFilenameUtilities

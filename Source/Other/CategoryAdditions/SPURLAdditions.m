@@ -8,7 +8,6 @@
 
 #import "SPURLAdditions.h"
 #import "SPFunctions.h"
-#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 
 @implementation NSURL (SPURLAdditions)
 
@@ -20,7 +19,7 @@
 - (NSURL *)SA_initFileURLWithPath:(NSString *)path isDirectory:(BOOL)isDir{
 
 	if(path == nil){
-		CLS_LOG(@"initFileURLWithPath: path is nil");
+        SPLog(@"initFileURLWithPath: path is nil");
 		@throw NSInternalInconsistencyException;
 	}
 

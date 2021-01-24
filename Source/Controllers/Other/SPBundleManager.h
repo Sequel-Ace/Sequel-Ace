@@ -9,8 +9,6 @@
 #ifndef SPBundleManager_h
 #define SPBundleManager_h
 
-@import Firebase;
-
 @class SPBundleEditorController;
 
 @interface SPBundleManager : NSObject

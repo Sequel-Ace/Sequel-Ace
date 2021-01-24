@@ -54,11 +54,11 @@ enum {
 
 @interface PSMTabBarControl : NSControl {
 	// control basics
-	NSMutableArray			*_cells;					// the cells that draw the tabs
-	IBOutlet NSTabView		*tabView;					// the tab view being navigated
-	PSMOverflowPopUpButton	*_overflowPopUpButton;		// for too many tabs
-	PSMRolloverButton			*_addTabButton;
-	PSMTabBarController		*_controller;
+	NSMutableArray *_cells;					// the cells that draw the tabs
+	IBOutlet NSTabView *tabView;					// the tab view being navigated
+	PSMOverflowPopUpButton *_overflowPopUpButton;		// for too many tabs
+	PSMRolloverButton *_addTabButton;
+	PSMTabBarController *_controller;
 	
 	// Spring-loading.
 	NSTabViewItem			*_tabViewItemWithSpring;

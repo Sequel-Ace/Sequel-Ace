@@ -565,7 +565,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  * Open the add or edit trigger sheet.
  */
 - (void)_openTriggerSheet {
-	[[tableDocumentInstance parentWindow] beginSheet:addTriggerPanel completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:addTriggerPanel completionHandler:nil];
 }
 
 /**

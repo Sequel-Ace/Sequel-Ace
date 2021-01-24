@@ -43,4 +43,6 @@
 	NSUserDefaults *prefs;
 }
 - (void)preferencePaneWillBeShown;
+- (NSView *)modifyAndReturnBookmarkHelpView;
+
 @end

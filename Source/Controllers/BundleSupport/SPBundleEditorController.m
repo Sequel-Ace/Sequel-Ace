@@ -999,7 +999,6 @@
 
 		if(bundleVersion.longValue < SPBundleCurrentVersion){
 			SPLog(@"Got v1 bundle! : %@", bundleName);
-			CLS_LOG(@"Got v1 bundle! : %@", bundleName);
 		}
 
 		SPLog(@"bundleVersion = %@", bundleVersion);
@@ -1069,7 +1068,6 @@
 		[saveDict writeToURL:[NSURL fileURLWithPath:cmdFilePath] error:&error];
 		if(error){
 			SPLog(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
-			CLS_LOG(@"Could not write %@. Error: %@", cmdFilePath, error.localizedDescription);
 		}
 
 	} else {
@@ -1460,7 +1458,9 @@
 		(action == @selector(displayBundleMetaInfo:))) 
 	{
 		// Allow to record short-cuts used by the Bundle Editor
-		if([[NSApp keyWindow] firstResponder] == keyEquivalentField) return NO;
+        if ([[NSApp keyWindow] firstResponder] == keyEquivalentField) {
+            return NO;
+        }
 		
 		return ([[commandBundleTreeController selectedObjects] count] == 1 && ![[[commandBundleTreeController selectedObjects] objectAtIndex:0] objectForKey:kChildrenKey]);
 	}

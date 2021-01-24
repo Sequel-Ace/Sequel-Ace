@@ -33,7 +33,7 @@
 #import "SPTablesList.h"
 #import "RegexKitLite.h"
 #import "SPThreadAdditions.h"
-@import Firebase;
+#import "sequel-ace-Swift.h"
 #import <pthread.h>
 
 @interface SPDatabaseStructure ()
@@ -314,10 +314,7 @@
 		 }
 
             NSString *theQuery = [NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@ FROM %@", [aTableName backtickQuotedString], [currentDatabase backtickQuotedString]];
-
-            CLS_LOG(@"theQuery: %@", theQuery);
             SPLog(@"theQuery: %@", theQuery);
-            [[FIRCrashlytics crashlytics] setCustomValue:mySQLConnection.serverVersionString forKey:@"serverVersion"];
             
 			// Retrieve the column details
 			theResult = [mySQLConnection queryString:theQuery];
@@ -337,12 +334,6 @@
 
 			// Loop through the fields, extracting details for each
 			for (NSArray *row in theResult) {
-
-                if (row.count < 7){
-                    CLS_LOG(@"row count < 7. the row: %@", row);
-                    SPLog(@"row count < 7. the row: %@", row);
-                    [FIRCrashlytics.crashlytics recordError:[NSError errorWithDomain:@"database" code:7 userInfo:userInfo]];
-                }
 
 				NSString *field = [row safeObjectAtIndex:0];
 				NSString *type = [row safeObjectAtIndex:1];

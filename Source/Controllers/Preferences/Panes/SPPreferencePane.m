@@ -29,6 +29,8 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPPreferencePane.h"
+#import "SPAppController.h"
+#import "sequel-ace-Swift.h"
 
 @implementation SPPreferencePane
 
@@ -52,4 +54,20 @@
 	// Default: do nothing. Override in subclass.
 }
 
+- (NSView *)modifyAndReturnBookmarkHelpView{
+
+    SPAppController *appCon = SPAppDelegate;
+
+    NSView *helpView = [appCon staleBookmarkHelpView];
+    HyperlinkTextField *helpViewTF = [appCon staleBookmarkTextField];
+    NSTextFieldCell *helpViewTFC = [appCon staleBookmarkTextFieldCell];
+
+    helpViewTF.href = SPDocsAppSandbox;
+
+    helpViewTFC.title = NSLocalizedString(@"App Sandbox Info", @"App Sandbox Info");
+
+    [helpViewTF reapplyAttributes];
+
+    return helpView;
+}
 @end

@@ -48,7 +48,6 @@
 #import "SPPillAttachmentCell.h"
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
-@import Firebase;
 
 #import "sequel-ace-Swift.h"
 
@@ -473,7 +472,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[resetAutoIncrementLine setHidden:NO];
 		}
 
-		[[tableDocumentInstance parentWindow] beginSheet:resetAutoIncrementSheet completionHandler:^(NSModalResponse returnCode) {
+		[[tableDocumentInstance parentWindowControllerWindow] beginSheet:resetAutoIncrementSheet completionHandler:^(NSModalResponse returnCode) {
 			if (returnCode == NSAlertFirstButtonReturn) {
 				[self takeAutoIncrementFrom:self->resetAutoIncrementValue];
 			}
@@ -521,7 +520,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	
 	currentlyEditingRow = -1;
 	
-	[[tableDocumentInstance parentWindow] makeFirstResponder:tableSourceView];
+	[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:tableSourceView];
 	
 	return YES;
 }
@@ -636,9 +635,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Save any edits which have been made but not saved to the table yet;
 	// but not for any NSSearchFields which could cause a crash for undo, redo.
-	id currentFirstResponder = [[tableDocumentInstance parentWindow] firstResponder];
+	id currentFirstResponder = [[tableDocumentInstance parentWindowControllerWindow] firstResponder];
 	if (currentFirstResponder && [currentFirstResponder isKindOfClass:[NSView class]] && [(NSView *)currentFirstResponder isDescendantOf:tableSourceView]) {
-		[[tableDocumentInstance parentWindow] endEditingFor:nil];
+		[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 	}
 
 	// If no rows are currently being edited, or a save is already in progress, return success at once.
@@ -1009,7 +1008,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Problem: reentering edit mode for first cell doesn't function
 	[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-	[tableSourceView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
+	[tableSourceView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindowControllerWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 
 	[tableSourceView reloadData];
 }
@@ -1288,7 +1287,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[self->tableDocumentInstance endTask];
 
 			// Preserve focus on table for keyboard navigation
-			[[self->tableDocumentInstance parentWindow] makeFirstResponder:self->tableSourceView];
+			[[self->tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:self->tableSourceView];
 		}
 	});
 }
@@ -1382,9 +1381,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				NSString *encodingName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
 				NSString *title = (![encoding safeObjectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding safeObjectForKey:@"DESCRIPTION"], encodingName];
 
-                if(title == nil || [title isNSNull]){
-                    SPLog(@"title is nil");
-                    CLS_LOG(@"title is nil");
+                if(title == nil || [title isNSNull]) {
                     // default to empty string?
                     title = @"";
                 }
@@ -1458,14 +1455,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             }
             else{
                 SPLog(@"collation was nil");
-                CLS_LOG(@"collation was nil");
             }
             if(encoding != nil){
                 [theField safeSetObject:encoding forKey:@"encodingName"];
             }
             else{
                 SPLog(@"encoding was nil");
-                CLS_LOG(@"encoding was nil");
             }
 
 			// Set BINARY if collation ends with _bin for convenience
@@ -1771,7 +1766,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				// Asks the user to add an index to query if AUTO_INCREMENT is set and field isn't indexed
 				if ((![currentRow objectForKey:@"Key"] || [[currentRow objectForKey:@"Key"] isEqualToString:@""])) {
 					[chooseKeyButton selectItemWithTag:SPPrimaryKeyMenuTag];
-					[[tableDocumentInstance parentWindow] beginSheet:keySheet completionHandler:^(NSModalResponse returnCode) {
+					[[tableDocumentInstance parentWindowControllerWindow] beginSheet:keySheet completionHandler:^(NSModalResponse returnCode) {
 						if (returnCode) {
 							switch ([[self->chooseKeyButton selectedItem] tag]) {
 								case SPPrimaryKeyMenuTag:
@@ -2060,7 +2055,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 		[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
 
-		[[tableDocumentInstance parentWindow] makeFirstResponder:tableSourceView];
+		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:tableSourceView];
 
 		return YES;
 	}

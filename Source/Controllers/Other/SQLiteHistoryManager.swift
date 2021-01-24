@@ -6,7 +6,6 @@
 //  Copyright © 2020 Sequel-Ace. All rights reserved.
 //
 
-import Firebase
 import Foundation
 import FMDB
 import OSLog
@@ -14,21 +13,20 @@ import OSLog
 typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
 @objc final class SQLiteHistoryManager: NSObject {
-    @objc static let sharedInstance = SQLiteHistoryManager()
-
+    @objc static let sharedInstance             = SQLiteHistoryManager()
     @objc public var migratedPrefsToDB: Bool
-    @objc public var showLogging: Bool = false
+    @objc public var showLogging: Bool          = false
     @objc public var queryHist: [Int64: String] = [:]
     @objc public var queue: FMDatabaseQueue
-    private let maxSizeForCrashlyticsLog: Int = 64000
+    private let maxSizeForCrashlyticsLog: Int   = 64000
     private var traceExecution: Bool
     private let sqlitePath: String
-    private var dbSizeHumanReadable: String = ""
-    private var dbSize: Double = 0
-    private var additionalHistArraySize: Int = 0
-    private let prefs: UserDefaults = UserDefaults.standard
-    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "queryDatabase")
-    private var newSchemaVersion: Int32 = 0
+    private var dbSizeHumanReadable: String     = ""
+    private var dbSize: Double                  = 0
+    private var additionalHistArraySize: Int    = 0
+    private let prefs: UserDefaults             = UserDefaults.standard
+    private let Log                             = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "queryDatabase")
+    private var newSchemaVersion: Int32         = 0
 
     override private init() {
 
@@ -40,7 +38,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             tmpPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
         } catch {
             Log.error("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
-            Crashlytics.crashlytics().log("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription)")
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
             sqlitePath = ""
@@ -192,7 +189,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     Log.info("db schema did not need an update")
                 }
             } catch {
-                Crashlytics.crashlytics().log("Something went wrong: \(error.localizedDescription)")
                 Log.error("Something went wrong: \(error.localizedDescription)")
             }
         }
@@ -203,7 +199,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         let maxHistItems = prefs.integer(forKey: SPCustomQueryMaxHistoryItems)
         Log.debug("loading Query History. SPCustomQueryMaxHistoryItems: \(maxHistItems)")
-        Crashlytics.crashlytics().log("loading Query History. SPCustomQueryMaxHistoryItems: \(maxHistItems)")
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
@@ -224,7 +219,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Reloads the query history from the SQLite database.
     private func reloadQueryHistory() {
         Log.debug("reloading Query History")
-        Crashlytics.crashlytics().log("reloading Query History")
         queryHist.removeAll()
         loadQueryHistory()
     }
@@ -254,13 +248,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     private func migrateQueriesFromPrefs() {
         guard prefs.object(forKey: SPQueryHistory) != nil else {
             Log.error("no query history?")
-            Crashlytics.crashlytics().log("no query history?")
             migratedPrefsToDB = false
             prefs.set(false, forKey: SPMigratedQueriesFromPrefs)
             return
         }
 
-        Crashlytics.crashlytics().log("migrateQueriesFromPrefs")
         Log.debug("migrateQueriesFromPrefs")
 
         let queryHistoryArray = prefs.stringArray(forKey: SPQueryHistory) ?? [String]()
@@ -306,7 +298,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// We need to handle that scenario. See normalizeQueryHistory()
     @objc func updateQueryHistory(newHist: [String]) {
         Log.debug("updateQueryHistory")
-        Crashlytics.crashlytics().log("updateQueryHistory")
 
         var newHistMutArray: [String] = []
 
@@ -314,11 +305,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         Log.debug("newHist passed in: [\(newHist)]")
         Log.debug("newHistMut to be saved to db: [\(newHistMutArray)]")
-
-        if additionalHistArraySize < maxSizeForCrashlyticsLog {
-            Crashlytics.crashlytics().log("newHistMut to be saved to db: [\(newHistMutArray)]")
-        }
-
         // dont delete any history, keep it all?
         for query in newHistMutArray where query.isNotEmpty {
             let newDate = Date()
@@ -342,7 +328,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// Deletes all query history from the db
     @objc func deleteQueryHistory() {
         Log.debug("deleteQueryHistory")
-        Crashlytics.crashlytics().log("deleteQueryHistory")
         queue.inDatabase { db in
             db.traceExecution = traceExecution
             do {
@@ -362,7 +347,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// The VACUUM command rebuilds the database file, repacking it into a minimal amount of disk space
     @objc func execSQLiteVacuum() {
         Log.debug("execSQLiteVacuum")
-        Crashlytics.crashlytics().log("execSQLiteVacuum")
         queue.inDatabase { db in
             db.traceExecution = traceExecution
             do {
@@ -379,7 +363,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     ///   - error: the thrown Error
     /// - Returns: nothing, should crash
     func failed(error: Error) {
-        Crashlytics.crashlytics().log("Migration failed: \(error.localizedDescription)")
         assert(0 != 0, "Migration failed: \(error.localizedDescription)")
     }
 
@@ -388,7 +371,6 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     ///   - error: the thrown Error
     /// - Returns: nothing
     func logDBError(_ error: Error) {
-        Crashlytics.crashlytics().log("Query failed: \(error.localizedDescription)")
         Log.error("Query failed: \(error.localizedDescription)")
     }
 

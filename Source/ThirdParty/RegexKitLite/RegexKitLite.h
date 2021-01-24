@@ -49,7 +49,6 @@
 #include <TargetConditionals.h>
 #include <AvailabilityMacros.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

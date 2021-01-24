@@ -25,7 +25,7 @@
 #import "PSMTabBarControl.h"
 #import "NSBezierPath_AMShading.h"
 #import "PSMTabDragAssistant.h"
-@import Firebase;
+
 #import "sequel-ace-Swift.h"
 
 #define kPSMSequelProObjectCounterRadius 7.0f
@@ -499,7 +499,7 @@
     // icon
     if ([cell hasIcon]) {
         NSRect iconRect = [self iconRectForTabCell:cell];
-        NSImage *icon = [(id)[[cell representedObject] identifier] icon];
+        NSImage *icon = [[[cell representedObject] identifier] icon];
         
         // center in available space (in case icon image is smaller than kPSMTabBarIconWidth)
         if ([icon size].width < kPSMTabBarIconWidth) {
@@ -573,7 +573,6 @@
 
     if(cellBackgroundColor){
         SPLog(@"cellBackgroundColor not nil: %@", cellBackgroundColor.description);
-        CLS_LOG(@"cellBackgroundColor not nil: %@", cellBackgroundColor.description);
     }
 	// Set up colours
 	if (([[tabBar window] isMainWindow] || [[[tabBar window] attachedSheet] isMainWindow]) && [NSApp isActive]) {

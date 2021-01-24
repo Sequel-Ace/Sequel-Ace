@@ -280,39 +280,48 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	ignoreUpdate = flag;
 }
 
-- (void)removeConnection:(NSString*)connectionID
-{
-	if(schemaData && [schemaData objectForKey:connectionID]) {
+- (void)removeConnection:(NSString*)connectionID {
+	if (schemaData && [schemaData objectForKey:connectionID]) {
 		
 		NSInteger docCounter = 0;
 
 		// Detect if more than one connection windows with the connectionID are open.
 		// If so, don't remove it.
 		if ([SPAppDelegate frontDocument]) {
-			for(id doc in [SPAppDelegate orderedDocuments]) {
-				if([[doc connectionID] isEqualToString:connectionID])
+			for (SPDatabaseDocument *databaseDocument in [SPAppDelegate orderedDocuments]) {
+                if ([[databaseDocument connectionID] isEqualToString:connectionID]) {
 					docCounter++;
-				if(docCounter > 1) break;
+                }
+                if (docCounter > 1) {
+                    break;
+                }
 			}
 		}
 
-		if(docCounter > 1) return;
+        if (docCounter > 1) {
+            return;
+        }
 
-		if(schemaData && [schemaData objectForKey:connectionID] && [SPAppDelegate frontDocument] && [[SPAppDelegate orderedDocuments] count])
+        if (schemaData && [schemaData objectForKey:connectionID] && [SPAppDelegate frontDocument] && [[SPAppDelegate orderedDocuments] count]) {
 			[self saveSelectedItems];
+        }
 
-		if(schemaDataFiltered)
+        if (schemaDataFiltered) {
 			[schemaDataFiltered removeObjectForKey:connectionID];
-		if(schemaData)
+        }
+        if (schemaData) {
 			[schemaData removeObjectForKey:connectionID];
-		if(allSchemaKeys)
+        }
+        if (allSchemaKeys) {
 			[allSchemaKeys removeObjectForKey:connectionID];
+        }
 
-		if([[self window] isVisible]) {
+		if ([[self window] isVisible]) {
 			[outlineSchema2 reloadData];
 			[self restoreSelectedItems];
-			if(isFiltered)
+            if (isFiltered) {
 				[self filterTree:self];
+            }
 		}
 	}
 }

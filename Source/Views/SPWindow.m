@@ -31,7 +31,8 @@
 #import "SPWindow.h"
 #import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
-@import Firebase;
+
+#import "sequel-ace-Swift.h"
 
 @implementation SPWindow
 
@@ -66,7 +67,6 @@
 
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 
-            CLS_LOG(@"Option+Escape pressed. First responder = %@", [firstResponder class]);
             SPLog(@"Option+Escape pressed. First responder = %@", [firstResponder class]);
 
 			if(firstResponder && [firstResponder respondsToSelector:@selector(menuForEvent:)]) {

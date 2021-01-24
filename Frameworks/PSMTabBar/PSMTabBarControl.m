@@ -14,9 +14,11 @@
 #import "PSMSequelProTabStyle.h"
 #import "PSMTabDragAssistant.h"
 #import "PSMTabBarController.h"
-@import Firebase;
 #include <Carbon/Carbon.h> /* for GetKeys() and KeyMap */
 #include <bitstring.h>
+
+#import "SPDatabaseDocument.h"
+#import "sequel-ace-Swift.h"
 
 @interface PSMTabBarControl (Private)
 
@@ -613,8 +615,7 @@
 	}
 }
 
-- (void)removeTabForCell:(PSMTabBarCell *)cell
-{
+- (void)removeTabForCell:(PSMTabBarCell *)cell {
 	NSTabViewItem *item = [cell representedObject];
 	
     // unbind
@@ -627,39 +628,26 @@
 	[cell unbind:@"countColor"];
     [cell unbind:@"isEdited"];
 
-	if ([item identifier] != nil) {
-		if ([[item identifier] respondsToSelector:@selector(isProcessing)]) {
-			[[item identifier] removeObserver:cell forKeyPath:@"isProcessing"];
-		}
-	}
-	
-	if ([item identifier] != nil) {
-		if ([[item identifier] respondsToSelector:@selector(icon)]) {
-			[[item identifier] removeObserver:cell forKeyPath:@"icon"];
-		}
-	}
-	
-	if ([item identifier] != nil) {
-		if ([[item identifier] respondsToSelector:@selector(count)]) {
-			[[item identifier] removeObserver:cell forKeyPath:@"objectCount"];
-		}
-	}
-	
-	if ([item identifier] != nil) {
-		if ([[item identifier] respondsToSelector:@selector(countColor)]) {
-			[[item identifier] removeObserver:cell forKeyPath:@"countColor"];
-		}
-	}
+    SPDatabaseDocument *databaseDocument = [item databaseDocument];
 
-	if ([item identifier] != nil) {
-		if ([[item identifier] respondsToSelector:@selector(largeImage)]) {
-			[[item identifier] removeObserver:cell forKeyPath:@"largeImage"];
+	if (databaseDocument) {
+		if ([databaseDocument respondsToSelector:@selector(isProcessing)]) {
+			[databaseDocument removeObserver:cell forKeyPath:@"isProcessing"];
 		}
-	}
-	
-	if ([item identifier] != nil) {
-		if ([[item identifier] respondsToSelector:@selector(isEdited)]) {
-			[[item identifier] removeObserver:cell forKeyPath:@"isEdited"];
+		if ([databaseDocument respondsToSelector:@selector(icon)]) {
+			[databaseDocument removeObserver:cell forKeyPath:@"icon"];
+		}
+		if ([databaseDocument respondsToSelector:@selector(count)]) {
+			[databaseDocument removeObserver:cell forKeyPath:@"objectCount"];
+		}
+		if ([databaseDocument respondsToSelector:@selector(countColor)]) {
+			[databaseDocument removeObserver:cell forKeyPath:@"countColor"];
+		}
+		if ([databaseDocument respondsToSelector:@selector(largeImage)]) {
+			[databaseDocument removeObserver:cell forKeyPath:@"largeImage"];
+		}
+		if ([databaseDocument respondsToSelector:@selector(isEdited)]) {
+			[databaseDocument removeObserver:cell forKeyPath:@"isEdited"];
 		}
 	}
 	
@@ -688,7 +676,6 @@
     }
     else{
         SPLog(@"cell is nil");
-        CLS_LOG(@"cell is nil");
     }
 
     [self update];
@@ -1292,7 +1279,9 @@
         }
     }
     
-	if(item)[tabView removeTabViewItem:item];
+    if(item) {
+        [tabView removeTabViewItem:item];
+    }
 }
 
 - (void)tabClick:(id)sender
@@ -1587,65 +1576,66 @@
     [item addObserver:self forKeyPath:@"identifier" options:0 context:nil];
 }
 
-- (void)_bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item
-{
+- (void)_bindPropertiesForCell:(PSMTabBarCell *)cell andTabViewItem:(NSTabViewItem *)item {
+
+    SPDatabaseDocument *databaseDocument = [item databaseDocument];
     // bind the indicator to the represented object's status (if it exists)
     [[cell indicator] setHidden:YES];
-    if ([item identifier] != nil) {
-		if ([[[cell representedObject] identifier] respondsToSelector:@selector(isProcessing)]) {
+    if (databaseDocument != nil) {
+		if ([databaseDocument respondsToSelector:@selector(isProcessing)]) {
 			NSMutableDictionary *bindingOptions = [NSMutableDictionary dictionary];
 			[bindingOptions setObject:NSNegateBooleanTransformerName forKey:@"NSValueTransformerName"];
-			[[cell indicator] bind:@"animate" toObject:[item identifier] withKeyPath:@"isProcessing" options:nil];
-			[[cell indicator] bind:@"hidden" toObject:[item identifier] withKeyPath:@"isProcessing" options:bindingOptions];
-            [[item identifier] addObserver:cell forKeyPath:@"isProcessing" options:0 context:nil];
+			[[cell indicator] bind:@"animate" toObject:databaseDocument withKeyPath:@"isProcessing" options:nil];
+			[[cell indicator] bind:@"hidden" toObject:databaseDocument withKeyPath:@"isProcessing" options:bindingOptions];
+            [databaseDocument addObserver:cell forKeyPath:@"isProcessing" options:0 context:nil];
         }
     }
     
     // bind for the existence of an icon
     [cell setHasIcon:NO];
-    if ([item identifier] != nil) {
-		if ([[[cell representedObject] identifier] respondsToSelector:@selector(icon)]) {
+    if (databaseDocument != nil) {
+		if ([databaseDocument respondsToSelector:@selector(icon)]) {
 			NSMutableDictionary *bindingOptions = [NSMutableDictionary dictionary];
 			[bindingOptions setObject:NSIsNotNilTransformerName forKey:@"NSValueTransformerName"];
-			[cell bind:@"hasIcon" toObject:[item identifier] withKeyPath:@"icon" options:bindingOptions];
-			[[item identifier] addObserver:cell forKeyPath:@"icon" options:0 context:nil];
+			[cell bind:@"hasIcon" toObject:databaseDocument withKeyPath:@"icon" options:bindingOptions];
+			[databaseDocument addObserver:cell forKeyPath:@"icon" options:0 context:nil];
         }
     }
     
     // bind for the existence of a counter
     [cell setCount:0];
-    if ([item identifier] != nil) {
-		if ([[[cell representedObject] identifier] respondsToSelector:@selector(count)]) {
-			[cell bind:@"count" toObject:[item identifier] withKeyPath:@"objectCount" options:nil];
-			[[item identifier] addObserver:cell forKeyPath:@"objectCount" options:0 context:nil];
+    if (databaseDocument != nil) {
+		if ([databaseDocument respondsToSelector:@selector(count)]) {
+			[cell bind:@"count" toObject:databaseDocument withKeyPath:@"objectCount" options:nil];
+			[databaseDocument addObserver:cell forKeyPath:@"objectCount" options:0 context:nil];
 		}
     }
 	
     // bind for the color of a counter
     [cell setCountColor:nil];
-    if ([item identifier] != nil) {
-		if ([[[cell representedObject] identifier] respondsToSelector:@selector(countColor)]) {
-			[cell bind:@"countColor" toObject:[item identifier] withKeyPath:@"countColor" options:nil];
-			[[item identifier] addObserver:cell forKeyPath:@"countColor" options:0 context:nil];
+    if (databaseDocument != nil) {
+		if ([databaseDocument respondsToSelector:@selector(countColor)]) {
+			[cell bind:@"countColor" toObject:databaseDocument withKeyPath:@"countColor" options:nil];
+			[databaseDocument addObserver:cell forKeyPath:@"countColor" options:0 context:nil];
 		}
     }
 
 	// bind for a large image
 	[cell setHasLargeImage:NO];
-    if ([item identifier] != nil) {
-		if ([[[cell representedObject] identifier] respondsToSelector:@selector(largeImage)]) {
+    if (databaseDocument != nil) {
+		if ([databaseDocument respondsToSelector:@selector(largeImage)]) {
 			NSMutableDictionary *bindingOptions = [NSMutableDictionary dictionary];
 			[bindingOptions setObject:NSIsNotNilTransformerName forKey:@"NSValueTransformerName"];
-			[cell bind:@"hasLargeImage" toObject:[item identifier] withKeyPath:@"largeImage" options:bindingOptions];
-			[[item identifier] addObserver:cell forKeyPath:@"largeImage" options:0 context:nil];
+			[cell bind:@"hasLargeImage" toObject:databaseDocument withKeyPath:@"largeImage" options:bindingOptions];
+			[databaseDocument addObserver:cell forKeyPath:@"largeImage" options:0 context:nil];
 		}
     }
 	
     [cell setIsEdited:NO];
-    if ([item identifier] != nil) {
-		if ([[[cell representedObject] identifier] respondsToSelector:@selector(isEdited)]) {
-			[cell bind:@"isEdited" toObject:[item identifier] withKeyPath:@"isEdited" options:nil];
-			[[item identifier] addObserver:cell forKeyPath:@"isEdited" options:0 context:nil];
+    if (databaseDocument != nil) {
+		if ([databaseDocument respondsToSelector:@selector(isEdited)]) {
+			[cell bind:@"isEdited" toObject:databaseDocument withKeyPath:@"isEdited" options:nil];
+			[databaseDocument addObserver:cell forKeyPath:@"isEdited" options:0 context:nil];
 		}
     }
     

@@ -33,7 +33,7 @@
 #import "SPTablesList.h"
 #import "SPHistoryController.h"
 #import "SPThreadAdditions.h"
-@import Firebase;
+#import "sequel-ace-Swift.h"
 
 @implementation SPHistoryController
 
@@ -171,7 +171,6 @@
     }
     else {
         SPLog(@"theControl does not respondToSelector: selectedSegment. theControl class: %@", [theControl class]);
-        CLS_LOG(@"theControl does not respondToSelector: selectedSegment. theControl class: %@", [theControl class]);
     }
 }
 

@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>13F34</string>
+	<string>20C69</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>OCMock</string>
 	<key>CFBundleIdentifier</key>
@@ -20,23 +20,29 @@
 	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
-	<string>6A2008a</string>
+	<string>12C33</string>
+	<key>DTPlatformName</key>
+	<string>macosx</string>
 	<key>DTPlatformVersion</key>
-	<string>GM</string>
+	<string>11.1</string>
 	<key>DTSDKBuild</key>
-	<string>14A382</string>
+	<string>20C63</string>
 	<key>DTSDKName</key>
-	<string>macosx10.10</string>
+	<string>macosx11.1</string>
 	<key>DTXcode</key>
-	<string>0611</string>
+	<string>1230</string>
 	<key>DTXcodeBuild</key>
-	<string>6A2008a</string>
+	<string>12C33</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.10</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2004-2013 Mulle Kybernetik.</string>
+	<string>Copyright © 2004-2020 Mulle Kybernetik.</string>
 </dict>
 </plist>

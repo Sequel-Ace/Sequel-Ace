@@ -38,7 +38,6 @@
 #import "RegexKitLite.h"
 #import "SPDatabaseData.h"
 #import "SPFunctions.h"
-@import Firebase;
 #import <SPMySQL/SPMySQL.h>
 
 #import "sequel-ace-Swift.h"
@@ -524,7 +523,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Retrieve the information for the newly selected table using a SPTableData instance
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
-	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem]];
+	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:nil];
 	targetTableHasPrimaryKey = NO;
 	BOOL isReplacePossible = NO;
 
@@ -1389,9 +1388,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 			// Set best match
             if(match.location >= fieldMappingArray.count){
-                SPLog(@"match.location [%lu] >= fieldMappingArray.count [%lu]",(unsigned long)match.location, (unsigned long)fieldMappingArray.count );
-                CLS_LOG(@"match.location [%lu] >= fieldMappingArray.count [%lu]",(unsigned long)match.location, (unsigned long)fieldMappingArray.count );
-                CLS_LOG(@"fieldMappingArray = %@", m);
+                SPLog(@"match.location [%lu] >= fieldMappingArray.count [%lu]",(unsigned long)match.location, (unsigned long)fieldMappingArray.count);
                 SPLog(@"fieldMappingArray = %@", m);
                 continue;
             }

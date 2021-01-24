@@ -32,6 +32,7 @@
 
 @class PSMTabBarControl;
 @class SPDatabaseDocument;
+@protocol SPWindowControllerDelegate;
 
 @interface SPWindowController : NSWindowController <NSWindowDelegate>
 {
@@ -45,6 +46,7 @@
 	NSMutableArray *managedDatabaseConnections;
 }
 
+@property (nonatomic, weak) id<SPWindowControllerDelegate> delegate;
 @property (readonly, strong) IBOutlet PSMTabBarControl *tabBar;
 @property (readonly, strong) SPDatabaseDocument *selectedTableDocument;
 
@@ -59,8 +61,15 @@
 - (IBAction)closeTab:(id)sender;
 - (IBAction)selectNextDocumentTab:(id)sender;
 - (IBAction)selectPreviousDocumentTab:(id)sender;
-- (NSArray *)documents;
+- (NSArray <SPDatabaseDocument *> *)documents;
 - (void)selectTabAtIndex:(NSInteger)index;
 - (void)updateTabBar;
+
+@end
+
+@protocol SPWindowControllerDelegate <NSObject>
+
+- (void)windowControllerDidCreateNewWindowController:(SPWindowController *)newWindowController;
+- (void)windowControllerDidClose:(SPWindowController *)windowController;
 
 @end
