@@ -54,6 +54,7 @@
 }
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
+@property (nonatomic, strong, readonly) NSMutableArray <SPWindowController *> *windowControllers;
 
 @property (weak) IBOutlet NSView *staleBookmarkHelpView;
 @property (weak) IBOutlet HyperlinkTextField *staleBookmarkTextField;
@@ -80,7 +81,6 @@
 
 // Getters
 - (SPPreferenceController *)preferenceController;
-- (NSArray *)orderedDatabaseConnectionWindows;
 - (SPDatabaseDocument *)frontDocument;
 - (NSURL *)sessionURL;
 - (NSDictionary *)spfSessionDocData;
@@ -100,11 +100,9 @@
 
 - (NSDictionary *)shellEnvironmentForDocument:(NSString *)docUUID;
 
-
 #pragma mark - SPAppleScriptSupport
 
-- (NSArray *)orderedDocuments;
-- (void)insertInOrderedDocuments:(SPDatabaseDocument *)doc;
+- (NSArray <SPDatabaseDocument *> *)orderedDocuments;
 - (NSArray *)orderedWindows;
 - (id)handleQuitScriptCommand:(NSScriptCommand *)command;
 - (id)handleOpenScriptCommand:(NSScriptCommand *)command;
@@ -115,11 +113,6 @@
 - (IBAction)newTab:(id)sender;
 - (IBAction)duplicateTab:(id)sender;
 
-- (SPWindowController *)newWindow;
-- (SPDatabaseDocument *)makeNewConnectionTabOrWindow;
-- (SPWindowController *)frontController;
-
-- (NSWindow *)frontDocumentWindow;
 - (void)tabDragStarted:(id)sender;
 
 @end

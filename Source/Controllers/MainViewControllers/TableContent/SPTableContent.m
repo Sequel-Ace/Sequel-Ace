@@ -623,7 +623,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	// Store the current first responder so filter field doesn't steal focus
-	id currentFirstResponder = [[tableDocumentInstance parentWindow] firstResponder];
+	id currentFirstResponder = [[tableDocumentInstance parentWindowControllerWindow] firstResponder];
 	// For text inputs the window's fieldEditor will be the actual firstResponder, but that is useless for setting.
 	// We need the visible view object, which is the delegate of the field editor.
 	if([currentFirstResponder respondsToSelector:@selector(isFieldEditor)] && [currentFirstResponder isFieldEditor]) {
@@ -653,7 +653,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if ([prefs boolForKey:SPLimitResults]) contentPage = pageToRestore;
 
 	// Restore first responder
-	[[tableDocumentInstance parentWindow] makeFirstResponder:currentFirstResponder];
+	[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:currentFirstResponder];
 
 	// Set the state of the table buttons
 	[addButton setEnabled:(enableInteraction && [tablesListInstance tableType] == SPTableTypeTable)];
@@ -1754,7 +1754,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (IBAction)removeRow:(id)sender {
 	// cancel editing (maybe this is not the ideal method -- see xcode docs for that method)
-	[[tableDocumentInstance parentWindow] endEditingFor:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
 	if (![tableContentView numberOfSelectedRows]) return;
 
@@ -2447,15 +2447,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ( isEditingNewRow ) {
 			if ( [prefs boolForKey:SPReloadAfterAddingRow] ) {
 
-				// Save any edits which have been started but not saved to the underlying table/data structures
-				// yet - but not if currently undoing/redoing, as this can cause a processing loop
-				if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
-				[[tableDocumentInstance parentWindow] endEditingFor:nil];
-				}
+                // Save any edits which have been started but not saved to the underlying table/data structures
+                // yet - but not if currently undoing/redoing, as this can cause a processing loop
+                if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
+                    [[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
+                }
 
-				previousTableRowsCount = tableRowsCount;
-				[self loadTableValues];
-			}
+                previousTableRowsCount = tableRowsCount;
+                [self loadTableValues];
+            }
 			else {
 				// Set the insertId for fields with auto_increment
 				for ( i = 0; i < [dataColumns count]; i++ ) {
@@ -2469,20 +2469,20 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Existing row edited successfully
 		} else {
 
-			// Reload table if set to - otherwise no action required.
-			if ([prefs boolForKey:SPReloadAfterEditingRow]) {
+            // Reload table if set to - otherwise no action required.
+            if ([prefs boolForKey:SPReloadAfterEditingRow]) {
 
-				// Save any edits which have been started but not saved to the underlying table/data structures
-				// yet - but not if currently undoing/redoing, as this can cause a processing loop
-				if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
-				[[tableDocumentInstance parentWindow] endEditingFor:nil];
-				}
+                // Save any edits which have been started but not saved to the underlying table/data structures
+                // yet - but not if currently undoing/redoing, as this can cause a processing loop
+                if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) {
+                    [[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
+                }
 
-				previousTableRowsCount = tableRowsCount;
-				[self loadTableValues];
-			}
-		}
-		currentlyEditingRow = -1;
+                previousTableRowsCount = tableRowsCount;
+                [self loadTableValues];
+            }
+        }
+        currentlyEditingRow = -1;
 
         isSavingRow = NO;
 		return YES;
@@ -2717,7 +2717,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Save any edits which have been started but not saved to the underlying table/data structures
 	// yet - but not if currently undoing/redoing, as this can cause a processing loop
 	if (![[[[tableContentView window] firstResponder] undoManager] isUndoing] && ![[[[tableContentView window] firstResponder] undoManager] isRedoing]) { // -window is a UI method!
-		[[tableDocumentInstance parentWindow] endEditingFor:nil];
+		[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 	}
 
 	// If no rows are currently being edited, or a save is in progress, return success at once.
@@ -4180,7 +4180,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			              usingEncoding:[mySQLConnection stringEncoding]
 			               isObjectBlob:isBlob
 			                 isEditable:isFieldEditable
-			                 withWindow:[tableDocumentInstance parentWindow]
+			                 withWindow:[tableDocumentInstance parentWindowControllerWindow]
 			                     sender:self
 			                contextInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInteger:rowIndex], @"rowIndex", [NSNumber numberWithInteger:editedColumn], @"columnIndex", [NSNumber numberWithBool:isFieldEditable], @"isFieldEditable", nil]];
 
@@ -4358,8 +4358,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Suppress tooltip if another toolip is already visible, mainly displayed by a Bundle command
 		// TODO has to be improved
-		for (id win in [NSApp orderedWindows])
-		{
+		for (id win in [NSApp orderedWindows]) {
 			if ([[[[win contentView] class] description] isEqualToString:@"WKWebView"]) return nil;
 		}
 
@@ -4480,7 +4479,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 		
 		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
-		NSRect screenRect = [[tableDocumentInstance parentWindow] convertRectToScreen: NSMakeRect(tblContentViewPoint.x, tblContentViewPoint.y, 0,0)];
+		NSRect screenRect = [[tableDocumentInstance parentWindowControllerWindow] convertRectToScreen:NSMakeRect(tblContentViewPoint.x, tblContentViewPoint.y, 0,0)];
 		NSPoint pos = NSMakePoint(screenRect.origin.x, screenRect.origin.y);
 		
 		pos.y -= 20;

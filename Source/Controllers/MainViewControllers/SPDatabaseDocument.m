@@ -109,6 +109,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *hideConsoleImage;
 @property (nonatomic, strong) NSImage *showConsoleImage;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
+@property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
 
@@ -140,7 +141,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @synthesize sqlFileURL;
 @synthesize sqlFileEncoding;
-@synthesize parentWindowController;
 @synthesize parentTabViewItem;
 @synthesize isProcessing;
 @synthesize serverSupport;
@@ -163,9 +163,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 + (void)initialize {
 }
 
-- (instancetype)init
-{
-    if ((self = [super init])) {
+- (instancetype)initWithWindowController:(SPWindowController *)windowController {
+    if (self = [super init]) {
         instanceId = atomic_fetch_add(&SPDatabaseDocumentInstanceCounter, 1);
 
         _mainNibLoaded = NO;
@@ -208,7 +207,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         gotoDatabaseController = nil;
 
         mainToolbar = nil;
-        parentWindow = nil;
         isProcessing = NO;
 
         printWebView = [[WebView alloc] init];
@@ -252,6 +250,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
     }
+
+    _parentWindowController = windowController;
 
     return self;
 }
@@ -400,7 +400,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self setFileURL:newURL];
 
     // ...but hide the icon while the document is temporary
-    if ([self isUntitled]) [[parentWindow standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
+    if ([self isUntitled]) {
+        [[[self.parentWindowController window] standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
+    }
 
     // Get the mysql version
     mySQLVersion = [mySQLConnection serverVersionString] ;
@@ -487,8 +489,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self updateWindowTitle:self];
 
     NSString *serverDisplayName = nil;
-    if ([parentWindowController selectedTableDocument] == self) {
-        serverDisplayName = [parentWindow title];
+    if ([self.parentWindowController selectedTableDocument] == self) {
+        serverDisplayName = [[self.parentWindowController window] title];
     } else {
         serverDisplayName = [parentTabViewItem label];
     }
@@ -727,7 +729,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [addDatabaseCharsetHelper setDefaultCollation:defaultCollation];
     [addDatabaseCharsetHelper setEnabled:YES];
 
-    [parentWindow beginSheet:databaseSheet completionHandler:^(NSModalResponse returnCode) {
+    [[self.parentWindowController window] beginSheet:databaseSheet completionHandler:^(NSModalResponse returnCode) {
         [self->addDatabaseCharsetHelper setEnabled:NO];
 
         if (returnCode == NSModalResponseOK) {
@@ -766,7 +768,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [alterDatabaseCharsetHelper setSelectedCollation:currentCollation];
     [alterDatabaseCharsetHelper setEnabled:YES];
 
-    [parentWindow beginSheet:databaseAlterSheet completionHandler:^(NSModalResponse returnCode) {
+    [[self.parentWindowController window] beginSheet:databaseAlterSheet completionHandler:^(NSModalResponse returnCode) {
 
         [self->alterDatabaseCharsetHelper setEnabled:NO];
         if (returnCode == NSModalResponseOK) {
@@ -865,7 +867,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [databaseCopyNameField setStringValue:selectedDatabase];
     [copyDatabaseMessageField setStringValue:selectedDatabase];
 
-    [parentWindow beginSheet:databaseCopySheet completionHandler:^(NSModalResponse returnCode) {
+    [[self.parentWindowController window] beginSheet:databaseCopySheet completionHandler:^(NSModalResponse returnCode) {
         if (returnCode == NSModalResponseOK) {
             [self _copyDatabase];
         }
@@ -889,7 +891,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [databaseRenameNameField setStringValue:selectedDatabase];
     [renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
-    [parentWindow beginSheet:databaseRenameSheet completionHandler:^(NSModalResponse returnCode) {
+    [[self.parentWindowController window] beginSheet:databaseRenameSheet completionHandler:^(NSModalResponse returnCode) {
         if (returnCode == NSModalResponseOK) {
             [self _renameDatabase];
         }
@@ -932,7 +934,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [serverVariablesController setConnection:mySQLConnection];
     }
 
-    [serverVariablesController displayServerVariablesSheetAttachedToWindow:parentWindow];
+    [serverVariablesController displayServerVariablesSheetAttachedToWindow:[self.parentWindowController window]];
 }
 
 /**
@@ -1481,7 +1483,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)centerTaskWindow
 {
     NSPoint newBottomLeftPoint;
-    NSRect mainWindowRect = [parentWindow frame];
+    NSRect mainWindowRect = [[self.parentWindowController window] frame];
     NSRect taskWindowRect = [taskProgressWindow frame];
 
     newBottomLeftPoint.x = roundf(mainWindowRect.origin.x + mainWindowRect.size.width/2 - taskWindowRect.size.width/2);
@@ -1796,8 +1798,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [createTableSyntaxWindow makeFirstResponder:createTableSyntaxTextField];
 
     // Show variables sheet
-    [parentWindow beginSheet:createTableSyntaxWindow completionHandler:nil];
-
+    [[self.parentWindowController window] beginSheet:createTableSyntaxWindow completionHandler:nil];
 }
 
 /**
@@ -2298,7 +2299,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
-    [userManagerInstance beginSheetModalForWindow:parentWindow completionHandler:^(){ }];
+    [userManagerInstance beginSheetModalForWindow:[self.parentWindowController window] completionHandler:^(){ }];
 }
 
 /**
@@ -2306,7 +2307,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)doPerformQueryService:(NSString *)query
 {
-    [parentWindow makeKeyAndOrderFront:self];
+    [[self.parentWindowController window] makeKeyAndOrderFront:self];
     [self viewQuery:nil];
     [customQueryInstance doPerformQueryService:query];
 }
@@ -2402,7 +2403,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (BOOL)couldCommitCurrentViewActions
 {
-    [parentWindow endEditingFor:nil];
+    [[self.parentWindowController window] endEditingFor:nil];
     switch ([self currentlySelectedView]) {
 
         case SPTableViewStructure:
@@ -2826,7 +2827,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [panel setNameFieldStringValue:filename];
 
-    [panel beginSheetModalForWindow:parentWindow completionHandler:^(NSInteger returnCode) {
+    [panel beginSheetModalForWindow:[self.parentWindowController window] completionHandler:^(NSInteger returnCode) {
         [self saveConnectionPanelDidEnd:panel returnCode:returnCode contextInfo:(__bridge void *)(contextInfo)];
     }];
 }
@@ -2957,7 +2958,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [info setObject:@"connection bundle" forKey:SPFFormatKey];
 
             // Loop through all windows
-            for(NSWindow *window in [SPAppDelegate orderedDatabaseConnectionWindows]) {
+            for (SPWindowController *windowController in [SPAppDelegate windowControllers]) {
 
                 // First window is always the currently key window
 
@@ -2967,7 +2968,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 // Loop through all tabs of a given window
                 NSInteger tabCount = 0;
                 NSInteger selectedTabItem = 0;
-                for(SPDatabaseDocument *doc in [[window windowController] documents]) {
+                for (SPDatabaseDocument *doc in [windowController documents]) {
 
                     // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
                     if(![doc mySQLVersion]) continue;
@@ -2990,13 +2991,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                         [tabData setObject:[[doc fileURL] path] forKey:@"path"];
                     }
                     [tabs addObject:tabData];
-                    if([[window windowController] selectedTableDocument] == doc) selectedTabItem = tabCount;
+                    if ([windowController selectedTableDocument] == doc) selectedTabItem = tabCount;
                     tabCount++;
                 }
-                if(![tabs count]) continue;
+                if (![tabs count]) continue;
                 [win setObject:tabs forKey:@"tabs"];
                 [win setObject:[NSNumber numberWithInteger:selectedTabItem] forKey:@"selectedTabIndex"];
-                [win setObject:NSStringFromRect([window frame]) forKey:@"frame"];
+                [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
                 [windows addObject:win];
             }
             [info setObject:windows forKey:@"windows"];
@@ -3255,7 +3256,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)openDatabaseInNewTab:(id)sender
 {
     // Add a new tab to the window
-    [[parentWindow windowController] addNewConnection:self];
+    [self.parentWindowController addNewConnection:self];
 
     // Get the current state
     NSDictionary *allStateDetails = @{
@@ -3544,7 +3545,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     NSMutableString *tabTitle;
     NSMutableString *windowTitle;
-    SPDatabaseDocument *frontTableDocument = [parentWindowController selectedTableDocument];
+    SPDatabaseDocument *frontTableDocument = [self.parentWindowController selectedTableDocument];
 
     NSColor *tabColor = nil;
 
@@ -3607,15 +3608,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Set the titles
     [parentTabViewItem setLabel:tabTitle];
     [parentTabViewItem setColor:tabColor];
-    [parentWindowController updateTabBar];
+    [self.parentWindowController updateTabBar];
 
-    if ([parentWindowController selectedTableDocument] == self) {
-        [parentWindow setTitle:windowTitle];
+    if ([self.parentWindowController selectedTableDocument] == self) {
+        [[self.parentWindowController window] setTitle:windowTitle];
     }
 
     // If the sender wasn't the window controller, update other tabs in this window
     // for shared pathname updates
-    if ([sender class] != [SPWindowController class]) [parentWindowController updateAllTabTitles:self];
+    if ([sender class] != [SPWindowController class]) {
+        [self.parentWindowController updateAllTabTitles:self];
+    }
 }
 
 /**
@@ -3651,8 +3654,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)updateTitlebarStatusVisibilityForcingHide:(BOOL)forceHide
 {
     BOOL newIsVisible = !forceHide;
-    if (newIsVisible && [parentWindow styleMask] & NSWindowStyleMaskFullScreen) newIsVisible = NO;
-    if (newIsVisible && [parentWindowController selectedTableDocument] != self) newIsVisible = NO;
+    if (newIsVisible && [[self.parentWindowController window] styleMask] & NSWindowStyleMaskFullScreen) newIsVisible = NO;
+    if (newIsVisible && [self.parentWindowController selectedTableDocument] != self) newIsVisible = NO;
     if (newIsVisible == windowTitleStatusViewIsVisible) return;
 
     if (newIsVisible) {
@@ -3663,9 +3666,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init];
             accessoryViewController.view = titleAccessoryView;
             accessoryViewController.layoutAttribute = NSLayoutAttributeRight;
-            [parentWindow addTitlebarAccessoryViewController:accessoryViewController];
+            [[self.parentWindowController window] addTitlebarAccessoryViewController:accessoryViewController];
         } else {
-            NSView *windowFrame = [[parentWindow contentView] superview];
+            NSView *windowFrame = [[[self.parentWindowController window] contentView] superview];
             NSRect av = [titleAccessoryView frame];
             NSRect initialAccessoryViewFrame = NSMakeRect(
                                                           [windowFrame frame].size.width - av.size.width - 30,
@@ -3678,9 +3681,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     } else {
         if (NSClassFromString(@"NSTitlebarAccessoryViewController")) { // OS X 10.11 and later
-            [parentWindow.titlebarAccessoryViewControllers enumerateObjectsUsingBlock:^(__kindof NSTitlebarAccessoryViewController * _Nonnull accessoryViewController, NSUInteger idx, BOOL * _Nonnull stop) {
+            [[self.parentWindowController window].titlebarAccessoryViewControllers enumerateObjectsUsingBlock:^(__kindof NSTitlebarAccessoryViewController * _Nonnull accessoryViewController, NSUInteger idx, BOOL * _Nonnull stop) {
                 if (accessoryViewController.view == titleAccessoryView) {
-                    [parentWindow removeTitlebarAccessoryViewControllerAtIndex:idx];
+                    [[self.parentWindowController window] removeTitlebarAccessoryViewControllerAtIndex:idx];
                 }
             }];
         } else {
@@ -4012,7 +4015,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)makeKeyDocument
 {
-    [[[self parentWindow] onMainThread] makeKeyAndOrderFront:self];
+    [[[self.parentWindowController window] onMainThread] makeKeyAndOrderFront:self];
     [[[[self parentTabViewItem] onMainThread] tabView] selectTabViewItemWithIdentifier:self];
 }
 
@@ -4094,8 +4097,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
     [createTableSyntaxWindow orderOut:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [self setParentWindow:nil];
-
 }
 
 /**
@@ -4108,7 +4109,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self updateTitlebarStatusVisibilityForcingHide:YES];
 
     // Remove the task progress window
-    [parentWindow removeChildWindow:taskProgressWindow];
+    [[self.parentWindowController window] removeChildWindow:taskProgressWindow];
     [taskProgressWindow orderOut:self];
 }
 
@@ -4119,19 +4120,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)didBecomeActiveTabInWindow
 {
     // Update the toolbar
-    BOOL toolbarVisible = ![parentWindow toolbar] || [[parentWindow toolbar] isVisible];
-    [parentWindow setToolbar:mainToolbar];
-    [[parentWindow toolbar] setVisible:toolbarVisible];
+    BOOL toolbarVisible = ![[self.parentWindowController window] toolbar] || [[[self.parentWindowController window] toolbar] isVisible];
+    [[self.parentWindowController window] setToolbar:mainToolbar];
+    [mainToolbar setVisible:toolbarVisible];
 
     // Update the window's title and represented document
     [self updateWindowTitle:self];
-    [parentWindow setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
+    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
 
     [self updateTitlebarStatusVisibilityForcingHide:NO];
 
     // Add the progress window to this window
     [self centerTaskWindow];
-    [parentWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     // If not connected, update the favorite selection
     if (!_isConnected) {
@@ -4172,34 +4173,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [contentViewSplitter setPosition:[[[contentViewSplitter subviews] objectAtIndex:0] bounds].size.width ofDividerAtIndex:0];
 
     // If the task interface is visible, and this tab is frontmost, re-center the task child window
-    if (_isWorkingLevel && [parentWindowController selectedTableDocument] == self) [self centerTaskWindow];
-}
-
-/**
- * Set the parent window
- */
-- (void)setParentWindow:(NSWindow *)window
-{
-    NSWindow *favoritesOutlineViewWindow = [[connectionController favoritesOutlineView] window];
-
-    // If the window is being set for the first time - connection controller is visible - update focus
-    if (!parentWindow && !mySQLConnection && window == favoritesOutlineViewWindow) {
-        [window makeFirstResponder:[connectionController favoritesOutlineView]];
-    }
-
-    parentWindow = window;
-
-    SPSSHTunnel *currentTunnel = [connectionController valueForKeyPath:@"sshTunnel"];
-
-    if (currentTunnel) [currentTunnel setParentWindow:parentWindow];
-}
-
-/**
- * Return the parent window
- */
-- (NSWindow *)parentWindow
-{
-    return parentWindow;
+    if (_isWorkingLevel && [self.parentWindowController selectedTableDocument] == self) [self centerTaskWindow];
 }
 
 #pragma mark -
@@ -4210,10 +4184,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)setFileURL:(NSURL *)theURL
 {
-    spfFileURL  = theURL;
-    if ([parentWindowController selectedTableDocument] == self) {
-        if (spfFileURL && [spfFileURL isFileURL]) [parentWindow setRepresentedURL:spfFileURL];
-        else                                      [parentWindow setRepresentedURL:nil];
+    spfFileURL = theURL;
+    if ([self.parentWindowController selectedTableDocument] == self) {
+        if (spfFileURL && [spfFileURL isFileURL]) {
+            [[self.parentWindowController window] setRepresentedURL:spfFileURL];
+        } else {
+            [[self.parentWindowController window] setRepresentedURL:nil];
+        }
     }
 }
 
@@ -4398,7 +4375,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         [sessionState setObject:[mySQLConnection encoding] forKey:@"connectionEncoding"];
 
-        [sessionState setObject:[NSNumber numberWithBool:[[parentWindow toolbar] isVisible]] forKey:@"isToolbarVisible"];
+        [sessionState setObject:[NSNumber numberWithBool:[[[self.parentWindowController window] toolbar] isVisible]] forKey:@"isToolbarVisible"];
         [sessionState setObject:[NSNumber numberWithFloat:[tableContentInstance tablesListWidth]] forKey:@"windowVerticalDividerPosition"];
 
         if ([tableContentInstance sortColumnName]) [sessionState setObject:[tableContentInstance sortColumnName] forKey:@"contentSortCol"];
@@ -4622,7 +4599,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [inputTextWindowSecureTextField setStringValue:@""];
             [inputTextWindowSecureTextField selectText:nil];
 
-            [parentWindow beginSheet:inputTextWindow completionHandler:nil];
+            [[self.parentWindowController window] beginSheet:inputTextWindow completionHandler:nil];
             // wait for encryption password
             NSModalSession session = [NSApp beginModalSessionForWindow:inputTextWindow];
             for (;;) {
@@ -4813,8 +4790,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Update the window title to indicate that we are trying to establish a connection
     [parentTabViewItem setLabel:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
 
-    if ([parentWindowController selectedTableDocument] == self) {
-        [parentWindow setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
+    if ([self.parentWindowController selectedTableDocument] == self) {
+        [[self.parentWindowController window] setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
     }
 }
 
@@ -4935,7 +4912,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([command isEqualToString:@"SetSelectedTextRange"]) {
         if([params count] > 1) {
-            id firstResponder = [parentWindow firstResponder];
+            id firstResponder = [[self.parentWindowController window] firstResponder];
             if([firstResponder isKindOfClass:[NSTextView class]]) {
                 NSRange theRange = NSIntersectionRange(NSRangeFromString([params objectAtIndex:1]), NSMakeRange(0, [[firstResponder string] length]));
                 if(theRange.location != NSNotFound) {
@@ -4950,7 +4927,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([command isEqualToString:@"InsertText"]) {
         if([params count] > 1) {
-            id firstResponder = [parentWindow firstResponder];
+            id firstResponder = [[self.parentWindowController window] firstResponder];
             if([firstResponder isKindOfClass:[NSTextView class]]) {
                 [((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[params objectAtIndex:1]]];
                 return;
@@ -4962,7 +4939,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([command isEqualToString:@"SetText"]) {
         if([params count] > 1) {
-            id firstResponder = [parentWindow firstResponder];
+            id firstResponder = [[self.parentWindowController window] firstResponder];
             if([firstResponder isKindOfClass:[NSTextView class]]) {
                 [(NSTextView *)firstResponder setSelectedRange:NSMakeRange(0, [[firstResponder string] length])];
                 [((NSTextView *)firstResponder).textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[params objectAtIndex:1]]];
@@ -5483,7 +5460,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Otherwise position the sheet beneath the tab bar if it's visible
-    rect.origin.y -= [parentWindowController.tabBar frame].size.height - 1;
+    rect.origin.y -= [self.parentWindowController.tabBar frame].size.height - 1;
 
     return rect;
 }
@@ -6082,7 +6059,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         // Set the focus on the text field
-        [self->parentWindow makeFirstResponder:self->customQueryTextView];
+        [[self.parentWindowController window] makeFirstResponder:self->customQueryTextView];
         
         [self->prefs setInteger:SPQueryEditorViewMode forKey:SPLastViewMode];
     });
@@ -6111,7 +6088,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self->extendedTableInfoInstance loadTable:[self table]];
         }
         
-        [self->parentWindow makeFirstResponder:[self->extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
+        [[self.parentWindowController window] makeFirstResponder:[self->extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
         
         [self->prefs setInteger:SPTableInfoViewMode forKey:SPLastViewMode];
     });
@@ -6624,18 +6601,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Only display the reconnect dialog if the window is visible
     // and we are not terminating
-    if ([self parentWindow] && [[self parentWindow] isVisible] && appIsTerminating == NO) {
+    if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
 
         SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
         CLS_LOG(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
         // Ensure the window isn't miniaturized
-        if ([[self parentWindow] isMiniaturized]) [[self parentWindow] deminiaturize:self];
+        if ([[self.parentWindowController window] isMiniaturized]) {
+            [[self.parentWindowController window] deminiaturize:self];
+        }
 
         // Ensure the window and tab are frontmost
         [self makeKeyDocument];
 
         // Display the connection error dialog and wait for the return code
-        [self.parentWindow beginSheet:connectionErrorDialog completionHandler:nil];
+        [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
         connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
 
         [NSApp endSheet:connectionErrorDialog];
@@ -6655,7 +6634,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
-    if ([[self parentWindow] isVisible]) {
+    if ([[self.parentWindowController window] isVisible]) {
         [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
     }
 }
@@ -6673,7 +6652,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)closeAndDisconnect
 {
-    NSWindow *theParentWindow = [self parentWindow];
+    NSWindow *theParentWindow = [self.parentWindowController window];
 
     _isConnected = NO;
 
@@ -6688,6 +6667,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     [self parentTabDidClose];
+}
+
+- (void)updateParentWindowController:(SPWindowController *)windowController {
+    self.parentWindowController = windowController;
+}
+
+- (NSWindow *)parentWindowControllerWindow {
+    return [self.parentWindowController window];
 }
 
 #pragma mark - SPPrintController
@@ -6712,7 +6699,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
      */
     if ([self isWorking]) [self endTask];
 
-    [op runOperationModalForWindow:[self parentWindow] delegate:self didRunSelector:nil contextInfo:nil];
+    [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
 }
 
 /**

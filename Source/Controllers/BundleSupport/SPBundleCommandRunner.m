@@ -160,38 +160,35 @@
 	// Create and set an unique process ID for each SPDatabaseDocument which has to passed
 	// for each sequelace:// scheme command as user to be able to identify the url scheme command.
 	// Furthermore this id is used to communicate with the called command as file name.
-	id doc = nil;
-	if([[[NSApp mainWindow] delegate] respondsToSelector:@selector(selectedTableDocument)])
-		doc = [(SPWindowController *)[[NSApp mainWindow] delegate] selectedTableDocument];
+	SPDatabaseDocument *databaseDocument = nil;
+    if ([[[NSApp mainWindow] delegate] isKindOfClass:[SPWindowController class]]) {
+        databaseDocument = [(SPWindowController *)[[NSApp mainWindow] delegate] selectedTableDocument];
+    }
 	// Check if connected
-	if([doc getConnection] == nil)
-		doc = nil;
-	else {
-		for (NSWindow *aWindow in [NSApp orderedWindows])
-		{
-			if ([[[[aWindow windowController] class] description] isEqualToString:@"SPWindowController"]) {
+    if ([databaseDocument getConnection] == nil) {
+        databaseDocument = nil;
+    } else {
+        for (NSWindow *window in [NSApp orderedWindows]) {
+			if ([[[window windowController] class] isKindOfClass:[SPWindowController class]]) {
+                NSArray <SPDatabaseDocument *> *documents = [(SPWindowController *)[window windowController] documents];
+                for (SPDatabaseDocument *document in documents) {
+                    // Check if connected
+                    if ([document getConnection]) {
+                        databaseDocument = document;
+                    } else {
+                        databaseDocument = nil;
+                    }
 
-				SPWindowController *windowController = (SPWindowController *)[aWindow windowController];
-				NSArray *documents = [windowController documents];
-
-				if ([documents count] && [[[[documents objectAtIndex:0] class] description] isEqualToString:@"SPDatabaseDocument"]) {
-					// Check if connected
-					if ([[documents objectAtIndex:0] getConnection]) {
-						doc = [documents objectAtIndex:0];
-					}
-					else {
-						doc = nil;
-					}
-				}
+                    if (databaseDocument) {
+                        break;
+                    }
+                }
 			}
-
-			if (doc) break;
 		}
 	}
 
-	if (doc != nil) {
-
-		[doc setProcessID:uuid];
+	if (databaseDocument != nil) {
+		[databaseDocument setProcessID:uuid];
 
 		[theEnv setObject:uuid forKey:SPBundleShellVariableProcessID];
 		[theEnv setObject:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryInputPathHeader stringByExpandingTildeInPath], uuid] forKey:SPBundleShellVariableQueryFile];
@@ -199,21 +196,24 @@
 		[theEnv setObject:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultStatusPathHeader stringByExpandingTildeInPath], uuid] forKey:SPBundleShellVariableQueryResultStatusFile];
 		[theEnv setObject:[NSString stringWithFormat:@"%@%@", [SPURLSchemeQueryResultMetaPathHeader stringByExpandingTildeInPath], uuid] forKey:SPBundleShellVariableQueryResultMetaFile];
 
-		if([doc shellVariables])
-			[theEnv addEntriesFromDictionary:[doc shellVariables]];
+        if ([databaseDocument shellVariables]) {
+			[theEnv addEntriesFromDictionary:[databaseDocument shellVariables]];
+        }
 
 		if([theEnv objectForKey:SPBundleShellVariableCurrentEditedColumnName] && [[theEnv objectForKey:SPBundleShellVariableDataTableSource] isEqualToString:@"content"])
 			[theEnv setObject:[theEnv objectForKey:SPBundleShellVariableSelectedTable] forKey:SPBundleShellVariableCurrentEditedTable];
 
 	}
 
-	if(theEnv != nil && [theEnv count])
+    if(theEnv != nil && [theEnv count]) {
 		[bashTask setEnvironment:theEnv];
+    }
 
-	if(path != nil)
+    if (path != nil) {
 		[bashTask setCurrentDirectoryPath:path];
-	else if([shellEnvironment objectForKey:SPBundleShellVariableBundlePath] && [fileManager fileExistsAtPath:[shellEnvironment objectForKey:SPBundleShellVariableBundlePath] isDirectory:&isDir] && isDir)
+    } else if ([shellEnvironment objectForKey:SPBundleShellVariableBundlePath] && [fileManager fileExistsAtPath:[shellEnvironment objectForKey:SPBundleShellVariableBundlePath] isDirectory:&isDir] && isDir) {
 		[bashTask setCurrentDirectoryPath:[shellEnvironment objectForKey:SPBundleShellVariableBundlePath]];
+    }
 
     // logging below due to "Couldn't posix_spawn: error 7"
     // FB: 5c541e5508e7cdd4a925295cabfbf398

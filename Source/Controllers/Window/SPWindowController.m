@@ -38,6 +38,8 @@
 #import "PSMTabBarControl.h"
 #import "PSMTabStyle.h"
 
+#import "sequel-ace-Swift.h"
+
 @interface SPWindowController ()
 
 - (void)_setUpTabBar;
@@ -61,8 +63,7 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (void)awakeFromNib
-{
+- (void)awakeFromNib {
 	[self _switchOutSelectedTableDocument:nil];
 	
 	NSWindow *window = [self window];
@@ -91,8 +92,9 @@
 	// Because we are a document-based app we automatically adopt window restoration on 10.7+.
 	// However that causes a race condition with our own window setup code.
 	// Remove this when we actually support restoration.
-	if([window respondsToSelector:@selector(setRestorable:)])
+    if ([window respondsToSelector:@selector(setRestorable:)]) {
 		[window setRestorable:NO];
+    }
 }
 
 #pragma mark -
@@ -109,27 +111,24 @@
 - (SPDatabaseDocument *)addNewConnection
 {
 	// Create a new database connection view
-	SPDatabaseDocument *newTableDocument = [[SPDatabaseDocument alloc] init];
-	
-	[newTableDocument setParentWindowController:self];
-	[newTableDocument setParentWindow:[self window]];
+	SPDatabaseDocument *databaseDocument = [[SPDatabaseDocument alloc] initWithWindowController:self];
 
 	// Set up a new tab with the connection view as the identifier, add the view, and add it to the tab view
-    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:newTableDocument];
+    NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:databaseDocument];
 	
-	[newItem setView:[newTableDocument databaseView]];
+	[newItem setView:[databaseDocument databaseView]];
     [tabView addTabViewItem:newItem];
     [tabView selectTabViewItem:newItem];
-	[newTableDocument setParentTabViewItem:newItem];
+	[databaseDocument setParentTabViewItem:newItem];
 
 	// Tell the new database connection view to set up the window and update titles
-	[newTableDocument didBecomeActiveTabInWindow];
-	[newTableDocument updateWindowTitle:self];
+	[databaseDocument didBecomeActiveTabInWindow];
+	[databaseDocument updateWindowTitle:self];
 
 	// Bind the tab bar's progress display to the document
 	[self _updateProgressIndicatorForItem:newItem];
 	
-	return newTableDocument;
+	return databaseDocument;
 }
 
 /**
@@ -137,7 +136,7 @@
  */
 - (void)updateSelectedTableDocument
 {
-	[self _switchOutSelectedTableDocument:[[tabView selectedTabViewItem] identifier]];
+	[self _switchOutSelectedTableDocument:[[tabView selectedTabViewItem] databaseDocument]];
 	
 	[self.selectedTableDocument didBecomeActiveTabInWindow];
 }
@@ -152,7 +151,7 @@
 {
 	for (NSTabViewItem *eachItem in [tabView tabViewItems]) 
 	{
-		SPDatabaseDocument *eachDocument = [eachItem identifier];
+		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 		
 		if (eachDocument != sender) {
 			[eachDocument updateWindowTitle:self];
@@ -168,12 +167,15 @@
 	// If there are multiple tabs, close the front tab.
 	if ([tabView numberOfTabViewItems] > 1) {
 		// Return if the selected tab shouldn't be closed
-		if (![self.selectedTableDocument parentTabShouldClose]) return;
+        if (![self.selectedTableDocument parentTabShouldClose]) {
+            return;
+        }
 		[tabView removeTabViewItem:[tabView selectedTabViewItem]];
 	} 
 	else {
 		//trying to close the window will itself call parentTabShouldClose for all tabs in windowShouldClose:
 		[[self window] performClose:self];
+        [self.delegate windowControllerDidClose:self];
 	}
 }
 
@@ -206,15 +208,15 @@
 /**
  * Move the currently selected tab to a new window.
  */
-- (IBAction)moveSelectedTabInNewWindow:(id)sender
-{
+- (IBAction)moveSelectedTabInNewWindow:(id)sender {
 	static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
-	SPDatabaseDocument *selectedDocument = [[tabView selectedTabViewItem] identifier];
 	NSTabViewItem *selectedTabViewItem = [tabView selectedTabViewItem];
+    SPDatabaseDocument *selectedDocument = [selectedTabViewItem databaseDocument];
 	PSMTabBarCell *selectedCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:selectedTabViewItem]];
 
 	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    [self.delegate windowControllerDidCreateNewWindowController:newWindowController];
 	NSWindow *newWindow = [newWindowController window];
 
 	CGFloat toolbarHeight = 0;
@@ -236,7 +238,7 @@
 	[newWindow setDelegate:newWindowController];
 
 	// Set window title
-	[newWindow setTitle:[[[[tabView selectedTabViewItem] identifier] parentWindow] title]];
+	[newWindow setTitle:[[selectedDocument parentWindowControllerWindow] title]];
 
 	// New window's tabBar control
 	PSMTabBarControl *control = newWindowController.tabBar;
@@ -295,11 +297,10 @@
 /**
  * Retrieve the documents associated with this window.
  */
-- (NSArray *)documents
-{
-	NSMutableArray *documentsArray = [NSMutableArray array];
+- (NSArray <SPDatabaseDocument *> *)documents {
+	NSMutableArray <SPDatabaseDocument *> *documentsArray = [NSMutableArray array];
 	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
-		[documentsArray addObject:[eachItem identifier]];
+		[documentsArray safeAddObject:[eachItem databaseDocument]];
 	}
 	return documentsArray;
 }
@@ -428,7 +429,7 @@
 	
 	[[theCell indicator] setControlSize:NSControlSizeSmall];
 	
-	SPDatabaseDocument *theDocument = [theItem identifier];
+	SPDatabaseDocument *theDocument = [theItem databaseDocument];
 	
 	[[theCell indicator] setHidden:NO];
 	
@@ -447,14 +448,16 @@
 	NSAssert([NSThread isMainThread], @"Switching the selectedTableDocument via a background thread is not supported!");
 	
 	// shortcut if there is nothing to do
-	if(self.selectedTableDocument == newDoc) return;
+    if (self.selectedTableDocument == newDoc) {
+        return;
+    }
 	
 	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	if(self.selectedTableDocument) {
+	if (self.selectedTableDocument) {
 		[nc removeObserver:self name:SPDocumentWillCloseNotification object:self.selectedTableDocument];
 		self.selectedTableDocument = nil;
 	}
-	if(newDoc) {
+	if (newDoc) {
 		[nc addObserver:self selector:@selector(_selectedTableDocumentDeallocd:) name:SPDocumentWillCloseNotification object:newDoc];
 		self.selectedTableDocument = newDoc;
 	}
@@ -474,21 +477,21 @@
  * Go through the tabs in this window, and ask the database connection view
  * in each one if it can be closed, returning YES only if all can be closed.
  */
-- (BOOL)windowShouldClose:(NSWindow *)sender
-{
-	for (NSTabViewItem *eachItem in [tabView tabViewItems])
-	{
-		SPDatabaseDocument *eachDocument = [eachItem identifier];
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 
-		if (![eachDocument parentTabShouldClose]) return NO;
+        if (![eachDocument parentTabShouldClose]) {
+            return NO;
+        }
 	}
 
 	// Remove global session data if the last window of a session will be closed
-	if ([SPAppDelegate sessionURL] && [[SPAppDelegate orderedDatabaseConnectionWindows] count] == 1) {
+	if ([SPAppDelegate sessionURL] && [[SPAppDelegate windowControllers] count] == 1) {
 		[SPAppDelegate setSessionURL:nil];
 		[SPAppDelegate setSpfSessionDocData:nil];
 	}
-	[sender setReleasedWhenClosed:YES];
+    [self.delegate windowControllerDidClose:self];
 	return YES;
 }
 
@@ -554,11 +557,8 @@
  */
 - (void)windowDidResize:(NSNotification *)notification
 {
-	for (NSTabViewItem *eachItem in [tabView tabViewItems])
-	{
-		SPDatabaseDocument *eachDocument = [eachItem identifier];
-
-		[eachDocument tabDidResize];
+	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+		[[eachItem databaseDocument] tabDidResize];
 	}
 }
 
@@ -596,10 +596,12 @@
 {
 	if ([[PSMTabDragAssistant sharedDragAssistant] isDragging]) return;
 
-	[self _switchOutSelectedTableDocument:[tabViewItem identifier]];
+	[self _switchOutSelectedTableDocument:[tabViewItem databaseDocument]];
 	[self.selectedTableDocument didBecomeActiveTabInWindow];
 
-	if ([[self window] isKeyWindow]) [self.selectedTableDocument tabDidBecomeKey];
+    if ([[self window] isKeyWindow]) {
+        [self.selectedTableDocument tabDidBecomeKey];
+    }
 
 	[self updateAllTabTitles:self];
 }
@@ -611,10 +613,11 @@
  */
 - (BOOL)tabView:(NSTabView *)aTabView shouldCloseTabViewItem:(NSTabViewItem *)tabViewItem
 {
-	SPDatabaseDocument *theDocument = [tabViewItem identifier];
+	SPDatabaseDocument *theDocument = [tabViewItem databaseDocument];
 
-	if (![theDocument parentTabShouldClose]) return NO;
-
+    if (![theDocument parentTabShouldClose]) {
+        return NO;
+    }
 	return YES;
 }
 
@@ -623,7 +626,7 @@
  */
 - (void)tabView:(NSTabView *)aTabView didCloseTabViewItem:(NSTabViewItem *)tabViewItem
 {
-	SPDatabaseDocument *theDocument = [tabViewItem identifier];
+	SPDatabaseDocument *theDocument = [tabViewItem databaseDocument];
 
 	[theDocument removeObserver:self forKeyPath:@"isProcessing"];
 	[theDocument parentTabDidClose];
@@ -642,10 +645,10 @@
  */
 - (void)tabView:(NSTabView*)aTabView didDropTabViewItem:(NSTabViewItem *)tabViewItem inTabBar:(PSMTabBarControl *)tabBarControl
 {
-	SPDatabaseDocument *draggedDocument = [tabViewItem identifier];
+	SPDatabaseDocument *draggedDocument = [tabViewItem databaseDocument];
 
 	// Grab a reference to the old window
-	NSWindow *draggedFromWindow = [draggedDocument parentWindow];
+	NSWindow *draggedFromWindow = [draggedDocument parentWindowControllerWindow];
 
 	// If the window changed, perform additional processing.
 	if (draggedFromWindow != [tabBarControl window]) {
@@ -656,8 +659,7 @@
 
 		// Update the item's document's window and controller
 		[draggedDocument willResignActiveTabInWindow];
-		[draggedDocument setParentWindowController:[[tabBarControl window] windowController]];
-		[draggedDocument setParentWindow:[tabBarControl window]];
+        [draggedDocument updateParentWindowController:[[tabBarControl window] windowController]];
 		[draggedDocument didBecomeActiveTabInWindow];
 
 		// Update window controller's active tab, and update the document's isProcessing observation
@@ -667,7 +669,9 @@
 	}
 
 	// Check the window and move it to front if it's key (eg for new window creation)
-	if ([[tabBarControl window] isKeyWindow]) [[tabBarControl window] orderFront:self];
+    if ([[tabBarControl window] isKeyWindow]) {
+        [[tabBarControl window] orderFront:self];
+    }
 
 	// workaround bug where "source list" table views are broken in the new window. See https://github.com/sequelpro/sequelpro/issues/2863
 	SPWindowController *newWindowController = tabBarControl.window.windowController;
@@ -686,7 +690,7 @@
  */
 - (void)draggingEvent:(id <NSDraggingInfo>)dragEvent enteredTabBar:(PSMTabBarControl *)tabBarControl tabView:(NSTabViewItem *)tabViewItem
 {
-	SPDatabaseDocument *theDocument = [tabViewItem identifier];
+	SPDatabaseDocument *theDocument = [tabViewItem databaseDocument];
 
 	if (![theDocument isCustomQuerySelected] && [[[dragEvent draggingPasteboard] types] indexOfObject:NSStringPboardType] != NSNotFound)
 	{
@@ -723,11 +727,7 @@
 	}
 	// if cell is not selected show full title plus MySQL version is enabled as tooltip
 	else {
-		if ([[tabViewItem identifier] respondsToSelector:@selector(tabTitleForTooltip)]) {
-			return [[tabViewItem identifier] tabTitleForTooltip];
-		}
-
-		return @"";
+		return [[tabViewItem databaseDocument] tabTitleForTooltip];
 	}
 }
 
@@ -760,10 +760,10 @@
  * When a tab is dragged off a tab bar, create a new window containing a new
  * (empty) tab bar to hold it.
  */
-- (PSMTabBarControl *)tabView:(NSTabView *)aTabView newTabBarForDraggedTabViewItem:(NSTabViewItem *)tabViewItem atPoint:(NSPoint)point
-{
+- (PSMTabBarControl *)tabView:(NSTabView *)aTabView newTabBarForDraggedTabViewItem:(NSTabViewItem *)tabViewItem atPoint:(NSPoint)point {
 	// Create the new window controller, with no tabs
 	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    [self.delegate windowControllerDidCreateNewWindowController:newWindowController];
 	NSWindow *newWindow = [newWindowController window];
 
 	CGFloat toolbarHeight = 0;
@@ -786,7 +786,7 @@
 	[newWindow setDelegate:newWindowController];
 
 	// Set window title
-	[newWindow setTitle:[[[tabViewItem identifier] parentWindow] title]];
+	[newWindow setTitle:[[[tabViewItem databaseDocument] parentWindowControllerWindow] title]];
 
 	// Return the window's tab bar
 	return newWindowController.tabBar;
@@ -854,16 +854,14 @@
  * When tab drags start, show all the tab bars.  This allows adding tabs to windows
  * containing only one tab - where the bar is normally hidden.
  */
-- (void)tabDragStarted:(id)sender
-{
+- (void)tabDragStarted:(id)sender {
     
 }
 
 /**
  * When tab drags stop, set tab bars to automatically hide again for only one tab.
  */
-- (void)tabDragStopped:(id)sender
-{
+- (void)tabDragStopped:(id)sender {
 
 }
 

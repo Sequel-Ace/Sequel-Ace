@@ -337,7 +337,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[self _updateExportAdvancedOptionsLabel];
 	[self setExportInput:source];
 
-	[[tableDocumentInstance parentWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
 		// Perform the export
 		if (returnCode == NSModalResponseOK) {
 
@@ -369,7 +369,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[errorsTextView setString:@""];
 	[errorsTextView setString:errors];
 
-	[[tableDocumentInstance parentWindow] beginSheet:errorsWindow completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:errorsWindow completionHandler:nil];
 }
 
 /**
@@ -446,7 +446,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			[alert setMessageText:NSLocalizedString(@"No directory selected.", @"No directory selected.")];
 			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
 			
-			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindowControllerWindow] completionHandler:^(NSInteger returnCode) {
 				[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
 			}];
 			
@@ -1272,7 +1272,7 @@ set_input:
 
 	// If it's not already displayed, open the progress sheet
 	if (![exportProgressWindow isVisible]) {
-		[[tableDocumentInstance parentWindow] beginSheet:exportProgressWindow completionHandler:nil];
+		[[tableDocumentInstance parentWindowControllerWindow] beginSheet:exportProgressWindow completionHandler:nil];
 	}
 
 	// cache the current connection encoding so the exporter can do what it wants.
@@ -1447,7 +1447,7 @@ set_input:
 	[exportProgressIndicator setUsesThreadedAnimation:YES];
 
 	// Open the progress sheet
-	[[tableDocumentInstance parentWindow] beginSheet:exportProgressWindow completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:exportProgressWindow completionHandler:nil];
 
 	// CSV export
 	if (exportType == SPCSVExport) {
@@ -2123,7 +2123,7 @@ set_input:
  * Re-open the export sheet without resetting the interface - for use on error.
  */
 - (void)_reopenExportSheet {
-	[[tableDocumentInstance parentWindow] beginSheet:self.window completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:nil];
 }
 
 #pragma mark - SPExportFilenameUtilities

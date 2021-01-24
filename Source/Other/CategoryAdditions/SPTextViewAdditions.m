@@ -792,7 +792,10 @@
 		[menu removeItem:bItem];
 	}
 
-	if ([[[(SPWindowController *)[[SPAppDelegate frontDocumentWindow] delegate] selectedTableDocument] connectionID] isEqualToString:@"_"]) return menu;
+    id<NSWindowDelegate> windowController = [[NSApp keyWindow] delegate];
+    if ([windowController isKindOfClass:[SPWindowController class]] && [[[(SPWindowController *)windowController selectedTableDocument] connectionID] isEqualToString:@"_"]) {
+        return menu;
+    }
 
 	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
 

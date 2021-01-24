@@ -46,6 +46,7 @@
 #import "SPFunctions.h"
 #import "SPQueryController.h"
 #import "SPConstants.h"
+#import "SPWindowController.h"
 @import Firebase;
 
 #import <SPMySQL/SPMySQL.h>
@@ -205,7 +206,7 @@
 	NSRect accessoryViewRect = [importFromClipboardAccessoryView frame];
 	[importView setFrame:NSMakeRect(0, 0, accessoryViewRect.size.width, accessoryViewRect.size.height)];
 
-	[[tableDocumentInstance parentWindow] beginSheet:importFromClipboardSheet completionHandler:^(NSModalResponse returnCode) {
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:importFromClipboardSheet completionHandler:^(NSModalResponse returnCode) {
 		// Reset the interface and store prefs
 		[self->importFromClipboardTextView setString:@""];
 		[self->prefs setObject:[[self->importFormatPopup selectedItem] title] forKey:@"importFormatPopupValue"];
@@ -280,7 +281,7 @@
 		[openPanel setDirectoryURL:[NSURL URLWithString:openPath]];
 	}
 
-	[openPanel beginSheetModalForWindow:[tableDocumentInstance parentWindow] completionHandler:^(NSInteger returnCode) {
+	[openPanel beginSheetModalForWindow:[[tableDocumentInstance parentWindowController] window] completionHandler:^(NSInteger returnCode) {
 		// Ensure text inputs are completed, preventing dead character entry
 		[openPanel makeFirstResponder:nil];
 
@@ -404,7 +405,7 @@
 		[self->singleProgressBar startAnimation:self];
 		
 		// Open the progress sheet
-		[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
+		[[self->tableDocumentInstance parentWindowControllerWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
@@ -796,7 +797,7 @@
 		[self->singleProgressBar startAnimation:self];
 		
 		// Open the progress sheet
-		[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
+		[[self->tableDocumentInstance parentWindowControllerWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
@@ -949,7 +950,7 @@
 					[self->singleProgressBar setMaxValue:fileTotalLength];
 					[self->singleProgressBar setIndeterminate:NO];
 					[self->singleProgressBar startAnimation:self];
-					[[self->tableDocumentInstance parentWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
+					[[self->tableDocumentInstance parentWindowControllerWindow] beginSheet:self->singleProgressSheet completionHandler:nil];
 				});
 
                 // Set up index sets for use during row enumeration
@@ -1260,7 +1261,7 @@
 		[fieldMapperController setImportDataArray:self->fieldMappingImportArray hasHeader:[self->importFieldNamesSwitch state] isPreview:self->fieldMappingImportArrayIsPreview];
 		
 		// Show field mapper sheet and set the focus to it
-		[[self->tableDocumentInstance parentWindow] beginSheet:[fieldMapperController window] completionHandler:^(NSModalResponse returnCode) {
+		[[self->tableDocumentInstance parentWindowControllerWindow] beginSheet:[fieldMapperController window] completionHandler:^(NSModalResponse returnCode) {
 			self->fieldMapperSheetStatus = (returnCode) ? SPFieldMapperCompleted : SPFieldMapperCancelled;
 		}];
 	});
@@ -1650,7 +1651,7 @@
 	}
 	
 	[errorsView setString:message];
-	[[tableDocumentInstance parentWindow] beginSheet:errorsSheet completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:errorsSheet completionHandler:nil];
 }
 
 #pragma mark -

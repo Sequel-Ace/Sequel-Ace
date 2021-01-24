@@ -282,25 +282,7 @@ static unsigned short getRandomPort(void);
  * tunnel to the remote server.
  * Sets up and tears down as appropriate for usage in a background thread.
  */
-- (void)launchTask:(id) dummy
-{
-
-    SPMainQSync(^{
-        NSArray *allDocs = [SPAppDelegate orderedDocuments];
-        for (SPDatabaseDocument *doc in allDocs)
-        {
-            SPLog(@"host= %@",doc.getConnection.host );
-            SPLog(@"lastErrorMessage = %@",doc.getConnection.lastErrorMessage );
-            SPLog(@"isConnected = %d",doc.getConnection.isConnected );
-            SPLog(@"isProxy = %d",doc.getConnection.isProxy );
-            SPLog(@"timeout = %lu",(unsigned long)doc.getConnection.timeout );
-            CLS_LOG(@"host= %@",doc.getConnection.host );
-            CLS_LOG(@"lastErrorMessage = %@",doc.getConnection.lastErrorMessage );
-            CLS_LOG(@"isConnected = %d",doc.getConnection.isConnected );
-            CLS_LOG(@"isProxy = %d",doc.getConnection.isProxy );
-            CLS_LOG(@"timeout = %lu",(unsigned long)doc.getConnection.timeout );
-        }
-    });
+- (void)launchTask:(id) dummy {
     
     SPLog(@"connection state = %i", connectionState);
     CLS_LOG(@"connection state = %i", connectionState);
