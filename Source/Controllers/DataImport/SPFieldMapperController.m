@@ -1415,19 +1415,21 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 {
 	NSUInteger i, value;
 
-	if (!fieldMappingArray) {
+    if (!fieldMappingArray) {
 		fieldMappingArray = [[NSMutableArray alloc] init];
-		NSArray *currentRowValues = [fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow];
-		for (i = 0; i < [fieldMappingTableColumnNames count]; i++) {
-			if (i < [currentRowValues count]) {
-				value = i;
-			} else {
-				value = 0;
-			}
+    } else {
+        [fieldMappingArray removeAllObjects];
+    }
+    NSArray *currentRowValues = [fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow];
+    for (i = 0; i < [fieldMappingTableColumnNames count]; i++) {
+        if (i < [currentRowValues count]) {
+            value = i;
+        } else {
+            value = 0;
+        }
 
-			[fieldMappingArray addObject:[NSNumber numberWithUnsignedInteger:value]];
-		}
-	}
+        [fieldMappingArray addObject:[NSNumber numberWithUnsignedInteger:value]];
+    }
 
 	[fieldMapperTableView reloadData];
 }
@@ -1775,7 +1777,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 {
 
 	if(aTableView == fieldMapperTableView) {
-		
 		if ([[aTableColumn identifier] isEqualToString:SPTableViewTargetFieldColumnID]) {
 			return [fieldMappingTableColumnNames objectAtIndex:rowIndex];
 		}
