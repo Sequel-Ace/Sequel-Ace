@@ -36,8 +36,6 @@
 
 @interface SPWindowController : NSWindowController <NSWindowDelegate>
 {
-	IBOutlet NSTabView *tabView;
-
 	NSClipView *titleBarLineHidingView;
 
 	NSMenuItem *closeWindowMenuItem;
@@ -47,7 +45,8 @@
 }
 
 @property (nonatomic, weak) id<SPWindowControllerDelegate> delegate;
-@property (readonly, strong) IBOutlet PSMTabBarControl *tabBar;
+@property (nonatomic, strong) IBOutlet NSTabView *tabView;
+@property (nonatomic, strong) IBOutlet PSMTabBarControl *tabBarControl;
 @property (readonly, strong) SPDatabaseDocument *selectedTableDocument;
 
 // Database connection management

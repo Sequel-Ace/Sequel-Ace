@@ -150,6 +150,7 @@
 		1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
+		1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */; };
 		1AD45F2F25BE897A0042506F /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */; };
 		1AD785E725B749760007E153 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
@@ -276,6 +277,10 @@
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51BA34A525BD9F30007CA20B /* OCMock.framework */; };
+		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
+		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
+		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
+		51BC150E25BE1EB100F1CDC9 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
@@ -290,7 +295,6 @@
 		51CD0BE3258D06D8009E2484 /* DBView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC5258D06D7009E2484 /* DBView.xib */; };
 		51CD0BE4258D06D8009E2484 /* HelpViewer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC6258D06D7009E2484 /* HelpViewer.xib */; };
 		51CD0BE5258D06D8009E2484 /* Navigator.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC7258D06D8009E2484 /* Navigator.xib */; };
-		51CD0BE6258D06D8009E2484 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC8258D06D8009E2484 /* MainWindow.xib */; };
 		51CD0BE7258D06D8009E2484 /* ImportAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */; };
 		51CD0BE8258D06D8009E2484 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCA258D06D8009E2484 /* MainMenu.xib */; };
 		51CD0BE9258D06D8009E2484 /* Console.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCB258D06D8009E2484 /* Console.xib */; };
@@ -793,6 +797,7 @@
 		1AB0689824A355B500E2AAC2 /* client-key-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-lf.pem"; sourceTree = "<group>"; };
 		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
+		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
 		1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPDateAdditionsTests.m; sourceTree = "<group>"; };
@@ -895,6 +900,9 @@
 		51BA34A525BD9F30007CA20B /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Frameworks/OCMock.framework; sourceTree = "<group>"; };
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
+		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
+		51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PrintAccessory.xib; sourceTree = "<group>"; };
@@ -907,7 +915,6 @@
 		51CD0BC5258D06D7009E2484 /* DBView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DBView.xib; sourceTree = "<group>"; };
 		51CD0BC6258D06D7009E2484 /* HelpViewer.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HelpViewer.xib; sourceTree = "<group>"; };
 		51CD0BC7258D06D8009E2484 /* Navigator.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Navigator.xib; sourceTree = "<group>"; };
-		51CD0BC8258D06D8009E2484 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ImportAccessory.xib; sourceTree = "<group>"; };
 		51CD0BCA258D06D8009E2484 /* MainMenu.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		51CD0BCB258D06D8009E2484 /* Console.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Console.xib; sourceTree = "<group>"; };
@@ -1255,6 +1262,7 @@
 				503CDBB21ACDC204004F8A2F /* Quartz.framework in Frameworks */,
 				265446DF24A1616900376B48 /* libz.tbd in Frameworks */,
 				17AED4161888BD67008E380F /* Security.framework in Frameworks */,
+				51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */,
 				296DC8BF0F9091DF002A3258 /* libicucore.dylib in Frameworks */,
 				8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */,
 				296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */,
@@ -1635,6 +1643,7 @@
 			children = (
 				58A8A78F11A036C000B95749 /* SPWindowController.h */,
 				58A8A79011A036C000B95749 /* SPWindowController.m */,
+				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
 			);
 			path = Window;
 			sourceTree = "<group>";
@@ -2073,7 +2082,7 @@
 				51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */,
 				51CD0BC4258D06D7009E2484 /* IndexesView.xib */,
 				51CD0BCA258D06D8009E2484 /* MainMenu.xib */,
-				51CD0BC8258D06D8009E2484 /* MainWindow.xib */,
+				51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */,
 				51CD0BC7258D06D8009E2484 /* Navigator.xib */,
 				51CD0BC0258D06D7009E2484 /* Preferences.xib */,
 				51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */,
@@ -2196,6 +2205,14 @@
 			path = keys;
 			sourceTree = "<group>";
 		};
+		1ACA0B5E25BEBDEE002FA618 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		296DC8A40F90914B002A3258 /* MGTemplateEngine */ = {
 			isa = PBXGroup;
 			children = (
@@ -2233,6 +2250,7 @@
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
+				1ACA0B5E25BEBDEE002FA618 /* Recovered References */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -2303,6 +2321,7 @@
 		51F4AFB924B26646006144D5 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */,
 				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
 				51C8597B24C8A31400A8C7C4 /* StringExtension.swift */,
 				1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */,
@@ -2314,7 +2333,7 @@
 				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
 				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
 				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
-				1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */,
+				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -2610,6 +2629,7 @@
 				51D9527525AE2B5300574BEB /* FMDB */,
 				515D303E25BD7DE60021CF1E /* AppCenterCrashes */,
 				515D304025BD7DE60021CF1E /* AppCenterAnalytics */,
+				51BC150025BE138700F1CDC9 /* SnapKit */,
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = "sequel-pro";
@@ -2650,6 +2670,7 @@
 			packageReferences = (
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
+				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -2866,7 +2887,6 @@
 				582E93A0168296F3003459FD /* link-arrow@2x.png in Resources */,
 				51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */,
 				5135161B25935699001E4533 /* AquaTabCloseDirty_Front_Pressed.png in Resources */,
-				51CD0BE6258D06D8009E2484 /* MainWindow.xib in Resources */,
 				8831EFB62240150A00D10172 /* button_add_folderTemplate.pdf in Resources */,
 				582E940E1682A2AD003459FD /* button_bar_spacer@2x.png in Resources */,
 				50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */,
@@ -2890,6 +2910,7 @@
 				5135160425935699001E4533 /* TabNewMetalRollover.png in Resources */,
 				51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */,
 				582E9487168380D6003459FD /* sync_arrows_05.png in Resources */,
+				51BC150E25BE1EB100F1CDC9 /* MainWindow.xib in Resources */,
 				5135161425935699001E4533 /* AquaTabCloseDirty_Front.png in Resources */,
 				582E9488168380D6003459FD /* sync_arrows_06.png in Resources */,
 				5135160225935699001E4533 /* SequelProTabDirty_Pressed@2x.png in Resources */,
@@ -3097,6 +3118,7 @@
 				BC01BCCF104024BE006BDEE7 /* SPEncodingPopupAccessory.m in Sources */,
 				513515E42593568B001E4533 /* PSMProgressIndicator.m in Sources */,
 				3876E15D1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m in Sources */,
+				51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */,
 				513515E92593568B001E4533 /* PSMTabDragWindow.m in Sources */,
 				173C4366104455E0001F3A30 /* SPQueryFavoriteManager.m in Sources */,
 				173C44D81044A6B0001F3A30 /* SPOutlineView.m in Sources */,
@@ -3141,6 +3163,7 @@
 				50805B0D1BF2A068005F7A99 /* SPPopUpButtonCell.m in Sources */,
 				1A94988E25516057000BC793 /* DateExtension.swift in Sources */,
 				17A7773411C52D8E001E27B4 /* SPIndexesController.m in Sources */,
+				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
@@ -3179,6 +3202,7 @@
 				BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */,
 				BC0ED3DA12A9196C00088461 /* SPChooseMenuItemDialog.m in Sources */,
 				511C466A25BC768E001AA1BD /* NSTabViewItemExtension.swift in Sources */,
+				51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */,
 				583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */,
 				1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */,
 				582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */,
@@ -4255,6 +4279,14 @@
 				minimumVersion = 4.1.0;
 			};
 		};
+		51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.1;
+			};
+		};
 		51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ccgus/fmdb";
@@ -4275,6 +4307,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
 			productName = AppCenterAnalytics;
+		};
+		51BC150025BE138700F1CDC9 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
 		};
 		51D9527525AE2B5300574BEB /* FMDB */ = {
 			isa = XCSwiftPackageProductDependency;
