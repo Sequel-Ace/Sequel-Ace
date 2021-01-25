@@ -30,7 +30,6 @@
 
 #import "SPNetworkPreferencePane.h"
 #import "sequel-ace-Swift.h"
-@import AppCenterAnalytics;
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
@@ -326,8 +325,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                         @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
                         @"URLs" : (self->_currentFilePanel.URLs) ?: @""
                     };
-
-                    [MSACAnalytics trackEvent:@"error" withProperties: userInfo];
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];

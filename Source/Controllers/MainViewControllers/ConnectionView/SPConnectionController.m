@@ -61,8 +61,6 @@
 
 #import "sequel-ace-Swift.h"
 
-@import AppCenterAnalytics;
-
 // Constants
 static NSString *SPRemoveNode              = @"RemoveNode";
 static NSString *SPExportFavoritesFilename = @"SequelProFavorites.plist";
@@ -490,8 +488,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
                     @"class": classStr
                 };
-
-                [MSACAnalytics trackEvent:@"error" withProperties: userInfo];
 
                 SPLog(@"userInfo: %@", userInfo);
             }];
