@@ -991,7 +991,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	for (NSDictionary *engine in engines)
 	{
-		[newTableInfoEnginePopup addItemWithTitle:[engine objectForKey:@"Engine"]];
+		[newTableInfoEnginePopup safeAddItemWithTitle:[engine safeObjectForKey:@"Engine"]];
 	}
 
 	[newTableInfoEnginePopup selectItemWithTitle:[prefs objectForKey:SPLastImportIntoNewTableType]];
@@ -1009,7 +1009,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[[newTableInfoEncodingPopup menu] addItem:[NSMenuItem separatorItem]];
 		for (NSDictionary *encoding in encodings) {
 			NSString *menuItemTitle = (![encoding objectForKey:@"DESCRIPTION"]) ? [encoding objectForKey:@"CHARACTER_SET_NAME"] : [NSString stringWithFormat:@"%@ (%@)", [encoding objectForKey:@"DESCRIPTION"], [encoding objectForKey:@"CHARACTER_SET_NAME"]];
-			[newTableInfoEncodingPopup addItemWithTitle:menuItemTitle];
+			[newTableInfoEncodingPopup safeAddItemWithTitle:menuItemTitle];
 
 			// If the UTF8 entry has been encountered, store the menu title - prefer utf8mb4 if that specifically is found
             if ([[encoding objectForKey:@"CHARACTER_SET_NAME"] hasPrefix:@"utf8"] && (!utf8MenuItemTitle || [[encoding objectForKey:@"CHARACTER_SET_NAME"] isEqualToString:@"utf8mb4"])) {
@@ -1057,14 +1057,14 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		for(id item in [fieldMappingImportArray objectAtIndex:([self importFieldNamesHeader]? 1 : 0)]) {
 			i++;
 			if ([item isNSNull]) {
-				[insertPullDownButton addItemWithTitle:[NSString stringWithFormat:@"%li. <%@>", (long)i, [prefs objectForKey:SPNullValue]]];
+				[insertPullDownButton safeAddItemWithTitle:[NSString stringWithFormat:@"%li. <%@>", (long)i, [prefs objectForKey:SPNullValue]]];
 			} else if ([item isSPNotLoaded]) {
-				[insertPullDownButton addItemWithTitle:[NSString stringWithFormat:@"%li. <%@>", (long)i, @"DEFAULT"]];
+				[insertPullDownButton safeAddItemWithTitle:[NSString stringWithFormat:@"%li. <%@>", (long)i, @"DEFAULT"]];
 			} else {
 				if([(NSString*)item length] > 20)
-					[insertPullDownButton addItemWithTitle:[NSString stringWithFormat:@"%li. %@…", (long)i, [item substringToIndex:20]]];
+					[insertPullDownButton safeAddItemWithTitle:[NSString stringWithFormat:@"%li. %@…", (long)i, [item substringToIndex:20]]];
 				else
-					[insertPullDownButton addItemWithTitle:[NSString stringWithFormat:@"%li. %@", (long)i, item]];
+					[insertPullDownButton safeAddItemWithTitle:[NSString stringWithFormat:@"%li. %@", (long)i, item]];
 			}
 		}
 	}

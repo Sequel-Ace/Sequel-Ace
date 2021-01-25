@@ -1386,7 +1386,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                     title = @"";
                 }
 
-				[self->encodingPopupCell addItemWithTitle:title];
+				[self->encodingPopupCell safeAddItemWithTitle:title];
 				NSMenuItem *item = [self->encodingPopupCell lastItem];
 
 				[item setRepresentedObject:encodingName];
@@ -1661,9 +1661,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				// Populate collation popup button
 				for (NSDictionary *collation in collations)
 				{
-					NSString *collationName = [collation objectForKey:@"COLLATION_NAME"];
+					NSString *collationName = [collation safeObjectForKey:@"COLLATION_NAME"];
 
-					[collationCell addItemWithTitle:collationName];
+					[collationCell safeAddItemWithTitle:collationName];
 					NSMenuItem *item = [collationCell lastItem];
 					[item setRepresentedObject:collationName];
 

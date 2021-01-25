@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPEncodingPopupAccessory.h"
+#import "sequel-ace-Swift.h"
 #include <stdlib.h>
 
 @implementation SPEncodingPopupAccessory
@@ -139,7 +140,7 @@ static int encodingCompare(const void *firstPtr, const void *secondPtr)
 	{
 		NSStringEncoding enc = [[encs objectAtIndex:cnt] unsignedIntegerValue];
 		
-		[popup addItemWithTitle:[NSString localizedNameOfStringEncoding:enc]];
+		[popup safeAddItemWithTitle:[NSString localizedNameOfStringEncoding:enc]];
 		[[popup lastItem] setTag:enc];
 		[[popup lastItem] setEnabled:YES];
 		

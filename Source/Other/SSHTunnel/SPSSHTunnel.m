@@ -349,7 +349,10 @@ static unsigned short getRandomPort(void);
 		// Prepare to set up the arguments for the task
 		taskArguments = [[NSMutableArray alloc] init];
 		void (^TA)(NSString *, NSString *) = ^(NSString *_name, NSString *_value) {
-			[taskArguments addObjectsFromArray:@[_name,_value]];
+            // name is always set
+            if (!IsEmpty(_value)){
+                [taskArguments addObjectsFromArray:@[_name,_value]];
+            }
 		};
 
 		// Enable verbose mode for message parsing

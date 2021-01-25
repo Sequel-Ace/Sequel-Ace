@@ -150,6 +150,7 @@
 		1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
+		1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */; };
 		1AD785E725B749760007E153 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
@@ -795,6 +796,8 @@
 		1AB0689824A355B500E2AAC2 /* client-key-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-lf.pem"; sourceTree = "<group>"; };
 		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
+		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
+		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
 		1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPDateAdditionsTests.m; sourceTree = "<group>"; };
 		1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPFunctionsTests.m; sourceTree = "<group>"; };
@@ -2201,6 +2204,14 @@
 			path = keys;
 			sourceTree = "<group>";
 		};
+		1ACA0B5E25BEBDEE002FA618 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		296DC8A40F90914B002A3258 /* MGTemplateEngine */ = {
 			isa = PBXGroup;
 			children = (
@@ -2238,6 +2249,7 @@
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
+				1ACA0B5E25BEBDEE002FA618 /* Recovered References */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -2308,6 +2320,7 @@
 		51F4AFB924B26646006144D5 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */,
 				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
 				51C8597B24C8A31400A8C7C4 /* StringExtension.swift */,
 				1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */,
@@ -3148,6 +3161,7 @@
 				50805B0D1BF2A068005F7A99 /* SPPopUpButtonCell.m in Sources */,
 				1A94988E25516057000BC793 /* DateExtension.swift in Sources */,
 				17A7773411C52D8E001E27B4 /* SPIndexesController.m in Sources */,
+				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,

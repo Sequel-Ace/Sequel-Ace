@@ -230,7 +230,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 continue;
             }
             NSString *itemTitle = [key substringFromIndex:len];
-            [sshConfigChooser addItemWithTitle:itemTitle];
+            [sshConfigChooser safeAddItemWithTitle:itemTitle];
             count++;
         }
 	}];

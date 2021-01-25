@@ -1259,9 +1259,13 @@ typedef enum {
  */
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
+    if (replacementString == nil) {
+        return NO;
+    }
+    
 	if (textView == editTextView && 
 		(maxTextLength > 0) && 
-		![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]]) 
+		![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]])
 	{
 		NSInteger newLength;
 

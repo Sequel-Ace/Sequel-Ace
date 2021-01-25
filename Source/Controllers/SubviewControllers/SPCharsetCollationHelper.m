@@ -205,7 +205,7 @@
 	//  a) it was explicitly set in defaultCollation (only applies when defaultCharset == selectedCharset)
 	//  b) the server told us which was the default
 	//if neither works (old mysql / forks ?) we at least have the dummy default.
-	[collationButton addItemWithTitle:fmtStrDefaultUnknown];
+	[collationButton safeAddItemWithTitle:fmtStrDefaultUnknown];
 	
 	//get the charset id
     NSString *charsetId = @"";
