@@ -983,14 +983,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         SPMainQSync(^{
-            // TODO: there have been crash reports because dbName == nil at this point. When could that happen?
+            // TODO: there have been crash reports because dbName == nil at this point. When could that happen? 
             if([dbName unboxNull]) {
-                if(![dbName isEqualToString:self->selectedDatabase]) {
-
-                    self->selectedDatabase = [[NSString alloc] initWithString:dbName];
-                    [self->chooseDatabaseButton selectItemWithTitle:self->selectedDatabase];
-                    [self updateWindowTitle:self];
+                if([dbName respondsToSelector:@selector(isEqualToString:)]) {
+                    if(![dbName isEqualToString:self->selectedDatabase]) {
+                        self->selectedDatabase = [[NSString alloc] initWithString:dbName];
+                        [self->chooseDatabaseButton selectItemWithTitle:self->selectedDatabase];
+                        [self updateWindowTitle:self];
+                    }
                 }
+
             } else {
 
                 [self->chooseDatabaseButton selectItemAtIndex:0];
