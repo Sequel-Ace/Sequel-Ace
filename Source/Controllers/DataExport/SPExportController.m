@@ -434,11 +434,11 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// if they clicked export
 	// Cancel tag = 0
 	// Export tag = 1
-	if ([sender tag] == 1){
+	if ([(NSButton*)sender tag] == 1){
 		// but nothing is in the export path field
 		if([exportPathField stringValue] == nil || [[exportPathField stringValue] isEqualToString:@""] ){
 			NSLog(@"ERROR: no path!");
-			NSLog(@"sender title: %@, sender tag: %ld", [(NSButton*)sender title], (long)[sender tag]);
+			NSLog(@"sender title: %@, sender tag: %ld", [(NSButton*)sender title], (long)[(NSButton*)sender tag]);
 			
 			NSAlert *alert = [[NSAlert alloc] init];
 			[alert setAlertStyle:NSAlertStyleCritical];
@@ -476,7 +476,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	// without selecting a folder again..
 	// tried it ... doesn't give good UX.
 	
-	[NSApp endSheet:[sender window] returnCode:[sender tag]];
+	[NSApp endSheet:[sender window] returnCode:[(NSButton*)sender tag]];
 	[[sender window] orderOut:self];
 }
 
@@ -790,11 +790,11 @@ set_input:
 
 	for (NSMutableArray *table in tables)
 	{
-		if (toggleStructure) [table safeReplaceObjectAtIndex:1 withObject:[NSNumber numberWithBool:[sender tag]]];
+		if (toggleStructure) [table safeReplaceObjectAtIndex:1 withObject:[NSNumber numberWithBool:[(NSButton*)sender tag]]];
 		
-		[table safeReplaceObjectAtIndex:2 withObject:[NSNumber numberWithBool:[sender tag]]];
+		[table safeReplaceObjectAtIndex:2 withObject:[NSNumber numberWithBool:[(NSButton*)sender tag]]];
 		
-		if (toggleDropTable) [table safeReplaceObjectAtIndex:3 withObject:[NSNumber numberWithBool:[sender tag]]];
+		if (toggleDropTable) [table safeReplaceObjectAtIndex:3 withObject:[NSNumber numberWithBool:[(NSButton*)sender tag]]];
 	}
 	
 	[exportTableList reloadData];
@@ -924,7 +924,7 @@ set_input:
  */
 - (IBAction)exportCustomQueryResultAsFormat:(id)sender
 {	
-	[self exportTables:nil asFormat:[sender tag] usingSource:SPQueryExport];
+	[self exportTables:nil asFormat:[(NSMenuItem*)sender tag] usingSource:SPQueryExport];
 }
 
 #pragma mark -
