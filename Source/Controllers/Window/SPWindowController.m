@@ -66,7 +66,7 @@
     [super awakeFromNib];
 
     [self setupAppearance];
-    [self setupConstraints];
+//    [self setupConstraints]; FIXME: causes a crash
 
     [self _switchOutSelectedTableDocument:nil];
 

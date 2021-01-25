@@ -488,6 +488,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
                     @"class": classStr
                 };
+
                 SPLog(@"userInfo: %@", userInfo);
             }];
         }

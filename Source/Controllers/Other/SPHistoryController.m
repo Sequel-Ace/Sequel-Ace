@@ -348,7 +348,6 @@
 	if (contentSelectedRows) [newEntry setObject:contentSelectedRows forKey:@"contentSelection"];
 	if (contentFilter) [newEntry setObject:contentFilter forKey:@"contentFilterV2"];
 
-    SPLog(@"history addObject: %@", newEntry);
 	[history addObject:newEntry];
 
 	// If there are now more than fifty history entries, remove one from the start

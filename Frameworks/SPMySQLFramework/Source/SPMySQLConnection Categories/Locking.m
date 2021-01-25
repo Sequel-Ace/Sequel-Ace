@@ -41,8 +41,6 @@
  */
 - (void)_lockConnection
 {
-    SPLog(@"_lockConnection");
-
 	// We can only start a query when the condition is SPMySQLConnectionIdle
 	[connectionLock lockWhenCondition:SPMySQLConnectionIdle];
 
@@ -73,8 +71,6 @@
  */
 - (void)_unlockConnection
 {
-    SPLog(@"_unlockConnection");
-
 	// Always lock the conditional lock before proceeding
 	[connectionLock lock];
 

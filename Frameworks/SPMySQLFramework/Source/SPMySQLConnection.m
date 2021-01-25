@@ -397,8 +397,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)checkConnectionIfNecessary
 {
-    SPLog(@"checkConnectionIfNecessary");
-
 	// If the connection has been dropped in the background, trigger a
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {

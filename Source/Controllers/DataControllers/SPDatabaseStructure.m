@@ -314,8 +314,8 @@
 		 }
 
             NSString *theQuery = [NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@ FROM %@", [aTableName backtickQuotedString], [currentDatabase backtickQuotedString]];
-            SPLog(@"theQuery: %@", theQuery);
-            
+            SPLog(@"aTableName: %@", aTableName);
+
 			// Retrieve the column details
 			theResult = [mySQLConnection queryString:theQuery];
 			if (!theResult) {
