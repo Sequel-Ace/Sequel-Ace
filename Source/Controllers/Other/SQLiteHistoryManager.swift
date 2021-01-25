@@ -389,26 +389,42 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
         additionalHistArraySize = 0;
 
-        for query in arrayToNormalise where query.isNotEmpty {
-            if query.contains("\n"){
-                Log.debug("query contains newline: [\(query)]")
-                // an array where each entry contains the value from
-                // the history query, delimited by a new line
-                let lines = query.separatedIntoLines()
+        let saveHistoryIndividually = prefs.bool(forKey: SPCustomQuerySaveHistoryIndividually)
 
-                Log.debug("lines: [\(lines)]")
+        if saveHistoryIndividually == true {
+            Log.debug("saveHistoryIndividually: [\(saveHistoryIndividually)]")
+            for query in arrayToNormalise where query.isNotEmpty {
 
-                for line in lines where line.isNotEmpty {
-                    normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
+                if queryMightBeMultiLine(queryToCheck:query) == true {
+                    Log.debug("queryMightBeMultiLine: [\(query)]")
+                    normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
+                    continue
+                }
+
+                if query.contains("\n"){
+                    Log.debug("query contains newline: [\(query)]")
+                    // an array where each entry contains the value from
+                    // the history query, delimited by a new line
+                    let lines = query.separatedIntoLines()
+
+                    Log.debug("lines: [\(lines)]")
+
+                    for line in lines where line.isNotEmpty {
+                        normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
+                    }
+                }
+                else{
+                    normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
                 }
             }
-            else{
-                normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
-            }
+            Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
+            Log.debug("normalisedQueryArray: [\(normalisedQueryArray)]")
         }
-
-        Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
-        Log.debug("normalisedQueryArray: [\(normalisedQueryArray)]")
+        else{
+            Log.debug("saveHistoryIndividually: [\(saveHistoryIndividually)], setting normalisedQueryArray = arrayToNormalise")
+            normalisedQueryArray = arrayToNormalise
+            Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
+        }
 
         // keep a rough track of array size by counting string len
         for arr in normalisedQueryArray {
@@ -418,5 +434,24 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         Log.debug("additionalHistArraySize: [\(additionalHistArraySize)]")
 
         return normalisedQueryArray
+    }
+
+    /// Takes a guess at whether the query might be multi-line
+    /// - Parameters:
+    ///   - queryToCheck: the query to check
+    /// - Returns: bool - if the query contains on of the keywords.
+    private func queryMightBeMultiLine(queryToCheck: String) -> Bool {
+
+        let keywordArray: [String] = ["UNION", "JOIN", "ANY", "SOME", "ALL", "IN"] // FIXME: What about IN? Might not be multiline
+
+        for keyword in keywordArray {
+            if queryToCheck.contains(keyword) {
+                Log.debug("queryToCheck: [\(queryToCheck)]")
+                Log.debug("contains: [\(keyword)]")
+                return true
+            }
+        }
+
+        return false
     }
 }
