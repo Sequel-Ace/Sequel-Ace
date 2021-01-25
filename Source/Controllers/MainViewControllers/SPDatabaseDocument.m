@@ -599,7 +599,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Add system databases
     for (NSString *database in allSystemDatabases)
     {
-        [chooseDatabaseButton addItemWithTitle:database];
+        [chooseDatabaseButton safeAddItemWithTitle:database];
     }
 
     // Add a separator between the system and user databases
@@ -610,7 +610,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Add user databases
     for (NSString *database in allDatabases)
     {
-        [chooseDatabaseButton addItemWithTitle:database];
+        [chooseDatabaseButton safeAddItemWithTitle:database];
     }
 
     (![self database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[self database]];

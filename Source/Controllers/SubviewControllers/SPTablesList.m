@@ -396,7 +396,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	for (NSDictionary *engine in engines)
 	{
-		[tableTypeButton addItemWithTitle:[engine objectForKey:@"Engine"]];
+		[tableTypeButton safeAddItemWithTitle:[engine safeObjectForKey:@"Engine"]];
 	}
 
 	// Setup the charset and collation dropdowns
@@ -446,7 +446,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if(isDefaultCharset) {
 		NSString *defaultCollation = [databaseDataInstance getDatabaseDefaultCollation];
 		NSString *defaultItemTitle = (defaultCollation)? [NSString stringWithFormat:fmtStrDefaultId,defaultCollation] : fmtStrDefaultUnknown;
-		[tableCollationButton addItemWithTitle:defaultItemTitle];
+		[tableCollationButton safeAddItemWithTitle:defaultItemTitle];
 		//add the separator for the real items
 		[[tableCollationButton menu] addItem:[NSMenuItem separatorItem]];
 	}
@@ -468,8 +468,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	//add the real items
 	for (NSDictionary *collation in applicableCollations) 
 	{
-		NSString *collationName = [collation objectForKey:@"COLLATION_NAME"];
-		[tableCollationButton addItemWithTitle:collationName];
+		NSString *collationName = [collation safeObjectForKey:@"COLLATION_NAME"];
+		[tableCollationButton safeAddItemWithTitle:collationName];
 		
 		//if this is not the server default charset let's find it's default collation too
 		if(!isDefaultCharset && [[collation objectForKey:@"IS_DEFAULT"] isEqualToString:@"Yes"]) {
@@ -653,7 +653,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Add user databases
 	for (NSString *database in allDatabases)
 	{
-		[chooseDatabaseButton addItemWithTitle:database];
+		[chooseDatabaseButton safeAddItemWithTitle:database];
 	}
 
 	[chooseDatabaseButton itemAtIndex:1].enabled = YES;

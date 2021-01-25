@@ -304,8 +304,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 			[statusFields objectForKey:@"CharacterSetClient"] && 
 			[statusFields objectForKey:SPMySQLCollationField]) 
 		{
-			[tableEncodingPopUpButton addItemWithTitle:[statusFields objectForKey:@"CharacterSetClient"]];
-			[tableCollationPopUpButton addItemWithTitle:[statusFields objectForKey:SPMySQLCollationField]];
+			[tableEncodingPopUpButton safeAddItemWithTitle:[statusFields objectForKey:@"CharacterSetClient"]];
+			[tableCollationPopUpButton safeAddItemWithTitle:[statusFields objectForKey:SPMySQLCollationField]];
 		}
 		
 		return;
@@ -315,7 +315,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	NSArray *encodings  = [databaseDataInstance getDatabaseCharacterSetEncodings];
 	NSArray *collations = [databaseDataInstance getDatabaseCollationsForEncoding:[tableDataInstance tableEncoding]];
 
-	NSString *storageEngine = [statusFields objectForKey:SPMySQLEngineField];
+	NSString *storageEngine = [statusFields safeObjectForKey:SPMySQLEngineField];
 
 	if ([engines count] > 0 && storageEngine) {
 
@@ -330,7 +330,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
                 continue;
             }
 
-            [tableTypePopUpButton addItemWithTitle:tmpEngine];
+            [tableTypePopUpButton safeAddItemWithTitle:tmpEngine];
 		}
 
 		[tableTypePopUpButton selectItemWithTitle:storageEngine];
@@ -338,7 +338,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 		// Object has a non-user storage engine (i.e. performance_schema) so just add it
 		if ([tableTypePopUpButton indexOfSelectedItem] == -1) {
-			[tableTypePopUpButton addItemWithTitle:storageEngine];
+			[tableTypePopUpButton safeAddItemWithTitle:storageEngine];
 			[tableTypePopUpButton selectItemWithTitle:storageEngine];
 		}
 	}
@@ -357,7 +357,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 			NSString *menuItemTitle = (!encDesc) ? encCharset : [NSString stringWithFormat:@"%@ (%@)", encDesc, encCharset];
 
-			if(menuItemTitle != nil) [tableEncodingPopUpButton addItemWithTitle:menuItemTitle];
+			if(menuItemTitle != nil) [tableEncodingPopUpButton safeAddItemWithTitle:menuItemTitle];
 
 			if ([[tableDataInstance tableEncoding] isEqualToString:encCharset]) {
 				selectedTitle = menuItemTitle;
@@ -371,15 +371,15 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableEncodingPopUpButton addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 	}
 
-	if (([collations count] > 0) && ([statusFields objectForKey:SPMySQLCollationField])) {
+	if (([collations count] > 0) && ([statusFields safeObjectForKey:SPMySQLCollationField])) {
 
 		// Populate collation popup button
 		for (NSDictionary *collation in collations)
 		{
-			[tableCollationPopUpButton addItemWithTitle:[collation safeObjectForKey:@"COLLATION_NAME"]];
+			[tableCollationPopUpButton safeAddItemWithTitle:[collation safeObjectForKey:@"COLLATION_NAME"]];
 		}
 
-		[tableCollationPopUpButton selectItemWithTitle:[statusFields objectForKey:SPMySQLCollationField]];
+		[tableCollationPopUpButton selectItemWithTitle:[statusFields safeObjectForKey:SPMySQLCollationField]];
 		[tableCollationPopUpButton setEnabled:enableInteraction];
 	}
 	else {

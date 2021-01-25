@@ -127,7 +127,7 @@
 	[importEncodingPopup addItemWithTitle:NSLocalizedString(@"Autodetect", @"Encoding autodetect menu item")];
 	[[importEncodingPopup menu] addItem:[NSMenuItem separatorItem]];
 	for (NSNumber *encodingNumber in encodings) {
-		[importEncodingPopup addItemWithTitle:[NSString localizedNameOfStringEncoding:[encodingNumber unsignedIntegerValue]]];
+		[importEncodingPopup safeAddItemWithTitle:[NSString localizedNameOfStringEncoding:[encodingNumber unsignedIntegerValue]]];
 		[[importEncodingPopup lastItem] setTag:[encodingNumber unsignedIntegerValue]];
 	}
 }
