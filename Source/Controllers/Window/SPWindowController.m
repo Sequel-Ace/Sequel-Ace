@@ -34,6 +34,7 @@
 #import "PSMTabDragAssistant.h"
 #import "SPConnectionController.h"
 #import "SPFavoritesOutlineView.h"
+#import "SPWindow.h"
 
 #import "PSMTabBarControl.h"
 #import "PSMTabStyle.h"
@@ -58,42 +59,45 @@
 
 @implementation SPWindowController
 
-@synthesize tabBar;
-
 #pragma mark -
 #pragma mark Initialisation
 
 - (void)awakeFromNib {
-	[self _switchOutSelectedTableDocument:nil];
-	
-	NSWindow *window = [self window];
-	
-	[window setCollectionBehavior:[window collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+    [super awakeFromNib];
 
-	// Disable automatic cascading - this occurs before the size is set, so let the app
-	// controller apply cascading after frame autosaving.
-	[self setShouldCascadeWindows:NO];
+    [self setupAppearance];
+    [self setupConstraints];
 
-	// Initialise the managed database connections array
-	managedDatabaseConnections = [[NSMutableArray alloc] init];
+    [self _switchOutSelectedTableDocument:nil];
 
-	[self _setUpTabBar];
+    NSWindow *window = [self window];
 
-	// Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
-	NSMenu *mainMenu = [NSApp mainMenu];
-	closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
-	closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
+    [window setCollectionBehavior:[window collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
 
-	// Register for drag start and stop notifications - used to show/hide tab bars
-	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	[nc addObserver:self selector:@selector(tabDragStarted:) name:PSMTabDragDidBeginNotification object:nil];
-	[nc addObserver:self selector:@selector(tabDragStopped:) name:PSMTabDragDidEndNotification object:nil];
+    // Disable automatic cascading - this occurs before the size is set, so let the app
+    // controller apply cascading after frame autosaving.
+    [self setShouldCascadeWindows:NO];
 
-	// Because we are a document-based app we automatically adopt window restoration on 10.7+.
-	// However that causes a race condition with our own window setup code.
-	// Remove this when we actually support restoration.
+    // Initialise the managed database connections array
+    managedDatabaseConnections = [[NSMutableArray alloc] init];
+
+    [self _setUpTabBar];
+
+    // Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
+    NSMenu *mainMenu = [NSApp mainMenu];
+    closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
+    closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
+
+    // Register for drag start and stop notifications - used to show/hide tab bars
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self selector:@selector(tabDragStarted:) name:PSMTabDragDidBeginNotification object:nil];
+    [nc addObserver:self selector:@selector(tabDragStopped:) name:PSMTabDragDidEndNotification object:nil];
+
+    // Because we are a document-based app we automatically adopt window restoration on 10.7+.
+    // However that causes a race condition with our own window setup code.
+    // Remove this when we actually support restoration.
     if ([window respondsToSelector:@selector(setRestorable:)]) {
-		[window setRestorable:NO];
+        [window setRestorable:NO];
     }
 }
 
@@ -117,8 +121,8 @@
     NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:databaseDocument];
 	
 	[newItem setView:[databaseDocument databaseView]];
-    [tabView addTabViewItem:newItem];
-    [tabView selectTabViewItem:newItem];
+    [self.tabView addTabViewItem:newItem];
+    [self.tabView selectTabViewItem:newItem];
 	[databaseDocument setParentTabViewItem:newItem];
 
 	// Tell the new database connection view to set up the window and update titles
@@ -136,7 +140,7 @@
  */
 - (void)updateSelectedTableDocument
 {
-	[self _switchOutSelectedTableDocument:[[tabView selectedTabViewItem] databaseDocument]];
+	[self _switchOutSelectedTableDocument:[[self.tabView selectedTabViewItem] databaseDocument]];
 	
 	[self.selectedTableDocument didBecomeActiveTabInWindow];
 }
@@ -149,7 +153,7 @@
  */
 - (void)updateAllTabTitles:(id)sender
 {
-	for (NSTabViewItem *eachItem in [tabView tabViewItems]) 
+	for (NSTabViewItem *eachItem in [self.tabView tabViewItems])
 	{
 		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 		
@@ -165,12 +169,12 @@
 - (IBAction)closeTab:(id)sender
 {
 	// If there are multiple tabs, close the front tab.
-	if ([tabView numberOfTabViewItems] > 1) {
+	if ([self.tabView numberOfTabViewItems] > 1) {
 		// Return if the selected tab shouldn't be closed
         if (![self.selectedTableDocument parentTabShouldClose]) {
             return;
         }
-		[tabView removeTabViewItem:[tabView selectedTabViewItem]];
+		[self.tabView removeTabViewItem:[self.tabView selectedTabViewItem]];
 	} 
 	else {
 		//trying to close the window will itself call parentTabShouldClose for all tabs in windowShouldClose:
@@ -184,11 +188,11 @@
  */
 - (IBAction) selectNextDocumentTab:(id)sender
 {
-	if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]] == [tabView numberOfTabViewItems] - 1) {
-		[tabView selectFirstTabViewItem:nil];
+	if ([self.tabView indexOfTabViewItem:[self.tabView selectedTabViewItem]] == [self.tabView numberOfTabViewItems] - 1) {
+		[self.tabView selectFirstTabViewItem:nil];
 	}
 	else {
-		[tabView selectNextTabViewItem:nil];
+		[self.tabView selectNextTabViewItem:nil];
 	}
 }
 
@@ -197,11 +201,11 @@
  */
 - (IBAction) selectPreviousDocumentTab:(id)sender
 {
-	if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]] == 0) {
-		[tabView selectLastTabViewItem:nil];
+	if ([self.tabView indexOfTabViewItem:[self.tabView selectedTabViewItem]] == 0) {
+		[self.tabView selectLastTabViewItem:nil];
 	}
 	else {
-		[tabView selectPreviousTabViewItem:nil];
+		[self.tabView selectPreviousTabViewItem:nil];
 	}
 }
 
@@ -211,11 +215,11 @@
 - (IBAction)moveSelectedTabInNewWindow:(id)sender {
 	static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
-	NSTabViewItem *selectedTabViewItem = [tabView selectedTabViewItem];
+	NSTabViewItem *selectedTabViewItem = [self.tabView selectedTabViewItem];
     SPDatabaseDocument *selectedDocument = [selectedTabViewItem databaseDocument];
-	PSMTabBarCell *selectedCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:selectedTabViewItem]];
+	PSMTabBarCell *selectedCell = [[self.tabBarControl cells] objectAtIndex:[self.tabView indexOfTabViewItem:selectedTabViewItem]];
 
-	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
     [self.delegate windowControllerDidCreateNewWindowController:newWindowController];
 	NSWindow *newWindow = [newWindowController window];
 
@@ -240,8 +244,8 @@
 	// Set window title
 	[newWindow setTitle:[[selectedDocument parentWindowControllerWindow] title]];
 
-	// New window's tabBar control
-	PSMTabBarControl *control = newWindowController.tabBar;
+	// New window's self.tabBarControl control
+	PSMTabBarControl *control = newWindowController.tabBarControl;
 
 	// Add the selected tab to the new window
 	[[control cells] insertObject:selectedCell atIndex:0];
@@ -253,24 +257,24 @@
 	[self _updateProgressIndicatorForItem:selectedTabViewItem];
 
 	//remove the tracking rects and bindings registered on the old tab
-	[tabBar removeTrackingRect:[selectedCell closeButtonTrackingTag]];
-	[tabBar removeTrackingRect:[selectedCell cellTrackingTag]];
-	[tabBar removeTabForCell:selectedCell];
+	[self.tabBarControl removeTrackingRect:[selectedCell closeButtonTrackingTag]];
+	[self.tabBarControl removeTrackingRect:[selectedCell cellTrackingTag]];
+	[self.tabBarControl removeTabForCell:selectedCell];
 
 	//rebind the selected cell to the new control
 	[control bindPropertiesForCell:selectedCell andTabViewItem:selectedTabViewItem];
 	
 	[selectedCell setCustomControlView:control];
 	
-	[[tabBar tabView] removeTabViewItem:[selectedCell representedObject]];
+	[[self.tabBarControl tabView] removeTabViewItem:[selectedCell representedObject]];
 
 	[[control tabView] addTabViewItem:selectedTabViewItem];
 
 	// Make sure the new tab is set in the correct position by forcing an update
-	[tabBar update];
+	[self.tabBarControl update];
 
-	// Update tabBar of the new window
-	[newWindowController tabView:[tabBar tabView] didDropTabViewItem:[selectedCell representedObject] inTabBar:control];
+	// Update self.tabBarControl of the new window
+	[newWindowController tabView:[self.tabBarControl tabView] didDropTabViewItem:[selectedCell representedObject] inTabBar:control];
 
 	[newWindow makeKeyAndOrderFront:nil];	
 }
@@ -285,7 +289,7 @@
 		[menuItem action] == @selector(selectNextDocumentTab:) ||
 		[menuItem action] == @selector(moveSelectedTabInNewWindow:))
 	{
-		return ([tabView numberOfTabViewItems] != 1);
+		return ([self.tabView numberOfTabViewItems] != 1);
 	}
 	
 	// See if the front document blocks validation of this item
@@ -299,7 +303,7 @@
  */
 - (NSArray <SPDatabaseDocument *> *)documents {
 	NSMutableArray <SPDatabaseDocument *> *documentsArray = [NSMutableArray array];
-	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+	for (NSTabViewItem *eachItem in [self.tabView tabViewItems]) {
 		[documentsArray safeAddObject:[eachItem databaseDocument]];
 	}
 	return documentsArray;
@@ -310,11 +314,11 @@
  */
 - (void)selectTabAtIndex:(NSInteger)index
 {
-	if ([[tabBar cells] count] > 0 && [[tabBar cells] count] > (NSUInteger)index) {
-		[tabView selectTabViewItemAtIndex:index];
+	if ([[self.tabBarControl cells] count] > 0 && [[self.tabBarControl cells] count] > (NSUInteger)index) {
+		[self.tabView selectTabViewItemAtIndex:index];
 	} 
-	else if ([[tabBar cells] count]) {
-		[tabView selectTabViewItemAtIndex:0];
+	else if ([[self.tabBarControl cells] count]) {
+		[self.tabView selectTabViewItemAtIndex:0];
 	}
 }
 
@@ -340,7 +344,7 @@
 		}
 	}
 	
-	[tabBar update];
+	[self.tabBarControl update];
 }
 
 #pragma mark -
@@ -388,7 +392,7 @@
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    [tabBar update];
+    [self.tabBarControl update];
 }
 
 #pragma mark -
@@ -399,25 +403,25 @@
  */
 - (void)_setUpTabBar
 {
-	[tabBar setStyleNamed:@"SequelPro"];
-	[tabBar setCanCloseOnlyTab:NO];
-	[tabBar setShowAddTabButton:YES];
-	[tabBar setSizeCellsToFit:NO];
-	[tabBar setCellMinWidth:100];
-	[tabBar setCellMaxWidth:25000];
-	[tabBar setCellOptimumWidth:25000];
-	[tabBar setSelectsTabsOnMouseDown:YES];
-	[tabBar setCreatesTabOnDoubleClick:YES];
-	[tabBar setTearOffStyle:PSMTabBarTearOffAlphaWindow];
-	[tabBar setUsesSafariStyleDragging:YES];
+	[self.tabBarControl setStyleNamed:@"SequelPro"];
+	[self.tabBarControl setCanCloseOnlyTab:NO];
+	[self.tabBarControl setShowAddTabButton:YES];
+	[self.tabBarControl setSizeCellsToFit:NO];
+	[self.tabBarControl setCellMinWidth:100];
+	[self.tabBarControl setCellMaxWidth:25000];
+	[self.tabBarControl setCellOptimumWidth:25000];
+	[self.tabBarControl setSelectsTabsOnMouseDown:YES];
+	[self.tabBarControl setCreatesTabOnDoubleClick:YES];
+	[self.tabBarControl setTearOffStyle:PSMTabBarTearOffAlphaWindow];
+	[self.tabBarControl setUsesSafariStyleDragging:YES];
 	
 	// Hook up add tab button
-	[tabBar setCreateNewTabTarget:self];
-	[tabBar setCreateNewTabAction:@selector(addNewConnection:)];
+	[self.tabBarControl setCreateNewTabTarget:self];
+	[self.tabBarControl setCreateNewTabAction:@selector(addNewConnection:)];
 	
 	// Set the double click target and action
-	[tabBar setDoubleClickTarget:self];
-	[tabBar setDoubleClickAction:@selector(openDatabaseInNewTab)];
+	[self.tabBarControl setDoubleClickTarget:self];
+	[self.tabBarControl setDoubleClickAction:@selector(openDatabaseInNewTab)];
 }
 
 /**
@@ -425,7 +429,7 @@
  */
 - (void)_updateProgressIndicatorForItem:(NSTabViewItem *)theItem
 {
-	PSMTabBarCell *theCell = [[tabBar cells] objectAtIndex:[tabView indexOfTabViewItem:theItem]];
+	PSMTabBarCell *theCell = [[self.tabBarControl cells] objectAtIndex:[self.tabView indexOfTabViewItem:theItem]];
 	
 	[[theCell indicator] setControlSize:NSControlSizeSmall];
 	
@@ -478,7 +482,7 @@
  * in each one if it can be closed, returning YES only if all can be closed.
  */
 - (BOOL)windowShouldClose:(NSWindow *)sender {
-	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+	for (NSTabViewItem *eachItem in [self.tabView tabViewItems]) {
 		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
 
         if (![eachDocument parentTabShouldClose]) {
@@ -501,9 +505,9 @@
 - (void)windowWillClose:(NSNotification *)notification
 {
     SPLog(@"windowWillClose, notification: %@", notification);
-	for (NSTabViewItem *eachItem in [tabView tabViewItems])
+	for (NSTabViewItem *eachItem in [self.tabView tabViewItems])
 	{
-		[tabView removeTabViewItem:eachItem];
+		[self.tabView removeTabViewItem:eachItem];
 	}
 }
 
@@ -556,7 +560,7 @@
  */
 - (void)windowDidResize:(NSNotification *)notification
 {
-	for (NSTabViewItem *eachItem in [tabView tabViewItems]) {
+	for (NSTabViewItem *eachItem in [self.tabView tabViewItems]) {
 		[[eachItem databaseDocument] tabDidResize];
 	}
 }
@@ -702,11 +706,11 @@
  */
 - (NSString *)tabView:(NSTabView *)aTabView toolTipForTabViewItem:(NSTabViewItem *)tabViewItem
 {
-	NSInteger tabIndex = [tabView indexOfTabViewItem:tabViewItem];
+	NSInteger tabIndex = [self.tabView indexOfTabViewItem:tabViewItem];
 
-	if ([[tabBar cells] count] < (NSUInteger)tabIndex) return @"";
+	if ([[self.tabBarControl cells] count] < (NSUInteger)tabIndex) return @"";
 
-	PSMTabBarCell *theCell = [[tabBar cells] objectAtIndex:tabIndex];
+	PSMTabBarCell *theCell = [[self.tabBarControl cells] objectAtIndex:tabIndex];
 
 	// If cell is selected show tooltip if truncated only
 	if ([theCell tabState] & PSMTab_SelectedMask) {
@@ -761,7 +765,7 @@
  */
 - (PSMTabBarControl *)tabView:(NSTabView *)aTabView newTabBarForDraggedTabViewItem:(NSTabViewItem *)tabViewItem atPoint:(NSPoint)point {
 	// Create the new window controller, with no tabs
-	SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
     [self.delegate windowControllerDidCreateNewWindowController:newWindowController];
 	NSWindow *newWindow = [newWindowController window];
 
@@ -788,7 +792,7 @@
 	[newWindow setTitle:[[[tabViewItem databaseDocument] parentWindowControllerWindow] title]];
 
 	// Return the window's tab bar
-	return newWindowController.tabBar;
+	return newWindowController.tabBarControl;
 }
 
 /**
@@ -807,17 +811,17 @@
 
 	// Calculate the titlebar+toolbar height
 	CGFloat contentViewOffsetY = [[self window] frame].size.height - [[[self window] contentView] frame].size.height;
-	offset->height = contentViewOffsetY + [tabBar frame].size.height;
+	offset->height = contentViewOffsetY + [self.tabBarControl frame].size.height;
 
 	// Draw over the tab bar area
 	[viewImage lockFocus];
 	[[NSColor windowBackgroundColor] set];
-	NSRectFill([tabBar frame]);
+	NSRectFill([self.tabBarControl frame]);
 	[viewImage unlockFocus];
 
 	// Draw the tab bar background in the tab bar area
 	[viewImage lockFocus];
-	NSRect tabFrame = [tabBar frame];
+	NSRect tabFrame = [self.tabBarControl frame];
 	[[NSColor windowBackgroundColor] set];
 	NSRectFill(tabFrame);
 

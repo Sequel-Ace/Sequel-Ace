@@ -27,6 +27,15 @@
           "revision": "de6b8f9db4b2a0aa859a5507550a70548e4da936",
           "version": "1.8.1"
         }
+      },
+      {
+        "package": "SnapKit",
+        "repositoryURL": "https://github.com/SnapKit/SnapKit",
+        "state": {
+          "branch": null,
+          "revision": "d458564516e5676af9c70b4f4b2a9178294f1bc6",
+          "version": "5.0.1"
+        }
       }
     ]
   },

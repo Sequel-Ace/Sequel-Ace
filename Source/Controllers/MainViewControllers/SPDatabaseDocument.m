@@ -5426,7 +5426,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Otherwise position the sheet beneath the tab bar if it's visible
-    rect.origin.y -= [self.parentWindowController.tabBar frame].size.height - 1;
+    rect.origin.y -= [self.parentWindowController.tabBarControl frame].size.height - 1;
 
     return rect;
 }
