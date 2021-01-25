@@ -3253,8 +3253,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		
 		bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
 
-        SPLog(@"prefs: %@", prefs.dictionaryRepresentation);
-
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
 		// Create a reference to the favorites controller, forcing the data to be loaded from disk

@@ -219,8 +219,6 @@
 				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:tableStatusDataLengthAsLong]]];
 			}
 
-            SPLog(@"tableStatus: %@", tableStatus);
-
 			NSString *tableEnc = [tableDataInstance tableEncoding];
 			NSString *tableColl = [tableStatus safeObjectForKey:@"Collation"];
 

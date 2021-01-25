@@ -693,8 +693,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
     if (value.length){
         return value;
     } else{
-        SPLog(@"Unable to format key: %@", key);
-        SPLog(@"infoDict: %@", infoDict);
+        SPLog(@"Unable to format key: [%@], for value: [%@]", key, value);
         return NSLocalizedString(@"Not available", @"not available label");;
     }
 }

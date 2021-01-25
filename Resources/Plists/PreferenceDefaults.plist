@@ -97,6 +97,8 @@
 	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
+	<key>CustomQuerySaveHistoryIndividually</key>
+	<true/>
 	<key>CustomQuerySoftIndent</key>
 	<false/>
 	<key>CustomQuerySoftIndentWidth</key>
