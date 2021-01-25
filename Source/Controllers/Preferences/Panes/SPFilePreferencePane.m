@@ -30,6 +30,7 @@
 
 #import "SPFilePreferencePane.h"
 #import "SPAppController.h"
+@import AppCenterAnalytics;
 
 #import "sequel-ace-Swift.h"
 
@@ -493,6 +494,8 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                         @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
                         @"URLs" : (self->_currentFilePanel.URLs) ?: @""
                     };
+
+                    [MSACAnalytics trackEvent:@"chooseFileFilePrefsError" withProperties: userInfo];
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];

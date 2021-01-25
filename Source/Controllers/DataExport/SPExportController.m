@@ -56,6 +56,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+@import AppCenterAnalytics;
+
 // Constants
 static const NSUInteger SPExportUIPadding = 20;
 
@@ -666,6 +668,8 @@ set_input:
                         @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__],
                         @"class": classStr
                     };
+
+                    [MSACAnalytics trackEvent:@"chooseFileExportControllerError" withProperties: userInfo];
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];
