@@ -151,7 +151,6 @@
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */; };
-		1AD45F2F25BE897A0042506F /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */; };
 		1AD785E725B749760007E153 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
@@ -3134,7 +3133,6 @@
 				582A01E9107C0C170027D42B /* SPNotLoaded.m in Sources */,
 				173284EA1088FEDE0062E892 /* SPConstants.m in Sources */,
 				171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */,
-				1AD45F2F25BE897A0042506F /* PopupButtonExtensions.swift in Sources */,
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
 				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
