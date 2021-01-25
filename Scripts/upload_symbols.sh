@@ -45,6 +45,10 @@ function file_exists() {
 	return 1
 }
 
+safe_cd() {
+	cd "$@" >/dev/null || sa_fail "Error: failed to cd to $*!"
+}
+
 function is_variable
 {
     compgen -A variable | grep ^"${1}"$ > /dev/null
@@ -227,13 +231,43 @@ fi
 
 sa_log "method = ${method}"
 
-exit; # TODO: don't exit here
+# these are our expected dSYMs
+# might need some work...
+declare -a dSYMArray=(
+    "SequelAceTunnelAssistant.dSYM"
+    "Sequel Ace.app.dSYM"
+    "Sequel Ace Beta.app.dSYM"
+    "SPMySQL.framework.dSYM"
+    "xibLocalizationPostprocessor.dSYM"
+    "QueryKit.framework.dSYM"
+)
 
-# TODO: get list of dsyms and zip them
+sa_log "DWARF_DSYM_FOLDER_PATH = ${DWARF_DSYM_FOLDER_PATH}"
+
+safe_cd "$DWARF_DSYM_FOLDER_PATH"
+
+dSYM_ARCHIVE_NAME="${APP#*\/}_dSYMs.zip"
+
+sa_log "dSYM_ARCHIVE_NAME: ${dSYM_ARCHIVE_NAME}"
+
+if file_exists "${dSYM_ARCHIVE_NAME}"; then
+    sa_log "dSYM_ARCHIVE exists, removing"
+    rm -f "${dSYM_ARCHIVE_NAME}"
+fi
+
+for dSYM in "${dSYMArray[@]}"; 
+do 
+   if ! dir_exists "${dSYM}"; then
+        sa_log "path ${dSYM} does not exist, just skip?"
+    else
+        sa_log "path ${dSYM} exists, adding to zip archive."
+        zip -X -q -r -9 "${dSYM_ARCHIVE_NAME}" "${dSYM}"
+    fi
+done
 
 if [ "$method" == "cli" ]
 then
-    appcenter crashes upload-symbols --app "${APP}" --symbol "${DSYM_PATH}" --token "${MS_APP_CENTER}"
+    appcenter crashes upload-symbols --app "${APP}" --symbol "${dSYM_ARCHIVE_NAME}" --token "${MS_APP_CENTER}"
     # should error check here: https://docs.microsoft.com/en-us/appcenter/test-cloud/troubleshooting/cli-exit-codes
     rc="$?"
     check_return_code "${rc}"
