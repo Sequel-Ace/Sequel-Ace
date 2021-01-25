@@ -237,12 +237,12 @@
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
-			<key>googleapis.com</key>
+			<key>appcenter.ms</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
 				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.3</string>
+				<string>TLSv1.2</string>
 				<key>NSIncludeSubdomains</key>
 				<true/>
 				<key>NSRequiresCertificateTransparency</key>
@@ -264,7 +264,7 @@
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
 				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.2</string>
+				<string>TLSv1.3</string>
 				<key>NSIncludeSubdomains</key>
 				<true/>
 				<key>NSRequiresCertificateTransparency</key>
