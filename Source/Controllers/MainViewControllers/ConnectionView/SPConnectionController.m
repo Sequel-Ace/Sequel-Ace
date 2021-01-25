@@ -491,7 +491,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     @"class": classStr
                 };
 
-                [MSACAnalytics trackEvent:@"chooseFileConnectionControllerError" withProperties: userInfo];
+                [MSACAnalytics trackEvent:@"error" withProperties: userInfo];
 
                 SPLog(@"userInfo: %@", userInfo);
             }];

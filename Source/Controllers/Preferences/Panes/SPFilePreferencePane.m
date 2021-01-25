@@ -495,7 +495,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                         @"URLs" : (self->_currentFilePanel.URLs) ?: @""
                     };
 
-                    [MSACAnalytics trackEvent:@"chooseFileFilePrefsError" withProperties: userInfo];
+                    [MSACAnalytics trackEvent:@"error" withProperties: userInfo];
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];

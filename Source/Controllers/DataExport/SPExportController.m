@@ -669,7 +669,7 @@ set_input:
                         @"class": classStr
                     };
 
-                    [MSACAnalytics trackEvent:@"chooseFileExportControllerError" withProperties: userInfo];
+                    [MSACAnalytics trackEvent:@"error" withProperties: userInfo];
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];

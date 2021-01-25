@@ -327,7 +327,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                         @"URLs" : (self->_currentFilePanel.URLs) ?: @""
                     };
 
-                    [MSACAnalytics trackEvent:@"chooseFileNetworkPrefsError" withProperties: userInfo];
+                    [MSACAnalytics trackEvent:@"error" withProperties: userInfo];
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];
