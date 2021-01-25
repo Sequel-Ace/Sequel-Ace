@@ -20,3 +20,13 @@ extension NSPopUpButtonCell {
     }
 
 }
+
+extension NSPopUpButton {
+
+    @objc func safeAddItemWith(title: String){
+        if title.isNotEmpty {
+            self .addItem(withTitle: title)
+        }
+    }
+}
+
