@@ -598,7 +598,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
         [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
         [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
         for (NSArray *eachRow in result) {
-            [refTablePopUpButton safeAddItemWithTitle:[eachRow safeObjectAtIndex:0]];
+            [refTablePopUpButton safeAddItemWithTitle:[eachRow firstObject]];
         }
     }
     
