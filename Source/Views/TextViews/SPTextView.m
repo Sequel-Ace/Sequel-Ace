@@ -3259,8 +3259,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		return;
 	}
 
-    SPLog(@"editedRange: %@", NSStringFromRange(editedRange));
-
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(doAutoCompletion) object:nil];
