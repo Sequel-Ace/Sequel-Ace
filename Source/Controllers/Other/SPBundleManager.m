@@ -290,7 +290,7 @@ static SPBundleManager *sharedSPBundleManager = nil;
 				}
 			}
 			else{
-				SPLog(@"Already migrated: %@", path);
+                // Already migrated
 			}
 		}];
 	}];
