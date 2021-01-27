@@ -2394,7 +2394,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         }, 0.1);
         executeOnMainThreadAfterADelay(^{
             SPLog(@"NSMakeRange(self.textStorage.length-1, 1) : %lu", self.textStorage.length-1);
-            [self.textStorage replaceCharactersInRange:NSMakeRange(self.textStorage.length-1, 1) withString:@""];
+            [self.textStorage safeDeleteCharactersInRange:NSMakeRange(self.textStorage.length-1, 1)];
         }, 0.2);
 
 
