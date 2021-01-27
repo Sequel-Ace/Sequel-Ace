@@ -4058,6 +4058,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     [mySQLConnection setDelegate:nil];
+    //FIXME: I don't think this bool is updated correctly
     if (_isConnected) {
         [self closeConnection];
     } else {
@@ -6546,7 +6547,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // and we are not terminating
     if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
 
-        SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
+        SPLog(@"app is not terminating, parentWindow isVisible, therefore: showing connectionErrorDialog");
         // Ensure the window isn't miniaturized
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];
@@ -6565,6 +6566,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // If 'disconnect' was selected, trigger a window close.
         if (connectionErrorCode == SPMySQLConnectionLostDisconnect) {
             [self performSelectorOnMainThread:@selector(closeAndDisconnect) withObject:nil waitUntilDone:YES];
+        }
+        
+        // If 'reconnected' was selected, trigger a disconnect and reconnect.
+        if (connectionErrorCode == SPMySQLConnectionLostReconnect) {
+            [self performSelectorOnMainThread:@selector(reconnect) withObject:nil waitUntilDone:YES];
         }
     }
 
@@ -6587,6 +6593,40 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)closeErrorConnectionSheet:(id)sender
 {
     [NSApp stopModalWithCode:[sender tag]];
+}
+
+
+- (void)reconnect{
+
+    SPLog(@"reconnect");
+
+    if(mySQLConnection){
+
+        SPLog(@"calling mySQLConnection disconnect");
+
+        [mySQLConnection disconnect];
+
+        SPLog(@"calling mySQLConnection connect");
+        [mySQLConnection connect];
+
+    }
+    else{
+        SPLog(@"no mySQLConnection");
+    }
+
+    if([mySQLConnection proxy]){
+
+        SPLog(@"calling proxy disconnect");
+
+        [[mySQLConnection proxy] disconnect];
+        SPLog(@"calling proxy connect");
+
+        [[mySQLConnection proxy] connect];
+    }
+    else{
+        SPLog(@"no proxy");
+    }
+
 }
 
 /**

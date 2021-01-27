@@ -71,4 +71,8 @@ typedef enum {
  */
 - (BOOL)setConnectionStateChangeSelector:(SEL)theStateChangeSelector delegate:(id)theDelegate;
 
+#ifdef DEBUG
+- (NSString*)connectionStateStringForState;
+#endif
+
 @end

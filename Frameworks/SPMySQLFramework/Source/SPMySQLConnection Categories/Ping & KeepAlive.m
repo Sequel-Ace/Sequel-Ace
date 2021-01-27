@@ -53,9 +53,15 @@ typedef struct {
  */
 - (void)_keepAlive
 {
+
+    SPLog(@"_keepAlive");
+
 	// Do nothing if not connected, if keepalive is disabled, or a keepalive is in
 	// progress.
-	if (state != SPMySQLConnected || !useKeepAlive) return;
+    if (state != SPMySQLConnected || !useKeepAlive) {
+        SPLog(@"not connected. returning, state: %@. useKeepAlive: %d", [self connectionStateStringForState], useKeepAlive);
+        return;
+    }
 
 	// Check to see whether a ping is required.  First, compare the last query
 	// and keepalive times against the keepalive interval.
@@ -65,12 +71,28 @@ typedef struct {
 	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < keepAliveInterval - 1
 		|| _timeIntervalSinceMonotonicTime(lastKeepAliveTime) < keepAliveInterval - 1)
 	{
+        SPLog(@"ping is NOT required");
+        SPLog(@"lastConnectionUsedTime: %llu", lastConnectionUsedTime);
+        SPLog(@"lastKeepAliveTime: %llu", lastKeepAliveTime);
+        SPLog(@"_timeIntervalSinceMonotonicTime(lastConnectionUsedTime): %f", _timeIntervalSinceMonotonicTime(lastConnectionUsedTime));
+        SPLog(@"_timeIntervalSinceMonotonicTime(lastKeepAliveTime): %f", _timeIntervalSinceMonotonicTime(lastKeepAliveTime));
+        SPLog(@"keepAliveInterval: %f", keepAliveInterval);
+
+        /*
+         MySQLConnection(Ping_and_KeepAlive) _keepAlive]:76: lastKeepAliveTime: 0
+         2021-01-27 18:53:30.589236+0800 Sequel Ace[82522:3755269] -[SPMySQLConnection(Ping_and_KeepAlive) _keepAlive]:77: _timeIntervalSinceMonotonicTime(lastConnectionUsedTime): 18.960916
+         2021-01-27 18:53:30.589279+0800 Sequel Ace[82522:3755269] -[SPMySQLConnection(Ping_and_KeepAlive) _keepAlive]:78: _timeIntervalSinceMonotonicTime(lastKeepAliveTime): 500786.905401
+         2021-01-27 18:53:30.589312+0800 Sequel Ace[82522:3755269] -[SPMySQLConnection(Ping_and_KeepAlive) _keepAlive]:79: keepAliveInterval: 60.000000
+         */
 		return;
 	}
 
 	// Attempt to lock the connection. If the connection is currently busy,
     // we don't need a ping.
-	if (![self _tryLockConnection]) return;
+    if (![self _tryLockConnection]){
+        SPLog(@"! _tryLockConnection. ping is NOT required");
+        return;
+    }
 	[self _unlockConnection];
 
 	// Store the ping time
@@ -86,6 +108,10 @@ typedef struct {
  */
 - (void)_threadedKeepAlive
 {
+
+    SPLog(@"_threadedKeepAlive");
+
+
 	@autoreleasepool {
 		@synchronized(self) {
 			if(keepAliveThread) {
@@ -102,6 +128,8 @@ typedef struct {
 			// If the connection has been used within the last fifteen minutes,
 			// attempt a single reconnection in the background
 			if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
+                SPLog(@"calling _reconnectAfterBackgroundConnectionLoss");
+
 				[self _reconnectAfterBackgroundConnectionLoss];
 			}
 			// Otherwise set the state to connection lost for automatic reconnect on
@@ -115,6 +143,8 @@ typedef struct {
 		}
 
 		// Otherwise, perform a background ping.
+        SPLog(@"perform a background ping");
+
 		BOOL pingResult = [self _pingConnectionUsingLoopDelay:10000];
 		if (pingResult) {
 			keepAlivePingFailures = 0;
@@ -258,10 +288,10 @@ void _backgroundPingTask(void *ptr)
 	// Set up a signal handler for SIGUSR1, to handle forced timeouts.
 	signal(SIGUSR1, _forceThreadExit);
 
-#ifdef DEBUG
-    BOOL ret = (BOOL)(!mysql_ping(pingDetails->mySQLConnection));
-    SPLog(@"mysql_ping retcode = %d", ret);
-#endif
+//#ifdef DEBUG
+    int ret = mysql_ping(pingDetails->mySQLConnection);
+    SPLog(@"mysql_ping retcode = %i", ret);
+//#endif
 
 	// Perform a ping
 	*(pingDetails->keepAliveLastPingSuccessPointer) = (BOOL)(!mysql_ping(pingDetails->mySQLConnection));

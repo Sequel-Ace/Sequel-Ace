@@ -197,6 +197,9 @@
 #pragma mark -
 #pragma mark Connection state
 
+#ifdef DEBUG
+- (NSString*)connectionStateStringForState;
+#endif
 - (BOOL)isConnected;
 - (BOOL)isConnectedViaSSL;
 - (BOOL)checkConnection;

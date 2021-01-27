@@ -283,9 +283,14 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)reconnect
 {
-    SPLog(@"reconnect");
+    SPLog(@"reconnect, calling _reconnectAllowingRetries");
 	userTriggeredDisconnect = NO;
-	return [self _reconnectAllowingRetries:YES];
+    BOOL retCode = [self _reconnectAllowingRetries:YES];
+    if ([[NSThread currentThread] isCancelled]){
+        SPLog(@"currentThread] isCancelled, returning NO");
+        return NO;
+    }
+    return retCode;
 }
 
 /**
@@ -301,6 +306,27 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 #pragma mark -
 #pragma mark Connection state
 
+#ifdef DEBUG
+- (NSString*)connectionStateStringForState{
+
+    static NSDictionary<NSNumber*, NSString*> *stateStringDict = nil;
+
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        stateStringDict = @{
+            @(SPMySQLDisconnected)                  : @"SPMySQLDisconnected",
+            @(SPMySQLConnecting)                    : @"SPMySQLConnecting",
+            @(SPMySQLConnected)                     : @"SPMySQLConnected",
+            @(SPMySQLConnectionLostInBackground)    : @"SPMySQLConnectionLostInBackground",
+            @(SPMySQLDisconnecting)                 : @"SPMySQLDisconnecting",
+            @(NSNotFound)                           : @"SPMySQLUnknown"
+        };
+    });
+
+    return ((NSString*)[stateStringDict SPsafeObjectForKey:@(state)]) ?: @"SPMySQLUnknown";
+}
+#endif
+
 /**
  * Retrieve whether the connection instance is connected to the remote host.
  * Returns NO if the connection is still in process, YES if a disconnection is
@@ -308,10 +334,17 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)isConnected
 {
+    SPLog(@"isConnected, state: %@", [self connectionStateStringForState]);
+
 	// If the connection has been allowed to drop in the background, restore it if posslbe
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
-		[self _reconnectAllowingRetries:YES];
+
+        [self _reconnectAllowingRetries:YES];
+        if ([[NSThread currentThread] isCancelled]){
+            SPLog(@"currentThread isCancelled, returning NO");
+            return NO;
+        }
 	}
 
 	return (state == SPMySQLConnected || state == SPMySQLDisconnecting);
@@ -338,6 +371,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 - (BOOL)checkConnection
 {
     SPLog(@"checkConnection");
+    SPLog(@"checkConnection, state: %@", [self connectionStateStringForState]);
 
 	// If the connection is not seen as active, don't proceed
     if (state != SPMySQLConnected){
@@ -372,7 +406,14 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	// to keep reconnecting, or whether to disconnect.
 	if (!connectionVerified) {
         SPLog(@"!connectionVerified, calling _reconnectAllowingRetries");
-		connectionVerified = [self _reconnectAllowingRetries:YES];
+        BOOL retCode = [self _reconnectAllowingRetries:YES];
+        if ([[NSThread currentThread] isCancelled]){
+            SPLog(@"currentThread isCancelled, returning NO");
+            connectionVerified = NO;
+        }
+        SPLog(@"connectionVerified = %d", retCode);
+
+        connectionVerified = retCode;
 	}
 
 	// Update the connection tracking use variable if the connection was confirmed,
@@ -397,11 +438,19 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)checkConnectionIfNecessary
 {
+    SPLog(@"checkConnectionIfNecessary, state: %@", [self connectionStateStringForState]);
 	// If the connection has been dropped in the background, trigger a
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _reconnectAllowingRetries:YES];
+        BOOL retCode = [self _reconnectAllowingRetries:YES];
+        if ([[NSThread currentThread] isCancelled]){
+            SPLog(@"currentThread] isCancelled, returning NO");
+            return NO;
+        }
+        SPLog(@"_reconnectAllowingRetries ret code = %d", retCode);
+
+		return retCode;
 	}
 	
 	// If the connection was recently used, return success
@@ -514,7 +563,7 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_connect
 {
-    SPLog(@"_connect");
+    SPLog(@"_connect, state: %@", [self connectionStateStringForState]);
 
 	// If a connection is already active in some form, throw an exception
 	if (state != SPMySQLDisconnected && state != SPMySQLConnectionLostInBackground) {
@@ -530,6 +579,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnecting;
 
 	if (userTriggeredDisconnect) {
+        SPLog(@"userTriggeredDisconnect, JUST return");
 		return NO;
 	}
 
@@ -539,20 +589,26 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Attempt the connection
 	mySQLConnection = [self _makeRawMySQLConnectionWithEncoding:encoding isMasterConnection:YES];
 
+    SPLog(@"after _makeRawMySQLConnectionWithEncoding, state: %@", [self connectionStateStringForState]);
+
+
 	// If the connection failed, reset state and return
 	if (!mySQLConnection) {
-        SPLog(@"!mySQLConnection, unlock");
+        SPLog(@"!mySQLConnection, unlock and return");
 
 		[self _unlockConnection];
 		state = SPMySQLDisconnected;
 		return NO;
 	}
 
+    // FIXME: will we ever get here if the userTriggeredDisconnect - see above L:559
 	// If the connection was cancelled, clean up and don't continue
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
 		[self _unlockConnection];
+        SPLog(@"userTriggeredDisconnect, unlock and return");
+
 		return NO;
 	}
 
@@ -617,6 +673,9 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster
 {
+
+    SPLog(@"_makeRawMySQLConnectionWithEncoding, state: %@", [self connectionStateStringForState]);
+
 	if ([[NSThread currentThread] isCancelled]) return NULL;
 
 	// Set up the MySQL connection object
@@ -869,6 +928,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 
             SPLog(@"we have a proxy");
 
+            SPLog(@"proxy connection state = %@", [proxy connectionStateStringForState]);
+
+
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
 
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
@@ -903,6 +965,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				loopIterationStart_t = _monotonicTime();
 
                 SPLog(@"Wait while the proxy connects");
+                SPLog(@"proxy connection state = %@", [proxy connectionStateStringForState]);
 
 				// If the proxy has connected, record the new local port and break out of the loop
 				if ([proxy state] == SPMySQLProxyConnected) {
@@ -988,7 +1051,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 				default:
 					reconnectingThread = NULL;
                     SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
-					reconnectSucceeded = [self _reconnectAllowingRetries:YES];
+                    BOOL retCode = [self _reconnectAllowingRetries:YES];
+                    if ([[NSThread currentThread] isCancelled]){
+                        SPLog(@"currentThread isCancelled, returning NO");
+                        reconnectSucceeded = NO;
+                    }
+                    SPLog(@"reconnectSucceeded = %d", retCode);
+					reconnectSucceeded = retCode;
 			}
 		}
 	}
@@ -1003,9 +1072,18 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAfterBackgroundConnectionLoss
 {
-	if (![self _reconnectAllowingRetries:NO]) {
+    SPLog(@"_reconnectAfterBackgroundConnectionLoss");
+
+    BOOL retCode = [self _reconnectAllowingRetries:NO];
+    if ([[NSThread currentThread] isCancelled]){
+        SPLog(@"currentThread isCancelled, returning NO");
+        return NO;
+    }
+	if (!retCode) {
 		state = SPMySQLConnectionLostInBackground;
 	}
+
+    SPLog(@"_reconnectAllowingRetries ret code = %d", retCode);
 
 	return (state == SPMySQLConnected);
 }
@@ -1064,11 +1142,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
+        SPLog(@"state is connection lost. state: %@", [self connectionStateStringForState]);
 		state = SPMySQLDisconnected;
+        SPLog(@"set state directly to disconnected. state: %@", [self connectionStateStringForState]);
+
 	}
 
 	// Only continue if a connection is active
 	if (state != SPMySQLConnected && state != SPMySQLConnecting) {
+        SPLog(@"Only continue if a connection is active. No active connection, returning. state: %@", [self connectionStateStringForState]);
 		return;
 	}
 

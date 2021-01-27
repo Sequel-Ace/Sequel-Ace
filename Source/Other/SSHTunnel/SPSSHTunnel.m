@@ -46,6 +46,8 @@ static unsigned short getRandomPort(void);
 
 @interface SPSSHTunnel ()
 
+@property (readwrite, strong) NSUserDefaults *prefs;
+
 - (void)setLastError:(NSString *)msg;
 
 @end
@@ -55,6 +57,7 @@ static unsigned short getRandomPort(void);
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
 @synthesize sshQuestionText, sshQuestionDialog, sshPasswordText, sshPasswordDialog, sshPasswordField;
+@synthesize prefs;
 /*
  * Initialise with the supplied connection details.  Host, login and port should all be provided.
  * The password can either be set later via setPassword:, which stores the password locally and is
@@ -81,10 +84,11 @@ static unsigned short getRandomPort(void);
 		debugMessages = [[NSMutableArray alloc] init];
 		debugMessagesLock = [[NSLock alloc] init];
 		answerAvailableLock = [[NSLock alloc] init];
+        prefs = [NSUserDefaults standardUserDefaults];
 
 		// Enable connection muxing on 10.7+, but only if a preference is enabled; this is because
 		// muxing causes connection instability for a large number of users (see Issue #1457)
-		connectionMuxingEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:SPSSHEnableMuxingPreference];
+		connectionMuxingEnabled = [prefs boolForKey:SPSSHEnableMuxingPreference];
 
 		// Set up a connection for use by the tunnel process
 		tunnelConnectionName = [[NSString alloc] initWithFormat:@"NKQ4HJ66PX.sequel-ace.SequelAce-%lu", (unsigned long)[[NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]] hash]];
@@ -207,6 +211,9 @@ static unsigned short getRandomPort(void);
  */
 - (SPMySQLConnectionProxyState)state
 {
+
+    SPLog(@"SPMySQLConnectionProxyState: %@", [self connectionStateStringForState]);
+
 	// See if an auth dialog is up
 	if (![answerAvailableLock tryLock]) {
 		return SPMySQLProxyWaitingForAuth;
@@ -253,7 +260,7 @@ static unsigned short getRandomPort(void);
  */
 - (void)connect
 {
-    SPLog(@"connect in ssh tunnel connection state = %i", connectionState);
+    SPLog(@"connect in ssh tunnel connection state = %@", [self connectionStateStringForState]);
 
 	localPort = 0;
 
@@ -280,10 +287,13 @@ static unsigned short getRandomPort(void);
  */
 - (void)launchTask:(id) dummy {
     
-    SPLog(@"connection state = %i", connectionState);
+    SPLog(@"connection state = %@", [self connectionStateStringForState]);
+
+    SPLog(@"JIMMY task: %@", task.description);
 
     if (connectionState != SPMySQLProxyIdle || task){
         SPLog(@"connection state != SPMySQLProxyIdle || task, returning");
+        SPLog(@"JIMMY task: %@", task.description);
         return;
     }
 
@@ -304,10 +314,10 @@ static unsigned short getRandomPort(void);
 			return;
 		}
 
-		NSInteger connectionTimeout = [[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue];
+		NSInteger connectionTimeout = [[prefs objectForKey:SPConnectionTimeoutValue] integerValue];
 		if (!connectionTimeout) connectionTimeout = 10;
-		BOOL useKeepAlive = [[[NSUserDefaults standardUserDefaults] objectForKey:SPUseKeepAlive] doubleValue];
-		double keepAliveInterval = [[[NSUserDefaults standardUserDefaults] objectForKey:SPKeepAliveInterval] doubleValue];
+		BOOL useKeepAlive = [[prefs objectForKey:SPUseKeepAlive] doubleValue];
+		double keepAliveInterval = [[prefs objectForKey:SPKeepAliveInterval] doubleValue];
 		if (!keepAliveInterval) keepAliveInterval = 0;
 
 		// If no local port has yet been chosen, choose one
@@ -332,7 +342,7 @@ static unsigned short getRandomPort(void);
 		// Set up the NSTask
 		task = [[NSTask alloc] init];
 		NSString *launchPath = @"/usr/bin/ssh";
-		NSString *userSSHPath = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHClientPath];
+		NSString *userSSHPath = [prefs stringForKey:SPSSHClientPath];
 
 		if([userSSHPath length]) {
 			launchPath = userSSHPath;
@@ -400,7 +410,7 @@ static unsigned short getRandomPort(void);
 		TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@", customKnownHostsFilePath]);
 		
 		// Use a custom ssh config file
-		NSString *sshConfigFile = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile];
+		NSString *sshConfigFile = [prefs stringForKey:SPSSHConfigFile];
 		
 		// If the config is not set, use the default one
 		if (sshConfigFile == nil) {
@@ -555,7 +565,7 @@ static unsigned short getRandomPort(void);
 			connectionState = SPMySQLProxyIdle;
 			taskExitedUnexpectedly = YES;
 			[self setLastError:NSLocalizedString(@"The SSH Tunnel has unexpectedly closed.", @"SSH tunnel unexpectedly closed")];
-            SPLog(@"SSH Tunnel has unexpectedly closed");
+            SPLog(@"SSH Tunnel has unexpectedly closed. state = %@", [self connectionStateStringForState]);
 
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 		}
@@ -563,8 +573,6 @@ static unsigned short getRandomPort(void);
 		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
 		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
 
-		
-		
 	}
 }
 
@@ -573,7 +581,8 @@ static unsigned short getRandomPort(void);
  */
 - (void)disconnect
 {
-    SPLog(@"ssh tunnel disconnect");
+
+    SPLog(@"ssh tunnel disconnect connection state = %@", [self connectionStateStringForState]);
 
     if (connectionState == SPMySQLProxyIdle){
         SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
@@ -608,6 +617,10 @@ static unsigned short getRandomPort(void);
 	notificationText = [[NSString alloc] initWithData:[[aNotification object] availableData] encoding:NSASCIIStringEncoding];
 
 	if ([notificationText length]) {
+
+        SPLog(@"ssh notificationText = %@", notificationText);
+
+
 		messages = [notificationText componentsSeparatedByString:@"\n"];
 		enumerator = [messages objectEnumerator];
 		while ((message = [[enumerator nextObject] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]])) {
@@ -655,16 +668,49 @@ static unsigned short getRandomPort(void);
 			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
 				[task terminate];
-				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
+				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[prefs objectForKey:SPConnectionTimeoutValue] integerValue]]];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
+            if ([message rangeOfString:@"Broken pipe" ].location != NSNotFound) {
+                connectionState = SPMySQLProxyIdle;
+                SPLog(@"ssh Broken pipe");
+                [self setLastError:NSLocalizedString(@"The SSH Tunnel was closed due to a broken pipe.", @"The SSH Tunnel was closed due to a broken pipe")];
+                if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
+            }
 		}
 	}
 
+    SPLog(@"ssh standardErrorHandler connection state = %@", [self connectionStateStringForState]);
+
 	if (connectionState != SPMySQLProxyIdle) {
+        SPLog(@"ssh waitForDataInBackgroundAndNotify");
+
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
 }
+
+#ifdef DEBUG
+- (NSString*)connectionStateStringForState{
+
+    static NSDictionary<NSNumber*, NSString*> *stateStringDict = nil;
+
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        stateStringDict = @{
+            @(SPMySQLProxyIdle)             : @"SPMySQLProxyIdle",
+            @(SPMySQLProxyConnecting)       : @"SPMySQLProxyConnecting",
+            @(SPMySQLProxyWaitingForAuth)   : @"SPMySQLProxyWaitingForAuth",
+            @(SPMySQLProxyConnected)        : @"SPMySQLProxyConnected",
+            @(SPMySQLProxyForwardingFailed) : @"SPMySQLProxyForwardingFailed",
+            @(SPMySQLProxyLaunchFailed)     : @"SPMySQLProxyLaunchFailed",
+            @(NSNotFound)                   : @"SPMySQLProxyUnknown"
+        };
+    });
+
+    return ((NSString*)[stateStringDict safeObjectForKey:@(connectionState)]) ?: @"SPMySQLProxyUnknown";
+}
+#endif
+
 
 /*
  * Returns the local port assigned for use by the tunnel

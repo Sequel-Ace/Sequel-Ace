@@ -197,6 +197,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	SPFavoritesSortItem currentSortItem;
 }
 
+/**
+ * Reachability library object, which listens for changes in the network state.
+ */
+@property(nonatomic) SPReachability *reachability;
+
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
@@ -238,6 +243,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (NSString *)keychainPassword;
 - (NSString *)keychainPasswordForSSH;
+
+- (void)networkStateChanged:(__unused NSNotificationCenter *)notification;
 
 // Connection processes
 - (IBAction)initiateConnection:(id)sender;

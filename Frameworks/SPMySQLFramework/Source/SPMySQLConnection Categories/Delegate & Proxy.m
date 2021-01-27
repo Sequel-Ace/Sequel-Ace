@@ -106,7 +106,7 @@
 
 	SPMySQLConnectionProxyState newState = [aProxy state];
 
-    SPLog(@"state = %i", newState);
+    SPLog(@"newState = %@", [aProxy connectionStateStringForState]);
 
 	// If the connection proxy disconnects, trigger a reconnect; use a new thread to allow the
 	// main thread to process events as required.
@@ -122,14 +122,46 @@
 		if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 2) {
             SPLog(@"If the connection has actively been used in the last couple of minutes, trigger a full reconnection attempt");
             SPLog(@"create new reconnectionThread");
-			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES];
+//			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES];
+            reconnectionThread = [[NSThread alloc] initWithBlock:^{
+                @autoreleasepool {
+                    SPLog(@"in block, calling _reconnectAllowingRetries");
+                    BOOL retCode = [self _reconnectAllowingRetries:YES];
+                    if ([[NSThread currentThread] isCancelled]){
+                        SPLog(@"currentThread isCancelled, returning NO");
+                        self->state = SPMySQLDisconnected;
+                    }
+                    else if (retCode == NO) {
+                        self->state = SPMySQLDisconnected;
+                    }
+                    SPLog(@"self->state = %@", [self connectionStateStringForState]);
+                    SPLog(@"in block ended");
+                }
+            }];
+
 			[reconnectionThread setName:@"SPMySQL reconnection thread (full)"];
 			[reconnectionThread start];
 
 		// If used within the last fifteen minutes, trigger a background/single reconnection attempt
 		} else if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
             SPLog(@"If used within the last fifteen minutes, trigger a background/single reconnection attempt");
-			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil];
+//			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil];
+            reconnectionThread = [[NSThread alloc] initWithBlock:^{
+                @autoreleasepool {
+                    SPLog(@"in block, calling _reconnectAfterBackgroundConnectionLoss");
+                    BOOL retCode = [self _reconnectAfterBackgroundConnectionLoss];
+                    if ([[NSThread currentThread] isCancelled]){
+                        SPLog(@"currentThread isCancelled, returning NO");
+                        self->state = SPMySQLDisconnected;
+                    }
+                    else if (retCode == NO) {
+                        self->state = SPMySQLDisconnected;
+                    }
+                    SPLog(@"self->state = %@", [self connectionStateStringForState]);
+
+                    SPLog(@"in block ended");
+                }
+            }];
 			[reconnectionThread setName:@"SPMySQL reconnection thread (limited)"];
 			[reconnectionThread start];
 

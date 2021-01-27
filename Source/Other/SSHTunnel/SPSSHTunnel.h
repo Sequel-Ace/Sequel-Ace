@@ -112,4 +112,8 @@
 - (IBAction)closeSSHQuestionSheet:(id)sender;
 - (IBAction)closeSSHPasswordSheet:(id)sender;
 
+#ifdef DEBUG
+- (NSString*)connectionStateStringForState;
+#endif
+
 @end

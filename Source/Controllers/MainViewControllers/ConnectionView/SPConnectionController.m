@@ -81,6 +81,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 @property (readwrite, assign) BOOL isEditingConnection;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 @property (readwrite, assign) BOOL errorShowing;
+@property (readwrite, assign) NetworkStatus currentNetworkStatus;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (void)_sortFavorites;
@@ -170,6 +171,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize isConnecting;
 @synthesize isEditingConnection;
 @synthesize errorShowing;
+@synthesize reachability, currentNetworkStatus;
 
 + (void)initialize {
 
@@ -202,12 +204,41 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #pragma mark Connection processes
 
 -(BOOL)connected{
-	
-	SPReachability *reachability = [SPReachability reachabilityForInternetConnection];
-	NetworkStatus networkStatus = [reachability currentReachabilityStatus];
-	return networkStatus != NotReachable;
+
+    SPLog(@"connected called, starting reachability notifier");
+
+    self.reachability = [SPReachability reachabilityForInternetConnection];
+    self.currentNetworkStatus = [self.reachability currentReachabilityStatus];
+
+    SPLog(@"currentNetworkStatus: %li", (long)currentNetworkStatus);
+
+    // Add listener to reachability.
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                 selector:@selector(networkStateChanged:)
+                                     name:kReachabilityChangedNotification
+                                   object:nil];
+
+    [self.reachability startNotifier];
+    
+	return currentNetworkStatus != NotReachable;
 
 }
+
+- (void)networkStateChanged:(__unused NSNotificationCenter *)notification {
+
+
+    self.currentNetworkStatus = [self.reachability currentReachabilityStatus];
+
+    SPLog(@"currentNetworkStatus: %li", (long)currentNetworkStatus);
+
+    if (self.currentNetworkStatus == NotReachable) {
+        SPLog(@"Internet connection is down.");
+    }
+    else {
+        SPLog(@"Internet connection is up.");
+    }
+}
+
 
 /**
  * Starts the connection process; invoked when user hits the connect button
@@ -217,6 +248,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)initiateConnection:(id)sender
 {
+    SPLog(@"initiateConnection");
+
+    currentNetworkStatus = NotReachable;
+
+    [self connected];
+
 	// If this action was triggered via a double-click on the favorites outline view,
 	// ensure that one of the connections was double-clicked, not the area above or below
 	if (sender == favoritesOutlineView && [favoritesOutlineView clickedRow] <= 0) return;
@@ -342,6 +379,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)cancelConnection:(id)sender
 {
+    SPLog(@"cancelConnection");
+
 	[connectButton setEnabled:NO];
 
 	[progressIndicatorText setStringValue:NSLocalizedString(@"Cancelling...", @"cancelling task status message")];
@@ -352,11 +391,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Cancel the MySQL connection - handing it off to a background thread - if one is present
 	if (mySQLConnection) {
 		[mySQLConnection setDelegate:nil];
+        SPLog(@"cancelConnection. we have an sshTunnel, calling [mySQLConnection disconnect]");
 		[NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController cancellation background disconnect",dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
 	}
 
 	// Cancel the SSH tunnel if present
 	if (sshTunnel) {
+        SPLog(@"cancelConnection. we have an sshTunnel, calling [sshTunnel disconnect]");
+        // MARK: If the result of a network change, this tunnel has already gone.
 		[sshTunnel disconnect];
 	}
 
@@ -1318,6 +1360,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// thanks a lot to @jamesstout for pointing this out!
     // no longer needed
     // but for some reson there are other KVO registered, so need to keep the method...
+    if ([keyPath isEqualToString:SPUseKeepAlive]) {
+        [mySQLConnection setUseKeepAlive:[[change valueForKey:NSKeyValueChangeNewKey] boolValue]];
+        SPLog(@"useKeepAlive changed to: %d", mySQLConnection.useKeepAlive);
+    }
 }
 
 #pragma mark -
@@ -1726,6 +1772,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)_restoreConnectionInterface
 {
+
+    SPLog(@"_restoreConnectionInterface");
+
 	// Must be performed on the main thread
 	if (![NSThread isMainThread]) return [[self onMainThread] _restoreConnectionInterface];
 
@@ -2111,6 +2160,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[mySQLConnection setUseKeepAlive:[[prefs objectForKey:SPUseKeepAlive] boolValue]];
 		[mySQLConnection setKeepAliveInterval:[[prefs objectForKey:SPKeepAliveInterval] floatValue]];
 
+        [prefs addObserver:self forKeyPath:SPUseKeepAlive options:NSKeyValueObservingOptionNew context:NULL];
+
+
 		// Connect
 		[mySQLConnection connect];
 
@@ -2236,15 +2288,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Set up the tunnel details
 	sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
 	
-	if(sshTunnel == nil) {
-						[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
-
-				[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
-												errorMessage:@"Failed to Initialize SSH Handle"
-													  detail:@"Could not initiate ssh connection worker."
-												rawErrorText:@"Could not initiate ssh connection worker."];
-		return;
-	}
+    if(sshTunnel == nil) {
+        [dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
+        
+        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
+                                        errorMessage:@"Failed to Initialize SSH Handle"
+                                              detail:@"Could not initiate ssh connection worker."
+                                        rawErrorText:@"Could not initiate ssh connection worker."];
+        return;
+    }
 	
 	[sshTunnel setParentWindow:[dbDocument parentWindowControllerWindow]];
 
@@ -2338,6 +2390,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	NSInteger newState = [theTunnel state];
 
     SPLog(@"newState = %li", (long)newState);
+    SPLog(@"newState = %@", [theTunnel connectionStateStringForState]);
 
 	// If the user cancelled the password prompt dialog, continue with no further action.
 	if ([theTunnel passwordPromptCancelled]) {
@@ -3692,6 +3745,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 
 	[self setConnectionKeychainID:nil];
+
+    [reachability stopNotifier];
 
 }
 
