@@ -48,8 +48,12 @@
 			@"SPTableViewInvalid": @(NSNotFound)
 		};
 	});
-	
-	return tableViewType[self].integerValue;
+
+    if ([tableViewType safeObjectForKey:self] != nil){
+        return tableViewType[self].integerValue;
+    }
+    
+	return NSNotFound;
 }
 
 @end
