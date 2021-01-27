@@ -2388,9 +2388,16 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         // this adds a space to the end that
         // triggers a text change notification
         // which fully formats the query
+        // then we need to remove it for issue #843
         executeOnMainThreadAfterADelay(^{
             [self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@" "]];
-        }, 0.5);
+        }, 0.1);
+        executeOnMainThreadAfterADelay(^{
+            SPLog(@"NSMakeRange(self.textStorage.length-1, 1) : %lu", self.textStorage.length-1);
+            [self.textStorage replaceCharactersInRange:NSMakeRange(self.textStorage.length-1, 1) withString:@""];
+        }, 0.2);
+
+
 
     }
     else{
