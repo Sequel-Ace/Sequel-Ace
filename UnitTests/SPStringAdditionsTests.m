@@ -371,6 +371,81 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 }
 
+- (void)testMutAttrStringSafeDeleteCharactersInRange{
+
+
+    NSDictionary *baseAttrs = @{NSFontAttributeName: [NSFont systemFontOfSize:11], NSParagraphStyleAttributeName: [NSParagraphStyle defaultParagraphStyle]};
+
+    NSMutableAttributedString *str = [[NSMutableAttributedString alloc] initWithString:@"The Dude is abiding..." attributes:baseAttrs];
+    NSMutableAttributedString *expectedStr = [[NSMutableAttributedString alloc] initWithString:@"The Dude is abiding.." attributes:baseAttrs];
+
+
+    NSUInteger startLoc = [str length]-1;
+
+    NSRange tmpRange = NSMakeRange(startLoc, 1);
+
+    NSLog(@"tmpRange: %@", NSStringFromRange(tmpRange));
+    NSLog(@"str.len: %lu", (unsigned long)str.length);
+
+    [str safeDeleteCharactersInRange:tmpRange];
+
+    NSLog(@"str: %@", str);
+    NSLog(@"str.len: %lu", (unsigned long)str.length);
+
+    XCTAssertTrue(str.length == startLoc);
+
+    XCTAssertEqualObjects(str, expectedStr);
+
+    tmpRange = NSMakeRange(str.length+2, 1);
+
+    XCTAssertThrows([str deleteCharactersInRange:tmpRange]);
+    XCTAssertNoThrow([str safeDeleteCharactersInRange:tmpRange]);
+
+}
+
+// 1.39 s
+- (void)testMutAttrStringSafeDeleteCharactersInRangePerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        NSDictionary *baseAttrs = @{NSFontAttributeName: [NSFont systemFontOfSize:11], NSParagraphStyleAttributeName: [NSParagraphStyle defaultParagraphStyle]};
+
+        for (int i = 0; i < iterations; i++) {
+
+            NSMutableAttributedString *str = [[NSMutableAttributedString alloc] initWithString:@"The tomato never really took off as a hand fruit..." attributes:baseAttrs];
+
+            NSUInteger startLoc = [str length]-1;
+
+            NSRange tmpRange = NSMakeRange(startLoc, 1);
+            @autoreleasepool {
+                [str safeDeleteCharactersInRange:tmpRange];
+            }
+        }
+    }];
+}
+
+//1.34 s
+- (void)testMutAttrStringDeleteCharactersInRangePerf{
+    [self measureBlock:^{
+        int const iterations = 1000000;
+
+        NSDictionary *baseAttrs = @{NSFontAttributeName: [NSFont systemFontOfSize:11], NSParagraphStyleAttributeName: [NSParagraphStyle defaultParagraphStyle]};
+
+        for (int i = 0; i < iterations; i++) {
+
+            NSMutableAttributedString *str = [[NSMutableAttributedString alloc] initWithString:@"The tomato never really took off as a hand fruit..." attributes:baseAttrs];
+
+            NSUInteger startLoc = [str length]-1;
+
+            NSRange tmpRange = NSMakeRange(startLoc, 1);
+            @autoreleasepool {
+                [str deleteCharactersInRange:tmpRange];
+            }
+        }
+    }];
+}
+
+
 - (void)testSafeDeleteCharactersInRange{
 
     NSMutableString *str = [[NSMutableString alloc] initWithString:@"How far will you go for 15 seconds of fame?"];

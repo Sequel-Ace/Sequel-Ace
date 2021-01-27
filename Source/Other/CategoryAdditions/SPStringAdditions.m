@@ -646,3 +646,16 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c)
 }
 
 @end
+
+@implementation NSMutableAttributedString (SPStringAdditions)
+
+- (void)safeDeleteCharactersInRange:(NSRange)aRange
+{
+    if (aRange.location == NSNotFound || NSMaxRange(aRange) > [self length]) {
+        return;
+    }
+
+    [self deleteCharactersInRange:aRange];
+}
+
+@end

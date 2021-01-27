@@ -125,3 +125,7 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 
 - (void)safeDeleteCharactersInRange:(NSRange)aRange;
 @end
+
+@interface NSMutableAttributedString (SPStringAdditions)
+- (void)safeDeleteCharactersInRange:(NSRange)aRange;
+@end
