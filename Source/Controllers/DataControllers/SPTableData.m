@@ -529,99 +529,19 @@
 
     if(isMySQL8 == YES && [database isEqualToString:SPMySQLInformationSchemaDatabase]){
 
-        SPLog(@"isMySQL8 && SPMySQLInformationSchemaDatabase: performing special view logic");
+        resultFieldNames = @[@"Table", @"Create Table"];
+        syntaxResult = [self createTableSyntaxFromView:tableName withSyntaxResult:syntaxResult];
 
-        id obj2 = [syntaxResult firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
-            if ([(NSString *)obj contains:@"CREATE ALGORITHM"] && [(NSString *)obj contains:@"DEFINER VIEW"]) {
-                SPLog(@"obj contains:CREATE ALGORITHM and DEFINER VIEW");
-                *stop = YES;
-                return YES;
-            }
-            return NO;
-        }];
-
-        if(obj2 != nil){
-            SPLog(@"obj2 NOT NIL: %@", obj2);
-            SPLog(@"calling CREATE TEMPORARY TABLE");
-
-            queryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [tableName backtickQuotedString]];
-
-            SPLog(@"queryStr: %@", queryStr);
-
-            theResult = [mySQLConnection queryString:queryStr];
-
-            NSMutableString *viewCreateStr = [[NSMutableString alloc] init];
-
-            [viewCreateStr appendFormat:@"CREATE TEMPORARY TABLE `%@` (\n", tableName];
-
-            [theResult setReturnDataAsStrings:YES];
-
-            NSDictionary *tableRow;
-            while ((tableRow = [theResult getRowAsDictionary]) != nil) {
-
-                NSString *Default = [tableRow safeObjectForKey:@"Default"];
-                NSString *Field = [tableRow safeObjectForKey:@"Field"];
-                NSString *Null = [tableRow safeObjectForKey:@"Null"];
-                NSString *Type = [tableRow safeObjectForKey:@"Type"];
-
-
-                if([Null isEqualToString:@"YES"]){
-                    Null = @"";
-                    Default = @"DEFAULT NULL";
-                }
-                else if([Null isEqualToString:@"NO"]){
-                    Null = @"NOT NULL";
-                    Default = @"";
-                }
-
-                SPLog(@"Field: [%@]", Field);
-                SPLog(@"Default: [%@]", Default);
-                SPLog(@"Null: [%@]", Null);
-
-                NSString *tmpStr = [NSString stringWithFormat:@"`%@` %@ %@ %@,\n", Field, Type, Null, Default];
-
-                SPLog(@"tmpStr: [%@]", tmpStr);
-
-                [viewCreateStr appendString:tmpStr];
-            }
-
-            [viewCreateStr setString:[viewCreateStr dropSuffixWithSuffix:@",\n"]];
-            [viewCreateStr appendString:@")"];
-
-            SPLog(@"viewCreateStr: [%@]", viewCreateStr);
-
-            syntaxResult = @[tableName, viewCreateStr];
-            resultFieldNames = @[@"Table", @"Create Table"];
-
-            // Check for any errors, but only display them if a connection still exists
-            if ([mySQLConnection queryErrored]) {
-                if ([mySQLConnection isConnected]) {
-                    NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
-                                              tableName, [mySQLConnection lastErrorMessage]];
-                    // If the current table doesn't exist anymore reload table list
-                    if ([mySQLConnection lastErrorID] == 1146) {
-
-                        // Release the table loading lock to allow reselection/reloading to requery the database.
-                        pthread_mutex_unlock(&dataProcessingLock);
-
-                        [tableListInstance deselectAllTables];
-                        [tableListInstance updateTables:self];
-                    }
-
-                    SPMainQSync(^{
-                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
-                    });
-                    if (changeEncoding) [mySQLConnection restoreStoredEncoding];
-                }
-
-                return nil;
-            }
-        }
-    }
+    } // end of isMySQL8 == YES &&
 
     // Only continue if syntaxResult is not nil. This accommodates causes where the above query caused the
     // connection reconnect dialog to appear and the user chose to close the connection.
-    if (!syntaxResult) return nil;
+    if (!syntaxResult) {
+        if (changeEncoding){
+            [mySQLConnection restoreStoredEncoding];
+        }
+        return nil;
+    }
     
     // A NULL value indicates that the user does not have permission to view the syntax
     if ([[syntaxResult safeObjectAtIndex:1] isNSNull] || [syntaxResult safeObjectAtIndex:1] == nil) {
@@ -640,6 +560,100 @@
     SPLog(@"cols count: %lu", ((NSDictionary*)[tableData safeObjectForKey:@"columns"]).count);
 
     return tableData;
+}
+
+- (NSArray *)createTableSyntaxFromView:(NSString *)tableName withSyntaxResult:(NSArray *)syntaxResult {
+
+    SPMySQLResult *theResult;
+    NSString *queryStr;
+
+    SPLog(@"isMySQL8 && SPMySQLInformationSchemaDatabase: performing special view logic");
+
+    id obj2 = [syntaxResult firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+        if ([(NSString *)obj contains:@"CREATE ALGORITHM"] && [(NSString *)obj contains:@"DEFINER VIEW"]) {
+            SPLog(@"obj contains:CREATE ALGORITHM and DEFINER VIEW");
+            *stop = YES;
+            return YES;
+        }
+        return NO;
+    }];
+
+    if(obj2 != nil){
+        SPLog(@"obj2 NOT NIL: %@", obj2);
+
+        queryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [tableName backtickQuotedString]];
+
+        SPLog(@"queryStr: %@", queryStr);
+
+        theResult = [mySQLConnection queryString:queryStr];
+
+        NSMutableString *viewCreateStr = [[NSMutableString alloc] init];
+
+        [viewCreateStr appendFormat:@"CREATE TEMPORARY TABLE `%@` (\n", tableName];
+
+        [theResult setReturnDataAsStrings:YES];
+
+        NSDictionary *tableRow;
+        while ((tableRow = [theResult getRowAsDictionary]) != nil) {
+
+            NSString *Default = [tableRow safeObjectForKey:@"Default"];
+            NSString *Field = [tableRow safeObjectForKey:@"Field"];
+            NSString *Null = [tableRow safeObjectForKey:@"Null"];
+            NSString *Type = [tableRow safeObjectForKey:@"Type"];
+
+            if([Null isEqualToString:@"YES"]){
+                Null = @"";
+                Default = @"DEFAULT NULL";
+            }
+            else if([Null isEqualToString:@"NO"]){
+                Null = @"NOT NULL";
+                Default = @"";
+            }
+
+            SPLog(@"Field: [%@]", Field);
+            SPLog(@"Default: [%@]", Default);
+            SPLog(@"Null: [%@]", Null);
+
+            NSString *tmpStr = [NSString stringWithFormat:@"`%@` %@ %@ %@,\n", Field, Type, Null, Default];
+
+            SPLog(@"tmpStr: [%@]", tmpStr);
+
+            [viewCreateStr appendString:tmpStr];
+        }
+
+        [viewCreateStr setString:[viewCreateStr dropSuffixWithSuffix:@",\n"]];
+        [viewCreateStr appendString:@")"];
+
+        SPLog(@"viewCreateStr: [%@]", viewCreateStr);
+
+        syntaxResult = @[tableName, viewCreateStr];
+
+        // Check for any errors, but only display them if a connection still exists
+        if ([mySQLConnection queryErrored]) {
+            if ([mySQLConnection isConnected]) {
+                NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+                                          tableName, [mySQLConnection lastErrorMessage]];
+                // If the current table doesn't exist anymore reload table list
+                if ([mySQLConnection lastErrorID] == 1146) {
+                    // Release the table loading lock to allow reselection/reloading to requery the database.
+                    pthread_mutex_unlock(&dataProcessingLock);
+                    [tableListInstance deselectAllTables];
+                    [tableListInstance updateTables:self];
+                }
+
+                SPMainQSync(^{
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
+                });
+            }
+
+            return nil;
+        }
+    } // end of obj2 not nil
+    else{
+        syntaxResult = nil;
+    }
+
+    return syntaxResult;
 }
 
 /**
