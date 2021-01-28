@@ -61,7 +61,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 {	
 	IBOutlet SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
-	IBOutlet SPTableData* tableDataInstance;
+
 	IBOutlet SPTableStructure *tableSourceInstance;
 
 	IBOutlet SPTableInfo *tableInfoInstance;
@@ -160,6 +160,9 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	BOOL showFilterRuleEditor;
 
 	NSDictionary *filtersToRestore;
+
+    @package
+    IBOutlet SPTableData* tableDataInstance;
 }
 
 - (void)setFieldEditorSelectedRange:(NSRange)aRange;
