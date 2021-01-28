@@ -45,6 +45,7 @@
 
 - (void)_loopWhileWorking;
 - (NSDictionary *)parseCreateStatement:(NSString *)tableDef ofType:(NSString *)tableType;
+@property (readonly, assign) BOOL isMySQL8;
 
 @end
 
@@ -52,6 +53,7 @@
 
 @synthesize tableHasAutoIncrementField;
 @synthesize connection = mySQLConnection;
+@synthesize isMySQL8;
 
 - (id) init
 {
@@ -66,6 +68,8 @@
 		tableEncoding = nil;
 		tableCreateSyntax = nil;
 		tableHasAutoIncrementField = NO;
+
+        [self addObserver:self forKeyPath:@"connection" options:NSKeyValueObservingOptionNew context:nil];
 
 		pthread_mutex_init(&dataProcessingLock, NULL);
 	}
@@ -437,6 +441,17 @@
 	return YES;
 }
 
+#pragma mark -
+#pragma mark Key Value Observing
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
+
+    if([keyPath isEqualToString:@"connection"] && mySQLConnection != nil){
+        isMySQL8 = [mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0];
+        SPLog(@"KVO isMySQL8: %hhd", isMySQL8);
+    }
+}
+#pragma mark -
+
 /**
  * Retrieve the CREATE statement for a table/view and return extracted table
  * structure information.
@@ -447,6 +462,8 @@
 - (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database
 {
     BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
+
+    SPLog(@"isMySQL8: %hhd", isMySQL8);
 
     // Catch unselected tables and return nil
     if ([tableName isEqualToString:@""] || !tableName) return nil;
@@ -464,10 +481,19 @@
 
     // Retrieve the CREATE TABLE syntax for the table
     SPMySQLResult *theResult;
-    if (database)
-        theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [database backtickQuotedString], [tableName backtickQuotedString]]];
-    else
-        theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]]];
+    NSString *queryStr;
+
+    if (database){
+        queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [database backtickQuotedString], [tableName backtickQuotedString]];
+        theResult = [mySQLConnection queryString:queryStr];
+    }
+    else{
+        queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]];
+        theResult = [mySQLConnection queryString:queryStr];
+    }
+
+    SPLog(@"queryStr: %@", queryStr);
+
     [theResult setReturnDataAsStrings:YES];
 
     // Check for any errors, but only display them if a connection still exists
@@ -498,6 +524,52 @@
     NSArray *syntaxResult = [theResult getRowAsArray];
     NSArray *resultFieldNames = [theResult fieldNames];
 
+    if(isMySQL8 == YES && [database isEqualToString:SPMySQLInformationSchemaDatabase]){
+
+        SPLog(@"isMySQL8 && SPMySQLInformationSchemaDatabase: performing special view logic");
+
+        id obj2 = [syntaxResult firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+            if ([(NSString *)obj contains:@"CREATE ALGORITHM"] && [(NSString *)obj contains:@"DEFINER VIEW"]) {
+                SPLog(@"obj contains:CREATE ALGORITHM and DEFINER VIEW");
+                *stop = YES;
+                return YES;
+            }
+            return NO;
+        }];
+
+        if(obj2 != nil){
+            SPLog(@"obj2 NOT NIL: %@", obj2);
+            SPLog(@"calling CREATE TEMPORARY TABLE");
+
+            // create temp table
+            queryStr = [NSString stringWithFormat:@"CREATE TEMPORARY TABLE %@.%@ SELECT * FROM %@.%@", [SPMySQLDatabase backtickQuotedString], [SPMySQLTempTableName backtickQuotedString], [SPMySQLInformationSchemaDatabase backtickQuotedString], [tableName backtickQuotedString]];
+
+            SPLog(@"queryStr: %@", queryStr);
+
+            theResult = [mySQLConnection queryString:queryStr];
+
+            // Check for any errors, but only display them if a connection still exists
+            if ([mySQLConnection queryErrored]) {
+                if ([mySQLConnection isConnected]) {
+                    NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+                                              tableName, [mySQLConnection lastErrorMessage]];
+
+                    SPMainQSync(^{
+                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
+                    });
+                    if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+                }
+
+                return nil;
+            }
+            else{
+                // call self with new temp table
+                SPLog(@"calling self with TEMPORARY TABLE");
+                return [self informationForTable:SPMySQLTempTableName fromDatabase:SPMySQLDatabase];
+            }
+        }
+    }
+
     // Only continue if syntaxResult is not nil. This accommodates causes where the above query caused the
     // connection reconnect dialog to appear and the user chose to close the connection.
     if (!syntaxResult) return nil;
@@ -515,6 +587,30 @@
     NSDictionary *tableData = [self parseCreateStatement:tableCreateSyntax ofType:[resultFieldNames objectAtIndex:0]];
     
     if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+
+    SPLog(@"cols count: %lu", ((NSDictionary*)[tableData safeObjectForKey:@"columns"]).count);
+
+    if ([tableName isEqualToString:SPMySQLTempTableName]){
+
+        queryStr = [NSString stringWithFormat:@"DROP TABLE %@.%@", [SPMySQLDatabase backtickQuotedString], [SPMySQLTempTableName backtickQuotedString]];
+
+        SPLog(@"queryStr: %@", queryStr);
+        // drop temp table
+        theResult = [mySQLConnection queryString:queryStr];
+
+        if ([mySQLConnection queryErrored]) {
+            if ([mySQLConnection isConnected]) {
+                NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+                           tableName, [mySQLConnection lastErrorMessage]];
+
+                SPMainQSync(^{
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
+                });
+                if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+            }
+            return nil;
+        }
+    }
 
     return tableData;
 }
@@ -835,7 +931,7 @@
 	}
 
 	// Retrieve the CREATE TABLE syntax for the table
-	SPMySQLResult *theResult = [mySQLConnection queryString: [NSString stringWithFormat: @"SHOW CREATE TABLE %@",
+	SPMySQLResult *theResult = [mySQLConnection queryString: [NSString stringWithFormat: @"  %@",
 																					   [viewName backtickQuotedString]
 																					]];
 	[theResult setReturnDataAsStrings:YES];
@@ -1377,6 +1473,7 @@
 
 - (void)dealloc
 {
+    [self removeObserver:self forKeyPath:@"connection"];
 	[self setConnection:nil];
 
 	pthread_mutex_destroy(&dataProcessingLock);
