@@ -524,6 +524,9 @@
     NSArray *syntaxResult = [theResult getRowAsArray];
     NSArray *resultFieldNames = [theResult fieldNames];
 
+    SPLog(@"syntaxResult: %@", syntaxResult);
+    SPLog(@"resultFieldNames: %@", resultFieldNames);
+
     if(isMySQL8 == YES && [database isEqualToString:SPMySQLInformationSchemaDatabase]){
 
         SPLog(@"isMySQL8 && SPMySQLInformationSchemaDatabase: performing special view logic");
@@ -541,18 +544,69 @@
             SPLog(@"obj2 NOT NIL: %@", obj2);
             SPLog(@"calling CREATE TEMPORARY TABLE");
 
-            // create temp table
-            queryStr = [NSString stringWithFormat:@"CREATE TEMPORARY TABLE %@.%@ SELECT * FROM %@.%@", [SPMySQLDatabase backtickQuotedString], [SPMySQLTempTableName backtickQuotedString], [SPMySQLInformationSchemaDatabase backtickQuotedString], [tableName backtickQuotedString]];
+            queryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [tableName backtickQuotedString]];
 
             SPLog(@"queryStr: %@", queryStr);
 
             theResult = [mySQLConnection queryString:queryStr];
+
+            NSMutableString *viewCreateStr = [[NSMutableString alloc] init];
+
+            [viewCreateStr appendFormat:@"CREATE TEMPORARY TABLE `%@` (\n", tableName];
+
+            [theResult setReturnDataAsStrings:YES];
+
+            NSDictionary *tableRow;
+            while ((tableRow = [theResult getRowAsDictionary]) != nil) {
+
+                NSString *Default = [tableRow safeObjectForKey:@"Default"];
+                NSString *Field = [tableRow safeObjectForKey:@"Field"];
+                NSString *Null = [tableRow safeObjectForKey:@"Null"];
+                NSString *Type = [tableRow safeObjectForKey:@"Type"];
+
+
+                if([Null isEqualToString:@"YES"]){
+                    Null = @"";
+                    Default = @"DEFAULT NULL";
+                }
+                else if([Null isEqualToString:@"NO"]){
+                    Null = @"NOT NULL";
+                    Default = @"";
+                }
+
+                SPLog(@"Field: [%@]", Field);
+                SPLog(@"Default: [%@]", Default);
+                SPLog(@"Null: [%@]", Null);
+
+                NSString *tmpStr = [NSString stringWithFormat:@"`%@` %@ %@ %@,\n", Field, Type, Null, Default];
+
+                SPLog(@"tmpStr: [%@]", tmpStr);
+
+                [viewCreateStr appendString:tmpStr];
+            }
+
+            [viewCreateStr setString:[viewCreateStr dropSuffixWithSuffix:@",\n"]];
+            [viewCreateStr appendString:@")"];
+
+            SPLog(@"viewCreateStr: [%@]", viewCreateStr);
+
+            syntaxResult = @[tableName, viewCreateStr];
+            resultFieldNames = @[@"Table", @"Create Table"];
 
             // Check for any errors, but only display them if a connection still exists
             if ([mySQLConnection queryErrored]) {
                 if ([mySQLConnection isConnected]) {
                     NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
                                               tableName, [mySQLConnection lastErrorMessage]];
+                    // If the current table doesn't exist anymore reload table list
+                    if ([mySQLConnection lastErrorID] == 1146) {
+
+                        // Release the table loading lock to allow reselection/reloading to requery the database.
+                        pthread_mutex_unlock(&dataProcessingLock);
+
+                        [tableListInstance deselectAllTables];
+                        [tableListInstance updateTables:self];
+                    }
 
                     SPMainQSync(^{
                         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
@@ -561,11 +615,6 @@
                 }
 
                 return nil;
-            }
-            else{
-                // call self with new temp table
-                SPLog(@"calling self with TEMPORARY TABLE");
-                return [self informationForTable:SPMySQLTempTableName fromDatabase:SPMySQLDatabase];
             }
         }
     }
@@ -589,28 +638,6 @@
     if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
     SPLog(@"cols count: %lu", ((NSDictionary*)[tableData safeObjectForKey:@"columns"]).count);
-
-    if ([tableName isEqualToString:SPMySQLTempTableName]){
-
-        queryStr = [NSString stringWithFormat:@"DROP TABLE %@.%@", [SPMySQLDatabase backtickQuotedString], [SPMySQLTempTableName backtickQuotedString]];
-
-        SPLog(@"queryStr: %@", queryStr);
-        // drop temp table
-        theResult = [mySQLConnection queryString:queryStr];
-
-        if ([mySQLConnection queryErrored]) {
-            if ([mySQLConnection isConnected]) {
-                NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
-                           tableName, [mySQLConnection lastErrorMessage]];
-
-                SPMainQSync(^{
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving table information", @"error retrieving table information message") message:errorMessage callback:nil];
-                });
-                if (changeEncoding) [mySQLConnection restoreStoredEncoding];
-            }
-            return nil;
-        }
-    }
 
     return tableData;
 }
@@ -1137,13 +1164,19 @@
 
 	// When views are selected, populate the table by adding some default information.
 	else if ([tableListInstance tableType] == SPTableTypeView) {
-		[status addEntriesFromDictionary:[NSDictionary dictionaryWithObjectsAndKeys:
-			@"View", @"Engine",
-			@"No status information is available for views.", @"Comment",
-			[tableListInstance tableName], @"Name",
-			[status objectForKey:@"COLLATION_CONNECTION"], @"Collation",
-			[status objectForKey:@"CHARACTER_SET_CLIENT"], @"CharacterSetClient",
-			nil]];
+
+
+        // Create_time
+        NSDate *updateDate = [NSDateFormatter.naturalLanguageFormatter dateFromString:[status objectForKey:@"Create_time"]];
+
+        [status addEntriesFromDictionary:[NSDictionary dictionaryWithObjectsAndKeys:
+                                          @"View", @"Engine",
+                                          [NSDateFormatter.shortStyleNoTimeFormatter stringFromDate:updateDate], @"Create_time",
+                                          @"No status information is available for views.", @"Comment",
+                                          [tableListInstance tableName], @"Name",
+                                          [status objectForKey:@"COLLATION_CONNECTION"], @"Collation",
+                                          [status objectForKey:@"CHARACTER_SET_CLIENT"], @"CharacterSetClient",
+                                          nil]];
 	}
 
 	if (changeEncoding) [mySQLConnection restoreStoredEncoding];
