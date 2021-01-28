@@ -101,9 +101,9 @@ static const NSInteger kBlobAsImageFile = 4;
 {
 	NSString *tmp = nil;
 	
-	if ([sender tag] == SPEditMenuCopyAsSQL || [sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
+	if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL || [(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
 
-		if ([sender tag] == SPEditMenuCopyAsSQL){
+		if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL){
 			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
 		}
 		else{
@@ -117,7 +117,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		}
 	}
 	else {
-		tmp = [self rowsAsTabStringWithHeaders:([sender tag] == SPEditMenuCopyWithColumns) onlySelectedRows:YES blobHandling:kBlobInclude];
+		tmp = [self rowsAsTabStringWithHeaders:([(NSMenuItem*)sender tag] == SPEditMenuCopyWithColumns) onlySelectedRows:YES blobHandling:kBlobInclude];
 		
 		if (tmp != nil) {
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
@@ -1264,14 +1264,14 @@ static const NSInteger kBlobAsImageFile = 4;
 
 - (IBAction)executeBundleItemForDataTable:(id)sender
 {
-	NSInteger idx = [sender tag] - 1000000;
+	NSInteger idx = [(NSMenuItem*)sender tag] - 1000000;
 	NSString *infoPath = nil;
 	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
-		if([sender tag] == 0 && [[sender toolTip] length]) {
-			infoPath = [sender toolTip];
+		if([(NSMenuItem*)sender tag] == 0 && [[(NSMenuItem*)sender toolTip] length]) {
+			infoPath = [(NSMenuItem*)sender toolTip];
 		}
 	}
 
