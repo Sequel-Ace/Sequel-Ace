@@ -258,6 +258,7 @@ extern NSString *SPMySQLDatabase;
 extern NSString *SPMySQLInformationSchemaDatabase;
 extern NSString *SPMySQLPerformanceSchemaDatabase;
 extern NSString *SPMySQLSysDatabase;
+extern NSString *SPMySQLTempTableName;
 
 // Table view drag types
 extern NSString *SPDefaultPasteboardDragType;
