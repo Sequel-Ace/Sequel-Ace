@@ -132,6 +132,9 @@
 							   [targetDatabase backtickQuotedString],
 							   [tableName backtickQuotedString]];
 
+    SPLog(@"moveTable from : %@, to: %@", sourceDatabase, targetDatabase);
+    SPLog(@"moveTable moveStatement: %@", moveStatement);
+
 	[connection queryString:moveStatement];
 	
 	return ![connection queryErrored];

@@ -49,6 +49,8 @@
 
 - (BOOL)createDatabase:(NSString *)database withEncoding:(NSString *)encoding collation:(NSString *)collation
 {
+    SPLog(@"createDatabase: %@", database);
+
 	if (![database length]) {
 		SPLog(@"'database' should not be nil or empty!");
 		return NO;
