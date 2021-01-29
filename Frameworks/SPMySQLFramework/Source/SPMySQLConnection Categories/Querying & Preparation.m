@@ -593,19 +593,29 @@
 	// connection may have finished processing the query at this point (depending how
 	// long the connection attempt took), check whether we can skip the reconnect.
 	if ([self _tryLockConnection]) {
+        SPLog(@"SPMySQL Framework: self _tryLockConnection, calling [self _unlockConnection]");
 		[self _unlockConnection];
 		return;
 	}
 
-	if (state == SPMySQLDisconnecting || state == SPMySQLDisconnected) return;
+    if (state == SPMySQLDisconnecting || state == SPMySQLDisconnected) {
+        SPLog(@"SPMySQL Framework: state == SPMySQLDisconnecting || state == SPMySQLDisconnected, returning.");
+        return;
+    }
 
 	// Reset the connection with a reconnect.  Unlock the connection beforehand,
 	// to allow the reconnect, but lock it again afterwards to restore the expected
 	// state (query execution process should unlock as appropriate).
+    SPLog(@"SPMySQL Framework: calling [self _unlockConnection]");
 	[self _unlockConnection];
+
+    SPLog(@"SPMySQL Framework: _reconnectAllowingRetries:YES");
 	[self _reconnectAllowingRetries:YES];
+
+    SPLog(@"SPMySQL Framework: calling [self _lockConnection]");
 	[self _lockConnection];
 
+    SPLog(@"SPMySQL Framework: setting lastQueryWasCancelled = YES");
 	// Reset tracking bools to cover encompassed queries
 	lastQueryWasCancelled = YES;
 }

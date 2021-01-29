@@ -93,6 +93,7 @@
 		SPLog(@"SPMySQLConnection: Discarding unretrieved results. This is currently normal when using CALL.");
 		[self _flushMultipleResultSets];
 	}
+    SPLog(@"_unlockConnection: calling connectionLock unlockWithCondition:SPMySQLConnectionIdle.");
 
 	// Tell everyone that the connection is available again
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];

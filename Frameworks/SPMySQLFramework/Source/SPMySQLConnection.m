@@ -904,9 +904,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 		}
 
 		// If there is a connection proxy, temporarily disassociate the state change action
-		if (proxy) proxyStateChangeNotificationsIgnored = YES;
+        if (proxy) {
+            SPLog(@"SPMySQL Framework: there is a connection proxy, temporarily disassociate the state change action");
+            proxyStateChangeNotificationsIgnored = YES;
+        }
 
 		// Close the connection if it's active
+        SPLog(@"SPMySQL Framework: there is a connection proxy, temporarily disassociate the state change action");
 		[self _disconnect];
 
 		// Lock the connection while waiting for network and proxy
@@ -1155,6 +1159,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 
 	// If a query is active, cancel it
+    SPLog(@"If a query is active, cancel it, calling cancelCurrentQuery");
 	[self cancelCurrentQuery];
 
 	state = SPMySQLDisconnecting;
@@ -1162,6 +1167,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Allow any pings or cancelled queries  to complete, inside a time limit of ten seconds
 	uint64_t disconnectStartTime_t = _monotonicTime();
 	while (![self _tryLockConnection]) {
+        SPLog(@"![self _tryLockConnection], sleeping");
+
 		usleep(100000);
 		if (_timeIntervalSinceMonotonicTime(disconnectStartTime_t) > 10) {
 			NSLog(@"%s: Could not acquire connection lock within time limit (10s). Forcing unlock!",__PRETTY_FUNCTION__);
@@ -1169,24 +1176,28 @@ asm(".desc ___crashreporter_info__, 0x10");
 		}
 	}
 
+    SPLog(@"calling _unlockConnection");
 	[self _unlockConnection];
+    SPLog(@"calling _cancelKeepAlives");
 	[self _cancelKeepAlives];
+    SPLog(@"calling _lockConnection");
 	[self _lockConnection];
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.
 	if (mySQLConnection && !mySQLConnection->net.reading_or_writing && mySQLConnection->net.vio && mySQLConnection->net.buff) {
         SPLog(@"calling mysql_close(mySQLConnection)");
-
 		mysql_close(mySQLConnection);
 	}
 	mySQLConnection = NULL;
 	serverVersionNumber = 0;
 	state = SPMySQLDisconnected;
+    SPLog(@"calling _unlockConnection");
 	[self _unlockConnection];
 
 	// If using a connection proxy, disconnect that too
 	if (proxy) {
+        SPLog(@"have a proxy, calling disconnect");
 		[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
 	}
 }

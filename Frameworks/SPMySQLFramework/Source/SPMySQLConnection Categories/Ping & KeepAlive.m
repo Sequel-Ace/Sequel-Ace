@@ -283,7 +283,8 @@ void _backgroundPingTask(void *ptr)
 	pthread_cleanup_push(_pingThreadCleanup, pingDetails);
 
 	// Initialise MySQL variables and handling on this thread
-	mysql_thread_init();
+	BOOL retCode = mysql_thread_init();
+    SPLog(@"_backgroundPingTask: mysql_thread_init: %hhd", retCode);
 
 	// Set up a signal handler for SIGUSR1, to handle forced timeouts.
 	signal(SIGUSR1, _forceThreadExit);
@@ -305,6 +306,8 @@ void _backgroundPingTask(void *ptr)
  */
 void _forceThreadExit(int signalNumber)
 {
+    SPLog(@"_forceThreadExit, signalNumber: %d", signalNumber);
+
 	pthread_exit(NULL);
 }
 
