@@ -46,12 +46,14 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseContentViewDelegate.h"
 #import "SPBundleManager.h"
+#import "SPTableData.h"
 
 #import <SPMySQL/SPMySQL.h>
 #import "pthread.h"
 #include <stdlib.h>
 
 #import "sequel-ace-Swift.h"
+@import AppCenterAnalytics;
 
 NSInteger SPEditMenuCopy               = 2001;
 NSInteger SPEditMenuCopyWithColumns    = 2002;
@@ -101,9 +103,9 @@ static const NSInteger kBlobAsImageFile = 4;
 {
 	NSString *tmp = nil;
 	
-	if ([sender tag] == SPEditMenuCopyAsSQL || [sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
+	if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL || [(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
 
-		if ([sender tag] == SPEditMenuCopyAsSQL){
+		if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL){
 			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
 		}
 		else{
@@ -117,7 +119,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		}
 	}
 	else {
-		tmp = [self rowsAsTabStringWithHeaders:([sender tag] == SPEditMenuCopyWithColumns) onlySelectedRows:YES blobHandling:kBlobInclude];
+		tmp = [self rowsAsTabStringWithHeaders:([(NSMenuItem*)sender tag] == SPEditMenuCopyWithColumns) onlySelectedRows:YES blobHandling:kBlobInclude];
 		
 		if (tmp != nil) {
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
@@ -435,6 +437,8 @@ static const NSInteger kBlobAsImageFile = 4;
 		[tbHeader addObject:[[enumObj headerCell] stringValue]];
 	}
 
+    NSMutableDictionary *errorDict = [[NSMutableDictionary alloc] init];
+
 	// Create arrays of table column mappings and types for fast iteration
 	NSUInteger *columnMappings = calloc(numColumns, sizeof(NSUInteger));
 	NSUInteger *columnTypes = calloc(numColumns, sizeof(NSUInteger));
@@ -444,7 +448,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		columnMappings[c] = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
 		
 		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"typegrouping"];
-		
+
 		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
             
             id obj = [columnDefinitions safeObjectAtIndex:columnMappings[c]];
@@ -487,11 +491,12 @@ static const NSInteger kBlobAsImageFile = 4;
 			foundAutoIncColumn = YES;
 			autoIncrement = NO;
 		}
-	}
+	} // end of column loop
 	
 	if(foundAutoIncColumn == YES && skipAutoIncrementColumn == YES){
 		//what if autoIncrementColumnName is nil?
 		if(autoIncrementColumnName == nil){
+            [errorDict safeSetObject:@"autoIncrementColumnName is nil even though we found an auto_increment column" forKey:@"autoIncrementColumnNameNil"];
 			SPLog(@"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions");
 			
 			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Cannot find auto_increment column name", @"Cannot find auto_increment column name")]
@@ -505,11 +510,25 @@ static const NSInteger kBlobAsImageFile = 4;
 			return nil;
 		}
 		else{
+            NSUInteger tbHeaderCount = tbHeader.count;
 			SPLog(@"autoIncrementColumnName: %@", autoIncrementColumnName);
 			[tbHeader removeObject:autoIncrementColumnName];
 			SPLog(@"tbHeader: %@", tbHeader);
+            if(tbHeaderCount == tbHeader.count){
+                SPLog(@"autoIncrementColumn NOT removed: %@", autoIncrementColumnName);
+                [errorDict safeSetObject:@"autoIncrementColumn NOT removed" forKey:@"tbHeaderCount"];
+                [errorDict safeSetObject:autoIncrementColumnName forKey:@"autoIncrementColumnName"];
+                [errorDict safeSetObject:@(tableInstance->tableDataInstance.tableHasAutoIncrementField) forKey:@"tableHasAutoIncrementField"];
+                [errorDict safeSetObject:columnDefinitions forKey:@"columnDefinitions"];
+            }
 		}
 	}
+
+    if(errorDict.count > 0){
+        SPLog(@"autoIncrement error");
+        [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+    }
+
 	// Begin the SQL string
 	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n",
 		[(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString], [tbHeader componentsJoinedAndBacktickQuoted]];
@@ -1264,14 +1283,14 @@ static const NSInteger kBlobAsImageFile = 4;
 
 - (IBAction)executeBundleItemForDataTable:(id)sender
 {
-	NSInteger idx = [sender tag] - 1000000;
+	NSInteger idx = [(NSMenuItem*)sender tag] - 1000000;
 	NSString *infoPath = nil;
 	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeDataTable];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
-		if([sender tag] == 0 && [[sender toolTip] length]) {
-			infoPath = [sender toolTip];
+		if([(NSMenuItem*)sender tag] == 0 && [[(NSMenuItem*)sender toolTip] length]) {
+			infoPath = [(NSMenuItem*)sender toolTip];
 		}
 	}
 
