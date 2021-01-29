@@ -111,8 +111,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
 @property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
-@property (nonatomic, strong) NSNotificationCenter *defaultNotificationCenter;
-
 
 - (void)_addDatabase;
 - (void)_alterDatabase;
@@ -158,7 +156,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize showConsoleImage;
 @synthesize textAndCommandMacwindowImage;
 @synthesize appIsTerminating;
-@synthesize defaultNotificationCenter;
 
 #pragma mark -
 
@@ -244,8 +241,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         printThread = nil;
         windowTitleStatusViewIsVisible = NO;
 
-        defaultNotificationCenter = [NSNotificationCenter defaultCenter];
-
         // As this object is not an NSWindowController subclass, top-level objects in loaded nibs aren't
         // automatically released.  Keep track of the top-level objects for release on dealloc.
         NSArray *dbViewTopLevelObjects = nil;
@@ -286,20 +281,21 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self _addPreferenceObservers];
 
     // Register for notifications
-    [defaultNotificationCenter addObserver:self
-                                  selector:@selector(willPerformQuery:)
-                                      name:@"SMySQLQueryWillBePerformed"
-                                    object:self];
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self
+           selector:@selector(willPerformQuery:)
+               name:@"SMySQLQueryWillBePerformed"
+             object:self];
 
-    [defaultNotificationCenter addObserver:self
-                                  selector:@selector(hasPerformedQuery:)
-                                      name:@"SMySQLQueryHasBeenPerformed"
-                                    object:self];
+    [nc addObserver:self
+           selector:@selector(hasPerformedQuery:)
+               name:@"SMySQLQueryHasBeenPerformed"
+             object:self];
 
-    [defaultNotificationCenter addObserver:self
-                                  selector:@selector(applicationWillTerminate:)
-                                      name:@"NSApplicationWillTerminateNotification"
-                                    object:nil];
+    [nc addObserver:self
+           selector:@selector(applicationWillTerminate:)
+               name:@"NSApplicationWillTerminateNotification"
+             object:nil];
 
     // Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
     selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
@@ -973,7 +969,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSString *dbName = nil;
 
     // Notify listeners that a query has started
-    [defaultNotificationCenter postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:self];
 
     SPMySQLResult *theResult = [mySQLConnection queryString:@"SELECT DATABASE()"];
     [theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
@@ -1004,7 +1000,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     //query finished
-    [defaultNotificationCenter postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:self];
 }
 
 - (BOOL)navigatorSchemaPathExistsForDatabase:(NSString*)dbname
@@ -1162,7 +1158,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Set flags and prevent further UI interaction in this window
         databaseListIsSelectable = NO;
-        [defaultNotificationCenter postNotificationName:SPDocumentTaskStartNotification object:self];
+        [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
         [mainToolbar validateVisibleItems];
         [chooseDatabaseButton setEnabled:NO];
 
@@ -1361,7 +1357,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Re-enable window interface
         databaseListIsSelectable = YES;
-        [defaultNotificationCenter postNotificationName:SPDocumentTaskEndNotification object:self];
+        [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskEndNotification object:self];
         [mainToolbar validateVisibleItems];
         [chooseDatabaseButton setEnabled:_isConnected];
     }
@@ -4067,7 +4063,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
     if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
     [createTableSyntaxWindow orderOut:nil];
-    [defaultNotificationCenter removeObserver:self];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 /**
@@ -5279,7 +5275,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)registerActivity:(NSDictionary *)commandDict
 {
     [runningActivitiesArray addObject:commandDict];
-    [defaultNotificationCenter postNotificationOnMainThreadWithName:SPActivitiesUpdateNotification object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPActivitiesUpdateNotification object:self];
 
     if([runningActivitiesArray count] || [[SPAppDelegate runningActivities] count])
         [self performSelector:@selector(setActivityPaneHidden:) withObject:@0 afterDelay:1.0];
@@ -5311,7 +5307,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self setActivityPaneHidden:@1];
     }
 
-    [defaultNotificationCenter postNotificationOnMainThreadWithName:SPActivitiesUpdateNotification object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPActivitiesUpdateNotification object:self];
 }
 
 - (void)setActivityPaneHidden:(NSNumber *)hide
@@ -5598,7 +5594,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[self onMainThread] setDatabases:self];
 
         // inform observers that a new database was added
-        [defaultNotificationCenter postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
 
         [self endTask];
 
@@ -5632,7 +5628,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self setDatabases:self];
         [self selectDatabase:newDatabaseName item:nil];
         // inform observers that a new database was added
-        [defaultNotificationCenter postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
     }
     else {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
@@ -5674,7 +5670,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self setDatabases:self];
 
     // inform observers that a new database was added
-    [defaultNotificationCenter postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
 
     // Select the database
     [self selectDatabase:[databaseNameField stringValue] item:nil];
@@ -5747,7 +5743,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [tablesListInstance setConnection:mySQLConnection];
 
     // inform observers that a database was dropped
-    [defaultNotificationCenter postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
 
     [self updateWindowTitle:self];
 }
@@ -6233,7 +6229,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [spHistoryControllerInstance updateHistoryEntries];
 
         // Notify listeners of the table change
-        [defaultNotificationCenter postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
+        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
 
         return;
     }
@@ -6378,7 +6374,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
         // Notify listeners of the table change now that the state is fully set up.
-        [defaultNotificationCenter postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
+        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
 
         // Restore view states as appropriate
         [spHistoryControllerInstance restoreViewStates];
@@ -6974,12 +6970,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSAssert([NSThread isMainThread], @"Calling %s from a background thread is not supported!", __func__);
 
     // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
-    [defaultNotificationCenter postNotificationName:SPDocumentWillCloseNotification object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentWillCloseNotification object:self];
 
     // Unregister observers
     [self _removePreferenceObservers];
 
-    [defaultNotificationCenter removeObserver:self];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [NSObject cancelPreviousPerformRequestsWithTarget:self];
 
     [taskProgressWindow close];
