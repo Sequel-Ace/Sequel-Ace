@@ -431,6 +431,7 @@ extern NSString *SPSecureBookmarksOldFormat;
 extern NSString *SPSecureBookmarksHaveBeenMigrated;
 
 // Misc
+extern NSString *SPDatabaseCreatedRemovedRenamedNotification;
 extern NSString *SPContentFilters;
 extern NSString *SPBookmarksChangedNotification;
 extern NSString *SPDocumentTaskEndNotification;
