@@ -276,6 +276,7 @@ NSString *SPQueryFavoritesHaveBeenUpdatedNotification = @"QueryFavoritesHaveBeen
 NSString *SPHistoryItemsHaveBeenUpdatedNotification   = @"HistoryItemsHaveBeenUpdatedNotification";
 NSString *SPContentFiltersHaveBeenUpdatedNotification = @"ContentFiltersHaveBeenUpdatedNotification";
 NSString *SPCopyContentOnTableCopy                    = @"CopyContentOnTableCopy";
+NSString *SPDatabaseCreatedRemovedRenamedNotification = @"DatabaseCreatedRemovedRenamedNotification";
 
 // URLs
 NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@";

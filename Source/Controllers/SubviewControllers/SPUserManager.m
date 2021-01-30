@@ -120,6 +120,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
         grantedSchemaPrivs = [[NSMutableArray alloc] init];
         isSaving = NO;
         doneRecordError = NO;
+
+        // listen for new/dropped/renamed databases, to refresh the list
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_initializeSchemaPrivs)
+                                                     name:SPDatabaseCreatedRemovedRenamedNotification
+                                                   object:nil];
 	}
 	
 	return self;
@@ -365,6 +371,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (void)_initializeSchemaPrivs
 {
+    SPLog(@"_initializeSchemaPrivs called.");
 	// Initialize Databases
 	[schemas removeAllObjects];
 	[schemas addObjectsFromArray:[databaseDocument allDatabaseNames]];

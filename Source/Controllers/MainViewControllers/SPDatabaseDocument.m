@@ -112,7 +112,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
-
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -283,7 +282,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Register for notifications
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-
     [nc addObserver:self
            selector:@selector(willPerformQuery:)
                name:@"SMySQLQueryWillBePerformed"
@@ -5596,6 +5594,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Update database list
         [[self onMainThread] setDatabases:self];
 
+        // inform observers that a new database was added
+        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+
         [self endTask];
 
         if (!success) {
@@ -5618,6 +5619,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
+    SPLog(@"_renameDatabase");
     SPDatabaseRename *dbActionRename = [[SPDatabaseRename alloc] init];
 
     [dbActionRename setTablesList:tablesListInstance];
@@ -5626,6 +5628,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([dbActionRename renameDatabaseFrom:[self createDatabaseInfo] to:newDatabaseName]) {
         [self setDatabases:self];
         [self selectDatabase:newDatabaseName item:nil];
+        // inform observers that a new database was added
+        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
     }
     else {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
@@ -5663,7 +5667,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
+    // this refreshes the allDatabases array
     [self setDatabases:self];
+
+    // inform observers that a new database was added
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
 
     // Select the database
     [self selectDatabase:[databaseNameField stringValue] item:nil];
@@ -5731,11 +5739,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // that's why we can run this on main thread
     [databaseStructureRetrieval queryDbStructureWithUserInfo:nil];
 
-
-
     [self setDatabases:self];
 
     [tablesListInstance setConnection:mySQLConnection];
+
+    // inform observers that a database was dropped
+    [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
 
     [self updateWindowTitle:self];
 }
