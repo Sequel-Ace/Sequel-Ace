@@ -670,11 +670,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[[tableSourceView window] endEditingFor:nil];
 	}
 
-	NSDictionary *theRow = [tableFields objectAtIndex:currentlyEditingRow];
+	NSDictionary *theRow = [tableFields safeObjectAtIndex:currentlyEditingRow];
 
 	if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
 		// If the field isn't set to be unsigned and we're making it the primary key then make it unsigned
-		if (![[theRow objectForKey:@"unsigned"] boolValue]) {
+		if (![[theRow safeObjectForKey:@"unsigned"] boolValue]) {
 			NSMutableDictionary *rowCpy = [theRow mutableCopy];
 			[rowCpy setObject:@YES forKey:@"unsigned"];
 			theRow = rowCpy;
