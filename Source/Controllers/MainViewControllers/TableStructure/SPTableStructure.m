@@ -670,11 +670,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[[tableSourceView window] endEditingFor:nil];
 	}
 
-	NSDictionary *theRow = [tableFields objectAtIndex:currentlyEditingRow];
+	NSDictionary *theRow = [tableFields safeObjectAtIndex:currentlyEditingRow];
 
 	if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
 		// If the field isn't set to be unsigned and we're making it the primary key then make it unsigned
-		if (![[theRow objectForKey:@"unsigned"] boolValue]) {
+		if (![[theRow safeObjectForKey:@"unsigned"] boolValue]) {
 			NSMutableDictionary *rowCpy = [theRow mutableCopy];
 			[rowCpy setObject:@YES forKey:@"unsigned"];
 			theRow = rowCpy;
@@ -1123,14 +1123,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
 
-	[tempResult addObject:[structureQueryResult fieldNames]];
+	[tempResult safeAddObject:[structureQueryResult fieldNames]];
 
 	NSMutableArray *temp = [[indexesQueryResult fieldNames] mutableCopy];
 
 	// Remove the 'table' column
 	[temp removeObjectAtIndex:0];
 
-	[tempResult2 addObject:temp];
+	[tempResult2 safeAddObject:temp];
 
 	for (i = 0; i < [structureQueryResult numberOfRows]; i++) {
 		NSMutableArray *row = [[structureQueryResult getRowAsArray] mutableCopy];
@@ -1143,7 +1143,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 
-		[tempResult addObject:row];
+		[tempResult safeAddObject:row];
 	}
 
 	for (i = 0; i < [indexesQueryResult numberOfRows]; i++) {
@@ -1160,7 +1160,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 
-		[tempResult2 addObject:eachIndex];
+		[tempResult2 safeAddObject:eachIndex];
 	}
 
 	CFRelease(escapedNullValue);
