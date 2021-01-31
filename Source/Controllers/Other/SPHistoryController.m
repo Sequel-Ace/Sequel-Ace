@@ -285,10 +285,12 @@
         SPLog(@"If there's any items after the current history position, remove them");
         NSRange tmpRange = NSMakeRange(historyPosition + 1, [history count] - historyPosition - 1);
         SPLog(@"tmpRange.location=%lu tmpRange.length=%lu", (unsigned long)tmpRange.location, (unsigned long)tmpRange.length);
-		[history removeObjectsInRange:tmpRange];
+        if(tmpRange.location + tmpRange.length < history.count -1){
+            [history removeObjectsInRange:tmpRange];
+        }
 
 	} else if (historyPosition != NSNotFound && historyPosition == [history count] - 1) {
-		NSMutableDictionary *currentHistoryEntry = [history objectAtIndex:historyPosition];
+		NSMutableDictionary *currentHistoryEntry = [history safeObjectAtIndex:historyPosition];
 
 		BOOL databaseIsTheSame = [[currentHistoryEntry objectForKey:@"database"] isEqualToString:theDatabase];
 		BOOL tableIsTheSame    = [[currentHistoryEntry objectForKey:@"table"] isEqualToString:theTable];
