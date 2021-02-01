@@ -40,7 +40,7 @@
 
 - (BOOL)_dropDatabase:(NSString *)database;
 
-- (void)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
+- (BOOL)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
 - (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
 
 @end
@@ -52,21 +52,55 @@
  */
 - (BOOL)renameDatabaseFrom:(SPCreateDatabaseInfo *)sourceDatabase to:(NSString *)targetDatabase
 {
+    NSString *sourceDatabaseName = [sourceDatabase databaseName];
+
+    SPLog(@"renameDatabaseFrom: %@, to: %@", sourceDatabaseName, targetDatabase);
+
 	// Check, whether the source database exists and the target database doesn't
-	BOOL sourceExists = [[connection databases] containsObject:[sourceDatabase databaseName]];
+	BOOL sourceExists = [[connection databases] containsObject:sourceDatabaseName];
 	BOOL targetExists = [[connection databases] containsObject:targetDatabase];
-	
-	if (!sourceExists || targetExists) return NO;
+
+    BOOL success = NO;
+    BOOL success2 = NO;
+    BOOL success3 = NO;
+
+    if (!sourceExists || targetExists){
+        SPLog(@"!sourceExists || targetExists");
+        return NO;
+    }
 
 	NSArray *tables = [tablesList allTableNames];
 
-	BOOL success = [self createDatabase:targetDatabase
-						   withEncoding:[sourceDatabase defaultEncoding]
-						      collation:[sourceDatabase defaultCollation]];
-	
-	[self _moveTables:tables fromDatabase:[sourceDatabase databaseName] toDatabase:targetDatabase];
-	
-	return success;
+    success = [self createDatabase:targetDatabase
+                      withEncoding:[sourceDatabase defaultEncoding]
+                         collation:[sourceDatabase defaultCollation]];
+
+    if(success == YES){
+        SPLog(@"createDatabase SUCCESS, calling move tables");
+        success2 = [self _moveTables:tables fromDatabase:sourceDatabaseName toDatabase:targetDatabase];
+        if(success2 == NO){
+            SPLog(@"_moveTables FAILED: %@", [connection lastErrorMessage]);
+        }
+        else{
+            SPLog(@"_moveTables SUCCESS, calling _dropDatabase");
+            success3 = [self _dropDatabase:sourceDatabaseName];
+            if(success3 == NO){
+                SPLog(@"_dropDatabase FAILED: %@", [connection lastErrorMessage]);
+            }
+            else{
+                SPLog(@"_dropDatabase SUCCESS");
+            }
+        }
+    }
+    else{
+        SPLog(@"createDatabase FAILED: %@", [connection lastErrorMessage]);
+    }
+
+    BOOL ret = success && success2 && success3;
+
+    SPLog(@"ret code: %hhd", ret);
+
+	return ret;
 }
 
 #pragma mark -
@@ -79,22 +113,30 @@
  * @return BOOL YES on success, otherwise NO
  */
 - (BOOL)_dropDatabase:(NSString *)database 
-{	
+{
+    SPLog(@"_dropDatabase: %@", database);
+
 	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [database backtickQuotedString]]];	
 	
 	return ![connection queryErrored];
 }
 
-- (void)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
+- (BOOL)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
 {
+    SPLog(@"_moveTables from : %@, to: %@", sourceDatabase, targetDatabase);
+
+    BOOL success = YES;
+
 	SPTableCopy *dbActionTableCopy = [[SPTableCopy alloc] init];
 	
 	[dbActionTableCopy setConnection:connection];
 	
 	for (NSString *table in tables) 
 	{
-		[dbActionTableCopy moveTable:table from:sourceDatabase to:targetDatabase];
+        success = [dbActionTableCopy moveTable:table from:sourceDatabase to:targetDatabase];
 	}
+
+    return success;
 }
 
 - (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
