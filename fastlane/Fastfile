@@ -11,8 +11,6 @@ QK_PROJECT_NAME = "Frameworks/QueryKit/QueryKit.xcodeproj"
 SPMYSQL_PROJECT_NAME = "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj"
 WORKSPACE_NAME = "sequel-ace.xcworkspace"
 TARGET_NAME = "Sequel Ace"
-ARCHIVE_PATH = "./build-dir/" + TARGET_NAME + ".xcarchive"
-DYSYM_PATH = ARCHIVE_PATH + "/dSYMs"
 
 platform :mac do
 
@@ -251,21 +249,9 @@ platform :mac do
    lane :appcenter_upload_dsyms do |options|
       UI.message("\n\n\n=====================================\n uploading only dSYM files\n=====================================")
       appcenter_upload(
-         dsym: DYSYM_PATH,
+         dsym: options[:dsym_path],
          upload_dsym_only: true,
          strict: 'true'
          )
-   end
-
-   desc "do_build"
-   lane :do_build do |options|
-      UI.message("\n\n\n=====================================\n BUILDING Sequel Ace Local Testing \n=====================================")
-      xcodebuild(
-         archive: true,
-         archive_path: ARCHIVE_PATH,
-         scheme: "Sequel Ace Local Testing",
-         workspace: WORKSPACE_NAME,
-         configuration: "Debug"
-      )
    end
 end

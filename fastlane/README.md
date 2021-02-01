@@ -76,11 +76,6 @@ appcenter_fetch_version
 fastlane mac appcenter_upload_dsyms
 ```
 appcenter_upload_dsyms
-### mac do_build
-```
-fastlane mac do_build
-```
-do_build
 
 ----
 
