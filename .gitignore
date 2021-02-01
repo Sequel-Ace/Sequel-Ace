@@ -26,3 +26,5 @@ fastlane/build_folder
 fastlane/.env
 prebuild.log
 /docs/_site
+/Sequel Ace.app
+/build-dir

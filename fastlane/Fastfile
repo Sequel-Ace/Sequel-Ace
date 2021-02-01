@@ -11,6 +11,8 @@ QK_PROJECT_NAME = "Frameworks/QueryKit/QueryKit.xcodeproj"
 SPMYSQL_PROJECT_NAME = "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj"
 WORKSPACE_NAME = "sequel-ace.xcworkspace"
 TARGET_NAME = "Sequel Ace"
+ARCHIVE_PATH = "./build-dir/" + TARGET_NAME + ".xcarchive"
+DYSYM_PATH = ARCHIVE_PATH + "/dSYMs"
 
 platform :mac do
 
@@ -236,5 +238,34 @@ platform :mac do
       increment_version_number(xcodeproj: QK_PROJECT_NAME, bump_type: "patch")
       increment_version_number(xcodeproj: SPMYSQL_PROJECT_NAME, bump_type: "patch")
       sh "git add -A && git commit -m 'Increment app patch version'"
+   end
+
+   desc "appcenter_fetch_version"
+   lane :appcenter_fetch_version do |options|
+      UI.message("\n\n\n=====================================\n Fetch latest version: \n=====================================")
+      version = appcenter_fetch_version_number()
+      UI.message(version.to_s)
+   end
+
+   desc "appcenter_upload_dsyms"
+   lane :appcenter_upload_dsyms do |options|
+      UI.message("\n\n\n=====================================\n uploading only dSYM files\n=====================================")
+      appcenter_upload(
+         dsym: DYSYM_PATH,
+         upload_dsym_only: true,
+         strict: 'true'
+         )
+   end
+
+   desc "do_build"
+   lane :do_build do |options|
+      UI.message("\n\n\n=====================================\n BUILDING Sequel Ace Local Testing \n=====================================")
+      xcodebuild(
+         archive: true,
+         archive_path: ARCHIVE_PATH,
+         scheme: "Sequel Ace Local Testing",
+         workspace: WORKSPACE_NAME,
+         configuration: "Debug"
+      )
    end
 end

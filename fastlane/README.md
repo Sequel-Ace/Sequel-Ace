@@ -66,6 +66,21 @@ Increase app version
 fastlane mac increment_app_patch_version
 ```
 Increase app patch version
+### mac appcenter_fetch_version
+```
+fastlane mac appcenter_fetch_version
+```
+appcenter_fetch_version
+### mac appcenter_upload_dsyms
+```
+fastlane mac appcenter_upload_dsyms
+```
+appcenter_upload_dsyms
+### mac do_build
+```
+fastlane mac do_build
+```
+do_build
 
 ----
 
