@@ -548,16 +548,13 @@
 
 - (NSArray *)createTableSyntaxFromView:(NSString *)tableName withSyntaxResult:(NSArray *)syntaxResult {
 
-    SPMySQLResult *theResult;
-    NSString *queryStr;
-
     SPLog(@"createTableSyntaxFromView");
 
-    queryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [tableName backtickQuotedString]];
+    NSString *queryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [tableName backtickQuotedString]];
 
     SPLog(@"queryStr: %@", queryStr);
 
-    theResult = [mySQLConnection queryString:queryStr];
+    SPMySQLResult *theResult = [mySQLConnection queryString:queryStr];
 
     NSMutableString *viewCreateStr = [[NSMutableString alloc] init];
 
@@ -1113,10 +1110,6 @@
 			[status safeSetObject:[status objectForKey:@"Type"] forKey:@"Engine"];
 		}
 
-		// If the "Engine" key is NULL, a problem occurred when retrieving the table information.
-        // MARK: JCS note. Now in 8.0.0 information_schema can be a view, it has no Engine
-        // so we don't want to return here.
-
 		// Add a note for whether the row count is accurate or not - only for MyISAM
 		if ([[status safeObjectForKey:@"Engine"] isEqualToString:@"MyISAM"]) {
 			[status setObject:@"y" forKey:@"RowsCountAccurate"];
@@ -1130,7 +1123,7 @@
 			tableStatusResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [escapedTableName backtickQuotedString] ]];
 			// this query can fail e.g. if a table is damaged
 			if (tableStatusResult && ![mySQLConnection queryErrored]) {
-				[status safeSetObject:[[tableStatusResult getRowAsArray] safeObjectAtIndex:0] forKey:@"Rows"];
+				[status safeSetObject:[[tableStatusResult getRowAsArray] firstObject] forKey:@"Rows"];
 				[status setObject:@"y" forKey:@"RowsCountAccurate"];
 			}
 			else {
