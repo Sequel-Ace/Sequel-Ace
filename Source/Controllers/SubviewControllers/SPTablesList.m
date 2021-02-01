@@ -617,6 +617,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			break;
 	}
 
+    // from docs:
+    // A window that uses NSWindowStyleMaskBorderless can’t become key or main
+    // meaning it can't take input, so switch the style here.
+    // It doesn't change how the popup looks.
+    copyTableSheet.styleMask = NSWindowStyleMaskTitled;
+
 	[copyTableMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Duplicate %@ '%@' to:", @"duplicate object message"), tableType, [self tableName]]];
 	[copyTableNameField setStringValue:[NSString stringWithFormat:@"%@_copy", [filteredTables objectAtIndex:[tablesListView selectedRow]]]];
 
