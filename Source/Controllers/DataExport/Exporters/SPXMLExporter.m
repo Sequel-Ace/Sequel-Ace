@@ -168,7 +168,7 @@
 	if ((!isTableExport) || (isTableExport && [self xmlOutputIncludeContent])) {
 	
 		// Set up an array of encoded field names as opening and closing tags
-		fieldNames = ([self xmlDataArray]) ?  [[self xmlDataArray] safeObjectAtIndex:0] : [streamingResult fieldNames];
+		fieldNames = ([self xmlDataArray]) ?  [[self xmlDataArray] firstObject] : [streamingResult fieldNames];
 		for (i = 0; i < [fieldNames count]; i++) 
 		{
 			[xmlTags addObject:[NSMutableArray array]];
@@ -289,7 +289,7 @@
 				}
                 else if ([self xmlFormat] == SPXMLExportPlainFormat) {
                     // Add the opening and closing tag and the contents to the XML string
-                    [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:0]];
+                    [xmlString appendString:[[xmlTags safeObjectAtIndex:i] firstObject]];
                     [xmlString appendString:[xmlItem HTMLEscapeString]];
                     [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:1]];
                 }

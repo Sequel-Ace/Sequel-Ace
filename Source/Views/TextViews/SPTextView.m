@@ -538,7 +538,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 							if(![field hasPrefix:@"  "]) {
 								NSString *fieldpath = [field substringFromIndex:[field rangeOfString:SPUniqueSchemaDelimiter].location];
 								NSArray *def = [theTable objectForKey:field];
-								NSString *typ = [NSString stringWithFormat:@"%@ %@ %@", [def safeObjectAtIndex:0], [def safeObjectAtIndex:3], [def safeObjectAtIndex:5]];
+								NSString *typ = [NSString stringWithFormat:@"%@ %@ %@", [def firstObject], [def safeObjectAtIndex:3], [def safeObjectAtIndex:5]];
 								// Check if type definition contains a , if so replace the bracket content by … and add
 								// the bracket content as "list" key to prevend the token field to split them by ,
 								if(typ && [typ rangeOfString:@","].length) {

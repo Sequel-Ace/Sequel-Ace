@@ -609,7 +609,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (IBAction)checkAllPrivileges:(id)sender
 {
-	id selectedUser = [[treeController selectedObjects] safeObjectAtIndex:0];
+	id selectedUser = [[treeController selectedObjects] firstObject];
 
     if(selectedUser == nil){
         SPLog(@"selectedUser == nil");
@@ -634,7 +634,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (IBAction)uncheckAllPrivileges:(id)sender
 {
-	id selectedUser = [[treeController selectedObjects] safeObjectAtIndex:0];
+	id selectedUser = [[treeController selectedObjects] firstObject];
 
     if(selectedUser == nil){
         SPLog(@"selectedUser == nil");
@@ -681,8 +681,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
  */
 - (IBAction)removeUser:(id)sender
 {
-    NSString *username = [[[treeController selectedObjects] safeObjectAtIndex:0] valueForKey:@"originaluser"];
-    NSArray *children = [[[treeController selectedObjects] safeObjectAtIndex:0] valueForKey:@"children"];
+    NSString *username = [[[treeController selectedObjects] firstObject] valueForKey:@"originaluser"];
+    NSArray *children = [[[treeController selectedObjects] firstObject] valueForKey:@"children"];
 
 	// On all the children - host entries - set the username to be deleted,
 	// for later query contruction.
@@ -692,7 +692,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
     }
 	
 	// Unset the host on the user, so that only the host entries are dropped
-	[[[treeController selectedObjects] safeObjectAtIndex:0] setPrimitiveValue:nil forKey:@"host"];
+	[[[treeController selectedObjects] firstObject] setPrimitiveValue:nil forKey:@"host"];
 
 	[treeController remove:sender];
 }
@@ -704,7 +704,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
 	if ([[treeController selectedObjects] count] > 0)
 	{
-		if ([[[treeController selectedObjects] safeObjectAtIndex:0] parent] != nil)
+		if ([[[treeController selectedObjects] firstObject] parent] != nil)
 		{
 			[self _selectParentFromSelection];
 		}
@@ -732,7 +732,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
     // Set the username on the child so that it's accessabile when building
     // the drop sql command
-    SPUserMO *child = [[treeController selectedObjects] safeObjectAtIndex:0];
+    SPUserMO *child = [[treeController selectedObjects] firstObject];
     SPUserMO *parent = [child parent];
 	
     [child setPrimitiveValue:[[child valueForKey:@"parent"] valueForKey:@"user"] forKey:@"user"];

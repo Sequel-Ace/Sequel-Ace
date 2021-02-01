@@ -236,7 +236,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	fieldMappingImportArrayIsPreview = isPreview;
 
 	if([fieldMappingImportArray count])
-		numberOfImportColumns = [[fieldMappingImportArray safeObjectAtIndex:0] count];
+		numberOfImportColumns = [[fieldMappingImportArray firstObject] count];
 
 	NSInteger i;
 	for(i=0; i<numberOfImportColumns; i++) {
@@ -585,7 +585,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	// Set the first n operators to doImport
 	if([fieldMappingImportArray count]) {
-		NSUInteger possibleImports = ([[fieldMappingImportArray safeObjectAtIndex:0] count] > [fieldMappingTableColumnNames count]) ? [fieldMappingTableColumnNames count] : [[fieldMappingImportArray safeObjectAtIndex:0] count];
+		NSUInteger possibleImports = ([[fieldMappingImportArray firstObject] count] > [fieldMappingTableColumnNames count]) ? [fieldMappingTableColumnNames count] : [[fieldMappingImportArray firstObject] count];
 		for(i=0; i < possibleImports; i++)
 			[fieldMappingOperatorArray replaceObjectAtIndex:i withObject:doImportKey];
 	}
@@ -682,7 +682,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	NSUInteger i;
 	NSInteger j;
-	NSInteger possibleImports = ([[fieldMappingImportArray safeObjectAtIndex:0] count] > [fieldMappingTableColumnNames count]) ? [fieldMappingTableColumnNames count] : [[fieldMappingImportArray safeObjectAtIndex:0] count];
+	NSInteger possibleImports = ([[fieldMappingImportArray firstObject] count] > [fieldMappingTableColumnNames count]) ? [fieldMappingTableColumnNames count] : [[fieldMappingImportArray firstObject] count];
 
 	if(possibleImports < 1) return;
 
@@ -744,7 +744,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	if (newTableMode) {
 		[fieldMappingTableColumnNames removeAllObjects];
 		if([self importFieldNamesHeader]) {
-			headerRow = [fieldMappingImportArray safeObjectAtIndex:0];
+			headerRow = [fieldMappingImportArray firstObject];
 			for (i = 0; i < numberOfImportColumns; i++) {
 				id headerCol = [headerRow safeObjectAtIndex:i];
 				// we don't want a NSNull in the column headers to mess stuff up (issue #2375)
@@ -844,7 +844,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	BOOL serverGreaterThanVersion4 = ([mySQLConnection serverMajorVersion] >= 5) ? YES : NO;
 	BOOL importFirstRowAsFieldNames = [self importFieldNamesHeader];
 
-	NSArray *headerRow = [fieldMappingImportArray safeObjectAtIndex:0];
+	NSArray *headerRow = [fieldMappingImportArray firstObject];
 	for (columnCounter = 0; columnCounter < numberOfImportColumns; columnCounter++) {
 		if (importFirstRowAsFieldNames) {
 			id headerName = [headerRow safeObjectAtIndex:columnCounter];
@@ -1322,7 +1322,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	if(![self hasContentRows]) return;
 
 	NSMutableArray *fileHeaderNames = [NSMutableArray array];
-	[fileHeaderNames setArray:[fieldMappingImportArray safeObjectAtIndex:0]];
+	[fileHeaderNames setArray:[fieldMappingImportArray firstObject]];
 	NSMutableArray *tableHeaderNames = [NSMutableArray array];
 	[tableHeaderNames setArray:fieldMappingTableColumnNames];
 
@@ -1678,21 +1678,21 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			if ([doNotImportKey isEqual:[fieldMappingOperatorArray objectAtIndex:rowIndex]]) return [NSString stringWithFormat:@"DEFAULT: %@", [fieldMappingTableDefaultValues objectAtIndex:rowIndex]];
 
 			if([importFieldNamesHeaderSwitch state] == NSOnState) {
-				if([[fieldMappingArray safeObjectAtIndex:rowIndex] unsignedIntegerValue]>=[[fieldMappingImportArray safeObjectAtIndex:0] count])
+				if([[fieldMappingArray safeObjectAtIndex:rowIndex] unsignedIntegerValue]>=[[fieldMappingImportArray firstObject] count])
 					return [NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"User-defined value", @"user-defined value"), [fieldMappingGlobalValues safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]]];
 
 				if(fieldMappingCurrentRow)
 					return [NSString stringWithFormat:@"%@: %@",
-													  [[[fieldMappingImportArray safeObjectAtIndex:0] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description],
+													  [[[fieldMappingImportArray firstObject] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description],
                                                        [[[fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description]];
 				else
-					return [[[fieldMappingImportArray safeObjectAtIndex:0] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description];
+					return [[[fieldMappingImportArray firstObject] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description];
 
 			}
 			else if([importFieldNamesHeaderSwitch state] == NSOffState) {
 				NSUInteger colIndex = [[fieldMappingArray safeObjectAtIndex:rowIndex] unsignedIntegerValue];
 				NSString *retval;
-				if(colIndex >= [[fieldMappingImportArray safeObjectAtIndex:0] count])
+				if(colIndex >= [[fieldMappingImportArray firstObject] count])
 					retval = [fieldMappingGlobalValues safeObjectAtIndex:colIndex];
 				else
                     retval = [[fieldMappingImportArray safeObjectAtIndex:fieldMappingCurrentRow] safeObjectAtIndex:colIndex];

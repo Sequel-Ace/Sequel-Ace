@@ -266,7 +266,7 @@
 		}
 		
 		[self setSqlCurrentTableExportIndex:[self sqlCurrentTableExportIndex]+1];
-		NSString *tableName = [table safeObjectAtIndex:0];
+		NSString *tableName = [table firstObject];
 
 		BOOL sqlOutputIncludeStructure  = [[table safeObjectAtIndex:1] boolValue];
 		BOOL sqlOutputIncludeContent    = [[table safeObjectAtIndex:2] boolValue];
@@ -400,7 +400,7 @@
 				continue;
 			}
 			
-			NSUInteger rowCount = [[rowArray safeObjectAtIndex:0] integerValue];
+			NSUInteger rowCount = [[rowArray firstObject] integerValue];
 
 			if (rowCount) {
 				// Set up a result set in streaming mode
@@ -611,7 +611,7 @@
 					
 					[metaString appendFormat:@"/*!50003 SET SESSION SQL_MODE=\"%@\" */;;\n/*!50003 CREATE */ ", [triggers objectForKey:@"sql_mode"]];
 					[metaString appendFormat:@"/*!50017 DEFINER=%@@%@ */ /*!50003 TRIGGER %@ %@ %@ ON %@ FOR EACH ROW %@ */;;\n",
-					                         [[triggersDefiner safeObjectAtIndex:0] backtickQuotedString],
+					                         [[triggersDefiner firstObject] backtickQuotedString],
 					                         [[triggersDefiner safeObjectAtIndex:1] backtickQuotedString],
 					                         [[triggers objectForKey:@"Trigger"] backtickQuotedString],
 					                         [triggers objectForKey:@"Timing"],
@@ -741,7 +741,7 @@
 						return;
 					}
 					
-					if ([[item safeObjectAtIndex:0] isEqualToString:procedureName]) {
+					if ([[item firstObject] isEqualToString:procedureName]) {
 						itemFound = YES;
 						sqlOutputIncludeStructure  = [[item safeObjectAtIndex:1] boolValue];
 						sqlOutputIncludeDropSyntax = [[item safeObjectAtIndex:3] boolValue];
@@ -770,7 +770,7 @@
 				NSArray *procedureDefiner = [[proceduresList objectForKey:@"Definer"] componentsSeparatedByString:@"@"];
 
 				NSString *escapedDefiner = [NSString stringWithFormat:@"%@@%@",
-				                                                      [[procedureDefiner safeObjectAtIndex:0] backtickQuotedString],
+				                                                      [[procedureDefiner firstObject] backtickQuotedString],
 				                                                      [[procedureDefiner safeObjectAtIndex:1] backtickQuotedString]];
 				
 				SPMySQLResult *createProcedureResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,

@@ -423,7 +423,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
         // add on a trailing / to set the panel directory to the file
         // this has the side effect of pre-selecting the file for the user
         // see: https://stackoverflow.com/a/18931821/150772
-        NSString *fileName =  [options.fileNames safeObjectAtIndex:0];
+        NSString *fileName =  [options.fileNames firstObject];
         NSString *staleFileDir = [NSString stringWithFormat:@"%@/", fileName];
         SPLog(@"staleFileDir: %@", staleFileDir);
         directory = [NSURL fileURLWithPath:staleFileDir];

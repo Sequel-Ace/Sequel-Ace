@@ -128,7 +128,7 @@
 	if (![self queryErrored]) {
 		databaseList = [NSMutableArray arrayWithCapacity:(NSUInteger)[databaseResult numberOfRows]];
 		for (NSArray *dbRow in databaseResult) {
-			[databaseList SPsafeAddObject:[dbRow SPsafeObjectAtIndex:0]];
+			[databaseList SPsafeAddObject:[dbRow firstObject]];
 		}
 	}
 
@@ -213,7 +213,7 @@
 	if (![self queryErrored]) {
 		tableList = [NSMutableArray arrayWithCapacity:(NSUInteger)[tableResult numberOfRows]];
 		for (NSArray *tableRow in tableResult) {
-			[tableList SPsafeAddObject:[tableRow SPsafeObjectAtIndex:0]];
+			[tableList SPsafeAddObject:[tableRow firstObject]];
 		}
 	}
 

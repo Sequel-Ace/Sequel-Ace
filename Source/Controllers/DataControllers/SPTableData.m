@@ -833,7 +833,7 @@
 			// primary key
 			// add "isprimarykey" to the corresponding tableColumn
 			// add dict root "primarykeyfield" = <field> for faster accessing
-			else if( [[parts safeObjectAtIndex:0] hasPrefix:@"PRIMARY"] && [parts count] == 3) {
+			else if( [[parts firstObject] hasPrefix:@"PRIMARY"] && [parts count] == 3) {
 				SPSQLParser *keyParser = [SPSQLParser stringWithString:[parts safeObjectAtIndex:2]];
 				keyParser = [SPSQLParser stringWithString:[keyParser stringFromCharacter:'(' toCharacter:')' inclusively:NO skippingBrackets:YES]];
 				NSArray *primaryKeyQuotedNames = [keyParser splitStringByCharacter:','];
@@ -855,7 +855,7 @@
 			
 			// unique keys
 			// add to each corresponding tableColumn the tag "unique" if given
-			else if( [[parts safeObjectAtIndex:0] hasPrefix:@"UNIQUE"]  && [parts count] == 4) {
+			else if( [[parts firstObject] hasPrefix:@"UNIQUE"]  && [parts count] == 4) {
 				SPSQLParser *keyParser = [SPSQLParser stringWithString:[parts safeObjectAtIndex:3]];
 				keyParser = [SPSQLParser stringWithString:[keyParser stringFromCharacter:'(' toCharacter:')' inclusively:NO]];
 				for (NSString *quotedUniqueKey in [keyParser splitStringByCharacter:',']) {

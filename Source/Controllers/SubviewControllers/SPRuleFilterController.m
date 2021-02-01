@@ -941,9 +941,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if(!display) return; // abort if unset
 
 	// try to restore the value from the previous displayValue for input fields
-	RuleNode *oldCriterion = [oldCriteria safeObjectAtIndex:0];
+	RuleNode *oldCriterion = [oldCriteria firstObject];
 	if([curCriterion type] == RuleNodeTypeArgument && oldCriterion && [curCriterion type] == [oldCriterion type]) {
-		NSTextField *oldField = [oldDisplayValues safeObjectAtIndex:0];
+		NSTextField *oldField = [oldDisplayValues firstObject];
 		if(oldField) [display setStringValue:[oldField stringValue]];
 	}
 	[displayValues addObject:display];
@@ -959,7 +959,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSArray *nextOldDisplayValues = ([oldDisplayValues count] > 1 ? [oldDisplayValues subarrayWithRange:NSMakeRange(1, [oldDisplayValues count] - 1)] : [NSArray array]);
 
 		// if the user changed the column, try to retain the previously selected operation
-		RuleNode *nextOldCriterion = [nextOldCriteria safeObjectAtIndex:0];
+		RuleNode *nextOldCriterion = [nextOldCriteria firstObject];
 		if(nextOldCriterion && [nextOldCriterion type] == RuleNodeTypeOperator && [curCriterion type] == RuleNodeTypeColumn) {
 			NSString *opName = [(OpNode *)nextOldCriterion name];
 			OpNode *op = [self _operatorNamed:opName forColumn:(ColumnNode *)curCriterion];
@@ -1719,8 +1719,8 @@ BOOL SerIsGroup(NSDictionary *dict)
 
 		SPTableFilterParser *parser = [[SPTableFilterParser alloc] initWithFilterClause:[filter objectForKey:@"Clause"]
 		                                                              numberOfArguments:[[filter objectForKey:@"NumberOfArguments"] integerValue]];
-		[parser setArgument:[values safeObjectAtIndex:0]];
-		[parser setFirstBetweenArgument:[values safeObjectAtIndex:0]];
+		[parser setArgument:[values firstObject]];
+		[parser setFirstBetweenArgument:[values firstObject]];
 		[parser setSecondBetweenArgument:[values safeObjectAtIndex:1]];
 		[parser setSuppressLeadingTablePlaceholder:[[filter objectForKey:@"SuppressLeadingFieldPlaceholder"] boolValue]];
 		[parser setCaseSensitive:isBINARY];

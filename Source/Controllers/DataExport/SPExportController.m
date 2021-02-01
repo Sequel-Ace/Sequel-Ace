@@ -699,7 +699,7 @@ set_input:
 								  [item safeObjectAtIndex:3],
 								  [item safeObjectAtIndex:4],
 								  nil] 
-						  forKey:[item safeObjectAtIndex:0]];
+						  forKey:[item firstObject]];
 		}
 	}
 	
@@ -756,13 +756,13 @@ set_input:
 		// Restore the user's table selection
 		for (NSUInteger i = 0; i < [tables count]; i++)
 		{
-			NSMutableArray *oldSelection = [tableDict objectForKey:[[tables safeObjectAtIndex:i] safeObjectAtIndex:0]];
+			NSMutableArray *oldSelection = [tableDict objectForKey:[[tables safeObjectAtIndex:i] firstObject]];
 			
 			if (oldSelection) {
 				
 				NSMutableArray *newItem = [[NSMutableArray alloc] initWithArray:oldSelection];
 				
-				[newItem insertObject:[[tables safeObjectAtIndex:i] safeObjectAtIndex:0] atIndex:0];
+				[newItem insertObject:[[tables safeObjectAtIndex:i] firstObject] atIndex:0];
 				
 				[tables safeReplaceObjectAtIndex:i withObject:newItem];
 			}
@@ -1272,7 +1272,7 @@ set_input:
 	previousConnectionEncodingViaLatin1 = [connection encodingUsesLatin1Transport];
 
 	// Add the first exporter to the operation queue
-	[operationQueue addOperation:[exporters safeObjectAtIndex:0]];
+	[operationQueue addOperation:[exporters firstObject]];
 
 	// Remove the exporter we just added to the operation queue from our list of exporters
 	// so we know it's already been done.
@@ -1367,11 +1367,11 @@ set_input:
 					}
 				}
 				else if (exportType == SPDotExport) {
-					[exportTables safeAddObject:[table safeObjectAtIndex:0]];
+					[exportTables safeAddObject:[table firstObject]];
 				}
 				else {
 					if ([[table safeObjectAtIndex:2] boolValue]) {
-						[exportTables safeAddObject:[table safeObjectAtIndex:0]];
+						[exportTables safeAddObject:[table firstObject]];
 					}
 				}
 			}
@@ -1451,7 +1451,7 @@ set_input:
 		if ((![self exportToMultipleFiles]) || (exportSource == SPFilteredExport) || (exportSource == SPQueryExport)) {
 			NSString *selectedTableName = nil;
 
-			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables safeObjectAtIndex:0];
+			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables firstObject];
 
 			[exportFilename setString:createCustomFilename ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
 
@@ -1523,7 +1523,7 @@ set_input:
 		[sqlExporter setSqlExportTables:exportTables];
 
 		// Create custom filename if required
-		NSString *selectedTableName = (exportSource == SPTableExport && [exportTables count] == 1)? [[exportTables safeObjectAtIndex:0] safeObjectAtIndex:0] : nil;
+		NSString *selectedTableName = (exportSource == SPTableExport && [exportTables count] == 1)? [[exportTables firstObject] firstObject] : nil;
 		[exportFilename setString:(createCustomFilename) ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
 
 		// Only append the extension if necessary
@@ -1548,7 +1548,7 @@ set_input:
 		// export, create the single file now and assign it to all subsequently created exporters.
 		if ((![self exportToMultipleFiles]) || (exportSource == SPFilteredExport) || (exportSource == SPQueryExport)) {
 			NSString *selectedTableName = nil;
-			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables safeObjectAtIndex:0];
+			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables firstObject];
 
 			[exportFilename setString:(createCustomFilename) ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
 
@@ -1850,7 +1850,7 @@ set_input:
 					  lineEnding,
 					  lineEnding,
 					  NSLocalizedString(@"Table", @"csv export table heading"),
-					  [[tables safeObjectAtIndex:0] safeObjectAtIndex:0],
+					  [[tables firstObject] firstObject],
 					  lineEnding,
 					  lineEnding] dataUsingEncoding:[connection stringEncoding]]];
 }
@@ -1959,7 +1959,7 @@ set_input:
 		NSString *additionalErrors = filesFailed ? NSLocalizedString(@"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)", @"Additional export file errors") : @"";
 
 		if (filesAlreadyExisting == 1) {
-			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” already exists. Do you want to replace it?", @"Export file already exists message"), [[[files safeObjectAtIndex:0] exportFilePath] lastPathComponent]]];
+			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” already exists. Do you want to replace it?", @"Export file already exists message"), [[[files firstObject] exportFilePath] lastPathComponent]]];
 			[alert setInformativeText:[NSString stringWithFormat:@"%@%@", NSLocalizedString(@"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents.", @"Export file already exists explanatory text"), additionalErrors]];
 		}
 		else if (filesAlreadyExisting == [exportFiles count]) {
@@ -1990,7 +1990,7 @@ set_input:
 	// If one or multiple files failed, but only due to unhandled errors, show a short dialog
 	else {
 		if (filesFailed == 1) {
-			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” could not be created", @"Export file creation error title"), [[[files safeObjectAtIndex:0] exportFilePath] lastPathComponent]]];
+			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"“%@” could not be created", @"Export file creation error title"), [[[files firstObject] exportFilePath] lastPathComponent]]];
 			if (parentFoldersMissing) {
 				[alert setInformativeText:NSLocalizedString(@"The target export folder no longer exists.  Please select a new export location and try again.", @"Export folder missing explanatory text")];
 			} else if (parentFoldersNotWritable) {
@@ -3101,7 +3101,7 @@ set_input:
 		NSMutableDictionary *perObjectSettings = [NSMutableDictionary dictionaryWithCapacity:[tables count]];
 
 		for (NSMutableArray *table in tables) {
-			NSString *key = [table safeObjectAtIndex:0];
+			NSString *key = [table firstObject];
 			id settings = [self exporterSpecificSettingsForSchemaObject:key ofType:SPTableTypeTable];
 			if(settings)
 				[perObjectSettings safeSetObject:settings forKey:key];
@@ -3433,7 +3433,7 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views' rows to find the current checkbox value...
 		for (NSArray *table in tables) {
-			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+			if([[table firstObject] isEqualTo:name]) {
 				return @([[table safeObjectAtIndex:2] boolValue]);
 			}
 		}
@@ -3447,7 +3447,7 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views' rows to find the appropriate table...
 		for (NSMutableArray *table in tables) {
-			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+			if([[table firstObject] isEqualTo:name]) {
 				[table safeReplaceObjectAtIndex:2 withObject:@([settings boolValue])];
 				return;
 			}
@@ -3461,7 +3461,7 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views rows to find the current checkbox value...
 		for (NSArray *table in tables) {
-			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+			if([[table firstObject] isEqualTo:name]) {
 				return @([[table safeObjectAtIndex:2] boolValue]);
 			}
 		}
@@ -3475,7 +3475,7 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views' rows to find the appropriate table...
 		for (NSMutableArray *table in tables) {
-			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+			if([[table firstObject] isEqualTo:name]) {
 				[table safeReplaceObjectAtIndex:2 withObject:@([settings boolValue])];
 				return;
 			}
@@ -3493,7 +3493,7 @@ set_input:
 	if(type == SPTableTypeTable) {
 		// we have to look through the table views rows to find the current checkbox value...
 		for (NSArray *table in tables) {
-			if([[table safeObjectAtIndex:0] isEqualTo:name]) {
+			if([[table firstObject] isEqualTo:name]) {
 				NSMutableArray *flags = [NSMutableArray arrayWithCapacity:3];
 
 				if (structure && [[table safeObjectAtIndex:1] boolValue]) {
@@ -3577,7 +3577,7 @@ set_input:
 													 [exporter csvLineEndingString],
 													 [exporter csvLineEndingString],
 													 NSLocalizedString(@"Table", @"csv export table heading"),
-													 [(SPCSVExporter *)[exporters safeObjectAtIndex:0] csvTableName],
+													 [(SPCSVExporter *)[exporters firstObject] csvTableName],
 													 [exporter csvLineEndingString],
 													 [exporter csvLineEndingString]] dataUsingEncoding:[exporter exportOutputEncoding]]];
 		}
@@ -3587,7 +3587,7 @@ set_input:
 			[[exporter exportOutputFile] close];
 		}
 
-		[operationQueue addOperation:[exporters safeObjectAtIndex:0]];
+		[operationQueue addOperation:[exporters firstObject]];
 
 		// Remove the exporter we just added to the operation queue from our list of exporters
 		// so we know it's already been done.
@@ -3719,7 +3719,7 @@ set_input:
 			[[exporter exportOutputFile] close];
 		}
 
-		[operationQueue addOperation:[exporters safeObjectAtIndex:0]];
+		[operationQueue addOperation:[exporters firstObject]];
 
 		// Remove the exporter we just added to the operation queue from our list of exporters
 		// so we know it's already been done.

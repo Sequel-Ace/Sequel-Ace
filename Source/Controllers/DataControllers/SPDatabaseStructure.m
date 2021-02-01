@@ -335,7 +335,7 @@
 			// Loop through the fields, extracting details for each
 			for (NSArray *row in theResult) {
 
-				NSString *field = [row safeObjectAtIndex:0];
+				NSString *field = [row firstObject];
 				NSString *type = [row safeObjectAtIndex:1];
 				NSString *type_display = [type stringByReplacingOccurrencesOfRegex:@"\\(.*?,.*?\\)" withString:@"(…)"];
 				NSString *collation = [row safeObjectAtIndex:2];
@@ -351,7 +351,7 @@
 				NSString *charset = @"";
 				if (![collation isNSNull]) {
 					NSArray *a = [collation componentsSeparatedByString:@"_"];
-					charset = [a safeObjectAtIndex:0];
+					charset = [a firstObject];
 				}
 
 				// Add a structure key for this field
