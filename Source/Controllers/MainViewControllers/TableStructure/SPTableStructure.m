@@ -1234,15 +1234,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// Remove the foreign key before the field if required
 			if ([removeForeignKey boolValue]) {
 				NSString *relationName = @"";
-				NSString *field = [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"];
+				NSString *field = [[self->tableFields safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"];
 
 				// Get the foreign key name
 				for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
 				{
-					for (NSString *column in [constraint objectForKey:@"columns"])
+					for (NSString *column in [constraint safeObjectForKey:@"columns"])
 					{
 						if ([column isEqualToString:field]) {
-							relationName = [constraint objectForKey:@"name"];
+							relationName = [constraint safeObjectForKey:@"name"];
 							break;
 						}
 					}
@@ -1261,7 +1261,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Remove field
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString]]];
+																	[self->selectedTable backtickQuotedString], [[[self->tableFields safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
