@@ -3227,3 +3227,9 @@
 
 /* Error message when a bash task fails to start */
 "Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
+
+/* Error message title when we failed to create new connection view */
+"New Connection Error" = "New Connection Error";
+
+/* New Connection Error informative message */
+"Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
