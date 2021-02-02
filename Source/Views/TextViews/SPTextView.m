@@ -1108,9 +1108,10 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	NSString *selString = [[self string] substringWithRange:currentRange];
 
-	// Replace the current selection with the selected string wrapped in prefix and suffix
-	[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@%@%@", prefix, selString, suffix]]];
-	
+    // Replace the current selection with the selected string wrapped in prefix and suffix
+    [self.textStorage deleteCharactersInRange:currentRange];
+    [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@%@%@", prefix, selString, suffix]] atIndex:currentRange.location];
+
 	// Re-select original selection
 	NSRange innerSelectionRange = NSMakeRange(currentRange.location+1, [selString length]);
 	[self setSelectedRange:innerSelectionRange];
