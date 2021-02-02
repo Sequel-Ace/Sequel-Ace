@@ -231,7 +231,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorVariableColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTextColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
-	[prefs addObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPCustomQueryAutoIndent options:NSKeyValueObservingOptionNew context:NULL];
 }
 
 - (void) setConnection:(SPMySQLConnection *)theConnection withVersion:(NSInteger)majorVersion
@@ -308,10 +309,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
 	} else if ([keyPath isEqualToString:SPCustomQueryAutoUppercaseKeywords]) {
-		[self setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
-	} else {
-		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-	}
+        [self setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
+    } else if ([keyPath isEqualToString:SPCustomQueryAutoIndent]) {
+        [self setAutoindent:[prefs boolForKey:SPCustomQueryAutoIndent]];
+    } else {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+    }
 }
 
 - (void)doSyntaxHighlightingWithForceWrapper:(NSString*)keyPath{
@@ -2491,7 +2494,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	// Handle newlines, adding any indentation found on the current line to the new line - ignoring the enter key if appropriate
 	if (aSelector == @selector(insertNewline:)
-		&& [prefs boolForKey:SPCustomQueryAutoIndent]
+		&& autoindentEnabled
 		&& (!autoindentIgnoresEnter || [[NSApp currentEvent] keyCode] != 0x4C))
 	{
 		NSString *textViewString = [[self textStorage] string];
@@ -2505,6 +2508,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		currentLine = [[NSString alloc] initWithString:[textViewString substringWithRange:currentLineRange]];
 		lineCursorLocation = [self selectedRange].location - currentLineRange.location;
 
+        SPLog(@"selectedRange: %@", NSStringFromRange([self selectedRange]));
+
 		// Scan all indentation characters on the line into a string
 		whitespaceScanner = [[NSScanner alloc] initWithString:currentLine];
 		[whitespaceScanner setCharactersToBeSkipped:nil];
@@ -2512,13 +2517,17 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		// Always add the newline, whether or not we want to indent the next line
 		[self insertNewline:self];
+        SPLog(@"selectedRange now: %@", NSStringFromRange([self selectedRange]));
 
 		// Replicate the indentation on the previous line if one was found.
 		if (indentString) {
+            SPLog(@"got indentString: [%@]", indentString);
 			if (lineCursorLocation < [indentString length]) {
-				[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]]];
+                SPLog(@"lineCursorLocation < [indentString length]: [%lu] < [%lu]", (unsigned long)lineCursorLocation,(unsigned long)[indentString length] );
+                [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]] atIndex:[self selectedRange].location];
 			} else {
-				[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:indentString]];
+                SPLog(@"lineCursorLocation >= [indentString length]: [%lu] >= [%lu]", (unsigned long)lineCursorLocation,(unsigned long)[indentString length] );
+                [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:indentString] atIndex:[self selectedRange].location];
 			}
 		}
 
@@ -3607,7 +3616,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorVariableColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTextColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth];
-	[prefs removeObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords];
+    [prefs removeObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords];
+    [prefs removeObserver:self forKeyPath:SPCustomQueryAutoIndent];
 
 	if (completionIsOpen) (void)([completionPopup close]), completionIsOpen = NO;
 }
