@@ -1369,7 +1369,7 @@
 				} else if([insertItem isSPNotLoaded]) {
 					[globalVar setString:@"NULL"];
 				} else {
-					[globalVar setString:insertItem];
+					[globalVar setStringOrNil:insertItem];
 					// Global variables are coming wrapped in ' ' if there're not marked as SQL.
 					// If global variable contains column placeholders $1 etc. replace them.
 					if([globalVar rangeOfString:@"$"].length && [globalVar isMatchedByRegex:re]) {
@@ -1421,7 +1421,7 @@
 				} else if([insertItem isSPNotLoaded]) {
 					[globalVar setString:@"NULL"];
 				} else {
-					[globalVar setString:insertItem];
+					[globalVar setStringOrNil:insertItem];
 					// Global variables are coming wrapped in ' ' if there're not marked as SQL.
 					// If global variable contains column placeholders $1 etc. replace them.
 					if([globalVar rangeOfString:@"$"].length && [globalVar isMatchedByRegex:re]) {
@@ -1499,7 +1499,7 @@
 			} else if([insertItem isSPNotLoaded]) {
 				[globalVar setString:@"NULL"];
 			} else {
-				[globalVar setString:insertItem];
+				[globalVar setStringOrNil:insertItem];
 				// Global variables are coming wrapped in ' ' if there're not marked as SQL.
 				// If global variable contains column placeholders $1 etc. replace them by escaped 'csv content' or NULL.
 				if([globalVar rangeOfString:@"$"].length && [globalVar isMatchedByRegex:re]) {

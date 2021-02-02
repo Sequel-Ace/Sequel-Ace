@@ -506,10 +506,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	
 	if (isEditingNewRow) {
 		isEditingNewRow = NO;
-		[tableFields removeObjectAtIndex:currentlyEditingRow];
+		[tableFields safeRemoveObjectAtIndex:currentlyEditingRow];
 	} 
 	else {
-		[tableFields replaceObjectAtIndex:currentlyEditingRow withObject:[NSMutableDictionary dictionaryWithDictionary:oldRow]];
+		[tableFields safeReplaceObjectAtIndex:currentlyEditingRow withObject:[NSMutableDictionary dictionaryWithDictionary:oldRow]];
 	}
 	
 	isEditingRow = NO;
@@ -700,13 +700,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[tableFields objectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 			}
 		}
 		else {
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[tableFields objectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 			}
 
 			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] backtickQuotedString]];
@@ -714,7 +714,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	// Add AFTER ... only if the user added a new field
 	else if (isEditingNewRow) {
-		[queryString appendFormat:@"\n AFTER %@", [[[tableFields objectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 	}
 
 	isCurrentExtraAutoIncrement = NO;
@@ -1139,7 +1139,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [row count]; j++)
 		{
 			if ([[row objectAtIndex:j] isNSNull]) {
-				[row replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
+				[row safeReplaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
@@ -1156,7 +1156,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [eachIndex count]; j++)
 		{
 			if ([[eachIndex objectAtIndex:j] isNSNull]) {
-				[eachIndex replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
+				[eachIndex safeReplaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
@@ -1234,15 +1234,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// Remove the foreign key before the field if required
 			if ([removeForeignKey boolValue]) {
 				NSString *relationName = @"";
-				NSString *field = [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"];
+				NSString *field = [[self->tableFields safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"];
 
 				// Get the foreign key name
 				for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
 				{
-					for (NSString *column in [constraint objectForKey:@"columns"])
+					for (NSString *column in [constraint safeObjectForKey:@"columns"])
 					{
 						if ([column isEqualToString:field]) {
-							relationName = [constraint objectForKey:@"name"];
+							relationName = [constraint safeObjectForKey:@"name"];
 							break;
 						}
 					}
@@ -1261,7 +1261,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Remove field
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString]]];
+																	[self->selectedTable backtickQuotedString], [[[self->tableFields safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {

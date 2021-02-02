@@ -257,7 +257,15 @@
 	NSPipe *stderr_pipe = [NSPipe pipe];
 	[bashTask setStandardError:stderr_pipe];
 	NSFileHandle *stderr_file = [stderr_pipe fileHandleForReading];
-	[bashTask launch];
+    @try {
+        [bashTask launch];
+    }
+    @catch (NSException *myException) {
+        NSString *errMessage = [NSString stringWithFormat:NSLocalizedString(@"Couldn't launch task.\nException reason: %@\n ENV length: %lu", @"Exception reason: %@\n ENV length: %lu"), [myException reason], envStr.length + argArrLen];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errMessage callback:nil];
+        return @"";
+    }
+
 	NSInteger pid = -1;
 	if(caller != nil && [caller respondsToSelector:@selector(registerActivity:)]) {
 		// register command
