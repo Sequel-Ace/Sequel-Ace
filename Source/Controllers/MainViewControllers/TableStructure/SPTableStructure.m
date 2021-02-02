@@ -506,10 +506,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	
 	if (isEditingNewRow) {
 		isEditingNewRow = NO;
-		[tableFields removeObjectAtIndex:currentlyEditingRow];
+		[tableFields safeRemoveObjectAtIndex:currentlyEditingRow];
 	} 
 	else {
-		[tableFields replaceObjectAtIndex:currentlyEditingRow withObject:[NSMutableDictionary dictionaryWithDictionary:oldRow]];
+		[tableFields safeReplaceObjectAtIndex:currentlyEditingRow withObject:[NSMutableDictionary dictionaryWithDictionary:oldRow]];
 	}
 	
 	isEditingRow = NO;
@@ -1139,7 +1139,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [row count]; j++)
 		{
 			if ([[row objectAtIndex:j] isNSNull]) {
-				[row replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
+				[row safeReplaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
@@ -1156,7 +1156,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (j = 0; j < [eachIndex count]; j++)
 		{
 			if ([[eachIndex objectAtIndex:j] isNSNull]) {
-				[eachIndex replaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
+				[eachIndex safeReplaceObjectAtIndex:j withObject:(__bridge NSString *)escapedNullValue];
 			}
 		}
 
