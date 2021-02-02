@@ -124,10 +124,14 @@ typedef enum {
 		NSString *filePath = [NSBundle pathForResource:@"EditorQuickLookTypes"
 												ofType:@"plist"
 										   inDirectory:[[NSBundle mainBundle] bundlePath]];
-		
-		NSData *defaultTypeData = [NSData dataWithContentsOfFile:filePath
-														 options:NSMappedRead
-														   error:&readError];
+
+        NSData *defaultTypeData = nil;
+
+        if(filePath != nil){
+            defaultTypeData = [NSData dataWithContentsOfFile:filePath
+                                                     options:NSMappedRead
+                                                       error:&readError];
+        }
 
 		NSDictionary *defaultQLTypes = nil;
 		if(defaultTypeData && !readError) {
