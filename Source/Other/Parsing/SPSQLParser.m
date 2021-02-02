@@ -236,9 +236,11 @@
 
 	// Trim if necessary
 	if (whitespaceCharsAtStart || whitespaceCharsAtEnd) {
-		stringLength -= whitespaceCharsAtStart + whitespaceCharsAtEnd;
 		queryString = [queryString safeSubstringWithRange:NSMakeRange(whitespaceCharsAtStart, stringLength)];
 	}
+
+    // reset stringLength to take into account any changes above.
+    stringLength = [queryString length];
 
 	// Check for carriage returns in the string
 	NSMutableArray *carriageReturnPositions = [NSMutableArray array];

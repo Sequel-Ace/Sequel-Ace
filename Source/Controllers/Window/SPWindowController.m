@@ -119,20 +119,26 @@
 
 	// Set up a new tab with the connection view as the identifier, add the view, and add it to the tab view
     NSTabViewItem *newItem = [[NSTabViewItem alloc] initWithIdentifier:databaseDocument];
-	
-	[newItem setView:[databaseDocument databaseView]];
-    [self.tabView addTabViewItem:newItem];
-    [self.tabView selectTabViewItem:newItem];
-	[databaseDocument setParentTabViewItem:newItem];
 
-	// Tell the new database connection view to set up the window and update titles
-	[databaseDocument didBecomeActiveTabInWindow];
-	[databaseDocument updateWindowTitle:self];
+    if(newItem != nil){
+        [newItem setView:[databaseDocument databaseView]];
+        [self.tabView addTabViewItem:newItem];
+        [self.tabView selectTabViewItem:newItem];
+        [databaseDocument setParentTabViewItem:newItem];
 
-	// Bind the tab bar's progress display to the document
-	[self _updateProgressIndicatorForItem:newItem];
-	
-	return databaseDocument;
+        // Tell the new database connection view to set up the window and update titles
+        [databaseDocument didBecomeActiveTabInWindow];
+        [databaseDocument updateWindowTitle:self];
+
+        // Bind the tab bar's progress display to the document
+        [self _updateProgressIndicatorForItem:newItem];
+    }
+    else{
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"New Connection Error", @"New Connection Error") message:NSLocalizedString(@"Failed to create new database connection window. Please restart Sequel Ace and try again.", @"New Connection Error informative message") callback:nil];
+        SPLog(@"Failed to create new NSTabViewItem. databaseDocument = %@", databaseDocument);
+    }
+
+    return databaseDocument;
 }
 
 /**
