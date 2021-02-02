@@ -700,13 +700,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[tableFields objectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 			}
 		}
 		else {
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[tableFields objectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 			}
 
 			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] backtickQuotedString]];
@@ -714,7 +714,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	// Add AFTER ... only if the user added a new field
 	else if (isEditingNewRow) {
-		[queryString appendFormat:@"\n AFTER %@", [[[tableFields objectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 	}
 
 	isCurrentExtraAutoIncrement = NO;
