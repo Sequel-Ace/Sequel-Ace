@@ -3224,3 +3224,6 @@
 
 /* Applying syntax highlighting task description */
 "Applying syntax highlighting..." = "Applying syntax highlighting...";
+
+/* Error message when a bash task fails to start */
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
