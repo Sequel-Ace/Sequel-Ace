@@ -232,6 +232,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTextColor options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPCustomQueryAutoIndent options:NSKeyValueObservingOptionNew context:NULL];
 }
 
 - (void) setConnection:(SPMySQLConnection *)theConnection withVersion:(NSInteger)majorVersion
@@ -309,6 +310,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[self setTabStops];
 	} else if ([keyPath isEqualToString:SPCustomQueryAutoUppercaseKeywords]) {
 		[self setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
+    } else if ([keyPath isEqualToString:SPCustomQueryAutoIndent]) {
+        [self setAutoindent:[prefs boolForKey:SPCustomQueryAutoIndent]];
 	} else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
@@ -2491,7 +2494,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	// Handle newlines, adding any indentation found on the current line to the new line - ignoring the enter key if appropriate
 	if (aSelector == @selector(insertNewline:)
-		&& [prefs boolForKey:SPCustomQueryAutoIndent]
+		&& autoindentEnabled
 		&& (!autoindentIgnoresEnter || [[NSApp currentEvent] keyCode] != 0x4C))
 	{
 		NSString *textViewString = [[self textStorage] string];
@@ -3608,6 +3611,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTextColor];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords];
+    [prefs removeObserver:self forKeyPath:SPCustomQueryAutoIndent];
 
 	if (completionIsOpen) (void)([completionPopup close]), completionIsOpen = NO;
 }
