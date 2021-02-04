@@ -358,7 +358,20 @@
 				NSString *field_id = [NSString stringWithFormat:@"%@%@%@", table_id, SPUniqueSchemaDelimiter, field];
 				[queriedStructureKeys addObject:field_id];
 
-				[tableStructure setObject:[NSArray arrayWithObjects:type, def, isnull, charset, collation, key, extra, priv, comment, type_display, [NSNumber numberWithUnsignedLongLong:uniqueCounter], nil] forKey:field_id];
+                NSMutableArray *tmpDetailArray = [[NSMutableArray alloc] init];
+                [tmpDetailArray safeAddObject:type];
+                [tmpDetailArray safeAddObject:def];
+                [tmpDetailArray safeAddObject:isnull];
+                [tmpDetailArray safeAddObject:charset];
+                [tmpDetailArray safeAddObject:collation];
+                [tmpDetailArray safeAddObject:key];
+                [tmpDetailArray safeAddObject:extra];
+                [tmpDetailArray safeAddObject:priv];
+                [tmpDetailArray safeAddObject:comment];
+                [tmpDetailArray safeAddObject:type_display];
+                [tmpDetailArray safeAddObject:[NSNumber numberWithUnsignedLongLong:uniqueCounter]];
+
+				[tableStructure setObject:tmpDetailArray forKey:field_id];
 				[tableStructure setObject:[aTableDict objectForKey:@"type"] forKey:@"  struct_type  "];
 				uniqueCounter++;
 			}
@@ -383,13 +396,13 @@
 
 			// Loop through the rows and extract the function details
 			for (NSArray *row in theResult) {
-				NSString *fname         =   [row objectAtIndex:0];
-				NSNumber *type          = ([[row objectAtIndex:1] isEqualToString:@"FUNCTION"]) ? @(SPTableTypeFunc) : @(SPTableTypeProc);
-				NSString *dtd           =   [row objectAtIndex:2];
-				NSString *det           =   [row objectAtIndex:3];
-				NSString *dataaccess    =   [row objectAtIndex:4];
-				NSString *security_type =   [row objectAtIndex:5];
-				NSString *definer       =   [row objectAtIndex:6];
+				NSString *fname         =   [row firstObject];
+				NSNumber *type          = ([[row safeObjectAtIndex:1] isEqualToString:@"FUNCTION"]) ? @(SPTableTypeFunc) : @(SPTableTypeProc);
+				NSString *dtd           =   [row safeObjectAtIndex:2];
+				NSString *det           =   [row safeObjectAtIndex:3];
+				NSString *dataaccess    =   [row safeObjectAtIndex:4];
+				NSString *security_type =   [row safeObjectAtIndex:5];
+				NSString *definer       =   [row safeObjectAtIndex:6];
 
 				// Generate "table" and "field" names and add to structure key store
 				NSString *table_id = [NSString stringWithFormat:@"%@%@%@", db_id, SPUniqueSchemaDelimiter, fname];
@@ -402,9 +415,16 @@
 					[[queriedStructure valueForKey:db_id] setObject:[NSMutableDictionary dictionary] forKey:table_id];
 				}
 
+                NSMutableArray *tmpDetailArray = [[NSMutableArray alloc] init];
+                [tmpDetailArray safeAddObject:dtd];
+                [tmpDetailArray safeAddObject:dataaccess];
+                [tmpDetailArray safeAddObject:det];
+                [tmpDetailArray safeAddObject:security_type];
+                [tmpDetailArray safeAddObject:definer];
+                [tmpDetailArray safeAddObject:[NSNumber numberWithUnsignedLongLong:uniqueCounter]];
+
 				// Add the "field" details
-				[[[queriedStructure valueForKey:db_id] valueForKey:table_id] setObject:
-					[NSArray arrayWithObjects:dtd, dataaccess, det, security_type, definer, [NSNumber numberWithUnsignedLongLong:uniqueCounter], nil] forKey:field_id];
+				[[[queriedStructure valueForKey:db_id] valueForKey:table_id] setObject:tmpDetailArray forKey:field_id];
 				[[[queriedStructure valueForKey:db_id] valueForKey:table_id] setObject:type forKey:@"  struct_type  "];
 				uniqueCounter++;
 			}

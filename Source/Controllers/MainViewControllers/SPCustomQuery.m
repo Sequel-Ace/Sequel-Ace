@@ -220,11 +220,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             NSLog(@"Could not find a query range suitable to run query");
             return;
         }
-        queries = @[[SPSQLParser normaliseQueryForExecution:[[textView string] substringWithRange:currentQueryRange]]];
+        queries = @[[SPSQLParser normaliseQueryForExecution:[[textView string] safeSubstringWithRange:currentQueryRange]]];
         
         // Otherwise, run the selected text.
     } else {
-        SPSQLParser *queryParser = [[SPSQLParser alloc] initWithString:[[textView string] substringWithRange:selectedRange]];
+        SPSQLParser *queryParser = [[SPSQLParser alloc] initWithString:[[textView string] safeSubstringWithRange:selectedRange]];
         [queryParser setDelimiterSupport:YES];
         queries = [queryParser splitStringByCharacter:';'];
         
