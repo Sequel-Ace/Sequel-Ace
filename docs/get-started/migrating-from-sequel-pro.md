@@ -23,7 +23,7 @@ to
 ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Preferences/com.sequel-ace.sequel-ace.plist
 
 5. Copy
-~/Library/Application Support/Sequel Pro/Data/Favorites.plist
+~/Library/Application\ Support/Sequel\ Pro/Data/Favorites.plist
 to
 ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data/Favorites.plist
 
