@@ -16,6 +16,12 @@ extension DateFormatter {
 		formatter.timeStyle = .medium
 		return formatter
 	}()
+
+    @objc public static var iso8601DateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
 	
 	@objc public static var mediumStyleNoDateFormatter: DateFormatter = {
 		let formatter = DateFormatter()
