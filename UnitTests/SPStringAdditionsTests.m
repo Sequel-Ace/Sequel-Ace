@@ -309,6 +309,116 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 }
 
+//0.133 s
+- (void)testPerformanceDateStringFromUnixTimestamp{
+    // This is an example of a performance test case.
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        double epoch = 1641629299;
+
+        int const iterations = 100000;
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                // exec on bg thread
+                epoch = epoch + i;
+                NSString *epochStr = [NSString stringWithFormat:@"%f", epoch];
+                NSString __unused *tmp = epochStr.dateStringFromUnixTimestamp;
+            }
+        }
+    }];
+}
+
+//0.273 s
+- (void)testPerformanceDateStringFromUnixTimestamp2{
+    // This is an example of a performance test case.
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        NSString *epochStr = @"1641629299";
+        int const iterations = 100000;
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                // exec on bg thread
+                NSString __unused *tmp = epochStr.dateStringFromUnixTimestamp;
+            }
+        }
+
+    }];
+}
+
+- (void)testIsUnixTimeStamp{
+
+    NSString *justOver100YAgo = @"-1574579624";
+    XCTAssertNil(justOver100YAgo.dateStringFromUnixTimestamp);
+
+    NSString *justUnder100YAgo = @"-1479885224";
+    XCTAssertNotNil(justUnder100YAgo.dateStringFromUnixTimestamp);
+
+    NSString *justOver100YinTheFut = @"4800012376";
+    XCTAssertNil(justOver100YinTheFut.dateStringFromUnixTimestamp);
+
+    NSString *justUnder100YinTheFut = @"4736853976";
+    XCTAssertNotNil(justUnder100YinTheFut.dateStringFromUnixTimestamp);
+
+    NSString *aboutNow = @"1612803456";
+    XCTAssertNotNil(aboutNow.dateStringFromUnixTimestamp);
+
+}
+
+// 0.429 s
+- (void)testPerformanceIsUnixTimeStamp{
+
+    // This is an example of a performance test case.
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+
+        double epoch = 1542957224;
+        int const iterations = 100000;
+        double twoYears = epoch + 31536000 + 31536000;
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                // exec on bg thread
+                epoch = epoch + i;
+                if(epoch > twoYears) epoch = 1578470899;
+                NSString *epochStr = [NSString stringWithFormat:@"%f", epoch];
+                NSString __unused *tmp = epochStr.dateStringFromUnixTimestamp;
+            }
+        }
+    }];
+}
+
+//0.138 s
+- (void)testPerformanceIsUnixTimeStamp2{
+
+    // This is an example of a performance test case.
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+
+        double epoch = 1542957224;
+        int const iterations = 100000;
+
+        int count = 0;
+
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                // exec on bg thread
+                epoch = epoch + i;
+                uint32_t randomNum = arc4random() % 2;
+
+                NSString *epochStr = [NSString stringWithFormat:@"%f", epoch];
+
+                if(randomNum > 0){
+                    NSString __unused *tmp2 = epochStr.dateStringFromUnixTimestamp;
+                    count++;
+                }
+
+            }
+        }
+    }];
+}
+
 
 // 0.95 s
 - (void)testSHA256Perf{

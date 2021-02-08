@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 extension String {
 	func dropPrefix(_ prefix: String) -> String {
@@ -105,5 +106,34 @@ extension String {
     public func separatedIntoLinesObjc() -> [NSString] {
         return (self as String).separatedIntoLines() as [NSString]
     }
+
+    public func dateStringFromUnixTimestamp() -> NSString? {
+        os_log("string [%@]", log: OSLog.default, type: .error, self)
+
+        guard
+            let timeInterval = self.doubleValue as Double?,
+            timeInterval != 0.0
+        else{
+            os_log("string [%@] cannot be represented as a double", log: OSLog.default, type: .error, self)
+            return nil
+        }
+
+        let now = Int(Date().timeIntervalSince1970)
+        os_log("unix timestamp for now: %i", log: OSLog.default, type: .debug, now)
+
+        let oneHundredYears: Int = 3153600000
+        let upperBound = now + oneHundredYears
+        let lowerBound = now - oneHundredYears
+
+        if Int(timeInterval) > lowerBound && Int(timeInterval) < upperBound {
+            os_log("unix timestamp within +/- oneHundredYears", log: OSLog.default, type: .debug)
+            let date = Date(timeIntervalSince1970: timeInterval)
+            let formatter = DateFormatter.iso8601DateFormatter
+            return formatter.string(from: date) as NSString
+        }
+        os_log("unix timestamp NOT within +/- oneHundredYears", log: OSLog.default, type: .debug)
+        return nil
+    }
+
 
 }
