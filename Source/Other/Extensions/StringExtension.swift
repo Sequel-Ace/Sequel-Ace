@@ -121,17 +121,17 @@ extension String {
         let now = Int(Date().timeIntervalSince1970)
         os_log("unix timestamp for now: %i", log: OSLog.default, type: .debug, now)
 
-        let aYear: Int = 31536000
-        let upperBound = now + aYear
-        let lowerBound = now - aYear
+        let oneHundredYears: Int = 3153600000
+        let upperBound = now + oneHundredYears
+        let lowerBound = now - oneHundredYears
 
         if Int(timeInterval) > lowerBound && Int(timeInterval) < upperBound {
-            os_log("unix timestamp within +/- one year", log: OSLog.default, type: .debug)
+            os_log("unix timestamp within +/- oneHundredYears", log: OSLog.default, type: .debug)
             let date = Date(timeIntervalSince1970: timeInterval)
             let formatter = DateFormatter.iso8601DateFormatter
             return formatter.string(from: date) as NSString
         }
-        os_log("unix timestamp NOT within +/- one year", log: OSLog.default, type: .debug)
+        os_log("unix timestamp NOT within +/- oneHundredYears", log: OSLog.default, type: .debug)
         return nil
     }
 

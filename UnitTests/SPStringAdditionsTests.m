@@ -347,6 +347,25 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     }];
 }
 
+- (void)testIsUnixTimeStamp{
+
+    NSString *justOver100YAgo = @"-1574579624";
+    XCTAssertNil(justOver100YAgo.dateStringFromUnixTimestamp);
+
+    NSString *justUnder100YAgo = @"-1479885224";
+    XCTAssertNotNil(justUnder100YAgo.dateStringFromUnixTimestamp);
+
+    NSString *justOver100YinTheFut = @"4800012376";
+    XCTAssertNil(justOver100YinTheFut.dateStringFromUnixTimestamp);
+
+    NSString *justUnder100YinTheFut = @"4736853976";
+    XCTAssertNotNil(justUnder100YinTheFut.dateStringFromUnixTimestamp);
+
+    NSString *aboutNow = @"1612803456";
+    XCTAssertNotNil(aboutNow.dateStringFromUnixTimestamp);
+
+}
+
 // 0.429 s
 - (void)testPerformanceIsUnixTimeStamp{
 
@@ -354,7 +373,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
-        double epoch = 1578470899;
+        double epoch = 1542957224;
         int const iterations = 100000;
         double twoYears = epoch + 31536000 + 31536000;
 
@@ -377,7 +396,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
-        double epoch = 1578470899;
+        double epoch = 1542957224;
         int const iterations = 100000;
 
         int count = 0;
