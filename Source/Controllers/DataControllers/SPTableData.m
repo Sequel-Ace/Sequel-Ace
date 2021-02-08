@@ -470,12 +470,12 @@
 
     if (database){
         queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [database backtickQuotedString], [tableName backtickQuotedString]];
-        theResult = [mySQLConnection queryString:queryStr];
     }
     else{
         queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]];
-        theResult = [mySQLConnection queryString:queryStr];
     }
+
+    theResult = [mySQLConnection queryString:queryStr];
 
     SPLog(@"queryStr: %@", queryStr);
 

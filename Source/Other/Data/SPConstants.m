@@ -64,7 +64,6 @@ NSString *SPMySQLDatabase                        = @"mysql";
 NSString *SPMySQLInformationSchemaDatabase       = @"information_schema";
 NSString *SPMySQLPerformanceSchemaDatabase       = @"performance_schema";
 NSString *SPMySQLSysDatabase                     = @"sys";
-NSString *SPMySQLTempTableName                   = @"my_temp_table";
 
 // Table view drag types
 NSString *SPDefaultPasteboardDragType            = @"SequelProPasteboard";
