@@ -57,7 +57,8 @@
 //	See more possible syntaxa in SPTooltip to init a tooltip
 
 #import "SPTooltip.h"
-
+#import "SPFunctions.h"
+#import "sequel-ace-Swift.h"
 #include <tgmath.h>
 
 static NSInteger spTooltipCounter = 0;
@@ -160,6 +161,15 @@ static CGFloat slow_in_out (CGFloat t)
 	if([type isEqualToString:@"text"]) {
 		NSString* html = nil;
 		NSMutableString* text = [(NSString*)content mutableCopy];
+
+        // check to see if the string is a unix timestamp, within +/- one year
+        // if it is create a date time string from the unix timestamp
+        NSString *unixTimestampAsString = text.dateStringFromUnixTimestamp;
+        if(!IsEmpty(unixTimestampAsString)){
+            SPLog(@"unixTimestampAsString: %@", unixTimestampAsString);
+            [text setString:unixTimestampAsString];
+        }
+
 		if(text)
 		{
 			int fontSize = ([displayOptions objectForKey:@"fontsize"]) ? [[displayOptions objectForKey:@"fontsize"] intValue] : 10;
@@ -171,6 +181,7 @@ static CGFloat slow_in_out (CGFloat t)
 							atIndex:0];
 			[text appendString:@"</pre>"];
 			html = text;
+            SPLog(@"html: %@", html);
 		}
 		else
 		{
