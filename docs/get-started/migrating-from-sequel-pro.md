@@ -23,11 +23,11 @@ to
 ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Preferences/com.sequel-ace.sequel-ace.plist
 
 5. Copy
-~/Library/Application Support/Sequel Pro/Data/Favorites.plist
+~/Library/Application\ Support/Sequel\ Pro/Data/Favorites.plist
 to
-~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application Support/Sequel Ace/Data/Favorites.plist
+~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data/Favorites.plist
 
-6. Open up the Keychain Access app ( /System/Applications/Utilities/Keychain Access.app )
+6. Open up the Keychain Access app ( /System/Applications/Utilities/Keychain\ Access.app )
 
 7. Search for ‘sequel pro’ — this should list all your Sequel Pro connections / favorites. You may also note some SSHTunnel items if you use those in Sequel Pro
 
