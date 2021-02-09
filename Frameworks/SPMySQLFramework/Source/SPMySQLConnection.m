@@ -1128,7 +1128,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
 	NSMutableDictionary *variables = [NSMutableDictionary new];
 	for (NSArray *variableRow in theResult) {
-		[variables SPsafeSetObject:[variableRow SPsafeObjectAtIndex:1] forKey:[variableRow SPsafeObjectAtIndex:0]];
+		[variables SPsafeSetObject:[variableRow SPsafeObjectAtIndex:1] forKey:[variableRow firstObject]];
 	}
 
 	// Get the connection encoding.  Although a specific encoding may have been requested on

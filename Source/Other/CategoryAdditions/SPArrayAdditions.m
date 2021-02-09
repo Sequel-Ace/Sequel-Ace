@@ -146,4 +146,14 @@
     return idx < self.count ? [self objectAtIndex:idx] : nil;
 }
 
+- (id)firstObjectPassingTest:(BOOL (^)(id obj, NSUInteger idx, BOOL *stop))predicate {
+
+    NSUInteger ix = [self indexOfObjectPassingTest:predicate];
+    if (ix == NSNotFound) {
+        return nil;
+    }
+
+    return self[ix];
+}
+
 @end

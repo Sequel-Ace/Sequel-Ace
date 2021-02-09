@@ -248,13 +248,13 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	[tableCollationPopUpButton removeAllItems];
 
 	// No table selected or view selected
-	if ((!table) || [table isEqualToString:@""] || [[statusFields objectForKey:@"Engine"] isEqualToString:@"View"]) {
+	if ((!table) || [table isEqualToString:@""] || [[statusFields safeObjectForKey:@"Engine"] isEqualToString:@"View"]) {
 
 		[tableTypePopUpButton setEnabled:NO];
 		[tableEncodingPopUpButton setEnabled:NO];
 		[tableCollationPopUpButton setEnabled:NO];
 
-		if ([[statusFields objectForKey:SPMySQLEngineField] isEqualToString:@"View"]) {
+		if ([[statusFields safeObjectForKey:SPMySQLEngineField] isEqualToString:@"View"]) {
 			[tableTypePopUpButton addItemWithTitle:@"View"];
 			
 			// Set create syntax
@@ -300,9 +300,9 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableCommentsTextView setString:@""];
 		[tableCommentsTextView didChangeText];
 
-		if ([[statusFields objectForKey:SPMySQLEngineField] isEqualToString:@"View"] && 
-			[statusFields objectForKey:@"CharacterSetClient"] && 
-			[statusFields objectForKey:SPMySQLCollationField]) 
+		if ([[statusFields safeObjectForKey:SPMySQLEngineField] isEqualToString:@"View"] &&
+			[statusFields safeObjectForKey:@"CharacterSetClient"] &&
+			[statusFields safeObjectForKey:SPMySQLCollationField])
 		{
 			[tableEncodingPopUpButton safeAddItemWithTitle:[statusFields objectForKey:@"CharacterSetClient"]];
 			[tableCollationPopUpButton safeAddItemWithTitle:[statusFields objectForKey:SPMySQLCollationField]];
@@ -592,7 +592,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 	NSDictionary *statusFields = [tableDataInstance statusValues];
 
-	if (!selectedTable || ![selectedTable length] || [[statusFields objectForKey:SPMySQLEngineField] isEqualToString:@"View"]) return;
+	if (!selectedTable || ![selectedTable length] || [[statusFields safeObjectForKey:SPMySQLEngineField] isEqualToString:@"View"]) return;
 
 	// If we are viewing tables in the information_schema database, then disable all controls that cause table
 	// changes as these tables are not modifiable by anyone.
@@ -601,7 +601,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 							 [[tableDocumentInstance database] isEqualToString:SPMySQLPerformanceSchemaDatabase] || 
 							 [[tableDocumentInstance database] isEqualToString:SPMySQLDatabase]);
 
-	if ([[databaseDataInstance getDatabaseStorageEngines] count] && [statusFields objectForKey:SPMySQLEngineField]) {
+	if ([[databaseDataInstance getDatabaseStorageEngines] count] && [statusFields safeObjectForKey:SPMySQLEngineField]) {
 		[tableTypePopUpButton setEnabled:(!isSystemSchemaDb)];
 	}
 

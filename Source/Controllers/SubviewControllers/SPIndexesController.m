@@ -819,7 +819,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		SPMainQSync(^{
 			// Reset indexed fields to default
 			[self->indexedFields removeAllObjects];
-			[self->indexedFields safeAddObject:[[self->fields safeObjectAtIndex:0] mutableCopy]];
+			[self->indexedFields safeAddObject:[[self->fields firstObject] mutableCopy]];
 			[self->indexedColumnsTableView reloadData];
 		});
 

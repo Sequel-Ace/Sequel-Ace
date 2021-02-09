@@ -977,7 +977,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         for (NSArray *eachRow in theResult)
         {
-            dbName = [eachRow safeObjectAtIndex:0];
+            dbName = [eachRow firstObject];
         }
 
         SPMainQSync(^{

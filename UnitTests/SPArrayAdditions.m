@@ -83,5 +83,92 @@
     XCTAssertNil([testArray safeObjectAtIndex:(NSUInteger)anIndex]);
 }
 
+- (void)testFirstObjectPassingTest {
+
+    NSArray *testArray = @[@"first", @"second", @"third", @"fourth"];
+
+    id obj2 = [testArray firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+        if ([(NSString *)obj contains:@"first"]) {
+            *stop = YES;
+            return YES;
+        }
+        return NO;
+    }];
+
+    XCTAssertNotNil(obj2);
+
+    obj2 = [testArray firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+        if ([(NSString *)obj contains:@"f"]) {
+            *stop = YES;
+            return YES;
+        }
+        return NO;
+    }];
+
+    XCTAssertNotNil(obj2);
+    XCTAssertEqual(obj2, @"first");
+
+
+    obj2 = [testArray firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+        if ([(NSString *)obj contains:@"fifth"]) {
+            *stop = YES;
+            return YES;
+        }
+        return NO;
+    }];
+
+    XCTAssertNil(obj2);
+
+}
+
+//0.668 s
+- (void)testPerformance_FirstObjectPassingTest_Last {
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 100;
+
+        NSArray *queryHist = [NSArray arrayWithArray:[SPTestingUtils randomHistArray]];
+        NSString *last = [queryHist lastObject];
+
+        for (NSUInteger i = 0; i < iterations; i++) {
+            @autoreleasepool {
+               id obj2 = [queryHist firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+                    if ([(NSString *)obj contains:last]) {
+                        *stop = YES;
+                        return YES;
+                    }
+                    return NO;
+                }];
+                XCTAssertNotNil(obj2);
+            }
+        }
+    }];
+}
+
+// 0.0274 s
+- (void)testPerformance_FirstObjectPassingTest_First {
+    [self measureBlock:^{
+        // Put the code you want to measure the time of here.
+        int const iterations = 100;
+
+        NSArray *queryHist = [NSArray arrayWithArray:[SPTestingUtils randomHistArray]];
+        NSString *first = [queryHist firstObject];
+
+        for (NSUInteger i = 0; i < iterations; i++) {
+            @autoreleasepool {
+               id obj2 = [queryHist firstObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+                    if ([(NSString *)obj contains:first]) {
+                        *stop = YES;
+                        return YES;
+                    }
+                    return NO;
+                }];
+
+                XCTAssertNotNil(obj2);
+            }
+        }
+    }];
+}
+
 
 @end

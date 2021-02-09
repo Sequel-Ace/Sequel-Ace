@@ -1781,8 +1781,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Remove all existing columns from the table
     theColumns = [customQueryView tableColumns];
     while ([theColumns count]) {
-        [[theColumns safeObjectAtIndex:0] setHeaderToolTip:nil]; // prevent crash #2414
-        [customQueryView removeTableColumn:[theColumns safeObjectAtIndex:0]];
+        [[theColumns firstObject] setHeaderToolTip:nil]; // prevent crash #2414
+        [customQueryView removeTableColumn:[theColumns firstObject]];
     }
     
     // Update font size on the table
@@ -3350,7 +3350,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     if(!columnDefinition) return NO;
     
     NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:column];
-    NSInteger numberOfPossibleUpdateRows = [[editStatus safeObjectAtIndex:0] integerValue];
+    NSInteger numberOfPossibleUpdateRows = [[editStatus firstObject] integerValue];
     
     NSPoint customQueryViewPoint = [customQueryView convertPoint:[customQueryView frameOfCellAtColumn:column row:row].origin toView:nil];
     NSRect screenRect = [[tableDocumentInstance parentWindowControllerWindow] convertRectToScreen:NSMakeRect(customQueryViewPoint.x, customQueryViewPoint.y, 0,0)];

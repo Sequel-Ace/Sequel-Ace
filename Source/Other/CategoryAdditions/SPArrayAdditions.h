@@ -81,6 +81,11 @@ static inline void NSMutableArrayReplaceObject(NSArray *self, CFIndex idx, id an
 
 - (NSArray *)subarrayWithIndexes:(NSIndexSet *)indexes;
 
+/*Gets the index from indexOfObjectPassingTest: and returns the object.
+ Returns nil if not found.*/
+
+- (id)firstObjectPassingTest:(BOOL (^)(id obj, NSUInteger idx, BOOL *stop))predicate;
+
 /**
  * Variant of objectAtIndex: that avoids the "index out of bounds" exception by
  * just returning nil instead.

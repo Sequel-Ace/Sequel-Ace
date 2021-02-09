@@ -803,7 +803,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 			id parentKeys = [parentObject allKeysForObject:item];
 			if(parentKeys && [parentKeys count] == 1) {
 
-				NSString *itemRef = [[parentKeys safeObjectAtIndex:0] description];
+				NSString *itemRef = [[parentKeys firstObject] description];
 
 				// For safety reasons
 				if(!itemRef)
@@ -925,10 +925,10 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 					if([outlineView levelForItem:item] == 1) {
 						// It's a db name which wasn't queried yet
 						[[tableColumn dataCell] setImage:databaseIcon];
-						return [[[allKeysForItem safeObjectAtIndex:0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+						return [[[allKeysForItem firstObject] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 					} else {
 						// It's a field and use the key "  struct_type  " to increase the distance between node and first child
-						if(![[allKeysForItem safeObjectAtIndex:0] hasPrefix:@"  "]) {
+						if(![[allKeysForItem firstObject] hasPrefix:@"  "]) {
 							[[tableColumn dataCell] setImage:fieldIcon];
 							return [[[[parentObject allKeysForObject:item] safeObjectAtIndex: 0] componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
 						} else {

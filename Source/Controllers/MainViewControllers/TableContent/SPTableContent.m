@@ -1967,11 +1967,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				// delete the fast way by using the PRIMARY KEY in an IN clause
 				NSMutableString *deleteQuery = [NSMutableString string];
 
-				[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames safeObjectAtIndex:0] backtickQuotedString]]];
+				[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
 
 				while (anIndex != NSNotFound) {
 
-					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames safeObjectAtIndex:0]] objectForKey:@"datacolumnindex"] integerValue]];
+					id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]] objectForKey:@"datacolumnindex"] integerValue]];
 
 					if([keyValue isKindOfClass:[NSData class]])
 						[deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteData:keyValue]];
@@ -1987,7 +1987,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 						affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
 
 						// Reinit a new deletion query
-						[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames safeObjectAtIndex:0] backtickQuotedString]]];
+						[deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
 					} else {
 						[deleteQuery appendString:@","];
 					}

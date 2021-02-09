@@ -586,6 +586,13 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)_addMessageToConsole:(NSString *)message connection:(NSString *)connection isError:(BOOL)error database:(NSString *)database
 {
+
+    // return if no actual message
+    if(IsEmpty(message)){
+        SPLog(@"message is empty, returning");
+        return;
+    }
+
 	NSString *messageTemp = [[message stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
 
 	// Only append a semi-colon (;) if the supplied message is not an error

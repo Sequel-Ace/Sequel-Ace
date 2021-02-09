@@ -440,7 +440,7 @@
  */
 - (id)getFirstFieldFromQuery:(NSString *)theQueryString
 {
-	return [[[self queryString:theQueryString] getRowAsArray] SPsafeObjectAtIndex:0];
+	return [[[self queryString:theQueryString] getRowAsArray] firstObject];
 }
 
 #pragma mark -

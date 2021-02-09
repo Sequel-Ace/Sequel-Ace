@@ -339,7 +339,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	// Get the current table's storage engine
 	NSString *engine = [tableDataInstance statusValueForKey:@"Engine"];
 
-	if (([tablesListInstance tableType] == SPTableTypeTable) && ([[engine lowercaseString] isEqualToString:@"innodb"])) {
+    // check engine is not nill before calling lowercase on it.
+	if ((engine != nil) && ([tablesListInstance tableType] == SPTableTypeTable) && ([[engine lowercaseString] isEqualToString:@"innodb"])) {
 
 		// Update the text label
 		[labelTextField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Relations for table: %@", @"Relations tab subtitle showing table name"), [tablesListInstance tableName]]];
