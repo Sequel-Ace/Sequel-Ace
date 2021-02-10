@@ -213,6 +213,7 @@
 			[result setReturnDataAsStrings:YES];
 			NSArray *row = [result getRowAsArray];
 			oldSqlMode = [[row objectAtIndex:1] unboxNull];
+            SPLog(@"oldSqlMode: %@", oldSqlMode);
 		}
 	}
 	//set sql mode for export
@@ -233,15 +234,23 @@
 			oldSqlMode = nil;
 		}
 	}
-	// TODO:
 	// * There is no point in writing out that the file should use a specific SQL mode when we don't even know which one was active during export.
 	// * Triggers, procs/funcs have their own SQL_MODE which is still set/reset below, though.
 	//
 	// But an unknown SQL_MODE (!sqlModeIsValid) could perhaps still affect how MySQL returns the "SHOW CREATE…"
 	// data for those objects (like it does for "SHOW CREATE TABLE") possibly rendering them invalid (need to check that),
 	// so it may be better to flat out refuse to export schema object DDL if we don't have a valid sql_mode.
-	[metaString appendString:@"/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n"];
 
+
+    // JCS Note: per docs: https://dev.mysql.com/doc/refman/8.0/en/sql-mode.html#sqlmode_no_auto_value_on_zero
+    // For example, if you dump the table with mysqldump and then reload it, MySQL normally generates new sequence numbers when it encounters the 0 values,
+    // resulting in a table with contents different from the one that was dumped. Enabling NO_AUTO_VALUE_ON_ZERO before reloading the dump file solves this problem.
+    // For this reason, mysqldump automatically includes in its output a statement that enables NO_AUTO_VALUE_ON_ZERO.
+    //
+    // so to address issue #865, where creating a table with a trigger discards NO_AUTO_VALUE_ON_ZERO,
+    // by setting SESSION SQL_MODE to the mode used when the trigger was created then resetting SQL_MODE to @OLD_SQL_MODE
+    // we add NO_AUTO_VALUE_ON_ZERO to @OLD_SQL_MODE here, for the export file to properly work.
+    [metaString appendString:@"/*!40101 SET @OLD_SQL_MODE='NO_AUTO_VALUE_ON_ZERO', SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n"];
 	[metaString appendString:@"/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n\n\n"];
 
 	[self writeString:metaString];
