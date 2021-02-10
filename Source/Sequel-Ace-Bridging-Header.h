@@ -30,6 +30,7 @@
 #import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 #import "PSMTabBarControl.h"
+#import "SPAboutController.h"
 
 #import "SPConstants.h"
 
