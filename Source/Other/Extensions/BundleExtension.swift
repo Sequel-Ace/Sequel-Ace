@@ -65,9 +65,9 @@ import os.log
         return ret
     }
 
-    public func needsUpdate() -> Bool {
+    public func updateAvailable() -> Dictionary<String, String> {
         let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleIdentifier ?? "")")
-
+        var responseDict: [String : String] = ["updateAvailable" : String(false)]
         do {
             let data = try Data(contentsOf: (url ?? URL(string: ""))!) as Data
             let json = try JSON(data: data ) as JSON
@@ -76,14 +76,20 @@ import os.log
             if resultCount > 0 {
                 let appStoreVersion = json["results"][0]["version"].stringValue
                 let ret = self.version?.isVersion(lessThan: appStoreVersion)
-                return ret ?? false
+                if ret == true {
+                    responseDict["updateAvailable"] = String(true)
+                    responseDict["currentVersion"] = self.version
+                    responseDict["appStoreVersion"] = appStoreVersion
+                }
+
+                return responseDict
             }
         }
         catch{
             os_log("Error: %@", log: OSLog.default, type: .error, error.localizedDescription)
         }
 
-        return false
+        return responseDict
     }
 
 
