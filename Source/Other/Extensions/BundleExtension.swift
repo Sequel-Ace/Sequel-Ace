@@ -20,6 +20,48 @@ import Foundation
 		return nil
 	}
 
+    public var version: String? {
+
+	if let info = self.infoDictionary {
+	    if let version = info["CFBundleShortVersionString"]{
+		return version as? String
+	    }
+	}
+
+	return nil
+    }
+
+    public var bundleIdentifier: String? {
+
+	if let info = self.infoDictionary {
+	    if let bundleIdentifier = info[kCFBundleIdentifierKey as String]{
+		return bundleIdentifier as? String
+	    }
+	}
+
+	return nil
+    }
+
+    public var build: String? {
+
+	if let info = self.infoDictionary {
+	    if let build = info[kCFBundleVersionKey as String]{
+		return build as? String
+	    }
+	}
+
+	return nil
+    }
+
+    public var isSnapshotBuild: Bool {
+
+	guard let ret = appName?.contains(SPSnapshotBuildIndicator)
+	else{
+	    return false
+	}
+
+	return ret
+    }
 	/// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
 	/// We are looking for, see below
 //	<key>CFBundleURLTypes</key>
