@@ -28,6 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+static NSString *SPSnapshotBuildIndicator = @"Beta";
+
 @interface SPAboutController : NSWindowController 
 {
 	IBOutlet NSTextField *appNameVersionTextField;
