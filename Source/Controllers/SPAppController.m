@@ -271,6 +271,35 @@
         [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
     });
 
+    executeOnLowPrioQueueAfterADelay(^{
+
+        NSDictionary<NSString *, NSString *> *updateAvailable = [NSBundle.mainBundle updateAvailable];
+        BOOL isUpdateAvailableBOOL = ((NSString *)[updateAvailable safeObjectForKey:@"updateAvailable"]).boolValue;
+        SPLog(@"isUpdateAvailableBOOL: %hhd", isUpdateAvailableBOOL);
+
+        if(isUpdateAvailableBOOL == YES){
+
+            NSString *currentVersion = [updateAvailable safeObjectForKey:@"currentVersion"];
+            NSString *appStoreVersion = [updateAvailable safeObjectForKey:@"appStoreVersion"];
+            NSString *message = nil;
+
+            if (!IsEmpty(currentVersion) && !IsEmpty(appStoreVersion)){
+                message = [NSString stringWithFormat:NSLocalizedString(@"v%@ is available, you have v%@.", @"v%@ is available, you have v%@."), appStoreVersion, currentVersion];
+            }
+            else{
+                message = NSLocalizedString(@"A new version of Sequel Ace is available.", "A new version of Sequel Ace is available.");
+            }
+
+            [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Sequel Ace Update Available", @"Update available")
+                                         message:message
+                              primaryButtonTitle:NSLocalizedString(@"Go to Mac App Store", @"Go to Mac App Store")
+                            primaryButtonHandler:^{
+                                    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://apps.apple.com/us/app/sequel-ace/id1518036000?mt=12"]];
+                            }
+                             cancelButtonHandler:nil];
+        }
+    }, 10.0); // delay for 10 seconds
+
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [sharedSPBundleManager reloadBundles:self];
