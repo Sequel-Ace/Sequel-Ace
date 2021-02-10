@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import SwiftyJSON
+import os.log
 
 @objc extension Bundle {
 
@@ -22,46 +24,69 @@ import Foundation
 
     public var version: String? {
 
-	if let info = self.infoDictionary {
-	    if let version = info["CFBundleShortVersionString"]{
-		return version as? String
-	    }
-	}
+        if let info = self.infoDictionary {
+            if let version = info["CFBundleShortVersionString"]{
+                return version as? String
+            }
+        }
 
-	return nil
+        return nil
     }
 
     public var bundleIdentifier: String? {
 
-	if let info = self.infoDictionary {
-	    if let bundleIdentifier = info[kCFBundleIdentifierKey as String]{
-		return bundleIdentifier as? String
-	    }
-	}
+        if let info = self.infoDictionary {
+            if let bundleIdentifier = info[kCFBundleIdentifierKey as String]{
+                return bundleIdentifier as? String
+            }
+        }
 
-	return nil
+        return nil
     }
 
     public var build: String? {
 
-	if let info = self.infoDictionary {
-	    if let build = info[kCFBundleVersionKey as String]{
-		return build as? String
-	    }
-	}
+        if let info = self.infoDictionary {
+            if let build = info[kCFBundleVersionKey as String]{
+                return build as? String
+            }
+        }
 
-	return nil
+        return nil
     }
 
     public var isSnapshotBuild: Bool {
 
-	guard let ret = appName?.contains(SPSnapshotBuildIndicator)
-	else{
-	    return false
-	}
+        guard let ret = appName?.contains(SPSnapshotBuildIndicator)
+        else{
+            return false
+        }
 
-	return ret
+        return ret
     }
+
+    public func needsUpdate() -> Bool {
+        let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleIdentifier ?? "")")
+
+        do {
+            let data = try Data(contentsOf: (url ?? URL(string: ""))!) as Data
+            let json = try JSON(data: data ) as JSON
+            let resultCount = json["resultCount"].intValue
+
+            if resultCount > 0 {
+                let appStoreVersion = json["results"][0]["version"].stringValue
+                let ret = self.version?.isVersion(lessThan: appStoreVersion)
+                return ret ?? false
+            }
+        }
+        catch{
+            os_log("Error: %@", log: OSLog.default, type: .error, error.localizedDescription)
+        }
+
+        return false
+    }
+
+
 	/// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
 	/// We are looking for, see below
 //	<key>CFBundleURLTypes</key>
