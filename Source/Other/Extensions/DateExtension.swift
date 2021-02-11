@@ -19,6 +19,19 @@ extension Date {
 		
 		return formatter.string(from: self)
 	}
+
+    func addDaysToDate(daysToAdd: Int) -> Date {
+
+        guard let newDate = Calendar.current.date(
+                byAdding: .day,
+                value: daysToAdd,
+                to: self)
+        else {
+            return Date()
+        }
+
+        return newDate
+    }
 }
 
 @objc extension NSDate {
