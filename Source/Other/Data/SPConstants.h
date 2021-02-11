@@ -252,6 +252,8 @@ typedef enum
 // Narrow down completion max rows
 extern const NSUInteger SPNarrowDownCompletionMaxRows;
 extern const NSUInteger SPMaxQueryLengthForWarning;
+extern NSString *SPUpdateAvailableSuppressed;
+extern NSString *SPDisableUpdatesAvailable;
 
 // System database names
 extern NSString *SPMySQLDatabase;
