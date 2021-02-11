@@ -1014,13 +1014,12 @@ CQ
             <connections>
                 <outlet property="delegate" destination="213" id="1193"/>
             </connections>
-            <point key="canvasLocation" x="14" y="149"/>
+            <point key="canvasLocation" x="-836" y="126"/>
         </menu>
         <customObject id="213" userLabel="SPAppController" customClass="SPAppController">
             <connections>
-                <outlet property="staleBookmarkHelpView" destination="Ipz-ua-fp5" id="psg-8l-YU5"/>
-                <outlet property="staleBookmarkTextField" destination="Bea-mS-nZN" id="m3E-QZ-KCA"/>
-                <outlet property="staleBookmarkTextFieldCell" destination="jQo-Yb-Hvj" id="8Ts-TE-F5t"/>
+                <outlet property="releaseNotesTextField" destination="aTI-lS-XFX" id="8ja-zR-JCR"/>
+                <outlet property="releaseNotesView" destination="Ew9-1a-C9V" id="ewC-bT-lp9"/>
             </connections>
         </customObject>
         <menu id="956" userLabel="Dock Menu">
@@ -1057,22 +1056,22 @@ CQ
             <point key="canvasLocation" x="139" y="32"/>
         </menu>
         <userDefaultsController representsSharedInstance="YES" id="1210"/>
-        <customView id="Ipz-ua-fp5" userLabel="Bookmark Help Link">
+        <customView id="xVM-7b-9yJ" userLabel="Bookmark Help Link">
             <rect key="frame" x="0.0" y="0.0" width="193" height="24"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
-                <button horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="UmH-Wv-wVE">
+                <button horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dxL-Cs-KbM">
                     <rect key="frame" x="-2" y="-2" width="25" height="25"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" enabled="NO" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5qI-xv-uWF">
+                    <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" enabled="NO" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hS2-lO-pb6">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                 </button>
-                <textField verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bea-mS-nZN" customClass="HyperlinkTextField" customModule="Sequel_Ace" customModuleProvider="target">
+                <textField verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="x1Y-dy-TSd" customClass="HyperlinkTextField" customModule="Sequel_Ace" customModuleProvider="target">
                     <rect key="frame" x="23" y="0.0" width="137" height="21"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" borderStyle="bezel" alignment="left" title="Stale Bookmark Help" id="jQo-Yb-Hvj">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" borderStyle="bezel" alignment="left" title="Stale Bookmark Help" id="BuA-RU-JjR">
                         <font key="font" size="11" name="HelveticaNeue"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1082,7 +1081,30 @@ CQ
                     </userDefinedRuntimeAttributes>
                 </textField>
             </subviews>
-            <point key="canvasLocation" x="-108.5" y="295"/>
+            <point key="canvasLocation" x="-480" y="2"/>
+        </customView>
+        <customView id="Ew9-1a-C9V" userLabel="ReleaseNotes">
+            <rect key="frame" x="0.0" y="0.0" width="234" height="136"/>
+            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+            <subviews>
+                <textField verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aTI-lS-XFX">
+                    <rect key="frame" x="-2" y="122" width="238" height="14"/>
+                    <constraints>
+                        <constraint firstAttribute="height" priority="250" constant="136" id="PWp-Yv-6mh"/>
+                    </constraints>
+                    <textFieldCell key="cell" selectable="YES" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="left" title="Release Notes" id="1gc-DR-N6D">
+                        <font key="font" metaFont="system" size="11"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+            </subviews>
+            <constraints>
+                <constraint firstItem="aTI-lS-XFX" firstAttribute="leading" secondItem="Ew9-1a-C9V" secondAttribute="leading" id="GFr-w8-74s"/>
+                <constraint firstAttribute="trailing" secondItem="aTI-lS-XFX" secondAttribute="trailing" id="YEd-X9-VHu"/>
+                <constraint firstItem="aTI-lS-XFX" firstAttribute="top" secondItem="Ew9-1a-C9V" secondAttribute="top" id="ypH-Nc-Jd5"/>
+            </constraints>
+            <point key="canvasLocation" x="-865" y="-32"/>
         </customView>
     </objects>
 </document>

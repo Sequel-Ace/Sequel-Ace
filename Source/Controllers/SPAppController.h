@@ -62,6 +62,8 @@
 - (IBAction)openAboutPanel:(id)sender;
 - (IBAction)openPreferences:(id)sender;
 - (IBAction)openConnectionSheet:(id)sender;
+@property (weak) IBOutlet NSTextField *releaseNotesTextField;
+@property (weak) IBOutlet NSView *releaseNotesView;
 
 // Services menu methods
 - (void)doPerformQueryService:(NSPasteboard *)pboard userData:(NSString *)data error:(NSString **)error;
