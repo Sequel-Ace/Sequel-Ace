@@ -13,46 +13,19 @@ import os.log
 @objc extension Bundle {
 
 	public var appName: String? {
-
-		if let info = self.infoDictionary {
-			if let appName = info[kCFBundleNameKey as String]{
-				return appName as? String
-			}
-		}
-		return nil
+        return self.object(forInfoDictionaryKey: kCFBundleNameKey as String) as? String
 	}
 
     public var version: String? {
-
-        if let info = self.infoDictionary {
-            if let version = info["CFBundleShortVersionString"]{
-                return version as? String
-            }
-        }
-
-        return nil
+        return self.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
     }
 
     public var bundleIdentifier: String? {
-
-        if let info = self.infoDictionary {
-            if let bundleIdentifier = info[kCFBundleIdentifierKey as String]{
-                return bundleIdentifier as? String
-            }
-        }
-
-        return nil
+        return self.object(forInfoDictionaryKey: kCFBundleIdentifierKey as String) as? String
     }
 
     public var build: String? {
-
-        if let info = self.infoDictionary {
-            if let build = info[kCFBundleVersionKey as String]{
-                return build as? String
-            }
-        }
-
-        return nil
+        return self.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as? String
     }
 
     public var isSnapshotBuild: Bool {
