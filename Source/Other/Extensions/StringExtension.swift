@@ -53,6 +53,53 @@ extension String {
         }
         return lines
     }
+
+    subscript(_ range: CountableRange<Int>) -> String {
+        let start = index(startIndex, offsetBy: max(0, range.lowerBound))
+        let end = index(start, offsetBy: min(self.count - range.lowerBound,
+                                             range.upperBound - range.lowerBound))
+        return String(self[start..<end])
+    }
+
+    func summarize(toLength length: Int, withEllipsis ellipsis: Bool) -> String? {
+
+        os_log("str:[%@]", log: OSLog.default, type: .debug, self)
+
+        var str = self
+        if str.count > length {
+            str = str[0..<length]
+            os_log("str now:[%@]", log: OSLog.default, type: .debug, str)
+            // Find last space
+            var index : Int
+            if let i = str.lastIndex(of: " ") {
+                index = distance(from: str.startIndex, to: i)
+            }
+            else{
+                index = length
+            }
+
+            str = str[0..<index]
+            os_log("str now:[%@]", log: OSLog.default, type: .debug, str)
+
+            str += (ellipsis) ? "\u{2026}" : ""
+            os_log("str now:[%@]", log: OSLog.default, type: .debug, str)
+
+        }
+        return str
+    }
+
+    // e.g format from JSON 2021-01-20T22:25:56Z
+    // convert to a date
+    func iso8601DateStringToDate() -> Date {
+
+        let formatter = DateFormatter.iso8601DateFormatter
+
+        guard let date = formatter.date(from:self) else {
+            return Date()
+        }
+
+        return date
+    }
     
 	
 	// stringByReplacingPercentEscapesUsingEncoding is deprecated
