@@ -49,8 +49,8 @@ void SPApplyRevisionChanges(void)
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 
 	// Get the current bundle version number (the SVN build number) for per-version upgrades
-	currentVersionNumber = [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] integerValue];
-	
+    currentVersionNumber = NSBundle.mainBundle.build.integerValue ;
+
 	// Get the current revision
 	if ([prefs objectForKey:SPLastUsedVersion]) {
 		recordedVersionNumber = [[prefs objectForKey:SPLastUsedVersion] integerValue];
@@ -59,10 +59,15 @@ void SPApplyRevisionChanges(void)
 	// Check if version changed at all
 	if (currentVersionNumber != recordedVersionNumber) {
 		// Update the prefs revision
-		[prefs setObject:[NSNumber numberWithInteger:currentVersionNumber] forKey:SPLastUsedVersion];
+        [prefs setObject:@(currentVersionNumber) forKey:SPLastUsedVersion];
 
 		// Inform SPAppController to check installed default Bundles for available updates
 		[prefs setObject:@YES forKey:@"doBundleUpdate"];
+
+        // reset the SPUpdateAvailableSuppressed flag
+        SPLog(@"reset the SPUpdateAvailableSuppressed flag to NO");
+        user_defaults_set_bool(SPUpdateAvailableSuppressed, NO, prefs);
+        
 	}
 
 	// If no recorded version, or current version matches or is less than recorded version, don't show release notes or do version-specific processing
