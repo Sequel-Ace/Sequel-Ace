@@ -48,11 +48,37 @@ import os.log
 
             if resultCount > 0 {
                 let appStoreVersion = json["results"][0]["version"].stringValue
+
                 let ret = self.version?.isVersion(lessThan: appStoreVersion)
                 if ret == true {
-                    responseDict["updateAvailable"] = String(true)
-                    responseDict["currentVersion"] = self.version
-                    responseDict["appStoreVersion"] = appStoreVersion
+                    let currentVersionReleaseDate = json["results"][0]["currentVersionReleaseDate"].stringValue
+                    os_log("currentVersionReleaseDate: %@", log: OSLog.default, type: .debug, currentVersionReleaseDate)
+
+                    // e.g format from JSON 2021-01-20T22:25:56Z
+                    // convert to a date
+                    let date = currentVersionReleaseDate.iso8601DateStringToDate()
+
+                    os_log("currentVersionReleaseDate: %@", log: OSLog.default, type: .debug, date as CVarArg)
+
+                    // create a date = currentVersionReleaseDate + 2 days
+                    let leadTime = date.addDaysToDate(daysToAdd: 2)
+
+                    os_log("leadTime: %@", log: OSLog.default, type: .debug, leadTime as CVarArg)
+
+                    if (leadTime.timeIntervalSinceNow.sign == .minus) {
+                        // date is in the past. i.e. more than X days have passed since the release
+                        os_log("leadTime is in the past: %@", log: OSLog.default, type: .debug, leadTime as CVarArg)
+                        var releaseNotes = json["results"][0]["releaseNotes"].stringValue
+
+                        releaseNotes = releaseNotes.summarize(toLength: 280, withEllipsis: true)!
+
+                        os_log("releaseNotes: %@", log: OSLog.default, type: .debug, releaseNotes)
+
+                        responseDict["updateAvailable"] = String(true)
+                        responseDict["currentVersion"] = self.version
+                        responseDict["appStoreVersion"] = appStoreVersion
+                        responseDict["releaseNotes"] = releaseNotes
+                    }
                 }
 
                 return responseDict
