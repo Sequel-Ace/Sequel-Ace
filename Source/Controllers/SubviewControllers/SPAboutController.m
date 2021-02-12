@@ -30,8 +30,6 @@
 
 #import "SPAboutController.h"
 
-static NSString *SPSnapshotBuildIndicator = @"Beta";
-
 static NSString *SPCreditsFilename = @"Credits";
 static NSString *SPLicenseFilename = @"License";
 
