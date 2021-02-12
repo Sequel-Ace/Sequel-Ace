@@ -1,3 +1,38 @@
+## [3.2.0]
+
+### Added
+- cccc8755, UTC time tooltips 
+- 85d0d6b5, Allow creating foreign keys referencing other databases 
+
+### Fixed
+- 9f32eeff,  import/export when table has a trigger
+- 2e642c83,  information schema crash 883
+- dab36f4f,  indenting issue on query editor
+- fc7ced75,  text wrapping on query screen 
+- e8b516b1,  a few crashes
+- 4a711678,  Duplicate Table... name not editable 
+- 2e468c1b,  some crashes
+- e30d9f53,  rename table so that it drops the original table
+- 0aa257c0,  Users screen schemas not updating
+- 8a2dbe4d,  remove space char used to trigger syntax highlighting on paste
+- a67ef9ed,  more fb crashes
+- 351b9daa, Fix CSV Import Index out of bound in array crash 
+- 30836826,  Bookmarks not being generated correctly
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+- 69e2d39d,  Set some App Center configs and events
+- c827cfd4, Rename SPWindowController's properties, start AutoLayout programatically without xibs 
+- 05fa4958, Appcenter upload_symbols script 
+- 351643ce, Get rid of Firebase Crashlytics, move to MSAppCenter Crashlytics & Analytics 
+- e6ffd106, Windows hierarchy cleanup and typesafety, part 1 
+- fac631db, Added more logging and removed a few non-fatal error reports 
+
 ## [3.1.1]
 
 ### Added
