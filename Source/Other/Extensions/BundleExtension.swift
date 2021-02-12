@@ -10,46 +10,62 @@ import Foundation
 
 @objc extension Bundle {
 
-	public var appName: String? {
+    public var appName: String? {
+        return self.object(forInfoDictionaryKey: kCFBundleNameKey as String) as? String
+    }
 
-		if let info = self.infoDictionary {
-			if let appName = info[kCFBundleNameKey as String]{
-				return appName as? String
-			}
-		}
-		return nil
-	}
+    public var version: String? {
+        return self.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+    }
 
-	/// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
-	/// We are looking for, see below
-//	<key>CFBundleURLTypes</key>
-//		<array>
-//			<dict>
-//				<key>CFBundleTypeRole</key>
-//				<string>Editor</string>
-//				<key>CFBundleURLName</key>
-//				<string>Sequel Ace URL scheme</string>
-//				<key>CFBundleURLSchemes</key>
-//				<array>
-//					<string>sequelace</string>     <--------- WE ARE LOOKING FOR THIS!
-//				</array>
-//			</dict>
-//			<dict>
-//				<key>CFBundleURLName</key>
-//				<string>MySQL URL scheme</string>
-//				<key>CFBundleURLSchemes</key>
-//				<array>
-//					<string>mysql</string>
-//				</array>
-//			</dict>
-//		</array>
-	public var saURLScheme: String? {
-		guard let bundleURLTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
-			return nil
-		}
+    public var bundleIdentifier: String? {
+        return self.object(forInfoDictionaryKey: kCFBundleIdentifierKey as String) as? String
+    }
 
-		let expectedDictionary = bundleURLTypes.first { $0["CFBundleURLName"] as? String == "Sequel Ace URL scheme" }
-		return [(expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first?.trimmedString,"://"].compactMap { $0 }.joined(separator: "")
+    public var build: String? {
+        return self.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as? String
+    }
 
-	}
+    public var isSnapshotBuild: Bool {
+
+        guard let ret = appName?.contains(SPSnapshotBuildIndicator)
+        else{
+            return false
+        }
+
+        return ret
+    }
+
+    /// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
+    /// We are looking for, see below
+//    <key>CFBundleURLTypes</key>
+//        <array>
+//            <dict>
+//                <key>CFBundleTypeRole</key>
+//                <string>Editor</string>
+//                <key>CFBundleURLName</key>
+//                <string>Sequel Ace URL scheme</string>
+//                <key>CFBundleURLSchemes</key>
+//                <array>
+//                    <string>sequelace</string>     <--------- WE ARE LOOKING FOR THIS!
+//                </array>
+//            </dict>
+//            <dict>
+//                <key>CFBundleURLName</key>
+//                <string>MySQL URL scheme</string>
+//                <key>CFBundleURLSchemes</key>
+//                <array>
+//                    <string>mysql</string>
+//                </array>
+//            </dict>
+//        </array>
+    public var saURLScheme: String? {
+        guard let bundleURLTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
+            return nil
+        }
+
+        let expectedDictionary = bundleURLTypes.first { $0["CFBundleURLName"] as? String == "Sequel Ace URL scheme" }
+        return [(expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first?.trimmedString,"://"].compactMap { $0 }.joined(separator: "")
+
+    }
 }
