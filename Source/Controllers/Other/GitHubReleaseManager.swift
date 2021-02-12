@@ -33,110 +33,137 @@ import Alamofire
 
     private static var config:Config?
 
-
     class func setup(_ config:Config){
         GitHubReleaseManager.config = config
     }
 
     private override init() {
         guard let config = GitHubReleaseManager.config else {
+            Log.error("you must call setup before accessing GitHubReleaseManager.sharedInstance")
             fatalError("Error - you must call setup before accessing GitHubReleaseManager.sharedInstance")
         }
-
-        //Regular initialisation using config
 
         self.user              = config.user
         self.project           = config.project
         self.includeDraft      = config.includeDraft
         self.includePrerelease = config.includePrerelease
-        let urlStr             = GitHubReleaseManager.githubURLStr.format(user, project)
 
-        Log.info("GitHubReleaseManager.config = \(String(describing: GitHubReleaseManager.config))")
-        Log.info("urlStr = \(urlStr)")
+        Log.debug("GitHubReleaseManager init")
 
         super.init()
+    }
+
+    public func checkReleaseWithName(name: String){
+
+        Log.debug("checkReleaseWithName: \(name)")
+
+        let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
+
+        Log.debug("GitHubReleaseManager.config = \(String(describing: GitHubReleaseManager.config))")
+        Log.debug("urlStr = \(urlStr)")
 
         AF.request(urlStr){ urlRequest in
             urlRequest.timeoutInterval = 60
-//            urlRequest.addValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-            debugPrint(urlRequest)
+            self.Log.debug("urlRequest: \(urlRequest)")
         }
         .validate() // check response code etc
         .responseJSON { [self] response in
             switch response.result {
                 case .success:
-                    print("Validation Successful")
-//                    debugPrint(response)
-//                    let stringNS2 = String(decoding: response.data!, as: UTF8.self)
-//                    let string2 = stringNS2.replacingOccurrences(of: "\\", with: "", options: .literal, range: nil)
+                    Log.info("Validation Successful")
 
                     do{
                         let json = try JSONSerialization.jsonObject(with: response.data!, options: JSONSerialization.ReadingOptions())
                         let prettyData = try JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
-//                        let prettyString = String(data: prettyData, encoding: String.Encoding.utf8)
                         let gitHub = try GitHub(data: prettyData)
-//                        debugPrint(prettyString as Any)
 
-//                        for element in gitHub {
-//                            let str = try element.jsonString()
-//                            debugPrint(str as Any)
-//                        }
-
-                        let releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
+                        var releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
                             return element0 > element1
                         })
 
-                        debugPrint(releasesArray)
-//
-                        if let i = releasesArray.firstIndex(where: { $0.name == "3.1.0 (3012)" }) {
-                            print("\(releasesArray[i]) 3.1.0 (3012)")
+                        Log.debug("releasesArray count: \(releasesArray.count)")
+
+                        if let i = releasesArray.firstIndex(where: { $0.name == name }) {
                             currentRelease = releasesArray[i]
+                            Log.debug("Found release at index:[\(i)] name: \(String(describing: currentRelease?.name))")
                         }
+
+                        if includeDraft == false {
+                            // remove drafts
+                            Log.debug("removing drafts")
+                            releasesArray.removeAll(where: { $0.draft == true })
+                        }
+
+                        if includePrerelease == false {
+                            // remove prereleases
+                            Log.debug("removing prereleases")
+                            releasesArray.removeAll(where: { $0.prerelease == true })
+                        }
+
+                        Log.debug("releasesArray count: \(releasesArray.count)")
 
                         releases = releasesArray
                         availableRelease = releases.first
-
-                        debugPrint(availableRelease as Any)
-
-                        
+                        if availableRelease != currentRelease {
+                            Log.info("Found availableRelease: \(String(describing: availableRelease?.name))")
+                            NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPNewReleaseAvailable.rawValue), object: availableRelease)
+                            self.displayNewReleaseAvailableAlert()
+                        }
                     }
                     catch{
-                        print(error)
+                        Log.error("Error: \(error.localizedDescription)")
                     }
-//                    let stringNS = NSData(data: response.data!)
-//                    let str : NSString = stringNS2.bv_jsonString(withPrettyPrint: true)! as NSString
-//                    let string2 = str.replacingOccurrences(of: "\\", with: "")
-//                    let gitHub = GitHub(response)
-//                    debugPrint(string2)
 
                 case let .failure(error):
-                    print(error)
+                    Log.error("Error: \(error.localizedDescription)")
             }
-
         }
-        .responseString{ response in
-            debugPrint("Response: \(response)")
-
-        }
-
     }
 
-    /*
+    private func displayNewReleaseAvailableAlert(){
 
-     @property (nonatomic, readonly) NSURL* url;
-     @property (nonatomic, readonly) NSString* user;
-     @property (nonatomic, readonly) NSString* project;
+        Log.debug("displayNewReleaseAvailableAlert")
 
-     @property (nonatomic, readonly) MLGitHubRelease* currentRelease;
-     @property (nonatomic, readonly) MLGitHubRelease* availableRelease;
-     @property (nonatomic, readonly) MLGitHubReleases* releases;
+        var localURL : String
+        if prefs.string(forKey: SPSkipNewReleaseAvailable) == availableRelease?.name {
+            Log.debug("The user has opted out of more alerts regarding this version")
+            return
+        }
 
-     @property (nonatomic, assign) BOOL includeDraft;
-     @property (nonatomic, assign) BOOL includePrerelease;
+        if (availableRelease?.htmlURL == nil) {
+            Log.error("release has no url")
+            return;
+        }
+        else{
+            localURL = availableRelease?.htmlURL ?? ""
+        }
 
-     @property (nonatomic, weak) id<MLGitHubReleaseCheckerDelegate> delegate;
-     summarize(toLength length: Int, withEllipsis ellipsis: Bool) -
-     */
+        let message = "Version %@ is available. You are currently running %@".format(availableRelease!.name, currentRelease!.name)
 
+        NSAlert .createDefaultAlertWithSuppression(title: "A new version is available",
+                                                   message: message,
+                                                   suppressionKey:SPSkipNewReleaseAvailable,
+                                                   suppressionValue:availableRelease?.name,
+                                                   primaryButtonTitle: "View",
+                                                   primaryButtonHandler: {
+                                                    self.Log.debug("user clicked view")
+                                                    NSWorkspace.shared.open(availableRelease!.htmlURL)
+                                                   })
 
+        /*
+         [NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")] message:@"Double checking as you have 'Show warning before executing a query' set in Preferences" suppressionKey:SPQueryWarningEnabledSuppressed suppressionValue:nil primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed") primaryButtonHandler:^{
+             SPLog(@"User clicked Yes, exec queries");
+             retCode = YES;
+         } cancelButtonHandler:^{
+             SPLog(@"Cancel pressed");
+             self->isEditingRow = NO;
+             self->currentlyEditingRow = -1;
+             // reload
+             [self loadTableValues];
+             retCode = NO;
+         }];
+
+         */
+
+    }
 }

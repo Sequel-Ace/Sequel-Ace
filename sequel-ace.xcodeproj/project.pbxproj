@@ -127,6 +127,9 @@
 		1A6447912588CD8B00927DB3 /* License.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17CC993A10B4C9C80034CD7A /* License.rtf */; };
 		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
+		1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */; };
+		1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1A89556E25D6C8880060CE72 /* Alamofire */; };
+		1A89558725D6E15D0060CE72 /* GitHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89557825D6DE860060CE72 /* GitHub.swift */; };
 		1A8B53572584520800526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A94988E25516057000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
@@ -775,6 +778,9 @@
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
+		1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubReleaseManager.swift; sourceTree = "<group>"; };
+		1A89557325D6DE4E0060CE72 /* GitHubElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubElement.swift; sourceTree = "<group>"; };
+		1A89557825D6DE860060CE72 /* GitHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHub.swift; sourceTree = "<group>"; };
 		1A8B53552584520800526DED /* SPURLAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPURLAdditions.h; sourceTree = "<group>"; };
 		1A8B53562584520800526DED /* SPURLAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditions.m; sourceTree = "<group>"; };
 		1A8B53672584552F00526DED /* SPURLAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditionsTests.m; sourceTree = "<group>"; };
@@ -1258,6 +1264,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */,
 				503CDBB21ACDC204004F8A2F /* Quartz.framework in Frameworks */,
 				265446DF24A1616900376B48 /* libz.tbd in Frameworks */,
 				17AED4161888BD67008E380F /* Security.framework in Frameworks */,
@@ -1560,6 +1567,9 @@
 				1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */,
 				1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */,
 				1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */,
+				1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */,
+				1A89557325D6DE4E0060CE72 /* GitHubElement.swift */,
+				1A89557825D6DE860060CE72 /* GitHub.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -2629,6 +2639,7 @@
 				515D303E25BD7DE60021CF1E /* AppCenterCrashes */,
 				515D304025BD7DE60021CF1E /* AppCenterAnalytics */,
 				51BC150025BE138700F1CDC9 /* SnapKit */,
+				1A89556E25D6C8880060CE72 /* Alamofire */,
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = "sequel-pro";
@@ -2670,6 +2681,7 @@
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
+				1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -3088,6 +3100,7 @@
 				296DC8BC0F909194002A3258 /* MGTemplateStandardFilters.m in Sources */,
 				5841423F0F97E11000A34B47 /* NoodleLineNumberView.m in Sources */,
 				BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */,
+				1A89558725D6E15D0060CE72 /* GitHub.swift in Sources */,
 				1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
@@ -3212,6 +3225,7 @@
 				584D899D15162CBE00F24774 /* SPDataBase64EncodingAdditions.m in Sources */,
 				1798F1871550175B004B0AB8 /* SPFavoritesExporter.m in Sources */,
 				1798F1881550175B004B0AB8 /* SPFavoritesImporter.m in Sources */,
+				1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */,
 				1798F1951550181B004B0AB8 /* SPGroupNode.m in Sources */,
 				1798F19815501838004B0AB8 /* SPMutableArrayAdditions.m in Sources */,
 				1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */,
@@ -4269,6 +4283,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.4.1;
+			};
+		};
 		515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
@@ -4296,6 +4318,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1A89556E25D6C8880060CE72 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
 		515D303E25BD7DE60021CF1E /* AppCenterCrashes */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;

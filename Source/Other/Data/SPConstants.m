@@ -417,6 +417,8 @@ NSString *SPBundleAppSchema                                 = @"sequelace";
 NSString *SPBundleLegacyAppSchema                           = @"sequelpro";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
 NSString *SPSnapshotBuildIndicator                          = @"Beta";
+NSString *SPNewReleaseAvailableNotification                 = @"NewReleaseAvailableNotification";
+NSString *SPSkipNewReleaseAvailable                         = @"SkipNewReleaseAvailable";
 const long SPBundleCurrentVersion                           = 2;
 
 NSString *SPBundleFileName                                  = @"command.plist";
