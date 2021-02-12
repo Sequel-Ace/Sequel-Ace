@@ -29,6 +29,8 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPAboutController.h"
+#import "sequel-ace-Swift.h"
+
 
 static NSString *SPCreditsFilename = @"Credits";
 static NSString *SPLicenseFilename = @"License";
@@ -53,12 +55,10 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 
 - (void)awakeFromNib
 {
-	NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-	
-	// If the name string contains 'Beta' then this is obviously a beta build.
-	NSRange matchRange = [[infoDictionary objectForKey:(NSString*)kCFBundleNameKey] rangeOfString:SPSnapshotBuildIndicator];
 
-	BOOL isSnapshotBuild = matchRange.location != NSNotFound;
+    NSBundle *mainBundle = [NSBundle mainBundle];
+
+	BOOL isSnapshotBuild = mainBundle.isSnapshotBuild;
 	
 	// Set the application name, but only include the major version if this is not a nightly build.
 	[appNameVersionTextField setStringValue:[NSString stringWithFormat:@"Sequel Ace%@", (isSnapshotBuild ? @" Beta" : @"")]];
@@ -101,16 +101,12 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
  */
 - (void)_setVersionLabel:(BOOL)isSnapshotBuild
 {
-	NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
+    NSBundle *mainBundle = [NSBundle mainBundle];
 
-	// Get version numbers
-	NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
-	NSString *bundleVersion = [infoDictionary objectForKey:(NSString *)kCFBundleVersionKey];
-
-	NSString *textFieldString = [NSString stringWithFormat:@"Version %@\n%@ %@",
-		version,
-		isSnapshotBuild ? NSLocalizedString(@"Beta Build", @"beta build label") : NSLocalizedString(@"Build", @"build label"),
-		bundleVersion];
+    NSString *textFieldString = [NSString stringWithFormat:@"Version %@\n%@ %@",
+                                 mainBundle.version,
+                                 isSnapshotBuild ? NSLocalizedString(@"Beta Build", @"beta build label") : NSLocalizedString(@"Build", @"build label"),
+                                 mainBundle.build];
 
 	[appBuildVersionTextField setStringValue:textFieldString];
 }
