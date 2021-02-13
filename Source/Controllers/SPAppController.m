@@ -271,6 +271,10 @@
         [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
     });
 
+    executeOnLowPrioQueueAfterADelay(^{
+        [NSBundle.mainBundle checkForNewVersion];
+    }, 10.0);
+
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [sharedSPBundleManager reloadBundles:self];
