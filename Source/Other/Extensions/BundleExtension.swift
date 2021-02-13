@@ -36,6 +36,23 @@ import Foundation
         return ret
     }
 
+    public var isMASVersion: Bool {
+
+        guard
+            let receiptURL : URL = self.appStoreReceiptURL
+        else{
+            return false
+        }
+
+        do {
+            let _ : Data = try Data(contentsOf: receiptURL)
+            return true
+        }
+        catch {
+            return false
+        }
+    }
+
     /// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
     /// We are looking for, see below
 //    <key>CFBundleURLTypes</key>
