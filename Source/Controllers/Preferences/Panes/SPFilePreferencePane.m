@@ -186,8 +186,8 @@
 - (void)_refreshBookmarks{
     SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
-    [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
-    [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
+    [self loadBookmarks];
+
 }
 
 - (NSImage *)preferencePaneIcon {
