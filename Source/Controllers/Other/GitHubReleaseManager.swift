@@ -127,6 +127,9 @@ import Alamofire
                             NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPNewReleaseAvailable.rawValue), object: availableRelease)
                             _ = self.displayNewReleaseAvailableAlert()
                         }
+                        else{
+                            Log.debug("No newer release available")
+                        }
                     }
                     catch{
                         Log.error("Error: \(error.localizedDescription)")
