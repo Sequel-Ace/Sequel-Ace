@@ -74,11 +74,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
 
 
-        GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: true, includePrerelease: false))
+        GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: true))
 
         let ghRM = GitHubReleaseManager.sharedInstance
 
-        ghRM.checkReleaseWithName(name: "3.1.0 (3012)")
+        ghRM.checkReleaseWithName(name: "3.0.2 (3009)")
         
         getDBsize()
 
