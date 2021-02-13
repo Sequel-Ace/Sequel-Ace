@@ -59,6 +59,10 @@ import Alamofire
 
     public func checkReleaseWithName(name: String){
 
+        if name.count == 0 {
+            Log.error("name not valid")
+            return
+        }
         Log.debug("checkReleaseWithName: \(name)")
 
         let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
