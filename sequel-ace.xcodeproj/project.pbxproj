@@ -136,7 +136,6 @@
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
 		1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
-		1A9594AC25D7B98C00DF68D5 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = 1A9594AB25D7B98C00DF68D5 /* Ink */; };
 		1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */; };
 		1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */ = {isa = PBXBuildFile; fileRef = 584192A0101E57BB0089807F /* NSMutableArray-MultipleSort.m */; };
 		1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */; };
@@ -1277,7 +1276,6 @@
 				515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */,
 				9651262224926F1200E65B53 /* QueryKit.framework in Frameworks */,
 				179ECECA11F265FC009C6A40 /* libbz2.dylib in Frameworks */,
-				1A9594AC25D7B98C00DF68D5 /* Ink in Frameworks */,
 				9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */,
 				51D9527625AE2B5300574BEB /* FMDB in Frameworks */,
 			);
@@ -2640,7 +2638,6 @@
 				515D304025BD7DE60021CF1E /* AppCenterAnalytics */,
 				51BC150025BE138700F1CDC9 /* SnapKit */,
 				1A89556E25D6C8880060CE72 /* Alamofire */,
-				1A9594AB25D7B98C00DF68D5 /* Ink */,
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = "sequel-pro";
@@ -2683,7 +2680,6 @@
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */,
-				1A9594AA25D7B98C00DF68D5 /* XCRemoteSwiftPackageReference "ink" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -4293,14 +4289,6 @@
 				minimumVersion = 5.4.1;
 			};
 		};
-		1A9594AA25D7B98C00DF68D5 /* XCRemoteSwiftPackageReference "ink" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/johnsundell/ink.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.5.0;
-			};
-		};
 		515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
@@ -4332,11 +4320,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
-		};
-		1A9594AB25D7B98C00DF68D5 /* Ink */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1A9594AA25D7B98C00DF68D5 /* XCRemoteSwiftPackageReference "ink" */;
-			productName = Ink;
 		};
 		515D303E25BD7DE60021CF1E /* AppCenterCrashes */ = {
 			isa = XCSwiftPackageProductDependency;

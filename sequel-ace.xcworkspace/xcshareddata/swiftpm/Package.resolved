@@ -29,15 +29,6 @@
         }
       },
       {
-        "package": "Ink",
-        "repositoryURL": "https://github.com/johnsundell/ink.git",
-        "state": {
-          "branch": null,
-          "revision": "bd223a2482449507bd3286cb262c962d32d81e4b",
-          "version": "0.5.0"
-        }
-      },
-      {
         "package": "PLCrashReporter",
         "repositoryURL": "https://github.com/microsoft/PLCrashReporter.git",
         "state": {
