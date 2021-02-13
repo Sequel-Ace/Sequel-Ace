@@ -53,12 +53,23 @@ import Foundation
         }
     }
 
+    public var versionString: String {
+        guard
+            let version : String = self.version,
+            let build   : String = self.build
+        else{
+            return ""
+        }
+
+        // e.g. "3.0.2 (3009)"
+        return "%@ (%@)" .format(version, build)
+    }
+
     public func checkForNewVersion(){
 
         if isMASVersion == false {
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: true))
-
-            GitHubReleaseManager.sharedInstance.checkReleaseWithName(name: "3.0.2 (3009)")
+            GitHubReleaseManager.sharedInstance.checkReleaseWithName(name: versionString)
         }
     }
 
