@@ -53,6 +53,15 @@ import Foundation
         }
     }
 
+    public func checkForNewVersion(){
+
+        if isMASVersion == false {
+            GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: true))
+
+            GitHubReleaseManager.sharedInstance.checkReleaseWithName(name: "3.0.2 (3009)")
+        }
+    }
+
     /// Attempts to get the ."Sequel Ace URL scheme" from Info.plist
     /// We are looking for, see below
 //    <key>CFBundleURLTypes</key>
