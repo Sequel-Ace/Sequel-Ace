@@ -50,7 +50,6 @@ import AppKit
 	static func createDefaultAlertWithSuppression(title: String,
 												  message: String,
                                                   suppressionKey: String? = nil,
-                                                  suppressionValue: String? = nil,
 												  primaryButtonTitle: String,
 												  primaryButtonHandler: (() -> ())? = nil,
 												  cancelButtonHandler: (() -> ())? = nil) {
@@ -75,12 +74,7 @@ import AppKit
             // if they check the box, set the bool
             if let suppressionButton = alert.suppressionButton, let suppressionKey = suppressionKey,
                suppressionButton.state == .on {
-                if suppressionValue != nil {
-                    UserDefaults.standard.setValue(suppressionValue, forKey: suppressionKey)
-                }
-                else{
-                    UserDefaults.standard.set(true, forKey: suppressionKey)
-                }
+                UserDefaults.standard.set(true, forKey: suppressionKey)
             }
         }
 	}
