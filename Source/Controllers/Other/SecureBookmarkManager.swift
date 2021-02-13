@@ -287,7 +287,7 @@ import OSLog
 
     /// bookmarkFor a file
     ///  - Parameters:
-    ///     - filename: file URL to generate secure bookmark for
+    ///     - filename: file URL to return secure bookmark for
     /// - Returns: the resolved URL or nil
     @objc func bookmarkFor(filename: String) -> URL? {
         Log.debug("filename: \(filename)")
