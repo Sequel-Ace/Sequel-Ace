@@ -635,13 +635,20 @@ set_input:
     [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-			NSString *path = [[self->changeExportOutputPathPanel directoryURL] path];
+
+            NSMutableString *path = [[NSMutableString alloc] initWithCapacity:self->changeExportOutputPathPanel.directoryURL.absoluteString.length];
+            [path setString:[[self->changeExportOutputPathPanel directoryURL] path]];
+
 			if(!path) {
 				@throw [NSException exceptionWithName:NSInternalInconsistencyException
 											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[self->changeExportOutputPathPanel directoryURL],[[self->changeExportOutputPathPanel directoryURL] isFileURL]]
 											 userInfo:nil];
 			}
-			
+
+            path = [[path dropSuffixWithSuffix:@"/"] mutableCopy];
+
+            [path appendString:@"/"];
+
 			[self->exportPathField setStringValue:path];
 
             NSMutableString *classStr = [NSMutableString string];
