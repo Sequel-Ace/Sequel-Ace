@@ -65,8 +65,12 @@ extension String {
                 return "(null)"
             } as [CVarArg]
 
-            return String.init(format: self, arguments: args)
-        }
+        return String.init(format: self, arguments: args)
+    }
+  
+    var isNumeric: Bool {
+        return !(self.isEmpty) && self.allSatisfy { $0.isNumber }
+    }
     
 	
 	// stringByReplacingPercentEscapesUsingEncoding is deprecated
@@ -125,6 +129,8 @@ extension String {
         os_log("string [%@]", log: OSLog.default, type: .error, self)
 
         guard
+            !(self as String).isEmpty,
+            (self as String).dropPrefix("-").isNumeric,
             let timeInterval = self.doubleValue as Double?,
             timeInterval != 0.0
         else{
@@ -135,17 +141,18 @@ extension String {
         let now = Int(Date().timeIntervalSince1970)
         os_log("unix timestamp for now: %i", log: OSLog.default, type: .debug, now)
 
-        let oneHundredYears: Int = 3153600000
-        let upperBound = now + oneHundredYears
-        let lowerBound = now - oneHundredYears
+        let oneYear: Int = 31_536_000
+        let numberOfYears: Int = 100
+        let upperBound = now + (oneYear * numberOfYears)
+        let lowerBound = now - (oneYear * numberOfYears)
 
         if Int(timeInterval) > lowerBound && Int(timeInterval) < upperBound {
-            os_log("unix timestamp within +/- oneHundredYears", log: OSLog.default, type: .debug)
+            os_log("unix timestamp within +/- %i years", log: OSLog.default, type: .debug, numberOfYears)
             let date = Date(timeIntervalSince1970: timeInterval)
             let formatter = DateFormatter.iso8601DateFormatter
             return formatter.string(from: date) as NSString
         }
-        os_log("unix timestamp NOT within +/- oneHundredYears", log: OSLog.default, type: .debug)
+        os_log("unix timestamp NOT within +/- %i years", log: OSLog.default, type: .debug, numberOfYears)
         return nil
     }
 

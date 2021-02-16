@@ -180,7 +180,9 @@
         if (![self.selectedTableDocument parentTabShouldClose]) {
             return;
         }
-		[self.tabView removeTabViewItem:[self.tabView selectedTabViewItem]];
+        if([[self.tabView tabViewItems] containsObject:[self.tabView selectedTabViewItem]] == YES){
+            [self.tabView removeTabViewItem:[self.tabView selectedTabViewItem]];
+        }
 	} 
 	else {
 		//trying to close the window will itself call parentTabShouldClose for all tabs in windowShouldClose:
@@ -271,9 +273,10 @@
 	[control bindPropertiesForCell:selectedCell andTabViewItem:selectedTabViewItem];
 	
 	[selectedCell setCustomControlView:control];
-	
-	[[self.tabBarControl tabView] removeTabViewItem:[selectedCell representedObject]];
 
+    if([[self.tabBarControl.tabView tabViewItems] containsObject:[selectedCell representedObject]] == YES){
+        [[self.tabBarControl tabView] removeTabViewItem:[selectedCell representedObject]];
+    }
 	[[control tabView] addTabViewItem:selectedTabViewItem];
 
 	// Make sure the new tab is set in the correct position by forcing an update
