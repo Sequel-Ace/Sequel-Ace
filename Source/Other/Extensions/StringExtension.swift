@@ -116,7 +116,7 @@ extension String {
 
         guard
             !(self as String).isEmpty,
-            (self as String).isNumeric,
+            (self as String).dropPrefix("-").isNumeric,
             let timeInterval = self.doubleValue as Double?,
             timeInterval != 0.0
         else{
