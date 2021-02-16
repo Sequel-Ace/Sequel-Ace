@@ -3242,3 +3242,18 @@
 
 /* new version is available alert informativeText */
 "Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+
+/* downloading new version window title */
+"Download Progress" = "Download Progress";
+
+/* downloading new version time remaining placeholder text */
+"Calculating time remaining..." = "Calculating time remaining...";
+
+/* downloading new version window message */
+"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
+
+/* downloading new version time remaining estimate text */
+"About %.1f seconds left" = "About %.1f seconds left";
+
+/* downloading new version failure alert title */
+"Download Failed" = "Download Failed";

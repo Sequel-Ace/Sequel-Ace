@@ -15,7 +15,7 @@ import Alamofire
     static let NSModalResponseView    : NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1001);
     static let NSModalResponseDownload: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1002);
 
-    @objc static let sharedInstance                     = GitHubReleaseManager()
+    static let sharedInstance                           = GitHubReleaseManager()
     static let githubURLStr           : String          = "https://api.github.com/repos/%@/%@/releases"
     private var user                  : String
     private var project               : String
@@ -238,7 +238,6 @@ import Alamofire
 
         self.Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
 
-
         // init progress view
         progressViewController = ProgressWindowController()
 
@@ -295,7 +294,7 @@ import Alamofire
 
                 if secondsLeft < previousSecondsLeft{
                     Log.debug("Going down now")
-                    progressViewController?.subtitle.cell?.title = String(format:"About %.1f seconds left", secondsLeft)
+                    progressViewController?.subtitle.cell?.title = String.localizedStringWithFormat("About %.1f seconds left", secondsLeft)
                 }
 
                 Log.debug("previousSecondsLeft: \(previousSecondsLeft)")
@@ -323,22 +322,20 @@ import Alamofire
                 switch response.result {
                     case .success:
                         Log.debug("Validation Successful")
-                        let diff : Double = GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti)
-
-                        Log.debug("diff: \(diff)")
+                        Log.debug("diff: \(GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti))")
                         if response.error == nil, let filePath = response.fileURL?.path {
                             Log.debug("downloadNewRelease: \(filePath)")
                             let downloadDir : String = (filePath as NSString).deletingLastPathComponent
                             Log.debug("downloadDir: \(downloadDir)")
                             NSWorkspace.shared.openFile(downloadDir, withApplication: "Finder")
-                            DistributedNotificationCenter.default() .postNotificationName(NSNotification.Name(rawValue: "com.apple.DownloadFileFinished"), object: downloadDir, userInfo: nil, deliverImmediately: true)
                         }
 
                     case let .failure(error):
-                        Log.error("Error: \(error.localizedDescription)")
-
-                        // alert?
-                        NSAlert .createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
+                        // only show alert if the user did not explicitly cancel the download
+                        if error.isExplicitlyCancelledError == false {
+                            Log.error("Error: \(error.localizedDescription)")
+                            NSAlert .createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
+                        }
                 }
             }
     }
