@@ -152,6 +152,8 @@
 		1AB068B024A355CC00E2AAC2 /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689824A355B500E2AAC2 /* client-key-lf.pem */; };
 		1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
+		1AB28D8125DBD3B500E62BF5 /* ProgressWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB28D7F25DBD3B500E62BF5 /* ProgressWindowController.swift */; };
+		1AB28D8225DBD3B500E62BF5 /* ProgressWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1AB28D8025DBD3B500E62BF5 /* ProgressWindowController.xib */; };
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */; };
 		1AD785E725B749760007E153 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
@@ -801,6 +803,8 @@
 		1AB0689824A355B500E2AAC2 /* client-key-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-lf.pem"; sourceTree = "<group>"; };
 		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
+		1AB28D7F25DBD3B500E62BF5 /* ProgressWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWindowController.swift; sourceTree = "<group>"; };
+		1AB28D8025DBD3B500E62BF5 /* ProgressWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ProgressWindowController.xib; sourceTree = "<group>"; };
 		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
@@ -1568,6 +1572,8 @@
 				1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */,
 				1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */,
 				1A89557825D6DE860060CE72 /* GitHub.swift */,
+				1AB28D7F25DBD3B500E62BF5 /* ProgressWindowController.swift */,
+				1AB28D8025DBD3B500E62BF5 /* ProgressWindowController.xib */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -2862,6 +2868,7 @@
 				5135160C25935699001E4533 /* AquaTabsDownNonKey.png in Resources */,
 				51CD0BE9258D06D8009E2484 /* Console.xib in Resources */,
 				8831EFB22240143600D10172 /* button_bar_handleTemplate.pdf in Resources */,
+				1AB28D8225DBD3B500E62BF5 /* ProgressWindowController.xib in Resources */,
 				513515FD25935699001E4533 /* overflowImage.png in Resources */,
 				C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */,
 				C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */,
@@ -3178,6 +3185,7 @@
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
 				BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */,
 				BC398A2D121D526200BE3EF4 /* SPCopyTable.m in Sources */,
+				1AB28D8125DBD3B500E62BF5 /* ProgressWindowController.swift in Sources */,
 				BC32F242121D66260067305E /* SPFileManagerAdditions.m in Sources */,
 				17A20AC6124F9B110095CEFB /* SPServerSupport.m in Sources */,
 				BC2898F3125F4488001B50E1 /* SPGeometryDataView.m in Sources */,
