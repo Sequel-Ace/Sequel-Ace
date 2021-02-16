@@ -6613,7 +6613,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
     }
     else {
-        [[[self parentTabViewItem] tabView] performSelector:@selector(removeTabViewItem:) withObject:[self parentTabViewItem] afterDelay:0.5];
+        if([self.parentTabViewItem.tabView.tabViewItems containsObject:[self parentTabViewItem]]){
+            [[[self parentTabViewItem] tabView] performSelector:@selector(removeTabViewItem:) withObject:[self parentTabViewItem] afterDelay:0.5];
+        }
         [theParentWindow performSelector:@selector(makeKeyAndOrderFront:) withObject:nil afterDelay:0.6];
     }
 
