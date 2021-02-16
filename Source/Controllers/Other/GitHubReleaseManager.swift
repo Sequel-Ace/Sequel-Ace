@@ -10,7 +10,8 @@ import Foundation
 import OSLog
 import Alamofire
 
-@objc final class GitHubReleaseManager: NSObject {
+@objc final class GitHubReleaseManager: NSObject, NSWindowDelegate, ProgressWindowControllerDelegate {
+
     static let NSModalResponseView    : NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1001);
     static let NSModalResponseDownload: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1002);
 
@@ -20,12 +21,15 @@ import Alamofire
     private var project               : String
     private var includeDraft          : Bool
     private var includePrerelease     : Bool
+    private var progressViewController: ProgressWindowController?
+    private var download              : DownloadRequest?
     private var currentReleaseName    : String = ""
     private var availableReleaseName  : String = ""
     private var currentRelease        : GitHubElement?
     private var availableRelease      : GitHubElement?
     private var releases              : [GitHubElement] = []
     private let Log                                     = OSLog(subsystem : "com.sequel-ace.sequel-ace", category : "github")
+    private let manager                                 = NetworkReachabilityManager(host: "www.apple.com")
 
 
     struct Config {
@@ -55,6 +59,11 @@ import Alamofire
         Log.debug("GitHubReleaseManager init")
 
         super.init()
+
+        manager?.startListening { status in
+            self.Log.debug("Network Status Changed: \(status)")
+        }
+
     }
 
     public func checkReleaseWithName(name: String){
@@ -219,6 +228,7 @@ import Alamofire
         return true
     }
 
+
     private func downloadNewRelease(asset: Asset){
         self.Log.debug("downloadNewRelease")
 
@@ -226,8 +236,31 @@ import Alamofire
 
         let downloadNSString : NSString = asset.browserDownloadURL as NSString
 
-        self.Log.debug("asset.browserDownloadURL: \(downloadNSString.lastPathComponent)")
+        self.Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
 
+
+        // init progress view
+        progressViewController = ProgressWindowController()
+
+        let message = NSLocalizedString("Downloading Sequel Ace - %@",
+                                    comment: "Downloading Sequel Ace - %@") .format(availableReleaseName)
+
+        progressViewController?.window?.delegate = self
+        progressViewController?.title.cell?.title = message
+        progressViewController?.subtitle.cell?.title = NSLocalizedString("Calculating time remaining...", comment: "Calculating time remaining")
+        progressViewController?.progressIndicator.maxValue = 1.0
+        progressViewController?.progressIndicator.minValue = 0.0
+        progressViewController?.progressIndicator.isIndeterminate = false
+        progressViewController?.delegate = self
+
+        guard let mainWindow = NSApp.mainWindow else { return }
+
+        // reposition within the main window
+        let panelRect : NSRect = progressViewController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)
+        let screenRect : NSRect = mainWindow.convertToScreen(panelRect)
+        progressViewController?.window?.setFrame(screenRect, display: true)
+
+        progressViewController?.showWindow(mainWindow)
 
         let destination: DownloadRequest.Destination = { _, _ in
             let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
@@ -236,24 +269,109 @@ import Alamofire
         }
 
         var previousFractionCompleted : Double = 0.0
+        var secondsLeft : Double = 0.0
+        var previousSecondsLeft : Double = 0.0
+        var percentLeft : Double = 0.0
+        var ETA : Double = 0.0
+        var diff : Double = 0.0
 
-        AF.download(asset.browserDownloadURL, to: destination)
-            .downloadProgress { progress in
-                self.Log.debug("Download Progress: \(progress.fractionCompleted)")
+        let ti : UInt64 = GitHubReleaseManager._monotonicTime()
+
+        self.download = AF.download(asset.browserDownloadURL, to: destination)
+            .downloadProgress { [self] progress in
+                progressViewController?.progressIndicator.startAnimation(nil)
+                Log.debug("Download Progress: \(progress.fractionCompleted)")
                 previousFractionCompleted = progress.fractionCompleted - previousFractionCompleted
-                self.Log.debug("previousFractionCompleted: \(previousFractionCompleted)")
+                Log.debug("previousFractionCompleted: \(previousFractionCompleted)")
+                diff = GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti)
+                Log.debug("diff: \(diff)")
+
+                percentLeft = (1 - progress.fractionCompleted) + 1
+                Log.debug("percentLeft: \(percentLeft)")
+
+                ETA = diff * percentLeft
+
+                secondsLeft = ETA - diff
+
+                if secondsLeft < previousSecondsLeft{
+                    Log.debug("Going down now")
+                    progressViewController?.subtitle.cell?.title = String(format:"About %.1f seconds left", secondsLeft)
+                }
+
+                Log.debug("previousSecondsLeft: \(previousSecondsLeft)")
+
+                previousSecondsLeft = secondsLeft
+
+                Log.debug("ETA: \(ETA)")
+                Log.debug("secondsLeft: \(secondsLeft)")
+
+                progressViewController?.progressIndicator.increment(by: previousFractionCompleted)
+
                 previousFractionCompleted = progress.fractionCompleted
                 if progress.fractionCompleted == 1.0 {
-                    self.Log.debug("Download Complete")
+                    progressViewController?.progressIndicator.doubleValue = 1.0
+                    progressViewController?.progressIndicator.stopAnimation(nil)
+                    Log.debug("Download Complete")
                 }
             }
-            .response { response in
-                self.Log.debug("response: \(response)")
+            .validate() // check response code etc
+            .response { [self] response in
 
-                if response.error == nil, let filePath = response.fileURL?.path {
-                    self.Log.debug("downloadNewRelease: \(filePath)")
+                progressViewController?.progressIndicator.stopAnimation(nil)
+                progressViewController?.close()
+
+                switch response.result {
+                    case .success:
+                        Log.debug("Validation Successful")
+                        let diff : Double = GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti)
+
+                        Log.debug("diff: \(diff)")
+                        if response.error == nil, let filePath = response.fileURL?.path {
+                            Log.debug("downloadNewRelease: \(filePath)")
+                            let downloadDir : String = (filePath as NSString).deletingLastPathComponent
+                            Log.debug("downloadDir: \(downloadDir)")
+                            NSWorkspace.shared.openFile(downloadDir, withApplication: "Finder")
+                            DistributedNotificationCenter.default() .postNotificationName(NSNotification.Name(rawValue: "com.apple.DownloadFileFinished"), object: downloadDir, userInfo: nil, deliverImmediately: true)
+                        }
+
+                    case let .failure(error):
+                        Log.error("Error: \(error.localizedDescription)")
+
+                        // alert?
+                        NSAlert .createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
                 }
             }
     }
 
+    // MARK: Timing functions
+    private static func _monotonicTime() -> UInt64{
+        return clock_gettime_nsec_np(CLOCK_MONOTONIC)
+    }
+
+    private static func _timeIntervalSinceMonotonicTime(comparisonTime: UInt64) -> Double{
+        return Double(_monotonicTime() - comparisonTime) * 1e-9
+    }
+
+    // MARK: NSWindowDelegate
+    internal func windowWillClose(_ notification: Notification){
+        self.Log.debug("windowWillClose")
+
+        guard let win = notification.object as? NSWindow else{
+            return
+        }
+
+        if (win == progressViewController?.window) {
+            self.Log.debug("setting progressViewController?.window?.delegate to nil")
+            progressViewController?.window?.delegate = nil
+            progressViewController?.delegate = nil
+        }
+    }
+
+    // MARK: ProgressWindowControllerDelegate
+    internal func cancelPressed() {
+        self.Log.debug("cancelPressed, cancelling download")
+        self.download?.cancel()
+        progressViewController?.progressIndicator.stopAnimation(nil)
+        progressViewController?.close()
+    }
 }
