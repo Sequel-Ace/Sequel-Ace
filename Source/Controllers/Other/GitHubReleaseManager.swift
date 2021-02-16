@@ -14,7 +14,7 @@ import OSLog
     static let NSModalResponseView: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1001)
     static let NSModalResponseDownload: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1002)
     static let sharedInstance = GitHubReleaseManager()
-    static let githubURLStr: String = "https                               ://api.github.com/repos/%@/%@/releases"
+    static let githubURLStr: String = "https://api.github.com/repos/%@/%@/releases"
     private var user: String
     private var project: String
     private var includeDraft: Bool
