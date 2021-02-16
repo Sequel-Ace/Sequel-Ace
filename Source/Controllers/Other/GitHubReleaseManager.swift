@@ -6,55 +6,52 @@
 //  Copyright © 2021 Sequel-Ace. All rights reserved.
 //
 
+import Alamofire
 import Foundation
 import OSLog
-import Alamofire
 
 @objc final class GitHubReleaseManager: NSObject, NSWindowDelegate, ProgressWindowControllerDelegate {
-
-    static let NSModalResponseView    : NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1001);
-    static let NSModalResponseDownload: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1002);
-
-    static let sharedInstance                           = GitHubReleaseManager()
-    static let githubURLStr           : String          = "https://api.github.com/repos/%@/%@/releases"
-    private var user                  : String
-    private var project               : String
-    private var includeDraft          : Bool
-    private var includePrerelease     : Bool
+    static let NSModalResponseView: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1001)
+    static let NSModalResponseDownload: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1002)
+    static let sharedInstance = GitHubReleaseManager()
+    static let githubURLStr: String = "https                               ://api.github.com/repos/%@/%@/releases"
+    private var user: String
+    private var project: String
+    private var includeDraft: Bool
+    private var includePrerelease: Bool
     private var progressViewController: ProgressWindowController?
-    private var download              : DownloadRequest?
-    private var currentReleaseName    : String = ""
-    private var availableReleaseName  : String = ""
-    private var currentRelease        : GitHubElement?
-    private var availableRelease      : GitHubElement?
-    private var releases              : [GitHubElement] = []
-    private let Log                                     = OSLog(subsystem : "com.sequel-ace.sequel-ace", category : "github")
-    private let manager                                 = NetworkReachabilityManager(host: "www.apple.com")
-
+    private var download: DownloadRequest?
+    private var currentReleaseName: String = ""
+    private var availableReleaseName: String = ""
+    private var currentRelease: GitHubElement?
+    private var availableRelease: GitHubElement?
+    private var releases: [GitHubElement] = []
+    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
+    private let manager = NetworkReachabilityManager(host: "www.apple.com")
 
     struct Config {
-        var user              : String
-        var project           : String
-        var includeDraft      : Bool = false
-        var includePrerelease : Bool = false
+        var user: String
+        var project: String
+        var includeDraft: Bool = false
+        var includePrerelease: Bool = false
     }
 
-    private static var config:Config?
+    private static var config: Config?
 
-    class func setup(_ config:Config){
+    class func setup(_ config: Config) {
         GitHubReleaseManager.config = config
     }
 
-    private override init() {
+    override private init() {
         guard let config = GitHubReleaseManager.config else {
             Log.error("you must call setup before accessing GitHubReleaseManager.sharedInstance")
             fatalError("Error - you must call setup before accessing GitHubReleaseManager.sharedInstance")
         }
 
-        self.user              = config.user
-        self.project           = config.project
-        self.includeDraft      = config.includeDraft
-        self.includePrerelease = config.includePrerelease
+        user = config.user
+        project = config.project
+        includeDraft = config.includeDraft
+        includePrerelease = config.includePrerelease
 
         Log.debug("GitHubReleaseManager init")
 
@@ -63,11 +60,9 @@ import Alamofire
         manager?.startListening { status in
             self.Log.debug("Network Status Changed: \(status)")
         }
-
     }
 
-    public func checkReleaseWithName(name: String){
-
+    public func checkReleaseWithName(name: String) {
         if name.count == 0 {
             Log.error("name not valid")
             return
@@ -79,96 +74,93 @@ import Alamofire
         Log.debug("GitHubReleaseManager.config = \(String(describing: GitHubReleaseManager.config))")
         Log.debug("urlStr = \(urlStr)")
 
-        AF.request(urlStr){ urlRequest in
+        AF.request(urlStr) { urlRequest in
             urlRequest.timeoutInterval = 60
             self.Log.debug("urlRequest: \(urlRequest)")
         }
         .validate() // check response code etc
         .responseJSON { [self] response in
             switch response.result {
-                case .success:
-                    Log.info("Validation Successful")
+            case .success:
+                Log.info("Validation Successful")
 
-                    do{
-                        guard let responseData = response.data else {
-                            Log.error("response.data not valid")
+                do {
+                    guard let responseData = response.data else {
+                        Log.error("response.data not valid")
+                        return
+                    }
+
+                    let json = try JSONSerialization.jsonObject(with: responseData, options: JSONSerialization.ReadingOptions())
+                    let jsonData = try JSONSerialization.data(withJSONObject: json, options: .fragmentsAllowed)
+                    let gitHub = try GitHub(data: jsonData)
+
+                    var releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
+                        element0 > element1
+                    })
+
+                    Log.debug("releasesArray count: \(releasesArray.count)")
+
+                    if let i = releasesArray.firstIndex(where: { $0.name == name }) {
+                        currentRelease = releasesArray[i]
+                        guard let currentReleaseName = currentRelease?.name else {
                             return
                         }
-                        
-                        let json = try JSONSerialization.jsonObject(with: responseData, options: JSONSerialization.ReadingOptions())
-                        let jsonData = try JSONSerialization.data(withJSONObject: json, options: .fragmentsAllowed)
-                        let gitHub = try GitHub(data: jsonData)
-
-                        var releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
-                            return element0 > element1
-                        })
-
-                        Log.debug("releasesArray count: \(releasesArray.count)")
-
-                        if let i = releasesArray.firstIndex(where: { $0.name == name }) {
-                            currentRelease = releasesArray[i]
-                            guard let currentReleaseName = currentRelease?.name else {
-                                 return
-                            }
-                            self.currentReleaseName = currentReleaseName
-                            Log.debug("Found this release at index:[\(i)] name: \(currentReleaseName))")
-                        }
-
-                        if includeDraft == false {
-                            // remove drafts
-                            Log.debug("removing drafts")
-                            releasesArray.removeAll(where: { $0.draft == true })
-                        }
-
-                        if includePrerelease == false {
-                            // remove prereleases
-                            Log.debug("removing prereleases")
-                            releasesArray.removeAll(where: { $0.prerelease == true })
-                        }
-
-                        Log.debug("releasesArray count: \(releasesArray.count)")
-
-                        releases = releasesArray
-                        availableRelease = releases.first
-                        if availableRelease != currentRelease {
-                            guard let availableReleaseName = availableRelease?.name else {
-                                 return
-                            }
-                            self.availableReleaseName = availableReleaseName
-                            Log.info("Found availableRelease: \(availableReleaseName)")
-                            // ??? do we need this?
-                            NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPNewReleaseAvailable.rawValue), object: availableRelease)
-                            _ = self.displayNewReleaseAvailableAlert()
-                        }
-                        else{
-                            Log.debug("No newer release available")
-                        }
-                    }
-                    catch{
-                        Log.error("Error: \(error.localizedDescription)")
+                        self.currentReleaseName = currentReleaseName
+                        Log.debug("Found this release at index:[\(i)] name: \(currentReleaseName))")
                     }
 
-                case let .failure(error):
+                    if includeDraft == false {
+                        // remove drafts
+                        Log.debug("removing drafts")
+                        releasesArray.removeAll(where: { $0.draft == true })
+                    }
+
+                    if includePrerelease == false {
+                        // remove prereleases
+                        Log.debug("removing prereleases")
+                        releasesArray.removeAll(where: { $0.prerelease == true })
+                    }
+
+                    Log.debug("releasesArray count: \(releasesArray.count)")
+
+                    releases = releasesArray
+                    availableRelease = releases.first
+                    if availableRelease != currentRelease {
+                        guard let availableReleaseName = availableRelease?.name else {
+                            return
+                        }
+                        self.availableReleaseName = availableReleaseName
+                        Log.info("Found availableRelease: \(availableReleaseName)")
+                        // ??? do we need this?
+                        NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPNewReleaseAvailable.rawValue), object: availableRelease)
+                        _ = self.displayNewReleaseAvailableAlert()
+                    } else {
+                        Log.debug("No newer release available")
+                    }
+                } catch {
                     Log.error("Error: \(error.localizedDescription)")
+                }
+
+            case let .failure(error):
+                Log.error("Error: \(error.localizedDescription)")
             }
         }
     }
 
     private func displayNewReleaseAvailableAlert() -> Bool {
-
         Log.debug("displayNewReleaseAvailableAlert")
 
-        let prefs    : UserDefaults = UserDefaults.standard
-        var localURL : URL
-        let message  : String
-        var asset    : Asset?
+        let prefs: UserDefaults = UserDefaults.standard
+        var localURL: URL
+        let message: String
+        var asset: Asset?
 
         if prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
             return false
         }
 
-        if (availableRelease?.htmlURL == nil) {
+        if availableRelease?.htmlURL == nil {
             Log.error("release has no url")
             return false
         }
@@ -187,7 +179,7 @@ import Alamofire
         }
 
         message = NSLocalizedString("Version %@ is available. You are currently running %@",
-                                    comment: "Version %@ is available. You are currently running %@") .format(availableReleaseName, currentReleaseName)
+                                    comment: "Version %@ is available. You are currently running %@").format(availableReleaseName, currentReleaseName)
 
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("A new version is available", comment: "A new version is available")
@@ -195,7 +187,7 @@ import Alamofire
         alert.showsSuppressionButton = true
         alert.alertStyle = .informational
         alert.addButton(withTitle: "View").tag = GitHubReleaseManager.NSModalResponseView.rawValue
-        
+
         if asset != nil {
             alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
         }
@@ -203,7 +195,7 @@ import Alamofire
 
         guard let mainWindow = NSApp.mainWindow else { return false }
 
-        alert .beginSheetModal(for: mainWindow) { [self] (returnCode: NSApplication.ModalResponse) -> Void in
+        alert.beginSheetModal(for: mainWindow) { [self] (returnCode: NSApplication.ModalResponse) -> Void in
             self.Log.debug("returnCode: \(returnCode)")
 
             if let suppressionButton = alert.suppressionButton,
@@ -212,37 +204,36 @@ import Alamofire
             }
 
             switch returnCode {
-                case GitHubReleaseManager.NSModalResponseView:
-                    self.Log.debug("user clicked view")
-                    NSWorkspace.shared .open(localURL)
-                case GitHubReleaseManager.NSModalResponseDownload:
-                    self.Log.debug("user clicked download")
-                    self.downloadNewRelease(asset: asset!) // already checked that this is not nil
-                case NSApplication.ModalResponse.cancel:
-                    self.Log.debug("user clicked cancel")
-                default:
-                    return
+            case GitHubReleaseManager.NSModalResponseView:
+                self.Log.debug("user clicked view")
+                NSWorkspace.shared.open(localURL)
+            case GitHubReleaseManager.NSModalResponseDownload:
+                self.Log.debug("user clicked download")
+                self.downloadNewRelease(asset: asset!) // already checked that this is not nil
+            case NSApplication.ModalResponse.cancel:
+                self.Log.debug("user clicked cancel")
+            default:
+                return
             }
         }
 
         return true
     }
 
+    private func downloadNewRelease(asset: Asset) {
+        Log.debug("downloadNewRelease")
 
-    private func downloadNewRelease(asset: Asset){
-        self.Log.debug("downloadNewRelease")
+        Log.debug("asset.browserDownloadURL: \(asset.browserDownloadURL)")
 
-        self.Log.debug("asset.browserDownloadURL: \(asset.browserDownloadURL)")
+        let downloadNSString: NSString = asset.browserDownloadURL as NSString
 
-        let downloadNSString : NSString = asset.browserDownloadURL as NSString
-
-        self.Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
+        Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
 
         // init progress view
         progressViewController = ProgressWindowController()
 
         let message = NSLocalizedString("Downloading Sequel Ace - %@",
-                                    comment: "Downloading Sequel Ace - %@") .format(availableReleaseName)
+                                        comment: "Downloading Sequel Ace - %@").format(availableReleaseName)
 
         progressViewController?.window?.delegate = self
         progressViewController?.title.cell?.title = message
@@ -255,8 +246,8 @@ import Alamofire
         guard let mainWindow = NSApp.mainWindow else { return }
 
         // reposition within the main window
-        let panelRect : NSRect = progressViewController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)
-        let screenRect : NSRect = mainWindow.convertToScreen(panelRect)
+        let panelRect: NSRect = progressViewController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)
+        let screenRect: NSRect = mainWindow.convertToScreen(panelRect)
         progressViewController?.window?.setFrame(screenRect, display: true)
 
         progressViewController?.showWindow(mainWindow)
@@ -267,16 +258,16 @@ import Alamofire
             return (fileURL, [.removePreviousFile, .createIntermediateDirectories])
         }
 
-        var previousFractionCompleted : Double = 0.0
-        var secondsLeft : Double = 0.0
-        var previousSecondsLeft : Double = 0.0
-        var percentLeft : Double = 0.0
-        var ETA : Double = 0.0
-        var diff : Double = 0.0
+        var previousFractionCompleted: Double = 0.0
+        var secondsLeft: Double = 0.0
+        var previousSecondsLeft: Double = 0.0
+        var percentLeft: Double = 0.0
+        var ETA: Double = 0.0
+        var diff: Double = 0.0
 
-        let ti : UInt64 = GitHubReleaseManager._monotonicTime()
+        let ti: UInt64 = GitHubReleaseManager._monotonicTime()
 
-        self.download = AF.download(asset.browserDownloadURL, to: destination)
+        download = AF.download(asset.browserDownloadURL, to: destination)
             .downloadProgress { [self] progress in
                 progressViewController?.progressIndicator.startAnimation(nil)
                 Log.debug("Download Progress: \(progress.fractionCompleted)")
@@ -292,7 +283,7 @@ import Alamofire
 
                 secondsLeft = ETA - diff
 
-                if secondsLeft < previousSecondsLeft{
+                if secondsLeft < previousSecondsLeft {
                     Log.debug("Going down now")
                     progressViewController?.subtitle.cell?.title = String.localizedStringWithFormat("About %.1f seconds left", secondsLeft)
                 }
@@ -320,54 +311,57 @@ import Alamofire
                 progressViewController?.close()
 
                 switch response.result {
-                    case .success:
-                        Log.debug("Validation Successful")
-                        Log.debug("diff: \(GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti))")
-                        if response.error == nil, let filePath = response.fileURL?.path {
-                            Log.debug("downloadNewRelease: \(filePath)")
-                            let downloadDir : String = (filePath as NSString).deletingLastPathComponent
-                            Log.debug("downloadDir: \(downloadDir)")
-                            NSWorkspace.shared.openFile(downloadDir, withApplication: "Finder")
-                        }
+                case .success:
+                    Log.debug("Validation Successful")
+                    Log.debug("diff: \(GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti))")
+                    if response.error == nil, let filePath = response.fileURL?.path {
+                        Log.debug("downloadNewRelease: \(filePath)")
+                        let downloadDir: String = (filePath as NSString).deletingLastPathComponent
+                        Log.debug("downloadDir: \(downloadDir)")
+                        NSWorkspace.shared.openFile(downloadDir, withApplication: "Finder")
+                    }
 
-                    case let .failure(error):
-                        // only show alert if the user did not explicitly cancel the download
-                        if error.isExplicitlyCancelledError == false {
-                            Log.error("Error: \(error.localizedDescription)")
-                            NSAlert .createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
-                        }
+                case let .failure(error):
+                    // only show alert if the user did not explicitly cancel the download
+                    if error.isExplicitlyCancelledError == false {
+                        Log.error("Error: \(error.localizedDescription)")
+                        NSAlert.createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
+                    }
                 }
             }
     }
 
     // MARK: Timing functions
-    private static func _monotonicTime() -> UInt64{
+
+    private static func _monotonicTime() -> UInt64 {
         return clock_gettime_nsec_np(CLOCK_MONOTONIC)
     }
 
-    private static func _timeIntervalSinceMonotonicTime(comparisonTime: UInt64) -> Double{
+    private static func _timeIntervalSinceMonotonicTime(comparisonTime: UInt64) -> Double {
         return Double(_monotonicTime() - comparisonTime) * 1e-9
     }
 
     // MARK: NSWindowDelegate
-    internal func windowWillClose(_ notification: Notification){
-        self.Log.debug("windowWillClose")
 
-        guard let win = notification.object as? NSWindow else{
+    internal func windowWillClose(_ notification: Notification) {
+        Log.debug("windowWillClose")
+
+        guard let win = notification.object as? NSWindow else {
             return
         }
 
-        if (win == progressViewController?.window) {
-            self.Log.debug("setting progressViewController?.window?.delegate to nil")
+        if win == progressViewController?.window {
+            Log.debug("setting progressViewController?.window?.delegate to nil")
             progressViewController?.window?.delegate = nil
             progressViewController?.delegate = nil
         }
     }
 
     // MARK: ProgressWindowControllerDelegate
+
     internal func cancelPressed() {
-        self.Log.debug("cancelPressed, cancelling download")
-        self.download?.cancel()
+        Log.debug("cancelPressed, cancelling download")
+        download?.cancel()
         progressViewController?.progressIndicator.stopAnimation(nil)
         progressViewController?.close()
     }
