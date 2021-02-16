@@ -9,27 +9,25 @@
 import Foundation
 
 @objc extension Bundle {
-
     public var appName: String? {
-        return self.object(forInfoDictionaryKey: kCFBundleNameKey as String) as? String
+        return object(forInfoDictionaryKey: kCFBundleNameKey as String) as? String
     }
 
     public var version: String? {
-        return self.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        return object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
     }
 
     public var bundleIdentifier: String? {
-        return self.object(forInfoDictionaryKey: kCFBundleIdentifierKey as String) as? String
+        return object(forInfoDictionaryKey: kCFBundleIdentifierKey as String) as? String
     }
 
     public var build: String? {
-        return self.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as? String
+        return object(forInfoDictionaryKey: kCFBundleVersionKey as String) as? String
     }
 
     public var isSnapshotBuild: Bool {
-
         guard let ret = appName?.contains(SPSnapshotBuildIndicator)
-        else{
+        else {
             return false
         }
 
@@ -37,38 +35,35 @@ import Foundation
     }
 
     public var isMASVersion: Bool {
-
         guard
-            let receiptURL : URL = self.appStoreReceiptURL
-        else{
+            let receiptURL: URL = appStoreReceiptURL
+        else {
             return false
         }
 
         do {
-            let _ : Data = try Data(contentsOf: receiptURL)
+            let _: Data = try Data(contentsOf: receiptURL)
             return true
-        }
-        catch {
+        } catch {
             return false
         }
     }
 
     public var versionString: String {
         guard
-            let version : String = self.version,
-            let build   : String = self.build
-        else{
+            let version: String = self.version,
+            let build: String = self.build
+        else {
             return ""
         }
 
         // e.g. "3.0.2 (3009)"
-        return "%@ (%@)" .format(version, build)
+        return "%@ (%@)".format(version, build)
     }
 
-    public func checkForNewVersion(){
-
+    public func checkForNewVersion() {
         if isMASVersion == false {
-            GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: (isSnapshotBuild ? true : false)))
+            GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: isSnapshotBuild ? true : false))
             GitHubReleaseManager.sharedInstance.checkReleaseWithName(name: versionString)
         }
     }
@@ -102,7 +97,6 @@ import Foundation
         }
 
         let expectedDictionary = bundleURLTypes.first { $0["CFBundleURLName"] as? String == "Sequel Ace URL scheme" }
-        return [(expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first?.trimmedString,"://"].compactMap { $0 }.joined(separator: "")
-
+        return [(expectedDictionary?["CFBundleURLSchemes"] as? [String])?.first?.trimmedString, "://"].compactMap { $0 }.joined(separator: "")
     }
 }

@@ -22,7 +22,7 @@ final class ProgressWindowController: NSWindowController {
     var delegate: ProgressWindowControllerDelegate?
 
     @IBAction func cancelAction(_ sender: NSButton) {
-        self.Log.debug("cancelPressed, calling delegate cancel")
+        Log.debug("cancelPressed, calling delegate cancel")
         delegate?.cancelPressed()
     }
 
