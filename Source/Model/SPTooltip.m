@@ -162,12 +162,15 @@ static CGFloat slow_in_out (CGFloat t)
 		NSString* html = nil;
 		NSMutableString* text = [(NSString*)content mutableCopy];
 
-        // check to see if the string is a unix timestamp, within +/- oneHundredYears
-        // if it is create a date time string from the unix timestamp
-        NSString *unixTimestampAsString = text.dateStringFromUnixTimestamp;
-        if(!IsEmpty(unixTimestampAsString)){
-            SPLog(@"unixTimestampAsString: %@", unixTimestampAsString);
-            [text setString:unixTimestampAsString];
+
+        if(!IsEmpty(text)){
+            // check to see if the string is a unix timestamp, within +/- oneHundredYears
+            // if it is create a date time string from the unix timestamp
+            NSString *unixTimestampAsString = text.dateStringFromUnixTimestamp;
+            if(!IsEmpty(unixTimestampAsString)){
+                SPLog(@"unixTimestampAsString: %@", unixTimestampAsString);
+                [text setString:unixTimestampAsString];
+            }
         }
 
 		if(text)
