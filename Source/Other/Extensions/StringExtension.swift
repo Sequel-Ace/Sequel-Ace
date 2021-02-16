@@ -115,7 +115,7 @@ extension String {
         os_log("string [%@]", log: OSLog.default, type: .error, self)
 
         guard
-            !IsEmpty(self),
+            !(self as String).isEmpty,
             (self as String).isNumeric,
             let timeInterval = self.doubleValue as Double?,
             timeInterval != 0.0
