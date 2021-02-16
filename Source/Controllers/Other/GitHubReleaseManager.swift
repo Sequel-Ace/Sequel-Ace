@@ -27,7 +27,7 @@ import OSLog
     private var availableRelease: GitHubElement?
     private var releases: [GitHubElement] = []
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
-    private let manager = NetworkReachabilityManager(host: "www.apple.com")
+    private let manager = NetworkReachabilityManager(host: "www.google.com")
 
     struct Config {
         var user: String
@@ -57,9 +57,6 @@ import OSLog
 
         super.init()
 
-        manager?.startListening { status in
-            self.Log.debug("Network Status Changed: \(status)")
-        }
     }
 
     public func checkReleaseWithName(name: String) {
@@ -67,6 +64,7 @@ import OSLog
             Log.error("name not valid")
             return
         }
+
         Log.debug("checkReleaseWithName: \(name)")
 
         let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
@@ -143,6 +141,9 @@ import OSLog
 
             case let .failure(error):
                 Log.error("Error: \(error.localizedDescription)")
+                if (manager?.isReachable == false) {
+                    Log.error("manager?.isReachable == false")
+                }
             }
         }
     }
@@ -326,6 +327,9 @@ import OSLog
                     if error.isExplicitlyCancelledError == false {
                         Log.error("Error: \(error.localizedDescription)")
                         NSAlert.createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
+                        if (manager?.isReachable == false) {
+                            Log.error("manager?.isReachable == false")
+                        }
                     }
                 }
             }
