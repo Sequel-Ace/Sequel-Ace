@@ -1653,7 +1653,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			if ([collations count] > 0) {
 				NSString *tableCollation = [[tableDataInstance statusValues] objectForKey:@"Collation"];
 
-				if (![tableCollation length]) {
+				if (![tableCollation isNSNull] && ![tableCollation length]) {
 					tableCollation = [databaseDataInstance getDefaultCollationForEncoding:tableEncoding];
 				}
 
