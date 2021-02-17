@@ -129,8 +129,6 @@ import OSLog
                         }
                         self.availableReleaseName = availableReleaseName
                         Log.info("Found availableRelease: \(availableReleaseName)")
-                        // ??? do we need this?
-                        NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPNewReleaseAvailable.rawValue), object: availableRelease)
                         _ = self.displayNewReleaseAvailableAlert()
                     } else {
                         Log.debug("No newer release available")
