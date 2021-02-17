@@ -505,7 +505,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
                 [delegate queryGaveError:lastErrorMessage connection:self];
             }
             if ([delegate respondsToSelector:@selector(showErrorWithTitle:message:)]) {
-                [lastErrorMessage appendString:@"\n\ntime_zone will be set to SYSTEM."];
+                [lastErrorMessage appendString:NSLocalizedString(@"\n\ntime_zone will be set to SYSTEM.", @"\n\ntime_zone will be set to SYSTEM.")];
                 [delegate showErrorWithTitle:NSLocalizedString(@"Error", @"error") message:lastErrorMessage];
             }
         }
