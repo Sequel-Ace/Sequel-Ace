@@ -60,6 +60,7 @@
 #import "SPFunctions.h"
 #import "sequel-ace-Swift.h"
 #include <tgmath.h>
+@import AppCenterAnalytics;
 
 static NSInteger spTooltipCounter = 0;
 
@@ -159,18 +160,40 @@ static CGFloat slow_in_out (CGFloat t)
 	[self setFrameTopLeftPoint:point];
 
 	if([type isEqualToString:@"text"]) {
-		NSString* html = nil;
-		NSMutableString* text = [(NSString*)content mutableCopy];
+		NSString *html = nil;
+        NSMutableString *text = nil;
+        NSString *textStr = nil;
 
+        NSMutableDictionary *errorDict = [[NSMutableDictionary alloc] init];
 
-        if(!IsEmpty(text)){
+        if ([content isKindOfClass:[NSString class]]) {
+            textStr = (NSString*)content;
+            text = [(NSString*)content mutableCopy];
+        }
+        else{
+            [errorDict setObject:@"not an NSString" forKey:@"content"];
+            [errorDict safeSetObject:[content class] forKey:@"content"];
+        }
+
+        if(!IsEmpty(textStr)){
             // check to see if the string is a unix timestamp, within +/- oneHundredYears
             // if it is create a date time string from the unix timestamp
-            NSString *unixTimestampAsString = text.dateStringFromUnixTimestamp;
+            NSString *unixTimestampAsString = textStr.dateStringFromUnixTimestamp;
             if(!IsEmpty(unixTimestampAsString)){
                 SPLog(@"unixTimestampAsString: %@", unixTimestampAsString);
                 [text setString:unixTimestampAsString];
             }
+        }
+        else{
+            [errorDict setObject:@"string is empty" forKey:@"textStr"];
+            [errorDict safeSetObject:textStr forKey:@"textStr"];
+            [errorDict safeSetObject:text forKey:@"textMut"];
+        }
+        
+        if(errorDict.count > 0){
+            executeOnBackgroundThread(^{
+                [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+            });
         }
 
 		if(text)
