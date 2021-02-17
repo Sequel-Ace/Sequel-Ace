@@ -493,7 +493,22 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
         [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
     } else {
         [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
-        self.timeZoneIdentifier = timeZoneIdentifier;
+        if ([self lastErrorMessage] == nil) {
+            self.timeZoneIdentifier = timeZoneIdentifier;
+        }
+        else{
+            NSMutableString *lastErrorMessage = [[NSMutableString alloc] init];
+            [lastErrorMessage setString:[self lastErrorMessage]];
+            SPLog(@"Failed to set time_zone. Error: %@", lastErrorMessage);
+            self.timeZoneIdentifier = nil;
+            if (delegate && [delegate respondsToSelector:@selector(queryGaveError:connection:)]) {
+                [delegate queryGaveError:lastErrorMessage connection:self];
+            }
+            if ([delegate respondsToSelector:@selector(showErrorWithTitle:message:)]) {
+                [lastErrorMessage appendString:NSLocalizedString(@"\n\ntime_zone will be set to SYSTEM.", @"\n\ntime_zone will be set to SYSTEM.")];
+                [delegate showErrorWithTitle:NSLocalizedString(@"Error", @"error") message:lastErrorMessage];
+            }
+        }
     }
 }
 
