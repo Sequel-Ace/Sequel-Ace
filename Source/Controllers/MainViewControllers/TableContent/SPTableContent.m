@@ -1764,7 +1764,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	NSString *contextInfo = @"removerow";
 
-	if (([tableContentView numberOfSelectedRows] == [tableContentView numberOfRows]) && [tableContentView numberOfSelectedRows] > 50 && !isFiltered && !isLimited && !isInterruptedLoad && !isEditingNewRow) {
+	if (([tableContentView numberOfSelectedRows] == [tableContentView numberOfRows]) && !isFiltered && !isLimited && !isInterruptedLoad && !isEditingNewRow) {
 
 		contextInfo = @"removeallrows";
 
