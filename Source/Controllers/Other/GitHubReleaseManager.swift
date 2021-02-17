@@ -59,13 +59,13 @@ import OSLog
 
     }
 
-    public func checkReleaseWithName(name: String) {
+    public func checkRelease(name: String) {
         if name.count == 0 {
             Log.error("name not valid")
             return
         }
 
-        Log.debug("checkReleaseWithName: \(name)")
+        Log.debug("checkRelease: \(name)")
 
         let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
 
@@ -97,6 +97,15 @@ import OSLog
                     })
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
+
+                    if let currentReleaseTmp = releasesArray.first(where: { $0.name == name }) {
+                        currentRelease = currentReleaseTmp
+                        guard let currentReleaseName = currentRelease?.name else {
+                            return
+                        }
+                        self.currentReleaseName = currentReleaseName
+                        Log.debug("Found this release: \(currentReleaseName))")
+                    }
 
                     if let i = releasesArray.firstIndex(where: { $0.name == name }) {
                         currentRelease = releasesArray[i]
@@ -159,22 +168,20 @@ import OSLog
             return false
         }
 
-        if availableRelease?.htmlURL == nil {
-            Log.error("release has no url")
-            return false
-        }
+        guard let mainWindow = NSApp.mainWindow else { return false }
 
         guard
             let availableReleaseURL = availableRelease?.htmlURL,
             let url = URL(string: availableReleaseURL)
         else {
+            Log.error("release has no url")
             return false
         }
 
         localURL = url
 
-        if let i = availableRelease?.assets.firstIndex(where: { $0.browserDownloadURL.count > 0 }) {
-            asset = availableRelease?.assets[i] ?? nil
+        if let availableAsset = availableRelease?.assets.first(where: { $0.browserDownloadURL.count > 0 }) {
+            asset = availableAsset
         }
 
         message = NSLocalizedString("Version %@ is available. You are currently running %@",
@@ -191,8 +198,6 @@ import OSLog
             alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
         }
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button")).tag = NSApplication.ModalResponse.cancel.rawValue
-
-        guard let mainWindow = NSApp.mainWindow else { return false }
 
         alert.beginSheetModal(for: mainWindow) { [self] (returnCode: NSApplication.ModalResponse) -> Void in
             self.Log.debug("returnCode: \(returnCode)")
@@ -224,6 +229,8 @@ import OSLog
 
         Log.debug("asset.browserDownloadURL: \(asset.browserDownloadURL)")
 
+        guard let mainWindow = NSApp.mainWindow else { return }
+
         let downloadNSString: NSString = asset.browserDownloadURL as NSString
 
         let size : Double = Double(asset.size)
@@ -244,8 +251,6 @@ import OSLog
         progressViewController?.progressIndicator.minValue = 0.0
         progressViewController?.progressIndicator.isIndeterminate = false
         progressViewController?.delegate = self
-
-        guard let mainWindow = NSApp.mainWindow else { return }
 
         // reposition within the main window
         let panelRect: NSRect = progressViewController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)

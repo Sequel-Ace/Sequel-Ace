@@ -64,7 +64,7 @@ import Foundation
     public func checkForNewVersion() {
         if isMASVersion == false {
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: isSnapshotBuild ? true : false))
-            GitHubReleaseManager.sharedInstance.checkReleaseWithName(name: versionString)
+            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString)
         }
     }
 

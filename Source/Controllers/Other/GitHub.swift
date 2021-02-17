@@ -14,7 +14,7 @@
 import Foundation
 
 // MARK: - GitHubElement
-class GitHubElement: Codable, Comparable {
+final class GitHubElement: Codable, Comparable {
     static func < (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
         return lhs.publishedAt < rhs.publishedAt
 
@@ -149,7 +149,7 @@ extension GitHubElement {
 }
 
 // MARK: - Asset
-class Asset: Codable {
+final class Asset: Codable {
     let url: String
     let id: Int
     let nodeID, name: String
@@ -259,7 +259,7 @@ enum State: String, Codable {
 }
 
 // MARK: - Author
-class Author: Codable {
+final class Author: Codable {
     let login: Login
     let id: Int
     let nodeID: NodeID
@@ -474,7 +474,7 @@ func newJSONEncoder() -> JSONEncoder {
 
 // MARK: - Encode/decode helpers
 
-class JSONNull: Codable, Hashable {
+final class JSONNull: Codable, Hashable {
 
     public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
         return true
