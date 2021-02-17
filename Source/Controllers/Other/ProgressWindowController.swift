@@ -15,6 +15,7 @@ protocol ProgressWindowControllerDelegate{
 
 final class ProgressWindowController: NSWindowController {
 
+    @IBOutlet weak var bytes: NSTextField!
     @IBOutlet weak var progressIndicator: NSProgressIndicator!
     @IBOutlet weak var subtitle: NSTextField!
     @IBOutlet weak var title: NSTextField!

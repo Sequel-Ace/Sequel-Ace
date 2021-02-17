@@ -226,6 +226,9 @@ import OSLog
 
         let downloadNSString: NSString = asset.browserDownloadURL as NSString
 
+        let size : Double = Double(asset.size)
+        let sizeStr : String = ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+
         Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
 
         // init progress view
@@ -263,6 +266,8 @@ import OSLog
         var percentLeft: Double = 0.0
         var ETA: Double = 0.0
         var diff: Double = 0.0
+        var dlBytes : Double = 0.0
+        var dlBytesStr : String = ""
 
         let ti: UInt64 = GitHubReleaseManager._monotonicTime()
 
@@ -274,6 +279,15 @@ import OSLog
                 Log.debug("previousFractionCompleted: \(previousFractionCompleted)")
                 diff = GitHubReleaseManager._timeIntervalSinceMonotonicTime(comparisonTime: ti)
                 Log.debug("diff: \(diff)")
+
+                dlBytes = progress.fractionCompleted * size
+
+                dlBytesStr = ByteCountFormatter.string(fromByteCount: Int64(dlBytes), countStyle: .file)
+
+                progressViewController?.bytes.cell?.title = String.localizedStringWithFormat("%@ of %@", dlBytesStr, sizeStr)
+
+                Log.debug("Download Progress Bytes: \(dlBytes)")
+                Log.debug("Download Progress dlBytesStr: \(dlBytesStr)")
 
                 percentLeft = (1 - progress.fractionCompleted) + 1
                 Log.debug("percentLeft: \(percentLeft)")

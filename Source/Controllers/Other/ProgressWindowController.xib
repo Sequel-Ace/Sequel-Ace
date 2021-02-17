@@ -8,6 +8,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="ProgressWindowController" customModule="Sequel_Ace" customModuleProvider="target">
             <connections>
+                <outlet property="bytes" destination="kC0-h7-kF7" id="Wip-Ig-e3T"/>
                 <outlet property="progressIndicator" destination="RNr-5h-9bm" id="HOd-I0-vz6"/>
                 <outlet property="subtitle" destination="hBS-Fc-jOS" id="DlF-8M-Gqi"/>
                 <outlet property="title" destination="qsh-ou-6K0" id="UOR-qu-qZi"/>
@@ -67,6 +68,15 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSApplicationIcon" id="4Xp-X3-lVg"/>
                     </imageView>
+                    <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kC0-h7-kF7">
+                        <rect key="frame" x="18" y="32" width="187" height="17"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" truncatesLastVisibleLine="YES" sendsActionOnEndEditing="YES" alignment="left" id="nwL-xq-6HW">
+                            <font key="font" metaFont="message" size="11"/>
+                            <color key="textColor" white="0.5" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
                 </subviews>
             </view>
             <connections>
