@@ -3257,3 +3257,6 @@
 
 /* downloading new version failure alert title */
 "Download Failed" = "Download Failed";
+
+/* Tool tip for the Show alert when update is available preference on the Notifications pane */
+"Only available for GitHub downloads" = "Only available for GitHub downloads";
