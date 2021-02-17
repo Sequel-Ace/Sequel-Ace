@@ -1,3 +1,22 @@
+## [3.2.1]
+
+### Added
+
+
+### Fixed
+- cb22f005,   some crashes
+- 2db66191,  Tooltip crash
+- 73d2bfa9,  Export directory bookmarks
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [3.2.0]
 
 ### Added
