@@ -6585,9 +6585,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
-    if ([[self.parentWindowController window] isVisible]) {
-        [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
-    }
+    SPMainQSync(^{
+        if ([[self.parentWindowController window] isVisible]) {
+            [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
+        }
+    });
 }
 
 /**
