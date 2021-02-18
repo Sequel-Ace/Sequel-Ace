@@ -10,7 +10,8 @@ import Alamofire
 import Foundation
 import OSLog
 
-@objc final class GitHubReleaseManager: NSObject, NSWindowDelegate, ProgressWindowControllerDelegate {
+@objc final class GitHubReleaseManager: NSObject {
+
     static let NSModalResponseView: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1001)
     static let NSModalResponseDownload: NSApplication.ModalResponse = NSApplication.ModalResponse(rawValue: 1002)
     static let sharedInstance = GitHubReleaseManager()
@@ -19,7 +20,8 @@ import OSLog
     private var project: String
     private var includeDraft: Bool
     private var includePrerelease: Bool
-    private var progressViewController: ProgressWindowController?
+    private var progressViewController: ProgressViewController
+    private var progressWindowController: ProgressWindowController
     private var download: DownloadRequest?
     private var currentReleaseName: String = ""
     private var availableReleaseName: String = ""
@@ -238,26 +240,39 @@ import OSLog
 
         Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
 
+        let progressWindowControllerStoryboard = NSStoryboard.init(name: NSStoryboard.Name("ProgressWindowController"), bundle: nil)
+
+        if #available(OSX 10.15, *) {
+            progressWindowController = progressWindowControllerStoryboard.instantiateInitialController() as! ProgressWindowController
+            progressViewController   = progressWindowControllerStoryboard.instantiateController(identifier: NSStoryboard.SceneIdentifier("ProgressViewController"))
+        }
+        else {
+            // Fallback on earlier versions
+            progressWindowController = (progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressWindowController")) as! ProgressWindowController)
+            progressViewController = (progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressViewController")) as! ProgressViewController)
+        }
+
+        _ = progressViewController?.view
+        
         // init progress view
-        progressViewController = ProgressWindowController()
 
         let message = NSLocalizedString("Downloading Sequel Ace - %@",
                                         comment: "Downloading Sequel Ace - %@").format(availableReleaseName)
 
-        progressViewController?.window?.delegate = self
-        progressViewController?.title.cell?.title = message
+        progressViewController?.title = message
         progressViewController?.subtitle.cell?.title = NSLocalizedString("Calculating time remaining...", comment: "Calculating time remaining")
         progressViewController?.progressIndicator.maxValue = 1.0
         progressViewController?.progressIndicator.minValue = 0.0
         progressViewController?.progressIndicator.isIndeterminate = false
-        progressViewController?.delegate = self
+
+        progressViewController?.view .display()
 
         // reposition within the main window
-        let panelRect: NSRect = progressViewController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)
+        let panelRect: NSRect = progressWindowController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)
         let screenRect: NSRect = mainWindow.convertToScreen(panelRect)
-        progressViewController?.window?.setFrame(screenRect, display: true)
+        progressWindowController?.window?.setFrame(screenRect, display: true)
 
-        progressViewController?.showWindow(mainWindow)
+        progressWindowController?.showWindow(mainWindow)
 
         let destination: DownloadRequest.Destination = { _, _ in
             let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
@@ -326,7 +341,7 @@ import OSLog
             .response { [self] response in
 
                 progressViewController?.progressIndicator.stopAnimation(nil)
-                progressViewController?.close()
+                progressWindowController?.close()
 
                 switch response.result {
                 case .success:
@@ -362,28 +377,17 @@ import OSLog
         return Double(_monotonicTime() - comparisonTime) * 1e-9
     }
 
-    // MARK: NSWindowDelegate
-
-    internal func windowWillClose(_ notification: Notification) {
-        Log.debug("windowWillClose")
-
-        guard let win = notification.object as? NSWindow else {
-            return
-        }
-
-        if win == progressViewController?.window {
-            Log.debug("setting progressViewController?.window?.delegate to nil")
-            progressViewController?.window?.delegate = nil
-            progressViewController?.delegate = nil
-        }
-    }
-
-    // MARK: ProgressWindowControllerDelegate
-
-    internal func cancelPressed() {
+    // MARK: ProgressViewControllerDelegate
+    func cancelPressed() {
         Log.debug("cancelPressed, cancelling download")
         download?.cancel()
         progressViewController?.progressIndicator.stopAnimation(nil)
-        progressViewController?.close()
+        progressWindowController?.close()
+    }
+
+    func closePressed() {
+        Log.debug("closePressed, cancelling download")
+        download?.cancel()
+        progressViewController?.progressIndicator.stopAnimation(nil)
     }
 }

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="dzF-mK-F2E">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Window Controller-->
+        <scene sceneID="Aut-tw-KjI">
+            <objects>
+                <windowController storyboardIdentifier="ProgressWindowController" id="dzF-mK-F2E" customClass="ProgressWindowController" customModule="Sequel_Ace" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="Kyw-ZL-Wc9">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
+                        <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+                        <rect key="contentRect" x="101" y="476" width="379" height="139"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+                        <value key="minSize" type="size" width="213" height="50"/>
+                        <view key="contentView" id="TzE-ku-uyh">
+                            <rect key="frame" x="0.0" y="0.0" width="379" height="139"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </view>
+                        <connections>
+                            <outlet property="delegate" destination="dzF-mK-F2E" id="7TL-ji-nfu"/>
+                        </connections>
+                    </window>
+                    <connections>
+                        <outlet property="theWindow" destination="Kyw-ZL-Wc9" id="Oh8-Kp-bjw"/>
+                        <segue destination="iQ6-bC-UWZ" kind="relationship" relationship="window.shadowedContentViewController" destinationCreationSelector="JIMMY:sender:" id="XSo-4v-eih"/>
+                    </connections>
+                </windowController>
+                <customObject id="1gK-ci-R6l" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-361" y="-283"/>
+        </scene>
+        <!--Progress View Controller-->
+        <scene sceneID="R7V-sI-SlQ">
+            <objects>
+                <viewController storyboardIdentifier="ProgressViewController" id="iQ6-bC-UWZ" customClass="ProgressViewController" customModule="Sequel_Ace" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="KyP-ZV-jD2">
+                        <rect key="frame" x="0.0" y="0.0" width="379" height="139"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <progressIndicator verticalHuggingPriority="750" fixedFrame="YES" maxValue="100" bezeled="NO" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="3ih-AF-JcS">
+                                <rect key="frame" x="18" y="56" width="343" height="20"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                            </progressIndicator>
+                            <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D0S-xV-5Os">
+                                <rect key="frame" x="59" y="84" width="300" height="17"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingMiddle" truncatesLastVisibleLine="YES" sendsActionOnEndEditing="YES" alignment="left" title="Importing…" id="Ouj-fs-LbV">
+                                    <font key="font" metaFont="message" size="11"/>
+                                    <color key="textColor" white="0.5" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9hK-Rx-EkH">
+                                <rect key="frame" x="257" y="12" width="108" height="32"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="HgZ-ne-hRp">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                    <string key="keyEquivalent" base64-UTF8="YES">
+Gw
+</string>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="cancelAction:" target="iQ6-bC-UWZ" id="NNL-QO-4fH"/>
+                                </connections>
+                            </button>
+                            <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nYl-ZQ-jon">
+                                <rect key="frame" x="59" y="104" width="300" height="17"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="Doing Stuff…" id="OXg-zr-wGp">
+                                    <font key="font" metaFont="systemBold"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <imageView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3MW-pI-PPJ">
+                                <rect key="frame" x="20" y="87" width="32" height="32"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSApplicationIcon" id="nAx-uj-lYq"/>
+                            </imageView>
+                            <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bEA-ha-4AJ">
+                                <rect key="frame" x="18" y="32" width="187" height="17"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingMiddle" truncatesLastVisibleLine="YES" sendsActionOnEndEditing="YES" alignment="left" id="Ndr-hw-j2d">
+                                    <font key="font" metaFont="message" size="11"/>
+                                    <color key="textColor" white="0.5" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                        </subviews>
+                    </view>
+                    <connections>
+                        <outlet property="bytes" destination="bEA-ha-4AJ" id="xJ1-nL-6Vl"/>
+                        <outlet property="progressIndicator" destination="3ih-AF-JcS" id="zK1-GY-uK7"/>
+                        <outlet property="subtitle" destination="D0S-xV-5Os" id="ikS-Pi-GeY"/>
+                        <outlet property="theTitle" destination="nYl-ZQ-jon" id="Huj-Sl-qu6"/>
+                        <outlet property="view" destination="KyP-ZV-jD2" id="D5H-Zz-vJp"/>
+                    </connections>
+                </viewController>
+                <customObject id="grq-rB-f1h" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-285" y="36"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="NSApplicationIcon" width="32" height="32"/>
+    </resources>
+</document>
