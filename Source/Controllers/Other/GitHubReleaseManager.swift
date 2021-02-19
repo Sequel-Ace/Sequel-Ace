@@ -248,10 +248,17 @@ import OSLog
         }
         else {
             // Fallback on earlier versions
-            progressWindowController = (progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressWindowController")) as! ProgressWindowController)
+            guard let tmpPWC = progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressWindowController")) as? ProgressWindowController else {
+                return
+            }
+            progressWindowController = tmpPWC
         }
 
-        progressViewController = (progressWindowController?.contentViewController as! ProgressViewController)
+        guard let tmpPVC = progressWindowController?.contentViewController as? ProgressViewController else {
+            return
+        }
+
+        progressViewController = tmpPVC
 
         let message = NSLocalizedString("Downloading Sequel Ace - %@",
                                         comment: "Downloading Sequel Ace - %@").format(availableReleaseName)

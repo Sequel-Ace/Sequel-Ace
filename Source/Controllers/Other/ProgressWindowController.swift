@@ -22,9 +22,13 @@ class ProgressWindowController: NSWindowController, NSWindowDelegate{
 
     override func awakeFromNib() {
         Log.debug("awakeFromNib")
-        let progressWindowControllerStoryboard = NSStoryboard.init(name: NSStoryboard.Name("ProgressWindowController"), bundle: nil)
 
-        contentViewController = (progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressViewController")) as! ProgressViewController)
+        guard let tmpPVC = contentViewController as? ProgressViewController else {
+            return
+        }
+
+        contentViewController = tmpPVC
+
         super.awakeFromNib()
     }
 
