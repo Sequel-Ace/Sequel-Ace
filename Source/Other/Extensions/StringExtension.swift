@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import os.log
 
 extension String {
 	func dropPrefix(_ prefix: String) -> String {
@@ -112,20 +111,18 @@ extension String {
     }
 
     public func dateStringFromUnixTimestamp() -> NSString? {
-        os_log("string [%@]", log: OSLog.default, type: .error, self)
 
         guard
+            self.length < 12, // 2121-02-17 is 4769274709 - 10 chars. 3121 is 11 chars
             !(self as String).isEmpty,
             (self as String).dropPrefix("-").isNumeric,
             let timeInterval = self.doubleValue as Double?,
             timeInterval != 0.0
         else{
-            os_log("string [%@] cannot be represented as a double", log: OSLog.default, type: .error, self)
             return nil
         }
 
         let now = Int(Date().timeIntervalSince1970)
-        os_log("unix timestamp for now: %i", log: OSLog.default, type: .debug, now)
 
         let oneYear: Int = 31_536_000
         let numberOfYears: Int = 100
@@ -133,14 +130,10 @@ extension String {
         let lowerBound = now - (oneYear * numberOfYears)
 
         if Int(timeInterval) > lowerBound && Int(timeInterval) < upperBound {
-            os_log("unix timestamp within +/- %i years", log: OSLog.default, type: .debug, numberOfYears)
             let date = Date(timeIntervalSince1970: timeInterval)
             let formatter = DateFormatter.iso8601DateFormatter
             return formatter.string(from: date) as NSString
         }
-        os_log("unix timestamp NOT within +/- %i years", log: OSLog.default, type: .debug, numberOfYears)
         return nil
     }
-
-
 }
