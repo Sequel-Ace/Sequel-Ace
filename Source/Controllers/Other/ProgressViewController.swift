@@ -22,13 +22,4 @@ final class ProgressViewController: NSViewController {
         GitHubReleaseManager.sharedInstance.cancelPressed()
     }
 
-    override func viewDidLoad() {
-        Log.debug("viewDidLoad")
-        super.viewDidLoad()
-    }
-
-    override func loadView(){
-        Log.debug("loadView")
-        super.loadView()
-    }
 }

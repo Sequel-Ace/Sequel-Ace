@@ -121,11 +121,13 @@
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
+		1A4DC22D25DECEA000DA4FE1 /* ProgressWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */; };
 		1A6447912588CD8B00927DB3 /* License.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17CC993A10B4C9C80034CD7A /* License.rtf */; };
 		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
+		1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */; };
 		1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1A89556E25D6C8880060CE72 /* Alamofire */; };
@@ -152,8 +154,7 @@
 		1AB068B024A355CC00E2AAC2 /* client-key-lf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689824A355B500E2AAC2 /* client-key-lf.pem */; };
 		1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */; };
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
-		1AB28D8125DBD3B500E62BF5 /* ProgressWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB28D7F25DBD3B500E62BF5 /* ProgressWindowController.swift */; };
-		1AB28D8225DBD3B500E62BF5 /* ProgressWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1AB28D8025DBD3B500E62BF5 /* ProgressWindowController.xib */; };
+		1AB28D8125DBD3B500E62BF5 /* ProgressViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */; };
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
 		1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */; };
 		1AD785E725B749760007E153 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
@@ -777,8 +778,10 @@
 		1A445DA925BACBE5004E9A77 /* naughty_strings.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = naughty_strings.txt; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
 		1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringRegexExtension.swift; sourceTree = "<group>"; };
+		1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWindowController.swift; sourceTree = "<group>"; };
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
+		1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ProgressWindowController.storyboard; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
 		1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubReleaseManager.swift; sourceTree = "<group>"; };
 		1A89557825D6DE860060CE72 /* GitHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHub.swift; sourceTree = "<group>"; };
@@ -803,8 +806,7 @@
 		1AB0689824A355B500E2AAC2 /* client-key-lf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-lf.pem"; sourceTree = "<group>"; };
 		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
-		1AB28D7F25DBD3B500E62BF5 /* ProgressWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWindowController.swift; sourceTree = "<group>"; };
-		1AB28D8025DBD3B500E62BF5 /* ProgressWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ProgressWindowController.xib; sourceTree = "<group>"; };
+		1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewController.swift; sourceTree = "<group>"; };
 		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
@@ -1572,8 +1574,9 @@
 				1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */,
 				1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */,
 				1A89557825D6DE860060CE72 /* GitHub.swift */,
-				1AB28D7F25DBD3B500E62BF5 /* ProgressWindowController.swift */,
-				1AB28D8025DBD3B500E62BF5 /* ProgressWindowController.xib */,
+				1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */,
+				1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */,
+				1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -2801,6 +2804,7 @@
 				177E792E0FCB54EC00E9E122 /* database-small.png in Resources */,
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
 				51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */,
+				1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */,
 				51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
 				513515FE25935699001E4533 /* SequelProTabDirty_Rollover@2x.png in Resources */,
@@ -2868,7 +2872,6 @@
 				5135160C25935699001E4533 /* AquaTabsDownNonKey.png in Resources */,
 				51CD0BE9258D06D8009E2484 /* Console.xib in Resources */,
 				8831EFB22240143600D10172 /* button_bar_handleTemplate.pdf in Resources */,
-				1AB28D8225DBD3B500E62BF5 /* ProgressWindowController.xib in Resources */,
 				513515FD25935699001E4533 /* overflowImage.png in Resources */,
 				C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */,
 				C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */,
@@ -3185,7 +3188,7 @@
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
 				BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */,
 				BC398A2D121D526200BE3EF4 /* SPCopyTable.m in Sources */,
-				1AB28D8125DBD3B500E62BF5 /* ProgressWindowController.swift in Sources */,
+				1AB28D8125DBD3B500E62BF5 /* ProgressViewController.swift in Sources */,
 				BC32F242121D66260067305E /* SPFileManagerAdditions.m in Sources */,
 				17A20AC6124F9B110095CEFB /* SPServerSupport.m in Sources */,
 				BC2898F3125F4488001B50E1 /* SPGeometryDataView.m in Sources */,
@@ -3227,6 +3230,7 @@
 				500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */,
 				584D878B15140FEB00F24774 /* SPObjectAdditions.m in Sources */,
 				584D87921514101E00F24774 /* SPDatabaseStructure.m in Sources */,
+				1A4DC22D25DECEA000DA4FE1 /* ProgressWindowController.swift in Sources */,
 				584D88A91515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
 				584D899D15162CBE00F24774 /* SPDataBase64EncodingAdditions.m in Sources */,
 				1798F1871550175B004B0AB8 /* SPFavoritesExporter.m in Sources */,

@@ -20,8 +20,8 @@ import OSLog
     private var project: String
     private var includeDraft: Bool
     private var includePrerelease: Bool
-    private var progressViewController: ProgressViewController
-    private var progressWindowController: ProgressWindowController
+    private var progressViewController: ProgressViewController?
+    private var progressWindowController: ProgressWindowController?
     private var download: DownloadRequest?
     private var currentReleaseName: String = ""
     private var availableReleaseName: String = ""
@@ -240,33 +240,32 @@ import OSLog
 
         Log.debug("asset.file: \(downloadNSString.lastPathComponent)")
 
+        // init progress view
         let progressWindowControllerStoryboard = NSStoryboard.init(name: NSStoryboard.Name("ProgressWindowController"), bundle: nil)
 
         if #available(OSX 10.15, *) {
-            progressWindowController = progressWindowControllerStoryboard.instantiateInitialController() as! ProgressWindowController
-            progressViewController   = progressWindowControllerStoryboard.instantiateController(identifier: NSStoryboard.SceneIdentifier("ProgressViewController"))
+            progressWindowController = progressWindowControllerStoryboard.instantiateInitialController()
         }
         else {
             // Fallback on earlier versions
             progressWindowController = (progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressWindowController")) as! ProgressWindowController)
-            progressViewController = (progressWindowControllerStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ProgressViewController")) as! ProgressViewController)
         }
 
-        _ = progressViewController?.view
-        
-        // init progress view
+        progressViewController = (progressWindowController?.contentViewController as! ProgressViewController)
 
         let message = NSLocalizedString("Downloading Sequel Ace - %@",
                                         comment: "Downloading Sequel Ace - %@").format(availableReleaseName)
 
-        progressViewController?.title = message
+        progressViewController?.theTitle.cell?.title = message
         progressViewController?.subtitle.cell?.title = NSLocalizedString("Calculating time remaining...", comment: "Calculating time remaining")
         progressViewController?.progressIndicator.maxValue = 1.0
         progressViewController?.progressIndicator.minValue = 0.0
         progressViewController?.progressIndicator.isIndeterminate = false
 
-        progressViewController?.view .display()
-
+        progressWindowController?.window?.title = NSLocalizedString("Download Progress", comment: "Download Progress")
+        progressViewController?.view .displayIfNeeded()
+        progressWindowController?.window? .displayIfNeeded()
+        
         // reposition within the main window
         let panelRect: NSRect = progressWindowController?.window?.frame ?? NSMakeRect(0, 0, 0, 0)
         let screenRect: NSRect = mainWindow.convertToScreen(panelRect)

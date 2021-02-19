@@ -9,7 +9,7 @@
         <!--Window Controller-->
         <scene sceneID="Aut-tw-KjI">
             <objects>
-                <windowController storyboardIdentifier="ProgressWindowController" id="dzF-mK-F2E" customClass="ProgressWindowController" customModule="Sequel_Ace" customModuleProvider="target" sceneMemberID="viewController">
+                <windowController storyboardIdentifier="ProgressWindowController" id="dzF-mK-F2E" customClass="ProgressWindowController" customModule="Sequel_Ace" sceneMemberID="viewController">
                     <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="Kyw-ZL-Wc9">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
@@ -25,8 +25,8 @@
                         </connections>
                     </window>
                     <connections>
-                        <outlet property="theWindow" destination="Kyw-ZL-Wc9" id="Oh8-Kp-bjw"/>
-                        <segue destination="iQ6-bC-UWZ" kind="relationship" relationship="window.shadowedContentViewController" destinationCreationSelector="JIMMY:sender:" id="XSo-4v-eih"/>
+                        <outlet property="window" destination="Kyw-ZL-Wc9" id="Dm5-BA-y2t"/>
+                        <segue destination="iQ6-bC-UWZ" kind="relationship" relationship="window.shadowedContentViewController" id="Elb-WH-uC0"/>
                     </connections>
                 </windowController>
                 <customObject id="1gK-ci-R6l" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -36,7 +36,7 @@
         <!--Progress View Controller-->
         <scene sceneID="R7V-sI-SlQ">
             <objects>
-                <viewController storyboardIdentifier="ProgressViewController" id="iQ6-bC-UWZ" customClass="ProgressViewController" customModule="Sequel_Ace" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ProgressViewController" id="iQ6-bC-UWZ" customClass="ProgressViewController" customModule="Sequel_Ace" sceneMemberID="viewController">
                     <view key="view" id="KyP-ZV-jD2">
                         <rect key="frame" x="0.0" y="0.0" width="379" height="139"/>
                         <autoresizingMask key="autoresizingMask"/>
