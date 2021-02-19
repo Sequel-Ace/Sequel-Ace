@@ -113,7 +113,8 @@ extension String {
     public func dateStringFromUnixTimestamp() -> NSString? {
 
         guard
-            self.length < 12, // 2121-02-17 is 4769274709 - 10 chars. 3121 is 11 chars
+            self.length < 12, // 2121-02-17 is 4769274709 - 10 chars. 3121 is 11 chars. 1921-02-17 = 1542050682, 10 chars
+            self.length > 9,
             !(self as String).isEmpty,
             (self as String).dropPrefix("-").isNumeric,
             let timeInterval = self.doubleValue as Double?,
