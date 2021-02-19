@@ -3267,3 +3267,5 @@
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
 
+/* Menu item title for checking for updates */
+"Check for updates" = "Check for updates";
