@@ -41,7 +41,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="379" height="139"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <progressIndicator verticalHuggingPriority="750" fixedFrame="YES" maxValue="100" bezeled="NO" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="3ih-AF-JcS">
+                            <progressIndicator verticalHuggingPriority="750" fixedFrame="YES" maxValue="1" bezeled="NO" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="3ih-AF-JcS">
                                 <rect key="frame" x="18" y="56" width="343" height="20"/>
                                 <autoresizingMask key="autoresizingMask"/>
                             </progressIndicator>

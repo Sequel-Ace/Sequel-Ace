@@ -258,9 +258,6 @@ import OSLog
 
         progressViewController?.theTitle.cell?.title = message
         progressViewController?.subtitle.cell?.title = NSLocalizedString("Calculating time remaining...", comment: "Calculating time remaining")
-        progressViewController?.progressIndicator.maxValue = 1.0
-        progressViewController?.progressIndicator.minValue = 0.0
-        progressViewController?.progressIndicator.isIndeterminate = false
 
         progressWindowController?.window?.title = NSLocalizedString("Download Progress", comment: "Download Progress")
         progressViewController?.view .displayIfNeeded()
