@@ -361,7 +361,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	isDesc = NO;
 
 	// Empty and disable filter options
-	[self setRuleEditorVisible:NO animate:NO];
 	[toggleRuleFilterButton setEnabled:NO];
 	[toggleRuleFilterButton setState:NSOffState];
 	[ruleFilterController setColumns:nil];
