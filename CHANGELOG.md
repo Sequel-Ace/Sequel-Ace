@@ -1,3 +1,23 @@
+## [3.2.2]
+
+### Added
+
+
+### Fixed
+- 3cb1d8aa,  maintain table filter state
+- 104cc39f,  Tooltip crash attempt two
+- 57890626, show error if setting the time zone fails  
+
+### Changed
+- 550a566e, Remove hard-coded minimum for resetting auto-increment 
+- 839bdfc8, Build Version is now selectable 
+
+### Removed
+
+
+### Infra
+
+
 ## [3.2.1]
 
 ### Added
