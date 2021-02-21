@@ -61,7 +61,7 @@
 @import AppCenterAnalytics;
 @import AppCenterCrashes;
 
-static const double SPDelayBeforeCheckingForNewReleases = 1;
+static const double SPDelayBeforeCheckingForNewReleases = 10;
 
 @interface SPAppController () <SPWindowControllerDelegate>
 @property (strong) IBOutlet NSMenu *mainMenu;
