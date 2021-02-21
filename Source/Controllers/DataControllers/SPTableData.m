@@ -998,7 +998,7 @@
 
 		// Add the column index and name
 		[tableColumn safeSetObject:[NSString stringWithFormat:@"%llu", (unsigned long long)[tableColumns count]] forKey:@"datacolumnindex"];
-		[tableColumn safeSetObject:[NSString stringWithString:safeString([resultRow safeObjectForKey:@"Field"])] forKey:@"name"];
+        [tableColumn safeSetObject:[resultRow safeObjectForKey:@"Field"] forKey:@"name"];
 
 		// Populate type, length, and other available details from the Type columns
 		[fieldParser setStringOrNil:[resultRow safeObjectForKey:@"Type"]];
