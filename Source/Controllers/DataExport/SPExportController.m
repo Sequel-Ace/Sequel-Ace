@@ -1304,17 +1304,6 @@ set_input:
 	
 	// Restore query mode
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-	
-	// relinquish access to userChosenDirectory
-//	[userChosenDirectory stopAccessingSecurityScopedResource];
-//
-//	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
-	
-	// release to avoid leaks
-	// I think...
-	// userChosenDirectory leaks if we don't release here
-	// the panel wasn't leaking according to Leaks instrument.
-	
 
 	// Display export finished notification
 	[self displayExportFinishedNotification];
