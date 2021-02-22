@@ -631,10 +631,10 @@ set_input:
 	[changeExportOutputPathPanel setCanChooseFiles:NO];
 	[changeExportOutputPathPanel setCanChooseDirectories:YES];
 	[changeExportOutputPathPanel setCanCreateDirectories:YES];
-    
+
     [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
-        if (returnCode == NSFileHandlingPanelOKButton) {
+        if (returnCode == NSModalResponseOK) {
 
             NSMutableString *path = [[NSMutableString alloc] initWithCapacity:self->changeExportOutputPathPanel.directoryURL.absoluteString.length];
             [path setString:[[self->changeExportOutputPathPanel directoryURL] path]];
@@ -645,11 +645,7 @@ set_input:
 											 userInfo:nil];
 			}
 
-            path = [[path dropSuffixWithSuffix:@"/"] mutableCopy];
-
-            [path appendString:@"/"];
-
-			[self->exportPathField setStringValue:path];
+            [self->exportPathField setStringValue:path];
 
             NSMutableString *classStr = [NSMutableString string];
             [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
@@ -680,13 +676,16 @@ set_input:
             else{
                 // this needs to be read-write
                 if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
-                    SPLog(@"addBookmarkForUrl success");
+                    SPLog(@"addBookmarkForUrl success: %@", self->changeExportOutputPathPanel.URL.absoluteString);
                 } else{
                     SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
                 }
             }
+        }// end of OK
+        else if(returnCode == NSModalResponseCancel){
+            SPLog(@"User clicked cancel, didn't change the output path");
         }
-    }];		
+    }];
 }
 
 /**
