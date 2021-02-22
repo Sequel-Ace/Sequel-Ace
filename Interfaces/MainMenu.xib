@@ -1014,10 +1014,11 @@ CQ
             <connections>
                 <outlet property="delegate" destination="213" id="1193"/>
             </connections>
-            <point key="canvasLocation" x="14" y="149"/>
+            <point key="canvasLocation" x="-382" y="-36"/>
         </menu>
         <customObject id="213" userLabel="SPAppController" customClass="SPAppController">
             <connections>
+                <outlet property="mainMenu" destination="57" id="GZs-gV-yIt"/>
                 <outlet property="staleBookmarkHelpView" destination="Ipz-ua-fp5" id="psg-8l-YU5"/>
                 <outlet property="staleBookmarkTextField" destination="Bea-mS-nZN" id="m3E-QZ-KCA"/>
                 <outlet property="staleBookmarkTextFieldCell" destination="jQo-Yb-Hvj" id="8Ts-TE-F5t"/>

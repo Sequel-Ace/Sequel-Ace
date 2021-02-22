@@ -138,6 +138,7 @@ NSString *SPFavorites                            = @"favorites";
 // Notifications Prefpane
 NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecuteQuery";
 NSString *SPQueryWarningEnabledSuppressed        = @"SPQueryWarningEnabledSuppressed";
+NSString *SPShowUpdateAvailable                  = @"ShowUpdateAvailable";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPConsoleEnableLogging                 = @"ConsoleEnableLogging";
 NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLogging";
@@ -416,6 +417,8 @@ NSString *SPBundleInternKeyEquivalentKey                    = @"keyEquivalent";
 NSString *SPBundleAppSchema                                 = @"sequelace";
 NSString *SPBundleLegacyAppSchema                           = @"sequelpro";
 NSString *SPBundleVersionKey                                = @"bundleVersion";
+NSString *SPSnapshotBuildIndicator                          = @"Beta";
+NSString *SPSkipNewReleaseAvailable                         = @"SkipNewReleaseAvailable";
 const long SPBundleCurrentVersion                           = 2;
 
 NSString *SPBundleFileName                                  = @"command.plist";

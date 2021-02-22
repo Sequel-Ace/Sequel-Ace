@@ -3234,5 +3234,38 @@
 /* New Connection Error informative message */
 "Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
 
+/* new version is available alert title */
+"A new version is available" = "A new version is available";
+
+/* new version is available download button title */
+"Download" = "Download";
+
+/* new version is available alert informativeText */
+"Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+
+/* downloading new version window title */
+"Download Progress" = "Download Progress";
+
+/* downloading new version time remaining placeholder text */
+"Calculating time remaining..." = "Calculating time remaining...";
+
+/* downloading new version window message */
+"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
+
+/* downloading new version time remaining estimate text */
+"About %.1f seconds left" = "About %.1f seconds left";
+
+/* downloading new version failure alert title */
+"Download Failed" = "Download Failed";
+
+/* Tool tip for the Show alert when update is available preference on the Notifications pane */
+"Only available for GitHub downloads" = "Only available for GitHub downloads";
+
+/* downloading new version bytes of bytes done */
+"%@ of %@" = "%@ of %@";
+
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
+
+/* Menu item title for checking for updates */
+"Check for updates" = "Check for updates";

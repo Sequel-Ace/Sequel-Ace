@@ -49,7 +49,7 @@ import AppKit
 	/// - Returns: Nothing
 	static func createDefaultAlertWithSuppression(title: String,
 												  message: String,
-												  suppressionKey: String? = nil,
+                                                  suppressionKey: String? = nil,
 												  primaryButtonTitle: String,
 												  primaryButtonHandler: (() -> ())? = nil,
 												  cancelButtonHandler: (() -> ())? = nil) {

@@ -434,6 +434,8 @@ extern NSString *SPSecureBookmarksHaveBeenMigrated;
 extern NSString *SPDatabaseCreatedRemovedRenamedNotification;
 extern NSString *SPContentFilters;
 extern NSString *SPBookmarksChangedNotification;
+extern NSString *SPSkipNewReleaseAvailable;
+extern NSString *SPShowUpdateAvailable;
 extern NSString *SPDocumentTaskEndNotification;
 extern NSString *SPDocumentTaskStartNotification;
 extern NSString *SPDocumentWillCloseNotification;
@@ -655,6 +657,7 @@ extern NSString *SPBundleShellVariableAllFunctions;
 extern NSString *SPBundleShellVariableAllViews;
 extern NSString *SPBundleShellVariableAllTables;
 extern NSString *SPBundleShellVariableAppCallbackURL;
+extern NSString *SPSnapshotBuildIndicator;
 extern const long SPBundleCurrentVersion;
 
 extern NSString *SPCurrentTimestampPattern;
