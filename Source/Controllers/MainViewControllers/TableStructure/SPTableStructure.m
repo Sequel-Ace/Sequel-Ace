@@ -1634,8 +1634,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if ([[tableColumn identifier] isEqualToString:@"collation"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
-		NSString *columnEncoding = [rowData objectForKey:@"encodingName"];
-		NSString *columnCollation = [rowData objectForKey:@"collationName"]; // loadTable: has already inferred it, if not set explicit
+		NSString *columnEncoding = [rowData safeObjectForKey:@"encodingName"];
+		NSString *columnCollation = [rowData safeObjectForKey:@"collationName"]; // loadTable: has already inferred it, if not set explicit
 
 #warning Building the collation menu here is a big performance hog. This should be done in menuNeedsUpdate: below!
 		NSPopUpButtonCell *collationCell = [tableColumn dataCell];
@@ -1651,7 +1651,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			collations = [databaseDataInstance getDatabaseCollationsForEncoding:columnEncoding];
 
 			if ([collations count] > 0) {
-				NSString *tableCollation = [[tableDataInstance statusValues] objectForKey:@"Collation"];
+				NSString *tableCollation = [[tableDataInstance statusValues] safeObjectForKey:@"Collation"];
 
 				if (![tableCollation isNSNull] && ![tableCollation length]) {
 					tableCollation = [databaseDataInstance getDefaultCollationForEncoding:tableEncoding];
