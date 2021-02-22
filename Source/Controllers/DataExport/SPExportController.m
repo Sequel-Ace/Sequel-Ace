@@ -1307,9 +1307,9 @@ set_input:
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	
 	// relinquish access to userChosenDirectory
-	[userChosenDirectory stopAccessingSecurityScopedResource];
-	
-	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
+//	[userChosenDirectory stopAccessingSecurityScopedResource];
+//
+//	[changeExportOutputPathPanel.URL stopAccessingSecurityScopedResource];
 	
 	// release to avoid leaks
 	// I think...
