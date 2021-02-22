@@ -61,7 +61,10 @@
 @import AppCenterAnalytics;
 @import AppCenterCrashes;
 
+static const double SPDelayBeforeCheckingForNewReleases = 10;
+
 @interface SPAppController () <SPWindowControllerDelegate>
+@property (strong) IBOutlet NSMenu *mainMenu;
 
 - (void)_copyDefaultThemes;
 
@@ -69,6 +72,9 @@
 - (void)openSQLFileAtPath:(NSString *)filePath;
 - (void)openSessionBundleAtPath:(NSString *)filePath;
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
+- (void)checkForNewVersion;
+- (void)removeCheckForUpdatesMenuItem;
+- (void)addCheckForUpdatesMenuItem;
 
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
@@ -81,6 +87,7 @@
 @synthesize lastBundleBlobFilesDirectory;
 @synthesize fileManager;
 @synthesize sharedSPBundleManager;
+@synthesize mainMenu;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -271,6 +278,13 @@
         [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
     });
 
+    [self checkForNewVersion];
+
+    // Add menu item to check for updates
+    [self addCheckForUpdatesMenuItem];
+
+    [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:SPShowUpdateAvailable options:NSKeyValueObservingOptionNew context:NULL];
+
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [sharedSPBundleManager reloadBundles:self];
@@ -287,6 +301,45 @@
         // Set autoconnection if appropriate
         if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
             [newConnection connect];
+        }
+    }
+}
+
+- (void)addCheckForUpdatesMenuItem {
+    if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
+        SPLog(@"Adding menu item to check for updates");
+        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for updates", @"menu item Check for updates") action:@selector(checkForNewVersion) keyEquivalent:@""];
+        [mainMenu insertItem:updates atIndex:1];
+    }
+}
+
+- (void)removeCheckForUpdatesMenuItem {
+
+    [mainMenu.itemArray enumerateObjectsUsingBlock:^(NSMenuItem *item2, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([item2.title isEqualToString:NSLocalizedString(@"Check for updates", @"menu item Check for updates")]) {
+            SPLog(@"Removing menu item to check for updates");
+            [mainMenu removeItemAtIndex:idx];
+            *stop = YES;
+        }
+    }];
+}
+
+- (void)checkForNewVersion {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
+        SPLog(@"checking for updates");
+        executeOnLowPrioQueueAfterADelay(^{
+            [NSBundle.mainBundle checkForNewVersion];
+        }, SPDelayBeforeCheckingForNewReleases);
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
+    if ([keyPath isEqualToString:SPShowUpdateAvailable]) {
+        if([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == YES){
+            [self addCheckForUpdatesMenuItem];
+        }
+        else if([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == NO){
+            [self removeCheckForUpdatesMenuItem];
         }
     }
 }
@@ -1627,6 +1680,7 @@
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [self removeObserver:self forKeyPath:SPShowUpdateAvailable];
 
 }
 

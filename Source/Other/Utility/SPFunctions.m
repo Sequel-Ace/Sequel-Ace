@@ -57,6 +57,15 @@ void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInS
     });
 }
 
+void executeOnLowPrioQueueAfterADelay(SAVoidCompletionBlock block, double delayInSeconds){
+
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (dispatch_time_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+        if (block) {
+            block();
+        }
+    });
+}
 
 void SPMainLoopAsync(SAVoidCompletionBlock block)
 {

@@ -31,6 +31,7 @@
 typedef void(^SAVoidCompletionBlock)(void);
 
 void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInSeconds);
+void executeOnLowPrioQueueAfterADelay(SAVoidCompletionBlock block, double delayInSeconds);
 
 /**
  * Synchronously execute a block on the main thread.

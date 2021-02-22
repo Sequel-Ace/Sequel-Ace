@@ -205,6 +205,8 @@
 	<false/>
 	<key>ShowWarningBeforeExecuteQuery</key>
 	<false/>
+	<key>ShowUpdateAvailable</key>
+	<true/>
 	<key>NSApplicationCrashOnExceptions</key>
 	<true/>
 </dict>

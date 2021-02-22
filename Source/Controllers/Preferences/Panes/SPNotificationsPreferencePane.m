@@ -29,14 +29,37 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPNotificationsPreferencePane.h"
+#import "sequel-ace-Swift.h"
+
+@interface SPNotificationsPreferencePane ()
+
+@property (weak) IBOutlet NSButton *updateAvailableButton;
+
+@end 
 
 @implementation SPNotificationsPreferencePane
+
+@synthesize updateAvailableButton;
 
 #pragma mark -
 #pragma mark Preference pane protocol methods
 
 - (NSView *)preferencePaneView
 {
+
+    if(NSBundle.mainBundle.isMASVersion == YES){
+        SPLog(@"isMASVersion == YES, set enabled = no, state = off");
+        updateAvailableButton.enabled = NO;
+        updateAvailableButton.state = NSOffState;
+    }
+    else {
+        SPLog(@"isMASVersion == NO, set enabled = yes, state = on");
+        updateAvailableButton.enabled = YES;
+        updateAvailableButton.state = (NSControlStateValue)[prefs boolForKey:SPShowUpdateAvailable];
+    }
+
+    updateAvailableButton.toolTip = NSLocalizedString(@"Only available for GitHub downloads", @"Only available for GitHub downloads");
+
 	return [self view];
 }
 
