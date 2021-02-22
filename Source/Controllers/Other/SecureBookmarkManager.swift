@@ -160,7 +160,7 @@ import OSLog
     // loops through current bookmarks from prefs and re-requests secure access
     // NOTE: when re-requesting access (resolvingBookmarkData) you only need to use
     // URLBookmarkResolutionWithSecurityScope, not the options it was originally created with
-    // otherwise it will be markes as stale.
+    // otherwise it will be marked as stale.
     private func reRequestSecureAccessToBookmarks() {
 
         // re-read - must do this after migration, could put it in an if, but it only happens once per app start.
