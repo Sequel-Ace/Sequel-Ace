@@ -268,6 +268,7 @@
 @property (readonly, strong) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;
 
 @property (readonly) int64_t instanceId;
+@property (strong) IBOutlet NSButton *multipleLineEditingButton;
 
 - (instancetype)initWithWindowController:(SPWindowController *)windowController;
 
@@ -344,6 +345,7 @@
 - (IBAction)showFilterTable:(id)sender;
 - (IBAction)export:(id)sender;
 - (IBAction)exportSelectedTablesAs:(id)sender;
+- (IBAction)multipleLineEditingButtonClicked:(NSButton *)sender;
 
 // Other methods
 - (IBAction)closeSheet:(id)sender;

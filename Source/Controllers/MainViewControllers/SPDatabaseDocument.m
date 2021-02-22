@@ -156,6 +156,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize showConsoleImage;
 @synthesize textAndCommandMacwindowImage;
 @synthesize appIsTerminating;
+@synthesize multipleLineEditingButton;
 
 #pragma mark -
 
@@ -2202,6 +2203,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Exports the selected tables in the chosen file format.
  */
+
 - (IBAction)exportSelectedTablesAs:(id)sender
 {
     [exportControllerInstance exportTables:[tablesListInstance selectedTableItems] asFormat:[sender tag] usingSource:SPTableExport];
@@ -2217,6 +2219,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 #pragma mark -
 #pragma mark Other Methods
+
+- (IBAction)multipleLineEditingButtonClicked:(NSButton *)sender{
+    SPLog(@"multipleLineEditingButtonClicked. State: %ld",(long)[sender state]);
+    user_defaults_set_bool(SPEditInSheetEnabled,[sender state]);
+}
 
 /**
  * Set that query which will be inserted into the Query Editor
@@ -2348,6 +2355,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     if ([keyPath isEqualToString:SPConsoleEnableLogging]) {
         [mySQLConnection setDelegateQueryLogging:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
+    }
+    else if ([keyPath isEqualToString:SPEditInSheetEnabled]) {
+        multipleLineEditingButton.state = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
     }
 }
 
@@ -5895,6 +5905,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [prefs addObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPEditInSheetEnabled options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 
     // Register observers for when the logging preference changes
@@ -5910,6 +5921,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)_removePreferenceObservers
 {
     [prefs removeObserver:self forKeyPath:SPConsoleEnableLogging];
+    [prefs removeObserver:self forKeyPath:SPEditInSheetEnabled];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
     [prefs removeObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
