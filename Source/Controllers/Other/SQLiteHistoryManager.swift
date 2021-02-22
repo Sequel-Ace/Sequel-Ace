@@ -6,6 +6,7 @@
 //  Copyright © 2020 Sequel-Ace. All rights reserved.
 //
 
+import AppCenterAnalytics
 import Foundation
 import FMDB
 import OSLog
@@ -72,8 +73,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
             loadQueryHistory()
         }
 
-        getDBsize()
-
+        DispatchQueue.background(background: {
+            self.getDBsize()
+        })
     }
 
     /// creates the database schema
@@ -338,9 +340,15 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
 
         queryHist.removeAll()
-        execSQLiteVacuum()
-        getDBsize()
-        queue.close()
+
+        DispatchQueue.background(background: { [self] in
+            // do something in background
+            execSQLiteVacuum()
+            getDBsize()
+        }, completion:{
+            // when background job finished, do something in main thread
+            self.queue.close()
+        })
     }
 
     /// Executes the vacuum command on the db
@@ -372,6 +380,10 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     /// - Returns: nothing
     func logDBError(_ error: Error) {
         Log.error("Query failed: \(error.localizedDescription)")
+
+        DispatchQueue.background(background: {
+            Analytics.trackEvent("error", withProperties: ["dbError":error.localizedDescription])
+        })
     }
 
     /// separates multiline query into individual lines.
