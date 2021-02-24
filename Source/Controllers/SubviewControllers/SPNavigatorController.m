@@ -438,9 +438,9 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 			}
 		}
 		id structureData = [[doc databaseStructureRetrieval] structure];
-		if(structureData && [structureData objectForKey:connectionName] && [[structureData objectForKey:connectionName] isKindOfClass:NSDictionaryClass]) {
+		if(structureData && [structureData safeObjectForKey:connectionName] && [[structureData safeObjectForKey:connectionName] isKindOfClass:NSDictionaryClass]) {
 			for(id item in [[structureData objectForKey:connectionName] allKeys])
-				[[schemaData objectForKey:connectionName] setObject:[[structureData objectForKey:connectionName] objectForKey:item] forKey:item];
+				[[schemaData safeObjectForKey:connectionName] safeSetObject:[[structureData objectForKey:connectionName] safeObjectForKey:item] forKey:item];
 
 			NSArray *a = [[doc databaseStructureRetrieval] allStructureKeys];
 			if(a)
