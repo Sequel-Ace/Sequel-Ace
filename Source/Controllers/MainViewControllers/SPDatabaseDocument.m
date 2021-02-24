@@ -3429,6 +3429,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return [self supportsEncoding];
     }
 
+    // unhide the debugging info menu
+    if (action == @selector(showConnectionDebugMessages:)) {
+        if(_isConnected && connectionController->sshTunnel != nil){
+            menuItem.hidden = NO;
+            [menuItem.menu.itemArray enumerateObjectsUsingBlock:^(NSMenuItem *item2, NSUInteger idx, BOOL * _Nonnull stop) {
+                if ([item2.title isEqualToString:NSLocalizedString(@"SSH Tunnel Debugging Info", @"SSH Tunnel Debugging Info")]) {
+                    SPLog(@"Unhiding HR above SSH Tunnel Debugging");
+                    NSMenuItem *hrMenuItem = [menuItem.menu.itemArray safeObjectAtIndex:idx-1];
+                    if(hrMenuItem.isSeparatorItem){
+                        hrMenuItem.hidden = NO;
+                    }
+                    *stop = YES;
+                }
+            }];
+        }
+        return YES;
+    }
+
     // Table actions and view switching
     if (action == @selector(analyzeTable:) ||
         action == @selector(optimizeTable:) ||
