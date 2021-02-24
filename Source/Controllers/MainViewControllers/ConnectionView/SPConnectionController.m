@@ -476,7 +476,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
             SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
-            NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+            NSView __block *helpView;
+
+            SPMainQSync(^{
+                // call windowDidLoad to alloc the panes
+                [[SPAppDelegate preferenceController] window];
+                helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+            });
 
             NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
                                       classStr];

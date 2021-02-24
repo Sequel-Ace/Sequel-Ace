@@ -52,6 +52,7 @@
 #import "SPDotExporterProtocol.h"
 #import "SPPDFExporterProtocol.h"
 #import "SPHTMLExporterProtocol.h"
+#import "SPFunctions.h"
 #import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
@@ -657,8 +658,14 @@ set_input:
 
                 SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
 
-                NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+                NSView __block *helpView;
 
+                SPMainQSync(^{
+                    // call windowDidLoad to alloc the panes
+                    [[SPAppDelegate preferenceController] window];
+                    helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+                });
+                
                 NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
                                           classStr];
 
