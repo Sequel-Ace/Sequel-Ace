@@ -115,7 +115,11 @@ extension String {
 	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
 	}
-	
+
+    public func isNumeric() -> Bool {
+        return (self as String).isNumeric
+    }
+
 	public func isPercentEncoded() -> Bool {
 		return (self as String).isPercentEncoded
 	}
