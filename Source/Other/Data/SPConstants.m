@@ -94,6 +94,8 @@ NSString *SPHTMLTableInfoPrintTemplate           = @"SPTableInfoPrintTemplate";
 NSString *SPHTMLHelpTemplate                     = @"SPMySQLHelpTemplate";
 NSString *SPPreferenceDefaultsFile               = @"PreferenceDefaults";
 NSString *SPSSHConfigFile                        = @"ssh_config";
+NSString *SPSSHKnownHostsFile                    = @"known_hosts";
+NSString *SPSSHDefaultKnownHostsFile             = @".keys/ssh_known_hosts_strict";
 
 // Folder names
 NSString *SPThemesSupportFolder                  = @"Themes";
