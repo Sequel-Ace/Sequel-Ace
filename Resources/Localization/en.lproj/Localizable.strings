@@ -3186,6 +3186,12 @@
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
+/* known hosts not writable error message */
+"The selected known_hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known_hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+
+/* known hosts not writable error title */
+"Known Hosts Error" = "Known Hosts Error";
+
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?";
 
@@ -3218,6 +3224,9 @@
 
 /* Title for Network Preference ssh config file selection dialog */
 "Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
+
+/* Title for Network Preference ssh known hosts file selection dialog */
+"Please choose your known_hosts file" = "Please choose your known_hosts file";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "Invalid JSON";

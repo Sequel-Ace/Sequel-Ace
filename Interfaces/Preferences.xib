@@ -61,6 +61,7 @@
         <customObject id="2146" userLabel="Network" customClass="SPNetworkPreferencePane">
             <connections>
                 <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="r1S-eS-uJK"/>
+                <outlet property="knownHostsChooser" destination="l1q-C8-ytL" id="V6x-e1-Io4"/>
                 <outlet property="sshClientPath" destination="yQV-9I-7us" id="eUn-5b-NBa"/>
                 <outlet property="sshClientPickerView" destination="D6L-76-0Ik" id="gUn-jl-Tfb"/>
                 <outlet property="sshConfigChooser" destination="P6m-dR-d6a" id="zw4-Lr-8KG"/>
@@ -296,7 +297,7 @@ Gw
                         </view>
                     </box>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1759">
-                        <rect key="frame" x="161" y="12" width="89" height="29"/>
+                        <rect key="frame" x="161" y="12" width="88" height="29"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES"/>
                         <buttonCell key="cell" type="push" title="Close" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="1764">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1368,13 +1369,13 @@ Gw
                     </connections>
                 </textField>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9lg-Fd-6u7">
-                    <rect key="frame" x="180" y="40" width="340" height="196"/>
+                    <rect key="frame" x="180" y="40" width="340" height="161"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
-                        <rect key="frame" x="1" y="1" width="338" height="194"/>
+                        <rect key="frame" x="1" y="1" width="338" height="159"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" id="RuH-Yq-cdH">
-                                <rect key="frame" x="0.0" y="0.0" width="338" height="194"/>
+                                <rect key="frame" x="0.0" y="0.0" width="338" height="159"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1402,7 +1403,7 @@ Gw
                     </clipView>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="8Wc-f4-fRs"/>
-                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="180" id="fLw-5T-pxg"/>
+                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="160" id="fLw-5T-pxg"/>
                     </constraints>
                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="ZqJ-4c-bqV">
                         <rect key="frame" x="1" y="203" width="298" height="16"/>
@@ -1437,7 +1438,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="3Fg-G1-BWj">
-                    <rect key="frame" x="180" y="243" width="340" height="5"/>
+                    <rect key="frame" x="180" y="207" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="Woc-dz-xx3"/>
                     </constraints>
@@ -1461,7 +1462,7 @@ Gw
                         </binding>
                     </connections>
                 </button>
-                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="P6m-dR-d6a">
+                <popUpButton verticalHuggingPriority="750" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="P6m-dR-d6a">
                     <rect key="frame" x="177" y="251" width="347" height="27"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="jKo-lu-g39"/>
@@ -1488,7 +1489,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4Aw-q4-73u">
-                    <rect key="frame" x="18" y="216" width="154" height="20"/>
+                    <rect key="frame" x="18" y="181" width="154" height="20"/>
                     <string key="toolTip">The cipher suites are used for SSL/TLS-secured connections and specify which algorithms Sequel Ace will use to encrypt a connection, as well as their preference.
 Warning: If Sequel Ace and the server do not have at least one cipher suite in common, you will no longer be able to connect!</string>
                     <constraints>
@@ -1501,23 +1502,60 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5Vs-H5-Nca">
+                    <rect key="frame" x="18" y="220" width="154" height="21"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" alignment="right" title="Known Hosts:" id="dyI-8y-FNW">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <popUpButton verticalHuggingPriority="750" tag="2" translatesAutoresizingMaskIntoConstraints="NO" id="l1q-C8-ytL">
+                    <rect key="frame" x="177" y="216" width="347" height="27"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="22" id="tk9-kk-iZA"/>
+                    </constraints>
+                    <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="geP-YV-B0g" id="hmJ-F4-sdq">
+                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="menu"/>
+                        <menu key="menu" id="jFV-QJ-gOA">
+                            <items>
+                                <menuItem title="Item 1" state="on" id="geP-YV-B0g"/>
+                                <menuItem title="Item 2" id="IYc-iy-xas"/>
+                                <menuItem title="Item 3" id="vG7-NQ-ak6"/>
+                            </items>
+                        </menu>
+                    </popUpButtonCell>
+                    <connections>
+                        <action selector="updateKnownHostsConfig:" target="2146" id="U2t-D8-vr8"/>
+                        <binding destination="117" name="selectedTag" keyPath="values.known_hosts" id="1uC-TG-LLr">
+                            <dictionary key="options">
+                                <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
+                                <string key="NSNullPlaceholder">Sequel Ace default</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
+                </popUpButton>
             </subviews>
             <constraints>
                 <constraint firstItem="P6m-dR-d6a" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="0bA-qB-3lq"/>
+                <constraint firstItem="5Vs-H5-Nca" firstAttribute="bottom" secondItem="l1q-C8-ytL" secondAttribute="bottom" id="0qK-im-Jy7"/>
                 <constraint firstItem="HWX-AV-xGx" firstAttribute="top" secondItem="652" secondAttribute="bottom" constant="9" id="1dQ-fg-k25"/>
                 <constraint firstItem="HWX-AV-xGx" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="3Hg-YJ-Hn4"/>
                 <constraint firstItem="9CM-2a-2JU" firstAttribute="leading" secondItem="641" secondAttribute="leading" constant="20" id="3b9-2b-LqV"/>
-                <constraint firstItem="3Fg-G1-BWj" firstAttribute="top" secondItem="P6m-dR-d6a" secondAttribute="bottom" constant="9" id="3hs-ey-VbC"/>
+                <constraint firstItem="3Fg-G1-BWj" firstAttribute="top" secondItem="l1q-C8-ytL" secondAttribute="bottom" constant="10" id="3hs-ey-VbC"/>
                 <constraint firstItem="P6m-dR-d6a" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="3lY-KJ-e21"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="4P6-Go-lyC"/>
+                <constraint firstItem="5Vs-H5-Nca" firstAttribute="leading" secondItem="641" secondAttribute="leading" constant="20" id="4oq-4y-wkk"/>
                 <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="9lg-Fd-6u7" secondAttribute="bottom" constant="5" id="5Zj-6C-bW5"/>
+                <constraint firstItem="5Vs-H5-Nca" firstAttribute="firstBaseline" secondItem="l1q-C8-ytL" secondAttribute="firstBaseline" id="6bc-BQ-FtG"/>
                 <constraint firstItem="652" firstAttribute="top" secondItem="681" secondAttribute="bottom" constant="9" id="88K-qP-zB5"/>
                 <constraint firstItem="jJw-LF-gtW" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="9oi-kf-DQM"/>
                 <constraint firstItem="TG6-Q3-g30" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="A0b-vy-lrC"/>
                 <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="jJw-LF-gtW" secondAttribute="top" id="C2G-02-FBf"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="9CM-2a-2JU" secondAttribute="centerY" id="D6v-YG-WzF"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="GcY-yy-sZn" secondAttribute="centerY" id="FDQ-ZG-T5Y"/>
-                <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="3Fg-G1-BWj" secondAttribute="bottom" constant="9" id="Hmn-IF-E0D"/>
+                <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="3Fg-G1-BWj" secondAttribute="bottom" constant="8" id="Hmn-IF-E0D"/>
                 <constraint firstItem="P6m-dR-d6a" firstAttribute="top" secondItem="Rsg-4x-YV2" secondAttribute="bottom" constant="9" id="Kmf-ZX-Bsb"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="leading" secondItem="4Aw-q4-73u" secondAttribute="trailing" constant="10" id="LwL-GT-zsg"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="top" secondItem="HWX-AV-xGx" secondAttribute="bottom" constant="9" id="NHV-YR-QtW"/>
@@ -1533,8 +1571,12 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="676" firstAttribute="centerY" secondItem="674" secondAttribute="centerY" id="cMG-DG-yHJ"/>
                 <constraint firstItem="676" firstAttribute="leading" secondItem="674" secondAttribute="trailing" constant="3" id="fvI-KT-Mdv"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="gLC-jU-Cqj"/>
+                <constraint firstItem="l1q-C8-ytL" firstAttribute="leading" secondItem="5Vs-H5-Nca" secondAttribute="trailing" constant="10" id="gcj-Ka-D8e"/>
                 <constraint firstItem="652" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="hdE-As-bYU"/>
+                <constraint firstItem="5Vs-H5-Nca" firstAttribute="trailing" secondItem="Rn3-Bt-QGE" secondAttribute="trailing" id="hq5-vD-epK"/>
                 <constraint firstItem="4Aw-q4-73u" firstAttribute="leading" secondItem="641" secondAttribute="leading" constant="20" id="kcK-VB-0J5"/>
+                <constraint firstAttribute="trailing" secondItem="l1q-C8-ytL" secondAttribute="trailing" constant="20" symbolic="YES" id="mIP-fB-4Co"/>
+                <constraint firstItem="5Vs-H5-Nca" firstAttribute="top" secondItem="Rn3-Bt-QGE" secondAttribute="bottom" constant="15" id="o2j-pK-ert"/>
                 <constraint firstItem="681" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="ost-3h-0Vc"/>
                 <constraint firstItem="GcY-yy-sZn" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="rB2-48-YNf"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="rWV-h3-8i3"/>
@@ -1547,7 +1589,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="4Aw-q4-73u" secondAttribute="top" id="wo7-6R-jfR"/>
                 <constraint firstItem="676" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="xPT-Wg-qIe"/>
             </constraints>
-            <point key="canvasLocation" x="751" y="614"/>
+            <point key="canvasLocation" x="732" y="551"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="802" userLabel="Editor">
             <rect key="frame" x="0.0" y="0.0" width="540" height="487"/>

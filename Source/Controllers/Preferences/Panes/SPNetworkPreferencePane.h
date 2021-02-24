@@ -30,6 +30,8 @@
 
 #import "SPPreferencePane.h"
 
+@class PanelOptions;
+
 /**
  * @class SPNetworkPreferencePane SPNetworkPreferencePane.h
  *
@@ -48,12 +50,17 @@
 @private
 	NSOpenPanel *_currentFilePanel;
 	NSMutableArray *sslCiphers;
-	NSString *sshConfigFile;
+    NSString *sshConfigFile;
+    NSString *knownHostsFile;
 }
 
 @property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
+@property (weak) IBOutlet NSPopUpButton *knownHostsChooser;
 
+- (IBAction)updateKnownHostsConfig:(NSPopUpButton *)sender;
 - (IBAction)pickSSHClientViaFileBrowser:(id)sender;
 - (IBAction)pickSSHClient:(id)sender;
 - (IBAction)resetCipherList:(id)sender;
+- (void)chooseSSHConfigWithOptions:(PanelOptions*)options;
+
 @end

@@ -35,6 +35,8 @@
 #import "SPThreadAdditions.h"
 #import "SPFileHandle.h"
 #import "SPAppController.h"
+#import "SPPreferenceController.h"
+#import "SPGeneralPreferencePane.h"
 #import "SPDatabaseDocument.h"
 #import "SPFunctions.h"
 
@@ -388,15 +390,49 @@ static unsigned short getRandomPort(void);
 
 		// Allow three password prompts
 		TA(@"-o",@"NumberOfPasswordPrompts=3");
-		
-		// Use a KnownHostsFile in the sandbox folder
-		NSString *customKnownHostsFilePath = [NSHomeDirectory() stringByAppendingPathComponent:@".keys/ssh_known_hosts_strict"];
-		if (![[NSFileManager defaultManager] isWritableFileAtPath:customKnownHostsFilePath]){
-			//Handle deleting an old known hosts file if it exists and we don't have permission to write
-			[[NSFileManager defaultManager] removeItemAtPath:customKnownHostsFilePath error:nil];
-			//Create new known hosts file
-			[[NSFileManager defaultManager] createFileAtPath:customKnownHostsFilePath contents:[@"" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
-		}
+
+
+        NSString *customKnownHostsFilePath = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHKnownHostsFile];
+
+        // if not set, could be empty or @0
+        if(IsEmpty(customKnownHostsFilePath) == NO && customKnownHostsFilePath.isNumeric == NO){
+            SPLog(@"customKnownHostsFilePath set to: %@", customKnownHostsFilePath);
+            if (![[NSFileManager defaultManager] isWritableFileAtPath:customKnownHostsFilePath]){
+                SPLog(@"ERROR: customKnownHostsFilePath NOT writable");
+
+                // return; //??
+
+                NSView __block *helpView;
+
+                SPMainQSync(^{
+                    // call windowDidLoad to alloc the panes
+                    [[((SPAppController *)[NSApp delegate]) preferenceController] window];
+                    helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+                });
+
+                NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known_hosts file is not writable.\n\n%@\n\nPlease check and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
+
+                [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Known Hosts Error", @"Known Hosts Error") message:alertMessage accessoryView:helpView callback:^{
+                    NSDictionary *userInfo = @{
+                        NSLocalizedDescriptionKey: @"known_hosts file is not writable",
+                        @"file": customKnownHostsFilePath,
+                        @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__]
+                    };
+                    SPLog(@"userInfo: %@", userInfo);
+                }];
+            }
+        }
+        else{
+            // Use a KnownHostsFile in the sandbox folder
+            customKnownHostsFilePath = [NSHomeDirectory() stringByAppendingPathComponent:SPSSHDefaultKnownHostsFile];
+            if (![[NSFileManager defaultManager] isWritableFileAtPath:customKnownHostsFilePath]){
+                //Handle deleting an old known hosts file if it exists and we don't have permission to write
+                [[NSFileManager defaultManager] removeItemAtPath:customKnownHostsFilePath error:nil];
+                //Create new known hosts file
+                [[NSFileManager defaultManager] createFileAtPath:customKnownHostsFilePath contents:[@"" dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
+            }
+        }
+
 		TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@", customKnownHostsFilePath]);
 		
 		// Use a custom ssh config file

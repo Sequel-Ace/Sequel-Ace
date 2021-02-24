@@ -29,6 +29,8 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPNetworkPreferencePane.h"
+#import "SPPanelOptions.h"
+
 #import "sequel-ace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
@@ -46,6 +48,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 @implementation SPNetworkPreferencePane
 
 @synthesize bookmarks;
+@synthesize knownHostsChooser;
 
 - (instancetype)init
 {
@@ -106,8 +109,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (void)preferencePaneWillBeShown
 {
-	[self updateSSHConfigPopUp];
-	
+    [self updateSSHConfigPopUp:sshConfigChooser];
+    [self updateSSHConfigPopUp:knownHostsChooser];
+
 	[self loadSSLCiphers];
 	if(![[sslCipherView registeredDraggedTypes] containsObject:SPSSLCipherPboardTypeName])
 		[sslCipherView registerForDraggedTypes:@[SPSSLCipherPboardTypeName]];
@@ -174,7 +178,47 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 }
 
 #pragma mark -
-#pragma mark - PopUp Button
+#pragma mark PopUp Button
+
+- (IBAction)updateKnownHostsConfig:(NSPopUpButton *)sender {
+
+    for (NSMenuItem *item in [knownHostsChooser itemArray]) {
+        [item setState:NSOffState];
+    }
+
+    [sender setState:NSOnState];
+    [knownHostsChooser setTitle:[sender title]];
+
+    if ([[sender title] isEqualToString:@"Sequel Ace default"]) {
+        return;
+    }
+
+    // choose a config file not listed
+    if ((NSUInteger) [knownHostsChooser indexOfSelectedItem] == ([[knownHostsChooser itemArray] count] - 1)) {
+        // open the file chooser dialog
+        PanelOptions *options = [[PanelOptions alloc] init];
+
+        options.allowsMultipleSelection = NO;
+        options.canChooseFiles = YES;
+        options.canChooseDirectories = NO;
+        options.title = NSLocalizedString(@"Please choose your known_hosts file", "Please choose your known_hosts file");
+        options.prefsKey = SPSSHKnownHostsFile;
+        options.chooser = knownHostsChooser;
+
+        SPLog(@"calling chooseSSHConfigWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+
+        [self chooseSSHConfigWithOptions:options];
+
+        return;
+    }
+
+    // the title contains the absolute path of the config file. Therefore save
+    // it to the preferences as selected config file.
+    [prefs setObject:[sender title] forKey:SPSSHKnownHostsFile];
+
+    [self updateSSHConfigPopUp:knownHostsChooser];
+
+}
 
 - (IBAction)updateSSHConfig:(NSPopUpButton *)sender
 {
@@ -194,7 +238,18 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	// choose a config file not listed
 	if ((NSUInteger) [sshConfigChooser indexOfSelectedItem] == ([[sshConfigChooser itemArray] count] - 1)) {
 		// open the file chooser dialog
-		[self chooseSSHConfig];
+        PanelOptions *options = [[PanelOptions alloc] init];
+
+        options.allowsMultipleSelection = YES;
+        options.canChooseFiles = YES;
+        options.canChooseDirectories = NO;
+        options.title = NSLocalizedString(@"Please choose your ssh config files(s)", "Please choose your ssh config files(s)");
+        options.prefsKey = SPSSHConfigFile;
+        options.chooser = sshConfigChooser;
+
+        SPLog(@"calling chooseSSHConfigWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
+
+        [self chooseSSHConfigWithOptions:options];
 		
 		return;
 	}
@@ -203,17 +258,17 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	// it to the preferences as selected config file.
 	[prefs setObject:[sender title] forKey:SPSSHConfigFile];
 	
-	[self updateSSHConfigPopUp];
+    [self updateSSHConfigPopUp:sshConfigChooser];
 }
 
-- (void)updateSSHConfigPopUp
+- (void)updateSSHConfigPopUp:(NSPopUpButton*)button
 {
 	// clear up all existing items
-	[sshConfigChooser removeAllItems];
+	[button removeAllItems];
 	
 	// add the default item to give the user the ability to revert his/her changes
-	[sshConfigChooser addItemWithTitle:@"Sequel Ace default"];
-	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
+	[button addItemWithTitle:@"Sequel Ace default"];
+	[[button menu] addItem:[NSMenuItem separatorItem]];
 	
 	NSUInteger __block count = 0;
 
@@ -230,73 +285,102 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 continue;
             }
             NSString *itemTitle = [key substringFromIndex:len];
-            [sshConfigChooser safeAddItemWithTitle:itemTitle];
+            [button safeAddItemWithTitle:itemTitle];
             count++;
         }
 	}];
 
 	// default value if no bookmarks are available
 	if (count == 0) {
-		[sshConfigChooser selectItemWithTitle:@"Sequel Ace default"];
+		[button selectItemWithTitle:@"Sequel Ace default"];
 	}
 	
 	// add a separate add option under all granted files, that will open a
 	// file chooser panel in order to select a new file and grant access to
 	// it
-	[[sshConfigChooser menu] addItem:[NSMenuItem separatorItem]];
-	[sshConfigChooser addItemWithTitle:@"Other file..."];
+	[[button menu] addItem:[NSMenuItem separatorItem]];
+	[button addItemWithTitle:@"Other file..."];
 
-	NSString *defaultConfig = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
-	
-	if (count != 0) {
-		// select the currently configured value
-		NSString *currentConfig = [prefs stringForKey:SPSSHConfigFile];
-		
-		if ([currentConfig isEqualToString:defaultConfig]) {
-			currentConfig = @"Sequel Ace default";
-		}
-		
-		[sshConfigChooser selectItemWithTitle:currentConfig];
-	}
+    // sshConfigChooser button tagged with @1 in IB
+    if(button.tag == 1){
+        NSString *defaultConfig = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+
+        if (count != 0) {
+            // select the currently configured value
+            NSString *currentConfig = [prefs stringForKey:SPSSHConfigFile];
+
+            // if currentConfig is @0, they didn't choose anything in the file chooser
+            // so set to default and update prefs.
+            if ([currentConfig isEqualToString:defaultConfig] || currentConfig.isNumeric == YES) {
+                currentConfig = @"Sequel Ace default";
+                [prefs setObject:[[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""] forKey:SPSSHConfigFile];
+            }
+
+            [button selectItemWithTitle:currentConfig];
+        }
+    }
+    // knownHostsChooser button tagged with @1 in IB
+    else if(button.tag == 2){
+        NSString *defaultConfig = [prefs stringForKey:SPSSHDefaultKnownHostsFile];
+
+        if (count != 0) {
+            // select the currently configured value
+            NSString *currentConfig = [prefs stringForKey:SPSSHKnownHostsFile];
+
+            // if currentConfig is @0, they didn't choose anything in the file chooser
+            // so set to default
+            if ([currentConfig isEqualToString:defaultConfig] || currentConfig.isNumeric == YES) {
+                currentConfig = @"Sequel Ace default";
+            }
+
+            [button selectItemWithTitle:currentConfig];
+        }
+    }
 }
 
-- (void)chooseSSHConfig
+
+#pragma mark -
+#pragma mark chooseSSHConfig
+
+- (void)chooseSSHConfigWithOptions:(PanelOptions*)options
 {
-	// retrieve the file manager in order to fetch the current user's home
-	// directory
-	NSFileManager *fileManager = [NSFileManager defaultManager];
-	NSURL *homeDirectory = nil;
-	if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
-		homeDirectory = [fileManager homeDirectoryForCurrentUser];
-	} else {
-		homeDirectory = [NSURL fileURLWithPath:NSHomeDirectory()];
-	}
+    // retrieve the file manager in order to fetch the current user's home
+    // directory
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *homeDirectory = nil;
+    if ([fileManager respondsToSelector:@selector(homeDirectoryForCurrentUser)]) {
+        homeDirectory = [fileManager homeDirectoryForCurrentUser];
+    } else {
+        homeDirectory = [NSURL fileURLWithPath:NSHomeDirectory()];
+    }
 
-	_currentFilePanel = [NSOpenPanel openPanel];
-    [_currentFilePanel setMessage:NSLocalizedString(@"Please choose your ssh config files(s)", "Please choose your ssh config files(s)")];
-	[_currentFilePanel setCanChooseFiles:YES];
-	[_currentFilePanel setCanChooseDirectories:NO];
-	[_currentFilePanel setAllowsMultipleSelection:YES];
-	[_currentFilePanel setAccessoryView:hiddenFileView];
-	[_currentFilePanel setResolvesAliases:NO];
-	[_currentFilePanel setDirectoryURL:[homeDirectory URLByAppendingPathComponent:@".ssh"]];
-	[self updateHiddenFiles];
-	
-	[prefs addObserver:self
-			forKeyPath:SPHiddenKeyFileVisibilityKey
-			   options:NSKeyValueObservingOptionNew
-			   context:NULL];
-	
-	[_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode)
-	 {
-		// only process data, when the user pressed ok
-		if (returnCode != NSModalResponseOK) {
-			return;
-		}
+    _currentFilePanel = [NSOpenPanel openPanel];
+    [_currentFilePanel setMessage:options.title];
+    [_currentFilePanel setCanChooseFiles:options.canChooseFiles];
+    [_currentFilePanel setCanChooseDirectories:options.canChooseDirectories];
+    [_currentFilePanel setAllowsMultipleSelection:options.allowsMultipleSelection];
+    [_currentFilePanel setAccessoryView:hiddenFileView];
+    [_currentFilePanel setResolvesAliases:NO];
+    [_currentFilePanel setDirectoryURL:[homeDirectory URLByAppendingPathComponent:@".ssh"]];
+    [self updateHiddenFiles];
 
-		// since ssh configs are able to consist of multiple files, bookmarks
-		// for every selected file should be created in order to access them
-		// read-only.
+    [prefs addObserver:self
+            forKeyPath:SPHiddenKeyFileVisibilityKey
+               options:NSKeyValueObservingOptionNew
+               context:NULL];
+
+    [_currentFilePanel beginWithCompletionHandler:^(NSInteger returnCode)
+     {
+        // only process data, when the user pressed ok
+        if (returnCode != NSModalResponseOK) {
+            // if they don't choose anything ... pref forKey:SPSSHConfigFile will be @0
+            [self updateSSHConfigPopUp:options.chooser];
+            return;
+        }
+
+        // since ssh configs are able to consist of multiple files, bookmarks
+        // for every selected file should be created in order to access them
+        // read-only.
         [self->_currentFilePanel.URLs enumerateObjectsUsingBlock:^(NSURL *url, NSUInteger idxURL, BOOL *stopURL){
             // check if the file is out of the sandbox
 
@@ -307,7 +391,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
             SPLog(@"Block URL str: %@", url.absoluteString);
             SPLog(@"Block URL add: %p", &url);
             SPLog(@"_currentFilePanel.URL add: %p", self->_currentFilePanel.URL);
-            
+
             // check it's really a URL
             if(![url isKindOfClass:[NSURL class]]){
                 SPLog(@"selected file is not a valid URL: %@", classStr);
@@ -341,24 +425,25 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 }
             }
 
-			// set the config path to the first selected file
-			if (idxURL == 0) {
-				// save the preferences
-				if (![[url path] length]) {
-					[self->prefs removeObjectForKey:SPSSHConfigFile];
-				} else {
-					[self->prefs setObject:[url path] forKey:SPSSHConfigFile];
-				}
-			}
-		}];
-		
-		// update the popup button with its items and the selected item
-		// from the file picker
-		[self updateSSHConfigPopUp];
-		
-		self->_currentFilePanel = nil;
-	}];
+            // set the config path to the first selected file
+            if (idxURL == 0) {
+                // save the preferences
+                if (![[url path] length]) {
+                    [self->prefs removeObjectForKey:options.prefsKey];
+                } else {
+                    [self->prefs setObject:[url path] forKey:options.prefsKey];
+                }
+            }
+        }];
+
+        // update the popup button with its items and the selected item
+        // from the file picker
+        [self updateSSHConfigPopUp:options.chooser];
+
+        self->_currentFilePanel = nil;
+    }];
 }
+
 
 #pragma mark -
 #pragma mark SSL cipher list methods
@@ -407,6 +492,89 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	NSString *flattedList = [sslCiphers componentsJoinedByString:@":"];
 	[prefs setObject:flattedList forKey:SPSSLCipherListKey];
 }
+
+- (IBAction)resetCipherList:(id)sender
+{
+    //remove the user pref and reset the GUI
+    [prefs removeObjectForKey:SPSSLCipherListKey];
+    [self loadSSLCiphers];
+}
+
++ (NSArray *)defaultSSLCipherList
+{
+    static dispatch_once_t token;
+    static NSArray *defaultSSLCipherList;
+
+    dispatch_once(&token, ^{
+        //this is the default list as hardcoded in SPMySQLConnection.m
+        //Sadly there is no way to make MySQL give us the list of runtime-supported ciphers.
+        defaultSSLCipherList = @[
+            @"ECDHE-ECDSA-AES256-GCM-SHA384",
+            @"ECDHE-ECDSA-AES128-GCM-SHA256",
+            @"ECDHE-RSA-AES256-GCM-SHA384",
+            @"ECDHE-RSA-AES128-GCM-SHA256",
+            @"DHE-DSS-AES256-GCM-SHA384",
+            @"DHE-DSS-AES128-GCM-SHA256",
+            @"DHE-RSA-AES256-GCM-SHA384",
+            @"DHE-RSA-AES128-GCM-SHA256",
+            @"ECDHE-ECDSA-AES256-SHA384",
+            @"ECDHE-ECDSA-AES128-SHA256",
+            @"ECDHE-RSA-AES256-SHA384",
+            @"ECDHE-RSA-AES128-SHA256",
+            @"DHE-RSA-AES128-SHA256",
+            @"DHE-DSS-AES128-SHA256",
+            @"DHE-RSA-AES256-SHA256",
+            @"DHE-DSS-AES256-SHA256",
+            SPSSLCipherListMarkerItem, //marker. disabled items below here
+            @"AES128-GCM-SHA256",
+            @"AES128-SHA",
+            @"AES128-SHA256",
+            @"AES256-GCM-SHA384",
+            @"AES256-SHA",
+            @"AES256-SHA256",
+            @"CAMELLIA128-SHA",
+            @"CAMELLIA256-SHA",
+            @"DH-DSS-AES128-GCM-SHA256",
+            @"DH-DSS-AES128-SHA",
+            @"DH-DSS-AES128-SHA256",
+            @"DH-DSS-AES256-GCM-SHA384",
+            @"DH-DSS-AES256-SHA",
+            @"DH-DSS-AES256-SHA256",
+            @"DH-RSA-AES128-GCM-SHA256",
+            @"DH-RSA-AES128-SHA",
+            @"DH-RSA-AES128-SHA256",
+            @"DH-RSA-AES256-GCM-SHA384",
+            @"DH-RSA-AES256-SHA",
+            @"DH-RSA-AES256-SHA256",
+            @"DHE-DSS-AES128-SHA",
+            @"DHE-DSS-AES256-SHA",
+            @"DHE-RSA-AES128-SHA",
+            @"DHE-RSA-AES256-SHA",
+            @"ECDH-ECDSA-AES128-GCM-SHA256",
+            @"ECDH-ECDSA-AES128-SHA",
+            @"ECDH-ECDSA-AES128-SHA256",
+            @"ECDH-ECDSA-AES256-GCM-SHA384",
+            @"ECDH-ECDSA-AES256-SHA",
+            @"ECDH-ECDSA-AES256-SHA384",
+            @"ECDH-RSA-AES128-GCM-SHA256",
+            @"ECDH-RSA-AES128-SHA",
+            @"ECDH-RSA-AES128-SHA256",
+            @"ECDH-RSA-AES256-GCM-SHA384",
+            @"ECDH-RSA-AES256-SHA",
+            @"ECDH-RSA-AES256-SHA384",
+            @"ECDHE-ECDSA-AES128-SHA",
+            @"ECDHE-ECDSA-AES256-SHA",
+            @"ECDHE-RSA-AES128-SHA",
+            @"ECDHE-RSA-AES256-SHA",
+        ];
+
+    });
+
+    return defaultSSLCipherList;
+}
+
+#pragma mark -
+#pragma mark tableView Delegate
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
 {
@@ -485,78 +653,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	[pboard declareTypes:@[SPSSLCipherPboardTypeName] owner:self];
 	[pboard setData:arch forType:SPSSLCipherPboardTypeName];
 	return YES;
-}
-
-- (IBAction)resetCipherList:(id)sender
-{
-	//remove the user pref and reset the GUI
-	[prefs removeObjectForKey:SPSSLCipherListKey];
-	[self loadSSLCiphers];
-}
-
-+ (NSArray *)defaultSSLCipherList
-{
-	//this is the default list as hardcoded in SPMySQLConnection.m
-	//Sadly there is no way to make MySQL give us the list of runtime-supported ciphers.
-	return @[
-		@"ECDHE-ECDSA-AES256-GCM-SHA384",
-		@"ECDHE-ECDSA-AES128-GCM-SHA256",
-		@"ECDHE-RSA-AES256-GCM-SHA384",
-		@"ECDHE-RSA-AES128-GCM-SHA256",
-		@"DHE-DSS-AES256-GCM-SHA384",
-		@"DHE-DSS-AES128-GCM-SHA256",
-		@"DHE-RSA-AES256-GCM-SHA384",
-		@"DHE-RSA-AES128-GCM-SHA256",
-		@"ECDHE-ECDSA-AES256-SHA384",
-		@"ECDHE-ECDSA-AES128-SHA256",
-		@"ECDHE-RSA-AES256-SHA384",
-		@"ECDHE-RSA-AES128-SHA256",
-		@"DHE-RSA-AES128-SHA256",
-		@"DHE-DSS-AES128-SHA256",
-		@"DHE-RSA-AES256-SHA256",
-		@"DHE-DSS-AES256-SHA256",
-		SPSSLCipherListMarkerItem, //marker. disabled items below here
-		@"AES128-GCM-SHA256",
-		@"AES128-SHA",
-		@"AES128-SHA256",
-		@"AES256-GCM-SHA384",
-		@"AES256-SHA",
-		@"AES256-SHA256",
-		@"CAMELLIA128-SHA",
-		@"CAMELLIA256-SHA",
-		@"DH-DSS-AES128-GCM-SHA256",
-		@"DH-DSS-AES128-SHA",
-		@"DH-DSS-AES128-SHA256",
-		@"DH-DSS-AES256-GCM-SHA384",
-		@"DH-DSS-AES256-SHA",
-		@"DH-DSS-AES256-SHA256",
-		@"DH-RSA-AES128-GCM-SHA256",
-		@"DH-RSA-AES128-SHA",
-		@"DH-RSA-AES128-SHA256",
-		@"DH-RSA-AES256-GCM-SHA384",
-		@"DH-RSA-AES256-SHA",
-		@"DH-RSA-AES256-SHA256",
-		@"DHE-DSS-AES128-SHA",
-		@"DHE-DSS-AES256-SHA",
-		@"DHE-RSA-AES128-SHA",
-		@"DHE-RSA-AES256-SHA",
-		@"ECDH-ECDSA-AES128-GCM-SHA256",
-		@"ECDH-ECDSA-AES128-SHA",
-		@"ECDH-ECDSA-AES128-SHA256",
-		@"ECDH-ECDSA-AES256-GCM-SHA384",
-		@"ECDH-ECDSA-AES256-SHA",
-		@"ECDH-ECDSA-AES256-SHA384",
-		@"ECDH-RSA-AES128-GCM-SHA256",
-		@"ECDH-RSA-AES128-SHA",
-		@"ECDH-RSA-AES128-SHA256",
-		@"ECDH-RSA-AES256-GCM-SHA384",
-		@"ECDH-RSA-AES256-SHA",
-		@"ECDH-RSA-AES256-SHA384",
-		@"ECDHE-ECDSA-AES128-SHA",
-		@"ECDHE-ECDSA-AES256-SHA",
-		@"ECDHE-RSA-AES128-SHA",
-		@"ECDHE-RSA-AES256-SHA",
-	];
 }
 
 @end
