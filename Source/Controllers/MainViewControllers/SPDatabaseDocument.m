@@ -3289,6 +3289,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [tablesListInstance performSelector:@selector(makeTableListFilterHaveFocus) withObject:nil afterDelay:0.1];
 }
 
+
+- (IBAction)showConnectionDebugMessages:(id)sender {
+
+    SPConnectionController *conn = self.connectionController;
+
+    NSString *debugMessages = [conn->sshTunnel debugMessages];
+
+    SPLog(@"%@", debugMessages);
+
+    conn->errorDetailWindow.title = NSLocalizedString(@"SSH Tunnel Debugging Info", @"SSH Tunnel Debugging Info");
+    conn->errorDetailText.string = debugMessages;
+
+    [[self parentWindowControllerWindow] beginSheet:conn->errorDetailWindow completionHandler:nil];
+
+}
+
 /**
  * Menu item validation.
  */
