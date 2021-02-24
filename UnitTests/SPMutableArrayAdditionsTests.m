@@ -31,6 +31,7 @@
 #import "SPMutableArrayAdditions.h"
 #import "NSMutableArray-MultipleSort.h"
 #import "SPTestingUtils.h"
+#import "SPFunctions.h"
 #import <XCTest/XCTest.h>
 
 /**
@@ -57,7 +58,55 @@
 	[testArray reverse];
 	
 	XCTAssertEqualObjects(testArray, expectedArray, @"The reversed array should look like: %@, but actually looks like: %@", expectedArray, testArray);
+
+    testArray = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", @"4", @"5", nil];
+
+    testArray = [testArray reverse2];
+
+    XCTAssertEqualObjects(testArray, expectedArray, @"The reversed array should look like: %@, but actually looks like: %@", expectedArray, testArray);
+
 }
+
+- (void)testSafeSetArray
+{
+    NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", @"4", @"5", nil];
+    NSMutableArray *expectedArray = [NSMutableArray arrayWithObjects:@"5", @"4", @"3", @"2", @"1", nil];
+
+    [testArray setArray:expectedArray];
+
+    XCTAssertEqualObjects(testArray, expectedArray, @"The reversed array should look like: %@, but actually looks like: %@", expectedArray, testArray);
+
+    expectedArray = nil;
+    testArray = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", @"4", @"5", nil];
+
+    [testArray setArray:expectedArray];
+
+    XCTAssertTrue(IsEmpty(testArray));
+    XCTAssertNotNil(testArray);
+
+    testArray = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", @"4", @"5", nil];
+
+    [testArray safeSetArray:expectedArray];
+
+    XCTAssertFalse(IsEmpty(testArray));
+    XCTAssertNotNil(testArray);
+
+    testArray = nil;
+
+    [testArray setArray:expectedArray];
+
+    XCTAssertTrue(IsEmpty(testArray));
+    XCTAssertNil(testArray);
+
+    testArray = nil;
+
+    [testArray safeSetArray:expectedArray];
+
+    XCTAssertTrue(IsEmpty(testArray));
+    XCTAssertNil(testArray);
+
+}
+
 
 - (void)testSort
 {
@@ -215,5 +264,38 @@
         }
     }];
 }
+
+// 0.761 s
+- (void)testPerformanceReverse {
+
+    [self measureBlock:^{
+
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        int const iterations = 1000;
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                [randomArray reverse];
+            }
+        }
+    }];
+}
+
+// 0.396 s
+- (void)testPerformanceReverse2 {
+
+    [self measureBlock:^{
+
+        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
+
+        int const iterations = 1000;
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+                [randomArray reverse2];
+            }
+        }
+    }];
+}
+
 
 @end

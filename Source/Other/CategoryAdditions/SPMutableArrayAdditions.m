@@ -48,6 +48,12 @@
 	}
 }
 
+- (instancetype _Nonnull)reverse2;
+{
+    return [[[self reverseObjectEnumerator] allObjects] mutableCopy];
+}
+
+
 - (id)safeObjectAtIndex:(NSUInteger)idx{
 	return idx < self.count ? [self objectAtIndex:idx] : nil;
 }
@@ -56,6 +62,12 @@
 	if (obj != nil) {
 		[self addObject:obj];
 	}
+}
+
+- (void)safeSetArray:(NSArray*)arr{
+    if (arr != nil) {
+        [self setArray:arr];
+    }
 }
 
 - (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject{
