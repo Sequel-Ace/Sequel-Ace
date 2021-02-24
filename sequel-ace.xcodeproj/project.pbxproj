@@ -156,6 +156,7 @@
 		1AB068B424A3577C00E2AAC2 /* SPValidateKeyAndCertFiles.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */; };
 		1AB28D8125DBD3B500E62BF5 /* ProgressViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */; };
 		1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */; };
+		1ABC770125E3895300E8EE01 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */; };
 		1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */; };
 		1AD785E725B749760007E153 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
@@ -807,6 +808,7 @@
 		1AB0689924A355B500E2AAC2 /* client-key-crlf.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "client-key-crlf.pem"; sourceTree = "<group>"; };
 		1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPValidateKeyAndCertFiles.m; sourceTree = "<group>"; };
 		1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewController.swift; sourceTree = "<group>"; };
+		1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtension.swift; sourceTree = "<group>"; };
 		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
@@ -2350,6 +2352,7 @@
 				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
 				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
 				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
+				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3147,6 +3150,7 @@
 				17F5B1541048C50D00FC794F /* SPExporter.m in Sources */,
 				17F5B39C1049B96A00FC794F /* SPSQLExporter.m in Sources */,
 				BC29C37F10501EFD00DD6C6E /* SPQueryController.m in Sources */,
+				1ABC770125E3895300E8EE01 /* DispatchQueueExtension.swift in Sources */,
 				5822D3091061833C00CE2157 /* SPCSVParser.m in Sources */,
 				1AD785E725B749760007E153 /* OSLog.swift in Sources */,
 				BC675A141072039C00C5ACD4 /* SPContentFilterManager.m in Sources */,
