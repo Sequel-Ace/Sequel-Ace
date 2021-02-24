@@ -478,7 +478,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		for (NSDictionary *dic in fields) 
 		{
 			if ([[dic objectForKey:@"name"] isEqualToString:object]) {
-				[indexedFields replaceObjectAtIndex:rowIndex withObject:dic];
+				[indexedFields safeReplaceObjectAtIndex:rowIndex withObject:dic];
 				break;
 			}
 		}
@@ -491,10 +491,10 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		}
 		
 		if (object) {
-			[[indexedFields objectAtIndex:rowIndex] setObject:object forKey:[tableColumn identifier]];
+			[[indexedFields safeObjectAtIndex:rowIndex] safeSetObject:object forKey:[tableColumn identifier]];
 		} 
 		else {
-			[[indexedFields objectAtIndex:rowIndex] removeObjectForKey:[tableColumn identifier]];
+			[[indexedFields safeObjectAtIndex:rowIndex] safeRemoveObjectForKey:[tableColumn identifier]];
 		}
 	}
 
@@ -586,7 +586,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 {
 	[indexes removeAllObjects];
 
-	[indexes setArray:tableIndexes];
+	[indexes safeSetArray:tableIndexes];
 }
 
 #pragma mark -
