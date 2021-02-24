@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 @property (readwrite, copy) NSString *title;
+@property (readwrite, copy) NSString *prefsKey;
+@property (readwrite, strong) NSPopUpButton *chooser;
 @property (readwrite, assign) BOOL canChooseFiles;
 @property (readwrite, assign) BOOL canChooseDirectories;
 @property (readwrite, assign) BOOL allowsMultipleSelection;

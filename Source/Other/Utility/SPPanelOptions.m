@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "SPPanelOptions.h"
+#import "SPFunctions.h"
 
 @implementation PanelOptions
 
@@ -28,6 +29,8 @@
 
     return @{
         @"title" : self.title,
+        @"prefsKey" : safeString(self.prefsKey),
+        @"chooser" : SPBoxNil(self.chooser.description),
         @"canChooseFiles" : @(self.canChooseFiles),
         @"canChooseDirectories" : @(self.canChooseDirectories),
         @"allowsMultipleSelection" : @(self.allowsMultipleSelection),
