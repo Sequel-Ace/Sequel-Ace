@@ -612,6 +612,7 @@ extern NSString *SPQueryWarningEnabledSuppressed;
 extern NSString *SPBundleLegacyAppSchema;
 extern NSString *SPBundleAppSchema;
 extern NSString *SPExportFileHandleError;
+extern NSString *SPSSHConfigContainsUserKnownHostsFile;
 
 extern NSString *SPBundleShellVariableInputFilePath;
 extern NSString *SPBundleShellVariableOutputFilePath;

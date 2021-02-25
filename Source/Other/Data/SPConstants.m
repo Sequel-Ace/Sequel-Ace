@@ -96,6 +96,7 @@ NSString *SPPreferenceDefaultsFile               = @"PreferenceDefaults";
 NSString *SPSSHConfigFile                        = @"ssh_config";
 NSString *SPSSHKnownHostsFile                    = @"known_hosts";
 NSString *SPSSHDefaultKnownHostsFile             = @".keys/ssh_known_hosts_strict";
+NSString *SPSSHConfigContainsUserKnownHostsFile  = @"SSHConfigContainsUserKnownHostsFile";
 
 // Folder names
 NSString *SPThemesSupportFolder                  = @"Themes";
