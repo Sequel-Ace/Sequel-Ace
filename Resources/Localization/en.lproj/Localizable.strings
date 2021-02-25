@@ -1039,7 +1039,7 @@
 "Delete selected row?" = "Delete selected row?";
 
 /* delete table menu title */
-"Delete Table" = "Delete Table";
+"Delete Table..." = "Delete Table...";
 
 /* delete tables menu title */
 "Delete Tables" = "Delete Tables";
@@ -2887,7 +2887,7 @@
 "Truncate selected tables?" = "Truncate selected tables?";
 
 /* truncate table menu title */
-"Truncate Table" = "Truncate Table";
+"Truncate Table..." = "Truncate Table...";
 
 /* truncate table message */
 "Truncate table '%@'?" = "Truncate table '%@'?";
