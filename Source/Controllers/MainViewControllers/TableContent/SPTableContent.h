@@ -69,7 +69,6 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 	IBOutlet SPCopyTable *tableContentView;
 
-	IBOutlet NSButton *toggleRuleFilterButton;
 	IBOutlet NSButton *addButton;
 	IBOutlet NSButton *duplicateButton;
 	IBOutlet NSButton *removeButton;
@@ -163,6 +162,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
     @package
     IBOutlet SPTableData* tableDataInstance;
+    IBOutlet NSButton *toggleRuleFilterButton;
 }
 
 - (void)setFieldEditorSelectedRange:(NSRange)aRange;
