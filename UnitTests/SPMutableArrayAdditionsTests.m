@@ -59,12 +59,6 @@
 	
 	XCTAssertEqualObjects(testArray, expectedArray, @"The reversed array should look like: %@, but actually looks like: %@", expectedArray, testArray);
 
-    testArray = [NSMutableArray arrayWithObjects:@"1", @"2", @"3", @"4", @"5", nil];
-
-    testArray = [testArray reverse2];
-
-    XCTAssertEqualObjects(testArray, expectedArray, @"The reversed array should look like: %@, but actually looks like: %@", expectedArray, testArray);
-
 }
 
 - (void)testSafeSetArray
@@ -280,22 +274,5 @@
         }
     }];
 }
-
-// 0.396 s
-- (void)testPerformanceReverse2 {
-
-    [self measureBlock:^{
-
-        NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
-
-        int const iterations = 1000;
-        for (int i = 0; i < iterations; i++) {
-            @autoreleasepool {
-                [randomArray reverse2];
-            }
-        }
-    }];
-}
-
 
 @end

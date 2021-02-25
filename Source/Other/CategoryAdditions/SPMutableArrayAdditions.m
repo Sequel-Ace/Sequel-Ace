@@ -48,12 +48,6 @@
 	}
 }
 
-- (instancetype _Nonnull)reverse2;
-{
-    return [[[self reverseObjectEnumerator] allObjects] mutableCopy];
-}
-
-
 - (id)safeObjectAtIndex:(NSUInteger)idx{
 	return idx < self.count ? [self objectAtIndex:idx] : nil;
 }
