@@ -300,10 +300,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
             for (NSArray *eachRow in theResult) {
                 [tables addObject:[eachRow safeObjectAtIndex:3]];
-                if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
-                    [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
-                } else {
-                    [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
+                if([[eachRow safeObjectAtIndex:4] isNSNull] == NO ){
+                    if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
+                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
+                    } else {
+                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
+                    }
                 }
             }
         }
