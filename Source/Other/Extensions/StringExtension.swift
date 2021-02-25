@@ -93,6 +93,11 @@ extension String {
 	var trimmedString: String {
         return self.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    // the string with spaces trimmed from BOTH ends
+    var whitespacesTrimmedString: String {
+        return self.trimmingCharacters(in: .whitespaces)
+    }
 }
 
 @objc extension NSString {
@@ -115,6 +120,10 @@ extension String {
 	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
 	}
+
+    public func trimWhitespaces() -> NSString {
+        return (self as String).whitespacesTrimmedString as NSString
+    }
 
     public func isNumeric() -> Bool {
         return (self as String).isNumeric
