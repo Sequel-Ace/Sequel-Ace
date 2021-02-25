@@ -58,6 +58,12 @@
 	}
 }
 
+- (void)safeSetArray:(NSArray*)arr{
+    if (arr != nil) {
+        [self setArray:arr];
+    }
+}
+
 - (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject{
     if (anObject != nil && index < self.count) {
         [self replaceObjectAtIndex:index withObject:anObject];
