@@ -33,6 +33,11 @@
 
 @implementation NSMutableArray (SPMutableArrayAdditions)
 
+- (instancetype _Nullable )unique{
+
+    return [self valueForKeyPath:@"@distinctUnionOfObjects.self"];
+}
+
 - (void)reverse
 {
 	NSUInteger count = [self count];
@@ -56,6 +61,12 @@
 	if (obj != nil) {
 		[self addObject:obj];
 	}
+}
+
+- (void)addObjectIfNotContains:(id)obj{
+    if (obj != nil && [self containsObject:obj] == NO) {
+        [self addObject:obj];
+    }
 }
 
 - (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject{
