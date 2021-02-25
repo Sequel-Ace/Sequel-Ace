@@ -398,6 +398,8 @@ import OSLog
                 Log.debug("Removing stale bookmark for: \(filename)")
                 staleBookmarks.removeAll(where: { $0 == filename })
                 prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+                // post notificay for SPFilePreferencePane
+                NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
                 return true
             }
         }
@@ -414,6 +416,8 @@ import OSLog
         staleBookmarks.appendIfNotContains(filename)
         prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
         Log.info("staleBookmarks count = \(staleBookmarks.count)")
+        // post notificay for SPFilePreferencePane
+        NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
     }
 
     // revoke secure access to all bookmarks
