@@ -30,6 +30,8 @@
 
 #import "SPNetworkPreferencePane.h"
 #import "SPPanelOptions.h"
+#import "SPAppController.h"
+#import "SPPreferenceController.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -49,6 +51,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 @synthesize bookmarks;
 @synthesize knownHostsChooser;
+@synthesize errorFileNames;
+@synthesize goodFileNames;
+@synthesize userKnownHostsFiles;
 
 - (instancetype)init
 {
@@ -56,6 +61,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	if (self) {
 		sslCiphers = [[NSMutableArray alloc] init];
         bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
+        errorFileNames = [[NSMutableArray alloc] init];
+        goodFileNames = [[NSMutableArray alloc] init];
+        userKnownHostsFiles = [[NSMutableArray alloc] init];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 	}
 	
@@ -193,6 +201,13 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
         return;
     }
 
+    // FIXME: would rather use an enum or ints instead of strings
+    if ([[sender title] isEqualToString:@"Use known hosts from ssh config (ADVANCED)"]) {
+        [prefs setObject:@"Use known hosts from ssh config (ADVANCED)" forKey:SPSSHKnownHostsFile];
+        [self updateSSHConfigPopUp:knownHostsChooser];
+        return;
+    }
+
     // choose a config file not listed
     if ((NSUInteger) [knownHostsChooser indexOfSelectedItem] == ([[knownHostsChooser itemArray] count] - 1)) {
         // open the file chooser dialog
@@ -204,6 +219,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
         options.title = NSLocalizedString(@"Please choose your known_hosts file", "Please choose your known_hosts file");
         options.prefsKey = SPSSHKnownHostsFile;
         options.chooser = knownHostsChooser;
+        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope);
 
         SPLog(@"calling chooseSSHConfigWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
 
@@ -269,7 +285,12 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	// add the default item to give the user the ability to revert his/her changes
 	[button addItemWithTitle:@"Sequel Ace default"];
 	[[button menu] addItem:[NSMenuItem separatorItem]];
-	
+
+    if(button.tag == 2){
+        [button addItemWithTitle:NSLocalizedString(@"Use known hosts from ssh config (ADVANCED)", @"Use known hosts from ssh config (ADVANCED)")];
+        [[button menu] addItem:[NSMenuItem separatorItem]];
+    }
+
 	NSUInteger __block count = 0;
 
     NSUInteger len = [@"file://" length];
@@ -334,10 +355,160 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
             }
 
             [button selectItemWithTitle:currentConfig];
+
+            if([currentConfig isEqualToString:NSLocalizedString(@"Use known hosts from ssh config (ADVANCED)", @"Use known hosts from ssh config (ADVANCED)")]){
+                BOOL ret = [self checkSSHConfigFileForUserKnownHostsFile:[prefs stringForKey:SPSSHConfigFile]];
+                SPLog(@"checkSSHConfigFileForUserKnownHostsFile ret: [%hhd]", ret);
+
+                if(ret == NO){
+                    NSString *title = NSLocalizedString(@"ERROR: known hosts (ADVANCED)", @"ERROR: known hosts (ADVANCED)");
+
+                    NSString *message = NSLocalizedString(@"No ssh config file contained UserKnownHostsFile.\n\nPlease check your config files and try again.", @"No ssh config file contained UserKnownHostsFile.\n\nPlease check your config files and try again.");
+
+                    [NSAlert createWarningAlertWithTitle:title message:message callback:nil];
+                }
+                else{
+                    // are the UserKnownHostsFiles RW?
+                    [self checkUserKnownHostsFilesAreWritable];
+                    user_defaults_set_bool_ud(SPSSHConfigContainsUserKnownHostsFile, YES, prefs);
+                }
+
+                SecureBookmarkManager *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
+                NSUInteger staleCount = secureBookmarkManager.staleBookmarks.count;
+
+                // error files should be sent to the files pref for the user to grant access
+                for(NSString *file in errorFileNames){
+                    NSString *fileName = [NSString stringWithFormat:@"file://%@", file];
+                    SPLog(@"calling addStaleBookmarkWithFilename: %@", fileName);
+
+                    [secureBookmarkManager addStaleBookmarkWithFilename:fileName];
+                }
+                if(secureBookmarkManager.staleBookmarks.count > staleCount){
+                    SPLog(@"staleBookmarks.count: %lu > staleCount: %lu", (unsigned long)secureBookmarkManager.staleBookmarks.count, (unsigned long)staleCount);
+
+                    // prompt user to recreate secure bookmarks
+                    if(secureBookmarkManager.staleBookmarks.count > 0){
+
+                        NSMutableString *staleBookmarksString = [[NSMutableString alloc] initWithCapacity:secureBookmarkManager.staleBookmarks.count];
+
+                        for(NSString* staleFile in secureBookmarkManager.staleBookmarks){
+                            [staleBookmarksString appendFormat:@"%@\n", staleFile.lastPathComponent];
+                            SPLog(@"fileNames adding stale file: %@", staleFile.lastPathComponent);
+                        }
+
+                        [staleBookmarksString setString:[staleBookmarksString dropSuffixWithSuffix:@"\n"]];
+
+                        NSView *helpView = [self modifyAndReturnBookmarkHelpView];
+
+                        [NSAlert createAccessoryAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue") message:[NSString stringWithFormat:NSLocalizedString(@"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?", @"Would you like to request access now?"), staleBookmarksString] accessoryView:helpView primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
+                                          primaryButtonHandler:^{
+                            SPLog(@"request access now");
+                            [self->errorFileNames removeAllObjects];
+                            SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
+                            [prefCon showWindow:nil];
+                            [prefCon displayPreferencePane:prefCon->fileItem];
+
+                        } cancelButtonHandler:^{
+                            SPLog(@"No not now");
+                        }];
+                    }
+                }
+            }
         }
     }
 }
 
+- (BOOL)checkSSHConfigFileForUserKnownHostsFile:(NSString*)configFile{
+
+    SPLog(@"checkSSHConfigFileForUserKnownHostsFile");
+
+    NSString *defaultConfig = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+
+    if ([configFile isEqualToString:defaultConfig] || configFile.isNumeric == YES) {
+        SPLog(@"ERROR: SPSSHConfigFile set to default. This has no UserKnownHostsFile");
+        return NO;
+    }
+
+    NSError *error = nil;
+    NSString *sshConfig = [NSString stringWithContentsOfFile:configFile encoding:NSUTF8StringEncoding error:&error];
+
+    if(error != nil){
+        SPLog(@"ERROR: configFile [%@] read error: %@", configFile, error.localizedDescription);
+        [errorFileNames addObjectIfNotContains:configFile];
+        return NO;
+    }
+
+    SPLog(@"sshConfig: %@", sshConfig);
+
+    if([sshConfig contains:@"UserKnownHostsFile"] == NO){
+        SPLog(@"ERROR: configFile [%@] has no UserKnownHostsFile", configFile);
+    }
+    else{
+        SPLog(@"configFile [%@] CONTAINS UserKnownHostsFile", configFile);
+        [goodFileNames addObjectIfNotContains:configFile];
+    }
+
+    NSArray *sshConfigAsArray = [sshConfig separatedIntoLinesObjc];
+    SPLog(@"sshConfigAsArray: %@", sshConfigAsArray);
+
+    NSMutableArray<NSString *> __block *includeFileNames = [[NSMutableArray alloc] init];
+
+    for(NSString *str in sshConfigAsArray){
+        if([str contains:@"Include"]){
+            SPLog(@"found Include line: [%@]", [str trimWhitespaces]);
+            [includeFileNames addObjectIfNotContains:[[str trimWhitespaces] dropPrefixWithPrefix:@"Include "]];
+        }
+        if([str contains:@"UserKnownHostsFile"]){
+            SPLog(@"found UserKnownHostsFile line: [%@]", [str trimWhitespaces]);
+            [userKnownHostsFiles addObjectIfNotContains:[[str trimWhitespaces] dropPrefixWithPrefix:@"UserKnownHostsFile "]];
+        }
+    }
+
+    SPLog(@"includeFileNames: %@", includeFileNames);
+    SPLog(@"SecureBookmarkManager.sharedInstance.resolved: %@", SecureBookmarkManager.sharedInstance.resolvedBookmarks);
+    SPLog(@"SecureBookmarkManager.sharedInstance.stale: %@", SecureBookmarkManager.sharedInstance.staleBookmarks);
+
+    NSMutableArray<NSString *> __block *includeFileNamesCopy = [includeFileNames mutableCopy];
+
+    [includeFileNamesCopy enumerateObjectsUsingBlock:^(NSString *str, NSUInteger idx, BOOL *stop){
+        NSURL *tmpURL = [NSURL URLWithString:[NSString stringWithFormat:@"file://%@",str]];
+        if([SecureBookmarkManager.sharedInstance.resolvedBookmarks containsObject:tmpURL]){
+            SPLog(@"found resolvedBookmark: [%@]", str);
+        }
+        else{
+            [errorFileNames addObjectIfNotContains:str];
+            [includeFileNames removeObject:str];
+        }
+    }];
+
+    for(NSString *incFile in includeFileNames){
+        [self checkSSHConfigFileForUserKnownHostsFile:incFile];
+    }
+
+    SPLog(@"errorFileNames: %@", errorFileNames);
+    SPLog(@"goodFileNames: %@", goodFileNames);
+    SPLog(@"userKnownHostsFiles: %@", userKnownHostsFiles);
+
+    return goodFileNames.count > 0;
+
+}
+
+- (void)checkUserKnownHostsFilesAreWritable {
+
+    for(NSString *file in userKnownHostsFiles){
+        NSURL *tmpURL = [NSURL URLWithString:[NSString stringWithFormat:@"file://%@",file]];
+        if([SecureBookmarkManager.sharedInstance.resolvedBookmarks containsObject:tmpURL]){
+            SPLog(@"found resolvedBookmark: [%@]", file);
+            SPLog(@"removing from errorFileNames. count: %lu", (unsigned long)errorFileNames.count);
+            [errorFileNames removeObject:file];
+            SPLog(@"errorFileNames. count: %lu", (unsigned long)errorFileNames.count);
+        }
+        else{
+            SPLog(@"ERROR: adding to errorFileNames - not in resolvedBookmarks: [%@]", file);
+            [errorFileNames addObjectIfNotContains:file];
+        }
+    }
+}
 
 #pragma mark -
 #pragma mark chooseSSHConfig
@@ -417,7 +588,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 // use url from the block, not self->_currentFilePanel.URL
                 // From Apple docs: The NSOpenPanel subclass sets this property to nil
                 // when the selection contains multiple items.
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:options.bookmarkCreationOptions isForStaleBookmark:NO] == YES){
                     SPLog(@"addBookmarkForUrl success");
                 }
                 else{

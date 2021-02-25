@@ -57,10 +57,15 @@
 @property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
 @property (weak) IBOutlet NSPopUpButton *knownHostsChooser;
 
+@property (readwrite, strong) NSMutableArray<NSString *> *errorFileNames;
+@property (readwrite, strong) NSMutableArray<NSString *> *goodFileNames;
+@property (readwrite, strong) NSMutableArray<NSString *> *userKnownHostsFiles;
+
 - (IBAction)updateKnownHostsConfig:(NSPopUpButton *)sender;
 - (IBAction)pickSSHClientViaFileBrowser:(id)sender;
 - (IBAction)pickSSHClient:(id)sender;
 - (IBAction)resetCipherList:(id)sender;
 - (void)chooseSSHConfigWithOptions:(PanelOptions*)options;
+- (BOOL)checkSSHConfigFileForUserKnownHostsFile:(NSString*)configFile;
 
 @end
