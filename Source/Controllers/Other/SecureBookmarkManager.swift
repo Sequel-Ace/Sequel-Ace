@@ -24,7 +24,7 @@ import OSLog
     @objc var bookmarks: [Dictionary<String, Data>]    = []
     @objc var staleBookmarks: [String]                 = []
 
-    private var resolvedBookmarks: [URL]               = []
+    @objc var resolvedBookmarks: [URL]                 = []
     private let URLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let URLBookmarkCreationWithSecurityScope   = URL.BookmarkCreationOptions(rawValue: 1 << 11)
 
@@ -201,7 +201,7 @@ import OSLog
                         let res = urlForBookmark.startAccessingSecurityScopedResource()
                         if res == true {
                             Log.info("success: startAccessingSecurityScopedResource for: \(key)")
-                            resolvedBookmarks.append(urlForBookmark)
+                            resolvedBookmarks.appendIfNotContains(urlForBookmark)
                             bookmarks.append([urlForBookmark.absoluteString: urlData])
                         } else {
                             Log.error("ERROR: startAccessingSecurityScopedResource for: \(key)")
@@ -263,7 +263,7 @@ import OSLog
 
             Log.debug("SUCCESS: Adding \(url.absoluteString) to bookmarks")
             bookmarks.append([url.absoluteString: spData])
-            resolvedBookmarks.append(url)
+            resolvedBookmarks.appendIfNotContains(url)
 
             if(staleBookmarks.contains(url.absoluteString)){
                 Log.debug("Removing stale bookmark for: \(url.absoluteString)")
@@ -313,7 +313,7 @@ import OSLog
                             prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
                         } else {
                             if urlForBookmark.startAccessingSecurityScopedResource() {
-                                resolvedBookmarks.append(urlForBookmark)
+                                resolvedBookmarks.appendIfNotContains(urlForBookmark)
                                 return urlForBookmark
                             } else {
                                 Log.error("Error startAccessingSecurityScopedResource For: key = \(urlForBookmark.absoluteString).")
@@ -407,6 +407,13 @@ import OSLog
         Log.debug("found: \(found)")
         Log.error("Failed to revoke bookmark for: \(filename)")
         return false
+    }
+
+    @objc func addStaleBookmark(filename: String){
+        Log.debug("addStaleBookmark called")
+        staleBookmarks.appendIfNotContains(filename)
+        prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+        Log.info("staleBookmarks count = \(staleBookmarks.count)")
     }
 
     // revoke secure access to all bookmarks
