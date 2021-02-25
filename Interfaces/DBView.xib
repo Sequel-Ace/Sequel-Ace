@@ -309,13 +309,13 @@
                                                     </connections>
                                                 </menuItem>
                                                 <menuItem isSeparatorItem="YES" id="7919"/>
-                                                <menuItem title="Truncate Table" toolTip="Delete all records of selected table(s)" id="7920">
+                                                <menuItem title="Truncate Table..." toolTip="Delete all records of selected table(s)" id="7920">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
                                                         <action selector="truncateTable:" target="68" id="7938"/>
                                                     </connections>
                                                 </menuItem>
-                                                <menuItem title="Remove Table" toolTip="Remove the selected item(s)" id="7921">
+                                                <menuItem title="Remove Table..." toolTip="Remove the selected item(s)" id="7921">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
                                                         <action selector="removeTable:" target="68" id="7937"/>
@@ -991,7 +991,7 @@
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" id="lwO-LP-RWZ">
                                                                             <rect key="frame" x="1" y="1" width="693" height="431"/>
-                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                            <autoresizingMask key="autoresizingMask"/>
                                                                             <subviews>
                                                                                 <tableView identifier="TableContentTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="3920" id="36" customClass="SPCopyTable">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="693" height="414"/>
@@ -1179,7 +1179,7 @@
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="kdv-Wp-s5h">
                                                                             <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
-                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                            <autoresizingMask key="autoresizingMask"/>
                                                                             <subviews>
                                                                                 <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>

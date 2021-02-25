@@ -1549,7 +1549,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)setTableDetails:(NSDictionary *)tableDetails
 {
-	NSString *newTableName = [tableDetails objectForKey:@"name"];
+	NSString *newTableName = [tableDetails safeObjectForKey:@"name"];
 	NSMutableDictionary *newDefaultValues;
 
 	BOOL enableInteraction =
@@ -1586,10 +1586,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Update the fields and indexes stores
-	[tableFields setArray:[tableDetails objectForKey:@"tableFields"]];
+	[tableFields safeSetArray:[tableDetails safeObjectForKey:@"tableFields"]];
 
 	[indexesController setFields:tableFields];
-	[indexesController setIndexes:[tableDetails objectForKey:@"tableIndexes"]];
+	[indexesController setIndexes:[tableDetails safeObjectForKey:@"tableIndexes"]];
 
 	
 
@@ -1597,7 +1597,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	for (id theField in tableFields)
 	{
-		[newDefaultValues setObject:[theField objectForKey:@"default"] forKey:[theField objectForKey:@"name"]];
+		[newDefaultValues safeSetObject:[theField safeObjectForKey:@"default"] forKey:[theField safeObjectForKey:@"name"]];
 	}
 
 	defaultValues = [NSDictionary dictionaryWithDictionary:newDefaultValues];

@@ -300,10 +300,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
             for (NSArray *eachRow in theResult) {
                 [tables addObject:[eachRow safeObjectAtIndex:3]];
-                if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
-                    [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
-                } else {
-                    [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
+                if([[eachRow safeObjectAtIndex:4] isNSNull] == NO ){
+                    if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
+                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
+                    } else {
+                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
+                    }
                 }
             }
         }
@@ -1035,8 +1037,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[duplicateTableMenuItem setHidden:NO];
 		[duplicateTableMenuItem setTitle:NSLocalizedString(@"Duplicate Table...", @"duplicate table menu title")];
 		[truncateTableButton setHidden:NO];
-		[truncateTableButton setTitle:NSLocalizedString(@"Truncate Table", @"truncate table menu title")];
-		[removeTableMenuItem setTitle:NSLocalizedString(@"Delete Table", @"delete table menu title")];
+		[truncateTableButton setTitle:NSLocalizedString(@"Truncate Table...", @"truncate table menu title")];
+		[removeTableMenuItem setTitle:NSLocalizedString(@"Delete Table...", @"delete table menu title")];
 		[openTableInNewTabMenuItem setHidden:NO];
 		[openTableInNewWindowMenuItem setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Table in New Tab", @"open table in new table title")];
@@ -1052,8 +1054,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[duplicateTableContextMenuItem setHidden:NO];
 		[duplicateTableContextMenuItem setTitle:NSLocalizedString(@"Duplicate Table...", @"duplicate table menu title")];
 		[truncateTableContextMenuItem setHidden:NO];
-		[truncateTableContextMenuItem setTitle:NSLocalizedString(@"Truncate Table", @"truncate table menu title")];
-		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Table", @"delete table menu title")];
+		[truncateTableContextMenuItem setTitle:NSLocalizedString(@"Truncate Table...", @"truncate table menu title")];
+		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Table...", @"delete table menu title")];
 		[openTableInNewTabContextMenuItem setHidden:NO];
 		[openTableInNewWindowContextMenuItem setHidden:NO];
 		[separatorTableContextMenuItem3 setHidden:NO];
