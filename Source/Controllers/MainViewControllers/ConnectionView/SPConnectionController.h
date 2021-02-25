@@ -169,9 +169,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSButton *testConnectButton;
 	IBOutlet NSButton *helpButton;
 	IBOutlet NSButton *saveFavoriteButton;
-	IBOutlet NSProgressIndicator *progressIndicator;
-	IBOutlet NSTextField *progressIndicatorText;
-    IBOutlet NSMenuItem *favoritesSortByMenuItem;
+	IBOutlet NSMenuItem *favoritesSortByMenuItem;
 	IBOutlet NSView *exportPanelAccessoryView;
 	IBOutlet NSView *editButtonsView;
 	
@@ -197,6 +195,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
     SPSSHTunnel *sshTunnel;
     IBOutlet NSWindow *errorDetailWindow;
     IBOutlet NSTextView *errorDetailText;
+    IBOutlet NSProgressIndicator *progressIndicator;
+    IBOutlet NSTextField *progressIndicatorText;
 
 }
 
