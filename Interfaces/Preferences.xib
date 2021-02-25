@@ -297,7 +297,7 @@ Gw
                         </view>
                     </box>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1759">
-                        <rect key="frame" x="161" y="12" width="88" height="29"/>
+                        <rect key="frame" x="161" y="12" width="87" height="29"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES"/>
                         <buttonCell key="cell" type="push" title="Close" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="1764">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1369,13 +1369,13 @@ Gw
                     </connections>
                 </textField>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9lg-Fd-6u7">
-                    <rect key="frame" x="180" y="40" width="340" height="161"/>
+                    <rect key="frame" x="180" y="40" width="340" height="160"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
-                        <rect key="frame" x="1" y="1" width="338" height="159"/>
+                        <rect key="frame" x="1" y="1" width="338" height="158"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" id="RuH-Yq-cdH">
-                                <rect key="frame" x="0.0" y="0.0" width="338" height="159"/>
+                                <rect key="frame" x="0.0" y="0.0" width="338" height="158"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1489,7 +1489,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4Aw-q4-73u">
-                    <rect key="frame" x="18" y="181" width="154" height="20"/>
+                    <rect key="frame" x="18" y="180" width="154" height="20"/>
                     <string key="toolTip">The cipher suites are used for SSL/TLS-secured connections and specify which algorithms Sequel Ace will use to encrypt a connection, as well as their preference.
 Warning: If Sequel Ace and the server do not have at least one cipher suite in common, you will no longer be able to connect!</string>
                     <constraints>
@@ -1555,7 +1555,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="jJw-LF-gtW" secondAttribute="top" id="C2G-02-FBf"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="9CM-2a-2JU" secondAttribute="centerY" id="D6v-YG-WzF"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="GcY-yy-sZn" secondAttribute="centerY" id="FDQ-ZG-T5Y"/>
-                <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="3Fg-G1-BWj" secondAttribute="bottom" constant="8" id="Hmn-IF-E0D"/>
+                <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="3Fg-G1-BWj" secondAttribute="bottom" constant="9" id="Hmn-IF-E0D"/>
                 <constraint firstItem="P6m-dR-d6a" firstAttribute="top" secondItem="Rsg-4x-YV2" secondAttribute="bottom" constant="9" id="Kmf-ZX-Bsb"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="leading" secondItem="4Aw-q4-73u" secondAttribute="trailing" constant="10" id="LwL-GT-zsg"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="top" secondItem="HWX-AV-xGx" secondAttribute="bottom" constant="9" id="NHV-YR-QtW"/>
