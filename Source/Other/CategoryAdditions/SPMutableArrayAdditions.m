@@ -82,5 +82,10 @@
     }
 }
 
+- (void)safeSetArray:(NSArray*)arr{
+    if (arr != nil) {
+        [self setArray:arr];
+    }
+}
 
 @end

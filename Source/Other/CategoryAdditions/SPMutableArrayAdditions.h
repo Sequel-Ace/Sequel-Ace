@@ -44,5 +44,6 @@
 - (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject;
 - (void)safeRemoveObjectAtIndex:(NSUInteger)index;
 - (void)addObjectIfNotContains:(id _Nonnull)obj;
+- (void)safeSetArray:(NSArray* _Nonnull)arr;
 
 @end
