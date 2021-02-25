@@ -501,7 +501,15 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                 // use url from the block, not self->_currentFilePanel.URL
                 // From Apple docs: The NSOpenPanel subclass sets this property to nil
                 // when the selection contains multiple items.
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
+
+                NSURLBookmarkCreationOptions bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess);
+
+                // try to make known_hosts files read-write
+                if([url.absoluteString contains:SPSSHKnownHostsFile] == YES){
+                    bookmarkCreationOptions = NSURLBookmarkCreationWithSecurityScope;
+                }
+
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:bookmarkCreationOptions isForStaleBookmark:options.isForStaleBookmark] == YES){
                     SPLog(@"addBookmarkForUrl success");
 
                     if(options.isForStaleBookmark == YES){
