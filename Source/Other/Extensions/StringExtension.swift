@@ -112,8 +112,22 @@ extension String {
 		
 	}
 
-    // returns the home dir of the user, as if we were not in a sandbox
+    // use new FileManager.userHomeDirectoryPath func
     var stringByExpandingTildeAsIfNotInSandbox: String {
+        // str will be something like ~/.ssh/known_hosts
+        let path = FileManager.default.userHomeDirectoryPath
+        // fallback on the, er, dodgy method if path is empty
+        if path.isEmpty {
+            return self.stringByExpandingTildeAsIfNotInSandboxBackup
+        }
+        else {
+            return path + self.dropPrefix("~")
+        }
+    }
+
+    
+    // returns the home dir of the user, as if we were not in a sandbox
+    var stringByExpandingTildeAsIfNotInSandboxBackup: String {
 
         let str = NSString(string: self).expandingTildeInPath as String
 
@@ -157,7 +171,6 @@ extension String {
         }
 
         return prefix + "/" + users + "/" + username + suffix
-
     }
 	
 	// the string with new lines and spaces trimmed from BOTH ends
