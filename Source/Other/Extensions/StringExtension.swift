@@ -9,7 +9,30 @@
 import Foundation
 
 extension String {
-	func dropPrefix(_ prefix: String) -> String {
+
+    subscript(_ range: CountableRange<Int>) -> String {
+        let start = index(startIndex, offsetBy: max(0, range.lowerBound))
+        let end = index(start, offsetBy: min(self.count - range.lowerBound,
+                                             range.upperBound - range.lowerBound))
+        return String(self[start..<end])
+    }
+
+    subscript(_ range: CountablePartialRangeFrom<Int>) -> String {
+        let start = index(startIndex, offsetBy: max(0, range.lowerBound))
+        return String(self[start...])
+    }
+
+    func slice(from: String, to: String) -> String? {
+
+        return (range(of: from)?.upperBound).flatMap { substringFrom in
+            (range(of: to, range: substringFrom..<endIndex)?.lowerBound).map { substringTo in
+                String(self[substringFrom..<substringTo])
+            }
+        }
+    }
+
+
+    func dropPrefix(_ prefix: String) -> String {
 		guard self.hasPrefix(prefix) else {
 			return self
 		}
