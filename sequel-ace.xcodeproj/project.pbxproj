@@ -104,6 +104,7 @@
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
 		1A07517025EAADB500FFDF6B /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A07516F25EAADB500FFDF6B /* FileManagerExtension.swift */; };
+		1A07518D25EAB9CB00FFDF6B /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A07516F25EAADB500FFDF6B /* FileManagerExtension.swift */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
 		1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */; };
@@ -3035,6 +3036,7 @@
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
+				1A07518D25EAB9CB00FFDF6B /* FileManagerExtension.swift in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 			);
