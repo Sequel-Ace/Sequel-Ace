@@ -121,7 +121,11 @@ extension String {
 	public func hasSuffix(suffix: NSString, caseSensitive: Bool = true) -> Bool {
 		return (self as String).hasSuffix(suffix as String, caseSensitive: caseSensitive)
 	}
-	
+
+    public func separatedIntoLinesByCharsetObjC() -> [NSString] {
+        return (self as String).separatedIntoLinesByCharset() as [NSString]
+    }
+
 	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
 	}
