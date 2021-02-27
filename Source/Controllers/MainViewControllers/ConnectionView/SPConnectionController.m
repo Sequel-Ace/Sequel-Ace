@@ -501,7 +501,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         else{
             SPLog(@"calling addBookmarkForUrl");
             // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
                 SPLog(@"addBookmarkForUrl success");
             }
             else{

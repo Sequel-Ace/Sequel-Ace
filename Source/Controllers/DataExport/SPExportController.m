@@ -682,7 +682,7 @@ set_input:
             }
             else{
                 // this needs to be read-write
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
                     SPLog(@"addBookmarkForUrl success: %@", self->changeExportOutputPathPanel.URL.absoluteString);
                 } else{
                     SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
