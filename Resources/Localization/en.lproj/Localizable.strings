@@ -3187,7 +3187,7 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
 /* known hosts not writable error message */
-"The selected known_hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known_hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
 
 /* known hosts not writable error title */
 "Known Hosts Error" = "Known Hosts Error";
@@ -3235,7 +3235,7 @@
 "Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
 
 /* Title for Network Preference ssh known hosts file selection dialog */
-"Please choose your known_hosts file" = "Please choose your known_hosts file";
+"Please choose your known hosts file" = "Please choose your known hosts file";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "Invalid JSON";

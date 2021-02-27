@@ -394,7 +394,7 @@ static unsigned short getRandomPort(void);
 		TA(@"-o",@"NumberOfPasswordPrompts=3");
 
         if(user_defaults_get_bool(SPSSHConfigContainsUserKnownHostsFile) == NO){
-            NSString *customKnownHostsFilePath = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHKnownHostsFile];
+            NSString *customKnownHostsFilePath = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHUsualKnownHostsFile];
 
             // if not set, could be empty or @0
             if(IsEmpty(customKnownHostsFilePath) == NO && customKnownHostsFilePath.isNumeric == NO){
@@ -416,10 +416,10 @@ static unsigned short getRandomPort(void);
                     NSString *alertMessage = nil;
 
                     if(validFile == YES){
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known_hosts file is not writable.\n\n%@\n\nPlease check and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
                     }
                     else{
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known_hosts file is invalid.\n\nPlease check and try again.", @"known hosts is invalid message")];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is invalid.\n\nPlease check and try again.", @"known hosts is invalid message")];
                     }
 
                     [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Known Hosts Error", @"Known Hosts Error") message:alertMessage accessoryView:helpView callback:^{

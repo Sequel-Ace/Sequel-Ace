@@ -198,12 +198,14 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
     [knownHostsChooser setTitle:[sender title]];
 
     if ([[sender title] isEqualToString:@"Sequel Ace default"]) {
+        // the user has not selected Use known hosts from ssh config (ADVANCED), set pref to NO.
+        user_defaults_set_bool_ud(SPSSHConfigContainsUserKnownHostsFile, NO, prefs);
         return;
     }
 
     // FIXME: would rather use an enum or ints instead of strings
     if ([[sender title] isEqualToString:@"Use known hosts from ssh config (ADVANCED)"]) {
-        [prefs setObject:@"Use known hosts from ssh config (ADVANCED)" forKey:SPSSHKnownHostsFile];
+        [prefs setObject:@"Use known hosts from ssh config (ADVANCED)" forKey:SPSSHUsualKnownHostsFile];
         [self updateSSHConfigPopUp:knownHostsChooser];
         return;
     }
@@ -216,10 +218,11 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
         options.allowsMultipleSelection = NO;
         options.canChooseFiles = YES;
         options.canChooseDirectories = NO;
-        options.title = NSLocalizedString(@"Please choose your known_hosts file", "Please choose your known_hosts file");
-        options.prefsKey = SPSSHKnownHostsFile;
+        options.title = NSLocalizedString(@"Please choose your known hosts file", "Please choose your known hosts file");
+        options.prefsKey = SPSSHUsualKnownHostsFile;
         options.chooser = knownHostsChooser;
-        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope);
+        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope); // RW
+        options.isForKnownHostsFile = YES;
 
         SPLog(@"calling chooseSSHConfigWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
 
@@ -230,7 +233,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
     // the title contains the absolute path of the config file. Therefore save
     // it to the preferences as selected config file.
-    [prefs setObject:[sender title] forKey:SPSSHKnownHostsFile];
+    [prefs setObject:[sender title] forKey:SPSSHUsualKnownHostsFile];
 
     [self updateSSHConfigPopUp:knownHostsChooser];
 
@@ -262,6 +265,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
         options.title = NSLocalizedString(@"Please choose your ssh config files(s)", "Please choose your ssh config files(s)");
         options.prefsKey = SPSSHConfigFile;
         options.chooser = sshConfigChooser;
+        options.isForKnownHostsFile = NO;
+        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess);
+
 
         SPLog(@"calling chooseSSHConfigWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
 
@@ -346,7 +352,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
         if (count != 0) {
             // select the currently configured value
-            NSString *currentConfig = [prefs stringForKey:SPSSHKnownHostsFile];
+            NSString *currentConfig = [prefs stringForKey:SPSSHUsualKnownHostsFile];
 
             // if currentConfig is @0, they didn't choose anything in the file chooser
             // so set to default
@@ -380,8 +386,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 for(NSString *file in errorFileNames){
                     NSString *fileName = [NSString stringWithFormat:@"file://%@", file];
                     SPLog(@"calling addStaleBookmarkWithFilename: %@", fileName);
-
                     [secureBookmarkManager addStaleBookmarkWithFilename:fileName];
+                    [secureBookmarkManager addKnownHostsBookmarkWithFilename:fileName];
                 }
                 if(secureBookmarkManager.staleBookmarks.count > staleCount){
                     SPLog(@"staleBookmarks.count: %lu > staleCount: %lu", (unsigned long)secureBookmarkManager.staleBookmarks.count, (unsigned long)staleCount);
@@ -413,6 +419,10 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                         }];
                     }
                 }
+            } // end of advance config
+            else{
+                // the user has not selected Use known hosts from ssh config (ADVANCED), set pref to NO.
+                user_defaults_set_bool_ud(SPSSHConfigContainsUserKnownHostsFile, NO, prefs);
             }
         }
     }
@@ -588,7 +598,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 // use url from the block, not self->_currentFilePanel.URL
                 // From Apple docs: The NSOpenPanel subclass sets this property to nil
                 // when the selection contains multiple items.
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:options.bookmarkCreationOptions isForStaleBookmark:NO] == YES){
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:options.bookmarkCreationOptions isForStaleBookmark:NO isForKnownHostsFile:options.isForKnownHostsFile] == YES){
                     SPLog(@"addBookmarkForUrl success");
                 }
                 else{

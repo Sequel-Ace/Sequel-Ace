@@ -25,6 +25,7 @@ import OSLog
     @objc var staleBookmarks: [String]                 = []
 
     @objc var resolvedBookmarks: [URL]                 = []
+    @objc var knownHostsBookmarks: [String]               = []
     private let URLBookmarkResolutionWithSecurityScope = URL.BookmarkResolutionOptions(rawValue: 1 << 10)
     private let URLBookmarkCreationWithSecurityScope   = URL.BookmarkCreationOptions(rawValue: 1 << 11)
 
@@ -66,6 +67,7 @@ import OSLog
         }
 
         staleBookmarks = prefs.array(forKey: SPStaleSecureBookmarks) as? [String] ?? []
+        knownHostsBookmarks = prefs.array(forKey: SPKnownHostsBookmarks) as? [String] ?? []
 
         bookmarks = secureBookmarks
 
@@ -227,13 +229,22 @@ import OSLog
     ///	 - options: URL.BookmarkCreationOptions. see https://developer.apple.com/documentation/foundation/nsurl/bookmarkcreationoptions
     ///  - isForStaleBookmark: Bool stating if this add bookmark call is for a stale bookmark
     /// - Returns: Bool on success or fail
-    @objc func addBookmarkFor(url: URL, options: UInt, isForStaleBookmark: Bool) -> Bool {
+    @objc func addBookmarkFor(url: URL, options: UInt, isForStaleBookmark: Bool, isForKnownHostsFile: Bool) -> Bool {
         let bookmarkCreationOptions: URL.BookmarkCreationOptions = URL.BookmarkCreationOptions(rawValue: options)
+
+        Log.debug("isForStaleBookmark: \(isForStaleBookmark)")
+        Log.debug("isForKnownHostsFile: \(isForKnownHostsFile)")
+
 
         for (index, bookmarkDict) in bookmarks.enumerated() {
             if bookmarkDict[url.absoluteString] != nil {
                 if isForStaleBookmark == false {
                     Log.debug("Existing bookmark for: \(url.absoluteString)")
+                    if isForKnownHostsFile == true {
+                        knownHostsBookmarks.appendIfNotContains(url.absoluteString)
+                        Log.debug("Updating UserDefaults for SPKnownHostsBookmarks")
+                        prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+                    }
                     return true
                 }
                 else{
@@ -265,17 +276,23 @@ import OSLog
             bookmarks.append([url.absoluteString: spData])
             resolvedBookmarks.appendIfNotContains(url)
 
-            if(staleBookmarks.contains(url.absoluteString)){
+            if staleBookmarks.contains(url.absoluteString) {
                 Log.debug("Removing stale bookmark for: \(url.absoluteString)")
                 Log.debug("staleBookmarks count = \(staleBookmarks.count)")
                 staleBookmarks.removeAll(where: { $0 == url.absoluteString })
                 Log.debug("staleBookmarks count = \(staleBookmarks.count)")
             }
 
+            if isForKnownHostsFile == true {
+                Log.debug("Adding KnownHostsFile bookmark for: \(url.absoluteString)")
+                knownHostsBookmarks.appendIfNotContains(url.absoluteString)
+            }
+
             Log.debug("Updating UserDefaults")
             iChangedTheBookmarks = true
             prefs.set(bookmarks, forKey: SASecureBookmarks)
             prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+            prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
 
             return true
 
@@ -378,6 +395,13 @@ import OSLog
                             prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
                         }
 
+                        // if it was in knownHostsBookmarks, remove
+                        if(knownHostsBookmarks.contains(urlForBookmark.absoluteString)){
+                            Log.debug("Removing knownHosts bookmark for: \(key)")
+                            knownHostsBookmarks.removeAll(where: { $0 == urlForBookmark.absoluteString })
+                            prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+                        }
+
                         return true
                     } catch {
                         Log.error("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
@@ -402,6 +426,12 @@ import OSLog
                 NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
                 return true
             }
+
+            if knownHostsBookmarks.contains(filename){
+                Log.debug("Removing knownHosts bookmark for: \(filename)")
+                knownHostsBookmarks.removeAll(where: { $0 == filename })
+                prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+            }
         }
 
         // if you try to revoke a stale bookmark ... you get to here
@@ -418,6 +448,13 @@ import OSLog
         Log.info("staleBookmarks count = \(staleBookmarks.count)")
         // post notificay for SPFilePreferencePane
         NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
+    }
+
+    @objc func addKnownHostsBookmark(filename: String){
+        Log.debug("addKnownHostsBookmark called")
+        knownHostsBookmarks.appendIfNotContains(filename)
+        prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+        Log.info("knownHostsBookmarks count = \(knownHostsBookmarks.count)")
     }
 
     // revoke secure access to all bookmarks
