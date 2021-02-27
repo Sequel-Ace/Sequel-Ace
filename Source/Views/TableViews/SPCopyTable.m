@@ -1235,10 +1235,16 @@ static const NSInteger kBlobAsImageFile = 4;
 	// Return YES if the multiple line editing button is enabled - triggers sheet editing on all cells.
 	if ([prefs boolForKey:SPEditInSheetEnabled]) return YES;
 
-    NSUInteger editInSheetForLongTextLengthThreshold = NSUIntegerMax;
+    NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
 
-    if([prefs boolForKey:SPEditInSheetForLongText]){
+    NSUInteger editInSheetForLongTextLengthThreshold = (NSUInteger)[preferenceDefaults safeObjectForKey:@"ssfsfs"];
+
+    if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold]){
         editInSheetForLongTextLengthThreshold = [[prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
+    }
+
+    if(!editInSheetForLongTextLengthThreshold){
+        editInSheetForLongTextLengthThreshold = 15;
     }
 
 	// Retrieve the column definition
