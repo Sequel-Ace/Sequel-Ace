@@ -23,12 +23,12 @@
     // kill any ssh pids we started
     NSTask *killTask = [[NSTask alloc] init];
     [killTask setLaunchPath:@"/bin/sh"];
-    [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -15 %@", [NSString stringWithString:[SPAppDelegate.sshProcessIDs componentsJoinedByString:@" "]]]]];
-    [killTask launch];
-    [killTask waitUntilExit];
-    [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -9 %@", [NSString stringWithString:[SPAppDelegate.sshProcessIDs componentsJoinedByString:@" "]]]]];
-    [killTask launch];
-    [killTask waitUntilExit];
+
+    SPMainQSync(^{
+        [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -9 %@", [NSString stringWithString:[SPAppDelegate.sshProcessIDs componentsJoinedByString:@" "]]]]];
+        [killTask launch];
+        [killTask waitUntilExit];
+    });
 
     // forward exception to MSACCrashes
     [MSACCrashes applicationDidReportException:exception];
