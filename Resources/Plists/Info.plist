@@ -301,7 +301,7 @@
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
+	<string>ReportExceptionApplication</string>
 	<key>NSServices</key>
 	<array>
 		<dict>
@@ -496,5 +496,7 @@
 			</dict>
 		</dict>
 	</array>
+	<key>AppCenterApplicationForwarderEnabled</key>
+	<false/>
 </dict>
 </plist>
