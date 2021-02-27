@@ -627,7 +627,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     NSString *str = @"SELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\n";
     NSArray *expectedArray = @[@"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000"];
 
-    NSArray *arr = [str separatedIntoLinesObjc];
+    NSArray *arr = [str separatedIntoLinesObjC];
 
     XCTAssertEqualObjects(expectedArray, arr);
 

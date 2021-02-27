@@ -133,7 +133,7 @@ extension String {
 		return (self as String).isPercentEncoded
 	}
 
-    public func separatedIntoLinesObjc() -> [NSString] {
+    public func separatedIntoLinesObjC() -> [NSString] {
         return (self as String).separatedIntoLines() as [NSString]
     }
 

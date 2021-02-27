@@ -458,7 +458,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
         [goodFileNames addObjectIfNotContains:configFile];
     }
 
-    NSArray *sshConfigAsArray = [sshConfig separatedIntoLinesObjc];
+    NSArray *sshConfigAsArray = [sshConfig separatedIntoLinesObjC];
     SPLog(@"sshConfigAsArray: %@", sshConfigAsArray);
 
     NSMutableArray<NSString *> __block *includeFileNames = [[NSMutableArray alloc] init];
