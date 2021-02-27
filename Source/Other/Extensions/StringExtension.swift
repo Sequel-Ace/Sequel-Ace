@@ -53,6 +53,16 @@ extension String {
         return lines
     }
 
+    func separatedIntoLinesByCharset() -> [String] {
+
+        var semiChar = CharacterSet()
+        semiChar.insert(charactersIn: ";")
+
+        let lines = (self as NSString).components(separatedBy: semiChar as CharacterSet).filter({ x in x.isNotEmpty})
+
+        return lines
+    }
+
     func format(_ arguments: CVarArg...) -> String {
             let args = arguments.map {
                 if let arg = $0 as? Int { return String(arg) }
