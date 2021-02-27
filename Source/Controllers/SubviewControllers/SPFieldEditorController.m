@@ -655,9 +655,14 @@ typedef enum {
 		if ([[fieldType uppercaseString] isEqualToString:@"FLOAT"] && ([[[editTextView textStorage] string] rangeOfString:@"."].location != NSNotFound)) {
 			maxLength++;
 		}
-		
-		if (maxLength > 0 && [[editTextView textStorage] length] > maxLength && ![[[editTextView textStorage] string] isEqualToString:[prefs objectForKey:SPNullValue]]) {
-			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [[editTextView textStorage] length] - (NSUInteger)maxLength)];
+
+        // SPNullValue = @"NULL"
+        NSString *nullValue = [[NSUserDefaults standardUserDefaults] objectForKey:SPNullValue];
+        NSTextStorage *editTVtextStorage = [editTextView textStorage];
+        NSString *editTVString = [editTVtextStorage string];
+        
+		if (maxLength > 0 && [editTVtextStorage length] > maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
+			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVtextStorage length] - (NSUInteger)maxLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxTextLength]];
 			
