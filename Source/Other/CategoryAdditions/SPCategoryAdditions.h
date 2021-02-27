@@ -52,3 +52,5 @@
 #import "NSNotificationCenterThreadingAdditions.h"
 #import "NSMutableArray-MultipleSort.h"
 #import "SPNSMutableDictionaryAdditions.h"
+#import "SPTaskAdditions.h"
+

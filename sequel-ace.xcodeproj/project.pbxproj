@@ -104,6 +104,7 @@
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
 		1A0751E325EAF37700FFDF6B /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
+		1A0751E925EAF83300FFDF6B /* SPTaskAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751E825EAF83300FFDF6B /* SPTaskAdditions.m */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
 		1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */; };
@@ -763,6 +764,8 @@
 		1A071B8B254D983700246912 /* SPNSMutableDictionaryAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPNSMutableDictionaryAdditions.h; sourceTree = "<group>"; };
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
 		1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReportExceptionApplication.m; sourceTree = "<group>"; };
+		1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTaskAdditions.h; sourceTree = "<group>"; };
+		1A0751E825EAF83300FFDF6B /* SPTaskAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPTaskAdditions.m; sourceTree = "<group>"; };
 		1A11E4FC25A32789001CB721 /* SPPanelOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPanelOptions.h; sourceTree = "<group>"; };
 		1A11E50325A327F1001CB721 /* SPPanelOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPanelOptions.m; sourceTree = "<group>"; };
 		1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperlinkTextField.swift; sourceTree = "<group>"; };
@@ -2568,6 +2571,8 @@
 				1AF0DA7D259F5D3100961974 /* SPPointerArrayAdditions.h */,
 				1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */,
 				1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */,
+				1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */,
+				1A0751E825EAF83300FFDF6B /* SPTaskAdditions.m */,
 			);
 			name = "Category Additions";
 			path = CategoryAdditions;
@@ -3183,6 +3188,7 @@
 				1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
 				173C837211AAD26E00B8B084 /* SPExportUtilities.m in Sources */,
+				1A0751E925EAF83300FFDF6B /* SPTaskAdditions.m in Sources */,
 				51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */,
 				173C837911AAD2AE00B8B084 /* SPDotExporter.m in Sources */,
 				173C837A11AAD2AE00B8B084 /* SPHTMLExporter.m in Sources */,
