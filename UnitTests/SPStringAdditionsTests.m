@@ -901,6 +901,26 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}
 }
 
+- (void)testStringByExpandingTildeAsIfNotInSandboxObjC{
+
+    NSString *str = @"~/.ssh";
+    NSString *expectedStr = @"/Users/james/.ssh";
+
+    str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+
+    // not in sandbox so:
+    XCTAssertEqualObjects(str, expectedStr);
+
+    str = @"~/.ssh/known_hosts";
+    expectedStr = @"/Users/james/.ssh/known_hosts";
+
+    str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+
+    XCTAssertEqualObjects(str, expectedStr);
+    
+}
+
+
 @end
 
 NSRange RangeFromArray(NSArray *a,NSUInteger idx)
