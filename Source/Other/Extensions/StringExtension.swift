@@ -111,6 +111,54 @@ extension String {
 		return self != decoded
 		
 	}
+
+    // returns the home dir of the user, as if we were not in a sandbox
+    var stringByExpandingTildeAsIfNotInSandbox: String {
+
+        let str = NSString(string: self).expandingTildeInPath as String
+
+        var prefix = "file://"
+        // will be something like
+        // file:///Users/james/Library/Containers/com.sequel-ace.sequel-ace/Data/.ssh/known_hosts
+        // or /Users/james/Library/Containers/com.sequel-ace.sequel-ace/Data/.ssh/known_hosts
+
+        var restOfString = ""
+        var homedir = ""
+        var suffix = ""
+
+        let hasPrefix = str.hasPrefix(prefix)
+
+        if hasPrefix == true {
+            restOfString = String(str.dropFirst(prefix.count))
+        }
+        else {
+            restOfString = str
+            prefix = ""
+        }
+
+        // should now be something like
+        // /Users/james/Library/Containers/com.sequel-ace.sequel-ace/Data/.ssh
+        // users = get string between first two / /
+        // username = get string between second two /Users/ and /Library/
+        // get suffix or last path component
+        guard
+            let users    = restOfString.slice(from: "/", to: "/"),
+            let username = restOfString.slice(from: "/Users/", to: "/Library/")
+        else {
+            return self
+        }
+
+        if let homedirTmp = NSHomeDirectory() as String? {
+            homedir = homedirTmp
+        }
+
+        if let suffixTmp = restOfString.dropPrefix(homedir) as String? {
+            suffix = suffixTmp
+        }
+
+        return prefix + "/" + users + "/" + username + suffix
+
+    }
 	
 	// the string with new lines and spaces trimmed from BOTH ends
 	var trimmedString: String {
@@ -146,6 +194,10 @@ extension String {
 
     public func trimWhitespaces() -> NSString {
         return (self as String).whitespacesTrimmedString as NSString
+    }
+
+    public func stringByExpandingTildeAsIfNotInSandboxObjC() -> NSString {
+        return (self as String).stringByExpandingTildeAsIfNotInSandbox as NSString
     }
 
     public func isNumeric() -> Bool {

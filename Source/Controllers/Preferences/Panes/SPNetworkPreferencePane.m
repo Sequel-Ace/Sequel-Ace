@@ -463,14 +463,22 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
     NSMutableArray<NSString *> __block *includeFileNames = [[NSMutableArray alloc] init];
 
-    for(NSString *str in sshConfigAsArray){
+    for(NSString __strong *str in sshConfigAsArray){
         if([str contains:@"Include"]){
-            SPLog(@"found Include line: [%@]", [str trimWhitespaces]);
-            [includeFileNames addObjectIfNotContains:[[str trimWhitespaces] dropPrefixWithPrefix:@"Include "]];
+            str = [[str trimWhitespaces] dropPrefixWithPrefix:@"Include "];
+            SPLog(@"found Include file: [%@]", str);
+            SPLog(@"if it contains a tilde, find real home dir");
+            str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+            SPLog(@"Include now: [%@]", str);
+            [includeFileNames addObjectIfNotContains:str];
         }
         if([str contains:@"UserKnownHostsFile"]){
-            SPLog(@"found UserKnownHostsFile line: [%@]", [str trimWhitespaces]);
-            [userKnownHostsFiles addObjectIfNotContains:[[str trimWhitespaces] dropPrefixWithPrefix:@"UserKnownHostsFile "]];
+            str = [[str trimWhitespaces] dropPrefixWithPrefix:@"UserKnownHostsFile "];
+            SPLog(@"found UserKnownHostsFile line: [%@]", str);
+            SPLog(@"if it contains a tilde, find real home dir");
+            str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+            SPLog(@"UserKnownHostsFile now: [%@]", str);
+            [userKnownHostsFiles addObjectIfNotContains:str];
         }
     }
 
