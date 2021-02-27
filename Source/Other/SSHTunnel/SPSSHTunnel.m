@@ -528,6 +528,10 @@ static unsigned short getRandomPort(void);
 			// Launch and run the tunnel
 			[task launch]; //throws for invalid paths, missing +x permission
 
+            SPMainLoopAsync(^{
+                [SPAppDelegate.sshProcessIDs addObject:@(self->task.processIdentifier)];
+            });
+            
 			// Listen for output
 			[task waitUntilExit]; // TODO: this leaks
 		}
