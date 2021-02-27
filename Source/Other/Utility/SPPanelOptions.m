@@ -33,6 +33,7 @@
         @"chooser" : SPBoxNil(self.chooser.description),
         @"canChooseFiles" : @(self.canChooseFiles),
         @"canChooseDirectories" : @(self.canChooseDirectories),
+        @"isForKnownHostsFile" : @(self.isForKnownHostsFile),
         @"bookmarkCreationOptions" : @(self.bookmarkCreationOptions),
         @"allowsMultipleSelection" : @(self.allowsMultipleSelection),
         @"isForStaleBookmark" : @(self.isForStaleBookmark),
