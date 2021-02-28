@@ -48,7 +48,7 @@
 @private
 	NSOpenPanel *_currentFilePanel;
 	NSMutableArray *sslCiphers;
-	NSString *sshConfigFile;
+
 }
 
 @property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
