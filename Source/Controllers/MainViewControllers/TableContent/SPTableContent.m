@@ -824,7 +824,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSUInteger primaryKeyFieldCount = [primaryKeyFieldNames count];
 			NSUInteger *primaryKeyFieldIndexes = calloc(primaryKeyFieldCount, sizeof(NSUInteger));
 			for (NSUInteger i = 0; i < primaryKeyFieldCount; i++) {
-				primaryKeyFieldIndexes[i] = [[tableDataInstance columnNames] indexOfObject:[primaryKeyFieldNames objectAtIndex:i]];
+                primaryKeyFieldIndexes[i] = [[tableDataInstance columnNames] indexOfObject:[primaryKeyFieldNames safeObjectAtIndex:i]];
 				if (primaryKeyFieldIndexes[i] == NSNotFound) {
 					columnsFound = NO;
 				}
