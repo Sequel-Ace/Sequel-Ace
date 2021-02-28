@@ -53,6 +53,16 @@ extension String {
         return lines
     }
 
+    func separatedIntoLinesByCharset() -> [String] {
+
+        var semiChar = CharacterSet()
+        semiChar.insert(charactersIn: ";")
+
+        let lines = (self as NSString).components(separatedBy: semiChar as CharacterSet).filter({ x in x.isNotEmpty})
+
+        return lines
+    }
+
     func format(_ arguments: CVarArg...) -> String {
             let args = arguments.map {
                 if let arg = $0 as? Int { return String(arg) }
@@ -111,7 +121,11 @@ extension String {
 	public func hasSuffix(suffix: NSString, caseSensitive: Bool = true) -> Bool {
 		return (self as String).hasSuffix(suffix as String, caseSensitive: caseSensitive)
 	}
-	
+
+    public func separatedIntoLinesByCharsetObjC() -> [NSString] {
+        return (self as String).separatedIntoLinesByCharset() as [NSString]
+    }
+
 	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
 	}
