@@ -35,6 +35,7 @@
 #import "SPContentFilterManager.h"
 #import "SPFunctions.h"
 #import "SPTableFilterParser.h"
+#import "SPTableContent.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -982,6 +983,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (IBAction)resetFilter:(id)sender
 {
+    SPTableContent *con = tableDocumentInstance.tableContentInstance;
+
+    con->toggleRuleFilterButton.state = !con->toggleRuleFilterButton.state;
+
+    [con toggleRuleEditorVisible:nil];
+
 	[self _doChangeToRuleEditorData:^{
 		[[self->_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
 	}];

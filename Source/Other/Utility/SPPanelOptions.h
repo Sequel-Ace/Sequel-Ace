@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite, assign) BOOL isForStaleBookmark;
 @property (readwrite, assign) NSUInteger index;
 @property (readwrite, assign) NSURLBookmarkCreationOptions bookmarkCreationOptions;
-@property (readwrite, copy, nullable) NSMutableArray<NSString *> *fileNames;
+@property (readwrite, strong, nullable) NSMutableArray<NSString *> *fileNames;
 
 - (NSString *)jsonStringWithPrettyPrint:(BOOL)prettyPrint;
 

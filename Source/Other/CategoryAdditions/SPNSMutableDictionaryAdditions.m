@@ -19,7 +19,7 @@
 	}
 }
 
-- (id)safeObjectForKey:(id)key {
+- (nullable id)safeObjectForKey:(id)key {
 	id object = [self objectForKey:key];
 	if (object != nil && object == [NSNull null]) {
 		return nil;
@@ -41,7 +41,7 @@
 #pragma mark -
 #pragma mark NSDictionary method
 
-- (id)safeObjectForKey:(id)key {
+- (nullable id)safeObjectForKey:(id)key {
 	id object = [self objectForKey:key];
 	if (object != nil && object == [NSNull null]) {
 		return nil;

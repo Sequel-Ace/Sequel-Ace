@@ -301,14 +301,9 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     @objc func updateQueryHistory(newHist: [String]) {
         Log.debug("updateQueryHistory")
 
-        var newHistMutArray: [String] = []
-
-        newHistMutArray = normalizeQueryHistory(arrayToNormalise: newHist)
-
         Log.debug("newHist passed in: [\(newHist)]")
-        Log.debug("newHistMut to be saved to db: [\(newHistMutArray)]")
         // dont delete any history, keep it all?
-        for query in newHistMutArray where query.isNotEmpty {
+        for query in newHist where query.isNotEmpty {
             let newDate = Date()
 
             queue.inDatabase { db in
@@ -409,24 +404,25 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
 
                 if queryMightBeMultiLine(queryToCheck:query) == true {
                     Log.debug("queryMightBeMultiLine: [\(query)]")
-                    normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
+                    normalisedQueryArray = appendToQueryHistory(arrayToAppendTo: normalisedQueryArray, queryToAppend: query)
                     continue
                 }
 
                 if query.contains("\n"){
                     Log.debug("query contains newline: [\(query)]")
                     // an array where each entry contains the value from
-                    // the history query, delimited by a new line
-                    let lines = query.separatedIntoLines()
+                    // the history query, delimited by a semi colon
+                    let lines = query.separatedIntoLinesByCharset()
 
                     Log.debug("lines: [\(lines)]")
 
-                    for line in lines where line.isNotEmpty {
-                        normalisedQueryArray.appendIfNotContains(line.dropSuffix(";").trimmedString)
+                    for line in lines {
+                        Log.debug("line: [\(line)]")
+                        normalisedQueryArray = appendToQueryHistory(arrayToAppendTo: normalisedQueryArray, queryToAppend: line)
                     }
                 }
                 else{
-                    normalisedQueryArray.appendIfNotContains(query.dropSuffix(";").trimmedString)
+                    normalisedQueryArray = appendToQueryHistory(arrayToAppendTo: normalisedQueryArray, queryToAppend: query)
                 }
             }
             Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
@@ -434,8 +430,19 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
         else{
             Log.debug("saveHistoryIndividually: [\(saveHistoryIndividually)], setting normalisedQueryArray = arrayToNormalise")
-            normalisedQueryArray = arrayToNormalise
-            Log.debug("arrayToNormalise: [\(arrayToNormalise)]")
+
+            for query in arrayToNormalise where query.isNotEmpty {
+
+                if query == arrayToNormalise.last && query.hasSuffix(";") == false {
+                    Log.debug("last and has suffix")
+                    normalisedQueryArray.appendIfNotContains(query.trimmedString + ";")
+                }
+                else {
+                    normalisedQueryArray.appendIfNotContains(query.trimmedString)
+                }
+            }
+
+            Log.debug("normalisedQueryArray: [\(normalisedQueryArray)]")
         }
 
         // keep a rough track of array size by counting string len
@@ -465,5 +472,24 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
 
         return false
+    }
+
+    /// Appends to the query history array (if not already in array) and adds final semi-colon if missing.
+    /// - Parameters:
+    ///   - arrayToAppendTo: the array to append to
+    ///   - queryToAppend: the query to append
+    /// - Returns: array of queries with the new query appended.
+    private func appendToQueryHistory(arrayToAppendTo: [String], queryToAppend: String) -> [String] {
+
+        var mutableArray = arrayToAppendTo
+        
+        if queryToAppend.hasSuffix(";") == false {
+            mutableArray.appendIfNotContains(queryToAppend.trimmedString + ";")
+        }
+        else{
+            mutableArray.appendIfNotContains(queryToAppend.trimmedString)
+        }
+
+        return mutableArray
     }
 }

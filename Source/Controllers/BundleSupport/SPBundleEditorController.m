@@ -492,9 +492,7 @@
 	NSMenu* senderMenu = [sender menu];
 
 	NSInteger selectedIndex = [senderMenu indexOfItem:sender];
-	NSString *input = SPBundleInputSourceBlobHandlingExclude;
-
-	input = [withBlobDataTableArray objectAtIndex:selectedIndex];
+	NSString *input = [withBlobDataTableArray objectAtIndex:selectedIndex];
 
 	[currentDict setObject:input forKey:SPBundleFileWithBlobKey];
 
