@@ -530,7 +530,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 NSAlert *alert = [[NSAlert alloc] init];
                 [alert setAlertStyle:NSAlertStyleWarning];
                 [alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-                [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"), [NSString stringForByteSize:[filesize longLongValue]]]];
+                [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to load a SQL file with %@ of data into the Query Editor?", @"message of panel asking for confirmation for loading large text into the query editor"), [NSByteCountFormatter stringWithByteSize:[filesize longLongValue]]]];
                 [alert setHelpAnchor:filePath];
 
 
