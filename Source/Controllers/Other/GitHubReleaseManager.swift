@@ -125,11 +125,18 @@ import OSLog
 
                     releases = releasesArray
                     availableRelease = releases.first
-                    if availableRelease != currentRelease {
-                        guard let availableReleaseName = availableRelease?.name else {
-                            return
-                        }
-                        self.availableReleaseName = availableReleaseName
+
+                    guard
+                        let currentReleaseTmp = currentRelease,
+                        let availableReleaseTmp = availableRelease
+                    else {
+                        Log.debug("No current release available")
+                        Log.debug("No newer release available")
+                        return
+                    }
+
+                    if availableReleaseTmp > currentReleaseTmp {
+                        availableReleaseName = availableReleaseTmp.name
                         Log.info("Found availableRelease: \(availableReleaseName)")
                         _ = self.displayNewReleaseAvailableAlert()
                     } else {
