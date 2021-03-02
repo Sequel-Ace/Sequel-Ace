@@ -129,6 +129,25 @@ import AppKit
         }
 	}
 
+    /// Creates an informational alert with primary colored OK button that triggers callback
+    /// - Parameters:
+    ///   - title: String for title of the alert
+    ///   - message: string for informative message
+    ///   - callback: Optional block that's invoked when user hits OK button
+    static func createInfoAlert(title: String,
+                                   message: String,
+                                   callback: (() -> ())? = nil) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .informational
+            alert.messageText = title
+            alert.informativeText = message
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            alert.runModal()
+            callback?()
+        }
+    }
+
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title, informative subtitle message and accessory view.
 	/// - Parameters:
 	///   - title: String for title of the alert

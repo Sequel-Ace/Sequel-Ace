@@ -141,13 +141,17 @@ import OSLog
                         _ = self.displayNewReleaseAvailableAlert()
                     } else {
                         Log.debug("No newer release available")
+                        NSAlert.createInfoAlert(title: NSLocalizedString("No Newer Release Available", comment: "No newer release available"),
+                                                   message: NSLocalizedString("You are currently running the latest release.", comment: "You are currently running the latest release."))
                     }
                 } catch {
                     Log.error("Error: \(error.localizedDescription)")
+                    NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
                 }
 
             case let .failure(error):
                 Log.error("Error: \(error.localizedDescription)")
+                NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
                 if (manager?.isReachable == false) {
                     Log.error("manager?.isReachable == false")
                 }
