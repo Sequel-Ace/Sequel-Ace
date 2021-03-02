@@ -165,6 +165,7 @@
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
 		1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */; };
+		1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */; };
 		1AF0DA7F259F5D8C00961974 /* SPPointerArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */; };
 		1AF0DA84259F631000961974 /* SPPointerArrayAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA83259F631000961974 /* SPPointerArrayAdditionsTests.m */; };
 		1AF0DA8B259F657200961974 /* SPPointerArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */; };
@@ -3040,6 +3041,7 @@
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
+				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
