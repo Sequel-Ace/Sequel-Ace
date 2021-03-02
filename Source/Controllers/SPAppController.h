@@ -53,6 +53,7 @@
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
 @property (nonatomic, strong, readonly) NSMutableArray <SPWindowController *> *windowControllers;
+@property (nonatomic, strong) NSMutableArray <NSNumber *> *sshProcessIDs;
 
 @property (weak) IBOutlet NSView *staleBookmarkHelpView;
 @property (weak) IBOutlet HyperlinkTextField *staleBookmarkTextField;
