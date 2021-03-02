@@ -72,7 +72,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)openSQLFileAtPath:(NSString *)filePath;
 - (void)openSessionBundleAtPath:(NSString *)filePath;
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
-- (void)checkForNewVersion;
+- (void)checkForNewVersionWithDelay:(double)delay;
 - (void)removeCheckForUpdatesMenuItem;
 - (void)addCheckForUpdatesMenuItem;
 
@@ -279,7 +279,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
     });
 
-    [self checkForNewVersion];
+    [self checkForNewVersionWithDelay:SPDelayBeforeCheckingForNewReleases];
 
     // Add menu item to check for updates
     [self addCheckForUpdatesMenuItem];
@@ -309,7 +309,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)addCheckForUpdatesMenuItem {
     if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
         SPLog(@"Adding menu item to check for updates");
-        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for updates", @"menu item Check for updates") action:@selector(checkForNewVersion) keyEquivalent:@""];
+        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for updates", @"menu item Check for updates") action:@selector(checkForNewVersionWithDelay:) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];
     }
 }
@@ -325,12 +325,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }];
 }
 
-- (void)checkForNewVersion {
+- (void)checkForNewVersionWithDelay:(double)delay {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
         SPLog(@"checking for updates");
         executeOnLowPrioQueueAfterADelay(^{
             [NSBundle.mainBundle checkForNewVersion];
-        }, SPDelayBeforeCheckingForNewReleases);
+        }, delay);
     }
 }
 
