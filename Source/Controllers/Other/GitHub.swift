@@ -17,7 +17,10 @@ import Foundation
 final class GitHubElement: Codable, Comparable {
     static func < (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
         return lhs.publishedAt < rhs.publishedAt
+    }
 
+    static func > (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
+        return lhs.publishedAt > rhs.publishedAt
     }
 
     static func == (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
