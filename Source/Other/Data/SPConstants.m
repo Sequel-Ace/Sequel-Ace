@@ -57,7 +57,7 @@
 
 // Narrow down completion max rows
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
-const NSUInteger SPMaxQueryLengthForWarning 	 = 1000;
+const NSUInteger SPMaxQueryLengthForWarning      = 1000;
 
 // System database names
 NSString *SPMySQLDatabase                        = @"mysql";
@@ -194,6 +194,8 @@ NSString *SPConsoleShowTimestamps                = @"ConsoleShowTimestamps";
 NSString *SPConsoleShowConnections               = @"ConsoleShowConnections";
 NSString *SPConsoleShowDatabases                 = @"ConsoleShowDatabases";
 NSString *SPEditInSheetEnabled                   = @"EditInSheetEnabled";
+NSString *SPEditInSheetForLongText               = @"EditInSheetForLongText";
+NSString *SPEditInSheetForLongTextLengthThreshold = @"EditInSheetForLongTextLengthThreshold";
 NSString *SPTableInformationPanelCollapsed       = @"TableInformationPanelCollapsed";
 NSString *SPTableColumnWidths                    = @"tableColumnWidths";
 NSString *SPProcessListTableColumnWidths         = @"ProcessListTableColumnWidths";
