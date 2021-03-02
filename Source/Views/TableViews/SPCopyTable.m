@@ -1234,13 +1234,25 @@ static const NSInteger kBlobAsImageFile = 4;
 {
 	// Return YES if the multiple line editing button is enabled - triggers sheet editing on all cells.
 	if ([prefs boolForKey:SPEditInSheetEnabled]) return YES;
-	
+
+    NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
+
+    NSUInteger editInSheetForLongTextLengthThreshold = [[preferenceDefaults safeObjectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
+
+    if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold]){
+        editInSheetForLongTextLengthThreshold = [[prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
+    }
+
+    if(!editInSheetForLongTextLengthThreshold || editInSheetForLongTextLengthThreshold % 1 != 0){ // modulus check for integer
+        editInSheetForLongTextLengthThreshold = 15;
+    }
+
 	// Retrieve the column definition
 	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
 	NSString *columnType = [columnDefinition objectForKey:@"typegrouping"];
 
 	// If the column is a BLOB or TEXT column, and not an enum, trigger sheet editing
-	BOOL isBlob = ([columnType isEqualToString:@"textdata"] || [columnType isEqualToString:@"blobdata"]);
+	BOOL isBlob = ([columnType isEqualToString:@"blobdata"]);
 	if (isBlob && ![columnType isEqualToString:@"enum"]) return YES;
 
 	// Otherwise, check the cell value for newlines.
@@ -1263,16 +1275,39 @@ static const NSInteger kBlobAsImageFile = 4;
 		cellValue = [tableStorage cellDataAtRow:rowIndex column:colIndex];
 	}
 
+    if([columnType isEqualToString:@"textdata"]){
+
+        SPLog(@"got a textdata column");
+
+        // TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT
+        if ([cellValue isKindOfClass:[NSString class]]) {
+            SPLog(@"it's a string");
+            if([cellValue length] > editInSheetForLongTextLengthThreshold){
+                return YES;
+            }
+        }
+    }
+
 	if ([cellValue isKindOfClass:[NSData class]]) {
 		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]];
 	}
 
+    SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
+
 	if (![cellValue isNSNull]
 		&& [columnType isEqualToString:@"string"]
-		&& [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound)
+		&& [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound
+        && [cellValue length] > editInSheetForLongTextLengthThreshold)
 	{
 		return YES;
 	}
+
+    if (![cellValue isNSNull]
+        && [columnType isEqualToString:@"string"]
+        && [cellValue length] > editInSheetForLongTextLengthThreshold)
+    {
+        return YES;
+    }
 
 	// Otherwise, use standard editing
 	return NO;
