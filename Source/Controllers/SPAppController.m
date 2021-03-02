@@ -88,7 +88,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 @synthesize fileManager;
 @synthesize sharedSPBundleManager;
 @synthesize mainMenu;
-
+@synthesize sshProcessIDs;
 #pragma mark -
 #pragma mark Initialisation
 
@@ -105,6 +105,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         _windowControllers = [[NSMutableArray alloc] init];
 
         runningActivitiesArray = [[NSMutableArray alloc] init];
+        sshProcessIDs = [[NSMutableArray alloc] init];
         fileManager = [NSFileManager defaultManager];
 
         //Create runtime directiories
@@ -1402,6 +1403,13 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [killTask launch];
         [killTask waitUntilExit];
     }
+
+    // this might catch some stray ssh pids, but probably not.
+    NSTask *killTask = [[NSTask alloc] init];
+    [killTask setLaunchPath:@"/bin/sh"];
+    [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -9 %@", [NSString stringWithString:[sshProcessIDs componentsJoinedByString:@" "]]]]];
+    [killTask launch];
+    [killTask waitUntilExit];
 
     // If required, make sure we save any changes made to the connection outline view's state
     if (shouldSaveFavorites) {
