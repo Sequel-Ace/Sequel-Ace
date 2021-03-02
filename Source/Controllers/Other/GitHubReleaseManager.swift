@@ -100,22 +100,13 @@ import OSLog
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
-                    if let currentReleaseTmp = releasesArray.first(where: { $0.name == name }) {
+                    if let currentReleaseTmp = releasesArray.first(where: { $0.name.hasPrefix(name) == true}) {
                         currentRelease = currentReleaseTmp
                         guard let currentReleaseName = currentRelease?.name else {
                             return
                         }
                         self.currentReleaseName = currentReleaseName
-                        Log.debug("Found this release: \(currentReleaseName))")
-                    }
-
-                    if let i = releasesArray.firstIndex(where: { $0.name == name }) {
-                        currentRelease = releasesArray[i]
-                        guard let currentReleaseName = currentRelease?.name else {
-                            return
-                        }
-                        self.currentReleaseName = currentReleaseName
-                        Log.debug("Found this release at index:[\(i)] name: \(currentReleaseName))")
+                        Log.debug("Found this release: \(currentReleaseName)")
                     }
 
                     if includeDraft == false {
@@ -134,11 +125,18 @@ import OSLog
 
                     releases = releasesArray
                     availableRelease = releases.first
-                    if availableRelease != currentRelease {
-                        guard let availableReleaseName = availableRelease?.name else {
-                            return
-                        }
-                        self.availableReleaseName = availableReleaseName
+
+                    guard
+                        let currentReleaseTmp = currentRelease,
+                        let availableReleaseTmp = availableRelease
+                    else {
+                        Log.debug("No current release available")
+                        Log.debug("No newer release available")
+                        return
+                    }
+
+                    if availableReleaseTmp > currentReleaseTmp {
+                        availableReleaseName = availableReleaseTmp.name
                         Log.info("Found availableRelease: \(availableReleaseName)")
                         _ = self.displayNewReleaseAvailableAlert()
                     } else {
