@@ -309,7 +309,7 @@ static SPBundleManager *sharedSPBundleManager = nil;
 
 		SPLog(@"migratedLegacyBundles: %@", migratedLegacyBundles);
 
-		NSMutableDictionary *filesContainingLegacyString = [NSMutableDictionary dictionary];
+		NSMutableDictionary *filesContainingLegacyString = [[NSMutableDictionary alloc] init];
 
 		for(NSString *filePath in migratedLegacyBundles){
 			filesContainingLegacyString = [self findLegacyStrings:filePath];

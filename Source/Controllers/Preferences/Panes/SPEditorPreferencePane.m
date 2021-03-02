@@ -112,13 +112,11 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	[NSColor setIgnoresAlpha:NO];
 	
-	NSTableColumn *column = [[colorSettingTableView tableColumns] objectAtIndex:0];
+    NSTableColumn *column = [[colorSettingTableView tableColumns] safeObjectAtIndex:1];
 	NSTextFieldCell *textCell = [[NSTextFieldCell alloc] init];
 	
 	[textCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
-	
-	column = [[colorSettingTableView tableColumns] objectAtIndex: 1];
-	
+
 	SPColorWellCell *colorCell = [[SPColorWellCell alloc] init];
 	
 	[colorCell setEditable:YES];
