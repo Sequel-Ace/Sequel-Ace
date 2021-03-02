@@ -1237,13 +1237,13 @@ static const NSInteger kBlobAsImageFile = 4;
 
     NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
 
-    NSUInteger editInSheetForLongTextLengthThreshold = (NSUInteger)[preferenceDefaults safeObjectForKey:@"ssfsfs"];
+    NSUInteger editInSheetForLongTextLengthThreshold = [[preferenceDefaults safeObjectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
 
     if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold]){
         editInSheetForLongTextLengthThreshold = [[prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
     }
 
-    if(!editInSheetForLongTextLengthThreshold){
+    if(!editInSheetForLongTextLengthThreshold || editInSheetForLongTextLengthThreshold % 1 != 0){ // modulus check for integer
         editInSheetForLongTextLengthThreshold = 15;
     }
 
