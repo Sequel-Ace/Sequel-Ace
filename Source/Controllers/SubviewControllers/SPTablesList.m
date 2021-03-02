@@ -2493,7 +2493,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSString *tableSyntax = [[theResult getRowAsArray] objectAtIndex:2];
 
 		// replace the old name by the new one and drop the old one
-		[mySQLConnection queryString:[tableSyntax stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[tableName backtickQuotedString]]];
+		[mySQLConnection queryString:[[tableSyntax unboxNull] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[tableName backtickQuotedString]]];
 
 		if ([mySQLConnection queryErrored]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];

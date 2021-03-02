@@ -15,11 +15,11 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.2.2</string>
+	<string>3.2.3</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>3021</string>
+	<string>3022</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.12</string>
 	<key>CFBundleSupportedPlatforms</key>

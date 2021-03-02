@@ -635,6 +635,18 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 }
 
+- (void)testSeparatedIntoLinesByCharsetObjC{
+
+    NSString *str = @"SELECT * FROM `HKWarningsLog`\n LIMIT 1000;\nSELECT * FROM `HKWarningsLog`\n LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000\n;";
+    NSArray *expectedArray = @[@"SELECT * FROM `HKWarningsLog`\n LIMIT 1000",@"\nSELECT * FROM `HKWarningsLog`\n LIMIT 1000", @"\nSELECT * FROM `HKWarningsLog` LIMIT 1000\n"];
+
+    NSArray *arr = [str separatedIntoLinesByCharsetObjC];
+
+    XCTAssertEqualObjects(expectedArray, arr);
+
+}
+
+
 - (void)testContains{
 
     NSString *str = @"When I say ATMOS, you say FEAR.";
