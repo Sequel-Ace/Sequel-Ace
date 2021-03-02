@@ -100,22 +100,13 @@ import OSLog
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
-                    if let currentReleaseTmp = releasesArray.first(where: { $0.name == name }) {
+                    if let currentReleaseTmp = releasesArray.first(where: { $0.name.hasPrefix(name) == true}) {
                         currentRelease = currentReleaseTmp
                         guard let currentReleaseName = currentRelease?.name else {
                             return
                         }
                         self.currentReleaseName = currentReleaseName
-                        Log.debug("Found this release: \(currentReleaseName))")
-                    }
-
-                    if let i = releasesArray.firstIndex(where: { $0.name == name }) {
-                        currentRelease = releasesArray[i]
-                        guard let currentReleaseName = currentRelease?.name else {
-                            return
-                        }
-                        self.currentReleaseName = currentReleaseName
-                        Log.debug("Found this release at index:[\(i)] name: \(currentReleaseName))")
+                        Log.debug("Found this release: \(currentReleaseName)")
                     }
 
                     if includeDraft == false {
