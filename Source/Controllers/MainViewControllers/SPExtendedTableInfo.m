@@ -667,7 +667,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 			[key isEqualToString:SPMySQLIndexLengthField] ||
 			[key isEqualToString:SPMySQLDataFreeField]) {
 
-			value = [NSString stringForByteSize:[value longLongValue]];
+            value = [NSByteCountFormatter stringWithByteSize:[value longLongValue]];
 		}
 		// Format date strings to the user's long date format
 		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
