@@ -3428,7 +3428,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			if(filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
 				if ([filesize unsignedLongValue] > 1000000) {
-					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data? The import can freeze the app for couple of seconds.", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
+                    NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data? The import can freeze the app for couple of seconds.", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSByteCountFormatter stringWithByteSize:[filesize longLongValue]]];
 					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:message primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
 						[self insertFileContentOfFile:filepath];
 					} cancelButtonHandler:nil];

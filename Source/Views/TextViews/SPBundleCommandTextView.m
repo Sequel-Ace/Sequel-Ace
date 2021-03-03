@@ -636,7 +636,7 @@
 			if (filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
 				if([filesize unsignedLongValue] > 1000000) {
-					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]] primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
+                    [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data?", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSByteCountFormatter stringWithByteSize:[filesize longLongValue]]] primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
 						[self insertFileContentOfFile:filepath];
 					} cancelButtonHandler:nil];
 				} else {

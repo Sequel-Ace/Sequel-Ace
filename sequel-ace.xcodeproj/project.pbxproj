@@ -103,8 +103,6 @@
 		17F90E481210B42700274C98 /* SPExportFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F90E471210B42700274C98 /* SPExportFile.m */; };
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
-		1A07517025EAADB500FFDF6B /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A07516F25EAADB500FFDF6B /* FileManagerExtension.swift */; };
-		1A07518D25EAB9CB00FFDF6B /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A07516F25EAADB500FFDF6B /* FileManagerExtension.swift */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
 		1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */; };
@@ -130,13 +128,15 @@
 		1A6447912588CD8B00927DB3 /* License.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17CC993A10B4C9C80034CD7A /* License.rtf */; };
 		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
 		1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */; };
+		1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
+		1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */; };
 		1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1A89556E25D6C8880060CE72 /* Alamofire */; };
 		1A89558725D6E15D0060CE72 /* GitHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89557825D6DE860060CE72 /* GitHub.swift */; };
 		1A8B53572584520800526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
 		1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B53562584520800526DED /* SPURLAdditions.m */; };
-		1A8B57D325EE95FD00DFC54A /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
+		1A8B582A25EEE15900DFC54A /* ByteCountFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */; };
 		1A94988E25516057000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498C125517191000BC793 /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94988D25516057000BC793 /* DateExtension.swift */; };
 		1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */; };
@@ -165,6 +165,7 @@
 		1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */; };
 		1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
 		1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */; };
+		1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */; };
 		1AF0DA7F259F5D8C00961974 /* SPPointerArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */; };
 		1AF0DA84259F631000961974 /* SPPointerArrayAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA83259F631000961974 /* SPPointerArrayAdditionsTests.m */; };
 		1AF0DA8B259F657200961974 /* SPPointerArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */; };
@@ -764,7 +765,6 @@
 		17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFontPreviewTextField.m; sourceTree = "<group>"; };
 		1A071B8B254D983700246912 /* SPNSMutableDictionaryAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPNSMutableDictionaryAdditions.h; sourceTree = "<group>"; };
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
-		1A07516F25EAADB500FFDF6B /* FileManagerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileManagerExtension.swift; sourceTree = "<group>"; };
 		1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReportExceptionApplication.m; sourceTree = "<group>"; };
 		1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTaskAdditions.h; sourceTree = "<group>"; };
 		1A11E4FC25A32789001CB721 /* SPPanelOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPanelOptions.h; sourceTree = "<group>"; };
@@ -789,12 +789,14 @@
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ProgressWindowController.storyboard; sourceTree = "<group>"; };
+		1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileManagerExtension.swift; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
 		1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubReleaseManager.swift; sourceTree = "<group>"; };
 		1A89557825D6DE860060CE72 /* GitHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHub.swift; sourceTree = "<group>"; };
 		1A8B53552584520800526DED /* SPURLAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPURLAdditions.h; sourceTree = "<group>"; };
 		1A8B53562584520800526DED /* SPURLAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditions.m; sourceTree = "<group>"; };
 		1A8B53672584552F00526DED /* SPURLAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPURLAdditionsTests.m; sourceTree = "<group>"; };
+		1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteCountFormatterExtension.swift; sourceTree = "<group>"; };
 		1A94988D25516057000BC793 /* DateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtension.swift; sourceTree = "<group>"; };
 		1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmark.swift; sourceTree = "<group>"; };
 		1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManager.swift; sourceTree = "<group>"; };
@@ -1570,6 +1572,7 @@
 		173E70D5107FF7AF008733C9 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */,
 				1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */,
 				1A24B626258A2E9A00541E88 /* SecureBookmarkData.swift */,
 				1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */,
@@ -2305,7 +2308,6 @@
 		507FF10E1BBCC4A900104523 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */,
 				1AD785E325B749760007E153 /* OSLog.swift */,
 				507FF1101BBCC4C400104523 /* SPFunctions.h */,
 				507FF1111BBCC57600104523 /* SPFunctions.m */,
@@ -2358,9 +2360,10 @@
 				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
 				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
 				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
+				1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */,
 				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
 				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
-				1A07516F25EAADB500FFDF6B /* FileManagerExtension.swift */,
+				1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3038,10 +3041,10 @@
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
+				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
-				1A07518D25EAB9CB00FFDF6B /* FileManagerExtension.swift in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 			);
@@ -3084,6 +3087,7 @@
 				513515EB2593568B001E4533 /* NSBezierPath_AMShading.m in Sources */,
 				17E6415B0EF01EF6001BC333 /* SPDataImport.m in Sources */,
 				17E6415C0EF01EF6001BC333 /* SPTableStructure.m in Sources */,
+				1A8B582A25EEE15900DFC54A /* ByteCountFormatterExtension.swift in Sources */,
 				1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */,
 				50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */,
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
@@ -3129,6 +3133,7 @@
 				177E7A230FCB6A2E00E9E122 /* SPExtendedTableInfo.m in Sources */,
 				73F70A961E4E547500636550 /* SPJSONFormatter.m in Sources */,
 				58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */,
+				1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */,
 				29A1B7E50FD1293A000B88E8 /* SPPrintAccessory.m in Sources */,
 				BC1847EA0FE6EC8400094BFB /* SPEditSheetTextView.m in Sources */,
 				BC2C16D40FEBEDF10003993B /* SPDataAdditions.m in Sources */,
@@ -3137,7 +3142,6 @@
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
-				1A8B57D325EE95FD00DFC54A /* ReportExceptionApplication.m in Sources */,
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
@@ -3151,7 +3155,6 @@
 				58DA8863103E15B5000B98DF /* SPLogger.m in Sources */,
 				BC01BCCF104024BE006BDEE7 /* SPEncodingPopupAccessory.m in Sources */,
 				513515E42593568B001E4533 /* PSMProgressIndicator.m in Sources */,
-				1A07517025EAADB500FFDF6B /* FileManagerExtension.swift in Sources */,
 				3876E15D1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m in Sources */,
 				51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */,
 				513515E92593568B001E4533 /* PSMTabDragWindow.m in Sources */,
@@ -3173,6 +3176,7 @@
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
 				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
+				1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */,
 				5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */,
 				17CC97F310B4ABE90034CD7A /* SPAboutController.m in Sources */,
 				513515ED2593568B001E4533 /* PSMTabBarController.m in Sources */,

@@ -216,7 +216,7 @@
 
                 SPLog(@"tableStatusDataLengthAsLong = %lld", tableStatusDataLengthAsLong);
 
-				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSString stringForByteSize:tableStatusDataLengthAsLong]]];
+                [info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"size: %@", @"Table Info Section : table size on disk"), [NSByteCountFormatter stringWithByteSize:tableStatusDataLengthAsLong]]];
 			}
 
 			NSString *tableEnc = [tableDataInstance tableEncoding];
