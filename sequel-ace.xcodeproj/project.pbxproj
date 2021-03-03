@@ -130,6 +130,7 @@
 		1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */; };
 		1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
 		1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
+		1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */; };
 		1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1A89556E25D6C8880060CE72 /* Alamofire */; };
@@ -3013,6 +3014,7 @@
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
+				1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */,
 				1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
