@@ -1339,11 +1339,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:SPLOCALIZEDURL_KEYBOARDSHORTCUTS]];
 }
 
-
-
-
-
-
 #pragma mark -
 #pragma mark Other methods
 
@@ -1361,7 +1356,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Return YES to the automatic opening
     return YES;
 }
-
 
 /**
  * If Sequel Ace is terminating kill all running BASH scripts and release all HTML output controller.
@@ -1631,7 +1625,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             return windowController;
         }
     }
-    return nil;
+    SPWindowController *windowController = [self.windowControllers firstObject];
+    [windowController.window makeKeyAndOrderFront:nil];
+    return windowController;
 }
 
 /**
