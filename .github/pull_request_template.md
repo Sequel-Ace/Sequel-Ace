@@ -13,7 +13,7 @@ Please use one of these hashtags for your PR title:
 - 
 
 ## Closes following issues:
-- Closes 
+- Closes: 
 
 ## Tested:
 - Processors:
@@ -25,12 +25,12 @@ Please use one of these hashtags for your PR title:
   - [ ] 10.14.x (Mojave)
   - [ ] 10.15.x (Catalina)
   - [ ] 11.x (Big Sur)
-- Xcode Version:
 - Localizations:
   - [ ] English
   - [ ] Spanish
   - [ ] Other (please specify)
+- Xcode Version:
+  
 ## Screenshots:
-
 
 ## Additional notes:
