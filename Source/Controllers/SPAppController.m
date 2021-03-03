@@ -72,9 +72,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)openSQLFileAtPath:(NSString *)filePath;
 - (void)openSessionBundleAtPath:(NSString *)filePath;
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
-- (void)checkForNewVersionWithDelay:(double)delay;
+- (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck;
 - (void)removeCheckForUpdatesMenuItem;
 - (void)addCheckForUpdatesMenuItem;
+- (void)checkForNewVersionFromMenu;
 
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
@@ -279,7 +280,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
     });
 
-    [self checkForNewVersionWithDelay:SPDelayBeforeCheckingForNewReleases];
+    [self checkForNewVersionWithDelay:SPDelayBeforeCheckingForNewReleases andIsFromMenuCheck:NO];
 
     // Add menu item to check for updates
     [self addCheckForUpdatesMenuItem];
@@ -309,7 +310,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)addCheckForUpdatesMenuItem {
     if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
         SPLog(@"Adding menu item to check for updates");
-        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for updates", @"menu item Check for updates") action:@selector(checkForNewVersionWithDelay:) keyEquivalent:@""];
+        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for updates", @"menu item Check for updates") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];
     }
 }
@@ -325,11 +326,17 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }];
 }
 
-- (void)checkForNewVersionWithDelay:(double)delay {
+- (void)checkForNewVersionFromMenu{
+    [self checkForNewVersionWithDelay:0 andIsFromMenuCheck:YES];
+}
+
+- (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck {
+
+    SPLog(@"isFromMenuCheck %d", isFromMenuCheck);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
         SPLog(@"checking for updates");
         executeOnLowPrioQueueAfterADelay(^{
-            [NSBundle.mainBundle checkForNewVersion];
+            [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
         }, delay);
     }
 }
