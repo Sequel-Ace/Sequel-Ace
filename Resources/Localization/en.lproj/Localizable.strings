@@ -3287,3 +3287,12 @@
 
 /* Menu item title for checking for updates */
 "Check for updates" = "Check for updates";
+
+/* Error alert title when the request to GitHub fails */
+"GitHub Request Failed" = "GitHub Request Failed";
+
+/* Info alert title when there are Newer Releases Available */
+"No Newer Release Available" = "No Newer Release Available";
+
+/* Info alert message when there are Newer Releases Available */
+"You are currently running the latest release." = "You are currently running the latest release."'
