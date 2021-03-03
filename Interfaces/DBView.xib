@@ -62,9 +62,6 @@
                 <outlet property="tableTabView" destination="25" id="1244"/>
                 <outlet property="tableTriggersInstance" destination="6691" id="6796"/>
                 <outlet property="tablesListInstance" destination="68" id="104"/>
-                <outlet property="titleAccessoryView" destination="5999" id="6002"/>
-                <outlet property="titleImageView" destination="6000" id="6003"/>
-                <outlet property="titleStringView" destination="6170" id="6172"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
@@ -4159,27 +4156,6 @@ Gw
                 </popUpButton>
             </subviews>
             <point key="canvasLocation" x="-1822" y="484"/>
-        </customView>
-        <customView id="5999" userLabel="Title Icon View">
-            <rect key="frame" x="0.0" y="0.0" width="110" height="20"/>
-            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
-            <subviews>
-                <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6170">
-                    <rect key="frame" x="2" y="2" width="105" height="14"/>
-                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" id="6171">
-                        <font key="font" metaFont="message" size="11"/>
-                        <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                </textField>
-                <imageView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6000">
-                    <rect key="frame" x="5" y="-2" width="101" height="22"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
-                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageAlignment="right" imageScaling="proportionallyDown" id="6001"/>
-                </imageView>
-            </subviews>
-            <point key="canvasLocation" x="-1323" y="644"/>
         </customView>
         <customView id="6885" userLabel="statusTable Accessory View">
             <rect key="frame" x="0.0" y="0.0" width="360" height="157"/>
