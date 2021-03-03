@@ -29,6 +29,9 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
 @class SPPreferenceController;
 @class SPAboutController;
 @class SPDatabaseDocument;

@@ -66,7 +66,7 @@
     [super awakeFromNib];
 
     [self setupAppearance];
-//    [self setupConstraints]; FIXME: causes a crash
+    [self setupConstraints];
 
     [self _switchOutSelectedTableDocument:nil];
 
@@ -85,8 +85,8 @@
 
     // Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
     NSMenu *mainMenu = [NSApp mainMenu];
-    closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
-    closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
+    _closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
+    _closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
 
     // Register for drag start and stop notifications - used to show/hide tab bars
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
@@ -481,111 +481,6 @@
 - (void)_selectedTableDocumentDeallocd:(NSNotification *)notification
 {
 	[self _switchOutSelectedTableDocument:nil];
-}
-
-#pragma mark - SPWindowControllerDelegate
-
-/**
- * Determine whether the window is permitted to close.
- * Go through the tabs in this window, and ask the database connection view
- * in each one if it can be closed, returning YES only if all can be closed.
- */
-- (BOOL)windowShouldClose:(NSWindow *)sender {
-	for (NSTabViewItem *eachItem in [self.tabView tabViewItems]) {
-		SPDatabaseDocument *eachDocument = [eachItem databaseDocument];
-
-        if (![eachDocument parentTabShouldClose]) {
-            return NO;
-        }
-	}
-
-	// Remove global session data if the last window of a session will be closed
-	if ([SPAppDelegate sessionURL] && [[SPAppDelegate windowControllers] count] == 1) {
-		[SPAppDelegate setSessionURL:nil];
-		[SPAppDelegate setSpfSessionDocData:nil];
-	}
-    [self.delegate windowControllerDidClose:self];
-	return YES;
-}
-
-/**
- * When the window does close, close all tabs.
- */
-- (void)windowWillClose:(NSNotification *)notification
-{
-    SPLog(@"windowWillClose, notification: %@", notification);
-	for (NSTabViewItem *eachItem in [self.tabView tabViewItems])
-	{
-		[self.tabView removeTabViewItem:eachItem];
-	}
-}
-
-/**
- * When the window becomes key, inform the selected tab and
- * update menu items.
- */
-- (void)windowDidBecomeKey:(NSNotification *)notification
-{
-	[self.selectedTableDocument tabDidBecomeKey];
-
-	// Update the "Close window" item
-	[closeWindowMenuItem setTitle:NSLocalizedString(@"Close Window", @"Close Window menu item")];
-	[closeWindowMenuItem setKeyEquivalentModifierMask:(NSEventModifierFlagCommand | NSEventModifierFlagShift)];
-
-	// Ensure the "Close tab" item is enabled and has the standard shortcut
-	[closeTabMenuItem setEnabled:YES];
-	[closeTabMenuItem setKeyEquivalent:@"w"];
-	[closeTabMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-}
-
-/**
- * When the window resigns key, update menu items.
- */
-- (void)windowDidResignKey:(NSNotification *)notification
-{
-
-	// Disable the "Close tab" menu item
-	[closeTabMenuItem setEnabled:NO];
-	[closeTabMenuItem setKeyEquivalent:@""];
-
-	// Update the "Close window" item to show only "Close"
-	[closeWindowMenuItem setTitle:NSLocalizedString(@"Close", @"Close menu item")];
-	[closeWindowMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-}
-
-/**
- * Observe changes in main window status to update drawing state to match
- */
-- (void)windowDidBecomeMain:(NSNotification *)notification
-{
-}
-
-- (void)windowDidResignMain:(NSNotification *)notification
-{
-}
-
-/**
- * If the window is resized, notify all the tabs.
- */
-- (void)windowDidResize:(NSNotification *)notification
-{
-	for (NSTabViewItem *eachItem in [self.tabView tabViewItems]) {
-		[[eachItem databaseDocument] tabDidResize];
-	}
-}
-
-/**
- * If the window is entering fullscreen, update the front tab's titlebar status view visibility.
- */
-- (void)windowWillEnterFullScreen:(NSNotification *)notification
-{
-}
-
-/**
- * If the window exits fullscreen, update the front tab's titlebar status view visibility.
- */
-- (void)windowDidExitFullScreen:(NSNotification *)notification
-{
 }
 
 #pragma mark -
