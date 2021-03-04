@@ -30,6 +30,7 @@ import OSLog
     private var releases: [GitHubElement] = []
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
     private let manager = NetworkReachabilityManager(host: "www.google.com")
+    public var isFromMenuCheck: Bool = false
 
     struct Config {
         var user: String
@@ -139,10 +140,15 @@ import OSLog
                         availableReleaseName = availableReleaseTmp.name
                         Log.info("Found availableRelease: \(availableReleaseName)")
                         _ = self.displayNewReleaseAvailableAlert()
-                    } else {
-                        Log.debug("No newer release available")
-                        NSAlert.createInfoAlert(title: NSLocalizedString("No Newer Release Available", comment: "No newer release available"),
-                                                   message: NSLocalizedString("You are currently running the latest release.", comment: "You are currently running the latest release."))
+                    }
+                    else {
+                        if isFromMenuCheck == false {
+                            Log.debug("From startup check, not menu check, so not showing no newer release alert")
+                        }
+                        else{
+                            NSAlert.createInfoAlert(title: NSLocalizedString("No Newer Release Available", comment: "No newer release available"),
+                                                    message: NSLocalizedString("You are currently running the latest release.", comment: "You are currently running the latest release."))
+                        }
                     }
                 } catch {
                     Log.error("Error: \(error.localizedDescription)")

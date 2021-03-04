@@ -579,7 +579,6 @@
  */
 - (void)windowWillEnterFullScreen:(NSNotification *)notification
 {
-	[self.selectedTableDocument updateTitlebarStatusVisibilityForcingHide:YES];
 }
 
 /**
@@ -587,7 +586,6 @@
  */
 - (void)windowDidExitFullScreen:(NSNotification *)notification
 {
-	[self.selectedTableDocument updateTitlebarStatusVisibilityForcingHide:NO];
 }
 
 #pragma mark -

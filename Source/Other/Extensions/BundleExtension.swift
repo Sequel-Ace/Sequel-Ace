@@ -61,9 +61,15 @@ import Foundation
         return "%@ (%@)".format(version, build)
     }
 
-    public func checkForNewVersion() {
+    public func checkForNewVersion(isFromMenuCheck: Bool) {
+
         if isMASVersion == false {
-            GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace", project: "Sequel-Ace", includeDraft: false, includePrerelease: isSnapshotBuild ? true : false))
+            GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
+                                                                   project: "Sequel-Ace",
+                                                                   includeDraft: false,
+                                                                   includePrerelease: isSnapshotBuild ? true : false))
+
+            GitHubReleaseManager.sharedInstance.isFromMenuCheck = isFromMenuCheck
             GitHubReleaseManager.sharedInstance.checkRelease(name: versionString)
         }
     }
