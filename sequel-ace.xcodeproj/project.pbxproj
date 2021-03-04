@@ -103,8 +103,6 @@
 		17F90E481210B42700274C98 /* SPExportFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F90E471210B42700274C98 /* SPExportFile.m */; };
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
-		1A0751E325EAF37700FFDF6B /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
-		1A0751E925EAF83300FFDF6B /* SPTaskAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751E825EAF83300FFDF6B /* SPTaskAdditions.m */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
 		1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */; };
@@ -130,6 +128,9 @@
 		1A6447912588CD8B00927DB3 /* License.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 17CC993A10B4C9C80034CD7A /* License.rtf */; };
 		1A6447992588CD9200927DB3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 517E44FB257A94C400ED333B /* Credits.rtf */; };
 		1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */; };
+		1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
+		1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
+		1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
 		1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */; };
 		1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 1A89556E25D6C8880060CE72 /* Alamofire */; };
@@ -767,7 +768,6 @@
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
 		1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReportExceptionApplication.m; sourceTree = "<group>"; };
 		1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTaskAdditions.h; sourceTree = "<group>"; };
-		1A0751E825EAF83300FFDF6B /* SPTaskAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPTaskAdditions.m; sourceTree = "<group>"; };
 		1A11E4FC25A32789001CB721 /* SPPanelOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPanelOptions.h; sourceTree = "<group>"; };
 		1A11E50325A327F1001CB721 /* SPPanelOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPanelOptions.m; sourceTree = "<group>"; };
 		1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperlinkTextField.swift; sourceTree = "<group>"; };
@@ -790,6 +790,7 @@
 		1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPillAttachmentCell.m; sourceTree = "<group>"; };
 		1A564C0C0FFB444D2E5CA447 /* SPPillAttachmentCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPillAttachmentCell.h; sourceTree = "<group>"; };
 		1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ProgressWindowController.storyboard; sourceTree = "<group>"; };
+		1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileManagerExtension.swift; sourceTree = "<group>"; };
 		1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPSyncTests.m; sourceTree = "<group>"; };
 		1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubReleaseManager.swift; sourceTree = "<group>"; };
 		1A89557825D6DE860060CE72 /* GitHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHub.swift; sourceTree = "<group>"; };
@@ -1572,6 +1573,7 @@
 		173E70D5107FF7AF008733C9 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */,
 				1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */,
 				1A24B626258A2E9A00541E88 /* SecureBookmarkData.swift */,
 				1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */,
@@ -2307,7 +2309,6 @@
 		507FF10E1BBCC4A900104523 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */,
 				1AD785E325B749760007E153 /* OSLog.swift */,
 				507FF1101BBCC4C400104523 /* SPFunctions.h */,
 				507FF1111BBCC57600104523 /* SPFunctions.m */,
@@ -2360,6 +2361,7 @@
 				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
 				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
 				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
+				1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */,
 				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
 				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
 				1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */,
@@ -2576,7 +2578,6 @@
 				1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */,
 				1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */,
 				1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */,
-				1A0751E825EAF83300FFDF6B /* SPTaskAdditions.m */,
 			);
 			name = "Category Additions";
 			path = CategoryAdditions;
@@ -3013,6 +3014,7 @@
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
+				1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */,
 				1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
@@ -3092,7 +3094,6 @@
 				50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */,
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
-				1A0751E325EAF37700FFDF6B /* ReportExceptionApplication.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
 				513515EA2593568B001E4533 /* PSMTabDragWindowController.m in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
@@ -3134,6 +3135,7 @@
 				177E7A230FCB6A2E00E9E122 /* SPExtendedTableInfo.m in Sources */,
 				73F70A961E4E547500636550 /* SPJSONFormatter.m in Sources */,
 				58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */,
+				1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */,
 				29A1B7E50FD1293A000B88E8 /* SPPrintAccessory.m in Sources */,
 				BC1847EA0FE6EC8400094BFB /* SPEditSheetTextView.m in Sources */,
 				BC2C16D40FEBEDF10003993B /* SPDataAdditions.m in Sources */,
@@ -3176,6 +3178,7 @@
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
 				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
+				1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */,
 				5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */,
 				17CC97F310B4ABE90034CD7A /* SPAboutController.m in Sources */,
 				513515ED2593568B001E4533 /* PSMTabBarController.m in Sources */,
@@ -3194,7 +3197,6 @@
 				1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
 				173C837211AAD26E00B8B084 /* SPExportUtilities.m in Sources */,
-				1A0751E925EAF83300FFDF6B /* SPTaskAdditions.m in Sources */,
 				51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */,
 				173C837911AAD2AE00B8B084 /* SPDotExporter.m in Sources */,
 				173C837A11AAD2AE00B8B084 /* SPHTMLExporter.m in Sources */,

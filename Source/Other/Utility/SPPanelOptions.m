@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "SPPanelOptions.h"
+#import "SPFunctions.h"
 
 @implementation PanelOptions
 
@@ -28,8 +29,12 @@
 
     return @{
         @"title" : self.title,
+        @"prefsKey" : safeString(self.prefsKey),
+        @"chooser" : SPBoxNil(self.chooser.description),
         @"canChooseFiles" : @(self.canChooseFiles),
         @"canChooseDirectories" : @(self.canChooseDirectories),
+        @"isForKnownHostsFile" : @(self.isForKnownHostsFile),
+        @"bookmarkCreationOptions" : @(self.bookmarkCreationOptions),
         @"allowsMultipleSelection" : @(self.allowsMultipleSelection),
         @"isForStaleBookmark" : @(self.isForStaleBookmark),
         @"fileNames" : self.fileNames.count > 0 ? self.fileNames : @[]

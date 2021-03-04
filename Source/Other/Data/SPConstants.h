@@ -284,6 +284,8 @@ extern NSString *SPHTMLTableInfoPrintTemplate;
 extern NSString *SPHTMLHelpTemplate;
 extern NSString *SPPreferenceDefaultsFile;
 extern NSString *SPSSHConfigFile;
+extern NSString *SPSSHUsualKnownHostsFile;
+extern NSString *SPSSHDefaultKnownHostsFile;
 
 // SPF file types
 extern NSString *SPFExportSettingsContentType;
@@ -429,6 +431,7 @@ extern NSString *SPFileNameFavoriteTokenName;
 extern NSString *SPFileNameTableTokenName;
 extern NSString *SASecureBookmarks;
 extern NSString *SPStaleSecureBookmarks;
+extern NSString *SPKnownHostsBookmarks;
 extern NSString *SPSecureBookmarksOldFormat;
 extern NSString *SPSecureBookmarksHaveBeenMigrated;
 
@@ -612,6 +615,7 @@ extern NSString *SPQueryWarningEnabledSuppressed;
 extern NSString *SPBundleLegacyAppSchema;
 extern NSString *SPBundleAppSchema;
 extern NSString *SPExportFileHandleError;
+extern NSString *SPSSHConfigContainsUserKnownHostsFile;
 
 extern NSString *SPBundleShellVariableInputFilePath;
 extern NSString *SPBundleShellVariableOutputFilePath;

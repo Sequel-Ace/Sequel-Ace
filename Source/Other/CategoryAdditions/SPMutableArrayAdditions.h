@@ -36,11 +36,14 @@
  * NSMutableArray additions category.
  */
 @interface NSMutableArray (SPMutableArrayAdditions)
+
 - (void)reverse;
+- (instancetype _Nullable )unique;
 - (nullable id)safeObjectAtIndex:(NSUInteger)idx;
 - (void)safeAddObject:(nullable id)obj;
 - (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject;
 - (void)safeRemoveObjectAtIndex:(NSUInteger)index;
+- (void)addObjectIfNotContains:(id _Nonnull)obj;
 - (void)safeSetArray:(NSArray* _Nonnull)arr;
 
 @end

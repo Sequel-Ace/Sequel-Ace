@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -1785,11 +1785,11 @@ DQ
             </subviews>
             <point key="canvasLocation" x="139" y="276.5"/>
         </customView>
-        <window title="Error Detail" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="5431" userLabel="Error Detail HUD" customClass="NSPanel">
+        <window title="Error Detail" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hidesOnDeactivate="YES" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="5431" userLabel="Error Detail HUD" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" HUD="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="439" y="291" width="580" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
             <value key="minSize" type="size" width="100" height="100"/>
             <view key="contentView" id="5432">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
@@ -1799,9 +1799,9 @@ DQ
                         <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Qd-RL-aJ4">
                             <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
-                            <autoresizingMask key="autoresizingMask"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView editable="NO" drawsBackground="NO" importsGraphics="NO" verticallyResizable="NO" id="5434" customClass="SPAutosizingTextView" customModule="Sequel_Ace" customModuleProvider="target">
+                                <textView editable="NO" drawsBackground="NO" importsGraphics="NO" richText="NO" verticallyResizable="NO" allowsCharacterPickerTouchBarItem="NO" textCompletion="NO" id="5434" customClass="SPAutosizingTextView" customModule="Sequel_Ace" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" red="0.90196078999999996" green="0.90196078999999996" blue="0.90196078999999996" alpha="1" colorSpace="calibratedRGB"/>
@@ -2581,7 +2581,7 @@ DQ
             <connections>
                 <outlet property="delegate" destination="-2" id="5461"/>
             </connections>
-            <point key="canvasLocation" x="139" y="-345"/>
+            <point key="canvasLocation" x="-51" y="-388"/>
         </window>
         <userDefaultsController representsSharedInstance="YES" id="5455"/>
         <customView id="5576" userLabel="SSH Key Selection Help">
