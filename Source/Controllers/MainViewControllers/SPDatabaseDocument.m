@@ -223,8 +223,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         spfDocData = [[NSMutableDictionary alloc] init];
         runningActivitiesArray = [[NSMutableArray alloc] init];
 
-        titleAccessoryView = nil;
-
         taskProgressWindow = nil;
         taskDisplayIsIndeterminate = YES;
         taskDisplayLastValue = 0;
@@ -329,8 +327,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [taskProgressWindow setBackgroundColor:[NSColor clearColor]];
     [taskProgressWindow setAlphaValue:0.0f];
     [taskProgressWindow setContentView:taskProgressLayer];
-
-    [self updateTitlebarStatusVisibilityForcingHide:NO];
 
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
@@ -3624,53 +3620,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [titleImageView setImage:nil];
 }
 
-/**
- * Update the title bar status area visibility.  The status area is visible if the tab is
- * frontmost in the window, and if the window is not fullscreen.
- */
-- (void)updateTitlebarStatusVisibilityForcingHide:(BOOL)forceHide
-{
-    BOOL newIsVisible = !forceHide;
-    if (newIsVisible && [[self.parentWindowController window] styleMask] & NSWindowStyleMaskFullScreen) newIsVisible = NO;
-    if (newIsVisible && [self.parentWindowController selectedTableDocument] != self) newIsVisible = NO;
-    if (newIsVisible == windowTitleStatusViewIsVisible) return;
-
-    if (newIsVisible) {
-        Class controllerClass;
-        if ((controllerClass = NSClassFromString(@"NSTitlebarAccessoryViewController"))) { // OS X 10.11 and later
-            [titleAccessoryView setFrame:NSMakeRect(0, 0, titleAccessoryView.frame.size.width, 120)]; // make it really tall, so that it's on the top right of the title/toolbar area, instead of the bottom right (AppKit will not prevent it from going behind the toolbar)
-
-            NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init];
-            accessoryViewController.view = titleAccessoryView;
-            accessoryViewController.layoutAttribute = NSLayoutAttributeRight;
-            [[self.parentWindowController window] addTitlebarAccessoryViewController:accessoryViewController];
-        } else {
-            NSView *windowFrame = [[[self.parentWindowController window] contentView] superview];
-            NSRect av = [titleAccessoryView frame];
-            NSRect initialAccessoryViewFrame = NSMakeRect(
-                                                          [windowFrame frame].size.width - av.size.width - 30,
-                                                          [windowFrame frame].size.height - av.size.height,
-                                                          av.size.width,
-                                                          av.size.height
-                                                          );
-            [titleAccessoryView setFrame:initialAccessoryViewFrame];
-            [windowFrame addSubview:titleAccessoryView];
-        }
-    } else {
-        if (NSClassFromString(@"NSTitlebarAccessoryViewController")) { // OS X 10.11 and later
-            [[self.parentWindowController window].titlebarAccessoryViewControllers enumerateObjectsUsingBlock:^(__kindof NSTitlebarAccessoryViewController * _Nonnull accessoryViewController, NSUInteger idx, BOOL * _Nonnull stop) {
-                if (accessoryViewController.view == titleAccessoryView) {
-                    [[self.parentWindowController window] removeTitlebarAccessoryViewControllerAtIndex:idx];
-                }
-            }];
-        } else {
-            [titleAccessoryView removeFromSuperview];
-        }
-    }
-
-    windowTitleStatusViewIsVisible = newIsVisible;
-}
-
 #pragma mark -
 #pragma mark Toolbar Methods
 
@@ -4081,10 +4030,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * window, but is being switched away from, to allow cleaning up
  * details in the window.
  */
-- (void)willResignActiveTabInWindow
-{
-    [self updateTitlebarStatusVisibilityForcingHide:YES];
-
+- (void)willResignActiveTabInWindow {
     // Remove the task progress window
     [[self.parentWindowController window] removeChildWindow:taskProgressWindow];
     [taskProgressWindow orderOut:self];
@@ -4104,8 +4050,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Update the window's title and represented document
     [self updateWindowTitle:self];
     [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
-
-    [self updateTitlebarStatusVisibilityForcingHide:NO];
 
     // Add the progress window to this window
     [self centerTaskWindow];

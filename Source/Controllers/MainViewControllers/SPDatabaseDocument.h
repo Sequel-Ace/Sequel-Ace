@@ -95,7 +95,6 @@
 
 	IBOutlet NSView *parentView;
 	
-	IBOutlet NSView *titleAccessoryView;
 	IBOutlet id titleImageView;
 	IBOutlet id titleStringView;
 	
@@ -409,7 +408,6 @@
 - (void)setStatusIconToImageWithName:(NSString *)imagePath;
 - (void)setTitlebarStatus:(NSString *)status;
 - (void)clearStatusIcon;
-- (void)updateTitlebarStatusVisibilityForcingHide:(BOOL)forceHide;
 
 // Toolbar methods
 - (void)updateWindowTitle:(id)sender;
