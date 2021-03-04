@@ -95,3 +95,9 @@ static inline __attribute__((always_inline)) BOOL IsEmpty(id thing) {
             ([thing respondsToSelector:@selector(length)] && [(NSData *)thing length] == 0) ||
             ([thing respondsToSelector:@selector(count)]  && [(NSArray *)thing count] == 0);
 }
+
+static inline __attribute__((always_inline)) BOOL IsLocalFilePath(NSString *path) {
+    NSString *fullpath = path.stringByExpandingTildeInPath;
+    return [fullpath hasPrefix:@"/"] || [fullpath hasPrefix:@"file:/"];
+
+}

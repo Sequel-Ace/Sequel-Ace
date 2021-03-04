@@ -15,11 +15,15 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 @property (readwrite, copy) NSString *title;
+@property (readwrite, copy) NSString *prefsKey;
+@property (readwrite, strong) NSPopUpButton *chooser;
 @property (readwrite, assign) BOOL canChooseFiles;
+@property (readwrite, assign) BOOL isForKnownHostsFile;
 @property (readwrite, assign) BOOL canChooseDirectories;
 @property (readwrite, assign) BOOL allowsMultipleSelection;
 @property (readwrite, assign) BOOL isForStaleBookmark;
 @property (readwrite, assign) NSUInteger index;
+@property (readwrite, assign) NSURLBookmarkCreationOptions bookmarkCreationOptions;
 @property (readwrite, strong, nullable) NSMutableArray<NSString *> *fileNames;
 
 - (NSString *)jsonStringWithPrettyPrint:(BOOL)prettyPrint;

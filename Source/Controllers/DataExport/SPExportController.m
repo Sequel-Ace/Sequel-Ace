@@ -52,6 +52,7 @@
 #import "SPDotExporterProtocol.h"
 #import "SPPDFExporterProtocol.h"
 #import "SPHTMLExporterProtocol.h"
+#import "SPFunctions.h"
 #import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
@@ -657,8 +658,14 @@ set_input:
 
                 SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
 
-                NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+                NSView __block *helpView;
 
+                SPMainQSync(^{
+                    // call windowDidLoad to alloc the panes
+                    [[SPAppDelegate preferenceController] window];
+                    helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+                });
+                
                 NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
                                           classStr];
 
@@ -675,7 +682,7 @@ set_input:
             }
             else{
                 // this needs to be read-write
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO] == YES){
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
                     SPLog(@"addBookmarkForUrl success: %@", self->changeExportOutputPathPanel.URL.absoluteString);
                 } else{
                     SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);

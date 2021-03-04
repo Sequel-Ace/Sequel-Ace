@@ -94,6 +94,9 @@ NSString *SPHTMLTableInfoPrintTemplate           = @"SPTableInfoPrintTemplate";
 NSString *SPHTMLHelpTemplate                     = @"SPMySQLHelpTemplate";
 NSString *SPPreferenceDefaultsFile               = @"PreferenceDefaults";
 NSString *SPSSHConfigFile                        = @"ssh_config";
+NSString *SPSSHUsualKnownHostsFile               = @"known_hosts";
+NSString *SPSSHDefaultKnownHostsFile             = @".keys/ssh_known_hosts_strict";
+NSString *SPSSHConfigContainsUserKnownHostsFile  = @"SSHConfigContainsUserKnownHostsFile";
 
 // Folder names
 NSString *SPThemesSupportFolder                  = @"Themes";
@@ -225,6 +228,7 @@ NSString *SPImportClipboardTempFileNamePrefix    = @"~/tmp/_SP_ClipBoard_Import_
 NSString *SPLastExportSettings                   = @"LastExportSettings";
 NSString *SASecureBookmarks                      = @"SPSecureBookmarks"; // MUST be SPSecureBookmarks for var name SASecureBookmarks
 NSString *SPStaleSecureBookmarks                 = @"SPStaleSecureBookmarks";
+NSString *SPKnownHostsBookmarks                  = @"SPKnownHostsBookmarks";
 NSString *SPSecureBookmarksOldFormat             = @"SPSecureBookmarksOldFormat";
 NSString *SPSecureBookmarksHaveBeenMigrated      = @"SPSecureBookmarksHaveBeenMigrated";
 // Export filename tokens

@@ -36,6 +36,11 @@
 #import "SPTestingUtils.h"
 #import "SPFunctions.h"
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <assert.h>
+
 #import <XCTest/XCTest.h>
 
 @interface SPStringAdditionsTests : XCTestCase
@@ -688,7 +693,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     NSString *str = @"SELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\n";
     NSArray *expectedArray = @[@"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000"];
 
-    NSArray *arr = [str separatedIntoLinesObjc];
+    NSArray *arr = [str separatedIntoLinesObjC];
 
     XCTAssertEqualObjects(expectedArray, arr);
 
@@ -973,6 +978,31 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 		XCTAssertEqualObjects([@"ab\r\ncd" stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:nil], @"abcd", @"testing replacement with nil");
 	}
 }
+
+- (void)testStringByExpandingTildeAsIfNotInSandboxObjC{
+
+    // for GitHub tests
+    struct passwd *pw = getpwuid(getuid());
+    assert(pw);
+    NSString *homeDir = [NSString stringWithUTF8String:pw->pw_dir];
+
+    NSString *str = @"~/.ssh";
+    NSString *expectedStr = [NSString stringWithFormat:@"%@/.ssh", homeDir];
+
+    str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+
+    // not in sandbox so:
+    XCTAssertEqualObjects(str, expectedStr);
+
+    str = @"~/.ssh/known_hosts";
+    expectedStr = [NSString stringWithFormat:@"%@/.ssh/known_hosts", homeDir];
+
+    str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+
+    XCTAssertEqualObjects(str, expectedStr);
+    
+}
+
 
 @end
 

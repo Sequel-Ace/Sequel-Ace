@@ -57,7 +57,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
 {	
 	SPDatabaseDocument *dbDocument;
-	SPSSHTunnel *sshTunnel;
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
@@ -124,8 +123,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSTextField *connectionInstructionsTextField;
 	IBOutlet SPFavoritesOutlineView *favoritesOutlineView;
 
-	IBOutlet NSWindow *errorDetailWindow;
-	IBOutlet NSTextView *errorDetailText;
 
 	IBOutlet NSView *connectionResizeContainer;
 	IBOutlet NSView *standardConnectionFormContainer;
@@ -172,9 +169,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSButton *testConnectButton;
 	IBOutlet NSButton *helpButton;
 	IBOutlet NSButton *saveFavoriteButton;
-	IBOutlet NSProgressIndicator *progressIndicator;
-	IBOutlet NSTextField *progressIndicatorText;
-    IBOutlet NSMenuItem *favoritesSortByMenuItem;
+	IBOutlet NSMenuItem *favoritesSortByMenuItem;
 	IBOutlet NSView *exportPanelAccessoryView;
 	IBOutlet NSView *editButtonsView;
 	
@@ -195,6 +190,14 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSDictionary *currentFavorite;
 	SPFavoritesController *favoritesController;
 	SPFavoritesSortItem currentSortItem;
+
+    @package
+    SPSSHTunnel *sshTunnel;
+    IBOutlet NSWindow *errorDetailWindow;
+    IBOutlet NSTextView *errorDetailText;
+    IBOutlet NSProgressIndicator *progressIndicator;
+    IBOutlet NSTextField *progressIndicatorText;
+
 }
 
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol, NSObject> delegate;

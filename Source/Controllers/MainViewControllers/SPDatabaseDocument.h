@@ -403,6 +403,7 @@
 - (IBAction)importFromClipboard:(id)sender;
 - (IBAction)addConnectionToFavorites:(id)sender;
 - (BOOL)isCustomQuerySelected;
+- (IBAction)showConnectionDebugMessages:(id)sender;
 
 // Titlebar methods
 - (void)setStatusIconToImageWithName:(NSString *)imagePath;

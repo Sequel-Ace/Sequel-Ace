@@ -988,6 +988,13 @@ CQ
                                     <action selector="visitFAQWebsite:" target="213" id="939"/>
                                 </connections>
                             </menuItem>
+                            <menuItem isSeparatorItem="YES" hidden="YES" id="ZLx-5a-0BY"/>
+                            <menuItem title="SSH Tunnel Debugging Info" hidden="YES" enabled="NO" id="Nzm-iu-YJV">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="showConnectionDebugMessages:" target="-1" id="PAE-lH-krZ"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="1048"/>
                             <menuItem title="Keyboard Shortcuts" id="1047">
                                 <modifierMask key="keyEquivalentModifierMask"/>
@@ -1008,6 +1015,9 @@ CQ
                                 </connections>
                             </menuItem>
                         </items>
+                        <connections>
+                            <outlet property="delegate" destination="103" id="uyy-MC-UPd"/>
+                        </connections>
                     </menu>
                 </menuItem>
             </items>
