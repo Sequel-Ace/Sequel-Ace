@@ -34,16 +34,14 @@
 @class SPDatabaseDocument;
 @protocol SPWindowControllerDelegate;
 
-@interface SPWindowController : NSWindowController <NSWindowDelegate>
+@interface SPWindowController : NSWindowController
 {
 	NSClipView *titleBarLineHidingView;
 
-	NSMenuItem *closeWindowMenuItem;
-	NSMenuItem *closeTabMenuItem;
-
 	NSMutableArray *managedDatabaseConnections;
 }
-
+@property (nonatomic, strong) NSMenuItem *closeWindowMenuItem;
+@property (nonatomic, strong) NSMenuItem *closeTabMenuItem;
 @property (nonatomic, weak) id<SPWindowControllerDelegate> delegate;
 @property (nonatomic, strong) IBOutlet NSTabView *tabView;
 @property (nonatomic, strong) IBOutlet PSMTabBarControl *tabBarControl;
