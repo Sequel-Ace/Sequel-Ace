@@ -9,7 +9,7 @@
 
 ### A Quick Introduction To App Sandbox
 
-[App Sandbox](https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AboutAppSandbox/AboutAppSandbox.html#//apple_ref/doc/uid/TP40011183-CH1-SW1) is an access control technology provided in macOS, enforced at the kernel level. It is designed to contain damage to the system and the user’s data if an app becomes compromised. Apps distributed through the Mac App Store must adopt App Sandbox.
+[App Sandbox](https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AboutAppSandbox/AboutAppSandbox.html#//apple_ref/doc/uid/TP40011183-CH1-SW1) is an access control technology provided in macOS, enforced at the kernel level. It is designed to contain damage to the system and the user's data if an app becomes compromised. Apps distributed through the Mac App Store must adopt App Sandbox.
 
 Sequel Ace is distributed through the Mac App Store, therefore Sequel Ace adopts App Sandbox for your safety and peace of mind.
 
@@ -68,4 +68,5 @@ If you don't Sequel Ace will not be able to read the stale files.
 ***
 
 [^fn-entitlements]: You can check these yourself by opening [Terminal](https://en.wikipedia.org/wiki/Terminal_(macOS)) and running: `codesign -d --entitlements :- /Applications/Sequel\ Ace.app/`.
+
 [^fn-stale-reasons]: There could be other reasons. Bookmarks are [complex](https://michaellynn.github.io/2015/10/24/apples-bookmarkdata-exposed/).
