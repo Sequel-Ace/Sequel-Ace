@@ -403,6 +403,12 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 {
 	SPExportType selectedExportType = SPAnyExportType;
 	SPExportSource selectedExportSource = SPTableExport;
+
+    // if they are exporting and haven't selected a table
+    // loadTableValues will fail, so select the last table
+    if([tablesListInstance selectedTableItems].count == 0){
+        [tablesListInstance selectTableAtIndex:@(tablesListInstance.tables.count-1)];
+    }
 	
 	NSArray *selectedTables = [tablesListInstance selectedTableItems];
 	
