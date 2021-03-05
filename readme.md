@@ -34,7 +34,7 @@ To run Sequel Ace locally from XCode, please:
 - download `.zip` archive of this repo / clone locally
 - open `sequel-ace.xcworkspace` and run `Sequel Ace Local Testing` schema
 
-If you encounter any issue, let us know by creating a new Issue.
+If you encounter any issue, let us know by [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose).
 
 ## Contributing
 
