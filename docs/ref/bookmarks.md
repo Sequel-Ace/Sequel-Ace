@@ -39,7 +39,7 @@ In plain English, to prevent Sequel Ace from having to re-request access to file
 
 __In short: with the app-scoped bookmark, Sequel Ace can obtain future access to the file/folder without bothering the user again.__
 
-Note: we provide a mechanism for a user to revoke access to a file/folder in __Preferences->Files__. You can also see all the files that have a security-scoped bookmark on the same screen:
+Note: we provide a mechanism for a user to revoke access to a file/folder in _Preferences_ » _Files_. You can also see all the files that have a security-scoped bookmark on the same screen:
 
 ![File Preferences](../images/file-prefs.png)
 
@@ -59,7 +59,7 @@ If Sequel Ace detects stale bookmarks, you will see this warning when the app st
 
 ![Stale Bookmark Warning](../images/stale-bookmarks.png)
 
-If you want to allow Sequel Ace to access the stale locations, you need to click "Yes" and double-click the red items in the __Preferences->Files__ pane:
+If you want to allow Sequel Ace to access the stale locations, you need to click "Yes" and double-click the red items in the _Preferences_ » _Files_ pane:
 
 ![Stale Bookmark Warning](../images/stale-file-prefs.png)
 
