@@ -19,7 +19,7 @@ If you are not sure if the MySQL server is running, open _Activity Viewer_ (from
 
 #### Connecting via a socket connection
 
-Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`):
+Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`):
 ```
 [mysqld]
 socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
