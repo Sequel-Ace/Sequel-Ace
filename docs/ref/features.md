@@ -27,7 +27,7 @@ To create an _enum_ field follow the same procedure as you would for any other f
 
 The connections strings are stored in the following preference file:
 
-~/Library/Preferences/com.sequelpro.SequelPro.plist
+~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Preferences/com.sequel-ace.sequel-ace.plist
 
 The passwords are stored in the Mac OSX Keychain, which is stored here:
 
@@ -35,7 +35,7 @@ The passwords are stored in the Mac OSX Keychain, which is stored here:
 
 Find more info about the Keychain here: [http://nevali.net/post/122592107/managing-the-mac-os-x-keychain](http://nevali.net/post/122592107/managing-the-mac-os-x-keychain "http://nevali.net/post/122592107/managing-the-mac-os-x-keychain").
 
-The ~/Library folder is invisible in Lion, to open it choose "Go To Folder…" (`⌘ + ⇧ + G`) and type "~/Library/Preferences/" to open the preference folder.
+The \~/Library folder is invisible in Lion, to open it choose "Go To Folder…" (`⌘ + ⇧ + G`) and type "~/Library/Preferences/" to open the preference folder.
 
 <!--
 ## Articles
