@@ -1119,6 +1119,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
                       value:[fontAtt objectForKey:NSFontAttributeName]
                       range:NSMakeRange(0, tmpStr.length)];
 
+    // Register the wrap for undo
+    [self shouldChangeTextInRange:currentRange replacementString:[tmpStr string]];
+
     // Replace the current selection with the selected string wrapped in prefix and suffix
     [self.textStorage deleteCharactersInRange:currentRange];
 
@@ -1133,6 +1136,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// If autopair is enabled mark last autopair character as autopair-linked
 	if([prefs boolForKey:SPCustomQueryAutoPairCharacters])
 		[[self textStorage] addAttribute:kAPlinked value:kAPval range:NSMakeRange(NSMaxRange(innerSelectionRange), 1)];
+
+    [self didChangeText];
 
 	return YES;
 }
