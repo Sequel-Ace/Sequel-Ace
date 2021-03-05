@@ -35,7 +35,7 @@ The passwords are stored in the Mac OSX Keychain, which is stored here:
 
 Find more info about the Keychain here: [http://nevali.net/post/122592107/managing-the-mac-os-x-keychain](http://nevali.net/post/122592107/managing-the-mac-os-x-keychain "http://nevali.net/post/122592107/managing-the-mac-os-x-keychain").
 
-The ~/Library folder is invisible in Lion, to open it choose "Go To Folder…" (`⌘ + ⇧ + G`) and type "~/Library/Preferences/" to open the preference folder.
+The \~/Library folder is invisible in Lion, to open it choose "Go To Folder…" (`⌘ + ⇧ + G`) and type "~/Library/Preferences/" to open the preference folder.
 
 <!--
 ## Articles
