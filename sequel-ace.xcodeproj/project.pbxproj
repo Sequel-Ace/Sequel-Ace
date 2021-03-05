@@ -115,6 +115,7 @@
 		1A2711E82539E2BB0066ED58 /* local-connection.html in Resources */ = {isa = PBXBuildFile; fileRef = 1A2711E72539E2BB0066ED58 /* local-connection.html */; };
 		1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55025939B6400616E7E /* SPArrayAdditions.m */; };
 		1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2DD55925939BEE00616E7E /* SPTestingUtils.m */; };
+		1A31FE3925F2132F000DD1D1 /* SPTaskAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A31FE3525F2132F000DD1D1 /* SPTaskAdditions.m */; };
 		1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */; };
 		1A445DAA25BACBE5004E9A77 /* naughty_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1A445DA925BACBE5004E9A77 /* naughty_strings.txt */; };
@@ -782,6 +783,7 @@
 		1A2DD55025939B6400616E7E /* SPArrayAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPArrayAdditions.m; sourceTree = "<group>"; };
 		1A2DD55925939BEE00616E7E /* SPTestingUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPTestingUtils.m; sourceTree = "<group>"; };
 		1A2DD55F25939C1500616E7E /* SPTestingUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTestingUtils.h; sourceTree = "<group>"; };
+		1A31FE3525F2132F000DD1D1 /* SPTaskAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTaskAdditions.m; sourceTree = "<group>"; };
 		1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneralSwiftTests.swift; sourceTree = "<group>"; };
 		1A445DA925BACBE5004E9A77 /* naughty_strings.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = naughty_strings.txt; sourceTree = "<group>"; };
 		1A479B15254375BD00D29E6E /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
@@ -2577,6 +2579,7 @@
 				1AF0DA7D259F5D3100961974 /* SPPointerArrayAdditions.h */,
 				1AF0DA7E259F5D8C00961974 /* SPPointerArrayAdditions.m */,
 				1A11E51525A36C62001CB721 /* HyperlinkTextField.swift */,
+				1A31FE3525F2132F000DD1D1 /* SPTaskAdditions.m */,
 				1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */,
 			);
 			name = "Category Additions";
@@ -3153,6 +3156,7 @@
 				4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */,
 				584192A1101E57BB0089807F /* NSMutableArray-MultipleSort.m in Sources */,
 				589235321020C1230011DE00 /* SPHistoryController.m in Sources */,
+				1A31FE3925F2132F000DD1D1 /* SPTaskAdditions.m in Sources */,
 				BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */,
 				58DA8863103E15B5000B98DF /* SPLogger.m in Sources */,
 				BC01BCCF104024BE006BDEE7 /* SPEncodingPopupAccessory.m in Sources */,
