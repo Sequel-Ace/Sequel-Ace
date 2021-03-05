@@ -66,7 +66,7 @@ If you want to insert a query favorite without using the mouse you have the chan
 -   type e.g. **sel** into the **Tab Trigger** field
 -   save
 
-After doing this type in the Custom Query Editor sel and press the tab ⇥ key. sel will be replaced by the query favorite SELECT FROM WHERE. A valid tab trigger can contain any alphanumeric character but no space or other punctuation signs for instance.
+After doing this type in the Custom Query Editor sel and press the tab `⇥` key. sel will be replaced by the query favorite SELECT FROM WHERE. A valid tab trigger can contain any alphanumeric character but no space or other punctuation signs for instance.
 
 ----------
 
@@ -93,7 +93,7 @@ A mirrored tab snippet is not allowed inside of a `${x:}` tab snippet and causes
 
 ##### Nested Tab Snippets
 
-By means of tab snippets you can generalize the query favorite SELECT FROM WHEREdue to the fact that the WHERE clause is optional. This can be achieved by using nested tab snippets. You can change the query favorite into:
+By means of tab snippets you can generalize the query favorite SELECT FROM WHERE due to the fact that the WHERE clause is optional. This can be achieved by using nested tab snippets. You can change the query favorite into:
 
 ```sql
 SELECT ${0:field} FROM ${2:${1:table} WHERE }
@@ -123,9 +123,9 @@ It could be the case that you want use the query favorite mostly for a set of fi
 SELECT ${0:} FROM ${1:¦table01¦table02¦table03¦} WHERE
 ```
 
-After insertion of that query favorite and selecting the second tab snippet a narrow-down completion list window appears thus choose your desired item or start to type to narrow-down the list (or press ⌫ to expand the list again).
+After insertion of that query favorite and selecting the second tab snippet a narrow-down completion list window appears thus choose your desired item or start to type to narrow-down the list (or press `⌫` to expand the list again).
 
-> <small><small>_Tip:_ If you use the default list template **¦¦a¦b¦¦** the narrow-down completion list switches to the fuzzy search mode which means that if you have e.g. the list items _reference_ and _ref_base_ you can type simply r_ to narrow-down the list to _ref_base_due to the fuzzy regular expression search strategy .*r.*_.* If you want to switch to the fuzzy search mode coming from the normal list template **¦a¦b¦** simply press ⌃⎋.</small></small>
+> <small><small>_Tip:_ If you use the default list template **¦¦a¦b¦¦** the narrow-down completion list switches to the fuzzy search mode which means that if you have e.g. the list items _reference_ and _ref_base_ you can type simply r_ to narrow-down the list to _ref_base_due to the fuzzy regular expression search strategy .*r.*_.* If you want to switch to the fuzzy search mode coming from the normal list template **¦a¦b¦** simply press `⌃⎋`.</small></small>
 
 ##### Dynamic Default Value Due to Current Selected Table
 
@@ -175,7 +175,7 @@ _Example_ The query favorite:
 `date_field` = '${1:$(date "+%Y-%m-%d" | perl -pe 'chomp')}'
 ```
 
-will execute the shell command **date "+%Y-%m-%d" | perl -pe 'chomp'** and insert e.g. `date_field` = '2010-03-15'. It is recommended to save the shell command as script on the hard disk and invoke it inside $() due to some escaping issues of } etc. The shell script will be executed via /bin/bash -c shell_command. This allows not only to insert the result of such shell commands like **curl** etc. but also to open other applications like **open -a Preview**, or **open sequelpro.com**, or to use an AppleScript to display a list, a dialog etc. **Each shell command** can be **terminated** by the keystroke **⌘.**
+will execute the shell command **date "+%Y-%m-%d" | perl -pe 'chomp'** and insert e.g. `date_field` = '2010-03-15'. It is recommended to save the shell command as script on the hard disk and invoke it inside $() due to some escaping issues of } etc. The shell script will be executed via /bin/bash -c shell_command. This allows not only to insert the result of such shell commands like **curl** etc. but also to open other applications like **open -a Preview**, or **open sequel-ace.com**, or to use an AppleScript to display a list, a dialog etc. **Each shell command** can be **terminated** by the keystroke **`⌘`.**
 
 In addition the following shell variables will passed:
 
@@ -207,7 +207,7 @@ The example SELECT ${0:$SP_SELECTED_TABLE.} FROM ${1:$SP_SELECTED_TABLE} WHERE t
 
 SELECT $1.${2:} FROM ${1:¦$SP_ASLIST_ALL_TABLES¦} WHERE $1.${3:} = ${4:value} AND $1.$2 =
 
-Each instance of $1 will be replaced by the current content of ${1:} which is still changeable, after choosing a table from the list you press the tab ⇥ key to move the insertion point to ${2:} where you can press ⎋ to open the completion list which will come up with all field names of the chosen table, and so on.
+Each instance of $1 will be replaced by the current content of ${1:} which is still changeable, after choosing a table from the list you press the tab `⇥` key to move the insertion point to ${2:} where you can press `⎋` to open the completion list which will come up with all field names of the chosen table, and so on.
 
 #### EXAMPLES
 
