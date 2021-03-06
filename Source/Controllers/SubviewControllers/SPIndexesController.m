@@ -186,7 +186,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// Build an array of all indexed column names
 	for (NSDictionary *index in indexes)
 	{
-		[indexedFieldNames addObject:[index objectForKey:@"Column_name"]];
+		[indexedFieldNames safeAddObject:[index objectForKey:@"Column_name"]];
 	}
 	
 	NSDictionary *initialField = nil;
