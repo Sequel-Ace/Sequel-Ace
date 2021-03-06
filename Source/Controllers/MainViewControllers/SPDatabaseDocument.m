@@ -420,17 +420,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Check if skip-show-database is set to ON
     SPMySQLResult *result = [mySQLConnection queryString:@"SHOW VARIABLES LIKE 'skip_show_database'"];
     [result setReturnDataAsStrings:YES];
-    if(![mySQLConnection queryErrored]) {
-        if ([result numberOfRows] == 1) {
-            NSString *skip_show_database = [[result getRowAsDictionary] objectForKey:@"Value"];
-            if ([skip_show_database caseInsensitiveCompare:@"on"] == NSOrderedSame) {
-                NSAlert *alert = [[NSAlert alloc] init];
-                [alert setAlertStyle:NSAlertStyleWarning];
-                [alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-                [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.", @"Warning message during connection in case the variable skip-show-database is set to ON")]];
-                [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-                [alert runModal];
-            }
+    if(![mySQLConnection queryErrored] && [result numberOfRows] == 1) {
+        NSString *skip_show_database = [[result getRowAsDictionary] objectForKey:@"Value"];
+        if ([skip_show_database caseInsensitiveCompare:@"on"] == NSOrderedSame) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:NSLocalizedString(@"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.", @"Warning message during connection in case the variable skip-show-database is set to ON") callback:nil];
         }
     }
 
