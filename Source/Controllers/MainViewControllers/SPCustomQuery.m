@@ -107,6 +107,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)historyItemsHaveBeenUpdated:(NSNotification *)notification;
 - (void)helpWindowClosedByUser:(NSNotification *)notification;
 
+@property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
+
 @end
 
 @implementation SPCustomQuery
@@ -114,6 +116,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @synthesize runAllButton;
 @synthesize textViewWasChanged;
 @synthesize bracketHighlighter;
+@synthesize sortCount;
 
 #pragma mark IBAction methods
 
@@ -171,8 +174,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Re-init sort order
     isDesc = NO;
     sortColumn = nil;
-    
-    
+    [sortCount removeAllObjects];
+
     // Retrieve the custom query string and split it into separate SQL queries
     queryParser = [[SPSQLParser alloc] initWithString:[textView string]];
     [queryParser setDelimiterSupport:YES];
@@ -211,6 +214,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Re-init sort order
     isDesc = NO;
     sortColumn = nil;
+    [sortCount removeAllObjects];
     
     
     // If the current selection is a single caret position, run the current query.
@@ -2255,16 +2259,33 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Sets column order as tri-state descending, ascending, no sort, descending, ascending etc. order if the same
     // header is clicked several times
+    // JCS - i dont think this is tri-state - i don't see a no sort option.
+    // so re-wrote this as desc or asc.
     if (sortField && [[tableColumn identifier] integerValue] == [sortField integerValue]) {
         BOOL invert = NO;
         if (modifierFlags & NSEventModifierFlagShift) {
             invert = YES;
         }
-        
-        // this is the same as saying (isDesc && !invert) || (!isDesc && invert)
-        if (isDesc == invert) {
-            isDesc = !isDesc;
+
+        NSNumber *count = [sortCount objectForKey:sortField];
+
+        if(count == nil){
+            count = @(0);
         }
+
+        count = @([count intValue] + 1);
+
+        [sortCount setObject:count forKey:sortField];
+
+        if(((count.integerValue % 2) != 0)){
+            isDesc = (invert == NO) ? YES : NO;
+            SPLog(@"it's odd, set to desc, unless modifier key pressed. isDesc = %hhd", isDesc);
+        }
+        else{
+            isDesc = (invert == NO) ? NO : YES;
+            SPLog(@"it's even, set to asc, unless modifier key pressed. isDesc = %hhd", isDesc);
+        }
+
     } else {
         // When the column is not sorted, allow to sort in reverse order using Shift+click
         if (modifierFlags & NSEventModifierFlagShift) {
@@ -3265,6 +3286,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         tableRowsSelectable = YES;
         selectionIndexToRestore = nil;
         selectionViewportToRestore = NSZeroRect;
+
+        sortCount = [[NSMutableDictionary alloc] init];
         
         // init tableView's data source
         resultData = [[SPDataStorage alloc] init];
