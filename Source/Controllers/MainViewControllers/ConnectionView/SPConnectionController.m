@@ -929,7 +929,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	// Store the selected favorite ID for use with the document on connection
-	if ([fav objectForKey:SPFavoriteIDKey]) [self setConnectionKeychainID:[[fav objectForKey:SPFavoriteIDKey] stringValue]];
+    if ([fav objectForKey:SPFavoriteIDKey]){
+        id obj = [fav safeObjectForKey:SPFavoriteIDKey];
+        if([obj respondsToSelector:@selector(stringValue)]){
+            [self setConnectionKeychainID:[obj stringValue]];
+        }
+    }
 
 	// And the same for the SSH password
 	connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
