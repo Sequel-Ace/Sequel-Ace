@@ -35,13 +35,8 @@ extension SPWindowController: NSWindowDelegate {
     /// - Parameter sender: NSWindow instance
     /// - Returns: true or false
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
-        for tabItem in tabView.tabViewItems {
-            guard let document = tabItem.databaseDocument else {
-                continue
-            }
-            if !document.parentTabShouldClose() {
-                return false
-            }
+        if !selectedTableDocument.parentTabShouldClose() {
+            return false
         }
 
         if let appDelegate = NSApp.delegate as? SPAppController, appDelegate.sessionURL() != nil, appDelegate.windowControllers.count == 1 {
@@ -50,12 +45,6 @@ extension SPWindowController: NSWindowDelegate {
         }
         delegate.windowControllerDidClose(self)
         return true
-    }
-
-    public func windowWillClose(_ notification: Notification) {
-        tabView.tabViewItems.forEach {
-            tabView.removeTabViewItem($0)
-        }
     }
 
     public func windowDidBecomeKey(_ notification: Notification) {
@@ -79,11 +68,5 @@ extension SPWindowController: NSWindowDelegate {
         // Update the "Close window" item to show only "Close"
         closeWindowMenuItem.title = NSLocalizedString("Close", comment: "Close menu item")
         closeWindowMenuItem.keyEquivalentModifierMask = .command
-    }
-
-    public func windowDidResize(_ notification: Notification) {
-        tabView.tabViewItems.forEach {
-            $0.databaseDocument?.tabDidResize()
-        }
     }
 }

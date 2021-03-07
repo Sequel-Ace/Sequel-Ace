@@ -650,7 +650,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         // Loop through each defined window in reversed order to reconstruct the last active window
         for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
             // Create a new window controller, and set up a new connection view within it.
-            SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+            SPWindowController *newWindowController = [[SPWindowController alloc] init];
             [self.windowControllers addObject:newWindowController];
             NSWindow *newWindow = [newWindowController window];
 
@@ -713,9 +713,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                     NSBeep();
                 }
             }
-
-            // Select active tab
-            [newWindowController selectTabAtIndex:[[window objectForKey:@"selectedTabIndex"] intValue]];
         }
     }
 
@@ -922,11 +919,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             processDocument = [self frontDocument];
         } else {
             for (SPWindowController *windowController in self.windowControllers) {
-                for (SPDatabaseDocument *doc in [windowController documents]) {
-                    if([doc processID] && [[doc processID] isEqualToString:passedProcessID]) {
-                        processDocument = doc;
-                        goto break_loop;
-                    }
+                if([windowController.selectedTableDocument processID] && [[windowController.selectedTableDocument processID] isEqualToString:passedProcessID]) {
+                    processDocument = windowController.selectedTableDocument;
+                    goto break_loop;
                 }
             }
         break_loop: /* breaking two levels of foreach */;
@@ -1093,11 +1088,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         doc = [self frontDocument];
     else {
         for (SPWindowController *windowController in self.windowControllers) {
-            for(SPDatabaseDocument *d in [windowController documents]) {
-                if ([d processID] && [[d processID] isEqualToString:docUUID]) {
-                    [env addEntriesFromDictionary:[d shellVariables]];
-                    goto break_loop;
-                }
+            if ([windowController.selectedTableDocument processID] && [[windowController.selectedTableDocument processID] isEqualToString:docUUID]) {
+                [env addEntriesFromDictionary:[windowController.selectedTableDocument shellVariables]];
+                goto break_loop;
             }
         }
     break_loop: /* breaking two levels of foreach */;
@@ -1375,23 +1368,20 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // Iterate through each open window
     for (SPWindowController *windowController in self.windowControllers) {
-        // Iterate through each document in the window
-        for (SPDatabaseDocument *doc in [windowController documents]) {
-            // Kill any BASH commands which are currently active
-            for (NSDictionary *cmd in [doc runningActivities]) {
-                NSInteger pid = [[cmd objectForKey:@"pid"] integerValue];
-                NSTask *killTask = [[NSTask alloc] init];
+        // Kill any BASH commands which are currently active
+        for (NSDictionary *cmd in [windowController.selectedTableDocument runningActivities]) {
+            NSInteger pid = [[cmd objectForKey:@"pid"] integerValue];
+            NSTask *killTask = [[NSTask alloc] init];
 
-                [killTask setLaunchPath:@"/bin/sh"];
-                [killTask setArguments:[NSArray arrayWithObjects:@"-c", [NSString stringWithFormat:@"kill -9 -%ld", (long)pid], nil]];
-                [killTask launch];
-                [killTask waitUntilExit];
-            }
+            [killTask setLaunchPath:@"/bin/sh"];
+            [killTask setArguments:[NSArray arrayWithObjects:@"-c", [NSString stringWithFormat:@"kill -9 -%ld", (long)pid], nil]];
+            [killTask launch];
+            [killTask waitUntilExit];
+        }
 
-            // If the connection view is active, mark the favourites for saving
-            if (![doc getConnection]) {
-                shouldSaveFavorites = YES;
-            }
+        // If the connection view is active, mark the favourites for saving
+        if (![windowController.selectedTableDocument getConnection]) {
+            shouldSaveFavorites = YES;
         }
     }
 
@@ -1473,13 +1463,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 {
     NSMutableArray *orderedDocuments = [NSMutableArray array];
 
-    for (NSWindow *aWindow in [self orderedWindows])
-    {
+    for (NSWindow *aWindow in [self orderedWindows]) {
         if ([[aWindow windowController] isMemberOfClass:[SPWindowController class]]) {
-            [orderedDocuments addObjectsFromArray:[[aWindow windowController] documents]];
+            [orderedDocuments addObject:[(SPWindowController *)[aWindow windowController] selectedTableDocument]];
         }
     }
-
     return orderedDocuments;
 }
 
@@ -1545,7 +1533,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
     // Create a new window controller, and set up a new connection view within it.
-    SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
+    SPWindowController *newWindowController = [[SPWindowController alloc] init];
     newWindowController.delegate = self;
     NSWindow *newWindow = [newWindowController window];
 
@@ -1593,7 +1581,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         if ([[self.activeWindowController window] isMiniaturized]) {
             [[self.activeWindowController window] deminiaturize:self];
         }
-        [self.activeWindowController addNewConnection:self];
+        [self.activeWindowController addNewConnection];
     }
 }
 

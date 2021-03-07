@@ -2934,42 +2934,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             for (SPWindowController *windowController in [SPAppDelegate windowControllers]) {
 
                 // First window is always the currently key window
-
-                NSMutableArray *tabs = [NSMutableArray array];
                 NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
-                // Loop through all tabs of a given window
-                NSInteger tabCount = 0;
-                NSInteger selectedTabItem = 0;
-                for (SPDatabaseDocument *doc in [windowController documents]) {
+                // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
+                if (![windowController.selectedTableDocument mySQLVersion]) continue;
 
-                    // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-                    if(![doc mySQLVersion]) continue;
-
-                    NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-                    if([doc isUntitled]) {
-                        // new bundle file name for untitled docs
-                        NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-                        // internal bundle path to store the doc
-                        NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-                        // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-                        [doc saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-                        [doc setIsSavedInBundle:YES];
-                        [tabData setObject:@NO forKey:@"isAbsolutePath"];
-                        [tabData setObject:newName forKey:@"path"];
-                    } else {
-                        // save it to the original location and take the file's spfDocData
-                        [doc saveDocumentWithFilePath:[[doc fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-                        [tabData setObject:@YES forKey:@"isAbsolutePath"];
-                        [tabData setObject:[[doc fileURL] path] forKey:@"path"];
-                    }
-                    [tabs addObject:tabData];
-                    if ([windowController selectedTableDocument] == doc) selectedTabItem = tabCount;
-                    tabCount++;
+                NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
+                if([windowController.selectedTableDocument isUntitled]) {
+                    // new bundle file name for untitled docs
+                    NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
+                    // internal bundle path to store the doc
+                    NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
+                    // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
+                    [windowController.selectedTableDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                    [windowController.selectedTableDocument setIsSavedInBundle:YES];
+                    [tabData setObject:@NO forKey:@"isAbsolutePath"];
+                    [tabData setObject:newName forKey:@"path"];
+                } else {
+                    // save it to the original location and take the file's spfDocData
+                    [windowController.selectedTableDocument saveDocumentWithFilePath:[[windowController.selectedTableDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                    [tabData setObject:@YES forKey:@"isAbsolutePath"];
+                    [tabData setObject:[[windowController.selectedTableDocument fileURL] path] forKey:@"path"];
                 }
-                if (![tabs count]) continue;
-                [win setObject:tabs forKey:@"tabs"];
-                [win setObject:[NSNumber numberWithInteger:selectedTabItem] forKey:@"selectedTabIndex"];
                 [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
                 [windows addObject:win];
             }
@@ -3229,7 +3215,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)openDatabaseInNewTab:(id)sender
 {
     // Add a new tab to the window
-    [self.parentWindowController addNewConnection:self];
+    [self.parentWindowController addNewConnection];
 
     // Get the current state
     NSDictionary *allStateDetails = @{
@@ -3615,16 +3601,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Set the titles
     [parentTabViewItem setLabel:tabTitle];
     [parentTabViewItem setColor:tabColor];
-    [self.parentWindowController updateTabBar];
 
     if ([self.parentWindowController selectedTableDocument] == self) {
         [[self.parentWindowController window] setTitle:windowTitle];
-    }
-
-    // If the sender wasn't the window controller, update other tabs in this window
-    // for shared pathname updates
-    if ([sender class] != [SPWindowController class]) {
-        [self.parentWindowController updateAllTabTitles:self];
     }
 }
 
@@ -5412,9 +5391,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return [it convertRect:rowrect toView:nil];
 
     }
-
-    // Otherwise position the sheet beneath the tab bar if it's visible
-    rect.origin.y -= [self.parentWindowController.tabBarControl frame].size.height - 1;
 
     return rect;
 }

@@ -30,37 +30,17 @@
 
 @import AppKit;
 
-@class PSMTabBarControl;
 @class SPDatabaseDocument;
 @protocol SPWindowControllerDelegate;
 
 @interface SPWindowController : NSWindowController
-{
-	NSClipView *titleBarLineHidingView;
 
-	NSMutableArray *managedDatabaseConnections;
-}
 @property (nonatomic, strong) NSMenuItem *closeWindowMenuItem;
 @property (nonatomic, strong) NSMenuItem *closeTabMenuItem;
 @property (nonatomic, weak) id<SPWindowControllerDelegate> delegate;
-@property (nonatomic, strong) IBOutlet NSTabView *tabView;
-@property (nonatomic, strong) IBOutlet PSMTabBarControl *tabBarControl;
 @property (readonly, strong) SPDatabaseDocument *selectedTableDocument;
 
-// Database connection management
-- (IBAction)addNewConnection:(id)sender;
-- (IBAction)moveSelectedTabInNewWindow:(id)sender;
-
 - (SPDatabaseDocument *)addNewConnection;
-
-- (void)updateSelectedTableDocument;
-- (void)updateAllTabTitles:(id)sender;
-- (IBAction)closeTab:(id)sender;
-- (IBAction)selectNextDocumentTab:(id)sender;
-- (IBAction)selectPreviousDocumentTab:(id)sender;
-- (NSArray <SPDatabaseDocument *> *)documents;
-- (void)selectTabAtIndex:(NSInteger)index;
-- (void)updateTabBar;
 
 @end
 

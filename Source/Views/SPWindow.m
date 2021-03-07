@@ -101,16 +101,14 @@
 			case '}':
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectNextDocumentTab:)])
-						[[self windowController] selectNextDocumentTab:self];
+                    // TODO: Tabs switching
 					return;
 				}
 				break;
 			case '{':
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectPreviousDocumentTab:)])
-						[[self windowController] selectPreviousDocumentTab:self];
+					// TODO: Tabs switching
 					return;
 				}
 				break;
@@ -119,16 +117,14 @@
 			case NSRightArrowFunctionKey:
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectNextDocumentTab:)])
-						[[self windowController] selectNextDocumentTab:self];
+                    // TODO: Tabs switching
 					return;
 				}
 				break;
 			case NSLeftArrowFunctionKey:
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectPreviousDocumentTab:)])
-						[[self windowController] selectPreviousDocumentTab:self];
+                    // TODO: Tabs switching
 					return;
 				}
 				break;

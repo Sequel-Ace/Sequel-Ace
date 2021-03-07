@@ -291,7 +291,6 @@
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
-		51BC150E25BE1EB100F1CDC9 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
@@ -922,7 +921,6 @@
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
-		51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PrintAccessory.xib; sourceTree = "<group>"; };
@@ -2107,7 +2105,6 @@
 				51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */,
 				51CD0BC4258D06D7009E2484 /* IndexesView.xib */,
 				51CD0BCA258D06D8009E2484 /* MainMenu.xib */,
-				51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */,
 				51CD0BC7258D06D8009E2484 /* Navigator.xib */,
 				51CD0BC0258D06D7009E2484 /* Preferences.xib */,
 				51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */,
@@ -2943,7 +2940,6 @@
 				5135160425935699001E4533 /* TabNewMetalRollover.png in Resources */,
 				51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */,
 				582E9487168380D6003459FD /* sync_arrows_05.png in Resources */,
-				51BC150E25BE1EB100F1CDC9 /* MainWindow.xib in Resources */,
 				5135161425935699001E4533 /* AquaTabCloseDirty_Front.png in Resources */,
 				582E9488168380D6003459FD /* sync_arrows_06.png in Resources */,
 				5135160225935699001E4533 /* SequelProTabDirty_Pressed@2x.png in Resources */,
