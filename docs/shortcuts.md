@@ -27,7 +27,7 @@ Get the most out of Sequel Ace by remembering the following keyboard shortcuts.
 | Keyboard shortcut | Description                                |
 | :---------------- | :----------------------------------------- |
 | `⌘ N`             | New Window (Connection File)               |
-| `⌘ T`             | New Tab(Connection File)                   |
+| `⌘ T`             | New Tab (Connection File)                  |
 | `⇧ ⌘ A`           | Add Connection To Favorites                |
 | `⌘ O`             | Open (Connection File or SQL File)         |
 | `⌥ ⌘ O`           | Open current Connection File in New Window |

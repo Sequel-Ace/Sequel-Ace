@@ -450,7 +450,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Set the maximum table rows to an estimated count pre-load
 		NSString *rows = [tableDataInstance statusValueForKey:@"Rows"];
-		maxNumRows = (rows && ![rows isNSNull])? [rows integerValue] : 0;
+
+        if(rows && ![rows isNSNull]){
+            if([rows respondsToSelector:@selector(integerValue)] == YES){
+                maxNumRows = [rows integerValue];
+            }
+            else{
+                maxNumRows = 0;
+            }
+        }
+        else{
+            maxNumRows = 0;
+        }
+
 		maxNumRowsIsEstimate = YES;
 	}
 

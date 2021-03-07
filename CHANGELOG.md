@@ -1,3 +1,34 @@
+## [3.2.3]
+
+### Added
+- eb3378d5, No Newer Release Available info alert 
+- caa4103b, kill ssh child processes on crash 
+- baa65392, Edit cells inline or popup 'intelligent' switch 
+- 3b188a8f, GitHub release checker 
+
+### Fixed
+- e6899d3b, Fix windows being created instead of populated 
+- 07e01804, GitHub version checker fixes  
+- b074152d,  saving individual query history
+- 1a8377bf,  some analyzer warnings
+- 53f87c86,  hide the filter for the current session
+- f07244a8,  a couple of crashes
+- 0b0ae9cf, allow insertion of NULL into varchar fields of length < 4  
+- bff9f326,   latest crashes
+- 62491cb9, edit in popup  
+- 22de4acc, Export directory bookmarks 
+- 8163a425,  some crashes
+
+### Changed
+- e4a68c3e, Don't show no new release available alert on startup 
+
+### Removed
+
+
+### Infra
+- cf73d714, faster-stringForByteSize 
+- b967b556, Sqlite error logging 
+
 ## [3.2.2]
 
 ### Added

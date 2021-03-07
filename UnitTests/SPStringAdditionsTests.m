@@ -36,6 +36,11 @@
 #import "SPTestingUtils.h"
 #import "SPFunctions.h"
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <assert.h>
+
 #import <XCTest/XCTest.h>
 
 @interface SPStringAdditionsTests : XCTestCase
@@ -52,19 +57,80 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 @implementation SPStringAdditionsTests
 
-// non static - 0.5s
+
+- (void)teststringForByteSize{
+
+    /*
+     dbSizeHumanReadable = bcf.string(fromByteCount: Int64(1234500000000))
+     Log.debug("dbSize = \(dbSizeHumanReadable)")
+     dbSizeHumanReadable = bcf.string(fromByteCount: Int64(1234500000))
+     Log.debug("dbSize = \(dbSizeHumanReadable)")
+     dbSizeHumanReadable = bcf.string(fromByteCount: Int64(12345000))
+     Log.debug("dbSize = \(dbSizeHumanReadable)")
+     dbSizeHumanReadable = bcf.string(fromByteCount: Int64(1234500))
+     Log.debug("dbSize = \(dbSizeHumanReadable)")
+
+     */
+
+    NSString *tmp = [NSString stringForByteSize:1234500000000];
+    NSLog(@"%@", tmp);
+
+    tmp = [NSString stringForByteSize:1234500000];
+    NSLog(@"%@", tmp);
+
+    tmp = [NSString stringForByteSize:12345000];
+    NSLog(@"%@", tmp);
+
+
+    tmp = [NSString stringForByteSize:1234500];
+    NSLog(@"%@", tmp);
+
+
+    tmp = [NSString stringForByteSize:123450];
+    NSLog(@"%@", tmp);
+
+
+    tmp = [NSString stringForByteSize:12345];
+    NSLog(@"%@", tmp);
+
+
+
+}
+
+// 5.2 s 
 - (void)testPerformance_stringForByteSize {
 	// this is on main thread
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
-		int const iterations = 10000;
+		int const iterations = 100000;
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
 				[NSString stringForByteSize:i];
+//                NSLog(@"%@", [NSString stringForByteSize:i]);
 			}
 		}
 	}];
 }
+
+//1.18 s - about 5x faster. It's used on every table info screen and extended info screen.
+- (void)testPerformance_stringForByteSizeSwift {
+    // this is on main thread
+
+    [self measureBlock:^{
+
+        NSString *tmp = [[NSString alloc] init];
+        // Put the code you want to measure the time of here.
+        int const iterations = 100000;
+        for (int i = 0; i < iterations; i++) {
+            @autoreleasepool {
+//                NSLog(@"%@", [NSByteCountFormatter stringWithByteSize:i]);
+
+                tmp = [NSByteCountFormatter stringWithByteSize:i];
+            }
+        }
+    }];
+}
+
 // obj c static - 0.241s
 - (void)testPerformance_stringForByteSizeObjCStatic {
 	// this is on main thread
@@ -627,7 +693,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     NSString *str = @"SELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\nSELECT * FROM `HKWarningsLog` LIMIT 1000\n";
     NSArray *expectedArray = @[@"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000", @"SELECT * FROM `HKWarningsLog` LIMIT 1000"];
 
-    NSArray *arr = [str separatedIntoLinesObjc];
+    NSArray *arr = [str separatedIntoLinesObjC];
 
     XCTAssertEqualObjects(expectedArray, arr);
 
@@ -912,6 +978,31 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 		XCTAssertEqualObjects([@"ab\r\ncd" stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:nil], @"abcd", @"testing replacement with nil");
 	}
 }
+
+- (void)testStringByExpandingTildeAsIfNotInSandboxObjC{
+
+    // for GitHub tests
+    struct passwd *pw = getpwuid(getuid());
+    assert(pw);
+    NSString *homeDir = [NSString stringWithUTF8String:pw->pw_dir];
+
+    NSString *str = @"~/.ssh";
+    NSString *expectedStr = [NSString stringWithFormat:@"%@/.ssh", homeDir];
+
+    str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+
+    // not in sandbox so:
+    XCTAssertEqualObjects(str, expectedStr);
+
+    str = @"~/.ssh/known_hosts";
+    expectedStr = [NSString stringWithFormat:@"%@/.ssh/known_hosts", homeDir];
+
+    str = str.stringByExpandingTildeAsIfNotInSandboxObjC;
+
+    XCTAssertEqualObjects(str, expectedStr);
+    
+}
+
 
 @end
 

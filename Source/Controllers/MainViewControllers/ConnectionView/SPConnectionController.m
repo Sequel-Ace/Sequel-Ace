@@ -476,7 +476,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
             SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
-            NSView *helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+            NSView __block *helpView;
+
+            SPMainQSync(^{
+                // call windowDidLoad to alloc the panes
+                [[SPAppDelegate preferenceController] window];
+                helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
+            });
 
             NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@", @"error while selecting file message"),
                                       classStr];
@@ -495,7 +501,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         else{
             SPLog(@"calling addBookmarkForUrl");
             // this needs to be read-only to handle keys with 400 perms so we add the bitwise OR NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess
-            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO] == YES){
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->keySelectionPanel.URL options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
                 SPLog(@"addBookmarkForUrl success");
             }
             else{
@@ -923,7 +929,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	// Store the selected favorite ID for use with the document on connection
-	if ([fav objectForKey:SPFavoriteIDKey]) [self setConnectionKeychainID:[[fav objectForKey:SPFavoriteIDKey] stringValue]];
+    if ([fav objectForKey:SPFavoriteIDKey]){
+        id obj = [fav safeObjectForKey:SPFavoriteIDKey];
+        if([obj respondsToSelector:@selector(stringValue)]){
+            [self setConnectionKeychainID:[obj stringValue]];
+        }
+    }
 
 	// And the same for the SSH password
 	connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];

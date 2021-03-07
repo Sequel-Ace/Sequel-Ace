@@ -377,7 +377,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         Log.error("Query failed: \(error.localizedDescription)")
 
         DispatchQueue.background(background: {
-            Analytics.trackEvent("error", withProperties: ["dbError":error.localizedDescription])
+            Analytics.trackEvent("error", withProperties: ["dbError":error.localizedDescription, "sqliteLibVersion" : FMDatabase.sqliteLibVersion()])
         })
     }
 

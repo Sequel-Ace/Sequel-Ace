@@ -98,6 +98,8 @@
         options.canChooseFiles = YES;
         options.canChooseDirectories = YES;
         options.isForStaleBookmark = YES;
+        options.isForKnownHostsFile = NO;
+        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess);
         options.title = NSLocalizedString(@"Please re-select the file '%@' in order to restore Sequel Ace's access.", "Title for Stale Bookmark file selection dialog");
 
         BOOL __block match = NO;
@@ -377,8 +379,10 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     options.canChooseFiles = YES;
     options.canChooseDirectories = YES;
     options.isForStaleBookmark = NO;
+    options.isForKnownHostsFile = NO;
     options.title = NSLocalizedString(@"Please choose a file or folder to grant Sequel Ace access to.", "Please choose a file or folder to grant Sequel Ace access to.");
     options.fileNames = nil;
+    options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess);
 
     SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
     
@@ -501,7 +505,18 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                 // use url from the block, not self->_currentFilePanel.URL
                 // From Apple docs: The NSOpenPanel subclass sets this property to nil
                 // when the selection contains multiple items.
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url options:(NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess) isForStaleBookmark:options.isForStaleBookmark] == YES){
+
+                // try to make known hosts files read-write
+                if([SecureBookmarkManager.sharedInstance.knownHostsBookmarks containsObject:url.absoluteString] == YES){
+                    SPLog(@"this is a known hosts file, set to RW");
+                    options.bookmarkCreationOptions = NSURLBookmarkCreationWithSecurityScope;
+                    options.isForKnownHostsFile = YES;
+                }
+
+                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:url
+                                                                   options:options.bookmarkCreationOptions
+                                                        isForStaleBookmark:options.isForStaleBookmark
+                                                       isForKnownHostsFile:options.isForKnownHostsFile] == YES){
                     SPLog(@"addBookmarkForUrl success");
 
                     if(options.isForStaleBookmark == YES){

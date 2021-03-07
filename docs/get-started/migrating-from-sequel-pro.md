@@ -27,12 +27,12 @@ to
 to
 ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data/Favorites.plist
 
-6. Open up the Keychain Access app ( /System/Applications/Utilities/Keychain\ Access.app )
+6. Open up the Keychain Access app (/System/Applications/Utilities/Keychain\ Access.app)
 
-7. Search for ‘sequel pro’ — this should list all your Sequel Pro connections / favorites. You may also note some SSHTunnel items if you use those in Sequel Pro
+7. Search for 'sequel pro' — this should list all your Sequel Pro connections / favorites. You may also note some SSHTunnel items if you use those in Sequel Pro
 
 *Notes:*
-- Due to the sandbox, all SSH keys must be re-nagivated to and selected in Sequel Ace after migrating connections.
+- Due to the sandbox, all SSH keys must be re-navigated to and selected in Sequel Ace after migrating connections.
 - Additionally, passwords are not migrated as well as they are stored in the Keychain. See the next section for a method to migrate passwords if you have many passwords and do not want to manually re-enter all of them in Sequel Ace.
 
 

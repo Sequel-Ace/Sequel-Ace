@@ -3186,8 +3186,23 @@
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
+/* known hosts not writable error message */
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+
+/* known hosts not writable error title */
+"Known Hosts Error" = "Known Hosts Error";
+
+/* SSH Tunnel Debugging menu and window title */
+"SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
+
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?";
+
+/* Question to user to see if they would like to request access to missing bookmarks */
+"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
+
+/* known hosts advance menu item title */
+"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
 
 /* The answer, yes */
 "Yes" = "Yes";
@@ -3218,6 +3233,9 @@
 
 /* Title for Network Preference ssh config file selection dialog */
 "Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
+
+/* Title for Network Preference ssh known hosts file selection dialog */
+"Please choose your known hosts file" = "Please choose your known hosts file";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "Invalid JSON";
@@ -3272,3 +3290,12 @@
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
+
+/* Error alert title when the request to GitHub fails */
+"GitHub Request Failed" = "GitHub Request Failed";
+
+/* Info alert title when there are Newer Releases Available */
+"No Newer Release Available" = "No Newer Release Available";
+
+/* Info alert message when there are Newer Releases Available */
+"You are currently running the latest release." = "You are currently running the latest release.";

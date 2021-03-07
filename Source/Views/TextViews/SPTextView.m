@@ -1111,9 +1111,23 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	NSString *selString = [[self string] substringWithRange:currentRange];
 
+    NSMutableAttributedString *tmpStr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@%@%@", prefix, selString, suffix]];
+
+    NSDictionary *fontAtt = [self.textStorage fontAttributesInRange:currentRange];
+
+    [tmpStr addAttribute:NSFontAttributeName
+                      value:[fontAtt objectForKey:NSFontAttributeName]
+                      range:NSMakeRange(0, tmpStr.length)];
+
+    // Register the wrap for undo
+    [self shouldChangeTextInRange:currentRange replacementString:[tmpStr string]];
+
     // Replace the current selection with the selected string wrapped in prefix and suffix
     [self.textStorage deleteCharactersInRange:currentRange];
-    [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@%@%@", prefix, selString, suffix]] atIndex:currentRange.location];
+
+    // this insert changes the font to the global default, not the query editor font
+    // hence changing the font above.
+    [self.textStorage insertAttributedString:tmpStr atIndex:currentRange.location];
 
 	// Re-select original selection
 	NSRange innerSelectionRange = NSMakeRange(currentRange.location+1, [selString length]);
@@ -1122,6 +1136,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// If autopair is enabled mark last autopair character as autopair-linked
 	if([prefs boolForKey:SPCustomQueryAutoPairCharacters])
 		[[self textStorage] addAttribute:kAPlinked value:kAPval range:NSMakeRange(NSMaxRange(innerSelectionRange), 1)];
+
+    [self didChangeText];
 
 	return YES;
 }
@@ -3428,7 +3444,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			if(filetype == NSFileTypeRegular && filesize) {
 				// Ask for confirmation if file content is larger than 1MB
 				if ([filesize unsignedLongValue] > 1000000) {
-					NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data? The import can freeze the app for couple of seconds.", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSString stringForByteSize:[filesize longLongValue]]];
+                    NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with %@ of data? The import can freeze the app for couple of seconds.", @"message of panel asking for confirmation for inserting large text from dragging action"), [NSByteCountFormatter stringWithByteSize:[filesize longLongValue]]];
 					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:message primaryButtonTitle:NSLocalizedString(@"OK", @"OK button") primaryButtonHandler:^{
 						[self insertFileContentOfFile:filepath];
 					} cancelButtonHandler:nil];

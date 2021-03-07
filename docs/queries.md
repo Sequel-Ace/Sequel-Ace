@@ -19,8 +19,8 @@ The Query Favourites are a powerful feature that makes it easy to rerun saved qu
 
 #### Tab Trigger
 
-A **tab trigger** is used as keyboard short-cut to insert the corresponding query favorite into the Custom Query Editor. It can contain any alphanumeric character but no spaces or punctuation signs.
+A **tab trigger** is used as keyboard shortcut to insert the corresponding query favorite into the Custom Query Editor. It can contain any alphanumeric character but no spaces or punctuation signs.
 
 #### Tab Snippet
 
-A **tab snippet** represents a insertion point of the cursor within a [query favorite](favorites.html "Query View"). To navigate through defined tab snippets use `⇥` or `⇧⇥`.
+A **tab snippet** represents an insertion point of the cursor within a [query favorite](favorites.html "Query View"). To navigate through defined tab snippets use `⇥` or `⇧⇥`.

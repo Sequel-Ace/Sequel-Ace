@@ -9,7 +9,7 @@
 
 ### A Quick Introduction To App Sandbox
 
-[App Sandbox](https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AboutAppSandbox/AboutAppSandbox.html#//apple_ref/doc/uid/TP40011183-CH1-SW1) is an access control technology provided in macOS, enforced at the kernel level. It is designed to contain damage to the system and the user’s data if an app becomes compromised. Apps distributed through the Mac App Store must adopt App Sandbox.
+[App Sandbox](https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/AboutAppSandbox/AboutAppSandbox.html#//apple_ref/doc/uid/TP40011183-CH1-SW1) is an access control technology provided in macOS, enforced at the kernel level. It is designed to contain damage to the system and the user's data if an app becomes compromised. Apps distributed through the Mac App Store must adopt App Sandbox.
 
 Sequel Ace is distributed through the Mac App Store, therefore Sequel Ace adopts App Sandbox for your safety and peace of mind.
 
@@ -39,7 +39,7 @@ In plain English, to prevent Sequel Ace from having to re-request access to file
 
 __In short: with the app-scoped bookmark, Sequel Ace can obtain future access to the file/folder without bothering the user again.__
 
-Note: we provide a mechanism for a user to revoke access to a file/folder in __Preferences->Files__. You can also see all the files that have a security-scoped bookmark on the same screen:
+Note: we provide a mechanism for a user to revoke access to a file/folder in _Preferences_ » _Files_. You can also see all the files that have a security-scoped bookmark on the same screen:
 
 ![File Preferences](../images/file-prefs.png)
 
@@ -59,7 +59,7 @@ If Sequel Ace detects stale bookmarks, you will see this warning when the app st
 
 ![Stale Bookmark Warning](../images/stale-bookmarks.png)
 
-If you want to allow Sequel Ace to access the stale locations, you need to click "Yes" and double-click the red items in the __Preferences->Files__ pane:
+If you want to allow Sequel Ace to access the stale locations, you need to click "Yes" and double-click the red items in the _Preferences_ » _Files_ pane:
 
 ![Stale Bookmark Warning](../images/stale-file-prefs.png)
 
@@ -68,4 +68,5 @@ If you don't Sequel Ace will not be able to read the stale files.
 ***
 
 [^fn-entitlements]: You can check these yourself by opening [Terminal](https://en.wikipedia.org/wiki/Terminal_(macOS)) and running: `codesign -d --entitlements :- /Applications/Sequel\ Ace.app/`.
+
 [^fn-stale-reasons]: There could be other reasons. Bookmarks are [complex](https://michaellynn.github.io/2015/10/24/apples-bookmarkdata-exposed/).

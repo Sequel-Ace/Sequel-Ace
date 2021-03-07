@@ -9,7 +9,30 @@
 import Foundation
 
 extension String {
-	func dropPrefix(_ prefix: String) -> String {
+
+    subscript(_ range: CountableRange<Int>) -> String {
+        let start = index(startIndex, offsetBy: max(0, range.lowerBound))
+        let end = index(start, offsetBy: min(self.count - range.lowerBound,
+                                             range.upperBound - range.lowerBound))
+        return String(self[start..<end])
+    }
+
+    subscript(_ range: CountablePartialRangeFrom<Int>) -> String {
+        let start = index(startIndex, offsetBy: max(0, range.lowerBound))
+        return String(self[start...])
+    }
+
+    func slice(from: String, to: String) -> String? {
+
+        return (range(of: from)?.upperBound).flatMap { substringFrom in
+            (range(of: to, range: substringFrom..<endIndex)?.lowerBound).map { substringTo in
+                String(self[substringFrom..<substringTo])
+            }
+        }
+    }
+
+
+    func dropPrefix(_ prefix: String) -> String {
 		guard self.hasPrefix(prefix) else {
 			return self
 		}
@@ -98,10 +121,76 @@ extension String {
 		return self != decoded
 		
 	}
+
+    // use new FileManager.userHomeDirectoryPath func
+    var stringByExpandingTildeAsIfNotInSandbox: String {
+        // str will be something like ~/.ssh/known_hosts
+        let path = FileManager.default.userHomeDirectoryPath
+        // fallback on the, er, dodgy method if path is empty
+        if path.isEmpty {
+            return self.stringByExpandingTildeAsIfNotInSandboxBackup
+        }
+        else {
+            return path + self.dropPrefix("~")
+        }
+    }
+
+    
+    // returns the home dir of the user, as if we were not in a sandbox
+    var stringByExpandingTildeAsIfNotInSandboxBackup: String {
+
+        let str = NSString(string: self).expandingTildeInPath as String
+
+        var prefix = "file://"
+        // will be something like
+        // file:///Users/james/Library/Containers/com.sequel-ace.sequel-ace/Data/.ssh/known_hosts
+        // or /Users/james/Library/Containers/com.sequel-ace.sequel-ace/Data/.ssh/known_hosts
+
+        var restOfString = ""
+        var homedir = ""
+        var suffix = ""
+
+        let hasPrefix = str.hasPrefix(prefix)
+
+        if hasPrefix == true {
+            restOfString = String(str.dropFirst(prefix.count))
+        }
+        else {
+            restOfString = str
+            prefix = ""
+        }
+
+        // should now be something like
+        // /Users/james/Library/Containers/com.sequel-ace.sequel-ace/Data/.ssh
+        // users = get string between first two / /
+        // username = get string between second two /Users/ and /Library/
+        // get suffix or last path component
+        guard
+            let users    = restOfString.slice(from: "/", to: "/"),
+            let username = restOfString.slice(from: "/Users/", to: "/Library/")
+        else {
+            return self
+        }
+
+        if let homedirTmp = NSHomeDirectory() as String? {
+            homedir = homedirTmp
+        }
+
+        if let suffixTmp = restOfString.dropPrefix(homedir) as String? {
+            suffix = suffixTmp
+        }
+
+        return prefix + "/" + users + "/" + username + suffix
+    }
 	
 	// the string with new lines and spaces trimmed from BOTH ends
 	var trimmedString: String {
         return self.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    // the string with spaces trimmed from BOTH ends
+    var whitespacesTrimmedString: String {
+        return self.trimmingCharacters(in: .whitespaces)
     }
 }
 
@@ -129,12 +218,24 @@ extension String {
 	public func trimWhitespacesAndNewlines() -> NSString {
 		return (self as String).trimmedString as NSString
 	}
-	
+
+    public func trimWhitespaces() -> NSString {
+        return (self as String).whitespacesTrimmedString as NSString
+    }
+
+    public func stringByExpandingTildeAsIfNotInSandboxObjC() -> NSString {
+        return (self as String).stringByExpandingTildeAsIfNotInSandbox as NSString
+    }
+
+    public func isNumeric() -> Bool {
+        return (self as String).isNumeric
+    }
+
 	public func isPercentEncoded() -> Bool {
 		return (self as String).isPercentEncoded
 	}
 
-    public func separatedIntoLinesObjc() -> [NSString] {
+    public func separatedIntoLinesObjC() -> [NSString] {
         return (self as String).separatedIntoLines() as [NSString]
     }
 
