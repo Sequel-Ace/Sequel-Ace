@@ -11,7 +11,7 @@ import SnapKit
 
 extension SPWindowController {
     @objc func setupAppearance() {
-        // Here should ahppen all UI / layout setups in the future ocne we remove .xib
+        // Here should happen all UI / layout setups in the future once we remove .xib
     }
 
     @objc func setupConstraints() {
