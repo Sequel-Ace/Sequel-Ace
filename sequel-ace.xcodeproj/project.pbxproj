@@ -55,7 +55,6 @@
 		1798F1951550181B004B0AB8 /* SPGroupNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F1941550181B004B0AB8 /* SPGroupNode.m */; };
 		1798F19815501838004B0AB8 /* SPMutableArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F19715501838004B0AB8 /* SPMutableArrayAdditions.m */; };
 		1798F19B1550185B004B0AB8 /* SPTreeNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F19A1550185B004B0AB8 /* SPTreeNode.m */; };
-		1798F19E15501892004B0AB8 /* SPFlippedView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F19D15501892004B0AB8 /* SPFlippedView.m */; };
 		1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F1C2155018D4004B0AB8 /* SPMutableArrayAdditionsTests.m */; };
 		179ECECA11F265FC009C6A40 /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 179ECEC611F265EE009C6A40 /* libbz2.dylib */; };
 		179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */ = {isa = PBXBuildFile; fileRef = 179F15050F7C433C00579954 /* SPEditorTokens.l */; };
@@ -682,8 +681,6 @@
 		1798F19715501838004B0AB8 /* SPMutableArrayAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPMutableArrayAdditions.m; sourceTree = "<group>"; };
 		1798F1991550185B004B0AB8 /* SPTreeNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTreeNode.h; sourceTree = "<group>"; };
 		1798F19A1550185B004B0AB8 /* SPTreeNode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTreeNode.m; sourceTree = "<group>"; };
-		1798F19C15501892004B0AB8 /* SPFlippedView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFlippedView.h; sourceTree = "<group>"; };
-		1798F19D15501892004B0AB8 /* SPFlippedView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFlippedView.m; sourceTree = "<group>"; };
 		1798F1C2155018D4004B0AB8 /* SPMutableArrayAdditionsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPMutableArrayAdditionsTests.m; sourceTree = "<group>"; };
 		179ECEC611F265EE009C6A40 /* libbz2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbz2.dylib; path = usr/lib/libbz2.dylib; sourceTree = SDKROOT; };
 		179F15040F7C433C00579954 /* SPEditorTokens.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPEditorTokens.h; sourceTree = "<group>"; };
@@ -1934,8 +1931,6 @@
 				583CA21412EC8B2200C9E763 /* SPWindow.m */,
 				17E6417E0EF01FA8001BC333 /* SPImageView.h */,
 				17E6417F0EF01FA8001BC333 /* SPImageView.m */,
-				1798F19C15501892004B0AB8 /* SPFlippedView.h */,
-				1798F19D15501892004B0AB8 /* SPFlippedView.m */,
 				58DF9F7115AB8509003B4330 /* SPSplitView.h */,
 				58DF9F7215AB8509003B4330 /* SPSplitView.m */,
 				58C56EF30F438E120035701E /* SPDataCellFormatter.h */,
@@ -3267,7 +3262,6 @@
 				1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */,
 				513515EF2593568B001E4533 /* PSMRolloverButton.m in Sources */,
 				1798F19B1550185B004B0AB8 /* SPTreeNode.m in Sources */,
-				1798F19E15501892004B0AB8 /* SPFlippedView.m in Sources */,
 				17D5B49E1553059F00EF3BB3 /* SPViewCopy.m in Sources */,
 				176E14D115570FE300FAF326 /* SPBundleCommandRunner.m in Sources */,
 				58DF9F3315AB26C2003B4330 /* SPDateAdditions.m in Sources */,
