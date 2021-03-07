@@ -28,7 +28,6 @@
 //
 
 #import "SPAppController.h"
-#import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 
 #import "SPConstants.h"

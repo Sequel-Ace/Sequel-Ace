@@ -36,7 +36,6 @@
 #import "SPAboutController.h"
 #import "SPDataImport.h"
 #import "SPEncodingPopupAccessory.h"
-#import "SPWindowController.h"
 #import "SPPreferencesUpgrade.h"
 #import "SPBundleEditorController.h"
 #import "SPTooltip.h"
@@ -696,10 +695,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                     if(newWindowController) {
 
                         if ([[newWindowController window] isMiniaturized]) [[newWindowController window] deminiaturize:self];
-                        SPDatabaseDocument *newConnection = [newWindowController addNewConnection];
 
-                        [newConnection setIsSavedInBundle:isBundleFile];
-                        if (![newConnection setStateFromConnectionFile:fileName]) {
+                        [newWindowController.selectedTableDocument setIsSavedInBundle:isBundleFile];
+                        if (![newWindowController.selectedTableDocument setStateFromConnectionFile:fileName]) {
                             break;
                         }
                     }
@@ -1548,9 +1546,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [newWindow setFrameUsingName:@"DBView"];
     }
 
-    // Add the connection view
-    [newWindowController addNewConnection];
-
     // Cascade according to the statically stored cascade location.
     cascadeLocation = [newWindow cascadeTopLeftFromPoint:cascadeLocation];
 
@@ -1575,10 +1570,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if (!self.activeWindowController) {
         [self newWindowController];
     } else {
-        if ([[self.activeWindowController window] isMiniaturized]) {
-            [[self.activeWindowController window] deminiaturize:self];
-        }
-        [self.activeWindowController addNewConnection];
+//        if ([[self.activeWindowController window] isMiniaturized]) {
+//            [[self.activeWindowController window] deminiaturize:self];
+//        }
+//        [self.activeWindowController addNewConnection];
     }
 }
 
@@ -1592,12 +1587,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         databaseDocument = [self.activeWindowController selectedTableDocument];
     }
     // Open the spf file in a new tab if the tab bar is visible
-    else {
-        if ([[self.activeWindowController window] isMiniaturized]) {
-            [[self.activeWindowController window] deminiaturize:self];
-        }
-        databaseDocument = [self.activeWindowController addNewConnection];
-    }
+//    else {
+//        if ([[self.activeWindowController window] isMiniaturized]) {
+//            [[self.activeWindowController window] deminiaturize:self];
+//        }
+//        databaseDocument = [self.activeWindowController addNewConnection];
+//    }
     return databaseDocument;
 }
 
@@ -1631,8 +1626,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [[self.activeWindowController window] deminiaturize:self];
     }
 
-    SPDatabaseDocument *newConnection = [self.activeWindowController addNewConnection];
-
     // Get the state of the previously-frontmost document
     NSDictionary *allStateDetails = @{
         @"connection" : @YES,
@@ -1647,8 +1640,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Ensure it's set to autoconnect
     [frontState setObject:@YES forKey:@"auto_connect"];
 
-    // Set the connection on the new tab
-    [newConnection setState:frontState];
+//    SPDatabaseDocument *newConnection = [self.activeWindowController addNewConnection];
+//    // Set the connection on the new tab
+//    [newConnection setState:frontState];
 }
 
 #pragma mark - NSWindowDelegate
@@ -1792,10 +1786,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 #pragma mark - SPWindowControllerDelegate
-
-- (void)windowControllerDidCreateNewWindowController:(SPWindowController *)newWindowController {
-    [self.windowControllers addObject:newWindowController];
-}
 
 - (void)windowControllerDidClose:(SPWindowController *)windowController {
     [self.windowControllers removeObject:windowController];

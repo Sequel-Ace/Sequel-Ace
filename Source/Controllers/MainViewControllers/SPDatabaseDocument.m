@@ -42,7 +42,6 @@
 #import "SPExportController.h"
 #import "SPSplitView.h"
 #import "SPQueryController.h"
-#import "SPWindowController.h"
 #import "SPNavigatorController.h"
 #import "SPSQLParser.h"
 #import "SPTableData.h"
@@ -262,6 +261,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Set collapsible behaviour on the table list so collapsing behaviour handles resize issus
     [contentViewSplitter setCollapsibleSubviewIndex:0];
+    [contentViewSplitter setMaxSize:200.0f ofSubviewAtIndex:0];
 
     // Set a minimum size on both text views on the table info page
     [tableInfoSplitView setMinSize:20 ofSubviewAtIndex:0];
@@ -3215,7 +3215,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)openDatabaseInNewTab:(id)sender
 {
     // Add a new tab to the window
-    [self.parentWindowController addNewConnection];
+//    [self.parentWindowController addNewConnection];
 
     // Get the current state
     NSDictionary *allStateDetails = @{

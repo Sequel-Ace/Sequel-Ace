@@ -46,7 +46,6 @@
 #import "SPThreadAdditions.h"
 #import "SPFavoriteColorSupport.h"
 #import "SPNamedNode.h"
-#import "SPWindowController.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPCategoryAdditions.h"
 #import "SPFavoriteTextFieldCell.h"
