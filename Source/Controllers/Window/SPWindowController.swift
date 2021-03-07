@@ -26,14 +26,13 @@ import SnapKit
             window.collectionBehavior = [window.collectionBehavior, .fullScreenPrimary]
         }
 
-        selectedTableDocument.didBecomeActiveTabInWindow()
-        selectedTableDocument.updateWindowTitle(self)
-
         setupAppearance()
     }
 
     func setupAppearance() {
-        // Here should happen all UI / layout setups in the future once we remove .xib
+        selectedTableDocument.didBecomeActiveTabInWindow()
+        selectedTableDocument.updateWindowTitle(self)
+
         window?.contentView?.addSubview(selectedTableDocument.databaseView())
         selectedTableDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
     }
