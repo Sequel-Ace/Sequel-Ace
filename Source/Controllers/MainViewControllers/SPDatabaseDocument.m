@@ -422,7 +422,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [result setReturnDataAsStrings:YES];
     if(![mySQLConnection queryErrored] && [result numberOfRows] == 1) {
         NSString *skip_show_database = [[result getRowAsDictionary] objectForKey:@"Value"];
-        if ([skip_show_database caseInsensitiveCompare:@"on"] == NSOrderedSame) {
+        if ([skip_show_database.lowercaseString isEqualToString:@"on"]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:NSLocalizedString(@"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.", @"Warning message during connection in case the variable skip-show-database is set to ON") callback:nil];
         }
     }
