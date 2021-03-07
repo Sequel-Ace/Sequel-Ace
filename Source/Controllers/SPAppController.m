@@ -61,7 +61,7 @@
 
 static const double SPDelayBeforeCheckingForNewReleases = 10;
 
-@interface SPAppController () <SPWindowControllerDelegate>
+@interface SPAppController ()
 @property (strong) IBOutlet NSMenu *mainMenu;
 
 - (void)_copyDefaultThemes;
@@ -78,6 +78,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
 @property (nonatomic, strong, readwrite) NSMutableArray <SPWindowController *> *windowControllers;
+
+@property (nonatomic, strong) TabManager *tabManager;
 
 @end
 
@@ -106,6 +108,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         runningActivitiesArray = [[NSMutableArray alloc] init];
         sshProcessIDs = [[NSMutableArray alloc] init];
         fileManager = [NSFileManager defaultManager];
+        _tabManager = [[TabManager alloc] initWithAppController:self];
 
         //Create runtime directiories
         [fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
@@ -285,19 +288,19 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [sharedSPBundleManager reloadBundles:self];
-    [self _copyDefaultThemes];
+    [self _copyDefaultThemes];;
 
     // If no documents are open, open one
     if (![self frontDocument]) {
-        SPDatabaseDocument *newConnection = [self createNewDatabaseDocument];
 
+        SPWindowController *newWindowController = [self.tabManager replaceTabServiceWithInitialWindow];
         if (spfDict) {
-            [newConnection setState:spfDict];
+            [newWindowController.selectedTableDocument setState:spfDict];
         }
 
         // Set autoconnection if appropriate
         if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
-            [newConnection connect];
+            [newWindowController.selectedTableDocument connect];
         }
     }
 }
@@ -347,15 +350,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 }
 
-- (void)externalApplicationWantsToOpenADatabaseConnection:(NSNotification *)notification
-{
+- (void)externalApplicationWantsToOpenADatabaseConnection:(NSNotification *)notification {
     NSDictionary *userInfo = [notification userInfo];
     NSString *MAMP_SPFVersion = [userInfo objectForKey:@"dataVersion"];
     if ([MAMP_SPFVersion isEqualToString:@"1"]) {
         NSDictionary *spfStructure = [userInfo objectForKey:@"spfData"];
         if (spfStructure) {
-            SPDatabaseDocument *frontDoc = [self createNewDatabaseDocument];
-            [frontDoc setState:spfStructure];
+            SPWindowController *windowController = [self.tabManager newWindowForWindow];
+            [windowController.selectedTableDocument setState:spfStructure];
         }
     }
 }
@@ -373,7 +375,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 
     if ([menuItem action] == @selector(newTab:)) {
-        return ([[self.activeWindowController window] attachedSheet] == nil);
+        return ([[[self.tabManager activeWindowController] window] attachedSheet] == nil);
     }
 
     if ([menuItem action] == @selector(duplicateTab:))
@@ -436,9 +438,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [panel setAllowedFileTypes:@[SPFileExtensionDefault, SPFileExtensionSQL, SPBundleFileExtension]];
 
     // Check if at least one document exists, if so show a sheet
-    if (self.activeWindowController) {
+    if ([self.tabManager activeWindowController]) {
 
-        [panel beginSheetModalForWindow:[self.activeWindowController window] completionHandler:^(NSInteger returnCode) {
+        [panel beginSheetModalForWindow:[[self.tabManager activeWindowController] window] completionHandler:^(NSInteger returnCode) {
             if (returnCode) {
                 [panel orderOut:self];
 
@@ -504,12 +506,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 }
 
-- (void)openConnectionFileAtPath:(NSString *)filePath
-{
-    SPDatabaseDocument *frontDocument = [self createNewDatabaseDocument];
-
-    [frontDocument setStateFromConnectionFile:filePath];
-
+- (void)openConnectionFileAtPath:(NSString *)filePath {
+    SPWindowController *windowController = [self.tabManager newWindowForWindow];
+    [windowController.selectedTableDocument setStateFromConnectionFile:filePath];
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
 }
 
@@ -592,8 +591,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 
     // Check if at least one document exists.  If not, open one.
-    if (!frontDocument) {
-        frontDocument = [self createNewDatabaseDocument];
+    if (![self.tabManager activeWindowController]) {
+        frontDocument = [self.tabManager newWindowForWindow].selectedTableDocument;
         [frontDocument initQueryEditorWithString:sqlString];
     }
     else {
@@ -768,42 +767,43 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 }
 
-- (void)handleMySQLConnectWithURL:(NSURL *)url
-{
+- (void)handleMySQLConnectWithURL:(NSURL *)url {
     if(![[url scheme] isEqualToString:@"mysql"]) {
         SPLog(@"unsupported url scheme: %@",url);
         return;
     }
-
-    // make connection window
-    SPDatabaseDocument *doc = [self createNewDatabaseDocument];
 
     NSMutableDictionary *details = [NSMutableDictionary dictionary];
 
     NSValue *connect = @NO;
 
     [details setObject:@"SPTCPIPConnection" forKey:@"type"];
-    if([url port])
+    if ([url port]) {
         [details setObject:[url port] forKey:@"port"];
+    }
 
-    if([url user])
+    if ([url user]) {
         [details setObject:[url user] forKey:@"user"];
+    }
 
-    if([url password]) {
+    if ([url password]) {
         [details setObject:[url password] forKey:@"password"];
         connect = @YES;
     }
 
-    if([[url host] length])
+    if ([[url host] length]) {
         [details setObject:[url host] forKey:@"host"];
-    else
+    } else {
         [details setObject:@"127.0.0.1" forKey:@"host"];
+    }
 
     NSArray *pc = [url pathComponents];
-    if([pc count] > 1) // first object is "/"
+    if ([pc count] > 1) { // first object is "/"
         [details setObject:[pc objectAtIndex:1] forKey:@"database"];
+    }
 
-    [doc setState:@{@"connection":details,@"auto_connect": connect} fromFile:NO];
+    SPWindowController *windowController = [self.tabManager newWindowForWindow];
+    [windowController.selectedTableDocument setState:@{@"connection":details,@"auto_connect": connect} fromFile:NO];
 }
 
 - (void)handleEventWithURL:(NSURL*)url
@@ -1230,7 +1230,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  * Retrieve the frontmost document; returns nil if not found.
  */
 - (SPDatabaseDocument *)frontDocument {
-    return [self.activeWindowController selectedTableDocument];
+    return [[self.tabManager activeWindowController] selectedTableDocument];
 }
 
 /**
@@ -1337,8 +1337,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag
 {
     // Only create a new document (without auto-connect) when there are already no documents open.
-    if (![self frontDocument]) {
-        [self newWindowController];
+    if (![self.tabManager activeWindowController]) {
+        [self.tabManager newWindowForWindow];
         return NO;
     }
     // Return YES to the automatic opening
@@ -1514,117 +1514,27 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
 #pragma mark - SPWindowManagement
 
-- (IBAction)newWindow:(id)sender
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self newWindowController];
-    });
+- (IBAction)newWindowForTab:(id)sender {
+    [self.tabManager newWindowForTab];
 }
 
-/**
- * Create a new window, containing a single tab.
- */
-- (SPWindowController *)newWindowController {
-    static NSPoint cascadeLocation = {.x = 0, .y = 0};
-
-    // Create a new window controller, and set up a new connection view within it.
-    SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
-    newWindowController.delegate = self;
-    NSWindow *newWindow = [newWindowController window];
-
-    // Cascading defaults to on - retrieve the window origin automatically assigned by cascading,
-    // and convert to a top left point.
-    NSPoint topLeftPoint = [newWindow frame].origin;
-    topLeftPoint.y += [newWindow frame].size.height;
-
-    // The first window should use autosaving; subsequent windows should cascade.
-    // So attempt to set the frame autosave name; this will succeed for the very
-    // first window, and fail for others.
-    BOOL usedAutosave = [newWindow setFrameAutosaveName:@"DBView"];
-
-    if (!usedAutosave) {
-        [newWindow setFrameUsingName:@"DBView"];
-    }
-
-    // Cascade according to the statically stored cascade location.
-    cascadeLocation = [newWindow cascadeTopLeftFromPoint:cascadeLocation];
-
-    // Set the window controller as the window's delegate
-    [newWindow setDelegate:newWindowController];
-
-    // Show the window, and perform frontmost tasks again once the window has drawn
-    [newWindowController showWindow:self];
-    [[newWindowController selectedTableDocument] didBecomeActiveTabInWindow];
-
-    [self.windowControllers addObject:newWindowController];
-
-    return newWindowController;
+- (IBAction)newWindow:(id)sender {
+    [self.tabManager newWindowForWindow];
 }
 
 /**
  * Create a new tab in the frontmost window.
  */
 - (IBAction)newTab:(id)sender {
-
-    // No root window means
-    if (!self.activeWindowController) {
-        [self newWindowController];
-    } else {
-//        if ([[self.activeWindowController window] isMiniaturized]) {
-//            [[self.activeWindowController window] deminiaturize:self];
-//        }
-//        [self.activeWindowController addNewConnection];
-    }
-}
-
-- (SPDatabaseDocument *)createNewDatabaseDocument {
-
-    SPDatabaseDocument *databaseDocument;
-
-    // If no window was found or the front most window has no tabs, create a new one
-    if (!self.activeWindowController || [[[self activeWindowController] valueForKeyPath:@"tabView"] numberOfTabViewItems] == 1) {
-        [self newWindowController];
-        databaseDocument = [self.activeWindowController selectedTableDocument];
-    }
-    // Open the spf file in a new tab if the tab bar is visible
-//    else {
-//        if ([[self.activeWindowController window] isMiniaturized]) {
-//            [[self.activeWindowController window] deminiaturize:self];
-//        }
-//        databaseDocument = [self.activeWindowController addNewConnection];
-//    }
-    return databaseDocument;
-}
-
-- (SPWindowController *)activeWindowController {
-    if (self.windowControllers.count == 0) {
-        return nil;
-    }
-    for (SPWindowController *windowController in self.windowControllers) {
-        if ([windowController.window isKeyWindow]) {
-            return windowController;
-        }
-    }
-    SPWindowController *windowController = [self.windowControllers firstObject];
-    [windowController.window makeKeyAndOrderFront:nil];
-    return windowController;
+    [self.tabManager newWindowForTab];
 }
 
 /**
  * Duplicate the current connection tab
  */
-- (IBAction)duplicateTab:(id)sender
-{
-    SPDatabaseDocument *theFrontDocument = [self frontDocument];
+- (IBAction)duplicateTab:(id)sender {
 
-    if (!theFrontDocument) {
-        return [self newTab:sender];
-    }
-
-    // Add a new tab to the window
-    if ([[self.activeWindowController window] isMiniaturized]) {
-        [[self.activeWindowController window] deminiaturize:self];
-    }
+    SPWindowController *newWindowController = [self.tabManager newWindowForTab];
 
     // Get the state of the previously-frontmost document
     NSDictionary *allStateDetails = @{
@@ -1635,14 +1545,13 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         @"password"   : @YES
     };
 
-    NSMutableDictionary *frontState = [NSMutableDictionary dictionaryWithDictionary:[theFrontDocument stateIncludingDetails:allStateDetails]];
+    NSMutableDictionary *frontState = [NSMutableDictionary dictionaryWithDictionary:[newWindowController.selectedTableDocument stateIncludingDetails:allStateDetails]];
 
     // Ensure it's set to autoconnect
     [frontState setObject:@YES forKey:@"auto_connect"];
 
-//    SPDatabaseDocument *newConnection = [self.activeWindowController addNewConnection];
-//    // Set the connection on the new tab
-//    [newConnection setState:frontState];
+    // Set the connection on the new tab
+    [newWindowController.selectedTableDocument setState:frontState];
 }
 
 #pragma mark - NSWindowDelegate
