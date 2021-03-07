@@ -3215,6 +3215,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)openDatabaseInNewTab:(id)sender
 {
     // Add a new tab to the window
+    // TODO
 //    [self.parentWindowController addNewConnection];
 
     // Get the current state

@@ -716,6 +716,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (IBAction)openTableInNewTab:(id)sender
 {
 	// Add a new tab to the window
+    // TODO
 //	[[tableDocumentInstance parentWindowController] addNewConnection];
 //
 //	[self _duplicateConnectionToFrontTab];
