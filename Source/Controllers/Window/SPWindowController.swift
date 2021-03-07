@@ -16,16 +16,6 @@ extension SPWindowController {
 
     @objc func setupConstraints() {
         // Here we will set constraints in the future once we remove .xib, for now, commented out as it crashes
-//        tabBarControl.snp.makeConstraints {
-//            $0.top.equalToSuperview()
-//            $0.leading.trailing.equalToSuperview()
-//            $0.height.equalTo(25)
-//        }
-//        tabView.snp.makeConstraints {
-//            $0.top.equalTo(tabBarControl.snp.bottom)
-//            $0.leading.trailing.equalToSuperview()
-//            $0.bottom.equalToSuperview()
-//        }
     }
 }
 

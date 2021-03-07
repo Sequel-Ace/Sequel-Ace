@@ -40,12 +40,16 @@
 
 #pragma mark -
 
-+ (void)initialize
-{
-	// Disable automatic window tabbing on 10.12+
-	if ([NSWindow respondsToSelector:@selector(setAllowsAutomaticWindowTabbing:)]) {
-		[NSWindow setAllowsAutomaticWindowTabbing:NO];
-	}
+- (BOOL)isResizable {
+    return YES;
+}
+
+- (BOOL)isMiniaturizable {
+    return YES;
+}
+
+- (BOOL)isReleasedWhenClosed {
+    return YES;
 }
 
 #pragma mark -

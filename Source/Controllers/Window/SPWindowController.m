@@ -31,13 +31,9 @@
 #import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
-#import "PSMTabDragAssistant.h"
 #import "SPConnectionController.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPWindow.h"
-
-#import "PSMTabBarControl.h"
-#import "PSMTabStyle.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -57,39 +53,43 @@
 
 - (instancetype)init {
     SPWindow *newWindow = [[SPWindow alloc] init];
-    if (self = [self initWithWindow:newWindow]) {
+    [newWindow setContentMinSize:NSMakeSize(800, 400)];
+    [newWindow setMinSize:NSMakeSize(800, 400)];
+    if (self = [super initWithWindow:newWindow]) {
 
+        [self setupAppearance];
+        [self setupConstraints];
+
+        [self _switchOutSelectedTableDocument:nil];
+
+        [newWindow setCollectionBehavior:[newWindow collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+
+        // Disable automatic cascading - this occurs before the size is set, so let the app
+        // controller apply cascading after frame autosaving.
+        [self setShouldCascadeWindows:NO];
+
+        // Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
+        NSMenu *mainMenu = [NSApp mainMenu];
+        _closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
+        _closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
+
+        // Because we are a document-based app we automatically adopt window restoration on 10.7+.
+        // However that causes a race condition with our own window setup code.
+        // Remove this when we actually support restoration.
+        if ([newWindow respondsToSelector:@selector(setRestorable:)]) {
+            [newWindow setRestorable:NO];
+        }
+        newWindow.autorecalculatesKeyViewLoop = NO;
     }
     return self;
 }
 
+- (void)awakeFromNib {
+    [super awakeFromNib];
+}
+
 - (void)windowDidLoad {
     [super windowDidLoad];
-
-    [self setupAppearance];
-    [self setupConstraints];
-
-    [self _switchOutSelectedTableDocument:nil];
-
-    NSWindow *window = [self window];
-
-    [window setCollectionBehavior:[window collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
-
-    // Disable automatic cascading - this occurs before the size is set, so let the app
-    // controller apply cascading after frame autosaving.
-    [self setShouldCascadeWindows:NO];
-
-    // Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
-    NSMenu *mainMenu = [NSApp mainMenu];
-    _closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
-    _closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
-
-    // Because we are a document-based app we automatically adopt window restoration on 10.7+.
-    // However that causes a race condition with our own window setup code.
-    // Remove this when we actually support restoration.
-    if ([window respondsToSelector:@selector(setRestorable:)]) {
-        [window setRestorable:NO];
-    }
 }
 
 #pragma mark -
@@ -99,7 +99,9 @@
 {
 	// Create a new database connection view
 	SPDatabaseDocument *databaseDocument = [[SPDatabaseDocument alloc] initWithWindowController:self];
-    self.contentViewController = databaseDocument;
+    self.selectedTableDocument = databaseDocument;
+    self.window.contentView.autoresizesSubviews = YES;
+    [self.window.contentView addSubview:[databaseDocument databaseView]];
 
     // Tell the new database connection view to set up the window and update titles
     [databaseDocument didBecomeActiveTabInWindow];
@@ -114,9 +116,9 @@
 - (IBAction)closeTab:(id)sender
 {
 
-		//trying to close the window will itself call parentTabShouldClose for all tabs in windowShouldClose:
-		[[self window] performClose:self];
-        [self.delegate windowControllerDidClose:self];
+    //trying to close the window will itself call parentTabShouldClose for all tabs in windowShouldClose:
+    [[self window] performClose:self];
+    [self.delegate windowControllerDidClose:self];
 }
 
 /**

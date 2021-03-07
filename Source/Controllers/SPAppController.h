@@ -115,6 +115,4 @@
 - (IBAction)newTab:(id)sender;
 - (IBAction)duplicateTab:(id)sender;
 
-- (void)tabDragStarted:(id)sender;
-
 @end

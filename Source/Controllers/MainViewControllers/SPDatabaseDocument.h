@@ -241,7 +241,6 @@
 	NSInteger confirmCopyDatabaseReturnCode;
 
 	// Properties
-	NSTabViewItem *parentTabViewItem;
 	BOOL isProcessing;
 	NSString *processID;
 	BOOL windowTitleStatusViewIsVisible;
@@ -254,7 +253,6 @@
 @property (nonatomic, strong) NSTableView *dbTablesTableView;
 @property (readwrite, strong) NSURL *sqlFileURL;
 @property (readwrite) NSStringEncoding sqlFileEncoding;
-@property (readwrite, strong) NSTabViewItem *parentTabViewItem;
 @property (readwrite) BOOL isProcessing;
 @property (readwrite, copy) NSString *processID;
 

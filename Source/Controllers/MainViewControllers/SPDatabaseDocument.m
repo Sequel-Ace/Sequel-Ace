@@ -82,8 +82,6 @@
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
-#import "PSMTabBarController.h"
-#import "PSMTabBarControl.h"
 #import "SPPrintUtility.h"
 #import "SPBundleManager.h"
 
@@ -140,7 +138,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @synthesize sqlFileURL;
 @synthesize sqlFileEncoding;
-@synthesize parentTabViewItem;
 @synthesize isProcessing;
 @synthesize serverSupport;
 @synthesize databaseStructureRetrieval;
@@ -458,13 +455,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self updateWindowTitle:self];
 
-    NSString *serverDisplayName = nil;
-    if ([self.parentWindowController selectedTableDocument] == self) {
-        serverDisplayName = [[self.parentWindowController window] title];
-    } else {
-        serverDisplayName = [parentTabViewItem label];
-    }
-
+    NSString *serverDisplayName = [[self.parentWindowController window] title];
     NSUserNotification *notification = [[NSUserNotification alloc] init];
     notification.title = @"Connected";
     notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Connected to %@", @"description for connected notification"), serverDisplayName];
@@ -2338,7 +2329,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Disconnected notification
     NSUserNotification *notification = [[NSUserNotification alloc] init];
     notification.title = @"Disconnected";
-    notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Disconnected from %@", @"description for disconnected notification"), [parentTabViewItem label]];
     notification.soundName = NSUserNotificationDefaultSoundName;
 
     [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
@@ -3301,8 +3291,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isConnected || _isWorkingLevel) {
         return (
                 action == @selector(newWindow:) ||
-                action == @selector(terminate:) ||
-                action == @selector(closeTab:)
+                action == @selector(terminate:)
                 );
     }
 
@@ -3536,11 +3525,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Ensure a call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
 
-    NSMutableString *tabTitle;
     NSMutableString *windowTitle;
-    SPDatabaseDocument *frontTableDocument = [self.parentWindowController selectedTableDocument];
-
-    NSColor *tabColor = nil;
 
     // Determine name details
     NSString *pathName = @"";
@@ -3550,17 +3535,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if ([connectionController isConnecting]) {
         windowTitle = [NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-        tabTitle = windowTitle;
     }
     else if (!_isConnected) {
         windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-        tabTitle = windowTitle;
     }
     else {
-        tabColor = [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]];
-
         windowTitle = [NSMutableString string];
-        tabTitle = [NSMutableString string];
 
         // Add the path to the window title
         [windowTitle appendString:pathName];
@@ -3571,36 +3551,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Add the name to the window
         [windowTitle appendString:[self name]];
 
-        // Also add to the non-front tabs if the host is different, not connected, or no db is selected
-        if ([[frontTableDocument name] isNotEqualTo:[self name]] || ![frontTableDocument getConnection] || ![self database]) {
-            [tabTitle appendString:[self name]];
-        }
-
         // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
         if ([self database]) {
             [windowTitle appendFormat:@"/%@", [self database]];
-            if (frontTableDocument == self
-                || ![frontTableDocument getConnection]
-                || [[frontTableDocument name] isNotEqualTo:[self name]]
-                || [[frontTableDocument database] isNotEqualTo:[self database]]
-                || ![[self table] length])
-            {
-                if ([tabTitle length]) [tabTitle appendString:@"/"];
-                [tabTitle appendString:[self database]];
-            }
         }
 
         // Add the table name if one is selected
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
-            if ([tabTitle length]) [tabTitle appendString:@"/"];
-            [tabTitle appendString:[self table]];
         }
     }
-
-    // Set the titles
-    [parentTabViewItem setLabel:tabTitle];
-    [parentTabViewItem setColor:tabColor];
 
     if ([self.parentWindowController selectedTableDocument] == self) {
         [[self.parentWindowController window] setTitle:windowTitle];
@@ -3955,7 +3915,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)makeKeyDocument
 {
     [[[self.parentWindowController window] onMainThread] makeKeyAndOrderFront:self];
-    [[[[self parentTabViewItem] onMainThread] tabView] selectTabViewItemWithIdentifier:self];
 }
 
 /**
@@ -4721,12 +4680,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)connectionControllerInitiatingConnection:(SPConnectionController *)controller
 {
-    // Update the window title to indicate that we are trying to establish a connection
-    [parentTabViewItem setLabel:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-
-    if ([self.parentWindowController selectedTableDocument] == self) {
-        [[self.parentWindowController window] setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-    }
+    [[self.parentWindowController window] setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
 }
 
 /**
@@ -6575,18 +6529,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _isConnected = NO;
 
-    if ([[[self parentTabViewItem] tabView] numberOfTabViewItems] == 1) {
-        [theParentWindow orderOut:self];
-        [theParentWindow setAlphaValue:0.0f];
-        [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
-    }
-    else {
-        NSTabViewItem *parentTabViewItemTmp = [self parentTabViewItem];
-        if([parentTabViewItemTmp.tabView.tabViewItems containsObject:parentTabViewItemTmp]){
-            [[parentTabViewItemTmp tabView] performSelector:@selector(removeTabViewItem:) withObject:parentTabViewItemTmp afterDelay:0.5];
-        }
-        [theParentWindow performSelector:@selector(makeKeyAndOrderFront:) withObject:nil afterDelay:0.6];
-    }
+    [theParentWindow orderOut:self];
+    [theParentWindow setAlphaValue:0.0f];
+    [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
 
     [self parentTabDidClose];
 }

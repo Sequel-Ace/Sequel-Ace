@@ -1742,7 +1742,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Reset the window title
 	[dbDocument updateWindowTitle:self];
-	[[dbDocument parentTabViewItem] setLabel:[dbDocument displayName]];
 	
 	// Stop the current tab's progress indicator
 	[dbDocument setIsProcessing:NO];
