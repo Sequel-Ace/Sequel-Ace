@@ -646,7 +646,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         // Loop through each defined window in reversed order to reconstruct the last active window
         for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
             // Create a new window controller, and set up a new connection view within it.
-            SPWindowController *newWindowController = [[SPWindowController alloc] init];
+            SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
             [newWindowController showWindow:self];
             [self.windowControllers addObject:newWindowController];
             NSWindow *newWindow = [newWindowController window];
@@ -1530,15 +1530,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     static NSPoint cascadeLocation = {.x = 0, .y = 0};
 
     // Create a new window controller, and set up a new connection view within it.
-    SPWindowController *newWindowController = [[SPWindowController alloc] init];
-//    [newWindowController showWindow:self];
+    SPWindowController *newWindowController = [[SPWindowController alloc] initWithWindowNibName:@"MainWindow"];
     newWindowController.delegate = self;
     NSWindow *newWindow = [newWindowController window];
 
     // Cascading defaults to on - retrieve the window origin automatically assigned by cascading,
     // and convert to a top left point.
-//    NSPoint topLeftPoint = [newWindow frame].origin;
-//    topLeftPoint.y += [newWindow frame].size.height;
+    NSPoint topLeftPoint = [newWindow frame].origin;
+    topLeftPoint.y += [newWindow frame].size.height;
 
     // The first window should use autosaving; subsequent windows should cascade.
     // So attempt to set the frame autosave name; this will succeed for the very
@@ -1546,14 +1545,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     BOOL usedAutosave = [newWindow setFrameAutosaveName:@"DBView"];
 
     if (!usedAutosave) {
-//        [newWindow setFrameUsingName:@"DBView"];
+        [newWindow setFrameUsingName:@"DBView"];
     }
 
     // Add the connection view
     [newWindowController addNewConnection];
 
     // Cascade according to the statically stored cascade location.
-//    cascadeLocation = [newWindow cascadeTopLeftFromPoint:cascadeLocation];
+    cascadeLocation = [newWindow cascadeTopLeftFromPoint:cascadeLocation];
 
     // Set the window controller as the window's delegate
     [newWindow setDelegate:newWindowController];

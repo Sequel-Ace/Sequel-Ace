@@ -51,45 +51,34 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (instancetype)init {
-    SPWindow *newWindow = [[SPWindow alloc] init];
-    [newWindow setContentMinSize:NSMakeSize(800, 400)];
-    [newWindow setMinSize:NSMakeSize(800, 400)];
-    if (self = [super initWithWindow:newWindow]) {
-
-        [self setupAppearance];
-        [self setupConstraints];
-
-        [self _switchOutSelectedTableDocument:nil];
-
-        [newWindow setCollectionBehavior:[newWindow collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
-
-        // Disable automatic cascading - this occurs before the size is set, so let the app
-        // controller apply cascading after frame autosaving.
-        [self setShouldCascadeWindows:NO];
-
-        // Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
-        NSMenu *mainMenu = [NSApp mainMenu];
-        _closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
-        _closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
-
-        // Because we are a document-based app we automatically adopt window restoration on 10.7+.
-        // However that causes a race condition with our own window setup code.
-        // Remove this when we actually support restoration.
-        if ([newWindow respondsToSelector:@selector(setRestorable:)]) {
-            [newWindow setRestorable:NO];
-        }
-        newWindow.autorecalculatesKeyViewLoop = NO;
-    }
-    return self;
-}
 
 - (void)awakeFromNib {
     [super awakeFromNib];
-}
 
-- (void)windowDidLoad {
-    [super windowDidLoad];
+    NSWindow *newWindow = [self window];
+
+    [self setupAppearance];
+    [self setupConstraints];
+
+    [self _switchOutSelectedTableDocument:nil];
+
+    [newWindow setCollectionBehavior:[newWindow collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+
+    // Disable automatic cascading - this occurs before the size is set, so let the app
+    // controller apply cascading after frame autosaving.
+    [self setShouldCascadeWindows:NO];
+
+    // Retrieve references to the 'Close Window' and 'Close Tab' menus.  These are updated as window focus changes.
+    NSMenu *mainMenu = [NSApp mainMenu];
+    _closeWindowMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileClose];
+    _closeTabMenuItem = [[[mainMenu itemWithTag:SPMainMenuFile] submenu] itemWithTag:SPMainMenuFileCloseTab];
+
+    // Because we are a document-based app we automatically adopt window restoration on 10.7+.
+    // However that causes a race condition with our own window setup code.
+    // Remove this when we actually support restoration.
+    if ([newWindow respondsToSelector:@selector(setRestorable:)]) {
+        [newWindow setRestorable:NO];
+    }
 }
 
 #pragma mark -
@@ -100,8 +89,8 @@
 	// Create a new database connection view
 	SPDatabaseDocument *databaseDocument = [[SPDatabaseDocument alloc] initWithWindowController:self];
     self.selectedTableDocument = databaseDocument;
-    self.window.contentView.autoresizesSubviews = YES;
     [self.window.contentView addSubview:[databaseDocument databaseView]];
+    [[databaseDocument databaseView] setFrame:self.window.contentView.frame];
 
     // Tell the new database connection view to set up the window and update titles
     [databaseDocument didBecomeActiveTabInWindow];
