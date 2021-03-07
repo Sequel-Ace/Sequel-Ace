@@ -141,9 +141,12 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	NSString *thisTable  = [tablesListInstance tableName];
 	NSString *thisColumn = [columnPopUpButton titleOfSelectedItem];
     NSString *thatDatabase = [refDatabasePopUpButton titleOfSelectedItem];
-	NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
-	NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
-	
+    if (!thatDatabase) {
+        thatDatabase = [tableDocumentInstance database];
+    }
+    NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
+    NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
+
 	NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ ADD ",[thisTable backtickQuotedString]];
 	
 	// Set constraint name?
@@ -587,6 +590,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 {
     // Get selected database
     NSString *database = [refDatabasePopUpButton titleOfSelectedItem];
+    if (!database) {
+        database = [tableDocumentInstance database];
+    }
 
     [refTablePopUpButton setEnabled:NO];
     [refColumnPopUpButton setEnabled:NO];
