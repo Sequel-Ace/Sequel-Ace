@@ -39,7 +39,9 @@
 @class SPWindowController;
 @class HyperlinkTextField;
 
-@interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate>
+@protocol SPWindowControllerDelegate;
+
+@interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate, SPWindowControllerDelegate>
 {
 	SPAboutController *aboutController;
 	SPPreferenceController *prefsController;
@@ -114,7 +116,5 @@
 - (IBAction)newWindow:(id)sender;
 - (IBAction)newTab:(id)sender;
 - (IBAction)duplicateTab:(id)sender;
-
-- (void)tabDragStarted:(id)sender;
 
 @end

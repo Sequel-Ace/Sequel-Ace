@@ -45,7 +45,6 @@
 #import "SPNavigatorController.h"
 #import "SPHistoryController.h"
 #import "SPServerSupport.h"
-#import "SPWindowController.h"
 #import "SPAppController.h"
 #import "SPSplitView.h"
 #import "SPThreadAdditions.h"
@@ -717,9 +716,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (IBAction)openTableInNewTab:(id)sender
 {
 	// Add a new tab to the window
-	[[tableDocumentInstance parentWindowController] addNewConnection:self];
-	
-	[self _duplicateConnectionToFrontTab];
+    // TODO
+//	[[tableDocumentInstance parentWindowController] addNewConnection];
+//
+//	[self _duplicateConnectionToFrontTab];
 }
 
 - (void)_duplicateConnectionToFrontTab

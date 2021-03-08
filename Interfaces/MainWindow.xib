@@ -8,8 +8,6 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="SPWindowController">
             <connections>
-                <outlet property="tabBarControl" destination="3" id="YQG-Ao-f28"/>
-                <outlet property="tabView" destination="4" id="14"/>
                 <outlet property="window" destination="1" id="15"/>
             </connections>
         </customObject>
@@ -18,33 +16,14 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" visibleAtLaunch="NO" animationBehavior="default" id="1" customClass="SPWindow">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="238" y="168" width="948" height="555"/>
+            <rect key="contentRect" x="238" y="168" width="1040" height="630"/>
             <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="800" height="400"/>
-            <view key="contentView" id="2">
-                <rect key="frame" x="0.0" y="0.0" width="948" height="555"/>
+            <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="2">
+                <rect key="frame" x="0.0" y="0.0" width="1040" height="630"/>
                 <autoresizingMask key="autoresizingMask"/>
-                <subviews>
-                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3" customClass="PSMTabBarControl">
-                        <rect key="frame" x="0.0" y="530" width="948" height="25"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                        <connections>
-                            <outlet property="delegate" destination="-2" id="12"/>
-                            <outlet property="partnerView" destination="4" id="10"/>
-                            <outlet property="tabView" destination="4" id="9"/>
-                        </connections>
-                    </customView>
-                    <tabView fixedFrame="YES" drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="4">
-                        <rect key="frame" x="0.0" y="0.0" width="948" height="530"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <font key="font" metaFont="system"/>
-                        <connections>
-                            <outlet property="delegate" destination="3" id="16"/>
-                        </connections>
-                    </tabView>
-                </subviews>
             </view>
-            <point key="canvasLocation" x="139" y="148"/>
+            <point key="canvasLocation" x="185" y="110"/>
         </window>
     </objects>
 </document>

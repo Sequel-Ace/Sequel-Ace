@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPWindow.h"
-#import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 
 #import "sequel-ace-Swift.h"
@@ -40,12 +39,16 @@
 
 #pragma mark -
 
-+ (void)initialize
-{
-	// Disable automatic window tabbing on 10.12+
-	if ([NSWindow respondsToSelector:@selector(setAllowsAutomaticWindowTabbing:)]) {
-		[NSWindow setAllowsAutomaticWindowTabbing:NO];
-	}
+- (BOOL)isResizable {
+    return YES;
+}
+
+- (BOOL)isMiniaturizable {
+    return YES;
+}
+
+- (BOOL)isReleasedWhenClosed {
+    return YES;
 }
 
 #pragma mark -
@@ -101,16 +104,14 @@
 			case '}':
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectNextDocumentTab:)])
-						[[self windowController] selectNextDocumentTab:self];
+                    // TODO: Tabs switching
 					return;
 				}
 				break;
 			case '{':
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectPreviousDocumentTab:)])
-						[[self windowController] selectPreviousDocumentTab:self];
+					// TODO: Tabs switching
 					return;
 				}
 				break;
@@ -119,16 +120,14 @@
 			case NSRightArrowFunctionKey:
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectNextDocumentTab:)])
-						[[self windowController] selectNextDocumentTab:self];
+                    // TODO: Tabs switching
 					return;
 				}
 				break;
 			case NSLeftArrowFunctionKey:
 				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction))
 				{
-					if ([[self windowController] respondsToSelector:@selector(selectPreviousDocumentTab:)])
-						[[self windowController] selectPreviousDocumentTab:self];
+                    // TODO: Tabs switching
 					return;
 				}
 				break;

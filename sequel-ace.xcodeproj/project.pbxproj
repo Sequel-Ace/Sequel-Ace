@@ -227,58 +227,9 @@
 		50EA92681AB23EFC008D3C4F /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
-		511C466A25BC768E001AA1BD /* NSTabViewItemExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511C466925BC768E001AA1BD /* NSTabViewItemExtension.swift */; };
+		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
+		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
-		513515E42593568B001E4533 /* PSMProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071D11BD9B34000826E5 /* PSMProgressIndicator.m */; };
-		513515E52593568B001E4533 /* PSMTabDragAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072711BD9B34000826E5 /* PSMTabDragAssistant.m */; };
-		513515E62593568B001E4533 /* PSMOverflowPopUpButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071B11BD9B34000826E5 /* PSMOverflowPopUpButton.m */; };
-		513515E72593568B001E4533 /* PSMTabBarControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072311BD9B34000826E5 /* PSMTabBarControl.m */; };
-		513515E82593568B001E4533 /* PSMTabBarCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072111BD9B34000826E5 /* PSMTabBarCell.m */; };
-		513515E92593568B001E4533 /* PSMTabDragWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072B11BD9B34000826E5 /* PSMTabDragWindow.m */; };
-		513515EA2593568B001E4533 /* PSMTabDragWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072D11BD9B34000826E5 /* PSMTabDragWindowController.m */; };
-		513515EB2593568B001E4533 /* NSBezierPath_AMShading.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071711BD9B34000826E5 /* NSBezierPath_AMShading.m */; };
-		513515EC2593568B001E4533 /* NSString_AITruncation.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071911BD9B34000826E5 /* NSString_AITruncation.m */; };
-		513515ED2593568B001E4533 /* PSMTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072511BD9B34000826E5 /* PSMTabBarController.m */; };
-		513515EE2593568B001E4533 /* PSMTabDragView.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9072911BD9B34000826E5 /* PSMTabDragView.m */; };
-		513515EF2593568B001E4533 /* PSMRolloverButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9071F11BD9B34000826E5 /* PSMRolloverButton.m */; };
-		513515F425935691001E4533 /* PSMSequelProTabStyle.m in Sources */ = {isa = PBXBuildFile; fileRef = B55F8E5E11C67CA0006A3386 /* PSMSequelProTabStyle.m */; };
-		513515FD25935699001E4533 /* overflowImage.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070A11BD9B34000826E5 /* overflowImage.png */; };
-		513515FE25935699001E4533 /* SequelProTabDirty_Rollover@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1216781A93004068AB /* SequelProTabDirty_Rollover@2x.png */; };
-		513515FF25935699001E4533 /* AdiumGradient.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B906FA11BD9B34000826E5 /* AdiumGradient.png */; };
-		5135160025935699001E4533 /* TabNewMetal.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9071311BD9B34000826E5 /* TabNewMetal.png */; };
-		5135160125935699001E4533 /* TabClose_Front_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9071211BD9B34000826E5 /* TabClose_Front_Rollover.png */; };
-		5135160225935699001E4533 /* SequelProTabDirty_Pressed@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1116781A93004068AB /* SequelProTabDirty_Pressed@2x.png */; };
-		5135160325935699001E4533 /* AquaTabClose_Front_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B906FD11BD9B34000826E5 /* AquaTabClose_Front_Rollover.png */; };
-		5135160425935699001E4533 /* TabNewMetalRollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9071511BD9B34000826E5 /* TabNewMetalRollover.png */; };
-		5135160525935699001E4533 /* AquaTabClose_Front_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B906FC11BD9B34000826E5 /* AquaTabClose_Front_Pressed.png */; };
-		5135160625935699001E4533 /* pi.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070C11BD9B34000826E5 /* pi.png */; };
-		5135160725935699001E4533 /* AquaTabClose_Front.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B906FB11BD9B34000826E5 /* AquaTabClose_Front.png */; };
-		5135160825935699001E4533 /* AquaTabNew.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070111BD9B34000826E5 /* AquaTabNew.png */; };
-		5135160925935699001E4533 /* AquaTabsSeparator.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070811BD9B34000826E5 /* AquaTabsSeparator.png */; };
-		5135160A25935699001E4533 /* TabClose_Front.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9071011BD9B34000826E5 /* TabClose_Front.png */; };
-		5135160B25935699001E4533 /* AquaTabNewRollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070311BD9B34000826E5 /* AquaTabNewRollover.png */; };
-		5135160C25935699001E4533 /* AquaTabsDownNonKey.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070711BD9B34000826E5 /* AquaTabsDownNonKey.png */; };
-		5135160D25935699001E4533 /* overflowImagePressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070B11BD9B34000826E5 /* overflowImagePressed.png */; };
-		5135160E25935699001E4533 /* AddTabButton.png in Resources */ = {isa = PBXBuildFile; fileRef = B55F8E6311C67D8A006A3386 /* AddTabButton.png */; };
-		5135160F25935699001E4533 /* AddTabButtonPushed.png in Resources */ = {isa = PBXBuildFile; fileRef = B55F8E6411C67D8A006A3386 /* AddTabButtonPushed.png */; };
-		5135161025935699001E4533 /* SequelProTabDirty@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 58C4BA1316781A93004068AB /* SequelProTabDirty@2x.png */; };
-		5135161125935699001E4533 /* TabClose_Dirty.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070D11BD9B34000826E5 /* TabClose_Dirty.png */; };
-		5135161225935699001E4533 /* TabNewMetalPressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9071411BD9B34000826E5 /* TabNewMetalPressed.png */; };
-		5135161325935699001E4533 /* AquaTabsBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070411BD9B34000826E5 /* AquaTabsBackground.png */; };
-		5135161425935699001E4533 /* AquaTabCloseDirty_Front.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B906FE11BD9B34000826E5 /* AquaTabCloseDirty_Front.png */; };
-		5135161525935699001E4533 /* TabClose_Front_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9071111BD9B34000826E5 /* TabClose_Front_Pressed.png */; };
-		5135161625935699001E4533 /* AquaTabsSeparatorDown.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070911BD9B34000826E5 /* AquaTabsSeparatorDown.png */; };
-		5135161725935699001E4533 /* AquaTabsDownGraphite.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070611BD9B34000826E5 /* AquaTabsDownGraphite.png */; };
-		5135161825935699001E4533 /* TabClose_Dirty_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070E11BD9B34000826E5 /* TabClose_Dirty_Pressed.png */; };
-		5135161925935699001E4533 /* AquaTabsDown.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070511BD9B34000826E5 /* AquaTabsDown.png */; };
-		5135161A25935699001E4533 /* SequelProTabDirty.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DB011EA772C000D8427 /* SequelProTabDirty.png */; };
-		5135161B25935699001E4533 /* AquaTabCloseDirty_Front_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B906FF11BD9B34000826E5 /* AquaTabCloseDirty_Front_Pressed.png */; };
-		5135161C25935699001E4533 /* AquaTabNewPressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070211BD9B34000826E5 /* AquaTabNewPressed.png */; };
-		5135161D25935699001E4533 /* TabClose_Dirty_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070F11BD9B34000826E5 /* TabClose_Dirty_Rollover.png */; };
-		5135161E25935699001E4533 /* AddTabButtonRollover.png in Resources */ = {isa = PBXBuildFile; fileRef = B55F8E6511C67D8A006A3386 /* AddTabButtonRollover.png */; };
-		5135161F25935699001E4533 /* AquaTabCloseDirty_Front_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 58B9070011BD9B34000826E5 /* AquaTabCloseDirty_Front_Rollover.png */; };
-		5135162025935699001E4533 /* SequelProTabDirty_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAF11EA772C000D8427 /* SequelProTabDirty_Rollover.png */; };
-		5135162125935699001E4533 /* SequelProTabDirty_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 580E8DAE11EA772C000D8427 /* SequelProTabDirty_Pressed.png */; };
 		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
 		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
 		517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */ = {isa = PBXBuildFile; fileRef = 5174122F2573E10C00EB6935 /* SPPrintUtility.m */; };
@@ -291,7 +242,6 @@
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
-		51BC150E25BE1EB100F1CDC9 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
@@ -327,6 +277,7 @@
 		51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */; };
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
+		51F41FBA25F56A5900594BA5 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51F41FB625F56A5900594BA5 /* MainWindow.xib */; };
 		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
 		581068B61015411B0068C6E2 /* link-arrow-highlighted.png in Resources */ = {isa = PBXBuildFile; fileRef = 581068B51015411B0068C6E2 /* link-arrow-highlighted.png */; };
@@ -380,7 +331,6 @@
 		589235321020C1230011DE00 /* SPHistoryController.m in Sources */ = {isa = PBXBuildFile; fileRef = 589235301020C1230011DE00 /* SPHistoryController.m */; };
 		589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */ = {isa = PBXBuildFile; fileRef = 589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */; };
 		58A137CD123ED5E6000B1B75 /* titlebarlock.png in Resources */ = {isa = PBXBuildFile; fileRef = 58A137CC123ED5E6000B1B75 /* titlebarlock.png */; };
-		58A8A79111A036C000B95749 /* SPWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 58A8A79011A036C000B95749 /* SPWindowController.m */; };
 		58B9097B11C3A4A2000826E5 /* xibLocalizationPostprocessor.m in Sources */ = {isa = PBXBuildFile; fileRef = 58B9095B11C3A3EC000826E5 /* xibLocalizationPostprocessor.m */; };
 		58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 58C56EF40F438E120035701E /* SPDataCellFormatter.m */; };
 		58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */; };
@@ -906,7 +856,8 @@
 		50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseActionTest.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
 		511B309F25ABBC6500D010E3 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
-		511C466925BC768E001AA1BD /* NSTabViewItemExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSTabViewItemExtension.swift; sourceTree = "<group>"; };
+		5132930925F586A900D803AD /* NotificationToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationToken.swift; sourceTree = "<group>"; };
+		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
@@ -922,7 +873,6 @@
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
-		51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PrintAccessory.xib; sourceTree = "<group>"; };
@@ -954,13 +904,11 @@
 		51CD0BD9258D06D8009E2484 /* AboutPanel.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AboutPanel.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
+		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
-		580E8DAE11EA772C000D8427 /* SequelProTabDirty_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SequelProTabDirty_Pressed.png; sourceTree = "<group>"; };
-		580E8DAF11EA772C000D8427 /* SequelProTabDirty_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SequelProTabDirty_Rollover.png; sourceTree = "<group>"; };
-		580E8DB011EA772C000D8427 /* SequelProTabDirty.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SequelProTabDirty.png; sourceTree = "<group>"; };
 		581068B51015411B0068C6E2 /* link-arrow-highlighted.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "link-arrow-highlighted.png"; sourceTree = "<group>"; };
 		5822C9B31000DB2400DCC3D6 /* SPConnectionController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPConnectionController.h; sourceTree = "<group>"; };
 		5822C9B41000DB2400DCC3D6 /* SPConnectionController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPConnectionController.m; sourceTree = "<group>"; };
@@ -1032,68 +980,10 @@
 		589582131154F8F400EDCC28 /* SPMainThreadTrampoline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPMainThreadTrampoline.h; sourceTree = "<group>"; };
 		589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPMainThreadTrampoline.m; sourceTree = "<group>"; };
 		58A137CC123ED5E6000B1B75 /* titlebarlock.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = titlebarlock.png; sourceTree = "<group>"; };
-		58A8A78F11A036C000B95749 /* SPWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPWindowController.h; sourceTree = "<group>"; };
-		58A8A79011A036C000B95749 /* SPWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPWindowController.m; sourceTree = "<group>"; };
-		58B906FA11BD9B34000826E5 /* AdiumGradient.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AdiumGradient.png; sourceTree = "<group>"; };
-		58B906FB11BD9B34000826E5 /* AquaTabClose_Front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabClose_Front.png; sourceTree = "<group>"; };
-		58B906FC11BD9B34000826E5 /* AquaTabClose_Front_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabClose_Front_Pressed.png; sourceTree = "<group>"; };
-		58B906FD11BD9B34000826E5 /* AquaTabClose_Front_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabClose_Front_Rollover.png; sourceTree = "<group>"; };
-		58B906FE11BD9B34000826E5 /* AquaTabCloseDirty_Front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabCloseDirty_Front.png; sourceTree = "<group>"; };
-		58B906FF11BD9B34000826E5 /* AquaTabCloseDirty_Front_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabCloseDirty_Front_Pressed.png; sourceTree = "<group>"; };
-		58B9070011BD9B34000826E5 /* AquaTabCloseDirty_Front_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabCloseDirty_Front_Rollover.png; sourceTree = "<group>"; };
-		58B9070111BD9B34000826E5 /* AquaTabNew.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabNew.png; sourceTree = "<group>"; };
-		58B9070211BD9B34000826E5 /* AquaTabNewPressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabNewPressed.png; sourceTree = "<group>"; };
-		58B9070311BD9B34000826E5 /* AquaTabNewRollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabNewRollover.png; sourceTree = "<group>"; };
-		58B9070411BD9B34000826E5 /* AquaTabsBackground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabsBackground.png; sourceTree = "<group>"; };
-		58B9070511BD9B34000826E5 /* AquaTabsDown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabsDown.png; sourceTree = "<group>"; };
-		58B9070611BD9B34000826E5 /* AquaTabsDownGraphite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabsDownGraphite.png; sourceTree = "<group>"; };
-		58B9070711BD9B34000826E5 /* AquaTabsDownNonKey.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabsDownNonKey.png; sourceTree = "<group>"; };
-		58B9070811BD9B34000826E5 /* AquaTabsSeparator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabsSeparator.png; sourceTree = "<group>"; };
-		58B9070911BD9B34000826E5 /* AquaTabsSeparatorDown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabsSeparatorDown.png; sourceTree = "<group>"; };
-		58B9070A11BD9B34000826E5 /* overflowImage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImage.png; sourceTree = "<group>"; };
-		58B9070B11BD9B34000826E5 /* overflowImagePressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImagePressed.png; sourceTree = "<group>"; };
-		58B9070C11BD9B34000826E5 /* pi.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pi.png; sourceTree = "<group>"; };
-		58B9070D11BD9B34000826E5 /* TabClose_Dirty.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabClose_Dirty.png; sourceTree = "<group>"; };
-		58B9070E11BD9B34000826E5 /* TabClose_Dirty_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabClose_Dirty_Pressed.png; sourceTree = "<group>"; };
-		58B9070F11BD9B34000826E5 /* TabClose_Dirty_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabClose_Dirty_Rollover.png; sourceTree = "<group>"; };
-		58B9071011BD9B34000826E5 /* TabClose_Front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabClose_Front.png; sourceTree = "<group>"; };
-		58B9071111BD9B34000826E5 /* TabClose_Front_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabClose_Front_Pressed.png; sourceTree = "<group>"; };
-		58B9071211BD9B34000826E5 /* TabClose_Front_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabClose_Front_Rollover.png; sourceTree = "<group>"; };
-		58B9071311BD9B34000826E5 /* TabNewMetal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabNewMetal.png; sourceTree = "<group>"; };
-		58B9071411BD9B34000826E5 /* TabNewMetalPressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabNewMetalPressed.png; sourceTree = "<group>"; };
-		58B9071511BD9B34000826E5 /* TabNewMetalRollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TabNewMetalRollover.png; sourceTree = "<group>"; };
-		58B9071611BD9B34000826E5 /* NSBezierPath_AMShading.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSBezierPath_AMShading.h; sourceTree = "<group>"; };
-		58B9071711BD9B34000826E5 /* NSBezierPath_AMShading.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSBezierPath_AMShading.m; sourceTree = "<group>"; };
-		58B9071811BD9B34000826E5 /* NSString_AITruncation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_AITruncation.h; sourceTree = "<group>"; };
-		58B9071911BD9B34000826E5 /* NSString_AITruncation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSString_AITruncation.m; sourceTree = "<group>"; };
-		58B9071A11BD9B34000826E5 /* PSMOverflowPopUpButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMOverflowPopUpButton.h; sourceTree = "<group>"; };
-		58B9071B11BD9B34000826E5 /* PSMOverflowPopUpButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMOverflowPopUpButton.m; sourceTree = "<group>"; };
-		58B9071C11BD9B34000826E5 /* PSMProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMProgressIndicator.h; sourceTree = "<group>"; };
-		58B9071D11BD9B34000826E5 /* PSMProgressIndicator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMProgressIndicator.m; sourceTree = "<group>"; };
-		58B9071E11BD9B34000826E5 /* PSMRolloverButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMRolloverButton.h; sourceTree = "<group>"; };
-		58B9071F11BD9B34000826E5 /* PSMRolloverButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMRolloverButton.m; sourceTree = "<group>"; };
-		58B9072011BD9B34000826E5 /* PSMTabBarCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabBarCell.h; sourceTree = "<group>"; };
-		58B9072111BD9B34000826E5 /* PSMTabBarCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabBarCell.m; sourceTree = "<group>"; };
-		58B9072211BD9B34000826E5 /* PSMTabBarControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabBarControl.h; sourceTree = "<group>"; };
-		58B9072311BD9B34000826E5 /* PSMTabBarControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabBarControl.m; sourceTree = "<group>"; };
-		58B9072411BD9B34000826E5 /* PSMTabBarController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabBarController.h; sourceTree = "<group>"; };
-		58B9072511BD9B34000826E5 /* PSMTabBarController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabBarController.m; sourceTree = "<group>"; };
-		58B9072611BD9B34000826E5 /* PSMTabDragAssistant.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragAssistant.h; sourceTree = "<group>"; };
-		58B9072711BD9B34000826E5 /* PSMTabDragAssistant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragAssistant.m; sourceTree = "<group>"; };
-		58B9072811BD9B34000826E5 /* PSMTabDragView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragView.h; sourceTree = "<group>"; };
-		58B9072911BD9B34000826E5 /* PSMTabDragView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragView.m; sourceTree = "<group>"; };
-		58B9072A11BD9B34000826E5 /* PSMTabDragWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragWindow.h; sourceTree = "<group>"; };
-		58B9072B11BD9B34000826E5 /* PSMTabDragWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragWindow.m; sourceTree = "<group>"; };
-		58B9072C11BD9B34000826E5 /* PSMTabDragWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragWindowController.h; sourceTree = "<group>"; };
-		58B9072D11BD9B34000826E5 /* PSMTabDragWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragWindowController.m; sourceTree = "<group>"; };
-		58B9072E11BD9B34000826E5 /* PSMTabStyle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabStyle.h; sourceTree = "<group>"; };
 		58B9077D11BD9B64000826E5 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		58B9088711BDB7AA000826E5 /* PSMTabBar-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "PSMTabBar-Info.plist"; path = "Plists/PSMTabBar-Info.plist"; sourceTree = "<group>"; };
 		58B9095B11C3A3EC000826E5 /* xibLocalizationPostprocessor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = xibLocalizationPostprocessor.m; sourceTree = "<group>"; };
 		58B9096111C3A42B000826E5 /* xibLocalizationPostprocessor */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xibLocalizationPostprocessor; sourceTree = BUILT_PRODUCTS_DIR; };
-		58C4BA1116781A93004068AB /* SequelProTabDirty_Pressed@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "SequelProTabDirty_Pressed@2x.png"; sourceTree = "<group>"; };
-		58C4BA1216781A93004068AB /* SequelProTabDirty_Rollover@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "SequelProTabDirty_Rollover@2x.png"; sourceTree = "<group>"; };
-		58C4BA1316781A93004068AB /* SequelProTabDirty@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "SequelProTabDirty@2x.png"; sourceTree = "<group>"; };
 		58C56EF30F438E120035701E /* SPDataCellFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDataCellFormatter.h; sourceTree = "<group>"; };
 		58C56EF40F438E120035701E /* SPDataCellFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDataCellFormatter.m; sourceTree = "<group>"; };
 		58CDB32E0FCE138D00F8ACA3 /* SPSSHTunnel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSSHTunnel.h; sourceTree = "<group>"; };
@@ -1169,11 +1059,6 @@
 		B52460D50F8EF92300171639 /* SPTextViewAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTextViewAdditions.h; sourceTree = "<group>"; };
 		B52460D60F8EF92300171639 /* SPTextViewAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTextViewAdditions.m; sourceTree = "<group>"; };
 		B54F25E50FD909C400E2CF36 /* toolbar-switch-to-table-relations.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-relations.png"; sourceTree = "<group>"; };
-		B55F8E5D11C67CA0006A3386 /* PSMSequelProTabStyle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMSequelProTabStyle.h; sourceTree = "<group>"; };
-		B55F8E5E11C67CA0006A3386 /* PSMSequelProTabStyle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMSequelProTabStyle.m; sourceTree = "<group>"; };
-		B55F8E6311C67D8A006A3386 /* AddTabButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AddTabButton.png; sourceTree = "<group>"; };
-		B55F8E6411C67D8A006A3386 /* AddTabButtonPushed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AddTabButtonPushed.png; sourceTree = "<group>"; };
-		B55F8E6511C67D8A006A3386 /* AddTabButtonRollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AddTabButtonRollover.png; sourceTree = "<group>"; };
 		B57747D30F7A8974003B34F9 /* SPPreferenceController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPreferenceController.m; sourceTree = "<group>"; };
 		B57747D50F7A8978003B34F9 /* SPPreferenceController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPreferenceController.h; sourceTree = "<group>"; };
 		B57747D70F7A8990003B34F9 /* SPWindowAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPWindowAdditions.h; sourceTree = "<group>"; };
@@ -1668,9 +1553,9 @@
 		17D3583C1533766800A654D7 /* Window */ = {
 			isa = PBXGroup;
 			children = (
-				58A8A78F11A036C000B95749 /* SPWindowController.h */,
-				58A8A79011A036C000B95749 /* SPWindowController.m */,
+				5132930925F586A900D803AD /* NotificationToken.swift */,
 				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
+				5132930A25F586A900D803AD /* TabManager.swift */,
 			);
 			path = Window;
 			sourceTree = "<group>";
@@ -1890,17 +1775,17 @@
 		17E641470EF01EB8001BC333 /* Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				173567BA12AC1306000DCCEF /* Bundle Support */,
+				173E70D4107FF6E7008733C9 /* Data Controllers */,
+				17F5B1491048C4C000FC794F /* Data Export */,
+				17D38EFB12777B2300672B13 /* Data Import */,
+				173E70A6107FF61D008733C9 /* Main View Controllers */,
+				173E70D5107FF7AF008733C9 /* Other */,
+				17D390A6127B54F300672B13 /* Preferences */,
 				17E6414A0EF01EF6001BC333 /* SPAppController.h */,
 				17E6414B0EF01EF6001BC333 /* SPAppController.m */,
-				17D3583C1533766800A654D7 /* Window */,
-				173567BA12AC1306000DCCEF /* Bundle Support */,
-				173E70A6107FF61D008733C9 /* Main View Controllers */,
 				173E70D2107FF687008733C9 /* Subview Controllers */,
-				173E70D4107FF6E7008733C9 /* Data Controllers */,
-				17D38EFB12777B2300672B13 /* Data Import */,
-				17F5B1491048C4C000FC794F /* Data Export */,
-				17D390A6127B54F300672B13 /* Preferences */,
-				173E70D5107FF7AF008733C9 /* Other */,
+				17D3583C1533766800A654D7 /* Window */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -2086,6 +1971,7 @@
 		17E642050EF020A3001BC333 /* Interfaces */ = {
 			isa = PBXGroup;
 			children = (
+				51F41FB625F56A5900594BA5 /* MainWindow.xib */,
 				51CD0BD9258D06D8009E2484 /* AboutPanel.xib */,
 				51CD0BD2258D06D8009E2484 /* BundleEditor.xib */,
 				51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */,
@@ -2107,7 +1993,6 @@
 				51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */,
 				51CD0BC4258D06D7009E2484 /* IndexesView.xib */,
 				51CD0BCA258D06D8009E2484 /* MainMenu.xib */,
-				51BC150D25BE1EB100F1CDC9 /* MainWindow.xib */,
 				51CD0BC7258D06D8009E2484 /* Navigator.xib */,
 				51CD0BC0258D06D7009E2484 /* Preferences.xib */,
 				51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */,
@@ -2162,7 +2047,6 @@
 			children = (
 				17E5954E14F304000054EE08 /* QueryKit.xcodeproj */,
 				584D876015140D3500F24774 /* SPMySQLFramework.xcodeproj */,
-				58B906F811BD9B34000826E5 /* PSMTabBar */,
 			);
 			name = Frameworks;
 			path = ..;
@@ -2383,95 +2267,6 @@
 				29B70BD61C805B2A00D1BE0C /* SPMySQL Unit Tests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		58B906F811BD9B34000826E5 /* PSMTabBar */ = {
-			isa = PBXGroup;
-			children = (
-				58B9071611BD9B34000826E5 /* NSBezierPath_AMShading.h */,
-				58B9071711BD9B34000826E5 /* NSBezierPath_AMShading.m */,
-				58B9071811BD9B34000826E5 /* NSString_AITruncation.h */,
-				58B9071911BD9B34000826E5 /* NSString_AITruncation.m */,
-				58B9071A11BD9B34000826E5 /* PSMOverflowPopUpButton.h */,
-				58B9071B11BD9B34000826E5 /* PSMOverflowPopUpButton.m */,
-				58B9071C11BD9B34000826E5 /* PSMProgressIndicator.h */,
-				58B9071D11BD9B34000826E5 /* PSMProgressIndicator.m */,
-				58B9071E11BD9B34000826E5 /* PSMRolloverButton.h */,
-				58B9071F11BD9B34000826E5 /* PSMRolloverButton.m */,
-				58B9072011BD9B34000826E5 /* PSMTabBarCell.h */,
-				58B9072111BD9B34000826E5 /* PSMTabBarCell.m */,
-				58B9072211BD9B34000826E5 /* PSMTabBarControl.h */,
-				58B9072311BD9B34000826E5 /* PSMTabBarControl.m */,
-				58B9072411BD9B34000826E5 /* PSMTabBarController.h */,
-				58B9072511BD9B34000826E5 /* PSMTabBarController.m */,
-				58B9072611BD9B34000826E5 /* PSMTabDragAssistant.h */,
-				58B9072711BD9B34000826E5 /* PSMTabDragAssistant.m */,
-				58B9072811BD9B34000826E5 /* PSMTabDragView.h */,
-				58B9072911BD9B34000826E5 /* PSMTabDragView.m */,
-				58B9072A11BD9B34000826E5 /* PSMTabDragWindow.h */,
-				58B9072B11BD9B34000826E5 /* PSMTabDragWindow.m */,
-				58B9072C11BD9B34000826E5 /* PSMTabDragWindowController.h */,
-				58B9072D11BD9B34000826E5 /* PSMTabDragWindowController.m */,
-				58B9072E11BD9B34000826E5 /* PSMTabStyle.h */,
-				58B9072F11BD9B34000826E5 /* Styles */,
-				58B906F911BD9B34000826E5 /* Images */,
-				511C466925BC768E001AA1BD /* NSTabViewItemExtension.swift */,
-			);
-			name = PSMTabBar;
-			path = Frameworks/PSMTabBar;
-			sourceTree = "<group>";
-		};
-		58B906F911BD9B34000826E5 /* Images */ = {
-			isa = PBXGroup;
-			children = (
-				58B906FA11BD9B34000826E5 /* AdiumGradient.png */,
-				B55F8E6311C67D8A006A3386 /* AddTabButton.png */,
-				B55F8E6411C67D8A006A3386 /* AddTabButtonPushed.png */,
-				B55F8E6511C67D8A006A3386 /* AddTabButtonRollover.png */,
-				58B906FB11BD9B34000826E5 /* AquaTabClose_Front.png */,
-				58B906FC11BD9B34000826E5 /* AquaTabClose_Front_Pressed.png */,
-				58B906FD11BD9B34000826E5 /* AquaTabClose_Front_Rollover.png */,
-				58B906FE11BD9B34000826E5 /* AquaTabCloseDirty_Front.png */,
-				58B906FF11BD9B34000826E5 /* AquaTabCloseDirty_Front_Pressed.png */,
-				58B9070011BD9B34000826E5 /* AquaTabCloseDirty_Front_Rollover.png */,
-				58B9070111BD9B34000826E5 /* AquaTabNew.png */,
-				58B9070211BD9B34000826E5 /* AquaTabNewPressed.png */,
-				58B9070311BD9B34000826E5 /* AquaTabNewRollover.png */,
-				58B9070411BD9B34000826E5 /* AquaTabsBackground.png */,
-				58B9070511BD9B34000826E5 /* AquaTabsDown.png */,
-				58B9070611BD9B34000826E5 /* AquaTabsDownGraphite.png */,
-				58B9070711BD9B34000826E5 /* AquaTabsDownNonKey.png */,
-				58B9070811BD9B34000826E5 /* AquaTabsSeparator.png */,
-				58B9070911BD9B34000826E5 /* AquaTabsSeparatorDown.png */,
-				58B9070A11BD9B34000826E5 /* overflowImage.png */,
-				58B9070B11BD9B34000826E5 /* overflowImagePressed.png */,
-				58B9070C11BD9B34000826E5 /* pi.png */,
-				580E8DAE11EA772C000D8427 /* SequelProTabDirty_Pressed.png */,
-				58C4BA1116781A93004068AB /* SequelProTabDirty_Pressed@2x.png */,
-				580E8DAF11EA772C000D8427 /* SequelProTabDirty_Rollover.png */,
-				58C4BA1216781A93004068AB /* SequelProTabDirty_Rollover@2x.png */,
-				580E8DB011EA772C000D8427 /* SequelProTabDirty.png */,
-				58C4BA1316781A93004068AB /* SequelProTabDirty@2x.png */,
-				58B9070D11BD9B34000826E5 /* TabClose_Dirty.png */,
-				58B9070E11BD9B34000826E5 /* TabClose_Dirty_Pressed.png */,
-				58B9070F11BD9B34000826E5 /* TabClose_Dirty_Rollover.png */,
-				58B9071011BD9B34000826E5 /* TabClose_Front.png */,
-				58B9071111BD9B34000826E5 /* TabClose_Front_Pressed.png */,
-				58B9071211BD9B34000826E5 /* TabClose_Front_Rollover.png */,
-				58B9071311BD9B34000826E5 /* TabNewMetal.png */,
-				58B9071411BD9B34000826E5 /* TabNewMetalPressed.png */,
-				58B9071511BD9B34000826E5 /* TabNewMetalRollover.png */,
-			);
-			path = Images;
-			sourceTree = "<group>";
-		};
-		58B9072F11BD9B34000826E5 /* Styles */ = {
-			isa = PBXGroup;
-			children = (
-				B55F8E5D11C67CA0006A3386 /* PSMSequelProTabStyle.h */,
-				B55F8E5E11C67CA0006A3386 /* PSMSequelProTabStyle.m */,
-			);
-			path = Styles;
 			sourceTree = "<group>";
 		};
 		58B909A111C3B8EC000826E5 /* Localization */ = {
@@ -2783,23 +2578,17 @@
 			files = (
 				51CD0BF8258D06D8009E2484 /* DatabaseProcessList.xib in Resources */,
 				17E641D10EF02036001BC333 /* grabber-horizontal.png in Resources */,
-				5135161E25935699001E4533 /* AddTabButtonRollover.png in Resources */,
-				5135160725935699001E4533 /* AquaTabClose_Front.png in Resources */,
 				17E641D20EF02036001BC333 /* grabber-vertical.png in Resources */,
 				51CD0BE5258D06D8009E2484 /* Navigator.xib in Resources */,
 				17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */,
 				17E641F30EF02036001BC333 /* toolbar-switch-to-table-info.png in Resources */,
 				1A6447992588CD9200927DB3 /* Credits.rtf in Resources */,
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
-				5135162025935699001E4533 /* SequelProTabDirty_Rollover.png in Resources */,
-				5135160925935699001E4533 /* AquaTabsSeparator.png in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
 				51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */,
 				51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */,
 				51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */,
-				5135160E25935699001E4533 /* AddTabButton.png in Resources */,
-				5135161D25935699001E4533 /* TabClose_Dirty_Rollover.png in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
 				51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */,
 				B57748420F7A8B57003B34F9 /* database.png in Resources */,
@@ -2810,31 +2599,21 @@
 				384582C40FB95FF800DDACB6 /* func-small.png in Resources */,
 				384582C70FB9603600DDACB6 /* proc-small.png in Resources */,
 				51CD0BEE258D06D8009E2484 /* UserManagerView.xib in Resources */,
-				5135160025935699001E4533 /* TabNewMetal.png in Resources */,
-				5135161325935699001E4533 /* AquaTabsBackground.png in Resources */,
-				5135161825935699001E4533 /* TabClose_Dirty_Pressed.png in Resources */,
 				8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */,
-				5135161525935699001E4533 /* TabClose_Front_Pressed.png in Resources */,
 				177E792E0FCB54EC00E9E122 /* database-small.png in Resources */,
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
 				51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */,
 				1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */,
 				51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
-				513515FE25935699001E4533 /* SequelProTabDirty_Rollover@2x.png in Resources */,
 				51CD0BE3258D06D8009E2484 /* DBView.xib in Resources */,
 				B54F25E60FD909C400E2CF36 /* toolbar-switch-to-table-relations.png in Resources */,
-				5135160D25935699001E4533 /* overflowImagePressed.png in Resources */,
 				8831EFB0224013AF00D10172 /* button_refreshTemplate.pdf in Resources */,
-				5135160125935699001E4533 /* TabClose_Front_Rollover.png in Resources */,
 				3E242D4F20FEB44D0015470D /* button_bar_spacer_dark.png in Resources */,
 				588B2CC80FE5641E00EC5FC0 /* ssh-connected.png in Resources */,
 				588B2CC90FE5641E00EC5FC0 /* ssh-connecting.png in Resources */,
-				5135160A25935699001E4533 /* TabClose_Front.png in Resources */,
-				5135162125935699001E4533 /* SequelProTabDirty_Pressed.png in Resources */,
 				588B2CCA0FE5641E00EC5FC0 /* ssh-disconnected.png in Resources */,
 				51CD0BDF258D06D8009E2484 /* FilterTableWindow.xib in Resources */,
-				5135160825935699001E4533 /* AquaTabNew.png in Resources */,
 				58D2E22E101222870063EF1D /* link-arrow-clicked.png in Resources */,
 				58D2E22F101222870063EF1D /* link-arrow-highlighted-clicked.png in Resources */,
 				58D2E230101222870063EF1D /* link-arrow.png in Resources */,
@@ -2848,7 +2627,6 @@
 				51CD0BF6258D06D8009E2484 /* ConnectionView.xib in Resources */,
 				17E0937E114AE154007FC1B4 /* SPTableInfoPrintTemplate.html in Resources */,
 				B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */,
-				5135161225935699001E4533 /* TabNewMetalPressed.png in Resources */,
 				8831EFBA2240154A00D10172 /* button_rightTemplate.pdf in Resources */,
 				51CD0BE0258D06D8009E2484 /* FieldEditorSheet.xib in Resources */,
 				17DD52B7115071D0007D8950 /* SPPrintTemplate.html in Resources */,
@@ -2859,18 +2637,13 @@
 				8831EFC12240166D00D10172 /* button_select_allTemplate.pdf in Resources */,
 				58A137CD123ED5E6000B1B75 /* titlebarlock.png in Resources */,
 				51CD0BEF258D06D8009E2484 /* ExportDialog.xib in Resources */,
-				5135161F25935699001E4533 /* AquaTabCloseDirty_Front_Rollover.png in Resources */,
+				51F41FBA25F56A5900594BA5 /* MainWindow.xib in Resources */,
 				BC09D7DE12A786FB0030DB64 /* cancel-clicked-highlighted.png in Resources */,
 				8831EFAC2240131500D10172 /* button_editTemplate.pdf in Resources */,
 				BC09D7DF12A786FB0030DB64 /* cancel-clicked.png in Resources */,
-				5135161925935699001E4533 /* AquaTabsDown.png in Resources */,
-				5135161A25935699001E4533 /* SequelProTabDirty.png in Resources */,
-				5135160325935699001E4533 /* AquaTabClose_Front_Rollover.png in Resources */,
 				BC09D7E012A786FB0030DB64 /* cancel-highlighted.png in Resources */,
-				5135161125935699001E4533 /* TabClose_Dirty.png in Resources */,
 				BC09D7E112A786FB0030DB64 /* cancel-hovered-highlighted.png in Resources */,
 				BC09D7E212A786FB0030DB64 /* cancel-hovered.png in Resources */,
-				5135161C25935699001E4533 /* AquaTabNewPressed.png in Resources */,
 				BC09D7E312A786FB0030DB64 /* cancel.png in Resources */,
 				58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */,
 				58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */,
@@ -2883,16 +2656,12 @@
 				5843DA6F161FA35600EAA6D1 /* key-icon@2x.png in Resources */,
 				51CD0BF5258D06D8009E2484 /* QueryFavoriteManager.xib in Resources */,
 				8831EFBE2240159E00D10172 /* button_pane_showTemplate.pdf in Resources */,
-				5135160C25935699001E4533 /* AquaTabsDownNonKey.png in Resources */,
 				51CD0BE9258D06D8009E2484 /* Console.xib in Resources */,
 				8831EFB22240143600D10172 /* button_bar_handleTemplate.pdf in Resources */,
-				513515FD25935699001E4533 /* overflowImage.png in Resources */,
 				C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */,
 				C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */,
 				51CD0BE2258D06D8009E2484 /* IndexesView.xib in Resources */,
-				5135160625935699001E4533 /* pi.png in Resources */,
 				C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */,
-				5135160B25935699001E4533 /* AquaTabNewRollover.png in Resources */,
 				51CD0BE8258D06D8009E2484 /* MainMenu.xib in Resources */,
 				51A709392565B99F001F1D2F /* Images.xcassets in Resources */,
 				51CD0BE7258D06D8009E2484 /* ImportAccessory.xib in Resources */,
@@ -2900,16 +2669,12 @@
 				C9AD7C7B1676158C00234EEE /* toolbar-switch-to-sql.png in Resources */,
 				C9AD7C7C1676158C00234EEE /* toolbar-switch-to-sql@2x.png in Resources */,
 				8831EFB4224014C700D10172 /* button_clearTemplate.pdf in Resources */,
-				5135160525935699001E4533 /* AquaTabClose_Front_Pressed.png in Resources */,
-				513515FF25935699001E4533 /* AdiumGradient.png in Resources */,
 				C9C994411678A439001F5DA8 /* button_bar_spacer.png in Resources */,
 				8831EFAE2240135400D10172 /* button_duplicateTemplate.pdf in Resources */,
 				C9C994491678B3E6001F5DA8 /* table-small-square.png in Resources */,
 				C9C9944A1678B3E6001F5DA8 /* table-small-square@2x.png in Resources */,
 				964908C8249A77D00052FC4A /* ssh_config in Resources */,
-				5135161725935699001E4533 /* AquaTabsDownGraphite.png in Resources */,
 				8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */,
-				5135160F25935699001E4533 /* AddTabButtonPushed.png in Resources */,
 				C9C9944D1678BCFA001F5DA8 /* table-small.png in Resources */,
 				C9C9944E1678BCFA001F5DA8 /* table-small@2x.png in Resources */,
 				582E939D168296F3003459FD /* link-arrow-clicked@2x.png in Resources */,
@@ -2919,7 +2684,6 @@
 				582E939F168296F3003459FD /* link-arrow-highlighted@2x.png in Resources */,
 				582E93A0168296F3003459FD /* link-arrow@2x.png in Resources */,
 				51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */,
-				5135161B25935699001E4533 /* AquaTabCloseDirty_Front_Pressed.png in Resources */,
 				8831EFB62240150A00D10172 /* button_add_folderTemplate.pdf in Resources */,
 				582E940E1682A2AD003459FD /* button_bar_spacer@2x.png in Resources */,
 				50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */,
@@ -2934,19 +2698,13 @@
 				582E945016837AA9003459FD /* network-small.png in Resources */,
 				582E947016837DB2003459FD /* showconsole.png in Resources */,
 				582E9483168380D6003459FD /* sync_arrows_01.png in Resources */,
-				5135161025935699001E4533 /* SequelProTabDirty@2x.png in Resources */,
 				582E9484168380D6003459FD /* sync_arrows_02.png in Resources */,
-				5135161625935699001E4533 /* AquaTabsSeparatorDown.png in Resources */,
 				582E9485168380D6003459FD /* sync_arrows_03.png in Resources */,
 				582E9486168380D6003459FD /* sync_arrows_04.png in Resources */,
 				51CD0BF2258D06D8009E2484 /* EncodingPopupView.xib in Resources */,
-				5135160425935699001E4533 /* TabNewMetalRollover.png in Resources */,
 				51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */,
 				582E9487168380D6003459FD /* sync_arrows_05.png in Resources */,
-				51BC150E25BE1EB100F1CDC9 /* MainWindow.xib in Resources */,
-				5135161425935699001E4533 /* AquaTabCloseDirty_Front.png in Resources */,
 				582E9488168380D6003459FD /* sync_arrows_06.png in Resources */,
-				5135160225935699001E4533 /* SequelProTabDirty_Pressed@2x.png in Resources */,
 				582E948F168383F0003459FD /* table-view-small-square.png in Resources */,
 				582E9490168383F0003459FD /* table-view-small.png in Resources */,
 				582E94A816839AD5003459FD /* toolbar-preferences-autoupdate.png in Resources */,
@@ -3082,9 +2840,7 @@
 				507FF1121BBCC57600104523 /* SPFunctions.m in Sources */,
 				5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */,
 				17E641590EF01EF6001BC333 /* SPTableContent.m in Sources */,
-				513515EC2593568B001E4533 /* NSString_AITruncation.m in Sources */,
 				17E6415A0EF01EF6001BC333 /* SPDatabaseDocument.m in Sources */,
-				513515EB2593568B001E4533 /* NSBezierPath_AMShading.m in Sources */,
 				17E6415B0EF01EF6001BC333 /* SPDataImport.m in Sources */,
 				17E6415C0EF01EF6001BC333 /* SPTableStructure.m in Sources */,
 				1A8B582A25EEE15900DFC54A /* ByteCountFormatterExtension.swift in Sources */,
@@ -3093,10 +2849,8 @@
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
-				513515EA2593568B001E4533 /* PSMTabDragWindowController.m in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
-				513515E52593568B001E4533 /* PSMTabDragAssistant.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,
 				1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */,
@@ -3155,10 +2909,8 @@
 				BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */,
 				58DA8863103E15B5000B98DF /* SPLogger.m in Sources */,
 				BC01BCCF104024BE006BDEE7 /* SPEncodingPopupAccessory.m in Sources */,
-				513515E42593568B001E4533 /* PSMProgressIndicator.m in Sources */,
 				3876E15D1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m in Sources */,
 				51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */,
-				513515E92593568B001E4533 /* PSMTabDragWindow.m in Sources */,
 				173C4366104455E0001F3A30 /* SPQueryFavoriteManager.m in Sources */,
 				173C44D81044A6B0001F3A30 /* SPOutlineView.m in Sources */,
 				500C1F921BFB5F9F0095DC7F /* SPPrivilegesMO.m in Sources */,
@@ -3169,6 +2921,7 @@
 				1ABC770125E3895300E8EE01 /* DispatchQueueExtension.swift in Sources */,
 				5822D3091061833C00CE2157 /* SPCSVParser.m in Sources */,
 				1AD785E725B749760007E153 /* OSLog.swift in Sources */,
+				5132930C25F586A900D803AD /* NotificationToken.swift in Sources */,
 				BC675A141072039C00C5ACD4 /* SPContentFilterManager.m in Sources */,
 				17292443107AC41000B21980 /* SPXMLExporter.m in Sources */,
 				582A01E9107C0C170027D42B /* SPNotLoaded.m in Sources */,
@@ -3180,7 +2933,6 @@
 				1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */,
 				5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */,
 				17CC97F310B4ABE90034CD7A /* SPAboutController.m in Sources */,
-				513515ED2593568B001E4533 /* PSMTabBarController.m in Sources */,
 				51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */,
 				5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */,
 				29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */,
@@ -3192,7 +2944,6 @@
 				1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */,
 				1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */,
 				11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */,
-				58A8A79111A036C000B95749 /* SPWindowController.m in Sources */,
 				1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
 				173C837211AAD26E00B8B084 /* SPExportUtilities.m in Sources */,
@@ -3213,7 +2964,6 @@
 				BC32F242121D66260067305E /* SPFileManagerAdditions.m in Sources */,
 				17A20AC6124F9B110095CEFB /* SPServerSupport.m in Sources */,
 				BC2898F3125F4488001B50E1 /* SPGeometryDataView.m in Sources */,
-				513515F425935691001E4533 /* PSMSequelProTabStyle.m in Sources */,
 				17D38F701279E23A00672B13 /* SPTableFieldValidation.m in Sources */,
 				17D390C8127B65AF00672B13 /* SPGeneralPreferencePane.m in Sources */,
 				1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */,
@@ -3229,9 +2979,7 @@
 				17D3C22212859E070047709F /* SPFavoriteNode.m in Sources */,
 				506CE9311A311C6C0039F736 /* SPRuleFilterController.m in Sources */,
 				17D3C66E128AD4710047709F /* SPFavoritesController.m in Sources */,
-				513515E62593568B001E4533 /* PSMOverflowPopUpButton.m in Sources */,
 				17D3C671128AD8160047709F /* SPSingleton.m in Sources */,
-				513515E72593568B001E4533 /* PSMTabBarControl.m in Sources */,
 				17D3C6D3128B1C900047709F /* SPFavoritesOutlineView.m in Sources */,
 				50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */,
 				1A8B53572584520800526DED /* SPURLAdditions.m in Sources */,
@@ -3242,12 +2990,10 @@
 				BC77C5E4129AA69E009AD832 /* SPBundleHTMLOutputController.m in Sources */,
 				BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */,
 				BC0ED3DA12A9196C00088461 /* SPChooseMenuItemDialog.m in Sources */,
-				511C466A25BC768E001AA1BD /* NSTabViewItemExtension.swift in Sources */,
 				51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */,
 				583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */,
 				1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */,
 				582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */,
-				513515EE2593568B001E4533 /* PSMTabDragView.m in Sources */,
 				500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */,
 				584D878B15140FEB00F24774 /* SPObjectAdditions.m in Sources */,
 				584D87921514101E00F24774 /* SPDatabaseStructure.m in Sources */,
@@ -3260,7 +3006,6 @@
 				1798F1951550181B004B0AB8 /* SPGroupNode.m in Sources */,
 				1798F19815501838004B0AB8 /* SPMutableArrayAdditions.m in Sources */,
 				1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */,
-				513515EF2593568B001E4533 /* PSMRolloverButton.m in Sources */,
 				1798F19B1550185B004B0AB8 /* SPTreeNode.m in Sources */,
 				17D5B49E1553059F00EF3BB3 /* SPViewCopy.m in Sources */,
 				176E14D115570FE300FAF326 /* SPBundleCommandRunner.m in Sources */,
@@ -3272,9 +3017,9 @@
 				501B1D181728A3DA0017C92E /* SPCharsetCollationHelper.m in Sources */,
 				50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */,
 				50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */,
-				513515E82593568B001E4533 /* PSMTabBarCell.m in Sources */,
 				1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */,
 				1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */,
+				5132930D25F586A900D803AD /* TabManager.swift in Sources */,
 				9BE76F2886901784E4FD2321 /* SPFilterTableController.m in Sources */,
 				9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */,
 				9BE76F2B943AFDBA6EDC52BE /* SPHelpViewerController.m in Sources */,

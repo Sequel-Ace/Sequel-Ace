@@ -30,7 +30,8 @@
 
 #import "SPWindowAdditions.h"
 #import "SPDatabaseDocument.h"
-#import "SPWindowController.h"
+
+#import "sequel-ace-Swift.h"
 
 @implementation NSWindow (SPWindowAdditions)
 
@@ -85,7 +86,7 @@
  */
 - (void)swipeWithEvent:(NSEvent *)event
 {
-	if (![[self delegate] isKindOfClass:[SPWindowController class]] || ![[(SPWindowController *)[self delegate] documents] count]) return;
+	if (![[self delegate] isKindOfClass:[SPWindowController class]]) return;
 
 	id frontDoc = [(SPWindowController *)[self delegate] selectedTableDocument];
 

@@ -42,7 +42,6 @@
 #import "SPExportController.h"
 #import "SPSplitView.h"
 #import "SPQueryController.h"
-#import "SPWindowController.h"
 #import "SPNavigatorController.h"
 #import "SPSQLParser.h"
 #import "SPTableData.h"
@@ -82,8 +81,6 @@
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
-#import "PSMTabBarController.h"
-#import "PSMTabBarControl.h"
 #import "SPPrintUtility.h"
 #import "SPBundleManager.h"
 
@@ -140,7 +137,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @synthesize sqlFileURL;
 @synthesize sqlFileEncoding;
-@synthesize parentTabViewItem;
 @synthesize isProcessing;
 @synthesize serverSupport;
 @synthesize databaseStructureRetrieval;
@@ -265,6 +261,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Set collapsible behaviour on the table list so collapsing behaviour handles resize issus
     [contentViewSplitter setCollapsibleSubviewIndex:0];
+    [contentViewSplitter setMaxSize:200.0f ofSubviewAtIndex:0];
 
     // Set a minimum size on both text views on the table info page
     [tableInfoSplitView setMinSize:20 ofSubviewAtIndex:0];
@@ -468,13 +465,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self updateWindowTitle:self];
 
-    NSString *serverDisplayName = nil;
-    if ([self.parentWindowController selectedTableDocument] == self) {
-        serverDisplayName = [[self.parentWindowController window] title];
-    } else {
-        serverDisplayName = [parentTabViewItem label];
-    }
-
+    NSString *serverDisplayName = [[self.parentWindowController window] title];
     NSUserNotification *notification = [[NSUserNotification alloc] init];
     notification.title = @"Connected";
     notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Connected to %@", @"description for connected notification"), serverDisplayName];
@@ -2348,7 +2339,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Disconnected notification
     NSUserNotification *notification = [[NSUserNotification alloc] init];
     notification.title = @"Disconnected";
-    notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Disconnected from %@", @"description for disconnected notification"), [parentTabViewItem label]];
     notification.soundName = NSUserNotificationDefaultSoundName;
 
     [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
@@ -2944,42 +2934,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             for (SPWindowController *windowController in [SPAppDelegate windowControllers]) {
 
                 // First window is always the currently key window
-
-                NSMutableArray *tabs = [NSMutableArray array];
                 NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
-                // Loop through all tabs of a given window
-                NSInteger tabCount = 0;
-                NSInteger selectedTabItem = 0;
-                for (SPDatabaseDocument *doc in [windowController documents]) {
+                // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
+                if (![windowController.selectedTableDocument mySQLVersion]) continue;
 
-                    // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-                    if(![doc mySQLVersion]) continue;
-
-                    NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-                    if([doc isUntitled]) {
-                        // new bundle file name for untitled docs
-                        NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-                        // internal bundle path to store the doc
-                        NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-                        // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-                        [doc saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-                        [doc setIsSavedInBundle:YES];
-                        [tabData setObject:@NO forKey:@"isAbsolutePath"];
-                        [tabData setObject:newName forKey:@"path"];
-                    } else {
-                        // save it to the original location and take the file's spfDocData
-                        [doc saveDocumentWithFilePath:[[doc fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-                        [tabData setObject:@YES forKey:@"isAbsolutePath"];
-                        [tabData setObject:[[doc fileURL] path] forKey:@"path"];
-                    }
-                    [tabs addObject:tabData];
-                    if ([windowController selectedTableDocument] == doc) selectedTabItem = tabCount;
-                    tabCount++;
+                NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
+                if([windowController.selectedTableDocument isUntitled]) {
+                    // new bundle file name for untitled docs
+                    NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
+                    // internal bundle path to store the doc
+                    NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
+                    // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
+                    [windowController.selectedTableDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                    [windowController.selectedTableDocument setIsSavedInBundle:YES];
+                    [tabData setObject:@NO forKey:@"isAbsolutePath"];
+                    [tabData setObject:newName forKey:@"path"];
+                } else {
+                    // save it to the original location and take the file's spfDocData
+                    [windowController.selectedTableDocument saveDocumentWithFilePath:[[windowController.selectedTableDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                    [tabData setObject:@YES forKey:@"isAbsolutePath"];
+                    [tabData setObject:[[windowController.selectedTableDocument fileURL] path] forKey:@"path"];
                 }
-                if (![tabs count]) continue;
-                [win setObject:tabs forKey:@"tabs"];
-                [win setObject:[NSNumber numberWithInteger:selectedTabItem] forKey:@"selectedTabIndex"];
                 [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
                 [windows addObject:win];
             }
@@ -3239,7 +3215,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)openDatabaseInNewTab:(id)sender
 {
     // Add a new tab to the window
-    [self.parentWindowController addNewConnection:self];
+    // TODO
+//    [self.parentWindowController addNewConnection];
 
     // Get the current state
     NSDictionary *allStateDetails = @{
@@ -3325,8 +3302,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isConnected || _isWorkingLevel) {
         return (
                 action == @selector(newWindow:) ||
-                action == @selector(terminate:) ||
-                action == @selector(closeTab:)
+                action == @selector(terminate:)
                 );
     }
 
@@ -3560,11 +3536,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Ensure a call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
 
-    NSMutableString *tabTitle;
     NSMutableString *windowTitle;
-    SPDatabaseDocument *frontTableDocument = [self.parentWindowController selectedTableDocument];
-
-    NSColor *tabColor = nil;
 
     // Determine name details
     NSString *pathName = @"";
@@ -3574,17 +3546,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if ([connectionController isConnecting]) {
         windowTitle = [NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-        tabTitle = windowTitle;
     }
     else if (!_isConnected) {
         windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-        tabTitle = windowTitle;
     }
     else {
-        tabColor = [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]];
-
         windowTitle = [NSMutableString string];
-        tabTitle = [NSMutableString string];
 
         // Add the path to the window title
         [windowTitle appendString:pathName];
@@ -3595,46 +3562,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Add the name to the window
         [windowTitle appendString:[self name]];
 
-        // Also add to the non-front tabs if the host is different, not connected, or no db is selected
-        if ([[frontTableDocument name] isNotEqualTo:[self name]] || ![frontTableDocument getConnection] || ![self database]) {
-            [tabTitle appendString:[self name]];
-        }
-
         // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
         if ([self database]) {
             [windowTitle appendFormat:@"/%@", [self database]];
-            if (frontTableDocument == self
-                || ![frontTableDocument getConnection]
-                || [[frontTableDocument name] isNotEqualTo:[self name]]
-                || [[frontTableDocument database] isNotEqualTo:[self database]]
-                || ![[self table] length])
-            {
-                if ([tabTitle length]) [tabTitle appendString:@"/"];
-                [tabTitle appendString:[self database]];
-            }
         }
 
         // Add the table name if one is selected
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
-            if ([tabTitle length]) [tabTitle appendString:@"/"];
-            [tabTitle appendString:[self table]];
         }
     }
 
-    // Set the titles
-    [parentTabViewItem setLabel:tabTitle];
-    [parentTabViewItem setColor:tabColor];
-    [self.parentWindowController updateTabBar];
-
     if ([self.parentWindowController selectedTableDocument] == self) {
         [[self.parentWindowController window] setTitle:windowTitle];
-    }
-
-    // If the sender wasn't the window controller, update other tabs in this window
-    // for shared pathname updates
-    if ([sender class] != [SPWindowController class]) {
-        [self.parentWindowController updateAllTabTitles:self];
     }
 }
 
@@ -3986,7 +3926,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)makeKeyDocument
 {
     [[[self.parentWindowController window] onMainThread] makeKeyAndOrderFront:self];
-    [[[[self parentTabViewItem] onMainThread] tabView] selectTabViewItemWithIdentifier:self];
 }
 
 /**
@@ -4752,12 +4691,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)connectionControllerInitiatingConnection:(SPConnectionController *)controller
 {
-    // Update the window title to indicate that we are trying to establish a connection
-    [parentTabViewItem setLabel:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-
-    if ([self.parentWindowController selectedTableDocument] == self) {
-        [[self.parentWindowController window] setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-    }
+    [[self.parentWindowController window] setTitle:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
 }
 
 /**
@@ -5422,9 +5356,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return [it convertRect:rowrect toView:nil];
 
     }
-
-    // Otherwise position the sheet beneath the tab bar if it's visible
-    rect.origin.y -= [self.parentWindowController.tabBarControl frame].size.height - 1;
 
     return rect;
 }
@@ -6609,18 +6540,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _isConnected = NO;
 
-    if ([[[self parentTabViewItem] tabView] numberOfTabViewItems] == 1) {
-        [theParentWindow orderOut:self];
-        [theParentWindow setAlphaValue:0.0f];
-        [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
-    }
-    else {
-        NSTabViewItem *parentTabViewItemTmp = [self parentTabViewItem];
-        if([parentTabViewItemTmp.tabView.tabViewItems containsObject:parentTabViewItemTmp]){
-            [[parentTabViewItemTmp tabView] performSelector:@selector(removeTabViewItem:) withObject:parentTabViewItemTmp afterDelay:0.5];
-        }
-        [theParentWindow performSelector:@selector(makeKeyAndOrderFront:) withObject:nil afterDelay:0.6];
-    }
+    [theParentWindow orderOut:self];
+    [theParentWindow setAlphaValue:0.0f];
+    [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
 
     [self parentTabDidClose];
 }

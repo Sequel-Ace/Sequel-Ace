@@ -46,7 +46,6 @@
 #import "SPFunctions.h"
 #import "SPQueryController.h"
 #import "SPConstants.h"
-#import "SPWindowController.h"
 
 #import <SPMySQL/SPMySQL.h>
 
