@@ -5,17 +5,58 @@
 //  Created by Jakub Kašpar on 24.01.2021.
 //  Copyright © 2021 Sequel-Ace. All rights reserved.
 //
+//  Permission is hereby granted, free of charge, to any person
+//  obtaining a copy of this software and associated documentation
+//  files (the "Software"), to deal in the Software without
+//  restriction, including without limitation the rights to use,
+//  copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the
+//  Software is furnished to do so, subject to the following
+//  conditions:
+//
+//  The above copyright notice and this permission notice shall be
+//  included in all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+//  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//  OTHER DEALINGS IN THE SOFTWARE.
+//
+//  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
 
 import Cocoa
 import SnapKit
 
-extension SPWindowController {
-    @objc func setupAppearance() {
-        // Here should happen all UI / layout setups in the future once we remove .xib
+@objc protocol SPWindowControllerDelegate: AnyObject {
+    func windowControllerDidClose(_ windowController: SPWindowController)
+}
+
+@objc final class SPWindowController: NSWindowController {
+
+    @objc weak var delegate: SPWindowControllerDelegate?
+
+    @objc lazy var selectedTableDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+
+        if let window = window  {
+            window.collectionBehavior = [window.collectionBehavior, .fullScreenPrimary]
+        }
+
+        setupAppearance()
     }
 
-    @objc func setupConstraints() {
-        // Here we will set constraints in the future once we remove .xib, for now, commented out as it crashes
+    private func setupAppearance() {
+        selectedTableDocument.didBecomeActiveTabInWindow()
+        selectedTableDocument.updateWindowTitle(self)
+
+        window?.contentView?.addSubview(selectedTableDocument.databaseView())
+        selectedTableDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
     }
 }
 
@@ -33,30 +74,7 @@ extension SPWindowController: NSWindowDelegate {
             appDelegate.setSessionURL(nil)
             appDelegate.setSpfSessionDocData(nil)
         }
-        delegate.windowControllerDidClose(self)
+        delegate?.windowControllerDidClose(self)
         return true
-    }
-
-    public func windowDidBecomeKey(_ notification: Notification) {
-        selectedTableDocument.tabDidBecomeKey()
-
-        // Update close tab
-        closeTabMenuItem.isEnabled = true
-        closeTabMenuItem.keyEquivalent = "w"
-        closeTabMenuItem.keyEquivalentModifierMask = .command
-
-        // Update the "Close" item to show "Close window"
-        closeWindowMenuItem.title = NSLocalizedString("Close Window", comment: "Close Window menu item")
-        closeWindowMenuItem.keyEquivalentModifierMask = [.command, .shift]
-    }
-
-    public func windowDidResignKey(_ notification: Notification) {
-        // Update close tab
-        closeTabMenuItem.isEnabled = true
-        closeTabMenuItem.keyEquivalentModifierMask = [.command, .shift]
-
-        // Update the "Close window" item to show only "Close"
-        closeWindowMenuItem.title = NSLocalizedString("Close", comment: "Close menu item")
-        closeWindowMenuItem.keyEquivalentModifierMask = .command
     }
 }

@@ -30,7 +30,8 @@
 
 #import "SPWindowAdditions.h"
 #import "SPDatabaseDocument.h"
-#import "SPWindowController.h"
+
+#import "sequel-ace-Swift.h"
 
 @implementation NSWindow (SPWindowAdditions)
 

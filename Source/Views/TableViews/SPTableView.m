@@ -31,8 +31,9 @@
 #import "SPTableView.h"
 #import "SPQueryFavoriteManager.h"
 #import "SPDatabaseDocument.h"
-#import "SPWindowController.h"
 #import "SPFieldMapperController.h"
+
+#import "sequel-ace-Swift.h"
 
 @protocol SPTableViewDelegate <NSObject>
 @optional

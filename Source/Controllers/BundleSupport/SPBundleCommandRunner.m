@@ -31,7 +31,6 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
-#import "SPWindowController.h"
 #import "sequel-ace-Swift.h"
 #import <sys/syslimits.h>
 

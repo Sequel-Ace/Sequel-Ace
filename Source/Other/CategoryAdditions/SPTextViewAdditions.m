@@ -34,7 +34,6 @@
 #import "SPAppController.h"
 #import "SPFieldEditorController.h"
 #import "SPTextView.h"
-#import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 #import "SPBundleCommandRunner.h"
 #import "SPBundleManager.h"

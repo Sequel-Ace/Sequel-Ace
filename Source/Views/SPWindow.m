@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPWindow.h"
-#import "SPWindowController.h"
 #import "SPDatabaseDocument.h"
 
 #import "sequel-ace-Swift.h"
