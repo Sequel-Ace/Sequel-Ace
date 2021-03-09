@@ -80,6 +80,38 @@ import AppKit
 
     // MARK: - Public API
 
+    @objc func switchToPreviousTab() {
+        // Get index of current tab
+        guard var index = managedWindows.firstIndex(where: { $0.window.isMainWindow }) else {
+            return
+        }
+        // If index is 0, we are on first tab, try to get the last tab
+        if index == 0 {
+            index = managedWindows.count
+        }
+        // If index is last window (count - 1), we are on last tab, try to get the first tab
+        guard let previousWindow = managedWindows[safe: index - 1] else {
+            return
+        }
+        previousWindow.window.order(.above, relativeTo: 0)
+    }
+
+    @objc func switchToNextTab() {
+        // Get index of current tab
+        guard var index = managedWindows.firstIndex(where: { $0.window.isMainWindow }) else {
+            return
+        }
+        // If index is last window (count - 1), we are on last tab, try to get the first tab
+        if index == managedWindows.count - 1 {
+            index = -1
+        }
+        // If tab exists, switch to it
+        guard let nextWindow = managedWindows[safe: index + 1] else {
+            return
+        }
+        nextWindow.window.order(.above, relativeTo: 0)
+    }
+
     @discardableResult
     @objc func newWindowForTab() -> SPWindowController {
         if let existingWindow = mainWindow {

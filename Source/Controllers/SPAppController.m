@@ -287,6 +287,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(duplicateConnectionToTab:) name:SPDocumentDuplicateTabNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(switchToPreviousTab:) name:SPWindowSelectPreviousTabNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(switchToNextTab:) name:SPWindowSelectNextTabNotification object:nil];
 
     [sharedSPBundleManager reloadBundles:self];
     [self _copyDefaultThemes];;
@@ -361,6 +363,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [windowController.selectedTableDocument setState:spfStructure];
         }
     }
+}
+
+- (void)switchToPreviousTab:(NSNotification *)notification {
+    [self.tabManager switchToPreviousTab];
+}
+
+- (void)switchToNextTab:(NSNotification *)notification {
+    [self.tabManager switchToNextTab];
 }
 
 - (void)duplicateConnectionToTab:(NSNotification *)notification {
