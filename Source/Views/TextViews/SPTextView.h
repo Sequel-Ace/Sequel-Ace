@@ -57,7 +57,8 @@ typedef struct {
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPCustomQuery *customQueryInstance;
 
-	BOOL autoindentEnabled;
+    BOOL autoindentEnabled;
+    BOOL autocompleteEnabled;
 	BOOL autopairEnabled;
 	BOOL autoindentIgnoresEnter;
 	BOOL autouppercaseKeywordsEnabled;
@@ -89,7 +90,6 @@ typedef struct {
 	BOOL completionIsOpen;
 	BOOL completionWasReinvokedAutomatically;
 	BOOL completionWasRefreshed;
-	BOOL completionFuzzyMode;
 	NSUInteger completionParseRangeLocation;
 
 	NSColor *queryHiliteColor;
@@ -123,6 +123,7 @@ typedef struct {
 @property (assign) BOOL syntaxHighlightingApplied;
 @property (assign) BOOL completionIsOpen;
 @property (assign) BOOL completionWasReinvokedAutomatically;
+@property (assign) BOOL completionFuzzyMode;
 
 - (IBAction)showMySQLHelpForCurrentWord:(id)sender;
 
@@ -134,6 +135,7 @@ typedef struct {
 - (BOOL) shiftSelectionRight;
 - (BOOL) shiftSelectionLeft;
 - (void) setAutoindent:(BOOL)enableAutoindent;
+- (void) setAutoComplete:(BOOL)enableAutocomplete;
 - (BOOL) autoindent;
 - (void) setAutoindentIgnoresEnter:(BOOL)enableAutoindentIgnoresEnter;
 - (BOOL) autoindentIgnoresEnter;
