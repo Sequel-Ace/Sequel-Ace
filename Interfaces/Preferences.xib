@@ -216,7 +216,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <clipView key="contentView" id="eRr-LP-c79">
                             <rect key="frame" x="1" y="1" width="263" height="152"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" id="1774">
                                     <rect key="frame" x="0.0" y="0.0" width="263" height="152"/>
@@ -1372,7 +1372,7 @@ Gw
                     <rect key="frame" x="180" y="40" width="340" height="160"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
                         <rect key="frame" x="1" y="1" width="338" height="158"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" id="RuH-Yq-cdH">
                                 <rect key="frame" x="0.0" y="0.0" width="338" height="158"/>
@@ -1992,11 +1992,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <constraint firstAttribute="height" constant="16" id="UHj-Wq-xiC"/>
                         <constraint firstAttribute="width" constant="11" id="nHg-43-jBJ"/>
                     </constraints>
-                    <stepperCell key="cell" controlSize="small" continuous="YES" enabled="NO" alignment="left" increment="0.10000000000000001" minValue="0.5" maxValue="5" doubleValue="1" id="1526">
+                    <stepperCell key="cell" controlSize="small" continuous="YES" enabled="NO" alignment="left" increment="0.10000000000000001" maxValue="5" doubleValue="2.5" id="1526">
                         <font key="font" metaFont="message" size="11"/>
                     </stepperCell>
                     <connections>
-                        <action selector="takeFloatValueFrom:" target="1520" id="1529"/>
+                        <action selector="delayStepperChanged:" target="2144" id="0lC-yA-DTc"/>
                         <binding destination="117" name="enabled" keyPath="values.CustomQueryAutoComplete" id="1541"/>
                         <binding destination="117" name="value" keyPath="values.CustomQueryAutoCompleteDelay" id="1540"/>
                     </connections>
@@ -2021,11 +2021,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="UbU-HI-GT2"/>
                     </constraints>
-                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" title=".5" drawsBackground="YES" usesSingleLineMode="YES" id="1523">
-                        <numberFormatter key="formatter" formatterBehavior="custom10_4" positiveFormat="#.0" alwaysShowsDecimalSeparator="YES" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="1" minimumFractionDigits="1" maximumFractionDigits="1" decimalSeparator="." groupingSeparator="" id="1524">
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="right" title="0.5" drawsBackground="YES" usesSingleLineMode="YES" id="1523">
+                        <numberFormatter key="formatter" formatterBehavior="custom10_4" positiveFormat="#.0" allowsFloats="NO" alwaysShowsDecimalSeparator="YES" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="1" maximumIntegerDigits="1" minimumFractionDigits="1" maximumFractionDigits="1" groupingSeparator="" id="1524">
                             <nil key="negativeInfinitySymbol"/>
                             <nil key="positiveInfinitySymbol"/>
-                            <real key="minimum" value="0.5"/>
+                            <real key="minimum" value="0.0"/>
                             <real key="maximum" value="20"/>
                         </numberFormatter>
                         <font key="font" metaFont="message" size="11"/>
@@ -2362,7 +2362,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <rect key="frame" x="20" y="46" width="500" height="212"/>
                     <clipView key="contentView" id="u3q-XC-nUM">
                         <rect key="frame" x="1" y="1" width="498" height="210"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" columnResizing="NO" autosaveColumns="NO" id="eH2-Ed-Xh3">
                                 <rect key="frame" x="0.0" y="0.0" width="498" height="210"/>

@@ -352,6 +352,22 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[colorSettingTableView reloadData];
 }
 
+- (IBAction)delayStepperChanged:(id)sender {
+
+    NSStepper *stepper = ((NSStepper*)sender);
+
+    if(stepper.floatValue < 0.1){
+        SPLog(@"delayStepperChanged to zero: %f", stepper.floatValue);
+        stepper.toolTip = NSLocalizedString(@"WARNING: Setting the auto-complete delay to 0.0 can result in strange output.", @"WARNING: Setting the auto-complete delay to 0.0 can result in strange output.");
+
+        // automatically display the tooltip
+        NSHelpManager *helpManager = [NSHelpManager sharedHelpManager];
+        [helpManager setContextHelp:[[NSAttributedString alloc] initWithString:stepper.toolTip] forObject:stepper];
+        [helpManager showContextHelpForObject:stepper locationHint:[NSEvent mouseLocation]];
+        [helpManager removeContextHelpForObject:stepper];
+    }
+}
+
 /**
  * Updates the colour scheme selection menu according to the available schemes.
  */
