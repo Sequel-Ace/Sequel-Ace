@@ -39,9 +39,7 @@
 @class SPWindowController;
 @class HyperlinkTextField;
 
-@protocol SPWindowControllerDelegate;
-
-@interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate, SPWindowControllerDelegate>
+@interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate>
 {
 	SPAboutController *aboutController;
 	SPPreferenceController *prefsController;

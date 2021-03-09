@@ -3212,11 +3212,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Open the currently selected database in a new tab, clearing any table selection.
  */
-- (IBAction)openDatabaseInNewTab:(id)sender
-{
-    // Add a new tab to the window
-    // TODO
-//    [self.parentWindowController addNewConnection];
+- (IBAction)openDatabaseInNewTab:(id)sender {
 
     // Get the current state
     NSDictionary *allStateDetails = @{
@@ -3234,8 +3230,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [sessionDict removeObjectForKey:@"table"];
     [currentState setObject:sessionDict forKey:@"session"];
 
-    // Set the connection on the new tab
-    [[SPAppDelegate frontDocument] setState:currentState];
+    [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentDuplicateTabNotification object:nil userInfo:currentState];
 }
 
 /**

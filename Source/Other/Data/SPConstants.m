@@ -249,6 +249,7 @@ NSString *SPDocumentTaskEndNotification          = @"DocumentTaskEnded";
 NSString *SPBookmarksChangedNotification         = @"BookmarksChangedNotification";
 NSString *SPDocumentTaskStartNotification        = @"DocumentTaskStarted";
 NSString *SPDocumentWillCloseNotification        = @"DocumentWillClose";
+NSString *SPDocumentDuplicateTabNotification     = @"DocumentDuplicateTab";
 NSString *SPActivitiesUpdateNotification         = @"ActivitiesUpdateNotification";
 NSString *SPWindowToolbarDidToggleNotification   = @"WindowToolbarWasToggledNotification";
 NSString *SPFieldEditorSheetFont                 = @"FieldEditorSheetFont";

@@ -444,6 +444,7 @@ extern NSString *SPShowUpdateAvailable;
 extern NSString *SPDocumentTaskEndNotification;
 extern NSString *SPDocumentTaskStartNotification;
 extern NSString *SPDocumentWillCloseNotification;
+extern NSString *SPDocumentDuplicateTabNotification;
 extern NSString *SPActivitiesUpdateNotification;
 extern NSString *SPWindowToolbarDidToggleNotification;
 extern NSString *SPFieldEditorSheetFont;

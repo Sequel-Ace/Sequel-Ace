@@ -239,6 +239,7 @@
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51BA34A525BD9F30007CA20B /* OCMock.framework */; };
+		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
@@ -869,6 +870,7 @@
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51BA34A525BD9F30007CA20B /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Frameworks/OCMock.framework; sourceTree = "<group>"; };
+		51BB391B25F82B060048CA69 /* SPAppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAppController.swift; sourceTree = "<group>"; };
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
@@ -1786,6 +1788,7 @@
 				17E6414B0EF01EF6001BC333 /* SPAppController.m */,
 				173E70D2107FF687008733C9 /* Subview Controllers */,
 				17D3583C1533766800A654D7 /* Window */,
+				51BB391B25F82B060048CA69 /* SPAppController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -2893,6 +2896,7 @@
 				BC2C16D40FEBEDF10003993B /* SPDataAdditions.m in Sources */,
 				5822C9B51000DB2400DCC3D6 /* SPConnectionController.m in Sources */,
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
+				51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
