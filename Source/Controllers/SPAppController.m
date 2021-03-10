@@ -122,7 +122,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             //Register an observer to switch Appearance at runtime
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
         }
-
         [NSApp setDelegate:self];
     }
     return self;
@@ -287,6 +286,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(duplicateConnectionToTab:) name:SPDocumentDuplicateTabNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(switchToPreviousTab:) name:SPWindowSelectPreviousTabNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(switchToNextTab:) name:SPWindowSelectNextTabNotification object:nil];
+
     [sharedSPBundleManager reloadBundles:self];
     [self _copyDefaultThemes];;
 
@@ -359,6 +362,23 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             SPWindowController *windowController = [self.tabManager newWindowForWindow];
             [windowController.selectedTableDocument setState:spfStructure];
         }
+    }
+}
+
+- (void)switchToPreviousTab:(NSNotification *)notification {
+    [self.tabManager switchToPreviousTab];
+}
+
+- (void)switchToNextTab:(NSNotification *)notification {
+    [self.tabManager switchToNextTab];
+}
+
+- (void)duplicateConnectionToTab:(NSNotification *)notification {
+
+    NSDictionary *userInfo = [notification userInfo];
+    if (userInfo) {
+        SPWindowController *newWindowController = [self.tabManager newWindowForTab];
+        [newWindowController.selectedTableDocument setState:userInfo];
     }
 }
 
@@ -1534,8 +1554,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (IBAction)duplicateTab:(id)sender {
 
-    SPWindowController *newWindowController = [self.tabManager newWindowForTab];
-
     // Get the state of the previously-frontmost document
     NSDictionary *allStateDetails = @{
         @"connection" : @YES,
@@ -1545,13 +1563,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         @"password"   : @YES
     };
 
-    NSMutableDictionary *frontState = [NSMutableDictionary dictionaryWithDictionary:[newWindowController.selectedTableDocument stateIncludingDetails:allStateDetails]];
+    NSMutableDictionary *frontState = [NSMutableDictionary dictionaryWithDictionary:[self.tabManager.activeWindowController.selectedTableDocument stateIncludingDetails:allStateDetails]];
 
     // Ensure it's set to autoconnect
     [frontState setObject:@YES forKey:@"auto_connect"];
 
-    // Set the connection on the new tab
-    [newWindowController.selectedTableDocument setState:frontState];
+    [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentDuplicateTabNotification object:nil userInfo:frontState];
 }
 
 #pragma mark - NSWindowDelegate
@@ -1692,12 +1709,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         k++;
     }
-}
-
-#pragma mark - SPWindowControllerDelegate
-
-- (void)windowControllerDidClose:(SPWindowController *)windowController {
-    [self.windowControllers removeObject:windowController];
 }
 
 @end

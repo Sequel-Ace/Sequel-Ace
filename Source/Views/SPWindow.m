@@ -99,35 +99,31 @@
 
 		switch (theCharacter) {
 
-			// Alternate keys for switching tabs - ⇧⌘[ and ⇧⌘].  These seem to be standards on some apps,
+			// Alternate keys for switching tabs - ⇧⌘[ and ⇧⌘]. These seem to be standards on some apps,
 			// including Apple applications under some circumstances
 			case '}':
-				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
-				{
-                    // TODO: Tabs switching
+				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift)) {
+                    [[NSNotificationCenter defaultCenter] postNotificationName:SPWindowSelectNextTabNotification object:nil];
 					return;
 				}
 				break;
 			case '{':
-				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
-				{
-					// TODO: Tabs switching
+				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagShift)) {
+                    [[NSNotificationCenter defaultCenter] postNotificationName:SPWindowSelectPreviousTabNotification object:nil];
 					return;
 				}
 				break;
 
 			// Also support ⌥⌘← and ⌥⌘→, used in other applications, for maximum compatibility
 			case NSRightArrowFunctionKey:
-				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction))
-				{
-                    // TODO: Tabs switching
+				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction)) {
+                    [[NSNotificationCenter defaultCenter] postNotificationName:SPWindowSelectNextTabNotification object:nil];
 					return;
 				}
 				break;
 			case NSLeftArrowFunctionKey:
-				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction))
-				{
-                    // TODO: Tabs switching
+				if (([theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == (NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagNumericPad | NSEventModifierFlagFunction)) {
+                    [[NSNotificationCenter defaultCenter] postNotificationName:SPWindowSelectPreviousTabNotification object:nil];
 					return;
 				}
 				break;
