@@ -298,12 +298,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         SPWindowController *newWindowController = [self.tabManager replaceTabServiceWithInitialWindow];
         if (spfDict) {
-            [newWindowController.selectedTableDocument setState:spfDict];
+            [newWindowController.databaseDocument setState:spfDict];
         }
 
         // Set autoconnection if appropriate
         if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
-            [newWindowController.selectedTableDocument connect];
+            [newWindowController.databaseDocument connect];
         }
     }
 }
@@ -360,7 +360,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         NSDictionary *spfStructure = [userInfo objectForKey:@"spfData"];
         if (spfStructure) {
             SPWindowController *windowController = [self.tabManager newWindowForWindow];
-            [windowController.selectedTableDocument setState:spfStructure];
+            [windowController.databaseDocument setState:spfStructure];
         }
     }
 }
@@ -378,7 +378,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSDictionary *userInfo = [notification userInfo];
     if (userInfo) {
         SPWindowController *newWindowController = [self.tabManager newWindowForTab];
-        [newWindowController.selectedTableDocument setState:userInfo];
+        [newWindowController.databaseDocument setState:userInfo];
     }
 }
 
@@ -528,7 +528,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
 - (void)openConnectionFileAtPath:(NSString *)filePath {
     SPWindowController *windowController = [self.tabManager newWindowForWindow];
-    [windowController.selectedTableDocument setStateFromConnectionFile:filePath];
+    [windowController.databaseDocument setStateFromConnectionFile:filePath];
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
 }
 
@@ -612,7 +612,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // Check if at least one document exists.  If not, open one.
     if (![self.tabManager activeWindowController]) {
-        frontDocument = [self.tabManager newWindowForWindow].selectedTableDocument;
+        frontDocument = [self.tabManager newWindowForWindow].databaseDocument;
         [frontDocument initQueryEditorWithString:sqlString];
     }
     else {
@@ -715,8 +715,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
                         if ([[newWindowController window] isMiniaturized]) [[newWindowController window] deminiaturize:self];
 
-                        [newWindowController.selectedTableDocument setIsSavedInBundle:isBundleFile];
-                        if (![newWindowController.selectedTableDocument setStateFromConnectionFile:fileName]) {
+                        [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
+                        if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
                             break;
                         }
                     }
@@ -823,7 +823,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 
     SPWindowController *windowController = [self.tabManager newWindowForWindow];
-    [windowController.selectedTableDocument setState:@{@"connection":details,@"auto_connect": connect} fromFile:NO];
+    [windowController.databaseDocument setState:@{@"connection":details,@"auto_connect": connect} fromFile:NO];
 }
 
 - (void)handleEventWithURL:(NSURL*)url
@@ -934,8 +934,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             processDocument = [self frontDocument];
         } else {
             for (SPWindowController *windowController in self.windowControllers) {
-                if([windowController.selectedTableDocument processID] && [[windowController.selectedTableDocument processID] isEqualToString:passedProcessID]) {
-                    processDocument = windowController.selectedTableDocument;
+                if([windowController.databaseDocument processID] && [[windowController.databaseDocument processID] isEqualToString:passedProcessID]) {
+                    processDocument = windowController.databaseDocument;
                     goto break_loop;
                 }
             }
@@ -1103,8 +1103,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         doc = [self frontDocument];
     else {
         for (SPWindowController *windowController in self.windowControllers) {
-            if ([windowController.selectedTableDocument processID] && [[windowController.selectedTableDocument processID] isEqualToString:docUUID]) {
-                [env addEntriesFromDictionary:[windowController.selectedTableDocument shellVariables]];
+            if ([windowController.databaseDocument processID] && [[windowController.databaseDocument processID] isEqualToString:docUUID]) {
+                [env addEntriesFromDictionary:[windowController.databaseDocument shellVariables]];
                 goto break_loop;
             }
         }
@@ -1250,7 +1250,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  * Retrieve the frontmost document; returns nil if not found.
  */
 - (SPDatabaseDocument *)frontDocument {
-    return [[self.tabManager activeWindowController] selectedTableDocument];
+    return [[self.tabManager activeWindowController] databaseDocument];
 }
 
 /**
@@ -1384,7 +1384,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Iterate through each open window
     for (SPWindowController *windowController in self.windowControllers) {
         // Kill any BASH commands which are currently active
-        for (NSDictionary *cmd in [windowController.selectedTableDocument runningActivities]) {
+        for (NSDictionary *cmd in [windowController.databaseDocument runningActivities]) {
             NSInteger pid = [[cmd objectForKey:@"pid"] integerValue];
             NSTask *killTask = [[NSTask alloc] init];
 
@@ -1395,7 +1395,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
 
         // If the connection view is active, mark the favourites for saving
-        if (![windowController.selectedTableDocument getConnection]) {
+        if (![windowController.databaseDocument getConnection]) {
             shouldSaveFavorites = YES;
         }
     }
@@ -1480,7 +1480,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     for (NSWindow *aWindow in [self orderedWindows]) {
         if ([[aWindow windowController] isMemberOfClass:[SPWindowController class]]) {
-            [orderedDocuments addObject:[(SPWindowController *)[aWindow windowController] selectedTableDocument]];
+            [orderedDocuments addObject:[(SPWindowController *)[aWindow windowController] databaseDocument]];
         }
     }
     return orderedDocuments;
@@ -1563,7 +1563,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         @"password"   : @YES
     };
 
-    NSMutableDictionary *frontState = [NSMutableDictionary dictionaryWithDictionary:[self.tabManager.activeWindowController.selectedTableDocument stateIncludingDetails:allStateDetails]];
+    NSMutableDictionary *frontState = [NSMutableDictionary dictionaryWithDictionary:[self.tabManager.activeWindowController.databaseDocument stateIncludingDetails:allStateDetails]];
 
     // Ensure it's set to autoconnect
     [frontState setObject:@YES forKey:@"auto_connect"];

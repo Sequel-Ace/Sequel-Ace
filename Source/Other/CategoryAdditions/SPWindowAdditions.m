@@ -88,7 +88,7 @@
 {
 	if (![[self delegate] isKindOfClass:[SPWindowController class]]) return;
 
-	id frontDoc = [(SPWindowController *)[self delegate] selectedTableDocument];
+	id frontDoc = [(SPWindowController *)[self delegate] databaseDocument];
 
 	if (frontDoc && [frontDoc isKindOfClass:[SPDatabaseDocument class]] && [frontDoc valueForKeyPath:@"spHistoryControllerInstance"] && ![frontDoc isWorking])
 	{

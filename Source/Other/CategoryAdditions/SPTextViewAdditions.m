@@ -792,7 +792,7 @@
 	}
 
     id<NSWindowDelegate> windowController = [[NSApp keyWindow] delegate];
-    if ([windowController isKindOfClass:[SPWindowController class]] && [[[(SPWindowController *)windowController selectedTableDocument] connectionID] isEqualToString:@"_"]) {
+    if ([windowController isKindOfClass:[SPWindowController class]] && [[[(SPWindowController *)windowController databaseDocument] connectionID] isEqualToString:@"_"]) {
         return menu;
     }
 

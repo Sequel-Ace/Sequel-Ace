@@ -2937,24 +2937,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
                 // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-                if (![windowController.selectedTableDocument mySQLVersion]) continue;
+                if (![windowController.databaseDocument mySQLVersion]) continue;
 
                 NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-                if([windowController.selectedTableDocument isUntitled]) {
+                if([windowController.databaseDocument isUntitled]) {
                     // new bundle file name for untitled docs
                     NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
                     // internal bundle path to store the doc
                     NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
                     // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-                    [windowController.selectedTableDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-                    [windowController.selectedTableDocument setIsSavedInBundle:YES];
+                    [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                    [windowController.databaseDocument setIsSavedInBundle:YES];
                     [tabData setObject:@NO forKey:@"isAbsolutePath"];
                     [tabData setObject:newName forKey:@"path"];
                 } else {
                     // save it to the original location and take the file's spfDocData
-                    [windowController.selectedTableDocument saveDocumentWithFilePath:[[windowController.selectedTableDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                    [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
                     [tabData setObject:@YES forKey:@"isAbsolutePath"];
-                    [tabData setObject:[[windowController.selectedTableDocument fileURL] path] forKey:@"path"];
+                    [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
                 }
                 [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
                 [windows addObject:win];
@@ -3568,7 +3568,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     }
 
-    if ([self.parentWindowController selectedTableDocument] == self) {
+    if ([self.parentWindowController databaseDocument] == self) {
         [[self.parentWindowController window] setTitle:windowTitle];
     }
 }
@@ -4072,7 +4072,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [contentViewSplitter setPosition:[[[contentViewSplitter subviews] objectAtIndex:0] bounds].size.width ofDividerAtIndex:0];
 
     // If the task interface is visible, and this tab is frontmost, re-center the task child window
-    if (_isWorkingLevel && [self.parentWindowController selectedTableDocument] == self) [self centerTaskWindow];
+    if (_isWorkingLevel && [self.parentWindowController databaseDocument] == self) [self centerTaskWindow];
 }
 
 #pragma mark -
@@ -4084,7 +4084,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)setFileURL:(NSURL *)theURL
 {
     spfFileURL = theURL;
-    if ([self.parentWindowController selectedTableDocument] == self) {
+    if ([self.parentWindowController databaseDocument] == self) {
         if (spfFileURL && [spfFileURL isFileURL]) {
             [[self.parentWindowController window] setRepresentedURL:spfFileURL];
         } else {
