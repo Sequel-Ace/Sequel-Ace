@@ -3930,15 +3930,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark Tab methods
 
 /**
- * Make this document's window frontmost in the application,
- * and ensure this tab is selected.
- */
-- (void)makeKeyDocument
-{
-    [[[self.parentWindowController window] onMainThread] makeKeyAndOrderFront:self];
-}
-
-/**
  * Invoked to determine whether the parent tab is allowed to close
  */
 - (BOOL)parentTabShouldClose {
@@ -6399,9 +6390,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];
         }
-
-        // Ensure the window and tab are frontmost
-        [self makeKeyDocument];
+        [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
 
         // Display the connection error dialog and wait for the return code
         [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];

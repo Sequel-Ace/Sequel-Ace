@@ -414,7 +414,6 @@
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
 
 // Tab methods
-- (void)makeKeyDocument;
 - (BOOL)parentTabShouldClose;
 
 - (void)setIsProcessing:(BOOL)value;
