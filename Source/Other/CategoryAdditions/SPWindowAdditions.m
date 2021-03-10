@@ -36,22 +36,6 @@
 @implementation NSWindow (SPWindowAdditions)
 
 /**
- * Returns the height of the currently visible toolbar.
- */
-- (CGFloat)toolbarHeight
-{
-	NSRect windowFrame;
-	CGFloat toolbarHeight = 0.0f;
-
-	if ([self toolbar] && [[self toolbar] isVisible]) {
-		windowFrame   = [NSWindow contentRectForFrameRect:[self frame] styleMask:[self styleMask]];
-		toolbarHeight = NSHeight(windowFrame) - NSHeight([[self contentView] frame]);
-	}
-
-	return toolbarHeight;
-}
-
-/**
  * Resizes this window to the size of the supplied view.
  */
 - (void)resizeForContentView:(NSView *)view

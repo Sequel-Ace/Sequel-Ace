@@ -146,7 +146,6 @@ private extension TabManager {
         windowController.delegate = appController
         windowController.window?.delegate = appController
         windowController.showWindow(self)
-        windowController.databaseDocument.didBecomeActiveTabInWindow()
         return windowController
     }
 

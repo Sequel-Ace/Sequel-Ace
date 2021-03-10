@@ -30,7 +30,6 @@
 
 @interface NSWindow (SPWindowAdditions)
 
-- (CGFloat)toolbarHeight;
 - (void)resizeForContentView:(NSView *)view;
 
 @end

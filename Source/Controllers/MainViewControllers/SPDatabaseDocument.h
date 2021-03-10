@@ -418,10 +418,6 @@
 - (void)makeKeyDocument;
 - (BOOL)parentTabShouldClose;
 - (void)parentTabDidClose;
-- (void)willResignActiveTabInWindow;
-- (void)didBecomeActiveTabInWindow;
-- (void)tabDidBecomeKey;
-- (void)tabDidResize;
 
 - (void)setIsProcessing:(BOOL)value;
 - (BOOL)isProcessing;

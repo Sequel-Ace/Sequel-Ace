@@ -297,6 +297,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if (![self frontDocument]) {
 
         SPWindowController *newWindowController = [self.tabManager replaceTabServiceWithInitialWindow];
+
         if (spfDict) {
             [newWindowController.databaseDocument setState:spfDict];
         }
@@ -668,20 +669,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [newWindowController showWindow:self];
             [self.windowControllers addObject:newWindowController];
             NSWindow *newWindow = [newWindowController window];
-
-            // The first window should use autosaving; subsequent windows should cascade.
-            // So attempt to set the frame autosave name; this will succeed for the very
-            // first window, and fail for others.
-            BOOL usedAutosave = [newWindow setFrameAutosaveName:@"DBView"];
-
-            if (!usedAutosave) {
-                [newWindow setFrameUsingName:@"DBView"];
-            }
-
-            if ([window objectForKey:@"frame"])
-            {
-                [newWindow setFrame:NSRectFromString([window objectForKey:@"frame"]) display:NO];
-            }
 
             // Set the window controller as the window's delegate
             [newWindow setDelegate:newWindowController];

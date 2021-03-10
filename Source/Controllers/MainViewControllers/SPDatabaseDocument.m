@@ -161,6 +161,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (instancetype)initWithWindowController:(SPWindowController *)windowController {
     if (self = [super init]) {
+        _parentWindowController = windowController;
+        
         instanceId = atomic_fetch_add(&SPDatabaseDocumentInstanceCounter, 1);
 
         _mainNibLoaded = NO;
@@ -245,8 +247,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
     }
 
-    _parentWindowController = windowController;
-
     return self;
 }
 
@@ -261,7 +261,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Set collapsible behaviour on the table list so collapsing behaviour handles resize issus
     [contentViewSplitter setCollapsibleSubviewIndex:0];
-    [contentViewSplitter setMaxSize:200.0f ofSubviewAtIndex:0];
 
     // Set a minimum size on both text views on the table info page
     [tableInfoSplitView setMinSize:20 ofSubviewAtIndex:0];
@@ -327,6 +326,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
+
+    // Update the toolbar
+    [[self.parentWindowController window] setToolbar:mainToolbar];
+
+    // Update the window's title and represented document
+    [self updateWindowTitle:self];
+    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
+
+    // Add the progress window to this window
+    [self centerTaskWindow];
+    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+
+    // If not connected, update the favorite selection
+    if (!_isConnected) {
+        [connectionController updateFavoriteNextKeyView];
+    }
+
+    initComplete = YES;
 }
 
 #pragma mark -
@@ -3526,7 +3543,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Update the window title.
  */
-- (void) updateWindowTitle:(id)sender
+- (void)updateWindowTitle:(id)sender
 {
     // Ensure a call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
@@ -3568,9 +3585,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     }
 
-    if ([self.parentWindowController databaseDocument] == self) {
-        [[self.parentWindowController window] setTitle:windowTitle];
-    }
+    [[self.parentWindowController window] setTitle:windowTitle];
 }
 
 /**
@@ -4001,78 +4016,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
     [createTableSyntaxWindow orderOut:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-/**
- * Invoked when the parent tab is currently the active tab in the
- * window, but is being switched away from, to allow cleaning up
- * details in the window.
- */
-- (void)willResignActiveTabInWindow {
-    // Remove the task progress window
-    [[self.parentWindowController window] removeChildWindow:taskProgressWindow];
-    [taskProgressWindow orderOut:self];
-}
-
-/**
- * Invoked when the parent tab became the active tab in the window,
- * to allow the window to reflect the contents of this view.
- */
-- (void)didBecomeActiveTabInWindow
-{
-    // Update the toolbar
-    BOOL toolbarVisible = ![[self.parentWindowController window] toolbar] || [[[self.parentWindowController window] toolbar] isVisible];
-    [[self.parentWindowController window] setToolbar:mainToolbar];
-    [mainToolbar setVisible:toolbarVisible];
-
-    // Update the window's title and represented document
-    [self updateWindowTitle:self];
-    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
-
-    // Add the progress window to this window
-    [self centerTaskWindow];
-    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
-
-    // If not connected, update the favorite selection
-    if (!_isConnected) {
-        [connectionController updateFavoriteNextKeyView];
-    }
-
-    initComplete = YES;
-}
-
-/**
- * Invoked when the parent tab became the key tab in the application;
- * the selected tab in the frontmost window.
- */
-- (void)tabDidBecomeKey
-{
-    // Synchronize Navigator with current active document if Navigator runs in syncMode
-    if([[SPNavigatorController sharedNavigatorController] syncMode] && [self connectionID] && ![[self connectionID] isEqualToString:@"_"]) {
-        NSMutableString *schemaPath = [NSMutableString string];
-        [schemaPath setString:[self connectionID]];
-        if([self database] && [[self database] length]) {
-            [schemaPath appendString:SPUniqueSchemaDelimiter];
-            [schemaPath appendString:[self database]];
-            if([self table] && [[self table] length]) {
-                [schemaPath appendString:SPUniqueSchemaDelimiter];
-                [schemaPath appendString:[self table]];
-            }
-        }
-        [[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
-    }
-}
-
-/**
- * Invoked when the document window is resized
- */
-- (void)tabDidResize
-{
-    // Coax the main split view into actually checking its constraints
-    [contentViewSplitter setPosition:[[[contentViewSplitter subviews] objectAtIndex:0] bounds].size.width ofDividerAtIndex:0];
-
-    // If the task interface is visible, and this tab is frontmost, re-center the task child window
-    if (_isWorkingLevel && [self.parentWindowController databaseDocument] == self) [self centerTaskWindow];
 }
 
 #pragma mark -

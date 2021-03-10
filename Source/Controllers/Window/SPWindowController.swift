@@ -52,7 +52,6 @@ import SnapKit
     }
 
     private func setupAppearance() {
-        databaseDocument.didBecomeActiveTabInWindow()
         databaseDocument.updateWindowTitle(self)
 
         window?.contentView?.addSubview(databaseDocument.databaseView())
