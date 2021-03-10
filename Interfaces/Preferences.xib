@@ -1592,20 +1592,20 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             <point key="canvasLocation" x="732" y="551"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="802" userLabel="Editor">
-            <rect key="frame" x="0.0" y="0.0" width="540" height="516"/>
+            <rect key="frame" x="0.0" y="0.0" width="540" height="487"/>
             <userGuides>
                 <userLayoutGuide location="146" affinity="minX"/>
                 <userLayoutGuide location="315" affinity="minX"/>
             </userGuides>
             <subviews>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1085">
-                    <rect key="frame" x="20" y="467" width="500" height="5"/>
+                    <rect key="frame" x="20" y="438" width="500" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="mJZ-MM-v9M"/>
                     </constraints>
                 </box>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1083">
-                    <rect key="frame" x="488" y="285" width="34" height="14"/>
+                    <rect key="frame" x="488" y="256" width="34" height="14"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="30" id="4mD-hS-s3t"/>
                     </constraints>
@@ -1619,7 +1619,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1046">
-                    <rect key="frame" x="474" y="280" width="15" height="22"/>
+                    <rect key="frame" x="474" y="251" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="EEE-Hl-ffx"/>
                         <constraint firstAttribute="width" constant="11" id="teM-Rz-MWp"/>
@@ -1634,7 +1634,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1045">
-                    <rect key="frame" x="299" y="281" width="59" height="22"/>
+                    <rect key="frame" x="299" y="252" width="59" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="J1h-3t-Frd"/>
                         <constraint firstAttribute="width" constant="55" id="wmw-DW-vkB"/>
@@ -1649,7 +1649,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1044">
-                    <rect key="frame" x="361" y="281" width="114" height="22"/>
+                    <rect key="frame" x="361" y="252" width="114" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="7Gy-54-e6x"/>
                     </constraints>
@@ -1671,7 +1671,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1128">
-                    <rect key="frame" x="259" y="249" width="261" height="24"/>
+                    <rect key="frame" x="259" y="220" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="o8a-4g-ciG"/>
                     </constraints>
@@ -1684,7 +1684,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1042">
-                    <rect key="frame" x="259" y="344" width="261" height="24"/>
+                    <rect key="frame" x="259" y="315" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Nm1-1L-fkL"/>
                     </constraints>
@@ -1697,7 +1697,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1041">
-                    <rect key="frame" x="259" y="302" width="261" height="35"/>
+                    <rect key="frame" x="259" y="273" width="261" height="35"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="33" id="LMj-pz-5qi"/>
                     </constraints>
@@ -1710,7 +1710,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1040">
-                    <rect key="frame" x="259" y="375" width="261" height="24"/>
+                    <rect key="frame" x="259" y="346" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="okU-1B-JWL"/>
                     </constraints>
@@ -1723,7 +1723,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1039">
-                    <rect key="frame" x="259" y="437" width="261" height="24"/>
+                    <rect key="frame" x="259" y="408" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="QM4-7n-4Uf"/>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="YuJ-Px-Th2"/>
@@ -1737,7 +1737,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1037" customClass="SPFontPreviewTextField">
-                    <rect key="frame" x="170" y="479" width="200" height="22"/>
+                    <rect key="frame" x="170" y="450" width="200" height="22"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="F5G-7E-Xu4"/>
                         <constraint firstAttribute="height" constant="22" id="Jtz-vN-iPm"/>
@@ -1749,7 +1749,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1036">
-                    <rect key="frame" x="373" y="473" width="114" height="32"/>
+                    <rect key="frame" x="373" y="444" width="114" height="32"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="100" id="Z6f-Ex-CfK"/>
                     </constraints>
@@ -1762,7 +1762,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1034">
-                    <rect key="frame" x="18" y="482" width="144" height="16"/>
+                    <rect key="frame" x="18" y="453" width="144" height="16"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="50" id="6gj-Xz-W0f"/>
                         <constraint firstAttribute="width" relation="lessThanOrEqual" constant="150" id="ltM-Zr-Qpk"/>
@@ -1812,13 +1812,13 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </popUpButtonCell>
                 </popUpButton>
                 <scrollView horizontalLineScroll="22" horizontalPageScroll="10" verticalLineScroll="22" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1682">
-                    <rect key="frame" x="20" y="42" width="231" height="418"/>
+                    <rect key="frame" x="20" y="42" width="231" height="389"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
-                        <rect key="frame" x="1" y="1" width="229" height="416"/>
+                        <rect key="frame" x="1" y="1" width="229" height="387"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" id="1685">
-                                <rect key="frame" x="0.0" y="0.0" width="229" height="416"/>
+                                <rect key="frame" x="0.0" y="0.0" width="229" height="387"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1899,7 +1899,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="2185">
-                    <rect key="frame" x="259" y="406" width="93" height="24"/>
+                    <rect key="frame" x="259" y="377" width="93" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="OaX-My-oPP"/>
                     </constraints>
@@ -1912,7 +1912,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2188">
-                    <rect key="frame" x="357" y="407" width="151" height="22"/>
+                    <rect key="frame" x="357" y="378" width="151" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="VGh-Jf-FAt"/>
                     </constraints>
@@ -1930,7 +1930,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2196">
-                    <rect key="frame" x="507" y="406" width="15" height="22"/>
+                    <rect key="frame" x="507" y="377" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="11" id="Epk-vt-fev"/>
                         <constraint firstAttribute="height" constant="16" id="fyK-95-4bF"/>
@@ -1944,7 +1944,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="xIN-qP-ogl">
-                    <rect key="frame" x="259" y="218" width="261" height="24"/>
+                    <rect key="frame" x="259" y="189" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="NJU-0g-hK3"/>
                     </constraints>
@@ -1957,7 +1957,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="UnY-1b-NTN">
-                    <rect key="frame" x="259" y="187" width="261" height="24"/>
+                    <rect key="frame" x="259" y="158" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="LQ3-Eq-hy0"/>
                     </constraints>
@@ -1973,7 +1973,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1517">
-                    <rect key="frame" x="488" y="139" width="34" height="14"/>
+                    <rect key="frame" x="488" y="110" width="34" height="14"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="30" id="Wt0-DH-0yD"/>
                     </constraints>
@@ -1987,7 +1987,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1518">
-                    <rect key="frame" x="474" y="134" width="15" height="22"/>
+                    <rect key="frame" x="474" y="105" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="UHj-Wq-xiC"/>
                         <constraint firstAttribute="width" constant="11" id="nHg-43-jBJ"/>
@@ -2002,7 +2002,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1519">
-                    <rect key="frame" x="299" y="135" width="59" height="22"/>
+                    <rect key="frame" x="299" y="106" width="59" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="6rD-Fb-Wtt"/>
                         <constraint firstAttribute="width" constant="55" id="sCD-jX-6bG"/>
@@ -2017,7 +2017,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1520">
-                    <rect key="frame" x="361" y="135" width="114" height="22"/>
+                    <rect key="frame" x="361" y="106" width="114" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="UbU-HI-GT2"/>
                     </constraints>
@@ -2039,7 +2039,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1521">
-                    <rect key="frame" x="259" y="156" width="261" height="24"/>
+                    <rect key="frame" x="259" y="127" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="JL1-kC-qdF"/>
                     </constraints>
@@ -2052,7 +2052,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="q6h-n2-3a8">
-                    <rect key="frame" x="259" y="77" width="261" height="24"/>
+                    <rect key="frame" x="259" y="74" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Hbi-dI-piB"/>
                     </constraints>
@@ -2065,7 +2065,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1542">
-                    <rect key="frame" x="259" y="46" width="261" height="24"/>
+                    <rect key="frame" x="259" y="43" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Vdm-3z-iY0"/>
                     </constraints>
@@ -2078,7 +2078,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1499">
-                    <rect key="frame" x="259" y="18" width="101" height="20"/>
+                    <rect key="frame" x="259" y="15" width="101" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="OHa-nn-g2y"/>
                     </constraints>
@@ -2089,7 +2089,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1505">
-                    <rect key="frame" x="363" y="17" width="145" height="22"/>
+                    <rect key="frame" x="363" y="14" width="145" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="VkS-BX-Qdr"/>
                     </constraints>
@@ -2108,7 +2108,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1497">
-                    <rect key="frame" x="507" y="16" width="15" height="22"/>
+                    <rect key="frame" x="507" y="13" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="11" id="kU9-CG-jyc"/>
                         <constraint firstAttribute="height" constant="16" id="ua9-l2-nxz"/>
@@ -2121,17 +2121,6 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <binding destination="117" name="value" keyPath="values.CustomQueryEditorTabStopWidth" id="1516"/>
                     </connections>
                 </stepper>
-                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mOk-t2-QBr">
-                    <rect key="frame" x="361" y="110" width="149" height="18"/>
-                    <buttonCell key="cell" type="check" title="Use Fuzzy Matching" bezelStyle="regularSquare" imagePosition="left" inset="2" id="2ZU-gx-dPA">
-                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                        <font key="font" metaFont="system"/>
-                    </buttonCell>
-                    <connections>
-                        <binding destination="117" name="enabled" keyPath="values.CustomQueryAutoComplete" id="htN-xh-Kve"/>
-                        <binding destination="117" name="value" keyPath="values.CustomQueryAutoCompleteFuzzy" id="wkM-53-FhK"/>
-                    </connections>
-                </button>
             </subviews>
             <constraints>
                 <constraint firstItem="1040" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="07h-Be-Qb7"/>
@@ -2149,11 +2138,10 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="1041" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="6Gc-GN-jaM"/>
                 <constraint firstItem="1499" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="6Gd-YR-UwY"/>
                 <constraint firstItem="1128" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="6Rt-Dl-nEH"/>
-                <constraint firstItem="q6h-n2-3a8" firstAttribute="top" secondItem="1519" secondAttribute="bottom" constant="35" id="753-w2-5rN"/>
+                <constraint firstItem="q6h-n2-3a8" firstAttribute="top" secondItem="1519" secondAttribute="bottom" constant="9" id="753-w2-5rN"/>
                 <constraint firstItem="1040" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="88v-JT-MZi"/>
                 <constraint firstItem="1044" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" id="8Nx-5g-ekY"/>
                 <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="3" id="8X8-bM-jcO"/>
-                <constraint firstItem="mOk-t2-QBr" firstAttribute="leading" secondItem="1505" secondAttribute="leading" id="BLY-hb-Ntp"/>
                 <constraint firstItem="1518" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" id="CM5-5a-OYN"/>
                 <constraint firstItem="1085" firstAttribute="leading" secondItem="802" secondAttribute="leading" constant="20" id="E3j-XR-Tr3"/>
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="FMR-XC-hJi"/>
@@ -2161,8 +2149,6 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstAttribute="bottom" secondItem="1669" secondAttribute="bottom" constant="15" id="GRk-eU-Obz"/>
                 <constraint firstItem="1499" firstAttribute="top" secondItem="1542" secondAttribute="bottom" constant="9" id="I3G-h6-HEr"/>
                 <constraint firstItem="1040" firstAttribute="top" secondItem="2185" secondAttribute="bottom" constant="9" id="ISt-G5-WmP"/>
-                <constraint firstItem="mOk-t2-QBr" firstAttribute="top" secondItem="1520" secondAttribute="bottom" constant="8" symbolic="YES" id="JUn-2s-cxG"/>
-                <constraint firstAttribute="trailing" secondItem="mOk-t2-QBr" secondAttribute="trailing" constant="30" id="LSE-0c-4w0"/>
                 <constraint firstItem="1517" firstAttribute="leading" secondItem="1518" secondAttribute="trailing" constant="3" id="LrC-x9-AzB"/>
                 <constraint firstItem="1740" firstAttribute="centerY" secondItem="1669" secondAttribute="centerY" id="Mxl-Bt-Lmm"/>
                 <constraint firstItem="xIN-qP-ogl" firstAttribute="top" secondItem="1128" secondAttribute="bottom" constant="9" id="N4F-tp-Ye3"/>
@@ -2175,7 +2161,6 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="2188" firstAttribute="centerY" secondItem="2185" secondAttribute="centerY" id="Rpe-nI-N5h"/>
                 <constraint firstItem="1518" firstAttribute="leading" secondItem="1520" secondAttribute="trailing" constant="1" id="S1I-B9-WbE"/>
                 <constraint firstItem="1682" firstAttribute="top" secondItem="1085" secondAttribute="bottom" constant="9" id="Tak-ON-k22"/>
-                <constraint firstItem="mOk-t2-QBr" firstAttribute="leading" secondItem="802" secondAttribute="leading" constant="363" id="TfM-ih-DGM"/>
                 <constraint firstItem="1045" firstAttribute="leading" secondItem="1682" secondAttribute="trailing" constant="50" id="TiG-wn-eVq"/>
                 <constraint firstItem="1128" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="U1K-di-gV4"/>
                 <constraint firstItem="1740" firstAttribute="trailing" secondItem="1682" secondAttribute="trailing" id="V1T-vE-bku"/>
@@ -2185,7 +2170,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="UnY-1b-NTN" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="VhL-v5-EOm"/>
                 <constraint firstItem="1037" firstAttribute="centerY" secondItem="1034" secondAttribute="centerY" id="ViK-Wb-m47"/>
                 <constraint firstItem="2196" firstAttribute="centerY" secondItem="2185" secondAttribute="centerY" id="W50-pu-PZf"/>
-                <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="1499" secondAttribute="bottom" constant="18" id="WqO-mA-gjk"/>
+                <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="1499" secondAttribute="bottom" constant="15" id="WqO-mA-gjk"/>
                 <constraint firstItem="1034" firstAttribute="leading" secondItem="802" secondAttribute="leading" constant="20" id="Xsx-t7-c69"/>
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="agH-Ty-N6d"/>
                 <constraint firstItem="1039" firstAttribute="top" secondItem="1085" secondAttribute="bottom" constant="9" id="bwP-pO-qGY"/>
@@ -2224,7 +2209,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstAttribute="trailing" secondItem="1085" secondAttribute="trailing" constant="20" id="ydA-be-JIe"/>
                 <constraint firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" constant="20" id="yoh-2E-iOA"/>
             </constraints>
-            <point key="canvasLocation" x="751" y="1108"/>
+            <point key="canvasLocation" x="751" y="1094"/>
         </customView>
         <menu id="1547" userLabel="Context Menu">
             <items>
