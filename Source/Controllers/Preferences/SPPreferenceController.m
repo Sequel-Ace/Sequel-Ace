@@ -40,7 +40,6 @@
 
 @interface SPPreferenceController () <NSWindowDelegate>
 
-- (void)_setupToolbar;
 - (void)_resizeWindowForContentView:(NSView *)view;
 
 @end
@@ -71,7 +70,7 @@
  */
 - (void)windowDidLoad
 {		
-	[self _setupToolbar];
+	[self setupToolbar];
 
 	if (@available(macOS 10.14, *)) {
 		[appearancePopUp setEnabled:YES];
@@ -156,7 +155,7 @@
 /**
  * Constructs the preferences' window toolbar.
  */
-- (void)_setupToolbar
+- (void)setupToolbar
 {
 	toolbar = [[NSToolbar alloc] initWithIdentifier:@"Preference Toolbar"];
 

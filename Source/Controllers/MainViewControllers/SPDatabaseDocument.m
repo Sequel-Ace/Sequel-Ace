@@ -3941,21 +3941,26 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Invoked to determine whether the parent tab is allowed to close
  */
-- (BOOL)parentTabShouldClose
-{
+- (BOOL)parentTabShouldClose {
 
     // If no connection is available, always return YES.  Covers initial setup and disconnections.
-    if(!_isConnected) return YES;
+    if(!_isConnected) {
+        return YES;
+    }
 
     // If tasks are active, return NO to allow tasks to complete
-    if (_isWorkingLevel) return NO;
+    if (_isWorkingLevel) {
+        return NO;
+    }
 
     // If the table list considers itself to be working, return NO. This catches open alerts, and
     // edits in progress in various views.
-    if ( ![tablesListInstance selectionShouldChangeInTableView:nil] ) return NO;
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return NO;
+    }
 
     // Auto-save spf file based connection and return if the save was not successful
-    if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
+    if ([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
         BOOL isSaved = [self saveDocumentWithFilePath:nil inBackground:YES onlyPreferences:YES contextInfo:nil];
         if (isSaved) {
             [[SPQueryController sharedQueryController] removeRegisteredDocumentWithFileURL:[self fileURL]];
@@ -3965,7 +3970,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Terminate all running BASH commands
-    for(NSDictionary* cmd in [self runningActivities]) {
+    for (NSDictionary* cmd in [self runningActivities]) {
         NSInteger pid = [[cmd objectForKey:@"pid"] integerValue];
         NSTask *killTask = [[NSTask alloc] init];
         [killTask setLaunchPath:@"/bin/sh"];
@@ -3981,41 +3986,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [[SPLogger logger] dumpLeaks];
     // Return YES by default
     return YES;
-}
-
-/**
- * Invoked when the parent tab is about to close
- */
-- (void)parentTabDidClose
-{
-    // if tab closed and there is text in the query view, safe to history
-    NSString *queryString = [self->customQueryTextView.textStorage string];
-
-    if([queryString length] > 0){
-        [[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
-    }
-
-    // Cancel autocompletion trigger
-    if([prefs boolForKey:SPCustomQueryAutoComplete]) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
-                                                 selector:@selector(doAutoCompletion)
-                                                   object:nil];
-    }
-    if([prefs boolForKey:SPCustomQueryUpdateAutoHelp]) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
-                                                 selector:@selector(autoHelp)
-                                                   object:nil];
-    }
-
-    [mySQLConnection setDelegate:nil];
-    if (_isConnected) {
-        [self closeConnection];
-    } else {
-        [connectionController cancelConnection:self];
-    }
-    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
-    [createTableSyntaxWindow orderOut:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 #pragma mark -
@@ -6482,11 +6452,34 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [theParentWindow setAlphaValue:0.0f];
     [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
 
-    [self parentTabDidClose];
-}
+    // if tab closed and there is text in the query view, safe to history
+    NSString *queryString = [self->customQueryTextView.textStorage string];
 
-- (void)updateParentWindowController:(SPWindowController *)windowController {
-    self.parentWindowController = windowController;
+    if([queryString length] > 0){
+        [[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
+    }
+
+    // Cancel autocompletion trigger
+    if([prefs boolForKey:SPCustomQueryAutoComplete]) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
+                                                 selector:@selector(doAutoCompletion)
+                                                   object:nil];
+    }
+    if([prefs boolForKey:SPCustomQueryUpdateAutoHelp]) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
+                                                 selector:@selector(autoHelp)
+                                                   object:nil];
+    }
+
+    [mySQLConnection setDelegate:nil];
+    if (_isConnected) {
+        [self closeConnection];
+    } else {
+        [connectionController cancelConnection:self];
+    }
+    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
+    [createTableSyntaxWindow orderOut:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (NSWindow *)parentWindowControllerWindow {

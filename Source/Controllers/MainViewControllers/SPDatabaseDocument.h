@@ -410,19 +410,16 @@
 
 // Toolbar methods
 - (void)updateWindowTitle:(id)sender;
-- (void)setupToolbar;
 - (NSString *)selectedToolbarItemIdentifier;
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
 
 // Tab methods
 - (void)makeKeyDocument;
 - (BOOL)parentTabShouldClose;
-- (void)parentTabDidClose;
 
 - (void)setIsProcessing:(BOOL)value;
 - (BOOL)isProcessing;
 
-- (void)updateParentWindowController:(SPWindowController *)windowController;
 - (NSWindow *)parentWindowControllerWindow;
 
 // Scripting
