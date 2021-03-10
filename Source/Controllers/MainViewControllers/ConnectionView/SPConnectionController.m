@@ -3201,7 +3201,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Weak reference
 		dbDocument = document;
 
-		databaseConnectionSuperview = [dbDocument databaseView];
 		databaseConnectionView = dbDocument->contentViewSplitter;
 
 
@@ -3247,7 +3246,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		// Hide the main view and position and display the connection view
 		[databaseConnectionView setHidden:YES];
 		[connectionView setFrame:[databaseConnectionView frame]];
-		[databaseConnectionSuperview addSubview:connectionView];
+		[[dbDocument databaseView] addSubview:connectionView];
 
 		// Set up the splitview
 		[connectionSplitView setMinSize:150.f ofSubviewAtIndex:0];

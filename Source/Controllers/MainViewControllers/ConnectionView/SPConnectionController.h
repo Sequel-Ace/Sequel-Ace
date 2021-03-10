@@ -60,7 +60,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
-	NSView *databaseConnectionSuperview;
 	NSSplitView *databaseConnectionView;
 
 	NSOpenPanel *keySelectionPanel;
