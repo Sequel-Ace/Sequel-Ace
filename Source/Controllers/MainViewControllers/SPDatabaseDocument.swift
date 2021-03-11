@@ -9,13 +9,5 @@
 import AppKit
 
 extension SPDatabaseDocument {
-    @objc var swiftTabAccessoryView: NSView {
-        let view = NSView()
-        view.wantsLayer = true
-        view.snp.makeConstraints {
-            $0.size.equalTo(16)
-        }
-        view.layer?.cornerRadius = 8
-        return view
-    }
+    
 }

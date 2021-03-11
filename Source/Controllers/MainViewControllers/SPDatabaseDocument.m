@@ -109,7 +109,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
-@property (nonatomic, strong) NSView *tabAccessoryView;
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
 - (void)_addDatabase;
@@ -349,13 +348,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 #pragma mark - Accessors
-
-- (NSView *)tabAccessoryView {
-    if (!_tabAccessoryView) {
-        _tabAccessoryView = [self swiftTabAccessoryView];
-    }
-    return _tabAccessoryView;
-}
 
 - (NSToolbar *)mainToolbar {
     if (!_mainToolbar) {
@@ -3431,9 +3423,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)updateWindowTitle:(id)sender {
     // Ensure a call on the main thread
-    if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
-
-    NSMutableString *windowTitle;
+    if (![NSThread isMainThread]) {
+        return [[self onMainThread] updateWindowTitle:sender];
+    }
 
     // Determine name details
     NSString *pathName = @"";
@@ -3442,11 +3434,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if ([connectionController isConnecting]) {
-        windowTitle = [NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
+        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")]];
     } else if (!_isConnected) {
-        windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
+        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]]];
     } else {
-        windowTitle = [NSMutableString string];
+        NSMutableString *windowTitle = [NSMutableString string];
 
         // Add the path to the window title
         [windowTitle appendString:pathName];
@@ -3466,18 +3458,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
         }
+        [self.parentWindowController updateWindowWithTitle:windowTitle];
     }
 
-    [[self.parentWindowController window] setTitle:windowTitle];
-
-    if (@available(macOS 10.13, *)) {
-        NSColor *color = [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]];
-        NSWindowTab *tab = [[self.parentWindowController window] tab];
-        if (tab && color && _isConnected) {
-            self.tabAccessoryView.layer.backgroundColor = color.CGColor;
-            tab.accessoryView = self.tabAccessoryView;
-        }
-    }
+    [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]]];
 }
 
 #pragma mark -

@@ -45,11 +45,42 @@ import SnapKit
         setupAppearance()
     }
 
-    private func setupAppearance() {
+    // MARK: - Accessory
+
+    private lazy var tabAccessoryView: NSView = {
+        let view = NSView()
+        view.wantsLayer = true
+        view.snp.makeConstraints {
+            $0.size.equalTo(16)
+        }
+        view.layer?.cornerRadius = 8
+        return view
+    }()
+}
+
+// MARK: - Private API
+
+private extension SPWindowController {
+    func setupAppearance() {
         databaseDocument.updateWindowTitle(self)
 
         window?.contentView?.addSubview(databaseDocument.databaseView())
         databaseDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
+    }
+}
+
+// MARK: - Public API
+
+@objc extension SPWindowController {
+    func updateWindow(title: String) {
+        window?.title = title
+    }
+
+    func updateWindowAccessory(color: NSColor?) {
+        if #available(macOS 10.13, *) {
+            tabAccessoryView.layer?.backgroundColor = color?.cgColor
+            window?.tab.accessoryView = tabAccessoryView
+        }
     }
 }
 
