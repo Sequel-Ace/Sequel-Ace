@@ -230,6 +230,7 @@
 		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
+		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
 		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
 		517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */ = {isa = PBXBuildFile; fileRef = 5174122F2573E10C00EB6935 /* SPPrintUtility.m */; };
@@ -860,6 +861,7 @@
 		5132930925F586A900D803AD /* NotificationToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationToken.swift; sourceTree = "<group>"; };
 		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
+		514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPDatabaseDocument.swift; sourceTree = "<group>"; };
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
@@ -1391,6 +1393,7 @@
 				17D38F691279E17D00672B13 /* Table Structure */,
 				17005CB016D6CEA400AF81F4 /* Table Triggers */,
 				171156501E8B0F40002E6363 /* Table Relations */,
+				514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -3007,6 +3010,7 @@
 				1798F1871550175B004B0AB8 /* SPFavoritesExporter.m in Sources */,
 				1798F1881550175B004B0AB8 /* SPFavoritesImporter.m in Sources */,
 				1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */,
+				514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */,
 				1798F1951550181B004B0AB8 /* SPGroupNode.m in Sources */,
 				1798F19815501838004B0AB8 /* SPMutableArrayAdditions.m in Sources */,
 				1A1EE94A2551185D0056FECD /* DateFormatterExtension.swift in Sources */,

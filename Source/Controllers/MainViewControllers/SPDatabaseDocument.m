@@ -109,6 +109,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
+@property (nonatomic, strong) NSView *tabAccessoryView;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -344,6 +346,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     initComplete = YES;
+}
+
+- (NSView *)tabAccessoryView {
+    if (!_tabAccessoryView) {
+        _tabAccessoryView = [self swiftTabAccessoryView];
+    }
+    return _tabAccessoryView;
 }
 
 #pragma mark -
@@ -3451,6 +3460,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     [[self.parentWindowController window] setTitle:windowTitle];
+
+    if (@available(macOS 10.13, *)) {
+        NSColor *color = [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]];
+        NSWindowTab *tab = [[self.parentWindowController window] tab];
+        if (tab && color && _isConnected) {
+            self.tabAccessoryView.layer.backgroundColor = color.CGColor;
+            tab.accessoryView = self.tabAccessoryView;
+        }
+    }
 }
 
 /**
