@@ -2328,13 +2328,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 }
 
-- (IBAction)openCurrentConnectionInNewWindow:(id)sender
-{
-    [SPAppDelegate newWindow:self];
-    SPDatabaseDocument *newTableDocument = [SPAppDelegate frontDocument];
-    [newTableDocument setStateFromConnectionFile:[[self fileURL] path]];
-}
-
 /**
  * Ask the connection controller to initiate connection, if it hasn't
  * already.  Used to support automatic connections on window open,
@@ -3203,18 +3196,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 action == @selector(newWindow:) ||
                 action == @selector(terminate:)
                 );
-    }
-
-    if (action == @selector(openCurrentConnectionInNewWindow:))
-    {
-        if ([self isUntitled]) {
-            [menuItem setTitle:NSLocalizedString(@"Open in New Window", @"menu item open in new window")];
-            return NO;
-        }
-        else {
-            [menuItem setTitle:[NSString stringWithFormat:NSLocalizedString(@"Open “%@” in New Window", @"menu item open “%@” in new window"), [self displayName]]];
-            return YES;
-        }
     }
 
     // Data export

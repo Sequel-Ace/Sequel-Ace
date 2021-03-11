@@ -295,7 +295,6 @@
 - (IBAction)showServerVariables:(id)sender;
 - (IBAction)showServerProcesses:(id)sender;
 - (IBAction)shutdownServer:(id)sender;
-- (IBAction)openCurrentConnectionInNewWindow:(id)sender;
 - (IBAction)showGotoDatabase:(id)sender;
 - (NSArray *)allDatabaseNames;
 - (NSArray *)allSystemDatabaseNames;

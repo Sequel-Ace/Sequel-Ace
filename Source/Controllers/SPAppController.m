@@ -517,14 +517,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 /**
  * Menu item validation.
  */
-- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
-{
-    if ([menuItem action] == @selector(openCurrentConnectionInNewWindow:))
-    {
-        [menuItem setTitle:NSLocalizedString(@"Open in New Window", @"menu item open in new window")];
-
-        return NO;
-    }
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
 
     if ([menuItem action] == @selector(newTab:)) {
         return ([[[self.tabManager activeWindowController] window] attachedSheet] == nil);
