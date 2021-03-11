@@ -2244,17 +2244,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Set up the tunnel details
 	sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
-	
-	if(sshTunnel == nil) {
-						[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
 
-				[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
-												errorMessage:@"Failed to Initialize SSH Handle"
-													  detail:@"Could not initiate ssh connection worker."
-												rawErrorText:@"Could not initiate ssh connection worker."];
-		return;
-	}
-	
+    if(sshTunnel == nil) {
+        [dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
+
+        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
+                                        errorMessage:@"Failed to Initialize SSH Handle"
+                                              detail:@"Could not initiate ssh connection worker."
+                                        rawErrorText:@"Could not initiate ssh connection worker."];
+        return;
+    }
+
 	[sshTunnel setParentWindow:[dbDocument parentWindowControllerWindow]];
 
     // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
@@ -2315,9 +2315,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
 		if (![mySQLConnection isConnectedViaSSL]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
-		}
-		else {
-			[dbDocument setStatusIconToImageWithName:@"titlebarlock"];
 		}
 	}
 

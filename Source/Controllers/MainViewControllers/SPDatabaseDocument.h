@@ -95,9 +95,6 @@
 
 	IBOutlet NSView *parentView;
 	
-	IBOutlet id titleImageView;
-	IBOutlet id titleStringView;
-	
 	IBOutlet id databaseSheet;
 	IBOutlet id databaseCopySheet;
 	IBOutlet id databaseRenameSheet;
@@ -403,7 +400,6 @@
 - (IBAction)showConnectionDebugMessages:(id)sender;
 
 // Titlebar methods
-- (void)setStatusIconToImageWithName:(NSString *)imagePath;
 - (void)setTitlebarStatus:(NSString *)status;
 - (void)clearStatusIcon;
 

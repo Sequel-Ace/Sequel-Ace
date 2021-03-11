@@ -3480,32 +3480,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 }
 
-/**
- * Set the connection status icon in the titlebar
- */
-- (void)setStatusIconToImageWithName:(NSString *)imageName
-{
-    NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];
-    if (!imagePath) return;
-
-    NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath];
-    [titleImageView setImage:image];
-}
-
-- (void)setTitlebarStatus:(NSString *)status
-{
-    [self clearStatusIcon];
-    [titleStringView setStringValue:status];
-}
-
-/**
- * Clear the connection status icon in the titlebar
- */
-- (void)clearStatusIcon
-{
-    [titleImageView setImage:nil];
-}
-
 #pragma mark -
 #pragma mark Toolbar Methods
 
@@ -3520,8 +3494,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * toolbar delegate method
  */
-- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar
-{
+- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar {
     NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 
     if ([itemIdentifier isEqualToString:SPMainToolbarDatabaseSelection]) {
