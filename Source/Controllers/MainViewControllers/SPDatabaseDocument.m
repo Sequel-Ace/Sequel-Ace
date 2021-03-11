@@ -3192,10 +3192,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if (!_isConnected || _isWorkingLevel) {
-        return (
-                action == @selector(newWindow:) ||
-                action == @selector(terminate:)
-                );
+        return action == @selector(terminate:);
     }
 
     // Data export
