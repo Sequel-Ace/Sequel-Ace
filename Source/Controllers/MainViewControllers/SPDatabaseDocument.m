@@ -364,10 +364,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Set the return code for entering the encryption passowrd sheet
  */
-- (IBAction)closePasswordSheet:(id)sender
-{
+- (IBAction)closePasswordSheet:(id)sender {
     passwordSheetReturnCode = 0;
-    if([sender tag]) {
+    if ([sender tag]) {
         [NSApp stopModal];
         passwordSheetReturnCode = 1;
     }
@@ -380,16 +379,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)backForwardInHistory:(id)sender
 {
     // Ensure history navigation is permitted - trigger end editing and any required saves
-    if (![self couldCommitCurrentViewActions]) return;
+    if (![self couldCommitCurrentViewActions]) {
+        return;
+    }
 
-    switch ([sender tag])
-    {
-            // Go backward
-        case 0:
+    switch ([sender tag]) {
+        case 0: // Go backward
             [spHistoryControllerInstance goBackInHistory];
             break;
-            // Go forward
-        case 1:
+        case 1: // Go forward
             [spHistoryControllerInstance goForwardInHistory];
             break;
     }
