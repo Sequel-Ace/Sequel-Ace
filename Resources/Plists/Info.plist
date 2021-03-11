@@ -29,7 +29,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.sequelpro.SequelPro</string>
+				<string>com.sequelpro.SequelPro.spf</string>
 				<string>com.sequel-ace.sequel-ace.spf</string>
 			</array>
 			<key>NSDocumentClass</key>
