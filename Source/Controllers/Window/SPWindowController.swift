@@ -31,13 +31,7 @@
 import Cocoa
 import SnapKit
 
-@objc protocol SPWindowControllerDelegate: AnyObject {
-    func windowControllerDidClose(_ windowController: SPWindowController)
-}
-
 @objc final class SPWindowController: NSWindowController {
-
-    @objc weak var delegate: SPWindowControllerDelegate?
 
     @objc lazy var databaseDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
 
@@ -60,20 +54,15 @@ import SnapKit
 }
 
 extension SPWindowController: NSWindowDelegate {
-    /// Determine whether the window is permitted to close.
-    /// Go through the tabs in this window, and ask the database connection view in each one if it can be closed, returning YES only if all can be closed.
-    /// - Parameter sender: NSWindow instance
-    /// - Returns: true or false
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
         if !databaseDocument.parentTabShouldClose() {
             return false
         }
 
-        if let appDelegate = NSApp.delegate as? SPAppController, appDelegate.sessionURL() != nil, appDelegate.windowControllers.count == 1 {
+        if let appDelegate = NSApp.delegate as? SPAppController, appDelegate.sessionURL() != nil {
             appDelegate.setSessionURL(nil)
             appDelegate.setSpfSessionDocData(nil)
         }
-        delegate?.windowControllerDidClose(self)
         return true
     }
 }

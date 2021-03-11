@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AppCenterApplicationForwarderEnabled</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleDocumentTypes</key>
@@ -27,7 +29,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.sequel-ace.sequel-ace.spf</string>
+				<string>com.sequelpro.SequelPro</string>
 				<string>com.sequel-ace.sequel-ace.spf</string>
 			</array>
 			<key>NSDocumentClass</key>
@@ -55,7 +57,7 @@
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.sequelpro.SequelPro.spfs</string>
-				<string>com.google.code.sequel-pro.spfs</string>
+				<string>com.sequel-ace.sequel-ace.spfs</string>
 			</array>
 			<key>LSTypeIsPackage</key>
 			<true/>
@@ -226,23 +228,23 @@
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>github.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.3</string>
-				<key>NSIncludeSubdomains</key>
-				<true/>
-				<key>NSRequiresCertificateTransparency</key>
-				<false/>
-			</dict>
 			<key>appcenter.ms</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.2</string>
+				<key>NSIncludeSubdomains</key>
+				<true/>
+				<key>NSRequiresCertificateTransparency</key>
+				<false/>
+			</dict>
+			<key>github.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.3</string>
 				<key>NSIncludeSubdomains</key>
 				<true/>
 				<key>NSRequiresCertificateTransparency</key>
@@ -496,7 +498,5 @@
 			</dict>
 		</dict>
 	</array>
-	<key>AppCenterApplicationForwarderEnabled</key>
-	<false/>
 </dict>
 </plist>

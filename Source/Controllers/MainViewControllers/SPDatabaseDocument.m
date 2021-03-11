@@ -2850,7 +2850,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSError *error = nil;
 
         // Save file as SQL file by using the chosen encoding
-        if(contextInfo == @"saveSQLfile") {
+        if (contextInfo == @"saveSQLfile") {
 
             [prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
             [prefs setObject:[fileName lastPathComponent] forKey:@"lastSqlFileName"];
@@ -2861,148 +2861,35 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                         encoding:[[encodingPopUp selectedItem] tag]
                            error:&error];
 
-            if(error != nil) {
+            if (error != nil) {
                 NSAlert *errorAlert = [NSAlert alertWithError:error];
                 [errorAlert runModal];
             }
-
             [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
 
-            return;
-        }
-
         // Save connection and session as SPF file
-        else if(contextInfo == @"saveSPFfile" || contextInfo == @"saveSPFfileAndClose") {
+        } else if(contextInfo == @"saveSPFfile" || contextInfo == @"saveSPFfileAndClose") {
             // Save changes of saveConnectionEncryptString
             [[saveConnectionEncryptString window] makeFirstResponder:[[saveConnectionEncryptString window] initialFirstResponder]];
 
             [self saveDocumentWithFilePath:fileName inBackground:NO onlyPreferences:NO contextInfo:nil];
 
-            if(contextInfo == @"saveSPFfileAndClose") [self closeAndDisconnect];
-        }
+            if (contextInfo == @"saveSPFfileAndClose") {
+                [self closeAndDisconnect];
+            }
 
         // Save all open windows including all tabs as session
-        else if(contextInfo == @"saveSession" || contextInfo == @"saveAsSession") {
-
-            // Sub-folder 'Contents' will contain all untitled connection as single window or tab.
-            // info.plist will contain the opened structure (windows and tabs for each window). Each connection
-            // is linked to a saved spf file either in 'Contents' for unTitled ones or already saved spf files.
-
-            if(contextInfo == @"saveAsSession" && [SPAppDelegate sessionURL]) fileName = [[SPAppDelegate sessionURL] path];
-
-            if(!fileName || ![fileName length]) return;
-
-            NSFileManager *fileManager = [NSFileManager defaultManager];
-
-            // If bundle exists remove it
-            if([fileManager fileExistsAtPath:fileName]) {
-                [fileManager removeItemAtPath:fileName error:&error];
-                if(error != nil) {
-                    NSAlert *errorAlert = [NSAlert alertWithError:error];
-                    [errorAlert runModal];
-                    return;
-                }
-            }
-
-            [fileManager createDirectoryAtPath:fileName withIntermediateDirectories:YES attributes:nil error:&error];
-
-            if(error != nil) {
-                NSAlert *errorAlert = [NSAlert alertWithError:error];
-                [errorAlert runModal];
-                return;
-            }
-
-            [fileManager createDirectoryAtPath:[NSString stringWithFormat:@"%@/Contents", fileName] withIntermediateDirectories:YES attributes:nil error:&error];
-
-            if(error != nil) {
-                NSAlert *errorAlert = [NSAlert alertWithError:error];
-                [errorAlert runModal];
-                return;
-            }
-
-            NSMutableDictionary *info = [NSMutableDictionary dictionary];
-            NSMutableArray *windows = [NSMutableArray array];
-
-            // retrieve save panel data for passing them to each doc
-            NSMutableDictionary *spfDocData_temp = [NSMutableDictionary dictionary];
-            if(contextInfo == @"saveAsSession") {
-                [spfDocData_temp addEntriesFromDictionary:[SPAppDelegate spfSessionDocData]];
-            } else {
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionEncrypt state]==NSOnState) ? YES : NO ] forKey:@"encrypted"];
-                if([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) [spfDocData_temp setObject:[saveConnectionEncryptString stringValue] forKey:@"e_string"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionAutoConnect state]==NSOnState) ? YES : NO ] forKey:@"auto_connect"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionSavePassword state]==NSOnState) ? YES : NO ] forKey:@"save_password"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionIncludeData state]==NSOnState) ? YES : NO ] forKey:@"include_session"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionIncludeQuery state]==NSOnState) ? YES : NO ] forKey:@"save_editor_content"];
-
-                // Save the session's accessory view settings
-                [SPAppDelegate setSpfSessionDocData:spfDocData_temp];
-            }
-
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"encrypted"] boolValue]] forKey:@"encrypted"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"auto_connect"] boolValue]] forKey:@"auto_connect"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"save_password"] boolValue]] forKey:@"save_password"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"include_session"] boolValue]] forKey:@"include_session"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"save_editor_content"] boolValue]] forKey:@"save_editor_content"];
-            [info setObject:@1 forKey:SPFVersionKey];
-            [info setObject:@"connection bundle" forKey:SPFFormatKey];
-
-            // Loop through all windows
-            for (SPWindowController *windowController in [SPAppDelegate windowControllers]) {
-
-                // First window is always the currently key window
-                NSMutableDictionary *win = [NSMutableDictionary dictionary];
-
-                // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-                if (![windowController.databaseDocument mySQLVersion]) continue;
-
-                NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-                if([windowController.databaseDocument isUntitled]) {
-                    // new bundle file name for untitled docs
-                    NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-                    // internal bundle path to store the doc
-                    NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-                    // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-                    [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-                    [windowController.databaseDocument setIsSavedInBundle:YES];
-                    [tabData setObject:@NO forKey:@"isAbsolutePath"];
-                    [tabData setObject:newName forKey:@"path"];
-                } else {
-                    // save it to the original location and take the file's spfDocData
-                    [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-                    [tabData setObject:@YES forKey:@"isAbsolutePath"];
-                    [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
-                }
-                [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
-                [windows addObject:win];
-            }
-            [info setObject:windows forKey:@"windows"];
-
-            error = nil;
-
-            NSData *plist = [NSPropertyListSerialization dataWithPropertyList:info
-                                                                       format:NSPropertyListXMLFormat_v1_0
-                                                                      options:0
-                                                                        error:&error];
-
-            if (error) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting session data", @"error while converting session data") message:[error localizedDescription] callback:nil];
-                return;
-            }
-
-            [plist writeToFile:[NSString stringWithFormat:@"%@/info.plist", fileName] options:NSAtomicWrite error:&error];
-
-            if (error != nil){
-                NSAlert *errorAlert = [NSAlert alertWithError:error];
-                [errorAlert runModal];
-
-                return;
-            }
-
-            [SPAppDelegate setSessionURL:fileName];
-
-            // Register spfs bundle in Recent Files
-            [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
+        } else if (contextInfo == @"saveSession" || contextInfo == @"saveAsSession") {
+            NSDictionary *userInfo = @{
+                @"contextInfo": (__bridge NSString *)contextInfo,
+                @"encrypted": [NSNumber numberWithBool:[saveConnectionEncrypt state] == NSOnState],
+                @"saveConnectionEncryptString": [saveConnectionEncryptString stringValue],
+                @"auto_connect": [NSNumber numberWithBool:[saveConnectionAutoConnect state] == NSOnState],
+                @"save_password": [NSNumber numberWithBool:[saveConnectionSavePassword state] == NSOnState],
+                @"include_session": [NSNumber numberWithBool:[saveConnectionIncludeData state] == NSOnState],
+                @"save_editor_content": [NSNumber numberWithBool:[saveConnectionIncludeQuery state] == NSOnState]
+            };
+            [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentSaveToSPFNotification object:fileName userInfo:userInfo];
         }
     }
 }
