@@ -329,15 +329,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
 
     // Update the toolbar
-    [[self.parentWindowController window] setToolbar:self.mainToolbar];
+    [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
 
     // Update the window's title and represented document
     [self updateWindowTitle:self];
-    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
+    [self.parentWindowControllerWindow setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
 
     // Add the progress window to this window
     [self centerTaskWindow];
-    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     // If not connected, update the favorite selection
     if (!_isConnected) {
