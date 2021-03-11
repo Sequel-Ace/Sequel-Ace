@@ -2331,38 +2331,36 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * state change, allowing connection to fail or proceed as appropriate.  If successful,
  * will call initiateMySQLConnection.
  */
-- (void)sshTunnelCallback:(SPSSHTunnel *)theTunnel
-{
+- (void)sshTunnelCallback:(SPSSHTunnel *)theTunnel {
     if (cancellingConnection){
         SPLog(@"cancellingConnection, returning");
         return;
     }
 
-	NSInteger newState = [theTunnel state];
+    NSInteger newState = [theTunnel state];
 
     SPLog(@"newState = %li", (long)newState);
 
-	// If the user cancelled the password prompt dialog, continue with no further action.
-	if ([theTunnel passwordPromptCancelled]) {
+    // If the user cancelled the password prompt dialog, continue with no further action.
+    if ([theTunnel passwordPromptCancelled]) {
         SPLog(@"user cancelled the password prompt dialog, continue with no further action");
-		[self _restoreConnectionInterface];
+        [self _restoreConnectionInterface];
 
-		return;
-	}
+        return;
+    }
 
-	if (newState == SPMySQLProxyIdle) {
+    if (newState == SPMySQLProxyIdle) {
         SPLog(@"SPMySQLProxyIdle, failing");
 
-		[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
-		                                errorMessage:[theTunnel lastError]
-		                                      detail:[sshTunnel debugMessages]
-		                                rawErrorText:[theTunnel lastError]];
-	}
-	else if (newState == SPMySQLProxyConnected) {
+        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
+                                        errorMessage:[theTunnel lastError]
+                                              detail:[sshTunnel debugMessages]
+                                        rawErrorText:[theTunnel lastError]];
+    } else if (newState == SPMySQLProxyConnected) {
         SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
 
-		[self initiateMySQLConnection];
-	}
+        [self initiateMySQLConnection];
+    }
 }
 
 /**
