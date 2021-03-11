@@ -212,8 +212,7 @@
 	BOOL taskCanBeCancelled;
 	id taskCancellationCallbackObject;
 	SEL taskCancellationCallbackSelector;
-	
-	@public NSToolbar *mainToolbar;
+
 	NSToolbarItem *chooseDatabaseToolbarItem;
 	
 	WebView *printWebView;
@@ -255,6 +254,7 @@
 @property (readwrite) NSStringEncoding sqlFileEncoding;
 @property (readwrite) BOOL isProcessing;
 @property (readwrite, copy) NSString *processID;
+@property (readonly, nonatomic, strong) NSToolbar *mainToolbar;
 
 @property (nonatomic, strong, readonly) SPWindowController *parentWindowController;
 @property (readonly, strong) SPServerSupport *serverSupport;

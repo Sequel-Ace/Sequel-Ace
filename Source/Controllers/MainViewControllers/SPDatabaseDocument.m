@@ -110,6 +110,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (assign) BOOL appIsTerminating;
 
 @property (nonatomic, strong) NSView *tabAccessoryView;
+@property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
 - (void)_addDatabase;
 - (void)_alterDatabase;
@@ -206,7 +207,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         allSystemDatabases = nil;
         gotoDatabaseController = nil;
 
-        mainToolbar = nil;
         isProcessing = NO;
 
         printWebView = [[WebView alloc] init];
@@ -258,8 +258,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _mainNibLoaded = YES;
 
-    // Set up the toolbar
-    [self setupToolbar];
+    // The history controller needs to track toolbar item state - trigger setup.
+    [spHistoryControllerInstance setupInterface];
 
     // Set collapsible behaviour on the table list so collapsing behaviour handles resize issus
     [contentViewSplitter setCollapsibleSubviewIndex:0];
@@ -330,7 +330,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
 
     // Update the toolbar
-    [[self.parentWindowController window] setToolbar:mainToolbar];
+    [[self.parentWindowController window] setToolbar:self.mainToolbar];
 
     // Update the window's title and represented document
     [self updateWindowTitle:self];
@@ -348,11 +348,23 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     initComplete = YES;
 }
 
+#pragma mark - Accessors
+
 - (NSView *)tabAccessoryView {
     if (!_tabAccessoryView) {
         _tabAccessoryView = [self swiftTabAccessoryView];
     }
     return _tabAccessoryView;
+}
+
+- (NSToolbar *)mainToolbar {
+    if (!_mainToolbar) {
+        _mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
+        [_mainToolbar setAllowsUserCustomization:YES];
+        [_mainToolbar setAutosavesConfiguration:YES];
+        [_mainToolbar setDelegate:self];
+    }
+    return _mainToolbar;
 }
 
 #pragma mark -
@@ -1183,7 +1195,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Set flags and prevent further UI interaction in this window
         databaseListIsSelectable = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
-        [mainToolbar validateVisibleItems];
+        [self.mainToolbar validateVisibleItems];
         [chooseDatabaseButton setEnabled:NO];
 
         SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
@@ -1382,7 +1394,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Re-enable window interface
         databaseListIsSelectable = YES;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskEndNotification object:self];
-        [mainToolbar validateVisibleItems];
+        [self.mainToolbar validateVisibleItems];
         [chooseDatabaseButton setEnabled:_isConnected];
     }
 }
@@ -3417,8 +3429,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Update the window title.
  */
-- (void)updateWindowTitle:(id)sender
-{
+- (void)updateWindowTitle:(id)sender {
     // Ensure a call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
 
@@ -3432,11 +3443,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if ([connectionController isConnecting]) {
         windowTitle = [NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-    }
-    else if (!_isConnected) {
+    } else if (!_isConnected) {
         windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-    }
-    else {
+    } else {
         windowTitle = [NSMutableString string];
 
         // Add the path to the window title
@@ -3501,30 +3510,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark Toolbar Methods
 
 /**
- * set up the standard toolbar
- */
-- (void)setupToolbar
-{
-    // create a new toolbar instance, and attach it to our document window
-    mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
-
-    // set up toolbar properties
-    [mainToolbar setAllowsUserCustomization:YES];
-    [mainToolbar setAutosavesConfiguration:YES];
-
-    // set ourself as the delegate
-    [mainToolbar setDelegate:self];
-
-    // The history controller needs to track toolbar item state - trigger setup.
-    [spHistoryControllerInstance setupInterface];
-}
-
-/**
  * Return the identifier for the currently selected toolbar item, or nil if none is selected.
  */
 - (NSString *)selectedToolbarItemIdentifier
 {
-    return [mainToolbar selectedItemIdentifier];
+    return [self.mainToolbar selectedItemIdentifier];
 }
 
 /**
@@ -4418,7 +4408,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Restore toolbar setting
         if ([spfSession objectForKey:@"isToolbarVisible"]) {
-            [[mainToolbar onMainThread] setVisible:[[spfSession objectForKey:@"isToolbarVisible"] boolValue]];
+            [[self.mainToolbar onMainThread] setVisible:[[spfSession objectForKey:@"isToolbarVisible"] boolValue]];
         }
 
         // Reset database view encoding if differs from default
@@ -5695,12 +5685,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:0];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
@@ -5711,12 +5701,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:1];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
         [self->spHistoryControllerInstance updateHistoryEntries];
         [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
     });
@@ -5727,12 +5717,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:2];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         // Set the focus on the text field
@@ -5749,12 +5739,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:3];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         if ([[self table] length]) {
@@ -5774,12 +5764,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:4];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
@@ -5793,12 +5783,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:5];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
