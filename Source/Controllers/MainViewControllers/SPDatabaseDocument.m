@@ -3457,9 +3457,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [windowTitle appendFormat:@"/%@", [self table]];
         }
         [self.parentWindowController updateWindowWithTitle:windowTitle];
+        [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]]];
     }
-
-    [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]]];
 }
 
 #pragma mark -
