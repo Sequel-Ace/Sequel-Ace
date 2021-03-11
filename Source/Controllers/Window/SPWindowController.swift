@@ -39,7 +39,7 @@ import SnapKit
 
     @objc weak var delegate: SPWindowControllerDelegate?
 
-    @objc lazy var selectedTableDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
+    @objc lazy var databaseDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -52,11 +52,10 @@ import SnapKit
     }
 
     private func setupAppearance() {
-        selectedTableDocument.didBecomeActiveTabInWindow()
-        selectedTableDocument.updateWindowTitle(self)
+        databaseDocument.updateWindowTitle(self)
 
-        window?.contentView?.addSubview(selectedTableDocument.databaseView())
-        selectedTableDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
+        window?.contentView?.addSubview(databaseDocument.databaseView())
+        databaseDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
     }
 }
 
@@ -66,7 +65,7 @@ extension SPWindowController: NSWindowDelegate {
     /// - Parameter sender: NSWindow instance
     /// - Returns: true or false
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if !selectedTableDocument.parentTabShouldClose() {
+        if !databaseDocument.parentTabShouldClose() {
             return false
         }
 

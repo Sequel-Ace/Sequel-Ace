@@ -60,7 +60,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
-	NSView *databaseConnectionSuperview;
 	NSSplitView *databaseConnectionView;
 
 	NSOpenPanel *keySelectionPanel;
@@ -200,7 +199,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 }
 
-@property (readwrite, weak) id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
+@property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;

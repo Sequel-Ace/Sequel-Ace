@@ -161,6 +161,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (instancetype)initWithWindowController:(SPWindowController *)windowController {
     if (self = [super init]) {
+        _parentWindowController = windowController;
+        
         instanceId = atomic_fetch_add(&SPDatabaseDocumentInstanceCounter, 1);
 
         _mainNibLoaded = NO;
@@ -245,8 +247,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         databaseStructureRetrieval = [[SPDatabaseStructure alloc] initWithDelegate:self];
     }
 
-    _parentWindowController = windowController;
-
     return self;
 }
 
@@ -261,7 +261,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Set collapsible behaviour on the table list so collapsing behaviour handles resize issus
     [contentViewSplitter setCollapsibleSubviewIndex:0];
-    [contentViewSplitter setMaxSize:200.0f ofSubviewAtIndex:0];
 
     // Set a minimum size on both text views on the table info page
     [tableInfoSplitView setMinSize:20 ofSubviewAtIndex:0];
@@ -327,6 +326,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
+
+    // Update the toolbar
+    [[self.parentWindowController window] setToolbar:mainToolbar];
+
+    // Update the window's title and represented document
+    [self updateWindowTitle:self];
+    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
+
+    // Add the progress window to this window
+    [self centerTaskWindow];
+    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+
+    // If not connected, update the favorite selection
+    if (!_isConnected) {
+        [connectionController updateFavoriteNextKeyView];
+    }
+
+    initComplete = YES;
 }
 
 #pragma mark -
@@ -2937,24 +2954,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
                 // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-                if (![windowController.selectedTableDocument mySQLVersion]) continue;
+                if (![windowController.databaseDocument mySQLVersion]) continue;
 
                 NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-                if([windowController.selectedTableDocument isUntitled]) {
+                if([windowController.databaseDocument isUntitled]) {
                     // new bundle file name for untitled docs
                     NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
                     // internal bundle path to store the doc
                     NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
                     // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-                    [windowController.selectedTableDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-                    [windowController.selectedTableDocument setIsSavedInBundle:YES];
+                    [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                    [windowController.databaseDocument setIsSavedInBundle:YES];
                     [tabData setObject:@NO forKey:@"isAbsolutePath"];
                     [tabData setObject:newName forKey:@"path"];
                 } else {
                     // save it to the original location and take the file's spfDocData
-                    [windowController.selectedTableDocument saveDocumentWithFilePath:[[windowController.selectedTableDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                    [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
                     [tabData setObject:@YES forKey:@"isAbsolutePath"];
-                    [tabData setObject:[[windowController.selectedTableDocument fileURL] path] forKey:@"path"];
+                    [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
                 }
                 [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
                 [windows addObject:win];
@@ -3526,7 +3543,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Update the window title.
  */
-- (void) updateWindowTitle:(id)sender
+- (void)updateWindowTitle:(id)sender
 {
     // Ensure a call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
@@ -3568,9 +3585,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     }
 
-    if ([self.parentWindowController selectedTableDocument] == self) {
-        [[self.parentWindowController window] setTitle:windowTitle];
-    }
+    [[self.parentWindowController window] setTitle:windowTitle];
 }
 
 /**
@@ -3915,32 +3930,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark Tab methods
 
 /**
- * Make this document's window frontmost in the application,
- * and ensure this tab is selected.
- */
-- (void)makeKeyDocument
-{
-    [[[self.parentWindowController window] onMainThread] makeKeyAndOrderFront:self];
-}
-
-/**
  * Invoked to determine whether the parent tab is allowed to close
  */
-- (BOOL)parentTabShouldClose
-{
+- (BOOL)parentTabShouldClose {
 
     // If no connection is available, always return YES.  Covers initial setup and disconnections.
-    if(!_isConnected) return YES;
+    if(!_isConnected) {
+        return YES;
+    }
 
     // If tasks are active, return NO to allow tasks to complete
-    if (_isWorkingLevel) return NO;
+    if (_isWorkingLevel) {
+        return NO;
+    }
 
     // If the table list considers itself to be working, return NO. This catches open alerts, and
     // edits in progress in various views.
-    if ( ![tablesListInstance selectionShouldChangeInTableView:nil] ) return NO;
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return NO;
+    }
 
     // Auto-save spf file based connection and return if the save was not successful
-    if([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
+    if ([self fileURL] && [[[self fileURL] path] length] && ![self isUntitled]) {
         BOOL isSaved = [self saveDocumentWithFilePath:nil inBackground:YES onlyPreferences:YES contextInfo:nil];
         if (isSaved) {
             [[SPQueryController sharedQueryController] removeRegisteredDocumentWithFileURL:[self fileURL]];
@@ -3950,7 +3961,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Terminate all running BASH commands
-    for(NSDictionary* cmd in [self runningActivities]) {
+    for (NSDictionary* cmd in [self runningActivities]) {
         NSInteger pid = [[cmd objectForKey:@"pid"] integerValue];
         NSTask *killTask = [[NSTask alloc] init];
         [killTask setLaunchPath:@"/bin/sh"];
@@ -3968,113 +3979,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return YES;
 }
 
-/**
- * Invoked when the parent tab is about to close
- */
-- (void)parentTabDidClose
-{
-    // if tab closed and there is text in the query view, safe to history
-    NSString *queryString = [self->customQueryTextView.textStorage string];
-
-    if([queryString length] > 0){
-        [[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
-    }
-
-    // Cancel autocompletion trigger
-    if([prefs boolForKey:SPCustomQueryAutoComplete]) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
-                                                 selector:@selector(doAutoCompletion)
-                                                   object:nil];
-    }
-    if([prefs boolForKey:SPCustomQueryUpdateAutoHelp]) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
-                                                 selector:@selector(autoHelp)
-                                                   object:nil];
-    }
-
-    [mySQLConnection setDelegate:nil];
-    if (_isConnected) {
-        [self closeConnection];
-    } else {
-        [connectionController cancelConnection:self];
-    }
-    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
-    [createTableSyntaxWindow orderOut:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-/**
- * Invoked when the parent tab is currently the active tab in the
- * window, but is being switched away from, to allow cleaning up
- * details in the window.
- */
-- (void)willResignActiveTabInWindow {
-    // Remove the task progress window
-    [[self.parentWindowController window] removeChildWindow:taskProgressWindow];
-    [taskProgressWindow orderOut:self];
-}
-
-/**
- * Invoked when the parent tab became the active tab in the window,
- * to allow the window to reflect the contents of this view.
- */
-- (void)didBecomeActiveTabInWindow
-{
-    // Update the toolbar
-    BOOL toolbarVisible = ![[self.parentWindowController window] toolbar] || [[[self.parentWindowController window] toolbar] isVisible];
-    [[self.parentWindowController window] setToolbar:mainToolbar];
-    [mainToolbar setVisible:toolbarVisible];
-
-    // Update the window's title and represented document
-    [self updateWindowTitle:self];
-    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
-
-    // Add the progress window to this window
-    [self centerTaskWindow];
-    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
-
-    // If not connected, update the favorite selection
-    if (!_isConnected) {
-        [connectionController updateFavoriteNextKeyView];
-    }
-
-    initComplete = YES;
-}
-
-/**
- * Invoked when the parent tab became the key tab in the application;
- * the selected tab in the frontmost window.
- */
-- (void)tabDidBecomeKey
-{
-    // Synchronize Navigator with current active document if Navigator runs in syncMode
-    if([[SPNavigatorController sharedNavigatorController] syncMode] && [self connectionID] && ![[self connectionID] isEqualToString:@"_"]) {
-        NSMutableString *schemaPath = [NSMutableString string];
-        [schemaPath setString:[self connectionID]];
-        if([self database] && [[self database] length]) {
-            [schemaPath appendString:SPUniqueSchemaDelimiter];
-            [schemaPath appendString:[self database]];
-            if([self table] && [[self table] length]) {
-                [schemaPath appendString:SPUniqueSchemaDelimiter];
-                [schemaPath appendString:[self table]];
-            }
-        }
-        [[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
-    }
-}
-
-/**
- * Invoked when the document window is resized
- */
-- (void)tabDidResize
-{
-    // Coax the main split view into actually checking its constraints
-    [contentViewSplitter setPosition:[[[contentViewSplitter subviews] objectAtIndex:0] bounds].size.width ofDividerAtIndex:0];
-
-    // If the task interface is visible, and this tab is frontmost, re-center the task child window
-    if (_isWorkingLevel && [self.parentWindowController selectedTableDocument] == self) [self centerTaskWindow];
-}
-
 #pragma mark -
 #pragma mark NSDocument compatibility
 
@@ -4084,7 +3988,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)setFileURL:(NSURL *)theURL
 {
     spfFileURL = theURL;
-    if ([self.parentWindowController selectedTableDocument] == self) {
+    if ([self.parentWindowController databaseDocument] == self) {
         if (spfFileURL && [spfFileURL isFileURL]) {
             [[self.parentWindowController window] setRepresentedURL:spfFileURL];
         } else {
@@ -6486,9 +6390,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];
         }
-
-        // Ensure the window and tab are frontmost
-        [self makeKeyDocument];
+        [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
 
         // Display the connection error dialog and wait for the return code
         [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
@@ -6539,11 +6441,34 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [theParentWindow setAlphaValue:0.0f];
     [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
 
-    [self parentTabDidClose];
-}
+    // if tab closed and there is text in the query view, safe to history
+    NSString *queryString = [self->customQueryTextView.textStorage string];
 
-- (void)updateParentWindowController:(SPWindowController *)windowController {
-    self.parentWindowController = windowController;
+    if([queryString length] > 0){
+        [[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
+    }
+
+    // Cancel autocompletion trigger
+    if([prefs boolForKey:SPCustomQueryAutoComplete]) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
+                                                 selector:@selector(doAutoCompletion)
+                                                   object:nil];
+    }
+    if([prefs boolForKey:SPCustomQueryUpdateAutoHelp]) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
+                                                 selector:@selector(autoHelp)
+                                                   object:nil];
+    }
+
+    [mySQLConnection setDelegate:nil];
+    if (_isConnected) {
+        [self closeConnection];
+    } else {
+        [connectionController cancelConnection:self];
+    }
+    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
+    [createTableSyntaxWindow orderOut:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (NSWindow *)parentWindowControllerWindow {

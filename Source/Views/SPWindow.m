@@ -142,10 +142,9 @@
  * document.  This allows undo to be individual per tab rather than shared across the
  * window.
  */
-- (NSUndoManager *)undoManager
-{
-	if ([[self windowController] respondsToSelector:@selector(selectedTableDocument)]) {
-		return [[[self windowController] selectedTableDocument] undoManager];
+- (NSUndoManager *)undoManager {
+    if ([[self windowController] isKindOfClass:[SPWindowController class]]) {
+		return [[(SPWindowController *)[self windowController] databaseDocument] undoManager];
 
 	}
 
