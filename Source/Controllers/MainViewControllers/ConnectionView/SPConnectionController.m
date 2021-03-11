@@ -1756,7 +1756,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[progressIndicator display];
 	[progressIndicatorText setHidden:YES];
 	[progressIndicatorText display];
-	[dbDocument setTitlebarStatus:@""];
 
 	// If not testing a connection, Update the password fields, restoring passwords that may have
 	// been bulleted out during connection
@@ -2246,8 +2245,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
 
     if(sshTunnel == nil) {
-        [dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
-
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
                                         errorMessage:@"Failed to Initialize SSH Handle"
                                               detail:@"Could not initiate ssh connection worker."
@@ -2356,8 +2353,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (newState == SPMySQLProxyIdle) {
         SPLog(@"SPMySQLProxyIdle, failing");
 
-		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Disconnected", @"SSH disconnected titlebar marker")];
-
 		[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
 		                                errorMessage:[theTunnel lastError]
 		                                      detail:[sshTunnel debugMessages]
@@ -2365,12 +2360,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 	else if (newState == SPMySQLProxyConnected) {
         SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
-		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Connected", @"SSH connected titlebar marker")];
 
 		[self initiateMySQLConnection];
-	}
-	else {
-		[dbDocument setTitlebarStatus:NSLocalizedString(@"SSH Connecting…", @"SSH connecting titlebar marker")];
 	}
 }
 

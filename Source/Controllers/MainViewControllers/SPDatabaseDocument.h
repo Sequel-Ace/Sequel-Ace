@@ -399,10 +399,6 @@
 - (BOOL)isCustomQuerySelected;
 - (IBAction)showConnectionDebugMessages:(id)sender;
 
-// Titlebar methods
-- (void)setTitlebarStatus:(NSString *)status;
-- (void)clearStatusIcon;
-
 // Toolbar methods
 - (void)updateWindowTitle:(id)sender;
 - (NSString *)selectedToolbarItemIdentifier;
