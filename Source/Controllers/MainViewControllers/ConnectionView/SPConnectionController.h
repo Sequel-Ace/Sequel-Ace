@@ -262,6 +262,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
 -(void)showValidationAlertForError:(NSError*)err;
 -(BOOL)connected;
+- (BOOL)isConnectedViaSSL;
 
 // Favorites interaction
 - (void)updateFavoriteSelection:(id)sender;
