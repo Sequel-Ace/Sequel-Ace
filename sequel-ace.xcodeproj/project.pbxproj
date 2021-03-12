@@ -1787,9 +1787,9 @@
 				17D390A6127B54F300672B13 /* Preferences */,
 				17E6414A0EF01EF6001BC333 /* SPAppController.h */,
 				17E6414B0EF01EF6001BC333 /* SPAppController.m */,
+				51BB391B25F82B060048CA69 /* SPAppController.swift */,
 				173E70D2107FF687008733C9 /* Subview Controllers */,
 				17D3583C1533766800A654D7 /* Window */,
-				51BB391B25F82B060048CA69 /* SPAppController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";

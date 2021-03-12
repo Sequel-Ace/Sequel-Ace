@@ -1939,7 +1939,7 @@ Gw
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                     </box>
                                                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5775">
-                                                        <rect key="frame" x="175" y="402" width="99" height="14"/>
+                                                        <rect key="frame" x="175" y="402" width="100" height="14"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="5776">
                                                             <font key="font" metaFont="message" size="11"/>
@@ -1948,7 +1948,7 @@ Gw
                                                         </textFieldCell>
                                                     </textField>
                                                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5777">
-                                                        <rect key="frame" x="175" y="380" width="99" height="14"/>
+                                                        <rect key="frame" x="175" y="380" width="100" height="14"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="5778">
                                                             <font key="font" metaFont="message" size="11"/>
@@ -1957,7 +1957,7 @@ Gw
                                                         </textFieldCell>
                                                     </textField>
                                                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5779">
-                                                        <rect key="frame" x="175" y="358" width="99" height="14"/>
+                                                        <rect key="frame" x="175" y="358" width="100" height="14"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="5780">
                                                             <font key="font" metaFont="message" size="11"/>
@@ -1979,7 +1979,7 @@ Gw
                                                         </connections>
                                                     </textField>
                                                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5793">
-                                                        <rect key="frame" x="462" y="402" width="210" height="14"/>
+                                                        <rect key="frame" x="462" y="402" width="211" height="14"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="5794">
                                                             <font key="font" metaFont="message" size="11"/>
@@ -1988,7 +1988,7 @@ Gw
                                                         </textFieldCell>
                                                     </textField>
                                                     <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5792">
-                                                        <rect key="frame" x="462" y="380" width="210" height="14"/>
+                                                        <rect key="frame" x="462" y="380" width="211" height="14"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="5795">
                                                             <font key="font" metaFont="message" size="11"/>
@@ -4704,6 +4704,7 @@ Gw
             <connections>
                 <outlet property="delegate" destination="7073" id="7094"/>
             </connections>
+            <point key="canvasLocation" x="-364" y="677"/>
         </menu>
         <menu id="6210" userLabel="Table Structure Menu">
             <items>

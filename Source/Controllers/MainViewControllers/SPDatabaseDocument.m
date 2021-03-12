@@ -2237,9 +2237,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Opens the data export dialog.
  */
-- (IBAction)export:(id)sender
-{
-    [exportControllerInstance export:self];
+- (void)exportData {
+    if (_isConnected) {
+        [exportControllerInstance exportData];
+    }
 }
 
 #pragma mark -
@@ -3144,16 +3145,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Passes the request to the dataImport object
  */
-- (IBAction)import:(id)sender
-{
+- (void)importFile {
     [tableDumpInstance importFile];
 }
 
 /**
  * Passes the request to the dataImport object
  */
-- (IBAction)importFromClipboard:(id)sender
-{
+- (void)importFromClipboard {
     [tableDumpInstance importFromClipboard];
 }
 
@@ -3375,7 +3374,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // If validation for the sort favorites tableview items reaches here then the preferences window isn't
     // open return NO.
-    if ((action == @selector(sortFavorites:)) || ([menuItem action] == @selector(reverseSortFavorites:))) {
+    if ((action == @selector(sortFavorites:)) || (action == @selector(reverseSortFavorites:))) {
         return NO;
     }
 
@@ -3386,12 +3385,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Adds the current database connection details to the user's favorites if it doesn't already exist.
  */
-- (IBAction)addConnectionToFavorites:(id)sender
-{
+- (void)addConnectionToFavorites {
     // Obviously don't add if it already exists. We shouldn't really need this as the menu item validation
     // enables or disables the menu item based on the same method. Although to be safe do the check anyway
     // as we don't know what's calling this method.
-    if ([connectionController selectedFavorite] && ![connectionController isEditingConnection]) return;
+    if ([connectionController selectedFavorite] && ![connectionController isEditingConnection]) {
+        return;
+    }
 
     // Request the connection controller to add its details to favorites
     [connectionController addFavoriteUsingCurrentDetails:self];

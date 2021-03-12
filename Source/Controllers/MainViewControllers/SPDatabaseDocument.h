@@ -336,7 +336,6 @@
 - (IBAction)copyCreateTableSyntaxFromSheet:(id)sender;
 - (IBAction)focusOnTableContentFilter:(id)sender;
 - (IBAction)showFilterTable:(id)sender;
-- (IBAction)export:(id)sender;
 - (IBAction)exportSelectedTablesAs:(id)sender;
 - (IBAction)multipleLineEditingButtonClicked:(NSButton *)sender;
 
@@ -393,9 +392,6 @@
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem;
 - (IBAction)openDatabaseInNewTab:(id)sender;
 - (IBAction)saveConnectionSheet:(id)sender;
-- (IBAction)import:(id)sender;
-- (IBAction)importFromClipboard:(id)sender;
-- (IBAction)addConnectionToFavorites:(id)sender;
 - (BOOL)isCustomQuerySelected;
 - (IBAction)showConnectionDebugMessages:(id)sender;
 
@@ -428,6 +424,13 @@
 - (void)restoreSession;
 
 - (SPConnectionController*)connectionController;
+
+#pragma mark - Menu actions called from SPAppController
+
+- (void)exportData;
+- (void)addConnectionToFavorites;
+- (void)importFile;
+- (void)importFromClipboard;
 
 #pragma mark - SPDatabaseViewController
 
