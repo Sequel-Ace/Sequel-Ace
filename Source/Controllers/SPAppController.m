@@ -265,15 +265,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             }
         }
     }
-    executeOnBackgroundThread(^{
-        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-
-        // fake the dbViewInfoPanelSplit being open
-        NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
-        [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];
-        [dbViewInfoPanelSplit addObject:@"0.000000, 586.500000, 359.500000, 190.500000, NO, NO"];
-        [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
-    });
+//    executeOnBackgroundThread(^{
+//        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+//
+//        // fake the dbViewInfoPanelSplit being open
+//        NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
+//        [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];
+//        [dbViewInfoPanelSplit addObject:@"0.000000, 586.500000, 359.500000, 190.500000, NO, NO"];
+//        [prefs setObject:dbViewInfoPanelSplit forKey:@"NSSplitView Subview Frames DbViewInfoPanelSplit"];
+//    });
 
     [self checkForNewVersionWithDelay:SPDelayBeforeCheckingForNewReleases andIsFromMenuCheck:NO];
 

@@ -736,13 +736,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)updateSplitViewSize
 {
-	if ([dbDocument getConnection]) {
-		return;
-	}
-
-	[connectionSplitView setDelegate:nil];
-	[connectionSplitView setPosition:[[[databaseConnectionView subviews] firstObject] frame].size.width ofDividerAtIndex:0];
-	[connectionSplitView setDelegate:self];
+//	if ([dbDocument getConnection]) {
+//		return;
+//	}
+//
+//	[connectionSplitView setDelegate:nil];
+//	[connectionSplitView setPosition:[[[databaseConnectionView subviews] firstObject] frame].size.width ofDividerAtIndex:0];
+//	[connectionSplitView setDelegate:self];
 }
 
 - (IBAction)updateClearTextPlugin:(id)sender
@@ -2485,18 +2485,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #pragma mark - SPConnectionControllerDelegate
 
 #pragma mark SplitView delegate methods
-
-/**
- * When the split view is resized, trigger a resize in the hidden table
- * width as well, to keep the connection view and connected view in sync.
- */
-- (void)splitViewDidResizeSubviews:(NSNotification *)notification
-{
-	if (initComplete) {
-		allowSplitViewResizing = YES;
-		[databaseConnectionView setPosition:[[[connectionSplitView subviews] objectAtIndex:0] frame].size.width ofDividerAtIndex:0];
-	}
-}
 
 - (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMax ofSubviewAt:(NSInteger)dividerIndex
 {

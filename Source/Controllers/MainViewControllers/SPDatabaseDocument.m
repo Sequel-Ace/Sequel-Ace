@@ -5089,14 +5089,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark SplitView delegate methods
 
-- (void)splitViewDidResizeSubviews:(NSNotification *)notification
-{
-    if (initComplete) {
-        allowSplitViewResizing = YES;
-        [connectionController updateSplitViewSize];
-    }
-}
-
 - (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMinimumPosition ofSubviewAt:(NSInteger)dividerIndex
 {
     if (dividerIndex == 0 && proposedMinimumPosition < 40) {
