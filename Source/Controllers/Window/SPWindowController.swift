@@ -63,6 +63,7 @@ import SnapKit
             image = systemImage
         }
         let imageView = NSImageView(image: image)
+        imageView.toolTip = NSLocalizedString("SSH Connected", comment: "Tooltip information text")
         imageView.isHidden = true
         return imageView
     }()
