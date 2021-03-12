@@ -8,8 +8,6 @@
 
 import AppKit
 
-extension SPAppController: SPWindowControllerDelegate {
-    func windowControllerDidClose(_ windowController: SPWindowController) {
-        windowControllers.remove(windowController)
-    }
+extension SPAppController {
+    
 }

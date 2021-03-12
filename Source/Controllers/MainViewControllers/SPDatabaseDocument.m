@@ -109,6 +109,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
+@property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -204,7 +206,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         allSystemDatabases = nil;
         gotoDatabaseController = nil;
 
-        mainToolbar = nil;
         isProcessing = NO;
 
         printWebView = [[WebView alloc] init];
@@ -256,8 +257,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _mainNibLoaded = YES;
 
-    // Set up the toolbar
-    [self setupToolbar];
+    // The history controller needs to track toolbar item state - trigger setup.
+    [spHistoryControllerInstance setupInterface];
 
     // Set collapsible behaviour on the table list so collapsing behaviour handles resize issus
     [contentViewSplitter setCollapsibleSubviewIndex:0];
@@ -328,15 +329,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
 
     // Update the toolbar
-    [[self.parentWindowController window] setToolbar:mainToolbar];
+    [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
 
     // Update the window's title and represented document
     [self updateWindowTitle:self];
-    [[self.parentWindowController window] setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
+    [self.parentWindowControllerWindow setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
 
     // Add the progress window to this window
     [self centerTaskWindow];
-    [[self.parentWindowController window] addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     // If not connected, update the favorite selection
     if (!_isConnected) {
@@ -346,15 +347,26 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     initComplete = YES;
 }
 
+#pragma mark - Accessors
+
+- (NSToolbar *)mainToolbar {
+    if (!_mainToolbar) {
+        _mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
+        [_mainToolbar setAllowsUserCustomization:YES];
+        [_mainToolbar setAutosavesConfiguration:YES];
+        [_mainToolbar setDelegate:self];
+    }
+    return _mainToolbar;
+}
+
 #pragma mark -
 
 /**
  * Set the return code for entering the encryption passowrd sheet
  */
-- (IBAction)closePasswordSheet:(id)sender
-{
+- (IBAction)closePasswordSheet:(id)sender {
     passwordSheetReturnCode = 0;
-    if([sender tag]) {
+    if ([sender tag]) {
         [NSApp stopModal];
         passwordSheetReturnCode = 1;
     }
@@ -367,16 +379,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)backForwardInHistory:(id)sender
 {
     // Ensure history navigation is permitted - trigger end editing and any required saves
-    if (![self couldCommitCurrentViewActions]) return;
+    if (![self couldCommitCurrentViewActions]) {
+        return;
+    }
 
-    switch ([sender tag])
-    {
-            // Go backward
-        case 0:
+    switch ([sender tag]) {
+        case 0: // Go backward
             [spHistoryControllerInstance goBackInHistory];
             break;
-            // Go forward
-        case 1:
+        case 1: // Go forward
             [spHistoryControllerInstance goForwardInHistory];
             break;
     }
@@ -1174,7 +1185,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Set flags and prevent further UI interaction in this window
         databaseListIsSelectable = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
-        [mainToolbar validateVisibleItems];
+        [self.mainToolbar validateVisibleItems];
         [chooseDatabaseButton setEnabled:NO];
 
         SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
@@ -1373,7 +1384,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Re-enable window interface
         databaseListIsSelectable = YES;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskEndNotification object:self];
-        [mainToolbar validateVisibleItems];
+        [self.mainToolbar validateVisibleItems];
         [chooseDatabaseButton setEnabled:_isConnected];
     }
 }
@@ -2328,13 +2339,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 }
 
-- (IBAction)openCurrentConnectionInNewWindow:(id)sender
-{
-    [SPAppDelegate newWindow:self];
-    SPDatabaseDocument *newTableDocument = [SPAppDelegate frontDocument];
-    [newTableDocument setStateFromConnectionFile:[[self fileURL] path]];
-}
-
 /**
  * Ask the connection controller to initiate connection, if it hasn't
  * already.  Used to support automatic connections on window open,
@@ -2850,7 +2854,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSError *error = nil;
 
         // Save file as SQL file by using the chosen encoding
-        if(contextInfo == @"saveSQLfile") {
+        if (contextInfo == @"saveSQLfile") {
 
             [prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
             [prefs setObject:[fileName lastPathComponent] forKey:@"lastSqlFileName"];
@@ -2861,148 +2865,35 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                         encoding:[[encodingPopUp selectedItem] tag]
                            error:&error];
 
-            if(error != nil) {
+            if (error != nil) {
                 NSAlert *errorAlert = [NSAlert alertWithError:error];
                 [errorAlert runModal];
             }
-
             [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
 
-            return;
-        }
-
         // Save connection and session as SPF file
-        else if(contextInfo == @"saveSPFfile" || contextInfo == @"saveSPFfileAndClose") {
+        } else if(contextInfo == @"saveSPFfile" || contextInfo == @"saveSPFfileAndClose") {
             // Save changes of saveConnectionEncryptString
             [[saveConnectionEncryptString window] makeFirstResponder:[[saveConnectionEncryptString window] initialFirstResponder]];
 
             [self saveDocumentWithFilePath:fileName inBackground:NO onlyPreferences:NO contextInfo:nil];
 
-            if(contextInfo == @"saveSPFfileAndClose") [self closeAndDisconnect];
-        }
+            if (contextInfo == @"saveSPFfileAndClose") {
+                [self closeAndDisconnect];
+            }
 
         // Save all open windows including all tabs as session
-        else if(contextInfo == @"saveSession" || contextInfo == @"saveAsSession") {
-
-            // Sub-folder 'Contents' will contain all untitled connection as single window or tab.
-            // info.plist will contain the opened structure (windows and tabs for each window). Each connection
-            // is linked to a saved spf file either in 'Contents' for unTitled ones or already saved spf files.
-
-            if(contextInfo == @"saveAsSession" && [SPAppDelegate sessionURL]) fileName = [[SPAppDelegate sessionURL] path];
-
-            if(!fileName || ![fileName length]) return;
-
-            NSFileManager *fileManager = [NSFileManager defaultManager];
-
-            // If bundle exists remove it
-            if([fileManager fileExistsAtPath:fileName]) {
-                [fileManager removeItemAtPath:fileName error:&error];
-                if(error != nil) {
-                    NSAlert *errorAlert = [NSAlert alertWithError:error];
-                    [errorAlert runModal];
-                    return;
-                }
-            }
-
-            [fileManager createDirectoryAtPath:fileName withIntermediateDirectories:YES attributes:nil error:&error];
-
-            if(error != nil) {
-                NSAlert *errorAlert = [NSAlert alertWithError:error];
-                [errorAlert runModal];
-                return;
-            }
-
-            [fileManager createDirectoryAtPath:[NSString stringWithFormat:@"%@/Contents", fileName] withIntermediateDirectories:YES attributes:nil error:&error];
-
-            if(error != nil) {
-                NSAlert *errorAlert = [NSAlert alertWithError:error];
-                [errorAlert runModal];
-                return;
-            }
-
-            NSMutableDictionary *info = [NSMutableDictionary dictionary];
-            NSMutableArray *windows = [NSMutableArray array];
-
-            // retrieve save panel data for passing them to each doc
-            NSMutableDictionary *spfDocData_temp = [NSMutableDictionary dictionary];
-            if(contextInfo == @"saveAsSession") {
-                [spfDocData_temp addEntriesFromDictionary:[SPAppDelegate spfSessionDocData]];
-            } else {
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionEncrypt state]==NSOnState) ? YES : NO ] forKey:@"encrypted"];
-                if([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) [spfDocData_temp setObject:[saveConnectionEncryptString stringValue] forKey:@"e_string"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionAutoConnect state]==NSOnState) ? YES : NO ] forKey:@"auto_connect"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionSavePassword state]==NSOnState) ? YES : NO ] forKey:@"save_password"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionIncludeData state]==NSOnState) ? YES : NO ] forKey:@"include_session"];
-                [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionIncludeQuery state]==NSOnState) ? YES : NO ] forKey:@"save_editor_content"];
-
-                // Save the session's accessory view settings
-                [SPAppDelegate setSpfSessionDocData:spfDocData_temp];
-            }
-
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"encrypted"] boolValue]] forKey:@"encrypted"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"auto_connect"] boolValue]] forKey:@"auto_connect"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"save_password"] boolValue]] forKey:@"save_password"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"include_session"] boolValue]] forKey:@"include_session"];
-            [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"save_editor_content"] boolValue]] forKey:@"save_editor_content"];
-            [info setObject:@1 forKey:SPFVersionKey];
-            [info setObject:@"connection bundle" forKey:SPFFormatKey];
-
-            // Loop through all windows
-            for (SPWindowController *windowController in [SPAppDelegate windowControllers]) {
-
-                // First window is always the currently key window
-                NSMutableDictionary *win = [NSMutableDictionary dictionary];
-
-                // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-                if (![windowController.databaseDocument mySQLVersion]) continue;
-
-                NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-                if([windowController.databaseDocument isUntitled]) {
-                    // new bundle file name for untitled docs
-                    NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-                    // internal bundle path to store the doc
-                    NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-                    // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-                    [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-                    [windowController.databaseDocument setIsSavedInBundle:YES];
-                    [tabData setObject:@NO forKey:@"isAbsolutePath"];
-                    [tabData setObject:newName forKey:@"path"];
-                } else {
-                    // save it to the original location and take the file's spfDocData
-                    [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-                    [tabData setObject:@YES forKey:@"isAbsolutePath"];
-                    [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
-                }
-                [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
-                [windows addObject:win];
-            }
-            [info setObject:windows forKey:@"windows"];
-
-            error = nil;
-
-            NSData *plist = [NSPropertyListSerialization dataWithPropertyList:info
-                                                                       format:NSPropertyListXMLFormat_v1_0
-                                                                      options:0
-                                                                        error:&error];
-
-            if (error) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while converting session data", @"error while converting session data") message:[error localizedDescription] callback:nil];
-                return;
-            }
-
-            [plist writeToFile:[NSString stringWithFormat:@"%@/info.plist", fileName] options:NSAtomicWrite error:&error];
-
-            if (error != nil){
-                NSAlert *errorAlert = [NSAlert alertWithError:error];
-                [errorAlert runModal];
-
-                return;
-            }
-
-            [SPAppDelegate setSessionURL:fileName];
-
-            // Register spfs bundle in Recent Files
-            [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
+        } else if (contextInfo == @"saveSession" || contextInfo == @"saveAsSession") {
+            NSDictionary *userInfo = @{
+                @"contextInfo": (__bridge NSString *)contextInfo,
+                @"encrypted": [NSNumber numberWithBool:[saveConnectionEncrypt state] == NSOnState],
+                @"saveConnectionEncryptString": [saveConnectionEncryptString stringValue],
+                @"auto_connect": [NSNumber numberWithBool:[saveConnectionAutoConnect state] == NSOnState],
+                @"save_password": [NSNumber numberWithBool:[saveConnectionSavePassword state] == NSOnState],
+                @"include_session": [NSNumber numberWithBool:[saveConnectionIncludeData state] == NSOnState],
+                @"save_editor_content": [NSNumber numberWithBool:[saveConnectionIncludeQuery state] == NSOnState]
+            };
+            [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentSaveToSPFNotification object:fileName userInfo:userInfo];
         }
     }
 }
@@ -3312,22 +3203,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if (!_isConnected || _isWorkingLevel) {
-        return (
-                action == @selector(newWindow:) ||
-                action == @selector(terminate:)
-                );
-    }
-
-    if (action == @selector(openCurrentConnectionInNewWindow:))
-    {
-        if ([self isUntitled]) {
-            [menuItem setTitle:NSLocalizedString(@"Open in New Window", @"menu item open in new window")];
-            return NO;
-        }
-        else {
-            [menuItem setTitle:[NSString stringWithFormat:NSLocalizedString(@"Open “%@” in New Window", @"menu item open “%@” in new window"), [self displayName]]];
-            return YES;
-        }
+        return action == @selector(terminate:);
     }
 
     // Data export
@@ -3543,12 +3419,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Update the window title.
  */
-- (void)updateWindowTitle:(id)sender
-{
+- (void)updateWindowTitle:(id)sender {
     // Ensure a call on the main thread
-    if (![NSThread isMainThread]) return [[self onMainThread] updateWindowTitle:sender];
-
-    NSMutableString *windowTitle;
+    if (![NSThread isMainThread]) {
+        return [[self onMainThread] updateWindowTitle:sender];
+    }
 
     // Determine name details
     NSString *pathName = @"";
@@ -3557,13 +3432,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if ([connectionController isConnecting]) {
-        windowTitle = [NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")];
-    }
-    else if (!_isConnected) {
-        windowTitle = [NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-    }
-    else {
-        windowTitle = [NSMutableString string];
+        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")]];
+    } else if (!_isConnected) {
+        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]]];
+    } else {
+        NSMutableString *windowTitle = [NSMutableString string];
 
         // Add the path to the window title
         [windowTitle appendString:pathName];
@@ -3583,72 +3456,26 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
         }
+        [self.parentWindowController updateWindowWithTitle:windowTitle];
+        [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
-
-    [[self.parentWindowController window] setTitle:windowTitle];
-}
-
-/**
- * Set the connection status icon in the titlebar
- */
-- (void)setStatusIconToImageWithName:(NSString *)imageName
-{
-    NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];
-    if (!imagePath) return;
-
-    NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath];
-    [titleImageView setImage:image];
-}
-
-- (void)setTitlebarStatus:(NSString *)status
-{
-    [self clearStatusIcon];
-    [titleStringView setStringValue:status];
-}
-
-/**
- * Clear the connection status icon in the titlebar
- */
-- (void)clearStatusIcon
-{
-    [titleImageView setImage:nil];
 }
 
 #pragma mark -
 #pragma mark Toolbar Methods
 
 /**
- * set up the standard toolbar
- */
-- (void)setupToolbar
-{
-    // create a new toolbar instance, and attach it to our document window
-    mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
-
-    // set up toolbar properties
-    [mainToolbar setAllowsUserCustomization:YES];
-    [mainToolbar setAutosavesConfiguration:YES];
-
-    // set ourself as the delegate
-    [mainToolbar setDelegate:self];
-
-    // The history controller needs to track toolbar item state - trigger setup.
-    [spHistoryControllerInstance setupInterface];
-}
-
-/**
  * Return the identifier for the currently selected toolbar item, or nil if none is selected.
  */
 - (NSString *)selectedToolbarItemIdentifier
 {
-    return [mainToolbar selectedItemIdentifier];
+    return [self.mainToolbar selectedItemIdentifier];
 }
 
 /**
  * toolbar delegate method
  */
-- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar
-{
+- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar {
     NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 
     if ([itemIdentifier isEqualToString:SPMainToolbarDatabaseSelection]) {
@@ -4535,7 +4362,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Restore toolbar setting
         if ([spfSession objectForKey:@"isToolbarVisible"]) {
-            [[mainToolbar onMainThread] setVisible:[[spfSession objectForKey:@"isToolbarVisible"] boolValue]];
+            [[self.mainToolbar onMainThread] setVisible:[[spfSession objectForKey:@"isToolbarVisible"] boolValue]];
         }
 
         // Reset database view encoding if differs from default
@@ -5812,12 +5639,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:0];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
@@ -5828,12 +5655,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:1];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
         [self->spHistoryControllerInstance updateHistoryEntries];
         [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
     });
@@ -5844,12 +5671,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:2];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         // Set the focus on the text field
@@ -5866,12 +5693,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:3];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         if ([[self table] length]) {
@@ -5891,12 +5718,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:4];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
@@ -5910,12 +5737,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
-            [self->mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
+            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
         
         [self->tableTabView selectTabViewItemAtIndex:5];
-        [self->mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
+        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];

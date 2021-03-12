@@ -95,9 +95,6 @@
 
 	IBOutlet NSView *parentView;
 	
-	IBOutlet id titleImageView;
-	IBOutlet id titleStringView;
-	
 	IBOutlet id databaseSheet;
 	IBOutlet id databaseCopySheet;
 	IBOutlet id databaseRenameSheet;
@@ -212,8 +209,7 @@
 	BOOL taskCanBeCancelled;
 	id taskCancellationCallbackObject;
 	SEL taskCancellationCallbackSelector;
-	
-	@public NSToolbar *mainToolbar;
+
 	NSToolbarItem *chooseDatabaseToolbarItem;
 	
 	WebView *printWebView;
@@ -255,6 +251,7 @@
 @property (readwrite) NSStringEncoding sqlFileEncoding;
 @property (readwrite) BOOL isProcessing;
 @property (readwrite, copy) NSString *processID;
+@property (readonly, nonatomic, strong) NSToolbar *mainToolbar;
 
 @property (nonatomic, strong, readonly) SPWindowController *parentWindowController;
 @property (readonly, strong) SPServerSupport *serverSupport;
@@ -295,7 +292,6 @@
 - (IBAction)showServerVariables:(id)sender;
 - (IBAction)showServerProcesses:(id)sender;
 - (IBAction)shutdownServer:(id)sender;
-- (IBAction)openCurrentConnectionInNewWindow:(id)sender;
 - (IBAction)showGotoDatabase:(id)sender;
 - (NSArray *)allDatabaseNames;
 - (NSArray *)allSystemDatabaseNames;
@@ -402,11 +398,6 @@
 - (IBAction)addConnectionToFavorites:(id)sender;
 - (BOOL)isCustomQuerySelected;
 - (IBAction)showConnectionDebugMessages:(id)sender;
-
-// Titlebar methods
-- (void)setStatusIconToImageWithName:(NSString *)imagePath;
-- (void)setTitlebarStatus:(NSString *)status;
-- (void)clearStatusIcon;
 
 // Toolbar methods
 - (void)updateWindowTitle:(id)sender;

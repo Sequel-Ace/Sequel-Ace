@@ -68,6 +68,10 @@ import AppKit
         return managedWindows.first { $0.window.isMainWindow }?.windowController
     }
 
+    @objc var windowControllers: [SPWindowController] {
+        return managedWindows.compactMap { $0.windowController}
+    }
+
     weak var appController: SPAppController?
 
     // MARK: - Lifecycle
@@ -136,6 +140,10 @@ import AppKit
         addManagedWindow(windowController: windowController)
         return windowController
     }
+
+    @objc func windowControllerWithDocument(processID: String) -> SPWindowController? {
+        return managedWindows.first(where: { $0.windowController.databaseDocument.processID == processID })?.windowController
+    }
 }
 
 // MARK: - Private API
@@ -143,7 +151,6 @@ import AppKit
 private extension TabManager {
     func createNewWindowController() -> SPWindowController {
         let windowController = SPWindowController(windowNibName: "MainWindow")
-        windowController.delegate = appController
         windowController.window?.delegate = appController
         windowController.showWindow(self)
         return windowController

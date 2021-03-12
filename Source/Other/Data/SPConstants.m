@@ -250,6 +250,7 @@ NSString *SPBookmarksChangedNotification         = @"BookmarksChangedNotificatio
 NSString *SPDocumentTaskStartNotification        = @"DocumentTaskStarted";
 NSString *SPDocumentWillCloseNotification        = @"DocumentWillClose";
 NSString *SPDocumentDuplicateTabNotification     = @"DocumentDuplicateTab";
+NSString *SPDocumentSaveToSPFNotification        = @"DocumentSaveToSPFNotification";
 NSString *SPWindowSelectPreviousTabNotification  = @"WindowSelectPreviousTab";
 NSString *SPWindowSelectNextTabNotification      = @"WindowSelectNextTab";
 NSString *SPActivitiesUpdateNotification         = @"ActivitiesUpdateNotification";
