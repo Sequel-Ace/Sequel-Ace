@@ -51,10 +51,21 @@ import SnapKit
         let view = NSView()
         view.wantsLayer = true
         view.snp.makeConstraints {
-            $0.size.equalTo(16)
+            $0.size.equalTo(20)
         }
-        view.layer?.cornerRadius = 8
+        view.layer?.cornerRadius = 10
         return view
+    }()
+
+    private lazy var tabAccessoryViewImage: NSImageView = {
+        var image = NSImage(imageLiteralResourceName: "fallback_lock.fill")
+        if #available(macOS 11, *), let systemImage = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil) {
+            image = systemImage
+        }
+        let imageView = NSImageView(image: image)
+        imageView.toolTip = NSLocalizedString("SSH Connected", comment: "Tooltip information text")
+        imageView.isHidden = true
+        return imageView
     }()
 }
 
@@ -66,6 +77,15 @@ private extension SPWindowController {
 
         window?.contentView?.addSubview(databaseDocument.databaseView())
         databaseDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
+
+        tabAccessoryView.addSubview(tabAccessoryViewImage)
+        tabAccessoryViewImage.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        if #available(macOS 10.13, *) {
+            window?.tab.accessoryView = tabAccessoryView
+        }
     }
 }
 
@@ -76,11 +96,9 @@ private extension SPWindowController {
         window?.title = title
     }
 
-    func updateWindowAccessory(color: NSColor?) {
-        if #available(macOS 10.13, *) {
-            tabAccessoryView.layer?.backgroundColor = color?.cgColor
-            window?.tab.accessoryView = tabAccessoryView
-        }
+    func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
+        tabAccessoryView.layer?.backgroundColor = color?.cgColor
+        tabAccessoryViewImage.isHidden = !isSSL
     }
 }
 
