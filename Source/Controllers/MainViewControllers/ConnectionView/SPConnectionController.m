@@ -363,6 +363,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[self _restoreConnectionInterface];
 }
 
+- (BOOL)isConnectedViaSSL {
+    return [mySQLConnection isConnectedViaSSL];
+}
+
 #pragma mark -
 #pragma mark Interface interaction
 
@@ -2318,9 +2322,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Re-enable favorites table view
 	[favoritesOutlineView setEnabled:YES];
 	[favoritesOutlineView display];
-
-	// Release the tunnel if set - will now be retained by the connection
-	
 
 	// Pass the connection to the document and clean up the interface
 	[self addConnectionToDocument];
