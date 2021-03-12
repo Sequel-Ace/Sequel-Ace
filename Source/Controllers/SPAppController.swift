@@ -9,6 +9,9 @@
 import AppKit
 
 extension SPAppController {
+
+    // MARK: - File menu actions
+
     @IBAction func newWindow(_ sender: Any) {
         tabManager.newWindowForWindow()
     }
@@ -35,5 +38,39 @@ extension SPAppController {
 
     @IBAction func importFromClipboard(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.importFromClipboard()
+    }
+
+    @IBAction func printDocument(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.print()
+    }
+
+    // MARK: - View menu actions
+
+    @IBAction func viewStructure(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.viewStructure()
+    }
+
+    @IBAction func viewContent(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.viewContent()
+    }
+
+    @IBAction func viewQuery(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.viewQuery()
+    }
+
+    @IBAction func viewStatus(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.viewStatus()
+    }
+
+    @IBAction func viewRelations(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.viewRelations()
+    }
+
+    @IBAction func viewTriggers(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.viewTriggers()
+    }
+
+    @IBAction func backForwardInHistory(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.backForwardInHistory(sender)
     }
 }

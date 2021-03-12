@@ -344,7 +344,6 @@
 - (IBAction)closePanelSheet:(id)sender;
 - (IBAction)validateSaveConnectionAccessory:(id)sender;
 - (IBAction)closePasswordSheet:(id)sender;
-- (IBAction)backForwardInHistory:(id)sender;
 - (IBAction)showUserManager:(id)sender;
 - (IBAction)copyChecksumFromSheet:(id)sender;
 - (IBAction)showNavigator:(id)sender;
@@ -427,10 +426,23 @@
 
 #pragma mark - Menu actions called from SPAppController
 
+#pragma mark File menu
+
 - (void)exportData;
 - (void)addConnectionToFavorites;
 - (void)importFile;
 - (void)importFromClipboard;
+- (void)printDocument;
+
+#pragma mark View menu
+
+- (void)viewStructure;
+- (void)viewContent;
+- (void)viewQuery;
+- (void)viewStatus;
+- (void)viewRelations;
+- (void)viewTriggers;
+- (void)backForwardInHistory:(id)sender;
 
 #pragma mark - SPDatabaseViewController
 
@@ -441,14 +453,6 @@
 - (BOOL)structureLoaded;
 - (BOOL)contentLoaded;
 - (BOOL)statusLoaded;
-
-// Tab view control
-- (IBAction)viewStructure:(id)sender;
-- (IBAction)viewContent:(id)sender;
-- (IBAction)viewQuery:(id)sender;
-- (IBAction)viewStatus:(id)sender;
-- (IBAction)viewRelations:(id)sender;
-- (IBAction)viewTriggers:(id)sender;
 
 - (void)setStructureRequiresReload:(BOOL)reload;
 - (void)setContentRequiresReload:(BOOL)reload;

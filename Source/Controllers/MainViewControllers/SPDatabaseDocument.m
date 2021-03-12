@@ -257,6 +257,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _mainNibLoaded = YES;
 
+    // Update the toolbar
+    [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
+
     // The history controller needs to track toolbar item state - trigger setup.
     [spHistoryControllerInstance setupInterface];
 
@@ -328,9 +331,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
 
-    // Update the toolbar
-    [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
-
     // Update the window's title and represented document
     [self updateWindowTitle:self];
     [self.parentWindowControllerWindow setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
@@ -376,8 +376,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Go backward or forward in the history depending on the menu item selected.
  */
-- (IBAction)backForwardInHistory:(id)sender
-{
+- (void)backForwardInHistory:(id)sender {
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
@@ -517,7 +516,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Insert queryEditorInitString into the Query Editor if defined
     if (queryEditorInitString && [queryEditorInitString length]) {
-        [self viewQuery:self];
+        [self viewQuery];
         [customQueryInstance doPerformLoadQueryService:queryEditorInitString];
 
     }
@@ -537,22 +536,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         switch ([prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode]) {
             default:
             case SPStructureViewMode:
-                [self viewStructure:self];
+                [self viewStructure];
                 break;
             case SPContentViewMode:
-                [self viewContent:self];
+                [self viewContent];
                 break;
             case SPRelationsViewMode:
-                [self viewRelations:self];
+                [self viewRelations];
                 break;
             case SPTableInfoViewMode:
-                [self viewStatus:self];
+                [self viewStatus];
                 break;
             case SPQueryEditorViewMode:
-                [self viewQuery:self];
+                [self viewQuery];
                 break;
             case SPTriggersViewMode:
-                [self viewTriggers:self];
+                [self viewTriggers];
                 break;
         }
     }
@@ -2202,7 +2201,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (IBAction)focusOnTableContentFilter:(id)sender
 {
-    [self viewContent:self];
+    [self viewContent];
 
     [tableContentInstance performSelector:@selector(makeContentFilterHaveFocus) withObject:nil afterDelay:0.1];
 }
@@ -2212,7 +2211,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (IBAction)showFilterTable:(id)sender
 {
-    [self viewContent:self];
+    [self viewContent];
 
     [tableContentInstance performSelector:@selector(showFilterTable:) withObject:sender afterDelay:0.1];
 }
@@ -2308,19 +2307,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Passes query to tablesListInstance
  */
-- (void)doPerformQueryService:(NSString *)query
-{
+- (void)doPerformQueryService:(NSString *)query {
     [[self.parentWindowController window] makeKeyAndOrderFront:self];
-    [self viewQuery:nil];
+    [self viewQuery];
     [customQueryInstance doPerformQueryService:query];
 }
 
 /**
  * Inserts query into the Custom Query editor
  */
-- (void)doPerformLoadQueryService:(NSString *)query
-{
-    [self viewQuery:nil];
+- (void)doPerformLoadQueryService:(NSString *)query {
+    [self viewQuery];
     [customQueryInstance doPerformLoadQueryService:query];
 }
 
@@ -3244,11 +3241,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Table specific actions
-    if (action == @selector(viewStructure:) ||
-        action == @selector(viewContent:)   ||
-        action == @selector(viewRelations:) ||
-        action == @selector(viewStatus:)    ||
-        action == @selector(viewTriggers:))
+    if (action == @selector(viewStructure) ||
+        action == @selector(viewContent)   ||
+        action == @selector(viewRelations) ||
+        action == @selector(viewStatus)    ||
+        action == @selector(viewTriggers))
     {
         return [self database] != nil && [[[tablesListInstance valueForKeyPath:@"tablesListView"] selectedRowIndexes] count];
 
@@ -3537,7 +3534,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewStructure:)];
+        [toolbarItem setAction:@selector(viewStructure)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableContent]) {
         [toolbarItem setLabel:NSLocalizedString(@"Content", @"toolbar item label for switching to the Table Content tab")];
@@ -3551,7 +3548,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewContent:)];
+        [toolbarItem setAction:@selector(viewContent)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
         [toolbarItem setLabel:NSLocalizedString(@"Query", @"toolbar item label for switching to the Run Query tab")];
@@ -3565,7 +3562,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewQuery:)];
+        [toolbarItem setAction:@selector(viewQuery)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableInfo]) {
         [toolbarItem setLabel:NSLocalizedString(@"Table Info", @"toolbar item label for switching to the Table Info tab")];
@@ -3579,7 +3576,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewStatus:)];
+        [toolbarItem setAction:@selector(viewStatus)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableRelations]) {
         [toolbarItem setLabel:NSLocalizedString(@"Relations", @"toolbar item label for switching to the Table Relations tab")];
@@ -3593,7 +3590,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewRelations:)];
+        [toolbarItem setAction:@selector(viewRelations)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableTriggers]) {
         [toolbarItem setLabel:NSLocalizedString(@"Triggers", @"toolbar item label for switching to the Table Triggers tab")];
@@ -3607,7 +3604,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewTriggers:)];
+        [toolbarItem setAction:@selector(viewTriggers)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarUserManager]) {
         [toolbarItem setLabel:NSLocalizedString(@"Users", @"toolbar item label for switching to the User Manager tab")];
@@ -4394,13 +4391,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             // Select view
             NSString *view = [self->spfSession objectForKey:@"view"];
 
-            if ([view isEqualToString:@"SP_VIEW_STRUCTURE"])   [self viewStructure:self];
-            else if ([view isEqualToString:@"SP_VIEW_CONTENT"])     [self viewContent:self];
-            else if ([view isEqualToString:@"SP_VIEW_CUSTOMQUERY"]) [self viewQuery:self];
-            else if ([view isEqualToString:@"SP_VIEW_STATUS"])      [self viewStatus:self];
-            else if ([view isEqualToString:@"SP_VIEW_RELATIONS"])   [self viewRelations:self];
-            else if ([view isEqualToString:@"SP_VIEW_TRIGGERS"])    [self viewTriggers:self];
-
+            if ([view isEqualToString:@"SP_VIEW_STRUCTURE"]) {
+                [self viewStructure];
+            } else if ([view isEqualToString:@"SP_VIEW_CONTENT"]) {
+                [self viewContent];
+            } else if ([view isEqualToString:@"SP_VIEW_CUSTOMQUERY"]) {
+                [self viewQuery];
+            } else if ([view isEqualToString:@"SP_VIEW_STATUS"]) {
+                [self viewStatus];
+            } else if ([view isEqualToString:@"SP_VIEW_RELATIONS"]) {
+                [self viewRelations];
+            } else if ([view isEqualToString:@"SP_VIEW_TRIGGERS"]) {
+                [self viewTriggers];
+            }
             [self updateWindowTitle:self];
         });
 
@@ -4478,18 +4481,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     }
 
-    if([command isEqualToString:@"SelectDocumentView"]) {
+    if ([command isEqualToString:@"SelectDocumentView"]) {
         if([params count] == 2) {
             NSString *view = [params objectAtIndex:1];
             if([view length]) {
                 NSString *viewName = [view lowercaseString];
-                if([viewName hasPrefix:@"str"]) [self viewStructure:self];
-                else if([viewName hasPrefix:@"con"]) [self viewContent:self];
-                else if([viewName hasPrefix:@"que"]) [self viewQuery:self];
-                else if([viewName hasPrefix:@"tab"]) [self viewStatus:self];
-                else if([viewName hasPrefix:@"rel"]) [self viewRelations:self];
-                else if([viewName hasPrefix:@"tri"]) [self viewTriggers:self];
-
+                if ([viewName hasPrefix:@"str"]) {
+                    [self viewStructure];
+                } else if([viewName hasPrefix:@"con"]) {
+                    [self viewContent];
+                } else if([viewName hasPrefix:@"que"]) {
+                    [self viewQuery];
+                } else if([viewName hasPrefix:@"tab"]) {
+                    [self viewStatus];
+                } else if([viewName hasPrefix:@"rel"]) {
+                    [self viewRelations];
+                } else if([viewName hasPrefix:@"tri"]) {
+                    [self viewTriggers];
+                }
                 [self updateWindowTitle:self];
             }
         }
@@ -5626,7 +5635,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark Tab view control and delegate methods
 
 //WARNING: Might be called from code in background threads
-- (IBAction)viewStructure:(id)sender {
+- (void)viewStructure {
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
@@ -5643,7 +5652,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     });
 }
 
-- (IBAction)viewContent:(id)sender {
+- (void)viewContent {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5658,8 +5667,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     });
 }
 
-- (IBAction)viewQuery:(id)sender {
-    
+- (void)viewQuery {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5679,9 +5687,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 }
 
-- (IBAction)viewStatus:(id)sender
-{
-
+- (void)viewStatus {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5704,9 +5710,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 }
 
-- (IBAction)viewRelations:(id)sender
-{
-    
+- (void)viewRelations {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5723,9 +5727,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 }
 
-- (IBAction)viewTriggers:(id)sender
-{
-    
+- (void)viewTriggers {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -6322,8 +6324,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Loads the print document interface. The actual printing is done in the doneLoading delegate.
  */
-- (IBAction)printDocument:(id)sender
-{
+- (void)printDocument {
     // Only display warning for the 'Table Content' view
     if ([self currentlySelectedView] == SPTableViewContent) {
 

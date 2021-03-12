@@ -450,22 +450,22 @@
 		if ([theDocument currentlySelectedView] != [[historyEntry objectForKey:@"view"] integerValue]) {
 			switch ([[historyEntry objectForKey:@"view"] integerValue]) {
 				case SPTableViewStructure:
-					[theDocument viewStructure:self];
+					[theDocument viewStructure];
 					break;
 				case SPTableViewContent:
-					[theDocument viewContent:self];
+					[theDocument viewContent];
 					break;
 				case SPTableViewCustomQuery:
-					[theDocument viewQuery:self];
+					[theDocument viewQuery];
 					break;
 				case SPTableViewStatus:
-					[theDocument viewStatus:self];
+					[theDocument viewStatus];
 					break;
 				case SPTableViewRelations:
-					[theDocument viewRelations:self];
+					[theDocument viewRelations];
 					break;
 				case SPTableViewTriggers:
-					[theDocument viewTriggers:self];
+					[theDocument viewTriggers];
 					break;
 			}
 			if ([theDocument currentlySelectedView] != [[historyEntry objectForKey:@"view"] integerValue]) {
