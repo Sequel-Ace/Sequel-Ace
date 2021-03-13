@@ -1668,8 +1668,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Copies if sender == self or displays or the CREATE TABLE syntax of the selected table(s) to the user .
  */
-- (IBAction)showCreateTableSyntax:(id)sender
-{
+- (void)showCreateTableSyntax:(SPDatabaseDocument *)sender {
     NSInteger colOffs = 1;
     NSString *query = nil;
     NSString *typeString = @"";
@@ -1784,8 +1783,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Copies the CREATE TABLE syntax of the selected table to the pasteboard.
  */
-- (IBAction)copyCreateTableSyntax:(id)sender
-{
+- (void)copyCreateTableSyntax {
     [self showCreateTableSyntax:self];
 
     return;
@@ -1794,8 +1792,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Performs a MySQL check table on the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)checkTable:(id)sender
-{
+- (void)checkTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -1853,8 +1850,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Analyzes the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)analyzeTable:(id)sender
-{
+- (void)analyzeTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -1912,8 +1908,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Optimizes the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)optimizeTable:(id)sender
-{
+- (void)optimizeTable {
 
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
@@ -1972,8 +1967,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Repairs the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)repairTable:(id)sender
-{
+- (void)repairTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -2031,8 +2025,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Flush the selected table and inform the user via a dialog sheet.
  */
-- (IBAction)flushTable:(id)sender
-{
+- (void)flushTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -2091,8 +2084,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Runs a MySQL checksum on the selected table and present the result to the user via an alert sheet.
  */
-- (IBAction)checksumTable:(id)sender
-{
+- (void)checksumTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -2184,8 +2176,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Switches to the content view and makes the filter field the first responder (has focus).
  */
-- (IBAction)focusOnTableContentFilter:(id)sender
-{
+- (void)focusOnTableContentFilter {
     [self viewContent];
 
     [tableContentInstance performSelector:@selector(makeContentFilterHaveFocus) withObject:nil afterDelay:0.1];
@@ -2194,11 +2185,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Switches to the content view and makes the advanced filter view the first responder
  */
-- (IBAction)showFilterTable:(id)sender
-{
+- (void)showFilterTable {
     [self viewContent];
 
-    [tableContentInstance performSelector:@selector(showFilterTable:) withObject:sender afterDelay:0.1];
+    [tableContentInstance performSelector:@selector(showFilterTable) withObject:nil afterDelay:0.1];
 }
 
 /**

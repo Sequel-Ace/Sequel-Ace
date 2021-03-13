@@ -143,4 +143,46 @@ extension SPAppController {
     @IBAction func shutdownServer(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.shutdownServer()
     }
+
+    // MARK: - Table menu actions
+
+    @IBAction func focusOnTableContentFilter(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.focusOnTableContentFilter()
+    }
+
+    @IBAction func showFilterTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showFilterTable()
+    }
+
+    @IBAction func copyCreateTableSyntax(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.copyCreateTableSyntax()
+    }
+
+    @IBAction func showCreateTableSyntax(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showCreateTableSyntax(nil)
+    }
+
+    @IBAction func checkTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.checkTable()
+    }
+
+    @IBAction func repairTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.repairTable()
+    }
+
+    @IBAction func analyzeTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.analyzeTable()
+    }
+
+    @IBAction func optimizeTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.optimizeTable()
+    }
+
+    @IBAction func flushTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.flushTable()
+    }
+
+    @IBAction func checksumTable(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.checksumTable()
+    }
 }

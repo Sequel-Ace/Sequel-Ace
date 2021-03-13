@@ -312,18 +312,8 @@
 - (NSString *)mysqlEncodingFromEncodingTag:(NSNumber *)encodingTag;
 
 // Table methods
-- (IBAction)showCreateTableSyntax:(id)sender;
-- (IBAction)copyCreateTableSyntax:(id)sender;
-- (IBAction)checkTable:(id)sender;
-- (IBAction)analyzeTable:(id)sender;
-- (IBAction)optimizeTable:(id)sender;
-- (IBAction)repairTable:(id)sender;
-- (IBAction)flushTable:(id)sender;
-- (IBAction)checksumTable:(id)sender;
 - (IBAction)saveCreateSyntax:(id)sender;
 - (IBAction)copyCreateTableSyntaxFromSheet:(id)sender;
-- (IBAction)focusOnTableContentFilter:(id)sender;
-- (IBAction)showFilterTable:(id)sender;
 - (IBAction)exportSelectedTablesAs:(id)sender;
 - (IBAction)multipleLineEditingButtonClicked:(NSButton *)sender;
 
@@ -446,6 +436,19 @@
 - (void)showServerVariables;
 - (void)showServerProcesses;
 - (void)shutdownServer;
+
+#pragma mark Table menu
+
+- (void)focusOnTableContentFilter;
+- (void)showFilterTable;
+- (void)copyCreateTableSyntax;
+- (void)showCreateTableSyntax:(SPDatabaseDocument *)sender;
+- (void)checkTable;
+- (void)repairTable;
+- (void)analyzeTable;
+- (void)optimizeTable;
+- (void)flushTable;
+- (void)checksumTable;
 
 #pragma mark - SPDatabaseViewController
 

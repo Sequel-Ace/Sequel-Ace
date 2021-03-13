@@ -3177,8 +3177,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Show filter table
  */
-- (IBAction)showFilterTable:(id)sender
-{
+- (void)showFilterTable {
 	[filterTableController showFilterTableWindow];
 }
 
