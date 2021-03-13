@@ -185,4 +185,10 @@ extension SPAppController {
     @IBAction func checksumTable(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.checksumTable()
     }
+
+    // MARK: - Help menu actions
+
+    @IBAction func showMySQLHelp(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showMySQLHelp()
+    }
 }

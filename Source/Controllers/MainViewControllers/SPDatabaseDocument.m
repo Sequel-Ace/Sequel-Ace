@@ -3129,8 +3129,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Show the MySQL Help TOC of the current MySQL connection
  * Invoked by the MainMenu > Help > MySQL Help
  */
-- (IBAction)showMySQLHelp:(id)sender
-{
+- (void)showMySQLHelp {
     [helpViewerClientInstance showHelpFor:SPHelpViewerSearchTOC addToHistory:YES calledByAutoHelp:NO];
     [[helpViewerClientInstance helpWebViewWindow] makeKeyWindow];
 }

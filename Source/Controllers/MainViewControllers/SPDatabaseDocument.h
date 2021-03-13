@@ -280,7 +280,6 @@
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;
 - (void)selectDatabase:(NSString *)aDatabase item:(NSString *)anItem;
-- (IBAction)showMySQLHelp:(id)sender;
 - (IBAction)makeTableListFilterHaveFocus:(id)sender;
 - (NSArray *)allDatabaseNames;
 - (NSArray *)allSystemDatabaseNames;
@@ -478,5 +477,9 @@
 - (void)optimizeTable;
 - (void)flushTable;
 - (void)checksumTable;
+
+#pragma mark Help menu
+
+- (void)showMySQLHelp;
 
 @end

@@ -1465,7 +1465,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag
 {
     // Only create a new document (without auto-connect) when there are already no documents open.
-    if (![self.tabManager activeWindowController]) {
+    if ([self.tabManager windowControllers].count == 0) {
         [self.tabManager newWindowForWindow];
         return NO;
     }
