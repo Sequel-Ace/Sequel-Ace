@@ -51,16 +51,14 @@
     return YES;
 }
 
-#pragma mark -
-#pragma mark Keyboard shortcut additions
+#pragma mark - Keyboard shortcut additions
 
 /**
  * While keyboard shortcuts are an easy way to apply code app-wide, alternate menu
  * items only collapse if the unmodified key matches; this method allows keyboard
  * shortcuts without menu equivalents for a window, or the use of different base shortcuts.
  */
-- (void) sendEvent:(NSEvent *)theEvent
-{
+- (void) sendEvent:(NSEvent *)theEvent {
 	if ([theEvent type] == NSEventTypeKeyDown && [[theEvent charactersIgnoringModifiers] length]) {
 
 		unichar theCharacter = [[theEvent charactersIgnoringModifiers] characterAtIndex:0];
@@ -129,12 +127,10 @@
 				break;
 		}
 	}
-
 	[super sendEvent:theEvent];
 }
 
-#pragma mark -
-#pragma mark Undo manager handling
+#pragma mark - Undo manager handling
 
 /**
  * If this window is controlled by an SPWindowController, and thus supports being asked
@@ -147,19 +143,16 @@
 		return [[(SPWindowController *)[self windowController] databaseDocument] undoManager];
 
 	}
-
 	return [super undoManager];
 }
 
-#pragma mark -
-#pragma mark Method overrides
+#pragma mark - Method overrides
 
 /**
  * Allow sheets to become main if necessary, for example if they are acting as an
  * editor for a window.
  */
-- (BOOL)canBecomeMainWindow
-{
+- (BOOL)canBecomeMainWindow {
 	// If this window is a sheet which is permitted to become main, respond appropriately
 	if ([self isSheet] && isSheetWhichCanBecomeMain) {
 		return [self isVisible];
@@ -169,7 +162,6 @@
 	if ([[self attachedSheet] isKindOfClass:[SPWindow class]] && [(SPWindow *)[self attachedSheet] isSheetWhichCanBecomeMain]) {
 		return NO;
 	}
-
 	return [super canBecomeMainWindow];
 }
 
@@ -177,25 +169,17 @@
  * Override the standard toolbar show/hide, adding a notification that can be
  * used to update state.
  */
-- (void)toggleToolbarShown:(id)sender
-{
+- (void)toggleToolbarShown:(id)sender {
 	[super toggleToolbarShown:sender];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:SPWindowToolbarDidToggleNotification object:nil];
 }
 
-/**
- * On 10.7+, allow the window to go fullscreen; do nothing on <10.7.
- */
-- (void)toggleFullScreen:(id)sender
-{
-	if ([NSWindow instancesRespondToSelector:@selector(toggleFullScreen:)]) {
-		[super toggleFullScreen:sender];
-	}
+- (void)toggleFullScreen:(id)sender {
+	[super toggleFullScreen:sender];
 }
 
-- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
-{
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
 	// If the item is the Show/Hide Toolbar menu item, override the text to allow correct translation
 	if ([menuItem action] == @selector(toggleToolbarShown:)) {
 		BOOL theResponse = [super validateMenuItem:menuItem];
@@ -207,18 +191,10 @@
 		return theResponse;
 	}
 
-	// On systems which don't support fullscreen windows, disable the fullscreen menu item
-	if ([menuItem action] == @selector(toggleFullScreen:)) {
-		if (![NSWindow instancesRespondToSelector:@selector(toggleFullScreen:)]) {
-			return NO;
-		}
-	}
-
 	// Allow the superclass to perform validation otherwise (if possible)
 	if ([super respondsToSelector:@selector(validateMenuItem:)]) {
 		return [super validateMenuItem:menuItem];
 	}
-
 	return YES;
 }
 

@@ -590,7 +590,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] != 1) return;
 	if (![tableSourceInstance saveRowOnDeselect] || ![tableContentInstance saveRowOnDeselect]) return;
 
-	[[self onMainThread] setDatabases:nil];
+	[[self onMainThread] setDatabases];
 
 	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
@@ -637,9 +637,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 
-- (IBAction)setDatabases:(id)sender;
-{
-	if (!chooseDatabaseButton) return;
+- (void)setDatabases {
+    if (!chooseDatabaseButton) {
+        return;
+    }
 
 	[chooseDatabaseButton removeAllItems];
 
@@ -2347,7 +2348,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 			// Select the newly created table and switch to the table structure view for easier setup
 			[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
-			[tableDocumentInstance viewStructure:self];
+			[tableDocumentInstance viewStructure];
 
 			// Query the structure of all databases in the background (mainly for completion)
 			[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];

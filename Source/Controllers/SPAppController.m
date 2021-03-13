@@ -78,7 +78,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 @property (readwrite, strong) NSFileManager *fileManager;
 @property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
 
-@property (nonatomic, strong) TabManager *tabManager;
+@property (nonatomic, strong, readwrite) TabManager *tabManager;
 
 @end
 
@@ -518,16 +518,20 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  * Menu item validation.
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
-
-    if ([menuItem action] == @selector(newTab:)) {
+    SEL action = [menuItem action];
+    if (action == @selector(newWindow:) || action == @selector(openConnectionSheet:)) {
+        return YES;
+    }
+    if (action == @selector(newTab:)) {
         return ([[[self.tabManager activeWindowController] window] attachedSheet] == nil);
     }
-
-    if ([menuItem action] == @selector(duplicateTab:))
-    {
+    if (action == @selector(duplicateTab:)) {
         return ([[self frontDocument] getConnection] != nil);
     }
 
+    if (self.tabManager.activeWindowController.databaseDocument) {
+        return [self.tabManager.activeWindowController.databaseDocument validateMenuItem:menuItem];
+    }
     return YES;
 }
 
@@ -1339,18 +1343,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [prefsController showWindow:self];
 }
 
-- (IBAction)import:(id)sender {
-    [[[self.tabManager activeWindowController] databaseDocument] import:sender];
-}
-
-- (IBAction)importFromClipboard:(id)sender {
-    [[[self.tabManager activeWindowController] databaseDocument] importFromClipboard:sender];
-}
-
-- (IBAction)saveConnectionSheet:(id)sender {
-    [[[self.tabManager activeWindowController] databaseDocument] saveConnectionSheet:sender];
-}
-
 #pragma mark -
 #pragma mark Accessors
 
@@ -1473,7 +1465,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag
 {
     // Only create a new document (without auto-connect) when there are already no documents open.
-    if (![self.tabManager activeWindowController]) {
+    if ([self.tabManager windowControllers].count == 0) {
         [self.tabManager newWindowForWindow];
         return NO;
     }
@@ -1651,17 +1643,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 #pragma mark - SPWindowManagement
 
 - (IBAction)newWindowForTab:(id)sender {
-    [self.tabManager newWindowForTab];
-}
-
-- (IBAction)newWindow:(id)sender {
-    [self.tabManager newWindowForWindow];
-}
-
-/**
- * Create a new tab in the frontmost window.
- */
-- (IBAction)newTab:(id)sender {
     [self.tabManager newWindowForTab];
 }
 

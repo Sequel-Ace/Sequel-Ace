@@ -184,19 +184,8 @@
                                     <action selector="performClose:" target="-1" id="193"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Close Tab" tag="1103" enabled="NO" id="1089">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="closeTab:" target="-1" id="1091"/>
-                                </connections>
-                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="74">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
-                            </menuItem>
-                            <menuItem title="Page Setup..." tag="1009" hidden="YES" enabled="NO" keyEquivalent="P" id="77">
-                                <connections>
-                                    <action selector="runPageLayout:" target="-1" id="87"/>
-                                </connections>
                             </menuItem>
                             <menuItem title="Print..." tag="1010" keyEquivalent="p" id="78">
                                 <connections>
@@ -634,11 +623,6 @@
                             <menuItem title="Delete Database..." id="631">
                                 <connections>
                                     <action selector="removeDatabase:" target="-1" id="659"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Drop Database..." alternate="YES" id="1207">
-                                <connections>
-                                    <action selector="removeDatabase:" target="-1" id="1208"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="1084"/>

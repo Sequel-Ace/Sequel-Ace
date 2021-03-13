@@ -481,12 +481,6 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	return NO;
 }
 
-- (void)removeDatabase:(NSString*)db_id forConnectionID:(NSString*)connectionID
-{
-	[[schemaData objectForKey:connectionID] removeObjectForKey:db_id];
-	[outlineSchema2 reloadData];
-}
-
 - (NSDictionary *)dbStructureForConnection:(NSString*)connectionID
 {
 	if([schemaData objectForKey:connectionID])

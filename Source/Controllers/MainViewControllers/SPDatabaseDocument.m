@@ -257,6 +257,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _mainNibLoaded = YES;
 
+    // Update the toolbar
+    [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
+
     // The history controller needs to track toolbar item state - trigger setup.
     [spHistoryControllerInstance setupInterface];
 
@@ -328,9 +331,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
 
-    // Update the toolbar
-    [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
-
     // Update the window's title and represented document
     [self updateWindowTitle:self];
     [self.parentWindowControllerWindow setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
@@ -376,8 +376,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Go backward or forward in the history depending on the menu item selected.
  */
-- (IBAction)backForwardInHistory:(id)sender
-{
+- (void)backForwardInHistory:(id)sender {
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
@@ -449,7 +448,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Update the database list
-    [self setDatabases:self];
+    [self setDatabases];
 
     [chooseDatabaseButton setEnabled:!_isWorkingLevel];
 
@@ -517,7 +516,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Insert queryEditorInitString into the Query Editor if defined
     if (queryEditorInitString && [queryEditorInitString length]) {
-        [self viewQuery:self];
+        [self viewQuery];
         [customQueryInstance doPerformLoadQueryService:queryEditorInitString];
 
     }
@@ -537,22 +536,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         switch ([prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode]) {
             default:
             case SPStructureViewMode:
-                [self viewStructure:self];
+                [self viewStructure];
                 break;
             case SPContentViewMode:
-                [self viewContent:self];
+                [self viewContent];
                 break;
             case SPRelationsViewMode:
-                [self viewRelations:self];
+                [self viewRelations];
                 break;
             case SPTableInfoViewMode:
-                [self viewStatus:self];
+                [self viewStatus];
                 break;
             case SPQueryEditorViewMode:
-                [self viewQuery:self];
+                [self viewQuery];
                 break;
             case SPTriggersViewMode:
-                [self viewTriggers:self];
+                [self viewTriggers];
                 break;
         }
     }
@@ -585,9 +584,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
-- (IBAction)setDatabases:(id)sender;
-{
-    if (!chooseDatabaseButton) return;
+- (void)setDatabases {
+    if (!chooseDatabaseButton) {
+        return;
+    }
 
     [chooseDatabaseButton removeAllItems];
 
@@ -596,8 +596,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Add Database...", @"menu item to add db") action:@selector(addDatabase:) keyEquivalent:@""];
     [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
     [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-
-
 
 
     NSArray *theDatabaseList = [mySQLConnection databases];
@@ -707,7 +705,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * opens the add-db sheet and creates the new db
  */
-- (IBAction)addDatabase:(id)sender
+- (void)addDatabase:(id)sender
 {
     if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
 
@@ -749,14 +747,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Show UI for the ALTER DATABASE statement
- * @warning Make sure this method is only called on mysql 4.1+ servers!
  */
-- (IBAction)alterDatabase:(id)sender {
+- (void)alterDatabase {
     //once the database is created the charset and collation are written
     //to the db.opt file regardless if they were explicity given or not.
     //So there is no longer a "Default" option.
 
-    NSString *currentCharset   = [databaseDataInstance getDatabaseDefaultCharacterSet];
+    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSet];
     NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollation];
 
     // Setup the charset and collation dropdowns
@@ -844,9 +841,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Opens the copy database sheet and copies the databsae.
  */
-- (IBAction)copyDatabase:(id)sender
-{	
-    if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
+- (void)copyDatabase {
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return;
+    }
 
     // Inform the user that we don't support copying objects other than tables and ask them if they'd like to proceed
     if ([tablesListInstance hasNonTableObjects]) {
@@ -876,9 +874,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Opens the rename database sheet and renames the databsae.
  */
-- (IBAction)renameDatabase:(id)sender
-{	
-    if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
+- (void)renameDatabase {	
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return;
+    }
 
     // We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
     // so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
@@ -900,12 +899,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * opens sheet to ask user if he really wants to delete the db
  */
-- (IBAction)removeDatabase:(id)sender
-{
+- (void)removeDatabase:(id)sender {
     // No database selected, bail
-    if ([chooseDatabaseButton indexOfSelectedItem] == 0) return;
+    if ([chooseDatabaseButton indexOfSelectedItem] == 0) {
+        return;
+    }
 
-    if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return;
+    }
 
     NSString *title = [NSString stringWithFormat:NSLocalizedString(@"Delete database '%@'?", @"delete database message"), [self database]];
     NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the database '%@'? This operation cannot be undone.", @"delete database informative message"), [self database]];
@@ -917,16 +919,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Refreshes the tables list by calling SPTablesList's updateTables.
  */
-- (IBAction)refreshTables:(id)sender
-{
+- (void)refreshTables {
     [tablesListInstance updateTables:self];
 }
 
 /**
  * Displays the database server variables sheet.
  */
-- (IBAction)showServerVariables:(id)sender
-{
+- (void)showServerVariables {
     if (!serverVariablesController) {
         serverVariablesController = [[SPServerVariablesController alloc] init];
 
@@ -939,8 +939,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Displays the database process list sheet.
  */
-- (IBAction)showServerProcesses:(id)sender
-{
+- (void)showServerProcesses {
     if (!processListController) {
         processListController = [[SPProcessListController alloc] init];
 
@@ -950,7 +949,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [processListController displayProcessListWindow];
 }
 
-- (IBAction)shutdownServer:(id)sender {
+- (void)shutdownServer {
     [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title") message:NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message") primaryButtonTitle:NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button") primaryButtonHandler:^{
         if (![self->mySQLConnection serverShutdown]) {
             if ([self->mySQLConnection isConnected]) {
@@ -1044,8 +1043,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return [[SPNavigatorController sharedNavigatorController] allSchemaKeysForConnection:[self connectionID]];
 }
 
-- (IBAction)showGotoDatabase:(id)sender
-{
+- (void)showGotoDatabase {
     if(!gotoDatabaseController) {
         gotoDatabaseController = [[SPGotoDatabaseController alloc] init];
     }
@@ -1055,7 +1053,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbList addObjectsFromArray:[self allDatabaseNames]];
     [gotoDatabaseController setDatabaseList:dbList];
 
-    if([gotoDatabaseController runModal]) {
+    if ([gotoDatabaseController runModal]) {
         [self selectDatabase:[gotoDatabaseController selectedDatabase] item:nil];
     }
 }
@@ -1066,8 +1064,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Shows or hides the console
  */
-- (void)toggleConsole:(id)sender
-{
+- (void)toggleConsole {
     // Toggle Console will show the Console window if it isn't visible or if it isn't
     // the front most window and hide it if it is the front most window
     if ([[[SPQueryController sharedQueryController] window] isVisible]
@@ -1076,29 +1073,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[[SPQueryController sharedQueryController] window] setIsVisible:NO];
     }
     else {
-        [self showConsole:nil];
+        [self showConsole];
     }
 }
 
 /**
  * Brings the console to the front
  */
-- (void)showConsole:(id)sender
-{
+- (void)showConsole {
     SPQueryController *queryController = [SPQueryController sharedQueryController];
     // If the Console window is not visible data are not reloaded (for speed).
     // Due to that update list if user opens the Console window.
-    if(![[queryController window] isVisible]) [queryController updateEntries];
+    if (![[queryController window] isVisible]) {
+        [queryController updateEntries];
+    }
 
     [[queryController window] makeKeyAndOrderFront:self];
-
 }
 
 /**
  * Clears the console by removing all of its messages
  */
-- (void)clearConsole:(id)sender
-{
+- (void)clearConsole:(id)sender {
     [[SPQueryController sharedQueryController] clearConsole:sender];
 }
 
@@ -1116,25 +1112,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Shows or hides the navigator
  */
-- (IBAction)toggleNavigator:(id)sender
-{
+- (void)toggleNavigator {
     BOOL isNavigatorVisible = [[[SPNavigatorController sharedNavigatorController] window] isVisible];
 
     // Show or hide the navigator
     [[[SPNavigatorController sharedNavigatorController] window] setIsVisible:(!isNavigatorVisible)];
 
-    if(!isNavigatorVisible) [[SPNavigatorController sharedNavigatorController] updateEntriesForConnection:self];
-
-}
-
-- (IBAction)showNavigator:(id)sender
-{
-    BOOL isNavigatorVisible = [[[SPNavigatorController sharedNavigatorController] window] isVisible];
-
     if (!isNavigatorVisible) {
-        [self toggleNavigator:sender];
-    } else {
-        [[[SPNavigatorController sharedNavigatorController] window] makeKeyAndOrderFront:self];
+        [[SPNavigatorController sharedNavigatorController] updateEntriesForConnection:self];
     }
 }
 
@@ -1665,8 +1650,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * When sent by an NSMenuItem, will set the encoding based on the title of the menu item
  */
-- (IBAction)chooseEncoding:(id)sender
-{
+- (void)chooseEncoding:(id)sender {
     [self setConnectionEncoding:[self mysqlEncodingFromEncodingTag:[NSNumber numberWithInteger:[(NSMenuItem *)sender tag]]] reloadingViews:YES];
 }
 
@@ -1684,8 +1668,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Copies if sender == self or displays or the CREATE TABLE syntax of the selected table(s) to the user .
  */
-- (IBAction)showCreateTableSyntax:(id)sender
-{
+- (void)showCreateTableSyntax:(SPDatabaseDocument *)sender {
     NSInteger colOffs = 1;
     NSString *query = nil;
     NSString *typeString = @"";
@@ -1800,8 +1783,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Copies the CREATE TABLE syntax of the selected table to the pasteboard.
  */
-- (IBAction)copyCreateTableSyntax:(id)sender
-{
+- (void)copyCreateTableSyntax {
     [self showCreateTableSyntax:self];
 
     return;
@@ -1810,8 +1792,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Performs a MySQL check table on the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)checkTable:(id)sender
-{
+- (void)checkTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -1869,8 +1850,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Analyzes the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)analyzeTable:(id)sender
-{
+- (void)analyzeTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -1928,8 +1908,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Optimizes the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)optimizeTable:(id)sender
-{
+- (void)optimizeTable {
 
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
@@ -1988,8 +1967,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Repairs the selected table and presents the result to the user via an alert sheet.
  */
-- (IBAction)repairTable:(id)sender
-{
+- (void)repairTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -2047,8 +2025,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Flush the selected table and inform the user via a dialog sheet.
  */
-- (IBAction)flushTable:(id)sender
-{
+- (void)flushTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -2107,8 +2084,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Runs a MySQL checksum on the selected table and present the result to the user via an alert sheet.
  */
-- (IBAction)checksumTable:(id)sender
-{
+- (void)checksumTable {
     NSArray *selectedItems = [tablesListInstance selectedTableItems];
     id message = nil;
 
@@ -2200,9 +2176,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Switches to the content view and makes the filter field the first responder (has focus).
  */
-- (IBAction)focusOnTableContentFilter:(id)sender
-{
-    [self viewContent:self];
+- (void)focusOnTableContentFilter {
+    [self viewContent];
 
     [tableContentInstance performSelector:@selector(makeContentFilterHaveFocus) withObject:nil afterDelay:0.1];
 }
@@ -2210,11 +2185,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Switches to the content view and makes the advanced filter view the first responder
  */
-- (IBAction)showFilterTable:(id)sender
-{
-    [self viewContent:self];
+- (void)showFilterTable {
+    [self viewContent];
 
-    [tableContentInstance performSelector:@selector(showFilterTable:) withObject:sender afterDelay:0.1];
+    [tableContentInstance performSelector:@selector(showFilterTable) withObject:nil afterDelay:0.1];
 }
 
 /**
@@ -2237,9 +2211,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Opens the data export dialog.
  */
-- (IBAction)export:(id)sender
-{
-    [exportControllerInstance export:self];
+- (void)exportData {
+    if (_isConnected) {
+        [exportControllerInstance exportData];
+    }
 }
 
 #pragma mark -
@@ -2281,10 +2256,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Displays the user account manager.
  */
-- (IBAction)showUserManager:(id)sender
-{	
-    if (!userManagerInstance)
-    {
+- (void)showUserManager {
+    if (!userManagerInstance) {
         userManagerInstance = [[SPUserManager alloc] init];
 
         [userManagerInstance setDatabaseDocument:self];
@@ -2307,27 +2280,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Passes query to tablesListInstance
  */
-- (void)doPerformQueryService:(NSString *)query
-{
+- (void)doPerformQueryService:(NSString *)query {
     [[self.parentWindowController window] makeKeyAndOrderFront:self];
-    [self viewQuery:nil];
+    [self viewQuery];
     [customQueryInstance doPerformQueryService:query];
 }
 
 /**
  * Inserts query into the Custom Query editor
  */
-- (void)doPerformLoadQueryService:(NSString *)query
-{
-    [self viewQuery:nil];
+- (void)doPerformLoadQueryService:(NSString *)query {
+    [self viewQuery];
     [customQueryInstance doPerformLoadQueryService:query];
 }
 
 /**
  * Flushes the mysql privileges
  */
-- (void)flushPrivileges:(id)sender
-{
+- (void)flushPrivileges {
     [mySQLConnection queryString:@"FLUSH PRIVILEGES"];
 
     if (![mySQLConnection queryErrored]) {
@@ -3120,7 +3090,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Open the currently selected database in a new tab, clearing any table selection.
  */
-- (IBAction)openDatabaseInNewTab:(id)sender {
+- (void)openDatabaseInNewTab {
 
     // Get the current state
     NSDictionary *allStateDetails = @{
@@ -3144,16 +3114,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Passes the request to the dataImport object
  */
-- (IBAction)import:(id)sender
-{
+- (void)importFile {
     [tableDumpInstance importFile];
 }
 
 /**
  * Passes the request to the dataImport object
  */
-- (IBAction)importFromClipboard:(id)sender
-{
+- (void)importFromClipboard {
     [tableDumpInstance importFromClipboard];
 }
 
@@ -3161,8 +3129,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Show the MySQL Help TOC of the current MySQL connection
  * Invoked by the MainMenu > Help > MySQL Help
  */
-- (IBAction)showMySQLHelp:(id)sender
-{
+- (void)showMySQLHelp {
     [helpViewerClientInstance showHelpFor:SPHelpViewerSearchTOC addToHistory:YES calledByAutoHelp:NO];
     [[helpViewerClientInstance helpWebViewWindow] makeKeyWindow];
 }
@@ -3245,11 +3212,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Table specific actions
-    if (action == @selector(viewStructure:) ||
-        action == @selector(viewContent:)   ||
-        action == @selector(viewRelations:) ||
-        action == @selector(viewStatus:)    ||
-        action == @selector(viewTriggers:))
+    if (action == @selector(viewStructure) ||
+        action == @selector(viewContent)   ||
+        action == @selector(viewRelations) ||
+        action == @selector(viewStatus)    ||
+        action == @selector(viewTriggers))
     {
         return [self database] != nil && [[[tablesListInstance valueForKeyPath:@"tablesListView"] selectedRowIndexes] count];
 
@@ -3375,7 +3342,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // If validation for the sort favorites tableview items reaches here then the preferences window isn't
     // open return NO.
-    if ((action == @selector(sortFavorites:)) || ([menuItem action] == @selector(reverseSortFavorites:))) {
+    if ((action == @selector(sortFavorites:)) || (action == @selector(reverseSortFavorites:))) {
         return NO;
     }
 
@@ -3386,12 +3353,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Adds the current database connection details to the user's favorites if it doesn't already exist.
  */
-- (IBAction)addConnectionToFavorites:(id)sender
-{
+- (void)addConnectionToFavorites {
     // Obviously don't add if it already exists. We shouldn't really need this as the menu item validation
     // enables or disables the menu item based on the same method. Although to be safe do the check anyway
     // as we don't know what's calling this method.
-    if ([connectionController selectedFavorite] && ![connectionController isEditingConnection]) return;
+    if ([connectionController selectedFavorite] && ![connectionController isEditingConnection]) {
+        return;
+    }
 
     // Request the connection controller to add its details to favorites
     [connectionController addFavoriteUsingCurrentDetails:self];
@@ -3508,7 +3476,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(showConsole:)];
+        [toolbarItem setAction:@selector(showConsole)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarClearConsole]) {
         //set the text label to be displayed in the toolbar and customization palette
@@ -3537,7 +3505,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewStructure:)];
+        [toolbarItem setAction:@selector(viewStructure)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableContent]) {
         [toolbarItem setLabel:NSLocalizedString(@"Content", @"toolbar item label for switching to the Table Content tab")];
@@ -3551,7 +3519,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewContent:)];
+        [toolbarItem setAction:@selector(viewContent)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
         [toolbarItem setLabel:NSLocalizedString(@"Query", @"toolbar item label for switching to the Run Query tab")];
@@ -3565,7 +3533,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewQuery:)];
+        [toolbarItem setAction:@selector(viewQuery)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableInfo]) {
         [toolbarItem setLabel:NSLocalizedString(@"Table Info", @"toolbar item label for switching to the Table Info tab")];
@@ -3579,7 +3547,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewStatus:)];
+        [toolbarItem setAction:@selector(viewStatus)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableRelations]) {
         [toolbarItem setLabel:NSLocalizedString(@"Relations", @"toolbar item label for switching to the Table Relations tab")];
@@ -3593,7 +3561,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewRelations:)];
+        [toolbarItem setAction:@selector(viewRelations)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarTableTriggers]) {
         [toolbarItem setLabel:NSLocalizedString(@"Triggers", @"toolbar item label for switching to the Table Triggers tab")];
@@ -3607,7 +3575,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewTriggers:)];
+        [toolbarItem setAction:@selector(viewTriggers)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarUserManager]) {
         [toolbarItem setLabel:NSLocalizedString(@"Users", @"toolbar item label for switching to the User Manager tab")];
@@ -4394,13 +4362,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             // Select view
             NSString *view = [self->spfSession objectForKey:@"view"];
 
-            if ([view isEqualToString:@"SP_VIEW_STRUCTURE"])   [self viewStructure:self];
-            else if ([view isEqualToString:@"SP_VIEW_CONTENT"])     [self viewContent:self];
-            else if ([view isEqualToString:@"SP_VIEW_CUSTOMQUERY"]) [self viewQuery:self];
-            else if ([view isEqualToString:@"SP_VIEW_STATUS"])      [self viewStatus:self];
-            else if ([view isEqualToString:@"SP_VIEW_RELATIONS"])   [self viewRelations:self];
-            else if ([view isEqualToString:@"SP_VIEW_TRIGGERS"])    [self viewTriggers:self];
-
+            if ([view isEqualToString:@"SP_VIEW_STRUCTURE"]) {
+                [self viewStructure];
+            } else if ([view isEqualToString:@"SP_VIEW_CONTENT"]) {
+                [self viewContent];
+            } else if ([view isEqualToString:@"SP_VIEW_CUSTOMQUERY"]) {
+                [self viewQuery];
+            } else if ([view isEqualToString:@"SP_VIEW_STATUS"]) {
+                [self viewStatus];
+            } else if ([view isEqualToString:@"SP_VIEW_RELATIONS"]) {
+                [self viewRelations];
+            } else if ([view isEqualToString:@"SP_VIEW_TRIGGERS"]) {
+                [self viewTriggers];
+            }
             [self updateWindowTitle:self];
         });
 
@@ -4478,18 +4452,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     }
 
-    if([command isEqualToString:@"SelectDocumentView"]) {
+    if ([command isEqualToString:@"SelectDocumentView"]) {
         if([params count] == 2) {
             NSString *view = [params objectAtIndex:1];
             if([view length]) {
                 NSString *viewName = [view lowercaseString];
-                if([viewName hasPrefix:@"str"]) [self viewStructure:self];
-                else if([viewName hasPrefix:@"con"]) [self viewContent:self];
-                else if([viewName hasPrefix:@"que"]) [self viewQuery:self];
-                else if([viewName hasPrefix:@"tab"]) [self viewStatus:self];
-                else if([viewName hasPrefix:@"rel"]) [self viewRelations:self];
-                else if([viewName hasPrefix:@"tri"]) [self viewTriggers:self];
-
+                if ([viewName hasPrefix:@"str"]) {
+                    [self viewStructure];
+                } else if([viewName hasPrefix:@"con"]) {
+                    [self viewContent];
+                } else if([viewName hasPrefix:@"que"]) {
+                    [self viewQuery];
+                } else if([viewName hasPrefix:@"tab"]) {
+                    [self viewStatus];
+                } else if([viewName hasPrefix:@"rel"]) {
+                    [self viewRelations];
+                } else if([viewName hasPrefix:@"tri"]) {
+                    [self viewTriggers];
+                }
                 [self updateWindowTitle:self];
             }
         }
@@ -5089,14 +5069,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark SplitView delegate methods
 
-- (void)splitViewDidResizeSubviews:(NSNotification *)notification
-{
-    if (initComplete) {
-        allowSplitViewResizing = YES;
-        [connectionController updateSplitViewSize];
-    }
-}
-
 - (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMinimumPosition ofSubviewAt:(NSInteger)dividerIndex
 {
     if (dividerIndex == 0 && proposedMinimumPosition < 40) {
@@ -5246,7 +5218,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[self onMainThread] selectDatabase:newDatabaseName item:nil];
 
         // Update database list
-        [[self onMainThread] setDatabases:self];
+        [[self onMainThread] setDatabases];
 
         // inform observers that a new database was added
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5280,7 +5252,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbActionRename setConnection:[self getConnection]];
 
     if ([dbActionRename renameDatabaseFrom:[self createDatabaseInfo] to:newDatabaseName]) {
-        [self setDatabases:self];
+        [self setDatabases];
         [self selectDatabase:newDatabaseName item:nil];
         // inform observers that a new database was added
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5322,7 +5294,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // this refreshes the allDatabases array
-    [self setDatabases:self];
+    [self setDatabases];
 
     // inform observers that a new database was added
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5332,11 +5304,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Run ALTER statement against current db. This is the callback to alterDatabase:
- * @warning Make sure this method is only called on mysql 4.1+ servers!
+ * Run ALTER statement against current db.
  */
-- (void)_alterDatabase
-{
+- (void)_alterDatabase {
     //we'll always run the alter statement, even if old == new because after all that is what the user requested
 
     NSString *newCharset   = [alterDatabaseCharsetHelper selectedCharset];
@@ -5393,7 +5363,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // that's why we can run this on main thread
     [databaseStructureRetrieval queryDbStructureWithUserInfo:nil];
 
-    [self setDatabases:self];
+    [self setDatabases];
 
     [tablesListInstance setConnection:mySQLConnection];
 
@@ -5430,7 +5400,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 if ([mySQLConnection isConnected]) {
 
                     // Update the database list
-                    [[self onMainThread] setDatabases:self];
+                    [[self onMainThread] setDatabases];
 
                     [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName] callback:nil];
                 }
@@ -5634,7 +5604,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark Tab view control and delegate methods
 
 //WARNING: Might be called from code in background threads
-- (IBAction)viewStructure:(id)sender {
+- (void)viewStructure {
     
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
@@ -5651,7 +5621,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     });
 }
 
-- (IBAction)viewContent:(id)sender {
+- (void)viewContent {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5666,8 +5636,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     });
 }
 
-- (IBAction)viewQuery:(id)sender {
-    
+- (void)viewQuery {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5687,9 +5656,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 }
 
-- (IBAction)viewStatus:(id)sender
-{
-
+- (void)viewStatus {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5712,9 +5679,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 }
 
-- (IBAction)viewRelations:(id)sender
-{
-    
+- (void)viewRelations {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5731,9 +5696,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 }
 
-- (IBAction)viewTriggers:(id)sender
-{
-    
+- (void)viewTriggers {
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -6293,7 +6256,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     } else {
         [connectionController cancelConnection:self];
     }
-    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
+    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole];
     [createTableSyntaxWindow orderOut:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
@@ -6330,8 +6293,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Loads the print document interface. The actual printing is done in the doneLoading delegate.
  */
-- (IBAction)printDocument:(id)sender
-{
+- (void)printDocument {
     // Only display warning for the 'Table Content' view
     if ([self currentlySelectedView] == SPTableViewContent) {
 
