@@ -251,7 +251,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (IBAction)showHelp:(id)sender;
 - (IBAction)updateSSLInterface:(id)sender;
 - (IBAction)updateKeyLocationFileVisibility:(id)sender;
-- (void)updateSplitViewSize;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 
