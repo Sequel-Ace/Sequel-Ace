@@ -448,7 +448,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Update the database list
-    [self setDatabases:self];
+    [self setDatabases];
 
     [chooseDatabaseButton setEnabled:!_isWorkingLevel];
 
@@ -584,9 +584,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
-- (IBAction)setDatabases:(id)sender;
-{
-    if (!chooseDatabaseButton) return;
+- (void)setDatabases {
+    if (!chooseDatabaseButton) {
+        return;
+    }
 
     [chooseDatabaseButton removeAllItems];
 
@@ -595,8 +596,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Add Database...", @"menu item to add db") action:@selector(addDatabase:) keyEquivalent:@""];
     [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
     [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-
-
 
 
     NSArray *theDatabaseList = [mySQLConnection databases];
@@ -706,7 +705,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * opens the add-db sheet and creates the new db
  */
-- (IBAction)addDatabase:(id)sender
+- (void)addDatabase:(id)sender
 {
     if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
 
@@ -748,14 +747,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Show UI for the ALTER DATABASE statement
- * @warning Make sure this method is only called on mysql 4.1+ servers!
  */
-- (IBAction)alterDatabase:(id)sender {
+- (void)alterDatabase {
     //once the database is created the charset and collation are written
     //to the db.opt file regardless if they were explicity given or not.
     //So there is no longer a "Default" option.
 
-    NSString *currentCharset   = [databaseDataInstance getDatabaseDefaultCharacterSet];
+    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSet];
     NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollation];
 
     // Setup the charset and collation dropdowns
@@ -843,9 +841,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Opens the copy database sheet and copies the databsae.
  */
-- (IBAction)copyDatabase:(id)sender
-{	
-    if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
+- (void)copyDatabase {
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return;
+    }
 
     // Inform the user that we don't support copying objects other than tables and ask them if they'd like to proceed
     if ([tablesListInstance hasNonTableObjects]) {
@@ -875,9 +874,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Opens the rename database sheet and renames the databsae.
  */
-- (IBAction)renameDatabase:(id)sender
-{	
-    if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
+- (void)renameDatabase {	
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return;
+    }
 
     // We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
     // so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
@@ -899,12 +899,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * opens sheet to ask user if he really wants to delete the db
  */
-- (IBAction)removeDatabase:(id)sender
-{
+- (void)removeDatabase:(id)sender {
     // No database selected, bail
-    if ([chooseDatabaseButton indexOfSelectedItem] == 0) return;
+    if ([chooseDatabaseButton indexOfSelectedItem] == 0) {
+        return;
+    }
 
-    if (![tablesListInstance selectionShouldChangeInTableView:nil]) return;
+    if (![tablesListInstance selectionShouldChangeInTableView:nil]) {
+        return;
+    }
 
     NSString *title = [NSString stringWithFormat:NSLocalizedString(@"Delete database '%@'?", @"delete database message"), [self database]];
     NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the database '%@'? This operation cannot be undone.", @"delete database informative message"), [self database]];
@@ -916,16 +919,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Refreshes the tables list by calling SPTablesList's updateTables.
  */
-- (IBAction)refreshTables:(id)sender
-{
+- (void)refreshTables {
     [tablesListInstance updateTables:self];
 }
 
 /**
  * Displays the database server variables sheet.
  */
-- (IBAction)showServerVariables:(id)sender
-{
+- (void)showServerVariables {
     if (!serverVariablesController) {
         serverVariablesController = [[SPServerVariablesController alloc] init];
 
@@ -938,8 +939,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Displays the database process list sheet.
  */
-- (IBAction)showServerProcesses:(id)sender
-{
+- (void)showServerProcesses {
     if (!processListController) {
         processListController = [[SPProcessListController alloc] init];
 
@@ -949,7 +949,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [processListController displayProcessListWindow];
 }
 
-- (IBAction)shutdownServer:(id)sender {
+- (void)shutdownServer {
     [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title") message:NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message") primaryButtonTitle:NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button") primaryButtonHandler:^{
         if (![self->mySQLConnection serverShutdown]) {
             if ([self->mySQLConnection isConnected]) {
@@ -1043,8 +1043,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return [[SPNavigatorController sharedNavigatorController] allSchemaKeysForConnection:[self connectionID]];
 }
 
-- (IBAction)showGotoDatabase:(id)sender
-{
+- (void)showGotoDatabase {
     if(!gotoDatabaseController) {
         gotoDatabaseController = [[SPGotoDatabaseController alloc] init];
     }
@@ -1054,7 +1053,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbList addObjectsFromArray:[self allDatabaseNames]];
     [gotoDatabaseController setDatabaseList:dbList];
 
-    if([gotoDatabaseController runModal]) {
+    if ([gotoDatabaseController runModal]) {
         [self selectDatabase:[gotoDatabaseController selectedDatabase] item:nil];
     }
 }
@@ -1651,8 +1650,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * When sent by an NSMenuItem, will set the encoding based on the title of the menu item
  */
-- (IBAction)chooseEncoding:(id)sender
-{
+- (void)chooseEncoding:(id)sender {
     [self setConnectionEncoding:[self mysqlEncodingFromEncodingTag:[NSNumber numberWithInteger:[(NSMenuItem *)sender tag]]] reloadingViews:YES];
 }
 
@@ -2268,10 +2266,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Displays the user account manager.
  */
-- (IBAction)showUserManager:(id)sender
-{	
-    if (!userManagerInstance)
-    {
+- (void)showUserManager {
+    if (!userManagerInstance) {
         userManagerInstance = [[SPUserManager alloc] init];
 
         [userManagerInstance setDatabaseDocument:self];
@@ -2311,8 +2307,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Flushes the mysql privileges
  */
-- (void)flushPrivileges:(id)sender
-{
+- (void)flushPrivileges {
     [mySQLConnection queryString:@"FLUSH PRIVILEGES"];
 
     if (![mySQLConnection queryErrored]) {
@@ -3105,7 +3100,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Open the currently selected database in a new tab, clearing any table selection.
  */
-- (IBAction)openDatabaseInNewTab:(id)sender {
+- (void)openDatabaseInNewTab {
 
     // Get the current state
     NSDictionary *allStateDetails = @{
@@ -5234,7 +5229,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[self onMainThread] selectDatabase:newDatabaseName item:nil];
 
         // Update database list
-        [[self onMainThread] setDatabases:self];
+        [[self onMainThread] setDatabases];
 
         // inform observers that a new database was added
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5268,7 +5263,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbActionRename setConnection:[self getConnection]];
 
     if ([dbActionRename renameDatabaseFrom:[self createDatabaseInfo] to:newDatabaseName]) {
-        [self setDatabases:self];
+        [self setDatabases];
         [self selectDatabase:newDatabaseName item:nil];
         // inform observers that a new database was added
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5310,7 +5305,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // this refreshes the allDatabases array
-    [self setDatabases:self];
+    [self setDatabases];
 
     // inform observers that a new database was added
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5320,11 +5315,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Run ALTER statement against current db. This is the callback to alterDatabase:
- * @warning Make sure this method is only called on mysql 4.1+ servers!
+ * Run ALTER statement against current db.
  */
-- (void)_alterDatabase
-{
+- (void)_alterDatabase {
     //we'll always run the alter statement, even if old == new because after all that is what the user requested
 
     NSString *newCharset   = [alterDatabaseCharsetHelper selectedCharset];
@@ -5381,7 +5374,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // that's why we can run this on main thread
     [databaseStructureRetrieval queryDbStructureWithUserInfo:nil];
 
-    [self setDatabases:self];
+    [self setDatabases];
 
     [tablesListInstance setConnection:mySQLConnection];
 
@@ -5418,7 +5411,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 if ([mySQLConnection isConnected]) {
 
                     // Update the database list
-                    [[self onMainThread] setDatabases:self];
+                    [[self onMainThread] setDatabases];
 
                     [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName] callback:nil];
                 }

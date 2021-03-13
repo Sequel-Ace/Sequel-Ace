@@ -278,21 +278,10 @@
 - (SPMySQLConnection *)getConnection;
 
 // Database methods
-- (IBAction)setDatabases:(id)sender;
 - (IBAction)chooseDatabase:(id)sender;
 - (void)selectDatabase:(NSString *)aDatabase item:(NSString *)anItem;
-- (IBAction)addDatabase:(id)sender;
-- (IBAction)alterDatabase:(id)sender;
-- (IBAction)removeDatabase:(id)sender;
-- (IBAction)refreshTables:(id)sender;
-- (IBAction)copyDatabase:(id)sender;
-- (IBAction)renameDatabase:(id)sender;
 - (IBAction)showMySQLHelp:(id)sender;
 - (IBAction)makeTableListFilterHaveFocus:(id)sender;
-- (IBAction)showServerVariables:(id)sender;
-- (IBAction)showServerProcesses:(id)sender;
-- (IBAction)shutdownServer:(id)sender;
-- (IBAction)showGotoDatabase:(id)sender;
 - (NSArray *)allDatabaseNames;
 - (NSArray *)allSystemDatabaseNames;
 - (NSDictionary *)getDbStructure;
@@ -317,7 +306,6 @@
 - (void)setConnectionEncoding:(NSString *)mysqlEncoding reloadingViews:(BOOL)reloadViews;
 - (NSString *)databaseEncoding;
 - (void)detectDatabaseEncoding;
-- (IBAction)chooseEncoding:(id)sender;
 - (BOOL)supportsEncoding;
 - (void)updateEncodingMenuWithSelectedEncoding:(NSNumber *)encodingTag;
 - (NSNumber *)encodingTagFromMySQLEncoding:(NSString *)mysqlEncoding;
@@ -344,13 +332,11 @@
 - (IBAction)closePanelSheet:(id)sender;
 - (IBAction)validateSaveConnectionAccessory:(id)sender;
 - (IBAction)closePasswordSheet:(id)sender;
-- (IBAction)showUserManager:(id)sender;
 - (IBAction)copyChecksumFromSheet:(id)sender;
 
 - (void)setQueryMode:(NSInteger)theQueryMode;
 - (void)doPerformQueryService:(NSString *)query;
 - (void)doPerformLoadQueryService:(NSString *)query;
-- (void)flushPrivileges:(id)sender;
 - (void)closeConnection;
 - (NSWindow *)getCreateTableSyntaxWindow;
 
@@ -386,7 +372,6 @@
 
 // Menu methods
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem;
-- (IBAction)openDatabaseInNewTab:(id)sender;
 - (IBAction)saveConnectionSheet:(id)sender;
 - (BOOL)isCustomQuerySelected;
 - (IBAction)showConnectionDebugMessages:(id)sender;
@@ -443,6 +428,24 @@
 - (void)toggleConsole;
 - (void)showConsole;
 - (void)toggleNavigator;
+
+#pragma mark Database menu
+
+- (void)showGotoDatabase;
+- (void)addDatabase:(id)sender;
+- (void)removeDatabase:(id)sender;
+- (void)copyDatabase;
+- (void)renameDatabase;
+- (void)alterDatabase;
+- (void)refreshTables;
+- (void)flushPrivileges;
+- (void)setDatabases;
+- (void)showUserManager;
+- (void)chooseEncoding:(id)sender;
+- (void)openDatabaseInNewTab;
+- (void)showServerVariables;
+- (void)showServerProcesses;
+- (void)shutdownServer;
 
 #pragma mark - SPDatabaseViewController
 

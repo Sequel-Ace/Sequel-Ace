@@ -590,7 +590,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] != 1) return;
 	if (![tableSourceInstance saveRowOnDeselect] || ![tableContentInstance saveRowOnDeselect]) return;
 
-	[[self onMainThread] setDatabases:nil];
+	[[self onMainThread] setDatabases];
 
 	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
@@ -637,9 +637,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 
-- (IBAction)setDatabases:(id)sender;
-{
-	if (!chooseDatabaseButton) return;
+- (void)setDatabases {
+    if (!chooseDatabaseButton) {
+        return;
+    }
 
 	[chooseDatabaseButton removeAllItems];
 

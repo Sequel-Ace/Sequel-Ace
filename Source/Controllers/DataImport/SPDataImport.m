@@ -689,7 +689,7 @@
 	}
 
 	// Update available databases
-	[[tableDocumentInstance onMainThread] setDatabases:self];
+	[[tableDocumentInstance onMainThread] setDatabases];
 
 	// Update current selected database
 	[tableDocumentInstance refreshCurrentDatabase];

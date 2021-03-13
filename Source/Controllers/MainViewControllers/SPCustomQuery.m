@@ -944,7 +944,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Reload table list if at least one query began with drop, alter, rename, or create
         if(tableListNeedsReload || databaseWasChanged) {
             // Build database pulldown menu
-            [[tableDocumentInstance onMainThread] setDatabases:self];
+            [[tableDocumentInstance onMainThread] setDatabases];
             
             if (databaseWasChanged) {
                 // Reset the current database

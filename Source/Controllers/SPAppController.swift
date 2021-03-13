@@ -81,4 +81,66 @@ extension SPAppController {
     @IBAction func toggleNavigator(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.toggleNavigator()
     }
+
+    // MARK: - Database menu actions
+
+    @IBAction func showGotoDatabase(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showGotoDatabase()
+    }
+
+    @IBAction func addDatabase(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.addDatabase(sender)
+    }
+
+    @IBAction func removeDatabase(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.removeDatabase(sender)
+    }
+
+    @IBAction func copyDatabase(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.copyDatabase()
+    }
+
+    @IBAction func renameDatabase(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.renameDatabase()
+    }
+
+    @IBAction func alterDatabase(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.alterDatabase()
+    }
+
+    @IBAction func refreshTables(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.refreshTables()
+    }
+
+    @IBAction func flushPrivileges(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.flushPrivileges()
+    }
+
+    @IBAction func setDatabases(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.setDatabases()
+    }
+
+    @IBAction func showUserManager(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showUserManager()
+    }
+
+    @IBAction func chooseEncoding(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.chooseEncoding(sender)
+    }
+
+    @IBAction func openDatabaseInNewTab(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.openDatabaseInNewTab()
+    }
+
+    @IBAction func showServerVariables(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showServerVariables()
+    }
+
+    @IBAction func showServerProcesses(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showServerProcesses()
+    }
+
+    @IBAction func shutdownServer(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.shutdownServer()
+    }
 }

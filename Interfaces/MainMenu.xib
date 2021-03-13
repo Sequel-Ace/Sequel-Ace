@@ -625,11 +625,6 @@
                                     <action selector="removeDatabase:" target="-1" id="659"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Drop Database..." alternate="YES" id="1207">
-                                <connections>
-                                    <action selector="removeDatabase:" target="-1" id="1208"/>
-                                </connections>
-                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="1084"/>
                             <menuItem title="Duplicate Database..." id="1077">
                                 <modifierMask key="keyEquivalentModifierMask"/>
