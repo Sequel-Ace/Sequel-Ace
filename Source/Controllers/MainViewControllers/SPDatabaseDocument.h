@@ -396,6 +396,35 @@
 
 - (SPConnectionController*)connectionController;
 
+#pragma mark - SPDatabaseViewController
+
+// Accessors
+- (NSString *)table;
+- (SPTableType)tableType;
+
+- (BOOL)structureLoaded;
+- (BOOL)contentLoaded;
+- (BOOL)statusLoaded;
+
+- (void)setStructureRequiresReload:(BOOL)reload;
+- (void)setContentRequiresReload:(BOOL)reload;
+- (void)setStatusRequiresReload:(BOOL)reload;
+- (void)setRelationsRequiresReload:(BOOL)reload;
+
+// Table control
+- (void)loadTable:(NSString *)aTable ofType:(SPTableType)aTableType;
+
+- (NSView *)databaseView;
+
+#pragma mark - SPPrintController
+
+- (void)startPrintDocumentOperation;
+- (void)generateHTMLForPrinting;
+- (void)generateTableInfoHTMLForPrinting;
+
+- (NSArray *)columnNames;
+- (NSMutableDictionary *)connectionInformation;
+
 #pragma mark - Menu actions called from SPAppController
 
 #pragma mark File menu
@@ -449,34 +478,5 @@
 - (void)optimizeTable;
 - (void)flushTable;
 - (void)checksumTable;
-
-#pragma mark - SPDatabaseViewController
-
-// Accessors
-- (NSString *)table;
-- (SPTableType)tableType;
-
-- (BOOL)structureLoaded;
-- (BOOL)contentLoaded;
-- (BOOL)statusLoaded;
-
-- (void)setStructureRequiresReload:(BOOL)reload;
-- (void)setContentRequiresReload:(BOOL)reload;
-- (void)setStatusRequiresReload:(BOOL)reload;
-- (void)setRelationsRequiresReload:(BOOL)reload;
-
-// Table control
-- (void)loadTable:(NSString *)aTable ofType:(SPTableType)aTableType;
-
-- (NSView *)databaseView;
-
-#pragma mark - SPPrintController
-
-- (void)startPrintDocumentOperation;
-- (void)generateHTMLForPrinting;
-- (void)generateTableInfoHTMLForPrinting;
-
-- (NSArray *)columnNames;
-- (NSMutableDictionary *)connectionInformation;
 
 @end
