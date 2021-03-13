@@ -1065,8 +1065,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Shows or hides the console
  */
-- (void)toggleConsole:(id)sender
-{
+- (void)toggleConsole {
     // Toggle Console will show the Console window if it isn't visible or if it isn't
     // the front most window and hide it if it is the front most window
     if ([[[SPQueryController sharedQueryController] window] isVisible]
@@ -1075,29 +1074,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[[SPQueryController sharedQueryController] window] setIsVisible:NO];
     }
     else {
-        [self showConsole:nil];
+        [self showConsole];
     }
 }
 
 /**
  * Brings the console to the front
  */
-- (void)showConsole:(id)sender
-{
+- (void)showConsole {
     SPQueryController *queryController = [SPQueryController sharedQueryController];
     // If the Console window is not visible data are not reloaded (for speed).
     // Due to that update list if user opens the Console window.
-    if(![[queryController window] isVisible]) [queryController updateEntries];
+    if (![[queryController window] isVisible]) {
+        [queryController updateEntries];
+    }
 
     [[queryController window] makeKeyAndOrderFront:self];
-
 }
 
 /**
  * Clears the console by removing all of its messages
  */
-- (void)clearConsole:(id)sender
-{
+- (void)clearConsole:(id)sender {
     [[SPQueryController sharedQueryController] clearConsole:sender];
 }
 
@@ -1115,25 +1113,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Shows or hides the navigator
  */
-- (IBAction)toggleNavigator:(id)sender
-{
+- (void)toggleNavigator {
     BOOL isNavigatorVisible = [[[SPNavigatorController sharedNavigatorController] window] isVisible];
 
     // Show or hide the navigator
     [[[SPNavigatorController sharedNavigatorController] window] setIsVisible:(!isNavigatorVisible)];
 
-    if(!isNavigatorVisible) [[SPNavigatorController sharedNavigatorController] updateEntriesForConnection:self];
-
-}
-
-- (IBAction)showNavigator:(id)sender
-{
-    BOOL isNavigatorVisible = [[[SPNavigatorController sharedNavigatorController] window] isVisible];
-
     if (!isNavigatorVisible) {
-        [self toggleNavigator:sender];
-    } else {
-        [[[SPNavigatorController sharedNavigatorController] window] makeKeyAndOrderFront:self];
+        [[SPNavigatorController sharedNavigatorController] updateEntriesForConnection:self];
     }
 }
 
@@ -3505,7 +3492,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(showConsole:)];
+        [toolbarItem setAction:@selector(showConsole)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarClearConsole]) {
         //set the text label to be displayed in the toolbar and customization palette
@@ -6287,7 +6274,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     } else {
         [connectionController cancelConnection:self];
     }
-    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole:self];
+    if ([[[SPQueryController sharedQueryController] window] isVisible]) [self toggleConsole];
     [createTableSyntaxWindow orderOut:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }

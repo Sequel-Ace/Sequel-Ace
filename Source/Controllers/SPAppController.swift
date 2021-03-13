@@ -73,4 +73,12 @@ extension SPAppController {
     @IBAction func backForwardInHistory(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.backForwardInHistory(sender)
     }
+
+    @IBAction func toggleConsole(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.toggleConsole()
+    }
+
+    @IBAction func toggleNavigator(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.toggleNavigator()
+    }
 }

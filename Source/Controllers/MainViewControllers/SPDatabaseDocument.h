@@ -346,8 +346,6 @@
 - (IBAction)closePasswordSheet:(id)sender;
 - (IBAction)showUserManager:(id)sender;
 - (IBAction)copyChecksumFromSheet:(id)sender;
-- (IBAction)showNavigator:(id)sender;
-- (IBAction)toggleNavigator:(id)sender;
 
 - (void)setQueryMode:(NSInteger)theQueryMode;
 - (void)doPerformQueryService:(NSString *)query;
@@ -363,7 +361,6 @@
 - (void)setIsSavedInBundle:(BOOL)savedInBundle;
 - (void)setFileURL:(NSURL *)fileURL;
 - (void)connect;
-- (void)showConsole:(id)sender;
 
 // Accessor methods
 - (NSString *)host;
@@ -443,6 +440,9 @@
 - (void)viewRelations;
 - (void)viewTriggers;
 - (void)backForwardInHistory:(id)sender;
+- (void)toggleConsole;
+- (void)showConsole;
+- (void)toggleNavigator;
 
 #pragma mark - SPDatabaseViewController
 
