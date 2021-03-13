@@ -8,9 +8,11 @@
 
 import AppKit
 
+// MARK: - Menu actions
+
 extension SPAppController {
 
-    // MARK: - File menu actions
+    // MARK: File menu actions
 
     @IBAction func newWindow(_ sender: Any) {
         tabManager.newWindowForWindow()
@@ -44,7 +46,7 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.print()
     }
 
-    // MARK: - View menu actions
+    // MARK: View menu actions
 
     @IBAction func viewStructure(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.viewStructure()
@@ -82,7 +84,7 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.toggleNavigator()
     }
 
-    // MARK: - Database menu actions
+    // MARK: Database menu actions
 
     @IBAction func showGotoDatabase(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.showGotoDatabase()
@@ -144,7 +146,7 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.shutdownServer()
     }
 
-    // MARK: - Table menu actions
+    // MARK: Table menu actions
 
     @IBAction func focusOnTableContentFilter(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.focusOnTableContentFilter()
@@ -186,7 +188,7 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.checksumTable()
     }
 
-    // MARK: - Help menu actions
+    // MARK: Help menu actions
 
     @IBAction func showMySQLHelp(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.showMySQLHelp()
