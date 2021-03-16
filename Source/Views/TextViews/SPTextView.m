@@ -118,6 +118,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 @synthesize completionWasReinvokedAutomatically;
 @synthesize syntaxHighlightingApplied;
 @synthesize taskCount;
+@synthesize completionFuzzyMode;
 
 - (void) awakeFromNib
 {
@@ -130,6 +131,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// Set defaults for general usage
 	autoindentEnabled = NO;
 	autopairEnabled = YES;
+    autocompleteEnabled = NO;
 	autoindentIgnoresEnter = NO;
 	autouppercaseKeywordsEnabled = NO;
 	autohelpEnabled = NO;
@@ -141,6 +143,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	completionIsOpen = NO;
 	isProcessingMirroredSnippets = NO;
 	completionWasRefreshed = NO;
+    completionFuzzyMode = NO; // not for the value from prefs
+
     // keep track of tasks we start and stop, otherwise we get an assert error
     taskCount = 0;
 
@@ -155,6 +159,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[self setAutoindentIgnoresEnter:YES];
 	[self setAutopair:[prefs boolForKey:SPCustomQueryAutoPairCharacters]];
 	[self setAutohelp:[prefs boolForKey:SPCustomQueryUpdateAutoHelp]];
+    [self setAutoComplete:[prefs boolForKey:SPCustomQueryAutoComplete]];
 	[self setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
 	[self setCompletionWasReinvokedAutomatically:NO];
 
@@ -233,6 +238,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPCustomQueryAutoIndent options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPCustomQueryAutoComplete options:NSKeyValueObservingOptionNew context:NULL];
 }
 
 - (void) setConnection:(SPMySQLConnection *)theConnection withVersion:(NSInteger)majorVersion
@@ -312,7 +318,10 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         [self setAutouppercaseKeywords:[prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]];
     } else if ([keyPath isEqualToString:SPCustomQueryAutoIndent]) {
         [self setAutoindent:[prefs boolForKey:SPCustomQueryAutoIndent]];
-    } else {
+    } else if ([keyPath isEqualToString:SPCustomQueryAutoComplete]) {
+        [self setAutoComplete:[prefs boolForKey:SPCustomQueryAutoComplete]];
+    }
+    else {
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
@@ -519,7 +528,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					if(!aTableNameExists)
 						switch(structtype) {
 							case SPTableTypeTable:
-								[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:[[table componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject], @"display", @"table-small-square", @"image", tablepath, @"path", @"", @"isRef", nil]];
+                                // add type for tables.
+								[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:[[table componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject], @"display", @"table-small-square", @"image", tablepath, @"path", @"", @"isRef", @"table", @"type", nil]];
 								break;
 							case SPTableTypeView:
 								[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:[[table componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject], @"display", @"table-view-small-square", @"image", tablepath, @"path", @"", @"isRef", nil]];
@@ -569,7 +579,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					}
 				}
 			}
-		} else {
+		}
+        else {
 
 			// [possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:NSLocalizedString(@"fetching table data…", @"fetching table data for completion in progress message"), @"path", @"", @"noCompletion", nil]];
 
@@ -605,7 +616,30 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:obj, @"display", @"func-small", @"image", @"", @"isRef", nil]];
 			}
 		}
-	}
+	} // end of dict mode?
+
+
+    if(completionFuzzyMode == YES){
+        SPLog(@"fuzzy mode == YES, so move tables to the top of the completion list");
+        // loop looking for type = table
+        NSMutableArray *possibleCompletionsCopy = [possibleCompletions mutableCopy];
+
+        for(NSMutableDictionary *dict in possibleCompletions){
+            [dict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL *stop1) {
+                if([key isEqualToString:@"type"] && [obj isEqualToString:@"table"]){
+                    // remove current dict and insert at the front
+                    [possibleCompletionsCopy removeObject:dict];
+                    [possibleCompletionsCopy insertObject:dict atIndex:0];
+                }
+            }];
+        }
+
+        if([possibleCompletionsCopy isEqualToArray:possibleCompletions] == NO){
+            SPLog(@"DIFF!");
+            [possibleCompletions setArray:possibleCompletionsCopy];
+        }
+
+    }
 
 	return possibleCompletions;
 
@@ -616,10 +650,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	if(completionIsOpen || !self || ![self delegate]) return;
 
 	// Cancel autocompletion trigger
-	if([prefs boolForKey:SPCustomQueryAutoComplete])
+    if([prefs boolForKey:SPCustomQueryAutoComplete]){
 		[NSObject cancelPreviousPerformRequestsWithTarget:self
 												 selector:@selector(doAutoCompletion)
 												   object:nil];
+
+    }
 
 	NSRange r = [self selectedRange];
 
@@ -640,8 +676,15 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		if([(NSString*)NSMutableAttributedStringAttributeAtIndex([self textStorage], kQuote, (r.location-1), nil) length])
 			useSpellChecker = YES;
 
-		// Trigger the completion
-		[self doCompletionByUsingSpellChecker:useSpellChecker fuzzyMode:NO autoCompleteMode:YES];
+        if([(NSString*)NSMutableAttributedStringAttributeAtIndex([self textStorage], kSQLkeyword, (r.location-1), nil) length]){
+            SPLog(@"in kSQLkeyword");
+            // Trigger the completion
+            [self doCompletionByUsingSpellChecker:useSpellChecker fuzzyMode:NO autoCompleteMode:YES];
+        }
+        else{
+            // Trigger the completion
+            [self doCompletionByUsingSpellChecker:useSpellChecker fuzzyMode:[prefs boolForKey:SPCustomQueryAutoCompleteFuzzy] autoCompleteMode:YES];
+        }
 	}
 
 }
@@ -2573,6 +2616,11 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	autoindentEnabled = enableAutoindent;
 }
 
+- (void)setAutoComplete:(BOOL)enableAutocomplete
+{
+    autocompleteEnabled = enableAutocomplete;
+}
+
 /**
  * Retrieve whether this text view applies indentation on the current line to new lines.
  */
@@ -3634,6 +3682,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth];
     [prefs removeObserver:self forKeyPath:SPCustomQueryAutoUppercaseKeywords];
     [prefs removeObserver:self forKeyPath:SPCustomQueryAutoIndent];
+    [prefs removeObserver:self forKeyPath:SPCustomQueryAutoComplete];
 
 	if (completionIsOpen) (void)([completionPopup close]), completionIsOpen = NO;
 }
