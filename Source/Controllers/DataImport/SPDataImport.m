@@ -46,7 +46,6 @@
 #import "SPFunctions.h"
 #import "SPQueryController.h"
 #import "SPConstants.h"
-#import "SPWindowController.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -690,7 +689,7 @@
 	}
 
 	// Update available databases
-	[[tableDocumentInstance onMainThread] setDatabases:self];
+	[[tableDocumentInstance onMainThread] setDatabases];
 
 	// Update current selected database
 	[tableDocumentInstance refreshCurrentDatabase];
@@ -1066,7 +1065,7 @@
 							[mySQLConnection queryString:query];
 
 						if ([mySQLConnection queryErrored]) {
-							[[tableDocumentInstance onMainThread] showConsole:nil];
+							[[tableDocumentInstance onMainThread] showConsole];
 							[errors appendFormat:
 								NSLocalizedString(@"[ERROR in row %ld] %@\n", @"error text when reading of csv file gave errors"),
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
@@ -1110,7 +1109,7 @@
 
 				// If an error occurred, run the queries individually to get exact line errors
 				if (!importMethodIsUpdate && [mySQLConnection queryErrored]) {
-					[[tableDocumentInstance onMainThread] showConsole:nil];
+					[[tableDocumentInstance onMainThread] showConsole];
 					if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
 						[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
 					}

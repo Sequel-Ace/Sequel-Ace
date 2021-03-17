@@ -95,9 +95,6 @@
 
 	IBOutlet NSView *parentView;
 	
-	IBOutlet id titleImageView;
-	IBOutlet id titleStringView;
-	
 	IBOutlet id databaseSheet;
 	IBOutlet id databaseCopySheet;
 	IBOutlet id databaseRenameSheet;
@@ -212,8 +209,7 @@
 	BOOL taskCanBeCancelled;
 	id taskCancellationCallbackObject;
 	SEL taskCancellationCallbackSelector;
-	
-	@public NSToolbar *mainToolbar;
+
 	NSToolbarItem *chooseDatabaseToolbarItem;
 	
 	WebView *printWebView;
@@ -241,7 +237,6 @@
 	NSInteger confirmCopyDatabaseReturnCode;
 
 	// Properties
-	NSTabViewItem *parentTabViewItem;
 	BOOL isProcessing;
 	NSString *processID;
 	BOOL windowTitleStatusViewIsVisible;
@@ -254,9 +249,9 @@
 @property (nonatomic, strong) NSTableView *dbTablesTableView;
 @property (readwrite, strong) NSURL *sqlFileURL;
 @property (readwrite) NSStringEncoding sqlFileEncoding;
-@property (readwrite, strong) NSTabViewItem *parentTabViewItem;
 @property (readwrite) BOOL isProcessing;
 @property (readwrite, copy) NSString *processID;
+@property (readonly, nonatomic, strong) NSToolbar *mainToolbar;
 
 @property (nonatomic, strong, readonly) SPWindowController *parentWindowController;
 @property (readonly, strong) SPServerSupport *serverSupport;
@@ -283,22 +278,9 @@
 - (SPMySQLConnection *)getConnection;
 
 // Database methods
-- (IBAction)setDatabases:(id)sender;
 - (IBAction)chooseDatabase:(id)sender;
 - (void)selectDatabase:(NSString *)aDatabase item:(NSString *)anItem;
-- (IBAction)addDatabase:(id)sender;
-- (IBAction)alterDatabase:(id)sender;
-- (IBAction)removeDatabase:(id)sender;
-- (IBAction)refreshTables:(id)sender;
-- (IBAction)copyDatabase:(id)sender;
-- (IBAction)renameDatabase:(id)sender;
-- (IBAction)showMySQLHelp:(id)sender;
 - (IBAction)makeTableListFilterHaveFocus:(id)sender;
-- (IBAction)showServerVariables:(id)sender;
-- (IBAction)showServerProcesses:(id)sender;
-- (IBAction)shutdownServer:(id)sender;
-- (IBAction)openCurrentConnectionInNewWindow:(id)sender;
-- (IBAction)showGotoDatabase:(id)sender;
 - (NSArray *)allDatabaseNames;
 - (NSArray *)allSystemDatabaseNames;
 - (NSDictionary *)getDbStructure;
@@ -323,26 +305,14 @@
 - (void)setConnectionEncoding:(NSString *)mysqlEncoding reloadingViews:(BOOL)reloadViews;
 - (NSString *)databaseEncoding;
 - (void)detectDatabaseEncoding;
-- (IBAction)chooseEncoding:(id)sender;
 - (BOOL)supportsEncoding;
 - (void)updateEncodingMenuWithSelectedEncoding:(NSNumber *)encodingTag;
 - (NSNumber *)encodingTagFromMySQLEncoding:(NSString *)mysqlEncoding;
 - (NSString *)mysqlEncodingFromEncodingTag:(NSNumber *)encodingTag;
 
 // Table methods
-- (IBAction)showCreateTableSyntax:(id)sender;
-- (IBAction)copyCreateTableSyntax:(id)sender;
-- (IBAction)checkTable:(id)sender;
-- (IBAction)analyzeTable:(id)sender;
-- (IBAction)optimizeTable:(id)sender;
-- (IBAction)repairTable:(id)sender;
-- (IBAction)flushTable:(id)sender;
-- (IBAction)checksumTable:(id)sender;
 - (IBAction)saveCreateSyntax:(id)sender;
 - (IBAction)copyCreateTableSyntaxFromSheet:(id)sender;
-- (IBAction)focusOnTableContentFilter:(id)sender;
-- (IBAction)showFilterTable:(id)sender;
-- (IBAction)export:(id)sender;
 - (IBAction)exportSelectedTablesAs:(id)sender;
 - (IBAction)multipleLineEditingButtonClicked:(NSButton *)sender;
 
@@ -351,16 +321,11 @@
 - (IBAction)closePanelSheet:(id)sender;
 - (IBAction)validateSaveConnectionAccessory:(id)sender;
 - (IBAction)closePasswordSheet:(id)sender;
-- (IBAction)backForwardInHistory:(id)sender;
-- (IBAction)showUserManager:(id)sender;
 - (IBAction)copyChecksumFromSheet:(id)sender;
-- (IBAction)showNavigator:(id)sender;
-- (IBAction)toggleNavigator:(id)sender;
 
 - (void)setQueryMode:(NSInteger)theQueryMode;
 - (void)doPerformQueryService:(NSString *)query;
 - (void)doPerformLoadQueryService:(NSString *)query;
-- (void)flushPrivileges:(id)sender;
 - (void)closeConnection;
 - (NSWindow *)getCreateTableSyntaxWindow;
 
@@ -371,7 +336,6 @@
 - (void)setIsSavedInBundle:(BOOL)savedInBundle;
 - (void)setFileURL:(NSURL *)fileURL;
 - (void)connect;
-- (void)showConsole:(id)sender;
 
 // Accessor methods
 - (NSString *)host;
@@ -397,38 +361,21 @@
 
 // Menu methods
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem;
-- (IBAction)openDatabaseInNewTab:(id)sender;
 - (IBAction)saveConnectionSheet:(id)sender;
-- (IBAction)import:(id)sender;
-- (IBAction)importFromClipboard:(id)sender;
-- (IBAction)addConnectionToFavorites:(id)sender;
 - (BOOL)isCustomQuerySelected;
 - (IBAction)showConnectionDebugMessages:(id)sender;
 
-// Titlebar methods
-- (void)setStatusIconToImageWithName:(NSString *)imagePath;
-- (void)setTitlebarStatus:(NSString *)status;
-- (void)clearStatusIcon;
-
 // Toolbar methods
 - (void)updateWindowTitle:(id)sender;
-- (void)setupToolbar;
 - (NSString *)selectedToolbarItemIdentifier;
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
 
 // Tab methods
-- (void)makeKeyDocument;
 - (BOOL)parentTabShouldClose;
-- (void)parentTabDidClose;
-- (void)willResignActiveTabInWindow;
-- (void)didBecomeActiveTabInWindow;
-- (void)tabDidBecomeKey;
-- (void)tabDidResize;
 
 - (void)setIsProcessing:(BOOL)value;
 - (BOOL)isProcessing;
 
-- (void)updateParentWindowController:(SPWindowController *)windowController;
 - (NSWindow *)parentWindowControllerWindow;
 
 // Scripting
@@ -458,14 +405,6 @@
 - (BOOL)contentLoaded;
 - (BOOL)statusLoaded;
 
-// Tab view control
-- (IBAction)viewStructure:(id)sender;
-- (IBAction)viewContent:(id)sender;
-- (IBAction)viewQuery:(id)sender;
-- (IBAction)viewStatus:(id)sender;
-- (IBAction)viewRelations:(id)sender;
-- (IBAction)viewTriggers:(id)sender;
-
 - (void)setStructureRequiresReload:(BOOL)reload;
 - (void)setContentRequiresReload:(BOOL)reload;
 - (void)setStatusRequiresReload:(BOOL)reload;
@@ -484,5 +423,63 @@
 
 - (NSArray *)columnNames;
 - (NSMutableDictionary *)connectionInformation;
+
+#pragma mark - Menu actions called from SPAppController
+
+#pragma mark File menu
+
+- (void)exportData;
+- (void)addConnectionToFavorites;
+- (void)importFile;
+- (void)importFromClipboard;
+- (void)printDocument;
+
+#pragma mark View menu
+
+- (void)viewStructure;
+- (void)viewContent;
+- (void)viewQuery;
+- (void)viewStatus;
+- (void)viewRelations;
+- (void)viewTriggers;
+- (void)backForwardInHistory:(id)sender;
+- (void)toggleConsole;
+- (void)showConsole;
+- (void)toggleNavigator;
+
+#pragma mark Database menu
+
+- (void)showGotoDatabase;
+- (void)addDatabase:(id)sender;
+- (void)removeDatabase:(id)sender;
+- (void)copyDatabase;
+- (void)renameDatabase;
+- (void)alterDatabase;
+- (void)refreshTables;
+- (void)flushPrivileges;
+- (void)setDatabases;
+- (void)showUserManager;
+- (void)chooseEncoding:(id)sender;
+- (void)openDatabaseInNewTab;
+- (void)showServerVariables;
+- (void)showServerProcesses;
+- (void)shutdownServer;
+
+#pragma mark Table menu
+
+- (void)focusOnTableContentFilter;
+- (void)showFilterTable;
+- (void)copyCreateTableSyntax;
+- (void)showCreateTableSyntax:(SPDatabaseDocument *)sender;
+- (void)checkTable;
+- (void)repairTable;
+- (void)analyzeTable;
+- (void)optimizeTable;
+- (void)flushTable;
+- (void)checksumTable;
+
+#pragma mark Help menu
+
+- (void)showMySQLHelp;
 
 @end

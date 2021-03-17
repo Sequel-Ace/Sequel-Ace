@@ -30,25 +30,10 @@
 
 #import "SPWindowAdditions.h"
 #import "SPDatabaseDocument.h"
-#import "SPWindowController.h"
+
+#import "sequel-ace-Swift.h"
 
 @implementation NSWindow (SPWindowAdditions)
-
-/**
- * Returns the height of the currently visible toolbar.
- */
-- (CGFloat)toolbarHeight
-{
-	NSRect windowFrame;
-	CGFloat toolbarHeight = 0.0f;
-
-	if ([self toolbar] && [[self toolbar] isVisible]) {
-		windowFrame   = [NSWindow contentRectForFrameRect:[self frame] styleMask:[self styleMask]];
-		toolbarHeight = NSHeight(windowFrame) - NSHeight([[self contentView] frame]);
-	}
-
-	return toolbarHeight;
-}
 
 /**
  * Resizes this window to the size of the supplied view.
@@ -85,9 +70,9 @@
  */
 - (void)swipeWithEvent:(NSEvent *)event
 {
-	if (![[self delegate] isKindOfClass:[SPWindowController class]] || ![[(SPWindowController *)[self delegate] documents] count]) return;
+	if (![[self delegate] isKindOfClass:[SPWindowController class]]) return;
 
-	id frontDoc = [(SPWindowController *)[self delegate] selectedTableDocument];
+	id frontDoc = [(SPWindowController *)[self delegate] databaseDocument];
 
 	if (frontDoc && [frontDoc isKindOfClass:[SPDatabaseDocument class]] && [frontDoc valueForKeyPath:@"spHistoryControllerInstance"] && ![frontDoc isWorking])
 	{

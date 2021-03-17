@@ -60,7 +60,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
-	NSView *databaseConnectionSuperview;
 	NSSplitView *databaseConnectionView;
 
 	NSOpenPanel *keySelectionPanel;
@@ -200,7 +199,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 }
 
-@property (readwrite, weak) id <SPConnectionControllerDelegateProtocol, NSObject> delegate;
+@property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;
@@ -252,7 +251,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (IBAction)showHelp:(id)sender;
 - (IBAction)updateSSLInterface:(id)sender;
 - (IBAction)updateKeyLocationFileVisibility:(id)sender;
-- (void)updateSplitViewSize;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 
@@ -263,6 +261,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
 -(void)showValidationAlertForError:(NSError*)err;
 -(BOOL)connected;
+- (BOOL)isConnectedViaSSL;
 
 // Favorites interaction
 - (void)updateFavoriteSelection:(id)sender;

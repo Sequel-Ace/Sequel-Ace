@@ -233,8 +233,7 @@ static SPQueryController *sharedQueryController = nil;
 /**
  * Clears the console by removing all of its messages.
  */
-- (IBAction)clearConsole:(id)sender
-{
+- (IBAction)clearConsole:(id)sender {
 	[messagesFullSet removeAllObjects];
 	[messagesFilteredSet removeAllObjects];
 

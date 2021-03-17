@@ -200,7 +200,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (IBAction)removeRow:(id)sender;
 
 // Filter Table
-- (IBAction)showFilterTable:(id)sender;
+- (void)showFilterTable;
 
 // Data accessors
 - (NSArray *)currentResult;

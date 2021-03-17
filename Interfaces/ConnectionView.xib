@@ -71,7 +71,7 @@
             <rect key="frame" x="0.0" y="0.0" width="882" height="759"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <splitView fixedFrame="YES" autosaveName="DBViewSplitter" dividerStyle="thin" vertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5741" customClass="SPSplitView">
+                <splitView fixedFrame="YES" autosaveName="DBConnectionViewSplitter" dividerStyle="thin" vertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5741" customClass="SPSplitView">
                     <rect key="frame" x="0.0" y="0.0" width="882" height="759"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                     <subviews>
@@ -250,10 +250,10 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5588">
-                                    <rect key="frame" x="0.0" y="0.0" width="681" height="727"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="681" height="759"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="gFs-TM-wGu">
-                                        <rect key="frame" x="0.0" y="0.0" width="681" height="727"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="681" height="759"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5447">
@@ -1789,7 +1789,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" HUD="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="439" y="291" width="580" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="100" height="100"/>
             <view key="contentView" id="5432">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
@@ -1799,7 +1799,7 @@ DQ
                         <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1Qd-RL-aJ4">
                             <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <textView editable="NO" drawsBackground="NO" importsGraphics="NO" richText="NO" verticallyResizable="NO" allowsCharacterPickerTouchBarItem="NO" textCompletion="NO" id="5434" customClass="SPAutosizingTextView" customModule="Sequel_Ace" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
@@ -2772,6 +2772,7 @@ DQ
                     </textFieldCell>
                 </textField>
             </subviews>
+            <point key="canvasLocation" x="-101" y="474"/>
         </customView>
     </objects>
     <resources>

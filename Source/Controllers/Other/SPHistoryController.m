@@ -66,8 +66,8 @@
 
 	toolbarItemVisible = NO;
 
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarWillAddItem:) name:NSToolbarWillAddItemNotification object:theDocument->mainToolbar];
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarDidRemoveItem:) name:NSToolbarDidRemoveItemNotification object:theDocument->mainToolbar];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarWillAddItem:) name:NSToolbarWillAddItemNotification object:theDocument.mainToolbar];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(toolbarDidRemoveItem:) name:NSToolbarDidRemoveItemNotification object:theDocument.mainToolbar];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startDocumentTask:) name:SPDocumentTaskStartNotification object:theDocument];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(endDocumentTask:) name:SPDocumentTaskEndNotification object:theDocument];
 }
@@ -180,7 +180,7 @@
  * can cause crashes.
  */
 - (void)setupInterface {
-	NSArray *toolbarItems = [theDocument->mainToolbar items];
+	NSArray *toolbarItems = [theDocument.mainToolbar items];
 
 	for (NSToolbarItem *toolbarItem in toolbarItems) {
 		if ([[toolbarItem itemIdentifier] isEqualToString:SPMainToolbarHistoryNavigation]) {
@@ -450,22 +450,22 @@
 		if ([theDocument currentlySelectedView] != [[historyEntry objectForKey:@"view"] integerValue]) {
 			switch ([[historyEntry objectForKey:@"view"] integerValue]) {
 				case SPTableViewStructure:
-					[theDocument viewStructure:self];
+					[theDocument viewStructure];
 					break;
 				case SPTableViewContent:
-					[theDocument viewContent:self];
+					[theDocument viewContent];
 					break;
 				case SPTableViewCustomQuery:
-					[theDocument viewQuery:self];
+					[theDocument viewQuery];
 					break;
 				case SPTableViewStatus:
-					[theDocument viewStatus:self];
+					[theDocument viewStatus];
 					break;
 				case SPTableViewRelations:
-					[theDocument viewRelations:self];
+					[theDocument viewRelations];
 					break;
 				case SPTableViewTriggers:
-					[theDocument viewTriggers:self];
+					[theDocument viewTriggers];
 					break;
 			}
 			if ([theDocument currentlySelectedView] != [[historyEntry objectForKey:@"view"] integerValue]) {

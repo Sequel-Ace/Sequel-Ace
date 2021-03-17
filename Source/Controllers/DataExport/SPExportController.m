@@ -44,7 +44,6 @@
 #import "SPSQLExporter.h"
 #import "SPXMLExporter.h"
 #import "SPDotExporter.h"
-#import "SPConnectionControllerDelegateProtocol.h"
 #import "SPExporter.h"
 #import "SPCSVExporterProtocol.h"
 #import "SPSQLExporterProtocol.h"
@@ -399,8 +398,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
  *
  * @param sender The caller (can be anything or nil as it is not currently used).
  */
-- (IBAction)export:(id)sender
-{
+- (void)exportData {
 	SPExportType selectedExportType = SPAnyExportType;
 	SPExportSource selectedExportSource = SPTableExport;
 
@@ -1077,7 +1075,7 @@ set_input:
 			[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
 		} cancelButtonHandler:^{
 			// Cancel the export and redisplay the export dialog after a short delay
-			[self performSelector:@selector(export:) withObject:self afterDelay:0.5];
+			[self performSelector:@selector(exportData) withObject:self afterDelay:0.5];
 		}];
 	}
 	else {

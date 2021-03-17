@@ -31,7 +31,6 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
-#import "SPWindowController.h"
 #import "sequel-ace-Swift.h"
 #import <sys/syslimits.h>
 
@@ -169,21 +168,19 @@
         databaseDocument = nil;
     } else {
         for (NSWindow *window in [NSApp orderedWindows]) {
-			if ([[[window windowController] class] isKindOfClass:[SPWindowController class]]) {
-                NSArray <SPDatabaseDocument *> *documents = [(SPWindowController *)[window windowController] documents];
-                for (SPDatabaseDocument *document in documents) {
-                    // Check if connected
-                    if ([document getConnection]) {
-                        databaseDocument = document;
-                    } else {
-                        databaseDocument = nil;
-                    }
-
-                    if (databaseDocument) {
-                        break;
-                    }
+            if ([[[window windowController] class] isKindOfClass:[SPWindowController class]]) {
+                // Check if connected
+                SPDatabaseDocument *document = [(SPWindowController *)[window windowController] selectedTableDocument];
+                if ([document getConnection]) {
+                    databaseDocument = document;
+                } else {
+                    databaseDocument = nil;
                 }
-			}
+
+                if (databaseDocument) {
+                    break;
+                }
+            }
 		}
 	}
 

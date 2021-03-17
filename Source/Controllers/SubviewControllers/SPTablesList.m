@@ -45,7 +45,6 @@
 #import "SPNavigatorController.h"
 #import "SPHistoryController.h"
 #import "SPServerSupport.h"
-#import "SPWindowController.h"
 #import "SPAppController.h"
 #import "SPSplitView.h"
 #import "SPThreadAdditions.h"
@@ -591,7 +590,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ([tablesListView numberOfSelectedRows] != 1) return;
 	if (![tableSourceInstance saveRowOnDeselect] || ![tableContentInstance saveRowOnDeselect]) return;
 
-	[[self onMainThread] setDatabases:nil];
+	[[self onMainThread] setDatabases];
 
 	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
@@ -638,9 +637,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 
-- (IBAction)setDatabases:(id)sender;
-{
-	if (!chooseDatabaseButton) return;
+- (void)setDatabases {
+    if (!chooseDatabaseButton) {
+        return;
+    }
 
 	[chooseDatabaseButton removeAllItems];
 
@@ -717,9 +717,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (IBAction)openTableInNewTab:(id)sender
 {
 	// Add a new tab to the window
-	[[tableDocumentInstance parentWindowController] addNewConnection:self];
-	
-	[self _duplicateConnectionToFrontTab];
+    // TODO
+//	[[tableDocumentInstance parentWindowController] addNewConnection];
+//
+//	[self _duplicateConnectionToFrontTab];
 }
 
 - (void)_duplicateConnectionToFrontTab
@@ -2347,7 +2348,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 			// Select the newly created table and switch to the table structure view for easier setup
 			[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
-			[tableDocumentInstance viewStructure:self];
+			[tableDocumentInstance viewStructure];
 
 			// Query the structure of all databases in the background (mainly for completion)
 			[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];

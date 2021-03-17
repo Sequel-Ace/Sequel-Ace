@@ -38,6 +38,7 @@
 @class SPBundleEditorController;
 @class SPWindowController;
 @class HyperlinkTextField;
+@class TabManager;
 
 @interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate>
 {
@@ -55,8 +56,8 @@
 }
 
 @property (readwrite, copy) NSString *lastBundleBlobFilesDirectory;
-@property (nonatomic, strong, readonly) NSMutableArray <SPWindowController *> *windowControllers;
 @property (nonatomic, strong) NSMutableArray <NSNumber *> *sshProcessIDs;
+@property (nonatomic, strong, readonly) TabManager *tabManager;
 
 @property (weak) IBOutlet NSView *staleBookmarkHelpView;
 @property (weak) IBOutlet HyperlinkTextField *staleBookmarkTextField;
@@ -111,10 +112,6 @@
 
 #pragma mark - SPWindowManagement
 
-- (IBAction)newWindow:(id)sender;
-- (IBAction)newTab:(id)sender;
 - (IBAction)duplicateTab:(id)sender;
-
-- (void)tabDragStarted:(id)sender;
 
 @end

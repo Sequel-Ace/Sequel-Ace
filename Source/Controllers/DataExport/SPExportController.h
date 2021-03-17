@@ -274,7 +274,7 @@
 - (BOOL)setExportInput:(SPExportSource)input;
 
 // IB action methods
-- (IBAction)export:(id)sender;
+- (void)exportData;
 - (IBAction)closeSheet:(id)sender;
 - (IBAction)switchInput:(id)sender;
 - (IBAction)cancelExport:(id)sender;
