@@ -179,6 +179,7 @@ NSString *SPCustomQueryEditorTabStopWidth        = @"CustomQueryEditorTabStopWid
 NSString *SPCustomQueryEditorCompleteWithBackticks = @"SPCustomQueryEditorCompleteWithBackticks";
 NSString *SPCustomQueryAutoComplete              = @"CustomQueryAutoComplete";
 NSString *SPCustomQueryAutoCompleteDelay         = @"CustomQueryAutoCompleteDelay";
+NSString *SPCustomQueryAutoCompleteFuzzy         = @"CustomQueryAutoCompleteFuzzy";
 NSString *SPCustomQueryFunctionCompletionInsertsArguments = @"CustomQueryFunctionCompletionInsertsArguments";
 NSString *SPCustomQueryEditorThemeName           = @"CustomQueryEditorThemeName";
 NSString *SPCustomQuerySoftIndent                = @"CustomQuerySoftIndent";

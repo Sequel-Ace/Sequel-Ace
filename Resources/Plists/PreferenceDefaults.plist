@@ -51,6 +51,8 @@
 	<true/>
 	<key>CustomQueryAutoCompleteDelay</key>
 	<real>1.5</real>
+	<key>CustomQueryAutoCompleteFuzzy</key>
+	<false/>
 	<key>CustomQueryAutoHelpDelay</key>
 	<real>1</real>
 	<key>CustomQueryAutoIndent</key>

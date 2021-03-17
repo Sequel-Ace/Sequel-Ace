@@ -3279,6 +3279,9 @@
 /* Tool tip for the Show alert when update is available preference on the Notifications pane */
 "Only available for GitHub downloads" = "Only available for GitHub downloads";
 
+/* Tool tip warning for when the user sets auto-complete delay to zero */
+"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
+
 /* downloading new version bytes of bytes done */
 "%@ of %@" = "%@ of %@";
 

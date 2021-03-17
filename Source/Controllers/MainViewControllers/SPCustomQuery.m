@@ -2129,38 +2129,101 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 newObject = [mySQLConnection escapeAndQuoteString:desc];
             }
         }
-        
-        [mySQLConnection queryString:
-         [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@ LIMIT 1",
-          [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString],
-          [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryString]];
-        
-        // Check for errors while UPDATE
-        if ([mySQLConnection queryErrored]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
-            return;
-        }
-        
-        // This shouldn't happen – for safety reasons
-        if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
-            if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
-            } else {
-                NSBeep();
+
+        NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@ LIMIT 1",
+                              [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString],
+                              [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryString];
+
+
+        SPLog(@"queryStr: %@", queryStr);
+
+        if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
+            [mySQLConnection queryString:queryStr];
+
+            // Check for errors while UPDATE
+            if ([mySQLConnection queryErrored]) {
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
+                return;
             }
-            return;
+
+            // This shouldn't happen – for safety reasons
+            if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
+                if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                } else {
+                    NSBeep();
+                }
+                return;
+            }
+
+            // On success reload table data by executing the last query if reloading is enabled
+            if ([prefs boolForKey:SPReloadAfterEditingRow]) {
+                reloadingExistingResult = YES;
+                [self storeCurrentResultViewForRestoration];
+                [self performQueries:@[lastExecutedQuery] withCallback:NULL];
+            } else {
+                // otherwise, just update the data in the data storage
+                [resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+            }
         }
-        
-        // On success reload table data by executing the last query if reloading is enabled
-        if ([prefs boolForKey:SPReloadAfterEditingRow]) {
-            reloadingExistingResult = YES;
-            [self storeCurrentResultViewForRestoration];
-            [self performQueries:@[lastExecutedQuery] withCallback:NULL];
-        } else {
-            // otherwise, just update the data in the data storage
-            [resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+        else{
+            // we know it does, but let's check
+            BOOL queryContainsDestructiveSQL = [self queriesContainDestructiveSQL:@[queryStr]];
+            SPLog(@"queryContainsDestructiveSQL: %hhd", queryContainsDestructiveSQL);
+
+            if(queryContainsDestructiveSQL == YES){
+
+                NSMutableString *theQueries = [queryStr mutableCopy];
+
+                SPLog(@"theQueriesLen: %lu", theQueries.length);
+
+                NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"),theQueries];
+
+                if(theQueries.length > SPMaxQueryLengthForWarning){
+                    theQueries = (NSMutableString*)[theQueries summarizeToLength:SPMaxQueryLengthForWarning withEllipsis:YES];
+                    infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with these queries?\n\n %@", @"message of panel asking for confirmation for exec query"), theQueries];
+                }
+
+                [NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Execute SQL?", @"Execute SQL?")]
+                                             message:infoText
+                                  primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+                                primaryButtonHandler:^{
+                    SPLog(@"User clicked Yes, exec queries");
+                    [self->mySQLConnection queryString:queryStr];
+
+                    // Check for errors while UPDATE
+                    if ([self->mySQLConnection queryErrored]) {
+                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [self->mySQLConnection lastErrorMessage]] callback:nil];
+                        return;
+                    }
+
+                    // This shouldn't happen – for safety reasons
+                    if ( ![self->mySQLConnection rowsAffectedByLastQuery] ) {
+                        if ( [self->prefs boolForKey:SPShowNoAffectedRowsError] ) {
+                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                        } else {
+                            NSBeep();
+                        }
+                        return;
+                    }
+
+                    // On success reload table data by executing the last query if reloading is enabled
+                    if ([self->prefs boolForKey:SPReloadAfterEditingRow]) {
+                        self->reloadingExistingResult = YES;
+                        [self storeCurrentResultViewForRestoration];
+                        [self performQueries:@[self->lastExecutedQuery] withCallback:NULL];
+                    } else {
+                        // otherwise, just update the data in the data storage
+                        [self->resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                    }
+                }
+                                 cancelButtonHandler:^{
+                    SPLog(@"Cancel pressed");
+                }];
+            }
         }
-    } else {
+    }
+    else {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed.", @"message of panel when error while updating field to db after enabling it"), (numberOfPossibleUpdateRows < 1) ? 0 : numberOfPossibleUpdateRows, [columnDefinition objectForKey:@"org_table"]] callback:nil];
     }
 }
