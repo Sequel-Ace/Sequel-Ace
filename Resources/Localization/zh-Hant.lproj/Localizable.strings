@@ -1039,7 +1039,7 @@
 "Delete selected row?" = "是否刪除所選中的條目？";
 
 /* delete table menu title */
-"Delete Table" = "刪除表";
+"Delete Table..." = "Delete Table...";
 
 /* delete tables menu title */
 "Delete Tables" = "刪除表";
@@ -2887,7 +2887,7 @@
 "Truncate selected tables?" = "是否清空所選表？";
 
 /* truncate table menu title */
-"Truncate Table" = "清空表";
+"Truncate Table..." = "Truncate Table...";
 
 /* truncate table message */
 "Truncate table '%@'?" = "是否清空表'%@'？";
@@ -3186,8 +3186,23 @@
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
+/* known hosts not writable error message */
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+
+/* known hosts not writable error title */
+"Known Hosts Error" = "Known Hosts Error";
+
+/* SSH Tunnel Debugging menu and window title */
+"SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
+
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "您有以下舊版書簽：\n\n%@\n\n是否重新請求訪問？";
+
+/* Question to user to see if they would like to request access to missing bookmarks */
+"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
+
+/* known hosts advance menu item title */
+"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
 
 /* The answer, yes */
 "Yes" = "是";
@@ -3219,6 +3234,9 @@
 /* Title for Network Preference ssh config file selection dialog */
 "Please choose your ssh config files(s)" = "請選擇您的SSH配置文件";
 
+/* Title for Network Preference ssh known hosts file selection dialog */
+"Please choose your known hosts file" = "Please choose your known hosts file";
+
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "無效的JSON";
 
@@ -3234,5 +3252,53 @@
 /* New Connection Error informative message */
 "Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
 
+/* new version is available alert title */
+"A new version is available" = "A new version is available";
+
+/* new version is available download button title */
+"Download" = "Download";
+
+/* new version is available alert informativeText */
+"Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+
+/* downloading new version window title */
+"Download Progress" = "Download Progress";
+
+/* downloading new version time remaining placeholder text */
+"Calculating time remaining..." = "Calculating time remaining...";
+
+/* downloading new version window message */
+"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
+
+/* downloading new version time remaining estimate text */
+"About %.1f seconds left" = "About %.1f seconds left";
+
+/* downloading new version failure alert title */
+"Download Failed" = "Download Failed";
+
+/* Tool tip for the Show alert when update is available preference on the Notifications pane */
+"Only available for GitHub downloads" = "Only available for GitHub downloads";
+
+/* Tool tip warning for when the user sets auto-complete delay to zero */
+"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
+
+/* downloading new version bytes of bytes done */
+"%@ of %@" = "%@ of %@";
+
+/* Time zone set failed informative message */
+"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
+
+/* Menu item title for checking for updates */
+"Check for updates" = "Check for updates";
+
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
+
+/* Error alert title when the request to GitHub fails */
+"GitHub Request Failed" = "GitHub Request Failed";
+
+/* Info alert title when there are Newer Releases Available */
+"No Newer Release Available" = "No Newer Release Available";
+
+/* Info alert message when there are Newer Releases Available */
+"You are currently running the latest release." = "You are currently running the latest release.";
