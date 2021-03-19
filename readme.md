@@ -33,10 +33,9 @@ brew cask install sequel-ace
 
 To move your quick connect list from Sequel Pro to Sequel Ace just copy the file
 
-~/Library/Application Support/Sequel Pro/Data/Favorites.plist
-to ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application Support/Sequel Ace/Data
+~/Library/Application Support/Sequel Pro/Data/Favorites.plist to ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application Support/Sequel Ace/Data
 
-```cp ~/Library/Application\ Support/Sequel\ Pro/Data/Favorites.plist ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data```
+cp ~/Library/Application\ Support/Sequel\ Pro/Data/Favorites.plist ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data
 
 Note that passwords are not copied this way, because they are stored in Keychain.
 
