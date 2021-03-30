@@ -44,13 +44,13 @@
  */
 - (instancetype)initWithDelegate:(NSObject<SPPDFExporterProtocol> *)exportDelegate
 {
-	if ((self = [super init])) {
-		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPPDFExporterProtocol));
-		
-		[self setDelegate:exportDelegate];
-	}
-	
-	return self;
+    if ((self = [super init])) {
+        SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPPDFExporterProtocol));
+        
+        [self setDelegate:exportDelegate];
+    }
+    
+    return self;
 }
 
 @end

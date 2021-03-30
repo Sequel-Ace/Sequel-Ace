@@ -44,13 +44,13 @@
  */
 - (instancetype)initWithDelegate:(NSObject<SPHTMLExporterProtocol> *)exportDelegate
 {
-	if ((self = [super init])) {
-		SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPHTMLExporterProtocol));
-		
-		[self setDelegate:exportDelegate];
-	}
-	
-	return self;
+    if ((self = [super init])) {
+        SPExportDelegateConformsToProtocol(exportDelegate, @protocol(SPHTMLExporterProtocol));
+
+        [self setDelegate:exportDelegate];
+    }
+
+    return self;
 }
 
 @end
