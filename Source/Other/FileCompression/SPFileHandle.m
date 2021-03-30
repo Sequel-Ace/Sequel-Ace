@@ -297,11 +297,11 @@ struct SPRawFileHandles {
  * Write the supplied data to the file.  The data may not be written to the
  * disk at once (see synchronizeFile).
  */
-- (void)writeData:(NSData *)data
-{
-    SPLog(@"in writeData, fileIsClosed: %d", fileIsClosed);
+- (void)writeData:(NSData *)data {
 	// Throw an exception if the file is closed
-	if (fileIsClosed) [NSException raise:NSInternalInconsistencyException format:@"Cannot write to a file handle after it has been closed"];
+    if (fileIsClosed) {
+        [NSException raise:NSInternalInconsistencyException format:@"Cannot write to a file handle after it has been closed"];
+    }
 
 	pthread_mutex_lock(&bufferLock);
 	
@@ -479,7 +479,6 @@ struct SPRawFileHandles {
 	free(wrappedFilePath);
 	
 	pthread_mutex_destroy(&bufferLock);
-	
 }
 
 @end
