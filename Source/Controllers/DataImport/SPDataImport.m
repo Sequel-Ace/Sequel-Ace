@@ -443,215 +443,218 @@
 	[sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
 	sqlDataBuffer = [[NSMutableData alloc] init];
 	while (1) {
-		if (progressCancelled) break;
+        @autoreleasepool {
 
-		@try {
-			fileChunk = [sqlFileHandle readDataOfLength:fileChunkMaxLength];
-		}
-		// Report file read errors, and bail
-		@catch (NSException *exception) {
-			if (connectionEncodingToRestore) {
-				[mySQLConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
-			}
-			if (sqlModeToRestore) {
-				[mySQLConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
-			}
+            if (progressCancelled) break;
 
-			[self _closeAndStopProgressSheet];
+            @try {
+                fileChunk = [sqlFileHandle readDataOfLength:fileChunkMaxLength];
+            }
+            // Report file read errors, and bail
+            @catch (NSException *exception) {
+                if (connectionEncodingToRestore) {
+                    [mySQLConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
+                }
+                if (sqlModeToRestore) {
+                    [mySQLConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
+                }
 
-			[NSAlert createWarningAlertWithTitle:SP_FILE_READ_ERROR_STRING message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)", @"SQL read error, including detail from system"), (long)queriesPerformed, [exception reason]] callback:nil];
-			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
-			return;
-		}
+                [self _closeAndStopProgressSheet];
 
-		// If no data returned, end of file - set a marker to ensure full processing
-		if (!fileChunk || ![fileChunk length]) {
-			allDataRead = YES;
+                [NSAlert createWarningAlertWithTitle:SP_FILE_READ_ERROR_STRING message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)", @"SQL read error, including detail from system"), (long)queriesPerformed, [exception reason]] callback:nil];
+                [tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
+                if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
+                return;
+            }
 
-		// Otherwise add the data to the read/parse buffer
-		} else {
-			[sqlDataBuffer appendData:fileChunk];
-		}
+            // If no data returned, end of file - set a marker to ensure full processing
+            if (!fileChunk || ![fileChunk length]) {
+                allDataRead = YES;
 
-		// Step through the data buffer, identifying line endings to parse the data with
-		sqlDataBufferBytes = [sqlDataBuffer bytes];
-		dataBufferLength = [sqlDataBuffer length];
-		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
-			if (sqlDataBufferBytes[dataBufferPosition] == 0x0A || sqlDataBufferBytes[dataBufferPosition] == 0x0D || allDataRead) {
+                // Otherwise add the data to the read/parse buffer
+            } else {
+                [sqlDataBuffer appendData:fileChunk];
+            }
 
-				// Keep reading through any other line endings
-				while (dataBufferPosition + 1 < dataBufferLength
-						&& (sqlDataBufferBytes[dataBufferPosition+1] == 0x0A
-							|| sqlDataBufferBytes[dataBufferPosition+1] == 0x0D))
-				{
-					dataBufferPosition++;
-				}
+            // Step through the data buffer, identifying line endings to parse the data with
+            sqlDataBufferBytes = [sqlDataBuffer bytes];
+            dataBufferLength = [sqlDataBuffer length];
+            for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
+                if (sqlDataBufferBytes[dataBufferPosition] == 0x0A || sqlDataBufferBytes[dataBufferPosition] == 0x0D || allDataRead) {
 
-				// Try to generate a NSString with the resulting data
-				sqlString = [[NSString alloc] initWithData:[sqlDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, dataBufferPosition - dataBufferLastQueryEndPosition)]
-				                                  encoding:sqlEncoding];
-				if (!sqlString) {
-					if (connectionEncodingToRestore) {
-						[mySQLConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
-					}
-					if (sqlModeToRestore) {
-						[mySQLConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
-					}
+                    // Keep reading through any other line endings
+                    while (dataBufferPosition + 1 < dataBufferLength
+                           && (sqlDataBufferBytes[dataBufferPosition+1] == 0x0A
+                               || sqlDataBufferBytes[dataBufferPosition+1] == 0x0D))
+                    {
+                        dataBufferPosition++;
+                    }
 
-					[self _closeAndStopProgressSheet];
+                    // Try to generate a NSString with the resulting data
+                    sqlString = [[NSString alloc] initWithData:[sqlDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, dataBufferPosition - dataBufferLastQueryEndPosition)]
+                                                      encoding:sqlEncoding];
+                    if (!sqlString) {
+                        if (connectionEncodingToRestore) {
+                            [mySQLConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
+                        }
+                        if (sqlModeToRestore) {
+                            [mySQLConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
+                        }
 
-					NSString *displayEncoding;
+                        [self _closeAndStopProgressSheet];
 
-					if (![[importEncodingPopup onMainThread] indexOfSelectedItem]) {
-						displayEncoding = [NSString stringWithFormat:@"%@ - %@", [[importEncodingPopup onMainThread] titleOfSelectedItem], [NSString localizedNameOfStringEncoding:sqlEncoding]];
-					} else {
-						displayEncoding = [NSString localizedNameOfStringEncoding:sqlEncoding];
-					}
-					[NSAlert createWarningAlertWithTitle:SP_FILE_READ_ERROR_STRING message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed.", @"SQL encoding read error"), displayEncoding, (long)queriesPerformed] callback:nil];
-					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
-					return;
-				}
+                        NSString *displayEncoding;
 
-				// Add the NSString segment to the SQL parser and release it
-				[sqlParser appendString:sqlString];
+                        if (![[importEncodingPopup onMainThread] indexOfSelectedItem]) {
+                            displayEncoding = [NSString stringWithFormat:@"%@ - %@", [[importEncodingPopup onMainThread] titleOfSelectedItem], [NSString localizedNameOfStringEncoding:sqlEncoding]];
+                        } else {
+                            displayEncoding = [NSString localizedNameOfStringEncoding:sqlEncoding];
+                        }
+                        [NSAlert createWarningAlertWithTitle:SP_FILE_READ_ERROR_STRING message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed.", @"SQL encoding read error"), displayEncoding, (long)queriesPerformed] callback:nil];
+                        [tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
+                        if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
+                        return;
+                    }
 
-				if (allDataRead) break;
+                    // Add the NSString segment to the SQL parser and release it
+                    [sqlParser appendString:sqlString];
 
-				// Increment the query end position marker
-				dataBufferLastQueryEndPosition = dataBufferPosition;
-			}
-		}
+                    if (allDataRead) break;
 
-		// Trim the data buffer if part of it was used
-		if (dataBufferLastQueryEndPosition) {
-			[sqlDataBuffer setData:[sqlDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, dataBufferLength - dataBufferLastQueryEndPosition)]];
-			dataBufferPosition -= dataBufferLastQueryEndPosition;
-			dataBufferLastQueryEndPosition = 0;
-		}
+                    // Increment the query end position marker
+                    dataBufferLastQueryEndPosition = dataBufferPosition;
+                }
+            }
 
-		// Before entering the following loop, check that we actually have a connection.
-		// If not, check the connection if appropriate and then clean up and exit if appropriate.
-		if (![mySQLConnection isConnected] && ([mySQLConnection userTriggeredDisconnect] || ![mySQLConnection checkConnection])) {
-			if ([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
+            // Trim the data buffer if part of it was used
+            if (dataBufferLastQueryEndPosition) {
+                [sqlDataBuffer setData:[sqlDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, dataBufferLength - dataBufferLastQueryEndPosition)]];
+                dataBufferPosition -= dataBufferLastQueryEndPosition;
+                dataBufferLastQueryEndPosition = 0;
+            }
 
-			[self _closeAndStopProgressSheet];
-			[errors appendString:NSLocalizedString(@"The connection to the server was lost during the import.  The import is only partially complete.", @"Connection lost during import error message")];
-			[self showErrorSheetWithMessage:errors];
+            // Before entering the following loop, check that we actually have a connection.
+            // If not, check the connection if appropriate and then clean up and exit if appropriate.
+            if (![mySQLConnection isConnected] && ([mySQLConnection userTriggeredDisconnect] || ![mySQLConnection checkConnection])) {
+                if ([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];
 
-			return;
-		}
+                [self _closeAndStopProgressSheet];
+                [errors appendString:NSLocalizedString(@"The connection to the server was lost during the import.  The import is only partially complete.", @"Connection lost during import error message")];
+                [self showErrorSheetWithMessage:errors];
 
-		// Extract and process any complete SQL queries that can be found in the strings parsed so far
-		while ((query = [sqlParser trimAndReturnStringToCharacter:';' trimmingInclusively:YES returningInclusively:NO])) {
-			if (progressCancelled) break;
-			fileProcessedLength += [query lengthOfBytesUsingEncoding:sqlEncoding] + 1;
+                return;
+            }
 
-			// Ensure whitespace is removed from both ends, and normalise if necessary.
-			if ([sqlParser containsCarriageReturns]) {
-				query = [SPSQLParser normaliseQueryForExecution:query];
-			} else {
-				query = [query stringByTrimmingCharactersInSet:whitespaceAndNewlineCharset];
-			}
+            // Extract and process any complete SQL queries that can be found in the strings parsed so far
+            while ((query = [sqlParser trimAndReturnStringToCharacter:';' trimmingInclusively:YES returningInclusively:NO])) {
+                if (progressCancelled) break;
+                fileProcessedLength += [query lengthOfBytesUsingEncoding:sqlEncoding] + 1;
 
-			// Skip blank or whitespace-only queries to avoid errors
-			if (![query length]) continue;
+                // Ensure whitespace is removed from both ends, and normalise if necessary.
+                if ([sqlParser containsCarriageReturns]) {
+                    query = [SPSQLParser normaliseQueryForExecution:query];
+                } else {
+                    query = [query stringByTrimmingCharactersInSet:whitespaceAndNewlineCharset];
+                }
 
-			// Run the query
-			[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult];
+                // Skip blank or whitespace-only queries to avoid errors
+                if (![query length]) continue;
 
-			// in case the query was a "SET @@sql_mode = ...", the server_status may have changed
-			if([mySQLConnection updateServerStatusBits:&serverStatus]) [sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
+                // Run the query
+                [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult];
 
-			// Check for any errors
-			if ([mySQLConnection queryErrored] && ![[mySQLConnection lastErrorMessage] isEqualToString:@"Query was empty"]) {
-				[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
+                // in case the query was a "SET @@sql_mode = ...", the server_status may have changed
+                if([mySQLConnection updateServerStatusBits:&serverStatus]) [sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
 
-				// if the error is about utf8mb4 not being supported by the server display a more helpful message.
-				// Note: the same error will occur when doing CREATE TABLE... with utf8mb4.
-				if([mySQLConnection lastErrorID] == 1115 /* ER_UNKNOWN_CHARACTER_SET */ && [[mySQLConnection lastErrorMessage] rangeOfString:@"utf8mb4" options:NSCaseInsensitiveSearch].location != NSNotFound && [query rangeOfString:@"SET NAMES" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-					if (!ignoreCharsetError) {
-						__block NSInteger charsetErrorSheetReturnCode;
+                // Check for any errors
+                if ([mySQLConnection queryErrored] && ![[mySQLConnection lastErrorMessage] isEqualToString:@"Query was empty"]) {
+                    [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
 
-						SPMainQSync(^{
-							NSAlert *charsetErrorAlert = [[NSAlert alloc] init];
-							[charsetErrorAlert setMessageText:NSLocalizedString(@"Incompatible encoding in SQL file", @"sql import error message")];
-							[charsetErrorAlert setInformativeText:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
+                    // if the error is about utf8mb4 not being supported by the server display a more helpful message.
+                    // Note: the same error will occur when doing CREATE TABLE... with utf8mb4.
+                    if([mySQLConnection lastErrorID] == 1115 /* ER_UNKNOWN_CHARACTER_SET */ && [[mySQLConnection lastErrorMessage] rangeOfString:@"utf8mb4" options:NSCaseInsensitiveSearch].location != NSNotFound && [query rangeOfString:@"SET NAMES" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                        if (!ignoreCharsetError) {
+                            __block NSInteger charsetErrorSheetReturnCode;
 
-							// Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
-							[charsetErrorAlert addButtonWithTitle:NSLocalizedString(@"Import Anyway", @"sql import : charset error alert : continue button")];
-							[charsetErrorAlert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+                            SPMainQSync(^{
+                                NSAlert *charsetErrorAlert = [[NSAlert alloc] init];
+                                [charsetErrorAlert setMessageText:NSLocalizedString(@"Incompatible encoding in SQL file", @"sql import error message")];
+                                [charsetErrorAlert setInformativeText:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
 
-							charsetErrorSheetReturnCode = [charsetErrorAlert runModal];
-						});
+                                // Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
+                                [charsetErrorAlert addButtonWithTitle:NSLocalizedString(@"Import Anyway", @"sql import : charset error alert : continue button")];
+                                [charsetErrorAlert addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
 
-						switch (charsetErrorSheetReturnCode) {
-							// don't display the message a second time
-							case NSAlertFirstButtonReturn:
-								ignoreCharsetError = YES;
-								break;
-							// Otherwise, stop
-							default:
-								[errors appendString:NSLocalizedString(@"Import cancelled!\n", @"import cancelled message")];
-								progressCancelled = YES;
-						}
-					}
-				}
-				// If not set to ignore errors, ask what to do.  Use NSAlert rather than
-				// SPBeginWaitingAlertSheet as there is already a modal sheet in progress.
-				else if (!ignoreSQLErrors) {
-					__block NSInteger sqlImportErrorSheetReturnCode;
+                                charsetErrorSheetReturnCode = [charsetErrorAlert runModal];
+                            });
 
-					SPMainQSync(^{
-						NSAlert *sqlErrorAlert = [[NSAlert alloc] init];
-						[sqlErrorAlert setMessageText:NSLocalizedString(@"An error occurred while importing SQL", @"sql import error message")];
-						[sqlErrorAlert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]]];
+                            switch (charsetErrorSheetReturnCode) {
+                                    // don't display the message a second time
+                                case NSAlertFirstButtonReturn:
+                                    ignoreCharsetError = YES;
+                                    break;
+                                    // Otherwise, stop
+                                default:
+                                    [errors appendString:NSLocalizedString(@"Import cancelled!\n", @"import cancelled message")];
+                                    progressCancelled = YES;
+                            }
+                        }
+                    }
+                    // If not set to ignore errors, ask what to do.  Use NSAlert rather than
+                    // SPBeginWaitingAlertSheet as there is already a modal sheet in progress.
+                    else if (!ignoreSQLErrors) {
+                        __block NSInteger sqlImportErrorSheetReturnCode;
 
-						// Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
-						[sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
-						[sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")];
-						[sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
+                        SPMainQSync(^{
+                            NSAlert *sqlErrorAlert = [[NSAlert alloc] init];
+                            [sqlErrorAlert setMessageText:NSLocalizedString(@"An error occurred while importing SQL", @"sql import error message")];
+                            [sqlErrorAlert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]]];
 
-						sqlImportErrorSheetReturnCode = [sqlErrorAlert runModal];
-					});
+                            // Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
+                            [sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
+                            [sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")];
+                            [sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Stop", @"stop button")];
 
-					switch (sqlImportErrorSheetReturnCode) {
-						case NSAlertFirstButtonReturn: // On "continue", no additional action is required
-							break;
-						case NSAlertSecondButtonReturn: // Ignore all future errors if asked to
-							ignoreSQLErrors = YES;
-							break;
-						default: // Otherwise, stop
-							[errors appendString:NSLocalizedString(@"Import cancelled!\n", @"import cancelled message")];
-							progressCancelled = YES;
-					}
-				}
-			}
+                            sqlImportErrorSheetReturnCode = [sqlErrorAlert runModal];
+                        });
 
-			// Increment the processed queries count
-			queriesPerformed++;
+                        switch (sqlImportErrorSheetReturnCode) {
+                            case NSAlertFirstButtonReturn: // On "continue", no additional action is required
+                                break;
+                            case NSAlertSecondButtonReturn: // Ignore all future errors if asked to
+                                ignoreSQLErrors = YES;
+                                break;
+                            default: // Otherwise, stop
+                                [errors appendString:NSLocalizedString(@"Import cancelled!\n", @"import cancelled message")];
+                                progressCancelled = YES;
+                        }
+                    }
+                }
+
+                // Increment the processed queries count
+                queriesPerformed++;
 #ifdef DEBUG
-			endDate = [NSDate date];
-			interval = [endDate timeIntervalSinceDate:startDate];
-			SPLog(@"Import time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
+                endDate = [NSDate date];
+                interval = [endDate timeIntervalSinceDate:startDate];
+                SPLog(@"Import time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
 #endif
-			// Update the progress bar
-			if (fileIsCompressed) {
-				[[singleProgressBar onMainThread] setDoubleValue:[sqlFileHandle realDataReadLength]];
-				[[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of SQL", @"SQL import progress text where total size is unknown"),
-                                                                   [NSByteCountFormatter stringWithByteSize:fileProcessedLength]]];
-			} else {
-				[[singleProgressBar onMainThread] setDoubleValue:fileProcessedLength];
-				[[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"),
-                                                                   [NSByteCountFormatter stringWithByteSize:fileProcessedLength],
-                                                                   [NSByteCountFormatter stringWithByteSize:fileTotalLength]]];
-			}
-		}
+                // Update the progress bar
+                if (fileIsCompressed) {
+                    [[singleProgressBar onMainThread] setDoubleValue:[sqlFileHandle realDataReadLength]];
+                    [[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of SQL", @"SQL import progress text where total size is unknown"),
+                                                                       [NSByteCountFormatter stringWithByteSize:fileProcessedLength]]];
+                } else {
+                    [[singleProgressBar onMainThread] setDoubleValue:fileProcessedLength];
+                    [[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"),
+                                                                       [NSByteCountFormatter stringWithByteSize:fileProcessedLength],
+                                                                       [NSByteCountFormatter stringWithByteSize:fileTotalLength]]];
+                }
+            }
 
-		// If all the data has been read, break out of the processing loop
-		if (allDataRead) break;
-	}
+            // If all the data has been read, break out of the processing loop
+            if (allDataRead) break;
+        }
+    }
 
 	// If any text remains in the SQL parser, it's an unterminated query - execute it.
 	query = [sqlParser stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
