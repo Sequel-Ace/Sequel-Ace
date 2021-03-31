@@ -712,32 +712,8 @@
              [[self sqlDatabaseName] tickQuotedString]];
 
             // Loop through the definitions, exporting if enabled
-            for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
-            {
-                
-                if(self.exportOutputFile.fileHandleError != nil){
-                    SPMainQSync(^{
-                        [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
-                    });
-                    return;
-                }
-                
-                // Check for cancellation flag
-                if ([self isCancelled]) {
-                    [self endCleanup:oldSqlMode];
-                    return;
-                }
-
-                NSDictionary *proceduresList = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
-                NSString *procedureName = [NSString stringWithFormat:@"%@", [proceduresList objectForKey:@"Name"]];
-
-                // Only proceed if the item is in the list of items
-                BOOL itemFound = NO;
-                BOOL sqlOutputIncludeStructure = NO;
-                BOOL sqlOutputIncludeDropSyntax = NO;
-                for (NSArray *item in items)
-                {
-
+            for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++) {
+                @autoreleasepool {
                     if(self.exportOutputFile.fileHandleError != nil){
                         SPMainQSync(^{
                             [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
@@ -751,77 +727,101 @@
                         return;
                     }
 
-                    if ([[item firstObject] isEqualToString:procedureName]) {
-                        itemFound = YES;
-                        sqlOutputIncludeStructure  = [[item safeObjectAtIndex:1] boolValue];
-                        sqlOutputIncludeDropSyntax = [[item safeObjectAtIndex:3] boolValue];
-                        break;
+                    NSDictionary *proceduresList = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
+                    NSString *procedureName = [NSString stringWithFormat:@"%@", [proceduresList objectForKey:@"Name"]];
+
+                    // Only proceed if the item is in the list of items
+                    BOOL itemFound = NO;
+                    BOOL sqlOutputIncludeStructure = NO;
+                    BOOL sqlOutputIncludeDropSyntax = NO;
+                    for (NSArray *item in items)
+                    {
+
+                        if(self.exportOutputFile.fileHandleError != nil){
+                            SPMainQSync(^{
+                                [(SPExportController*)self->delegate cancelExportForFile:self->exportOutputFile.exportFilePath];
+                            });
+                            return;
+                        }
+
+                        // Check for cancellation flag
+                        if ([self isCancelled]) {
+                            [self endCleanup:oldSqlMode];
+                            return;
+                        }
+
+                        if ([[item firstObject] isEqualToString:procedureName]) {
+                            itemFound = YES;
+                            sqlOutputIncludeStructure  = [[item safeObjectAtIndex:1] boolValue];
+                            sqlOutputIncludeDropSyntax = [[item safeObjectAtIndex:3] boolValue];
+                            break;
+                        }
                     }
-                }
-                if (!itemFound) {
-                    continue;
-                }
-
-                if (sqlOutputIncludeStructure || sqlOutputIncludeDropSyntax)
-                    [metaString appendFormat:@"# Dump of %@ %@\n# ------------------------------------------------------------\n\n", procedureType, procedureName];
-
-                // Add the 'DROP' command if required
-                if (sqlOutputIncludeDropSyntax) {
-                    [metaString appendFormat:@"/*!50003 DROP %@ IF EXISTS %@ */;;\n", procedureType,
-                     [procedureName backtickQuotedString]];
-                }
-
-                // Only continue if the 'CREATE SYNTAX' is required
-                if (!sqlOutputIncludeStructure) {
-                    continue;
-                }
-
-                // Definer is user@host but we need to escape it to `user`@`host`
-                NSArray *procedureDefiner = [[proceduresList objectForKey:@"Definer"] componentsSeparatedByString:@"@"];
-
-                NSString *escapedDefiner = [NSString stringWithFormat:@"%@@%@",
-                                            [[procedureDefiner firstObject] backtickQuotedString],
-                                            [[procedureDefiner safeObjectAtIndex:1] backtickQuotedString]];
-
-                SPMySQLResult *createProcedureResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
-                                                                                [procedureName backtickQuotedString]]];
-                [createProcedureResult setReturnDataAsStrings:YES];
-                if ([connection queryErrored]) {
-                    [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
-
-                    if ([self sqlOutputIncludeErrors]) {
-                        [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
+                    if (!itemFound) {
+                        continue;
                     }
-                    continue;
-                }
 
-                NSDictionary *procedureInfo = [[NSDictionary alloc] initWithDictionary:[createProcedureResult getRowAsDictionary]];
+                    if (sqlOutputIncludeStructure || sqlOutputIncludeDropSyntax)
+                        [metaString appendFormat:@"# Dump of %@ %@\n# ------------------------------------------------------------\n\n", procedureType, procedureName];
 
-                [metaString appendFormat:@"/*!50003 SET SESSION SQL_MODE=\"%@\"*/;;\n", [procedureInfo objectForKey:@"sql_mode"]];
-
-                NSString *createProcedure = [procedureInfo objectForKey:[NSString stringWithFormat:@"Create %@", [procedureType capitalizedString]]];
-
-                // A NULL result indicates a permission problem
-                if ([createProcedure isNSNull]) {
-                    NSString *errorString = [NSString stringWithFormat:NSLocalizedString(@"Could not export the %@ '%@' because of a permissions error.\n", @"Procedure/function export permission error"), procedureType, procedureName];
-                    [errors appendString:errorString];
-                    if ([self sqlOutputIncludeErrors]) {
-                        [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", errorString]];
+                    // Add the 'DROP' command if required
+                    if (sqlOutputIncludeDropSyntax) {
+                        [metaString appendFormat:@"/*!50003 DROP %@ IF EXISTS %@ */;;\n", procedureType,
+                         [procedureName backtickQuotedString]];
                     }
-                    continue;
+
+                    // Only continue if the 'CREATE SYNTAX' is required
+                    if (!sqlOutputIncludeStructure) {
+                        continue;
+                    }
+
+                    // Definer is user@host but we need to escape it to `user`@`host`
+                    NSArray *procedureDefiner = [[proceduresList objectForKey:@"Definer"] componentsSeparatedByString:@"@"];
+
+                    NSString *escapedDefiner = [NSString stringWithFormat:@"%@@%@",
+                                                [[procedureDefiner firstObject] backtickQuotedString],
+                                                [[procedureDefiner safeObjectAtIndex:1] backtickQuotedString]];
+
+                    SPMySQLResult *createProcedureResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
+                                                                                    [procedureName backtickQuotedString]]];
+                    [createProcedureResult setReturnDataAsStrings:YES];
+                    if ([connection queryErrored]) {
+                        [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
+
+                        if ([self sqlOutputIncludeErrors]) {
+                            [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
+                        }
+                        continue;
+                    }
+
+                    NSDictionary *procedureInfo = [[NSDictionary alloc] initWithDictionary:[createProcedureResult getRowAsDictionary]];
+
+                    [metaString appendFormat:@"/*!50003 SET SESSION SQL_MODE=\"%@\"*/;;\n", [procedureInfo objectForKey:@"sql_mode"]];
+
+                    NSString *createProcedure = [procedureInfo objectForKey:[NSString stringWithFormat:@"Create %@", [procedureType capitalizedString]]];
+
+                    // A NULL result indicates a permission problem
+                    if ([createProcedure isNSNull]) {
+                        NSString *errorString = [NSString stringWithFormat:NSLocalizedString(@"Could not export the %@ '%@' because of a permissions error.\n", @"Procedure/function export permission error"), procedureType, procedureName];
+                        [errors appendString:errorString];
+                        if ([self sqlOutputIncludeErrors]) {
+                            [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", errorString]];
+                        }
+                        continue;
+                    }
+
+                    NSRange procedureRange    = [createProcedure rangeOfString:procedureType options:NSCaseInsensitiveSearch];
+                    NSString *procedureBody   = [createProcedure substringFromIndex:procedureRange.location];
+
+                    // /*!50003 CREATE*/ /*!50020 DEFINER=`sequelpro`@`%`*/ /*!50003 PROCEDURE `p`()
+                    // 													  BEGIN
+                    // 													  /* This procedure does nothing */
+                    // END */;;
+                    //
+                    // Build the CREATE PROCEDURE string to include MySQL Version limiters
+                    [metaString appendFormat:@"/*!50003 CREATE*/ /*!50020 DEFINER=%@*/ /*!50003 %@ */;;\n\n/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;;\n", escapedDefiner, procedureBody];
+
                 }
-
-                NSRange procedureRange    = [createProcedure rangeOfString:procedureType options:NSCaseInsensitiveSearch];
-                NSString *procedureBody   = [createProcedure substringFromIndex:procedureRange.location];
-
-                // /*!50003 CREATE*/ /*!50020 DEFINER=`sequelpro`@`%`*/ /*!50003 PROCEDURE `p`()
-                // 													  BEGIN
-                // 													  /* This procedure does nothing */
-                // END */;;
-                //
-                // Build the CREATE PROCEDURE string to include MySQL Version limiters
-                [metaString appendFormat:@"/*!50003 CREATE*/ /*!50020 DEFINER=%@*/ /*!50003 %@ */;;\n\n/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;;\n", escapedDefiner, procedureBody];
-
             }
 
             [metaString appendString:@"DELIMITER ;\n"];
@@ -906,72 +906,72 @@
     // Set up the start of the placeholder string and initialise an empty field string
     placeholderSyntax = [[NSMutableString alloc] initWithFormat:@"CREATE TABLE %@ (\n", [viewName backtickQuotedString]];
 
-    NSMutableString *fieldString = [[NSMutableString alloc] init];
 
     // Loop through the columns, creating an appropriate column definition for each and appending it to the syntax string
-    for (i = 0; i < [viewColumns count]; i++)
-    {
-        NSDictionary *column = [viewColumns safeObjectAtIndex:i];
+    for (i = 0; i < [viewColumns count]; i++) {
+        @autoreleasepool {
+            NSDictionary *column = [viewColumns safeObjectAtIndex:i];
 
-        [fieldString setString:[[column objectForKey:@"name"] backtickQuotedString]];
+            NSMutableString *fieldString = [[NSMutableString alloc] initWithString:[[column objectForKey:@"name"] backtickQuotedString]];
 
-        // Add the type and length information as appropriate
-        if ([column objectForKey:@"length"]) {
-            NSString *length = [column objectForKey:@"length"];
-            NSString *decimals = [column objectForKey:@"decimals"];
-            if([decimals length]) {
-                length = [length stringByAppendingFormat:@",%@", decimals];
-            }
-            [fieldString appendFormat:@" %@(%@)", [column objectForKey:@"type"], length];
-        }
-        else if ([column objectForKey:@"values"]) {
-            [fieldString appendFormat:@" %@(", [column objectForKey:@"type"]];
-
-            for (j = 0; j < [[column objectForKey:@"values"] count]; j++)
-            {
-                [fieldString appendString:[connection escapeAndQuoteString:[[column safeObjectForKey:@"values"] safeObjectAtIndex:j]]];
-                if ((j + 1) != [[column objectForKey:@"values"] count]) {
-                    [fieldString appendString:@","];
+            // Add the type and length information as appropriate
+            if ([column objectForKey:@"length"]) {
+                NSString *length = [column objectForKey:@"length"];
+                NSString *decimals = [column objectForKey:@"decimals"];
+                if([decimals length]) {
+                    length = [length stringByAppendingFormat:@",%@", decimals];
                 }
+                [fieldString appendFormat:@" %@(%@)", [column objectForKey:@"type"], length];
             }
+            else if ([column objectForKey:@"values"]) {
+                [fieldString appendFormat:@" %@(", [column objectForKey:@"type"]];
 
-            [fieldString appendString:@")"];
-        }
-        else {
-            [fieldString appendFormat:@" %@", [column objectForKey:@"type"]];
-        }
-
-        // Field specification details
-        if ([[column objectForKey:@"unsigned"] integerValue] == 1) [fieldString appendString:@" UNSIGNED"];
-        if ([[column objectForKey:@"zerofill"] integerValue] == 1) [fieldString appendString:@" ZEROFILL"];
-        if ([[column objectForKey:@"binary"] integerValue] == 1) [fieldString appendString:@" BINARY"];
-        if ([[column objectForKey:@"null"] integerValue] == 0) {
-            [fieldString appendString:@" NOT NULL"];
-        } else {
-            [fieldString appendString:@" NULL"];
-        }
-
-        // Provide the field default if appropriate
-        if ([column objectForKey:@"default"]) {
-
-            // Some MySQL server versions show a default of NULL for NOT NULL columns - don't export those.
-            // Check against the NSNull singleton instance for speed.
-            if ([column objectForKey:@"default"] == [NSNull null]) {
-                if ([[column objectForKey:@"null"] integerValue]) {
-                    [fieldString appendString:@" DEFAULT NULL"];
+                for (j = 0; j < [[column objectForKey:@"values"] count]; j++)
+                {
+                    [fieldString appendString:[connection escapeAndQuoteString:[[column safeObjectForKey:@"values"] safeObjectAtIndex:j]]];
+                    if ((j + 1) != [[column objectForKey:@"values"] count]) {
+                        [fieldString appendString:@","];
+                    }
                 }
-            }
-            else if (([[column objectForKey:@"type"] isInArray:@[@"TIMESTAMP",@"DATETIME"]]) && [[column objectForKey:@"default"] isMatchedByRegex:SPCurrentTimestampPattern]) {
-                [fieldString appendFormat:@" DEFAULT %@",[column objectForKey:@"default"]];
+
+                [fieldString appendString:@")"];
             }
             else {
-                [fieldString appendFormat:@" DEFAULT %@", [connection escapeAndQuoteString:[column objectForKey:@"default"]]];
+                [fieldString appendFormat:@" %@", [column objectForKey:@"type"]];
             }
-        }
 
-        // Extras aren't required for the temp table
-        // Add the field string to the syntax string
-        [placeholderSyntax appendFormat:@"   %@%@\n", fieldString, (i == [viewColumns count] - 1) ? @"" : @","];
+            // Field specification details
+            if ([[column objectForKey:@"unsigned"] integerValue] == 1) [fieldString appendString:@" UNSIGNED"];
+            if ([[column objectForKey:@"zerofill"] integerValue] == 1) [fieldString appendString:@" ZEROFILL"];
+            if ([[column objectForKey:@"binary"] integerValue] == 1) [fieldString appendString:@" BINARY"];
+            if ([[column objectForKey:@"null"] integerValue] == 0) {
+                [fieldString appendString:@" NOT NULL"];
+            } else {
+                [fieldString appendString:@" NULL"];
+            }
+
+            // Provide the field default if appropriate
+            if ([column objectForKey:@"default"]) {
+
+                // Some MySQL server versions show a default of NULL for NOT NULL columns - don't export those.
+                // Check against the NSNull singleton instance for speed.
+                if ([column objectForKey:@"default"] == [NSNull null]) {
+                    if ([[column objectForKey:@"null"] integerValue]) {
+                        [fieldString appendString:@" DEFAULT NULL"];
+                    }
+                }
+                else if (([[column objectForKey:@"type"] isInArray:@[@"TIMESTAMP",@"DATETIME"]]) && [[column objectForKey:@"default"] isMatchedByRegex:SPCurrentTimestampPattern]) {
+                    [fieldString appendFormat:@" DEFAULT %@",[column objectForKey:@"default"]];
+                }
+                else {
+                    [fieldString appendFormat:@" DEFAULT %@", [connection escapeAndQuoteString:[column objectForKey:@"default"]]];
+                }
+            }
+
+            // Extras aren't required for the temp table
+            // Add the field string to the syntax string
+            [placeholderSyntax appendFormat:@"   %@%@\n", fieldString, (i == [viewColumns count] - 1) ? @"" : @","];
+        }
     }
 
     // Append the remainder of the table string
