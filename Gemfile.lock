@@ -7,7 +7,7 @@ GEM
     artifactory (3.0.15)
     atomos (0.1.3)
     aws-eventstream (1.1.1)
-    aws-partitions (1.437.0)
+    aws-partitions (1.438.0)
     aws-sdk-core (3.113.1)
       aws-eventstream (~> 1, >= 1.0.2)
       aws-partitions (~> 1, >= 1.239.0)
@@ -199,4 +199,4 @@ DEPENDENCIES
   fastlane (~> 2.168)
 
 BUNDLED WITH
-   2.1.4
+   2.2.15

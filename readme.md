@@ -36,6 +36,10 @@ To run Sequel Ace locally from XCode, please:
 
 If you encounter any issue, let us know by [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose).
 
+## Moving saved connections from Sequel Pro
+
+To move your favorites, please check [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
+
 ## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
