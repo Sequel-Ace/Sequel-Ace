@@ -26,23 +26,18 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 
-#import "QKQueryConstruct.h"
+#import <QueryKit/QKQueryConstruct.h>
 
-@interface QKQueryGenericParameter : QKQueryConstruct 
-{
-	id _value;
-	
-	NSString *_field;
-}
+@interface QKQueryGenericParameter: QKQueryConstruct 
 
 /**
  * @property field The field component of the parameter.
  */
-@property(readwrite, retain) NSString *field;
+@property (readwrite, copy) NSString *field;
 
 /**
  *@property value The value component of the parameter.
  */
-@property(readwrite, retain) id value;
+@property (readwrite, strong) id value;
 
 @end

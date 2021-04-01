@@ -32,40 +32,36 @@
 
 // Global include file for the framework.
 // Constants
-#import "SPMySQLConstants.h"
-#import "SPMySQLDataTypes.h"
+#import <SPMySQL/SPMySQLConstants.h>
+#import <SPMySQL/SPMySQLDataTypes.h>
 
 // Required category additions
-#ifndef SP_CODA
-#import "SPMySQLStringAdditions.h"
-#else
-#import <SPMySQL/SPMySQL.h>
-#endif
+#import <SPMySQL/SPMySQLStringAdditions.h>
 
 // MySQL Connection Delegate and Proxy protocols
-#import "SPMySQLConnectionDelegate.h"
-#import "SPMySQLConnectionProxy.h"
+#import <SPMySQL/SPMySQLConnectionDelegate.h>
+#import <SPMySQL/SPMySQLConnectionProxy.h>
 
 // MySQL Connection class and public categories
-#import "SPMySQLConnection.h"
-#import "Delegate & Proxy.h"
-#import "Databases & Tables.h"
-#import "Max Packet Size.h"
-#import "Querying & Preparation.h"
-#import "Encoding.h"
-#import "Server Info.h"
+#import <SPMySQL/SPMySQLConnection.h>
+#import <SPMySQL/Delegate & Proxy.h>
+#import <SPMySQL/Databases & Tables.h>
+#import <SPMySQL/Max Packet Size.h>
+#import <SPMySQL/Querying & Preparation.h>
+#import <SPMySQL/Encoding.h>
+#import <SPMySQL/Server Info.h>
 
 // MySQL result set, streaming subclasses of same, and associated categories
-#import "SPMySQLResult.h"
-#import "SPMySQLEmptyResult.h"
-#import "SPMySQLStreamingResult.h"
-#import "SPMySQLFastStreamingResult.h"
-#import "SPMySQLStreamingResultStore.h"
-#import "Field Definitions.h"
-#import "Convenience Methods.h"
+#import <SPMySQL/SPMySQLResult.h>
+#import <SPMySQL/SPMySQLEmptyResult.h>
+#import <SPMySQL/SPMySQLStreamingResult.h>
+#import <SPMySQL/SPMySQLFastStreamingResult.h>
+#import <SPMySQL/SPMySQLStreamingResultStore.h>
+#import <SPMySQL/Field Definitions.h>
+#import <SPMySQL/Convenience Methods.h>
 
 // MySQL result store delegate protocol
-#import "SPMySQLStreamingResultStoreDelegate.h"
+#import <SPMySQL/SPMySQLStreamingResultStoreDelegate.h>
 
 // Result data objects
-#import "SPMySQLGeometryData.h"
+#import <SPMySQL/SPMySQLGeometryData.h>

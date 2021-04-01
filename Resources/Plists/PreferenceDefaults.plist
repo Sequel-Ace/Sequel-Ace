@@ -51,6 +51,8 @@
 	<true/>
 	<key>CustomQueryAutoCompleteDelay</key>
 	<real>1.5</real>
+	<key>CustomQueryAutoCompleteFuzzy</key>
+	<false/>
 	<key>CustomQueryAutoHelpDelay</key>
 	<real>1</real>
 	<key>CustomQueryAutoIndent</key>
@@ -93,8 +95,14 @@
 	<true/>
 	<key>CustomQueryEnableSyntaxHighlighting</key>
 	<true/>
+	<key>CustomQueryEnableBracketHighlighting</key>
+	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
+	<key>EditInSheetForLongTextLengthThreshold</key>
+	<integer>15</integer>
+	<key>CustomQuerySaveHistoryIndividually</key>
+	<true/>
 	<key>CustomQuerySoftIndent</key>
 	<false/>
 	<key>CustomQuerySoftIndentWidth</key>
@@ -193,8 +201,6 @@
 	<integer>1</integer>
 	<key>UseKeepAlive</key>
 	<true/>
-	<key>UseMonospacedFonts</key>
-	<false/>
 	<key>WebKitDeveloperExtras</key>
 	<true/>
 	<key>DisplayBinaryDataAsHex</key>
@@ -203,5 +209,9 @@
 	<false/>
 	<key>ShowWarningBeforeExecuteQuery</key>
 	<false/>
+	<key>ShowUpdateAvailable</key>
+	<true/>
+	<key>NSApplicationCrashOnExceptions</key>
+	<true/>
 </dict>
 </plist>

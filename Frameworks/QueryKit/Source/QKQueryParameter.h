@@ -28,8 +28,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 
-#import "QKQueryOperators.h"
-#import "QKQueryGenericParameter.h"
+#import <QueryKit/QKQueryOperators.h>
+#import <QueryKit/QKQueryGenericParameter.h>
 
 /**
  * @class QKQueryParameter QKQueryParameter.h
@@ -38,18 +38,15 @@
  *
  * QueryKit query parameter class. 
  */
-@interface QKQueryParameter : QKQueryGenericParameter 
-{	
-	QKQueryOperator _operator;
-}
+@interface QKQueryParameter : QKQueryGenericParameter
 
 /**
  * @property operator The operator component of the parameter.
  */
-@property(readwrite, assign) QKQueryOperator operator;
+@property (readwrite, assign) QKQueryOperator operator;
 
 + (QKQueryParameter *)queryParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
 
-- (id)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
+- (instancetype)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value;
 
 @end

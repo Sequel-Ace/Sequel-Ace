@@ -52,7 +52,6 @@
 
 @end
 
-
 @interface SPMySQLConnection (Delegate_and_Proxy_Private_API)
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
@@ -60,13 +59,11 @@
 
 @end
 
-
 @interface SPMySQLConnection (Databases_and_Tables_Private_API)
 
 - (BOOL)_storeAndAlterEncodingToUTF8IfRequired;
 
 @end
-
 
 @interface SPMySQLConnection (Max_Packet_Size_Private_API)
 
@@ -78,7 +75,6 @@
 
 @end
 
-
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
 
 - (void)_flushMultipleResultSets;
@@ -88,7 +84,6 @@
 - (void)_updateLastSqlstate:(NSString *)theSqlstate;
 
 @end
-
 
 // SPMySQLResult Private API
 @interface SPMySQLResult (Private_API)

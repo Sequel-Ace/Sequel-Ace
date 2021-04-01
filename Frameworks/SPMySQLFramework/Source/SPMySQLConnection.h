@@ -46,6 +46,12 @@
 	BOOL useSocket;
 	NSString *socketPath;
 
+	//Special connection settings
+	BOOL allowDataLocalInfile;
+
+	// Clear text plugin
+	BOOL enableClearTextPlugin;
+
 	// SSL connection details
 	BOOL useSSL;
 	NSString *sslKeyFilePath;
@@ -112,7 +118,6 @@
 
 	// Query cancellation details
 	BOOL lastQueryWasCancelled;
-	BOOL lastQueryWasCancelledUsingReconnect;
 
 	// Timing details
 	uint64_t lastConnectionUsedTime;
@@ -135,17 +140,24 @@
 #pragma mark -
 #pragma mark Synthesized properties
 
-@property (readwrite, retain) NSString *host;
-@property (readwrite, retain) NSString *username;
-@property (readwrite, retain) NSString *password;
-@property (readwrite, assign) NSUInteger port;
-@property (readwrite, assign) BOOL useSocket;
-@property (readwrite, retain) NSString *socketPath;
+@property (readwrite, copy) NSString *host;
+@property (readwrite, copy) NSString *username;
+@property (readwrite, copy) NSString *password;
+@property (readwrite, copy) NSString *database;
+@property (readwrite) NSUInteger port;
+@property (readwrite) BOOL useSocket;
+@property (readwrite, copy) NSString *socketPath;
 
-@property (readwrite, assign) BOOL useSSL;
-@property (readwrite, retain) NSString *sslKeyFilePath;
-@property (readwrite, retain) NSString *sslCertificatePath;
-@property (readwrite, retain) NSString *sslCACertificatePath;
+@property (readonly, copy) NSString *timeZoneIdentifier;
+
+@property (readwrite) BOOL allowDataLocalInfile;
+
+@property (readwrite) BOOL enableClearTextPlugin;
+
+@property (readwrite) BOOL useSSL;
+@property (readwrite, copy) NSString *sslKeyFilePath;
+@property (readwrite, copy) NSString *sslCertificatePath;
+@property (readwrite, copy) NSString *sslCACertificatePath;
 
 /**
  * List of supported ciphers for SSL/TLS connections.
@@ -154,7 +166,7 @@
  * their preference (earlier = better).
  * A value of nil (default) means SPMySQL will use its built-in cipher list.
  */
-@property (readwrite, retain) NSString *sslCipherList;
+@property (readwrite, copy) NSString *sslCipherList;
 
 @property (readwrite, assign) NSUInteger timeout;
 @property (readwrite, assign) BOOL useKeepAlive;
@@ -197,5 +209,9 @@
 #pragma mark Connection utility
 
 + (NSString *)findSocketPath;
+
+#pragma mark -
+#pragma mark Timezone
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier;
 
 @end

@@ -1,14 +1,13 @@
--   [Getting Connected](./)
--   [Making Queries](../queries.html)
--   [Keyboard Shortcuts](../shortcuts.html)
--   [Reference](../ref/)
--   [Bundles](../bundles/)
--   [Contribute](../contribute/)
+- [Getting Connected](./)
+- [Making Queries](../queries.html)
+- [Keyboard Shortcuts](../shortcuts.html)
+- [Reference](../ref/)
+- [Bundles](../bundles/)
+- [Contribute](../contribute/)
 
 <hr>
 
 ### Reference
 
--   [Core Features](./features.html)
--   [Working With Data](./data.html)
--   [MySQL Reference](./mysql.html)
+- [Core Features](./features.html)
+- [App Sandbox and Secure Bookmarks](./bookmarks.html)

@@ -81,20 +81,16 @@ typedef struct st_point_2d_
 	return self;
 }
 
+- (nonnull id)copyWithZone:(nullable NSZone *)zone {
+    return [self copy];
+}
+
 /**
  * Return an autorelease SPMySQLGeometryData object
  */
 + (instancetype)dataWithBytes:(const void *)geoData length:(NSUInteger)length
 {
-	return [[[SPMySQLGeometryData alloc] initWithBytes:geoData length:length] autorelease];
-}
-
-/**
- * copyWithZone
- */
-- (id)copyWithZone:(NSZone *)zone
-{
-	return [self retain];
+	return [[SPMySQLGeometryData alloc] initWithBytes:geoData length:length];
 }
 
 /**
@@ -478,7 +474,7 @@ typedef struct st_point_2d_
 					[subcoordinates addObject:NSStringFromPoint(NSMakePoint((CGFloat)aPoint.x, (CGFloat)aPoint.y))];
 					ptr += POINT_DATA_SIZE;
 				}
-				[coordinates addObject:[[subcoordinates copy] autorelease]];
+				[coordinates addObject:[subcoordinates copy]];
 				[subcoordinates removeAllObjects];
 			}
 			return [NSDictionary dictionaryWithObjectsAndKeys:
@@ -535,7 +531,7 @@ typedef struct st_point_2d_
 					ptr += POINT_DATA_SIZE;
 				}
 				ptr += WKB_HEADER_SIZE;
-				[coordinates addObject:[[subcoordinates copy] autorelease]];
+				[coordinates addObject:[subcoordinates copy]];
 				[subcoordinates removeAllObjects];
 			}
 			return [NSDictionary dictionaryWithObjectsAndKeys:
@@ -569,7 +565,7 @@ typedef struct st_point_2d_
 						[subcoordinates addObject:NSStringFromPoint(NSMakePoint((CGFloat)aPoint.x, (CGFloat)aPoint.y))];
 						ptr += POINT_DATA_SIZE;
 					}
-					[coordinates addObject:[[subcoordinates copy] autorelease]];
+					[coordinates addObject:[subcoordinates copy]];
 					[subcoordinates removeAllObjects];
 				}
 				ptr += WKB_HEADER_SIZE;
@@ -626,7 +622,7 @@ typedef struct st_point_2d_
 							[linesubcoordinates addObject:NSStringFromPoint(NSMakePoint((CGFloat)aPoint.x, (CGFloat)aPoint.y))];
 							ptr += POINT_DATA_SIZE;
 						}
-						[linecoordinates addObject:[[linesubcoordinates copy] autorelease]];
+						[linecoordinates addObject:[linesubcoordinates copy]];
 						[linesubcoordinates removeAllObjects];
 					break;
 			
@@ -645,7 +641,7 @@ typedef struct st_point_2d_
 								[polygonsubcoordinates addObject:NSStringFromPoint(NSMakePoint((CGFloat)aPoint.x, (CGFloat)aPoint.y))];
 								ptr += POINT_DATA_SIZE;
 							}
-							[polygoncoordinates addObject:[[polygonsubcoordinates copy] autorelease]];
+							[polygoncoordinates addObject:[polygonsubcoordinates copy]];
 							[polygonsubcoordinates removeAllObjects];
 						}
 					break;
@@ -680,7 +676,7 @@ typedef struct st_point_2d_
 								[linesubcoordinates addObject:NSStringFromPoint(NSMakePoint((CGFloat)aPoint.x, (CGFloat)aPoint.y))];
 								ptr += POINT_DATA_SIZE;
 							}
-							[linecoordinates addObject:[[linesubcoordinates copy] autorelease]];
+							[linecoordinates addObject:[linesubcoordinates copy]];
 							[linesubcoordinates removeAllObjects];
 							ptr += WKB_HEADER_SIZE;
 						}
@@ -705,7 +701,7 @@ typedef struct st_point_2d_
 									[polygonsubcoordinates addObject:NSStringFromPoint(NSMakePoint((CGFloat)aPoint.x, (CGFloat)aPoint.y))];
 									ptr += POINT_DATA_SIZE;
 								}
-								[polygoncoordinates addObject:[[polygonsubcoordinates copy] autorelease]];
+								[polygoncoordinates addObject:[polygonsubcoordinates copy]];
 								[polygonsubcoordinates removeAllObjects];
 							}
 							ptr += WKB_HEADER_SIZE;
@@ -789,13 +785,11 @@ typedef struct st_point_2d_
 	return nil;
 }
 
-/**
- * dealloc
- */
 - (void)dealloc
 {
-	if (geoBuffer && bufferLength) free(geoBuffer);
-	[super dealloc];
+    if (geoBuffer && bufferLength) {
+        free(geoBuffer);
+    }
 }
 
 @end

@@ -61,24 +61,23 @@ Sequel Ace now sets up an SSH Tunnel for you when you choose the SSH connection 
 
 $ ssh -L 1234:mysqlhost:3306 sshuser@sshhost
 
-Here `mysqlhost` is what you have to enter in Sequel Ace as the MySQL host, `sshuser`corresponds to the SSH user, and `sshhost` corresponds to the SSH host field, obviously. The first number, `1234`, is the local port of the SSH tunnel. Sequel Ace chooses this port automatically. The second number in the command, `3306`, is the port used by the MySQL server.
+Here `mysqlhost` is what you have to enter in Sequel Ace as the MySQL host, `sshuser` corresponds to the SSH user, and `sshhost` corresponds to the SSH host field, obviously. The first number, `1234`, is the local port of the SSH tunnel. Sequel Ace chooses this port automatically. The second number in the command, `3306`, is the port used by the MySQL server.
 
 
 #### Notes
 
 -   the MySQL server must accept network connections
 
-_Some server administrators forbid connections from other computers, by using the option --skip-networking. Then the MySQL server only accepts connection from processes running on the same server (eg. PHP scripts), but not from remote clients (such as Sequel Ace). See [MySQL Manual](https://dev.mysql.com/doc/refman/en/server-options.html#option_mysqld_skip-networking)._
+_Some server administrators forbid connections from other computers, by using the option --skip-networking. Then the MySQL server only accepts connection from processes running on the same server (e.g. PHP scripts), but not from remote clients (such as Sequel Ace). See [MySQL Manual](https://dev.mysql.com/doc/refman/en/server-options.html#option_mysqld_skip-networking)._
 
--   the MySQL server must be configured to accept connections from your adress
+-   the MySQL server must be configured to accept connections from your address
 
-Many administrators configure MySQL in a manner that it allows network connections only from specific IP addresses. If this is the case, they will probably ask you for your IP adress. See [MySQL Manual](https://dev.mysql.com/doc/refman/en/connection-access.html) for details on how MySQL decides if you are allowed to connect.
+Many administrators configure MySQL in a manner that it allows network connections only from specific IP addresses. If this is the case, they will probably ask you for your IP address. See [MySQL Manual](https://dev.mysql.com/doc/refman/en/connection-access.html) for details on how MySQL decides if you are allowed to connect.
 
-if the server is behind a firewall, the firewall must be configured to accept MySQL connections
+If the server is behind a firewall, the firewall must be configured to accept MySQL connections.
 
 The firewall must be configured to allow incoming TCP connections on the port used by MySQL. Per default, MySQL uses port 3306.
 
-You must be able to reach the MySQL server directly
+You must be able to reach the MySQL server directly.
 
 If the MySQL server is behind a NAT gateway, you may not be able to reach the server.
-

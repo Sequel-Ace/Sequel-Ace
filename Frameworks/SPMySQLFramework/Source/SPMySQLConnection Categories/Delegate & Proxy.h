@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 @interface SPMySQLConnection (Delegate_and_Proxy)
 
 // Connection delegage

@@ -28,9 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import <SPMySQL/SPMySQL.h>
-#import "SPMySQLStreamingResultStoreDelegate.h"
+#import <SPMySQL/SPMySQLStreamingResultStoreDelegate.h>
 #include <malloc/malloc.h>
 
 typedef char SPMySQLStreamingResultStoreRowData;
@@ -38,7 +37,7 @@ typedef char SPMySQLStreamingResultStoreRowData;
 @interface SPMySQLStreamingResultStore : SPMySQLStreamingResult {
 	BOOL loadStarted;
 	BOOL loadCancelled;
-	id <SPMySQLStreamingResultStoreDelegate> delegate;
+	id <SPMySQLStreamingResultStoreDelegate> __unsafe_unretained delegate;
 
 	// Data storage and allocation
 	NSUInteger rowCapacity;
@@ -50,7 +49,7 @@ typedef char SPMySQLStreamingResultStoreRowData;
 	pthread_mutex_t dataLock;
 }
 
-@property (readwrite, assign) id <SPMySQLStreamingResultStoreDelegate> delegate;
+@property (readwrite, unsafe_unretained) id <SPMySQLStreamingResultStoreDelegate> delegate;
 
 /* Setup and teardown */
 - (void)replaceExistingResultStore:(SPMySQLStreamingResultStore *)previousResultStore;

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+<style>@import url("https://fonts.googleapis.com/css?family=Chivo:900");.highlight table td{padding:5px}.highlight table pre{margin:0}.highlight,.highlight .w{color:#d0d0d0}.highlight .err{color:#151515;background-color:#ac4142}.highlight .c,.highlight .cd,.highlight .cm,.highlight .c1,.highlight .cs{color:#888}.highlight .cp{color:#f4bf75}.highlight .nt{color:#f4bf75}.highlight .o,.highlight .ow{color:#d0d0d0}.highlight .p,.highlight .pi{color:#d0d0d0}.highlight .gi{color:#90a959}.highlight .gd{color:#ac4142}.highlight .gh{color:#6a9fb5;font-weight:bold}.highlight .k,.highlight .kn,.highlight .kp,.highlight .kr,.highlight .kv{color:#aa759f}.highlight .kc{color:#d28445}.highlight .kt{color:#d28445}.highlight .kd{color:#d28445}.highlight .s,.highlight .sb,.highlight .sc,.highlight .sd,.highlight .s2,.highlight .sh,.highlight .sx,.highlight .s1{color:#90a959}.highlight .sr{color:#75b5aa}.highlight .si{color:#8f5536}.highlight .se{color:#8f5536}.highlight .nn{color:#f4bf75}.highlight .nc{color:#f4bf75}.highlight .no{color:#f4bf75}.highlight .na{color:#6a9fb5}.highlight .m,.highlight .mf,.highlight .mh,.highlight .mi,.highlight .il,.highlight .mo,.highlight .mb,.highlight .mx{color:#90a959}.highlight .ss{color:#90a959}html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{padding:0;margin:0;font:inherit;font-size:100%;vertical-align:baseline;border:0}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}table{border-spacing:0;border-collapse:collapse}body{font-family:'Helvetica Neue', Helvetica, Arial, serif;font-size:1em;line-height:1.5;color:#6d6d6d;text-shadow:0 1px 0 rgba(255,255,255,0.8);background:#e7e7e7 url(../images/body-bg.png) 0 0 repeat}a{color:#d5000d}a:hover{color:#c5000c}header{padding-top:35px;padding-bottom:25px}header h1{font-family:'Chivo', 'Helvetica Neue', Helvetica, Arial, serif;font-size:48px;font-weight:900;line-height:1.2;color:#303030;letter-spacing:-1px}header h2{font-size:24px;font-weight:normal;line-height:1.3;color:#aaa;letter-spacing:-1px}#container{min-height:595px;background:transparent url(../images/highlight-bg.jpg) 50% 0 no-repeat}.inner{width:620px;margin:0 auto}#container .inner img{max-width:100%}#downloads{margin-bottom:40px}a.button{display:block;float:left;width:179px;padding:12px 8px 12px 8px;margin-right:14px;font-size:15px;font-weight:bold;line-height:25px;color:#303030;background:#fdfdfd;background:-moz-linear-gradient(top, #fdfdfd 0%, #f2f2f2 100%);background:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #fdfdfd), color-stop(100%, #f2f2f2));background:-webkit-linear-gradient(top, #fdfdfd 0%, #f2f2f2 100%);background:-o-linear-gradient(top, #fdfdfd 0%, #f2f2f2 100%);background:-ms-linear-gradient(top, #fdfdfd 0%, #f2f2f2 100%);background:linear-gradient(to top, #fdfdfd 0%, #f2f2f2 100%);filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#fdfdfd', endColorstr='#f2f2f2',GradientType=0 );border-top:solid 1px #cbcbcb;border-right:solid 1px #b7b7b7;border-bottom:solid 1px #b3b3b3;border-left:solid 1px #b7b7b7;border-radius:30px;-webkit-box-shadow:10px 10px 5px #888;-moz-box-shadow:10px 10px 5px #888;box-shadow:0px 1px 5px #e8e8e8;-moz-border-radius:30px;-webkit-border-radius:30px}a.button:hover{background:#fafafa;background:-moz-linear-gradient(top, #fdfdfd 0%, #f6f6f6 100%);background:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #fdfdfd), color-stop(100%, #f6f6f6));background:-webkit-linear-gradient(top, #fdfdfd 0%, #f6f6f6 100%);background:-o-linear-gradient(top, #fdfdfd 0%, #f6f6f6 100%);background:-ms-linear-gradient(top, #fdfdfd 0%, #f6f6f6 100%);background:linear-gradient(to top, #fdfdfd 0%, #f6f6f6, 100%);filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#fdfdfd', endColorstr='#f6f6f6',GradientType=0 );border-top:solid 1px #b7b7b7;border-right:solid 1px #b3b3b3;border-bottom:solid 1px #b3b3b3;border-left:solid 1px #b3b3b3}a.button span{display:block;height:23px;padding-left:50px}#download-zip span{background:transparent url(../images/zip-icon.png) 12px 50% no-repeat}#download-tar-gz span{background:transparent url(../images/tar-gz-icon.png) 12px 50% no-repeat}#view-on-github span{background:transparent url(../images/octocat-icon.png) 12px 50% no-repeat}#view-on-github{margin-right:0}code,pre{margin-bottom:30px;font-family:Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal;font-size:14px;color:#222}code{padding:0 3px;background-color:#f2f2f2;border:solid 1px #ddd}pre{padding:20px;overflow:auto;color:#f2f2f2;text-shadow:none;background:#303030}pre code{padding:0;color:#f2f2f2;background-color:#303030;border:none}ul,ol,dl{margin-bottom:20px}hr{height:1px;padding-bottom:1em;margin-top:1em;line-height:1px;background:transparent url("../images/hr.png") 50% 0 no-repeat;border:none}strong{font-weight:bold}em{font-style:italic}table{width:100%;border:1px solid #ebebeb}th{font-weight:500}td{font-weight:300;text-align:center;border:1px solid #ebebeb}form{padding:20px;background:#f2f2f2}h1{font-size:32px}h2{margin-bottom:8px;font-size:22px;font-weight:bold;color:#303030}h3{margin-bottom:8px;font-size:18px;font-weight:bold;color:#d5000d}h4{font-size:16px;font-weight:bold;color:#303030}h5{font-size:1em;color:#303030}h6{font-size:.8em;color:#303030}p{margin-bottom:20px;font-weight:300}a{text-decoration:none}p a{font-weight:400}blockquote{padding:0 0 0 30px;margin-bottom:20px;font-size:1.6em;border-left:10px solid #e9e9e9}ul li{list-style-position:inside;list-style:disc;padding-left:20px}ol li{list-style-position:inside;list-style:decimal;padding-left:3px}dl dt{color:#303030}footer{padding-top:20px;padding-bottom:30px;margin-top:40px;font-size:13px;color:#aaa;background:transparent url("../images/hr.png") 0 0 no-repeat}footer a{color:#666}footer a:hover{color:#444}.clearfix:after{display:block;height:0;clear:both;visibility:hidden;content:'.'}.clearfix{display:inline-block}* html .clearfix{height:1%}.clearfix{display:block}@media only screen and (max-width: 767px){header{padding-top:10px;padding-bottom:10px}#downloads{margin-bottom:25px}#download-zip,#download-tar-gz{display:none}.inner{width:94%;margin:0 auto}}</style>
+
+<style media="print">a,abbr,acronym,address,applet,article,aside,audio,b,big,blockquote,body,canvas,caption,center,cite,code,dd,del,details,dfn,div,dl,dt,em,embed,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hgroup,html,i,iframe,img,ins,kbd,label,legend,li,mark,menu,nav,object,ol,output,p,pre,q,ruby,s,samp,section,small,span,strike,strong,sub,summary,sup,table,tbody,td,tfoot,th,thead,time,tr,tt,u,ul,var,video{padding:0;margin:0;font:inherit;font-size:100%;vertical-align:baseline;border:0}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:after,blockquote:before,q:after,q:before{content:'';content:none}table{border-spacing:0;border-collapse:collapse}body{font-family:'Helvetica Neue',Helvetica,Arial,serif;font-size:13px;line-height:1.5;color:#000}a{font-weight:700;color:#d5000d}header{padding-top:35px;padding-bottom:10px}header h1{font-size:48px;font-weight:700;line-height:1.2;color:#303030;letter-spacing:-1px}header h2{font-size:24px;font-weight:400;line-height:1.3;color:#aaa;letter-spacing:-1px}#downloads{display:none}#main_content{padding-top:20px}code,pre{margin-bottom:30px;font-family:Monaco,"Bitstream Vera Sans Mono","Lucida Console",Terminal;font-size:12px;color:#222}code{padding:0 3px}pre{padding:20px;overflow:auto;border:solid 1px #ddd}pre code{padding:0}dl,ol,ul{margin-bottom:20px}table{width:100%;border:1px solid #ebebeb}th{font-weight:500}td{font-weight:300;text-align:center;border:1px solid #ebebeb}form{padding:20px;background:#f2f2f2}h1{font-size:2.8em}h2{margin-bottom:8px;font-size:22px;font-weight:700;color:#303030}h3{margin-bottom:8px;font-size:18px;font-weight:700;color:#d5000d}h4{font-size:16px;font-weight:700;color:#303030}h5{font-size:1em;color:#303030}h6{font-size:.8em;color:#303030}p{margin-bottom:20px;font-weight:300}a{text-decoration:none}p a{font-weight:400}blockquote{padding:0 0 0 30px;margin-bottom:20px;font-size:1.6em;border-left:10px solid #e9e9e9}ul li{list-style-position:inside;list-style:disc;padding-left:20px}ol li{list-style-position:inside;list-style:decimal;padding-left:3px}dl dd{font-style:italic;font-weight:100}footer{padding-top:20px;padding-bottom:30px;margin-top:40px;font-size:13px;color:#aaa}footer a{color:#666}.clearfix:after{display:block;height:0;clear:both;visibility:hidden;content:'.'}.clearfix{display:inline-block}* html .clearfix{height:1%}.clearfix{display:block}
+</style>
+
+<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Sequel Ace | MySQL/MariaDB database management for macOS</title>
+<meta name="generator" content="Jekyll v3.9.0">
+<meta property="og:title" content="Sequel Ace">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="MySQL/MariaDB database management for macOS">
+<meta property="og:description" content="MySQL/MariaDB database management for macOS">
+<link rel="canonical" href="https://sequel-ace.com/get-started/local-connection.html">
+<meta property="og:url" content="https://sequel-ace.com/get-started/local-connection.html">
+<meta property="og:site_name" content="Sequel Ace">
+<script type="application/ld+json">
+{"@type":"WebPage","headline":"Sequel Ace","url":"https://sequel-ace.com/get-started/local-connection.html","description":"MySQL/MariaDB database management for macOS","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+	<div id="container">
+	  <div class="inner">
+
+		<header>
+		  <h1>Sequel Ace</h1>
+		  <h2>MySQL/MariaDB database management for macOS</h2>
+		</header>
+		
+		<section id="main_content">
+<hr>
+
+<h3 id="connect-to-a-local-mysql-server">Connect to a Local MySQL Server</h3>
+
+<p>This document describes how to connect to a server running on the same computer as Sequel Ace.</p>
+
+<h4 id="making-sure-your-mysql-server-is-running">Making sure your MySQL server is running</h4>
+
+<p>If you are not sure if the MySQL server is running, open <em>Activity Viewer</em> (from <em>Applications</em> » <em>Utilities</em>). Choose <em>All Processes</em> in the popup menu. Type mysqld into the search field. If you see a mysqld process, MySQL is running.</p>
+
+<h4 id="connecting-via-a-socket-connection">Connecting via a socket connection</h4>
+
+<p>Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in <code class="language-plaintext highlighter-rouge">~/Library/Containers/com.sequel-ace.sequel-ace/Data</code> and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, <code class="language-plaintext highlighter-rouge">my.cnf</code>):</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[mysqld]
+socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+</code></pre></div></div>
+
+<h4 id="connecting-via-a-standard-connection">Connecting via a standard connection</h4>
+
+<p>Open Sequel Ace. Choose a <em>Standard</em> Connection. Enter 127.0.0.1 for the host. The default username for a new MySQL installation is root, with a blank password. You can leave the port field blank unless your server uses a different port than 3306.</p>
+
+<p><strong>Note</strong>: MAMP uses port 8889 per default, and root as the password. See <a href="https://sequel-ace.com/get-started/mamp-xampp.html" title="Connecting to MAMP or XAMPP">Connecting to MAMP or XAMPP</a></p>
+
+<p><strong>Note</strong>: Don’t try using localhost instead of 127.0.0.1. MySQL treats the hostname localhost specially. For details, see <a href="https://dev.mysql.com/doc/refman/en/connecting.html">MySQL manual.</a></p>
+
+		</section>
+
+		<footer>
+		
+		  Sequel Ace is maintained by <a href="https://github.com/Sequel-Ace">Sequel-Ace</a><br>
+		
+		  This page was generated by <a href="https://pages.github.com/">GitHub Pages</a>.
+		</footer>
+
+	  </div>
+	</div>
+	</body>
+</html>

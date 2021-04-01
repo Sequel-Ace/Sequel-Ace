@@ -33,7 +33,7 @@ If the MySQL server is on a different computer as Sequel Ace, it's called a _rem
 -   using a **Standard** connection
 -   using a **SSH** connection
 
-You can use a standard connection if the MySQL server is directly reachable -- eg. if it is on your local network. If you cannot directly reach your server (eg. it is behind a firewall), you will have to use a SSH connection. For more details see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
+You can use a standard connection if the MySQL server is directly reachable -- e.g. if it is on your local network. If you cannot directly reach your server (e.g. it's behind a firewall), you will have to use a SSH connection. For more details see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
 
 At the moment, **Sequel Ace does not support SSL** encryption. If possible, use a SSH connection instead.
 
@@ -59,27 +59,26 @@ Required Fields
 
 Host
 
-Enter the host name or IP address of the host.
+Enter the hostname or IP address of the host.
 
 Username
 
-The default username for a mysql install is **root**
+The default username for a MySQL install is **root**.
 
 Optional Fields
 
 Name
 
-The name you want to give the favourite.
+The name you want to give the favorite.
 
 Password
 
-The default password for a mysql install is an empty string.
+The default password for a MySQL install is an empty string.
 If that's the case, you should change the root password right away.
 
 Database
 
-If you enter a database, it will be selected when the connection to
-the server is established.
+If you enter a database, it will be selected when the connection to the server is established.
 Otherwise you can select one of the databases on the server afterwards.
 
 Port
@@ -95,25 +94,24 @@ Required Fields
 
 Username
 
-The default username for a mysql install is **root**
+The default username for a MySQL install is **root**.
 
 Password
 
-The default password for a mysql install is an empty string.
+The default password for a MySQL install is an empty string.
 If that's the case, you should change the root password right away.
 
 Optional Fields
 
 Name
 
-The name you want to give the favourite.
+The name you want to give the favorite.
 
 Database
 
-If you enter a database, it will be selected when the connection to
-the server is established.
+If you enter a database, it will be selected when the connection to the server is established.
 Otherwise you can select one of the databases on the server afterwards.
 
 Socket
 
-For non-standard mysql installs (e.g - MAMP) manually set the path. Read more about connecting via sockets to [MAMP, XAMPP and other MySQL server setups](mamp-xampp.html).
+For non-standard MySQL installs (e.g - MAMP) manually set the path. Read more about connecting via sockets to [MAMP, XAMPP and other MySQL server setups](mamp-xampp.html).

@@ -42,30 +42,32 @@
  */
 - (id)copyWithZone:(NSZone *)zone
 {
-	SPMySQLConnection *copy = [[[self class] allocWithZone:zone] init];
+    SPMySQLConnection *copy = [[[self class] allocWithZone:zone] init];
 
-	// Synthesized details
-	[copy setDelegate:delegate];
-	[copy setHost:host];
-	[copy setUsername:username];
-	[copy setPassword:password];
-	[copy setPort:port];
-	[copy setUseSocket:useSocket];
-	[copy setSocketPath:socketPath];
-	[copy setUseSSL:useSSL];
-	[copy setSslKeyFilePath:sslKeyFilePath];
-	[copy setSslCipherList:sslCipherList];
-	[copy setSslCertificatePath:sslCertificatePath];
-	[copy setSslCACertificatePath:sslCACertificatePath];
-	[copy setTimeout:timeout];
-	[copy setUseKeepAlive:useKeepAlive];
-	[copy setRetryQueriesOnConnectionFailure:retryQueriesOnConnectionFailure];
-	[copy setDelegateQueryLogging:delegateQueryLogging];
-	[copy setClientFlags:clientFlags];
+    // Synthesized details
+    [copy setDelegate:delegate];
+    [copy setHost:host];
+    [copy setUsername:username];
+    [copy setPassword:password];
+    [copy setPort:port];
+    [copy setUseSocket:useSocket];
+    [copy setSocketPath:socketPath];
+    [copy setAllowDataLocalInfile:allowDataLocalInfile];
+    [copy setEnableClearTextPlugin:enableClearTextPlugin];
+    [copy setUseSSL:useSSL];
+    [copy setSslKeyFilePath:sslKeyFilePath];
+    [copy setSslCipherList:sslCipherList];
+    [copy setSslCertificatePath:sslCertificatePath];
+    [copy setSslCACertificatePath:sslCACertificatePath];
+    [copy setTimeout:timeout];
+    [copy setUseKeepAlive:useKeepAlive];
+    [copy setRetryQueriesOnConnectionFailure:retryQueriesOnConnectionFailure];
+    [copy setDelegateQueryLogging:delegateQueryLogging];
+    [copy setClientFlags:clientFlags];
 
-	// Active connection state details, like selected database and encoding, are *not* copied.
+    // Active connection state details, like selected database and encoding, are *not* copied.
 
-	return copy;
+    return copy;
 }
 
 @end

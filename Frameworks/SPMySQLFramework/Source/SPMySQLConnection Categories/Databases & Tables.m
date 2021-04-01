@@ -31,6 +31,7 @@
 #import "Databases & Tables.h"
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLStringAdditions.h"
+#import "SPMySQLArrayAdditions.h"
 
 @implementation SPMySQLConnection (Databases_and_Tables)
 
@@ -78,7 +79,6 @@
 	if (encodingChangeRequired) [self restoreStoredEncoding];
 
 	// Store new database name and return success
-	if (database) [database release];
 	database = [[NSString alloc] initWithString:aDatabase];
 
 	return YES;
@@ -128,7 +128,7 @@
 	if (![self queryErrored]) {
 		databaseList = [NSMutableArray arrayWithCapacity:(NSUInteger)[databaseResult numberOfRows]];
 		for (NSArray *dbRow in databaseResult) {
-			[databaseList addObject:[dbRow objectAtIndex:0]];
+			[databaseList SPsafeAddObject:[dbRow firstObject]];
 		}
 	}
 
@@ -213,7 +213,7 @@
 	if (![self queryErrored]) {
 		tableList = [NSMutableArray arrayWithCapacity:(NSUInteger)[tableResult numberOfRows]];
 		for (NSArray *tableRow in tableResult) {
-			[tableList addObject:[tableRow objectAtIndex:0]];
+			[tableList SPsafeAddObject:[tableRow firstObject]];
 		}
 	}
 
@@ -240,11 +240,13 @@
 - (BOOL)_storeAndAlterEncodingToUTF8IfRequired
 {
 	// If the encoding is already UTF8, no change is required.
-	if ([encoding isEqualToString:@"utf8"] && !encodingUsesLatin1Transport) return NO;
+    if ([encoding hasPrefix:@"utf8"] && !encodingUsesLatin1Transport) {
+        return NO;
+    }
 
 	// Store the current encoding for restoration afterwards, and update encoding
 	[self storeEncodingForRestoration];
-	[self setEncoding:@"utf8"];
+	[self setEncoding:@"utf8mb4"];
 
 	return YES;
 }

@@ -30,7 +30,6 @@
 
 #import "SPMySQLFastStreamingResult.h"
 #import "SPMySQL Private APIs.h"
-#import "SPMySQLArrayAdditions.h"
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -78,7 +77,7 @@ typedef struct st_spmysqlstreamingrowdata {
  * As opposed to SPMySQLResult, defaults to returning rows as arrays, as the result
  * sets are likely to be larger and processed in loops.
  */
-- (id)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding connection:(SPMySQLConnection *)theConnection
+- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding connection:(SPMySQLConnection *)theConnection
 {
 	// If no result set was passed in, return nil.
 	if (!theResult) return nil;
@@ -112,10 +111,6 @@ typedef struct st_spmysqlstreamingrowdata {
 
 	// Destroy the linked list lock
 	pthread_mutex_destroy(&dataLock);
-
-	// Call dealloc on super to clean up everything else, and to throw an exception if
-	// the parent connection hasn't been cleaned up correctly.
-	[super dealloc];
 }
 
 #pragma mark -
@@ -210,7 +205,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 		// Add to the result array/dictionary
 		if (theType == SPMySQLResultRowAsArray) {
-			SPMySQLMutableArrayInsertObject(theReturnData, cellData, i);
+            [(NSMutableArray *)theReturnData insertObject:cellData atIndex:i];
 		} else {
 			[(NSMutableDictionary *)theReturnData setObject:cellData forKey:fieldNames[i]];
 		}
@@ -296,10 +291,10 @@ typedef struct st_spmysqlstreamingrowdata {
  * the instance default, as specified in setDefaultRowReturnType: or defaulting to
  * NSDictionary.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
 	// To avoid lock issues, return one row at a time.
-	id nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
+	id __autoreleasing nextRow = SPMySQLResultGetRow(self, SPMySQLResultRowAsDefault);
 
 	// If no row was available, return 0 to stop iteration.
 	if (!nextRow) return 0;
@@ -309,7 +304,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+	state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }
@@ -336,7 +331,7 @@ typedef struct st_spmysqlstreamingrowdata {
 
 		// Loop through the rows until the end of the data is reached - indicated via a NULL
 		while (
-			(*isConnectedPtr)(parentConnection, isConnectedSelector)
+			([parentConnection isConnected])
 				&& (theRow = mysql_fetch_row(resultSet))
 			) {
 			// Retrieve the lengths of the returned data
@@ -388,11 +383,6 @@ typedef struct st_spmysqlstreamingrowdata {
 		// Unlock the parent connection now all data has been retrieved
 		[parentConnection _unlockConnection];
 		connectionUnlocked = YES;
-
-		// If the connection query may have been cancelled with a query kill, double-check connection
-		if ([parentConnection lastQueryWasCancelled] && [parentConnection serverMajorVersion] < 5) {
-			[parentConnection checkConnection];
-		}
 
 		dataDownloaded = YES;
 	}

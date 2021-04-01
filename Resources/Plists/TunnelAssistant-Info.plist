@@ -4,159 +4,6 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>spf</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>SPF.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Connection</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>spf </string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.sequel-ace.sequel-ace.spf</string>
-				<string>com.sequel-ace.sequel-ace.spf</string>
-			</array>
-			<key>NSDocumentClass</key>
-			<string>SPDocumentController</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>spfs</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>SPF.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Session</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>spfs</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.sequelpro.SequelPro.spfs</string>
-				<string>com.google.code.sequel-pro.spfs</string>
-			</array>
-			<key>LSTypeIsPackage</key>
-			<true/>
-			<key>NSDocumentClass</key>
-			<string>SPDocumentController</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>spBundle</string>
-				<string>spbundle</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>Generic.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Bundle</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>spbn</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.sequel-ace.sequel-ace.spbundle</string>
-				<string>com.sequel-ace.sequel-ace.spbundle</string>
-			</array>
-			<key>LSTypeIsPackage</key>
-			<true/>
-			<key>NSDocumentClass</key>
-			<string>SPDocumentController</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>spTheme</string>
-				<string>sptheme</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>Generic.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Color Theme</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>spct</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.sequel-ace.sequel-ace.spTheme</string>
-				<string>com.google.code.sequel-pro.spTheme</string>
-			</array>
-			<key>NSDocumentClass</key>
-			<string>SPDocumentController</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>sql</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>SQL.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>SQL File</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>sqlt</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Default</string>
-			<key>NSDocumentClass</key>
-			<string>SPDocumentController</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>mysql</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>SQL.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>MySQL File</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>msql</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Default</string>
-			<key>LSTypeIsPackage</key>
-			<false/>
-			<key>NSDocumentClass</key>
-			<string>SPDocumentController</string>
-			<key>NSPersistentStoreTypeKey</key>
-			<string>Binary</string>
-		</dict>
-	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIdentifier</key>
@@ -168,13 +15,15 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.1.7</string>
+	<string>3.3.0</string>
 	<key>CFBundleVersion</key>
-	<string>2078</string>
+	<string>3025</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.10</string>
+	<string>10.12</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -182,7 +31,5 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 </dict>
 </plist>

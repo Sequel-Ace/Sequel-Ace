@@ -39,6 +39,6 @@
 
 + (QKQueryUpdateParameter *)queryUpdateParamWithField:(NSString *)field value:(id)value;
 
-- (id)initUpdateParamWithField:(NSString *)field value:(id)value;
+- (instancetype)initUpdateParamWithField:(NSString *)field value:(id)value;
 
 @end

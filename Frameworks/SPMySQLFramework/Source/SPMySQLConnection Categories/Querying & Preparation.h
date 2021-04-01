@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 @interface SPMySQLConnection (Querying_and_Preparation)
 
 // Data preparation
@@ -61,7 +60,6 @@
 
 // Query cancellation
 - (void)cancelCurrentQuery;
-- (BOOL)lastQueryWasCancelledUsingReconnect;
 
 @end
 

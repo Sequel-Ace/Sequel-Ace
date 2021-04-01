@@ -28,9 +28,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 
-#import "QKQueryTypes.h"
-#import "QKQueryDatabases.h"
-#import "QKQueryOperators.h"
+#import <QueryKit/QKQueryTypes.h>
+#import <QueryKit/QKQueryDatabases.h>
+#import <QueryKit/QKQueryOperators.h>
 
 @class QKQueryOrderBy;
 @class QKQueryParameter;
@@ -43,80 +43,62 @@
  *
  * Main QueryKit query class.
  */
-@interface QKQuery : NSObject 
-{
-	NSString *_database;
-	NSString *_table;
-	NSString *_identifierQuote;
-	
-	NSMutableString *_query;
-	
-	NSMutableArray *_parameters;
-	NSMutableArray *_fields;
-	NSMutableArray *_updateParameters;
-	NSMutableArray *_groupByFields;
-	NSMutableArray *_orderByFields;
-	
-	QKQueryType _queryType;
-	QKQueryDatabase _queryDatabase;
-	
-	BOOL _useQuotedIdentifiers;
-}
+@interface QKQuery : NSObject
 
 /**
  * @property database The database the query is to be run against (optional).
  */
-@property(readwrite, retain) NSString *database;
+@property (nonatomic, readwrite, copy) NSString *database;
 
 /**
  * @property table The table the query is to be run against.
  */
-@property(readwrite, retain) NSString *table; 
+@property (nonatomic, readwrite, copy) NSString *table;
 
 /**
  * @property parameters The parameters (constraints) of the query.
  */
-@property(readwrite, retain) NSMutableArray *parameters;
+@property (nonatomic, readwrite, strong) NSMutableArray *parameters;
 
 /**
  * @property fields The fields of the query.
  */
-@property(readwrite, retain) NSMutableArray *fields;
+@property (nonatomic, readwrite, strong) NSMutableArray *fields;
 
 /**
  * @property updateFields The fields of an UPDATE query.
  */
-@property(readwrite, retain) NSMutableArray *updateParameters;
+@property (nonatomic, readwrite, strong) NSMutableArray *updateParameters;
 
 /**
  * @property queryType The type of query to be built.
  */
-@property(readwrite, assign) QKQueryType queryType;
+@property (nonatomic, readwrite, assign) QKQueryType queryType;
 
 /**
  * @property queryDatabase The underlying database system this query will be run against.
  */
-@property(readwrite, assign) QKQueryDatabase queryDatabase;
+@property (nonatomic, readwrite, assign) QKQueryDatabase queryDatabase;
 
 /**
  * @property useQuotedIdentifiers Indicates whether or not the query's fields should be quoted.
  */
-@property(readwrite, assign) BOOL useQuotedIdentifiers;
+@property (nonatomic, readwrite, assign) BOOL useQuotedIdentifiers;
 
 /**
  * @property groupByFields The group by fields of the query.
  */
-@property(readonly) NSMutableArray *groupByFields;
+@property (nonatomic,readonly, strong) NSMutableArray *groupByFields;
 
 /**
  * @property orderByFields The order by fields of the query.
  */
-@property(readonly) NSMutableArray *orderByFields;
+@property (nonatomic,readonly, strong) NSMutableArray *orderByFields;
 
 /**
  * @property identifierQuote The character to use when quoting identifiers.
  */
-@property(readonly) NSString *identifierQuote;
+@property (nonatomic, copy, readonly) NSString *identifierQuote;
 
 + (QKQuery *)queryTable:(NSString *)table;
 + (QKQuery *)queryTable:(NSString *)table database:(NSString *)database;
@@ -124,8 +106,8 @@
 + (QKQuery *)selectQueryFromTable:(NSString *)table;
 + (QKQuery *)selectQueryFromTable:(NSString *)table database:(NSString *)database;
 
-- (id)initWithTable:(NSString *)table;
-- (id)initWithTable:(NSString *)table database:(NSString *)database;
+- (instancetype)initWithTable:(NSString *)table;
+- (instancetype)initWithTable:(NSString *)table database:(NSString *)database;
 
 - (NSString *)query;
 - (void)clear;

@@ -28,9 +28,9 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "SPMySQLConnection.h"
 #import "SPMySQL Private APIs.h"
+#import "SPMySQLArrayAdditions.h"
 
 @implementation SPMySQLConnection (Querying_and_Preparation)
 
@@ -42,7 +42,6 @@
  * added via an NSString category; however these methods are safer and more complete
  * as they use the current connection encoding to quote characters.
  */
-
 
 /**
  * Take a string, escapes any special character, and surrounds it with single quotes
@@ -115,7 +114,7 @@
 
 	// Free up any memory and return
 	free(escBuffer);
-	return [escapedString autorelease];
+	return escapedString;
 }
 
 /**
@@ -168,7 +167,7 @@
 
 	// Free up any memory and return
 	free(hexBuffer);
-	return [hexString autorelease];
+	return hexString;
 }
 
 #pragma mark -
@@ -235,7 +234,6 @@
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
-	lastQueryWasCancelledUsingReconnect = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -299,10 +297,10 @@
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query
-		uint64_t queryStartTime = mach_absolute_time();
+		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
-		queryExecutionTime = _elapsedSecondsSinceAbsoluteTime(queryStartTime);
-		lastConnectionUsedTime = mach_absolute_time();
+		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
+		lastConnectionUsedTime = _monotonicTime();
 		
 		// "An integer greater than zero indicates the number of rows affected or retrieved.
 		//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
@@ -399,14 +397,6 @@
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
 		theSqlstate = @"70100";
-
-		// If the query was cancelled on a MySQL <5 server, check the connection to allow reconnects
-		// after query kills.  This is also handled within the class for internal cancellations, but
-		// as other external classes may also cancel the query.
-		if (![self serverVersionIsGreaterThanOrEqualTo:5 minorVersion:0 releaseVersion:0]) {
-			[self _unlockConnection];
-			[self checkConnection];
-		}
 	}
 
 	// Unlock the connection if appropriate - if not a streaming result type.
@@ -429,7 +419,7 @@
 	// Store the result time on the response object
 	[theResult _setQueryExecutionTime:queryExecutionTime];
 
-	return [theResult autorelease];
+	return theResult;
 }
 
 #pragma mark -
@@ -450,7 +440,7 @@
  */
 - (id)getFirstFieldFromQuery:(NSString *)theQueryString
 {
-	return [[[self queryString:theQueryString] getRowAsArray] objectAtIndex:0];
+	return [[[self queryString:theQueryString] getRowAsArray] firstObject];
 }
 
 #pragma mark -
@@ -548,6 +538,7 @@
  */
 - (void)cancelCurrentQuery
 {
+    SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
 
@@ -562,17 +553,19 @@
 
 	// The query cancellation cannot occur on the connection actively running a query
 	// so set up a new connection to run the KILL command.
-	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8" isMasterConnection:NO];
+	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
 
 	// If the new connection was successfully set up, use it to run a KILL command.
 	if (killerConnection) {
 		NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
-		BOOL killQuerySupported = [self serverVersionIsGreaterThanOrEqualTo:5 minorVersion:0 releaseVersion:0];
 
 		// Build the kill query
 		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
-		if (killQuerySupported) [killQuery appendString:@" QUERY"];
-		[killQuery appendFormat:@" %lu", mySQLConnection->thread_id];
+		if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+			[killQuery appendString:@" TIDB"];
+            NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
+		}
+		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
 
 		// Convert to a C string
 		NSUInteger killQueryCStringLength;
@@ -586,24 +579,14 @@
 
 		// If the kill query succeeded, the active query was cancelled.
 		if (killQueryStatus == 0) {
-
-			// On MySQL < 5, the entire connection will have been reset.  Ensure it's
-			// restored.
-			if (!killQuerySupported) {
-				[self checkConnection];
-				lastQueryWasCancelledUsingReconnect = YES;
-			} else {
-				lastQueryWasCancelledUsingReconnect = NO;
-			}
-
 			// Ensure the tracking bool is re-set to cover encompassed queries and return
 			lastQueryWasCancelled = YES;
 			return;
 		} else {
-			NSLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d)", killQueryStatus);
+            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
 		}
 	} else if (!userTriggeredDisconnect) {
-		NSLog(@"SPMySQL Framework: query cancellation failed because connection failed");
+        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
 	}
 
 	// A full reconnect is required at this point to force a cancellation.  As the
@@ -625,18 +608,6 @@
 
 	// Reset tracking bools to cover encompassed queries
 	lastQueryWasCancelled = YES;
-	lastQueryWasCancelledUsingReconnect = YES;
-}
-
-/**
- * If the last query was cancelled, returns whether that query cancellation
- * required the connection to be reset or whether the query was successfully
- * cancelled leaving the connection intact.
- * If the last query was not cancelled, this will return NO.
- */
-- (BOOL)lastQueryWasCancelledUsingReconnect
-{
-	return lastQueryWasCancelledUsingReconnect;
 }
 
 @end
@@ -693,13 +664,15 @@
 		theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 	}
 
-	// Clear the last error message stored on the instance
-	if (queryErrorMessage) [queryErrorMessage release], queryErrorMessage = nil;
-
 	// If we have an error message *with a length*, update the instance error message
 	if (theErrorMessage && [theErrorMessage length]) {
 		queryErrorMessage = [[NSString alloc] initWithString:theErrorMessage];
 	}
+    else {
+        // VERY IMPORTANT to set to nil here
+        // DO NOT remove
+        queryErrorMessage = nil;
+    }
 }
 
 /**
@@ -735,9 +708,6 @@
 		// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 		theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 	}
-
-	// Clear the last SQLSTATE stored on the instance
-	if(querySqlstate) [querySqlstate release], querySqlstate = nil;
 
 	// If we have a SQLSTATE *with a length*, update the instance SQLSTATE
 	if(theSqlstate && [theSqlstate length]) {

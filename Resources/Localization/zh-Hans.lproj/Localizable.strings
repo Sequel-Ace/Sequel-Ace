@@ -1,0 +1,3304 @@
+/* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
+" Check the Console for possible errors inside the primary key(s) of this table!" = " 请检查控制台以寻找该表主键可能出现的错误！";
+
+/* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
+" Please check the Console and inform the Sequel Ace team!" = " 请检查控制台并联系Sequel Ace团队！";
+
+/* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
+" Reload the table to be sure that the contents have not changed in the meantime." = " 请重新加载表以防止过程中内容发生变化。";
+
+/* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
+" You should also add a primary key to this table!" = " 您应该在该表中定义一个主键！";
+
+/* Query snippet shell command syntax and placeholder */
+"$(shell_command)" = "$(shell_command)";
+
+/* text showing how many rows are selected */
+"%@ %@ selected" = "已选择%1$@ %2$@";
+
+/* History item filtered by values label */
+"%@ (Filtered by %@)" = "%1$@（按%2$@过滤）";
+
+/* History item with page number label */
+"%@ (Page %lu)" = "%1$@（第%2$lu页）";
+
+/* Content Filter Manager : Initial name of copied filter
+ Initial favourite name after duplicating a previous favourite */
+"%@ Copy" = "已拷贝%@";
+
+/* text showing a single row a partially loaded result */
+"%@ row in partial load" = "部分加载了%@条";
+
+/* text showing a single row in the result */
+"%@ row in table" = "表中共%@条";
+
+/* text showing how a single rows matched filter */
+"%@ row of %@%@ matches filter" = "%2$@%3$@中%1$@条符合筛选条件";
+
+/* text showing how many rows are in a partially loaded result */
+"%@ rows in partial load" = "部分加载了%@条";
+
+/* text showing how many rows are in the result */
+"%@ rows in table" = "表中共%@条";
+
+/* text showing how many rows matched filter */
+"%@ rows of %@%@ match filter" = "%2$@%3$@中%1$@条符合筛选条件";
+
+/* text showing how many rows have been affected by a single query */
+"%@; %ld rows affected" = "%1$@，涉及%2$ld条";
+
+/* text showing how many rows have been affected by multiple queries */
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@，涉及%2$ld条，%3$ld条查询耗时%4$@";
+
+/* text showing one row has been affected by a single query */
+"%@; 1 row affected" = "%@，涉及1条";
+
+/* text showing one row has been affected by multiple queries */
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@，涉及1条，%2$ld条查询耗时%3$@";
+
+/* text showing a query was cancelled */
+"%@; Cancelled after %@" = "%1$@，耗时%2$@后取消";
+
+/* text showing multiple queries were cancelled */
+"%@; Cancelled in query %ld, after %@" = "%1$@，在第%2$ld条查询时取消，耗时%3$@";
+
+/* Error display text, showing original MySQL error */
+"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL提示：%2$@";
+
+/* favorite singular label (%d == 1) */
+"%lu favorite" = "%lu条个人收藏";
+
+/* favorites plural label (%d != 1) */
+"%lu favorites" = "%lu条个人收藏";
+
+/* favorite group singular label (%d == 1) */
+"%lu group" = "%lu组";
+
+/* favorite groups plural label (%d != 1) */
+"%lu groups" = "%lu组";
+
+/* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
+"%ld additional rows were removed!" = "额外删除了%ld条！";
+
+/* Label showing the index of the selected CSV row */
+"%ld of %lu record(s)" = "%2$lu中的%1$ld条记录";
+
+/* Label showing the index of the selected CSV row (csv partially loaded) */
+"%ld of first %lu record(s)" = "前%2$lu中的%1$ld条记录";
+
+/* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
+"%ld rows were not removed." = "未删除%ld条。";
+
+/* Export file already exists message */
+"%lu files already exist. Do you want to replace them?" = "%lu个文件已存在，是否替换？";
+
+/* Export files creation error title */
+"%lu files could not be created" = "未能创建%lu个文件";
+
+/* Some export files already exist explanatory text */
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "目标文件夹存在%lu个同名文件，继续操作将覆盖其原有内容。";
+
+/* filtered item count */
+"%lu of %lu" = "%2$lu中的%1$lu";
+
+/* Export folder not writable for some files explanatory text */
+"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "导出文件中%lu个文件未能创建，因为目标文件夹不可写。请选择另一个导出位置并重试。";
+
+/* Export folder missing for some files explanatory text */
+"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "导出文件中%lu个文件未能创建，因为其目标文件夹不存在。请选择另一个导出位置并重试。";
+
+/* History item title with nothing selected */
+"(no selection)" = "（未选择）";
+
+/* value shown for hidden blob and text fields */
+"(not loaded)" = "（未加载）";
+
+/* Explanation for MySQL server has gone away error */
+"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "（这一般说明服务器因无活动而关闭了连接，但也可能是其他原因。连接已经重置，请重试以确定是否可以安全地重新运行查询。）";
+
+/* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
+", first row available after %1$@" = "，%1$@后可用的首条";
+
+/* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
+", taking %1$@" = "，耗时%1$@";
+
+/* warning shown in the console when no rows have been affected after writing to the db */
+"/* WARNING: No rows have been affected */\n" = "/*警告：没有条目被修改*/\n";
+
+/* error text when multiple custom query failed */
+"[ERROR in query %ld] %@\n" = "[查询%1$ld中发生错误] %2$@\n";
+
+/* error text when reading of csv file gave errors */
+"[ERROR in row %ld] %@\n" = "[第%1$ld行发生错误] %2$@\n";
+
+/* [multiple selection] */
+"[multiple selection]" = "[多个项目]";
+
+/* displayed when new content filter has empty Name field (ContentFilterManager) */
+"[name required]" = "[需要名称]";
+
+/* [no selection] */
+"[no selection]" = "[未选择]";
+
+/* Additional export file errors */
+"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n（另外，创建导出文件时发生错误：未能创建%lu。将忽略这些文件。）";
+
+/* \n\npress shift for binary search tooltip message */
+"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\n按⇧以进行二进制搜索（区分大小写）。";
+
+/* description of bit */
+"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "位字段类型，其中M指定位数。如果输入值位数小于M则对齐到最后一位。若要单独命名每一位请参考SET。";
+
+/* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
+"A Bundle ‘%@’ is already installed. Do you want to update it?" = "已安装包“%@”。是否更新？";
+
+/* description of binary */
+"A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "定长的字节数组，位数不足的值将会向右填充0x00直到长度达到M。";
+
+/* description of varbinary */
+"A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row." = "变长的字节数组，实际字节数同时受条目中其他字段的值限制。";
+
+/* description of blob
+ description of longblob
+ description of mediumblob
+ description of tinyblob */
+"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length." = "变长的字节数组，但与VARBINARY不同，不计入条目总长的最大值。";
+
+/* description of tinytext */
+"A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "最多可储存255字节字符的字符串，但长度较小时所需存储空间对应减小。实际字符数同时受文本编码的限制，但与VARCHAR不同，不计入条目总长的最大值。";
+
+/* description of varchar */
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row." = "最多可储存M字节字符的字符串，但长度较小时所需存储空间对应减小，实际字符数同时受文本编码与条目中其他字段的值限制。";
+
+/* description of text */
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "最多可储存M字节字符的字符串，但长度较小时所需存储空间对应减小。实际字符数同时受文本编码的限制，但与VARCHAR不同，不计入条目总长的最大值。";
+
+/* description of char */
+"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "需要M×w字节存储空间并与实际内容长度无关的字符串，其中w为所用文本编码中一个字符使用的最大字节数。";
+
+/* description of longtext
+ description of mediumtext */
+"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "变长字符串。实际字符数同时受文本编码的限制，但与VARCHAR不同，不计入条目总长的最大值。";
+
+/* description of json */
+"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "在INSERT操作时验证JSON代码并用相对于纯文本更高效的二进制方式存储的数据类型。\nMySQL 5.7.8之后可用。";
+
+/* Export file already exists explanatory text */
+"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "目标文件夹存在同名文件，继续操作将覆盖其原有内容。";
+
+/* description of decimal */
+"A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "非浮点的确切十进制值，其中M为最大位数，并可以包含小数点后的D。必要时四舍五入。";
+
+/* table structure : indexes : delete index : error 1553 : title
+ table structure : indexes : delete index : error 1553, no FK found : title */
+"A foreign key needs this index" = "存在需要该索引的外键";
+
+/* description of set */
+"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "一个SET可以定义多达64个字符串对象，通过逗号分隔的列表在字段中使用它们。INSERT操作完成时将会自动排序并移除重复项。支持用BIT类型的语法赋数字值。";
+
+/* SSH key not found message */
+"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "指定的SSH密钥位置找不到密钥文件，请重新选择。";
+
+/* SSL CA certificate file not found message */
+"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "指定的CA根证书位置找不到根证书文件，请重新选择。";
+
+/* SSL certificate file not found message */
+"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "指定的SSL证书位置找不到证书文件，请重新选择。";
+
+/* SSL key file not found message */
+"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "指定的SSL密钥位置找不到密钥文件，请重新选择。";
+
+/* duplicate host informative message */
+"A user with the host '%@' already exists" = "已存在主机为'%@'的用户";
+
+/* duplicate user informative message */
+"A user with the name '%@' already exists" = "用户'%@'已存在";
+
+/* table content : editing : error message description when parsing as hex string failed */
+"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "有效的十六进制字符串只能包含数字0-9与字母A-F（a-f）。可以使用“0x”开头且空格会被忽略。\n同时支持X加上十六进制值的写法。";
+
+/* connection failed due to access denied title */
+"Access denied!" = "访问被拒绝！";
+
+/* range of double */
+"Accurate to approx. 15 decimal places" = "精确到小数点后15位左右";
+
+/* range of float */
+"Accurate to approx. 7 decimal places" = "精确到小数点后7位左右";
+
+/* active connection window is busy. please wait and try again. tooltip */
+"Active connection window is busy. Please wait and try again." = "活动连接窗口忙，请稍后重试。";
+
+/* header for activities pane */
+"ACTIVITIES" = "活动";
+
+/* Add trigger button label */
+"Add" = "添加";
+
+/* menu item to add db */
+"Add Database..." = "添加数据库...";
+
+/* Add Host */
+"Add Host" = "添加主机";
+
+/* add global value or expression menu item */
+"Add Value or Expression…" = "添加值或表达式…";
+
+/* adding index task status message */
+"Adding index..." = "正在创建索引...";
+
+/* Advanced options short title */
+"Advanced" = "高级设置";
+
+/* notifications preference pane name */
+"Alerts & Logs" = "警告与日志";
+
+/* notifications preference pane tooltip */
+"Alerts & Logs Preferences" = "警告与日志偏好设置";
+
+/* All databases placeholder */
+"All Databases" = "所有数据库";
+
+/* All databases (%) placeholder */
+"All Databases (%)" = "所有数据库（%）";
+
+/* All export files already exist message */
+"All the export files already exist. Do you want to replace them?" = "所有导出目标文件都已存在，是否替换？";
+
+/* An error for sequelace URL scheme command occurred. Probably no corresponding connection window found. */
+"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "执行Sequal Ace的URL SCHEMA指令时出错。这可能是因为没有打开对应的连接窗口。";
+
+/* no connection available informatie message */
+"An error has occurred and there doesn't seem to be a connection available." = "发生错误：无连接";
+
+/* an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane. */
+"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "执行SCHEMA指令时发生错误。如果该指令来自一个包指令，则它可能仍在运行，您可以尝试通过按下⌘+.组合键或进入“活动”栏来中止它。";
+
+/* error killing query informative message */
+"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "尝试断开连接%1$lld时发生错误。\n\nMySQL提示：%2$@";
+
+/* error killing query informative message */
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "中止连接%1$lld进行的查询时发生错误。\n\nMySQL提示：%2$@";
+
+/* Error shown when unable to show create table syntax */
+"An error occurred while creating table syntax.\n\n: %@" = "创建CREATE TABLE语法时发生错误：\n\n%@";
+
+/* rename table error - no temporary name found */
+"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "重命名'%@'时发生错误，找不到临时名称。请尝试其他名称。";
+
+/* rename table error informative message */
+"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "重命名'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* rename error - don't know what type the renamed thing is */
+"An error occurred while renaming. '%@' is of an unknown type." = "重命名时发生错误，'%@'类型无法识别。";
+
+/* rename precedure/function error - can't delete old procedure */
+"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "重命名时发生错误，未能删除'%1$@'。\n\nMySQL提示：%2$@";
+
+/* rename precedure/function error - can't recreate procedure */
+"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "重命名时发生错误，未能重新创建'%1$@'。\n\nMySQL提示：%2$@";
+
+/* rename precedure/function error - can't retrieve syntax */
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "重命名时发生错误，未能解析'%1$@'处语法。\n\nMySQL提示：%2$@";
+
+/* rename error - invalid create syntax */
+"An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "重命名时发生错误。'%@'处的CREATE语法无法解析。";
+
+/* message of panel when retrieving view information failed */
+"An error occurred while retrieving status data.\n\nMySQL said: %@" = "获取状态数据时发生错误。\n\nMySQL提示：%@";
+
+/* message of panel when create syntax cannot be retrieved */
+"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "解析'%1$@'处CREATE语法时发生错误。\nMySQL提示：%2$@";
+
+/* add index error informative message */
+"An error occurred while trying to add the index.\n\nMySQL said: %@" = "尝试创建索引时发生错误。\n\nMySQL提示：%@";
+
+/* error adding password to keychain informative message */
+"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "尝试将密码导入您的钥匙串时发生错误。修复您的钥匙串可能可以解决问题，但如果未能解决，请联系Sequel Ace团队并提供错误代码%i。";
+
+/* unable to copy database message informative message */
+"An error occurred while trying to copy the database '%@' to '%@'." = "尝试将数据库'%1$@'拷贝到'%2$@'时发生错误。";
+
+/* error deleting index informative message */
+"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "尝试删除索引时发生错误。\n\nMySQL提示：%@";
+
+/* table status : row count query failed : error message */
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "尝试确定“%1$@”项目条数时发生错误。\nMySQL提示：%2$@ （%3$lu）";
+
+/* unable to rename database message informative message */
+"An error occurred while trying to rename the database '%@' to '%@'." = "尝试将数据库'%1$@'重命名为'%2$@'时发生错误。";
+
+/* error finding keychain item to edit informative message */
+"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "尝试读取您要修改的钥匙串项目时发生错误。修复您的钥匙串可能可以解决问题，但如果未能解决，请联系Sequel Ace团队并提供错误代码%i。";
+
+/* error updating keychain item informative message */
+"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "尝试提交对钥匙串项目的更改时发生错误。修复您的钥匙串可能可以解决问题，但如果未能解决，请联系Sequel Ace团队并提供错误代码%i。";
+
+/* mysql error occurred message */
+"An error occurred" = "发生错误";
+
+/* MySQL table info retrieval error message */
+"An error occurred retrieving table information.  MySQL said: %@" = "读取表信息时发生错误。MySQL提示：%@";
+
+/* SQL encoding read error */
+"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "读取文件时发生错误，因为您选择的文本编码（%1$@）无法读取该文件。\n\n只执行了%2$ld条查询。";
+
+/* CSV encoding read error */
+"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "读取文件时发生错误，因为您选择的文本编码（%1$@）无法读取该文件。\n\n只导入了%2$ld条数据。";
+
+/* SQL read error, including detail from system */
+"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "读取文件时发生错误。\n\n只执行了%1$ld条查询。\n\n（%2$@）";
+
+/* CSV read error, including detail string from system */
+"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "读取文件时发生错误。\n\n只导入了%1$ld条数据。\n\n（%2$@）";
+
+/* error adding field informative message */
+"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "%2$@\n\n尝试添加新字段'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+
+/* error changing field informative message */
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "%2$@\n\n尝试更改字段'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+
+/* error changing table collation informative message */
+"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "尝试将表字符序更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* error changing table encoding informative message */
+"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "尝试将表文本编码更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* error changing table type informative message */
+"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "尝试将表类型更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* error changing table comment informative message */
+"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "尝试将表注释改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
+"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "分析%1$@时发生错误。\n\nMySQL提示：%2$@";
+
+/* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
+"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "获取最优字段类型时发生错误。\n\nMySQL提示：%@";
+
+/* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
+"An error occurred while flushing the %@.\n\nMySQL said:%@" = "尝试刷新%1$@时发生错误。\n\nMySQL提示：%2$@";
+
+/* sql import error message */
+"An error occurred while importing SQL" = "导入SQL文件时发生错误";
+
+/* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
+"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "优化%1$@时发生错误。\n\nMySQL提示：%2$@";
+
+/* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
+"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "校验%1$@完整性时发生错误。\n\nMySQL提示：%2$@";
+
+/* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
+"An error occurred while repairing the %@.\n\nMySQL said:%@" = "修复%1$@时发生错误。\n\nMySQL提示：%2$@";
+
+/* message of panel when retrieving information failed */
+"An error occurred while retrieving information.\nMySQL said: %@" = "获取信息时发生错误。\nMySQL提示：%@";
+
+/* error retrieving table information informative message */
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "获取表'%1$@'信息时发生错误，请重试。\n\nMySQL提示：%2$@";
+
+/* error retrieving table information informative message */
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "获取表'%1$@'的触发器信息时发生错误，请重试。\n\nMySQL提示：%2$@";
+
+/* error adding new column informative message */
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "%2$@\n\n尝试添加新栏'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+
+/* error adding new table informative message */
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "%2$@\n\n尝试添加新表'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+
+/* error adding new table informative message */
+"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "尝试创建新表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* error while trying to alter table message */
+"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "尝试修改表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
+"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "尝试检查%1$@时发生错误。\n\nMySQL提示：%2$@";
+
+/* error deleting relation informative message */
+"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "尝试删除关系'%1$@'时发生错误\n\nMySQL提示：%2$@";
+
+/* unable to get list of users informative message */
+"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "尝试读取用户列表时发生错误。请确保您拥有进行用户管理的权限，包括对mysql.user表的访问权限。";
+
+/* error importing table informative message */
+"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "尝试通过\n%1$@\n导入表时发生错误。\n\nMySQL提示：%2$@";
+
+/* error moving field informative message */
+"An error occurred while trying to move the field.\n\nMySQL said: %@" = "尝试移动字段时发生错误\n\nMySQL提示：%@";
+
+/* error resetting auto_increment informative message */
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "重置表'%1$@'的AUTO_INCREMENT值时发生错误。\n\nMySQL提示：%2$@";
+
+/* error truncating table informative message */
+"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "清空表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+
+/* mysql error occurred informative message */
+"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "尝试完成操作时发生错误。\n\nMySQL提示：%@";
+
+/* Export files creation error explanatory text */
+"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "尝试创建%lu个导出文件时发生了未处理的错误。请检查详细信息并重试。";
+
+/* All export files creation error explanatory text */
+"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "尝试创建任一导出文件时发生了未处理的错误。请检查详细信息并重试。";
+
+/* Export file creation error explanatory text */
+"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "尝试创建导出文件时发生了未处理的错误。请检查详细信息并重试。";
+
+/* ANALYZE one or more tables - result title */
+"Analyze %@" = "分析%@";
+
+/* analyze selected items menu item */
+"Analyze Selected Items" = "分析所选项目";
+
+/* analyze table menu item */
+"Analyze Table" = "分析表";
+
+/* analyze table failed message */
+"Analyze table failed." = "表分析失败。";
+
+/* change table type informative message */
+"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "确定要将该表的类型改为%@吗？\n\n请注意改变表类型可能会导致部分或全部数据丢失。您无法撤销该操作。";
+
+/* clear global history list informative message */
+"Are you sure you want to clear the global history list? This action cannot be undone." = "确定要清空全局历史记录吗？您无法撤销该操作。";
+
+/* clear history list for %@ informative message */
+"Are you sure you want to clear the history list for %@? This action cannot be undone." = "确定要清空'%@'的历史记录吗？您无法撤销该操作。";
+
+/* truncate tables informative message */
+"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "确定要删除所选中的表中的 ***所有*** 记录吗？您无法撤销该操作。";
+
+/* truncate table informative message */
+"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "确定要删除表'%@'中的 ***所有*** 记录吗？您无法撤销该操作。";
+
+/* delete all rows informative message */
+"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "确定要删除该表中的所有行吗？您无法撤销该操作。";
+
+/* delete table/view informative message */
+"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "确定要删除%1$@ '%2$@'吗？您无法撤销该操作。";
+
+/* delete database informative message */
+"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "确定要删除数据库'%@'吗？您无法撤销该操作。";
+
+/* delete database informative message */
+"Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "确定要删除个人收藏'%@'吗？您无法撤销该操作。";
+
+/* delete field informative message */
+"Are you sure you want to delete the field '%@'? This action cannot be undone." = "确定要删除字段'%@'吗？您无法撤销该操作。";
+
+/* delete database informative message */
+"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone." = "确定要删除组'%@'吗？该组内的所有组与个人收藏都将被删除。您无法撤销该操作。";
+
+/* delete index informative message */
+"Are you sure you want to delete the index '%@'? This action cannot be undone." = "确定要删除索引'%@'吗？您无法撤销该操作。";
+
+/* delete tables/views informative message */
+"Are you sure you want to delete the selected %@? This operation cannot be undone." = "确定要删除所选中的%@吗？您无法撤销该操作。";
+
+/* delete rows informative message */
+"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "确定要从表中删除所选中的%ld行吗？您无法撤销该操作。";
+
+/* delete selected relation informative message */
+"Are you sure you want to delete the selected relations? This action cannot be undone." = "确定要删除所选中的关系吗？您无法撤销该操作。";
+
+/* delete selected row informative message */
+"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "确定要从该表中删除所选条目吗？您无法撤销该操作。";
+
+/* delete selected trigger informative message */
+"Are you sure you want to delete the selected triggers? This action cannot be undone." = "确定要删除所选中的触发器吗？您无法撤销该操作。";
+
+/* kill connection informative message */
+"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "确定要关闭连接%lld吗？\n\n继续关闭该连接可能会导致数据损坏，请谨慎决定。";
+
+/* kill query informative message */
+"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "确定要中止连接%lld上的当前查询吗？\n\n继续中止该查询可能会导致数据损坏，请谨慎决定。";
+
+/* Bundle Editor : Remove-Bundle: remove dialog message */
+"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "确定要将所选包移至废纸篓并删除吗？";
+
+/* continue to print informative message */
+"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "确定要打印表'%1$@'的当前视图吗？\n\n该视图目前包含%2$@行，可能需要很长时间完成打印。";
+
+/* remove all query favorites informative message */
+"Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "确定要删除所有个人收藏查询吗？您无法撤销该操作。";
+
+/* remove all selected content filters informative message */
+"Are you sure you want to remove all selected content filters? This action cannot be undone." = "确定要删除所选中的过滤器吗？您无法撤销该操作。";
+
+/* remove all selected query favorites informative message */
+"Are you sure you want to remove all selected query favorites? This action cannot be undone." = "确定要删除选中的个人收藏查询吗？您无法撤销该操作。";
+
+/* Table Info Section : current value of auto_increment */
+"auto_increment: %@" = "当前自动累加值：%@";
+
+/* Encoding autodetect menu item */
+"Autodetect" = "自动检测";
+
+/* background label for color table (Prefs > Editor) */
+"Background" = "背景";
+
+/* backtick quote label for color table (Prefs > Editor) */
+"Backtick Quote" = "反引号（`）";
+
+/* bash error */
+"BASH Error" = "BASH错误";
+
+/* toolbar item label for switching to the Table Content tab */
+"Browse & Edit Table Content" = "浏览并修改表内容";
+
+/* build label */
+"build" = "build";
+
+/* build label */
+"Build" = "Build";
+
+/* bundle editor menu item label */
+"Bundle Editor" = "包编辑器";
+
+/* bundle error */
+"Bundle Error" = "包错误";
+
+/* bundles menu item label */
+"Bundles" = "包";
+
+/* Bundle Editor : Outline View : 'BUNDLES' item */
+"BUNDLES" = "包";
+
+/* Bundle Editor : Outline View : Menu Category item : tooltip */
+"Bundles in category %@" = "“%@”类型的包";
+
+/* bundles installation error */
+"Bundles Installation Error" = "包安装错误";
+
+/* bzip2 compression export summary - within a sentence */
+"bzip2 compression" = "bzip2压缩算法";
+
+/* description of geometry */
+"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "一个空间内的POINT，LINESTRING或POLYGON对象。空间支持基于OpenGIS几何模型。";
+
+/* Bundle Editor : Remove-Bundle: cancel button
+ cancel
+ cancel button
+ Open Files : Bundle : Already-Installed : Cancel button
+ Preferences : Network : Custom SSH client : warning dialog : cancel button
+ shutdown server : confirmation dialog : cancel button */
+"Cancel" = "取消";
+
+/* sql import : charset error alert : cancel button */
+"Cancel Import" = "取消导入";
+
+/* cancelling task status message */
+"Cancelling..." = "正在取消...";
+
+/* empty query informative message */
+"Cannot save an empty query." = "无法保存空查询。";
+
+/* caret label for color table (Prefs > Editor) */
+"Caret" = "脱字号";
+
+/* change button */
+"Change" = "更改";
+
+/* change focus to table list menu item */
+"Change Focus to Table List" = "将焦点移至表列表";
+
+/* change table type message */
+"Change table type" = "更改表类型";
+
+/* unsaved changes informative message */
+"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "该窗口中的修改将会在窗口关闭后丢失，您确定要继续吗";
+
+/* character set client: %@ */
+"character set client: %@" = "客户端字符集：%@";
+
+/* CHECK one or more tables - result title */
+"Check %@" = "检查%@";
+
+/* check of all selected items successfully passed message */
+"Check of all selected items successfully passed." = "所选项目均已通过检查。";
+
+/* check option: %@ */
+"check option: %@" = "检查选项：%@";
+
+/* check selected items menu item */
+"Check Selected Items" = "检查所选项目";
+
+/* check table menu item */
+"Check Table" = "检查表";
+
+/* check table failed message */
+"Check table failed." = "表检查失败。";
+
+/* check table successfully passed message */
+"Check table successfully passed." = "表已通过检查。";
+
+/* check view menu item */
+"Check View" = "检查视图";
+
+/* checking field data for editing task description */
+"Checking field data for editing..." = "正在检查要编辑的字段数据...";
+
+/* checksum %@ message */
+"Checksum %@" = "校验%@的完整性";
+
+/* checksum selected items menu item */
+"Checksum Selected Items" = "校验所选项目的完整性";
+
+/* checksum table menu item */
+"Checksum Table" = "校验表的完整性";
+
+/* Checksums of %@ message */
+"Checksums of %@" = "%@的校验值";
+
+/* menu item for choose db */
+"Choose Database..." = "选择数据库...";
+
+/* cancelling export cleaning up message */
+"Cleaning up..." = "正在清理...";
+
+/* clear button */
+"Clear" = "清空";
+
+/* toolbar item for clear console */
+"Clear Console" = "清空控制台";
+
+/* clear global history menu item title */
+"Clear Global History" = "清空全局历史记录";
+
+/* clear history for %@ menu title */
+"Clear History for %@" = "清空“%@”历史记录";
+
+/* clear history message */
+"Clear History?" = "是否清空历史记录？";
+
+/* tooltip for toolbar item for clear console */
+"Clear the console which shows all MySQL commands performed by Sequel Ace" = "清空控制台内Sequel Ace执行的MySQL指令的记录";
+
+/* clear the document-based history list tooltip message */
+"Clear the document-based history list" = "清空基于文稿的历史记录";
+
+/* clear the global history list tooltip message */
+"Clear the global history list" = "清空全局历史记录";
+
+/* Close menu item */
+"Close" = "关闭";
+
+/* close tab context menu item */
+"Close Tab" = "关闭标签页";
+
+/* Close Window menu item */
+"Close Window" = "关闭窗口";
+
+/* collation label (Navigator) */
+"Collation" = "字符序";
+
+/* collation connection: %@ */
+"collation connection: %@" = "连接使用字符序：%@";
+
+/* comment label */
+"Comment" = "注释";
+
+/* Title of action menu item to comment line */
+"Comment Line" = "注释行";
+
+/* Title of action menu item to comment selection */
+"Comment Selection" = "选择注释";
+
+/* connect button */
+"Connect" = "连接";
+
+/* Connect via socket button */
+"Connect via socket" = "通过套接字连接";
+
+/* connection established message */
+"Connected" = "已连接";
+
+/* description for connected notification */
+"Connected to %@" = "已连接到%@";
+
+/* message of panel when connection to db failed */
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "已连接到主机，但未能连接到数据库%1$@。\n\n请确保数据库存在且您的权限有效。\n\nMySQL提示：%2$@";
+
+/* Generic connecting very short status message */
+"Connecting..." = "正在连接...";
+
+/* window title string indicating that sp is connecting */
+"Connecting…" = "正在连接…";
+
+/* error while reading connection data file */
+"Connection data file couldn't be read." = "未能读取连接数据文件。";
+
+/* message error while reading connection data file and suggesting to save it under a differnet name */
+"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "未能读取连接数据文件“%@”。请尝试用其他名字存储该文件。";
+
+/* connection failed title */
+"Connection failed!" = "连接失败！";
+
+/* Connection file is encrypted */
+"Connection file is encrypted" = "连接文件被加密";
+
+/* Connection success very short status message */
+"Connection succeeded" = "连接成功";
+
+/* Console */
+"Console" = "控制台";
+
+/* Console : Save as : Initial filename */
+"ConsoleLog" = "ConsoleLog";
+
+/* toolbar item label for switching to the Table Content tab */
+"Content" = "内容";
+
+/* content filter clause is empty tooltip. */
+"Content Filter clause is empty." = "内容过滤器为空。";
+
+/* continue button
+ Continue button title */
+"Continue" = "继续";
+
+/* continue to print message */
+"Continue to print?" = "是否继续打印？";
+
+/* Copy as RTF */
+"Copy as RTF" = "拷贝为RTF";
+
+/* copy create func syntax menu item
+ Table List : Context Menu : copy CREATE FUNCTION syntax */
+"Copy Create Function Syntax" = "拷贝CREATE FUNCTION语法";
+
+/* copy create proc syntax menu item
+ Table List : Context Menu : Copy CREATE PROCEDURE syntax
+ Table List : Gear Menu : Copy CREATE PROCEDURE syntax */
+"Copy Create Procedure Syntax" = "拷贝CREATE PROCEDURE语法";
+
+/* copy create syntaxes menu item
+ Table List : Context Menu : Copy CREATE syntax (multiple selection)
+ Table List : Gear Menu : Copy CREATE syntax (multiple selection) */
+"Copy Create Syntaxes" = "拷贝CREATE语法";
+
+/* copy create table syntax menu item
+ Table List : Context Menu : Copy CREATE syntax (single table)
+ Table List : Gear Menu : Copy CREATE syntax (single table) */
+"Copy Create Table Syntax" = "拷贝CREATE TABLE语法";
+
+/* copy create view syntax menu item
+ Table List : Context Menu : Copy CREATE view statement
+ Table List : Gear Menu : Copy CREATE view statement */
+"Copy Create View Syntax" = "拷贝CREATE VIEW语法";
+
+/* copy server variable name menu item */
+"Copy Variable Name" = "拷贝变量名";
+
+/* copy server variable names menu item */
+"Copy Variable Names" = "拷贝变量名";
+
+/* copy server variable value menu item */
+"Copy Variable Value" = "拷贝变量值";
+
+/* copy server variable values menu item */
+"Copy Variable Values" = "拷贝变量值";
+
+/* Procedure/function export permission error */
+"Could not export the %@ '%@' because of a permissions error.\n" = "由于权限错误，未能导出%1$@ '%2$@'。\n";
+
+/* Error when we can't parse/split file as CSV */
+"Could not parse file as CSV" = "未能将文件解析为CSV";
+
+/* message when database selection failed */
+"Could not select database" = "未能选中数据库";
+
+/* Alter Database : Query Failed ($1 = mysql error message) */
+"Couldn't alter database.\nMySQL said: %@" = "未能编辑数据库。\nMySQL提示：%@";
+
+/* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
+"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "未能将默认主题拷贝到Application Support文件夹！\n错误：%@";
+
+/* message of panel when table cannot be created */
+"Couldn't create '%@'.\nMySQL said: %@" = "未能创建'%1$@'。\nMySQL提示：%2$@";
+
+/* Couldn't create Application Support Bundle folder!\nError: %@ */
+"Couldn't create Application Support Bundle folder!\nError: %@" = "未能在Application Support文件夹创建包文件夹！\n错误：%@";
+
+/* Couldn't create Application Support Theme folder!\nError: %@ */
+"Couldn't create Application Support Theme folder!\nError: %@" = "未能在Application Support文件夹创建主题文件夹！\n错误：%@";
+
+/* message of panel when creation of db failed */
+"Couldn't create database.\nMySQL said: %@" = "未能创建数据库。\nMySQL提示：%@";
+
+/* message of panel when an item cannot be deleted */
+"Couldn't delete '%@'.\n\nMySQL said: %@" = "未能删除'%1$@'。\n\nMySQL提示：%2$@";
+
+/* message of panel when an item cannot be deleted including informative message about using force deletion */
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "未能删除'%1$@'。\n\n选择“强制删除”也许可以解决该问题，但可能会导致数据库不稳定。\n\nMySQL提示：%2$@";
+
+/* message of panel when field cannot be deleted */
+"Couldn't delete field %@.\nMySQL said: %@" = "未能删除字段%1$@。\nMySQL提示：%2$@";
+
+/* message when deleteing all rows failed */
+"Couldn't delete rows.\n\nMySQL said: %@" = "未能删除条目。\n\nMySQL提示：%@";
+
+/* message of panel when deleting db failed */
+"Couldn't delete the database.\nMySQL said: %@" = "未能删除数据库。\nMySQL提示：%@";
+
+/* message of panel when an item cannot be renamed */
+"Couldn't duplicate '%@'.\nMySQL said: %@" = "未能复制'%1$@'。\nMySQL提示：%2$@";
+
+/* message of panel when flushing privs failed */
+"Couldn't flush privileges.\nMySQL said: %@" = "未能刷新权限。\nMySQL提示：%@";
+
+/* message of panel when table information cannot be retrieved */
+"Couldn't get create syntax.\nMySQL said: %@" = "无法获取CREATE语法。\nMySQL提示：%@";
+
+/* Custom Query result editing error - could not identify a corresponding column */
+"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "未能唯一确定字段来源，因为栏'%@'包含来自多张表的数据。";
+
+/* message of panel when loading of row failed */
+"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "未能加载条目。重新加载表以确保条目存在，并利用表中定义的主键。";
+
+/* Couldn't read the file content of */
+"Couldn't read the file content of" = "未能读取文件";
+
+/* text shown if an error occurred while sorting the result table */
+"Couldn't sort column." = "未能按栏排序。";
+
+/* message of panel when sorting of table failed */
+"Couldn't sort table. MySQL said: %@" = "未能为表排序。MySQL提示：%@";
+
+/* message of panel when error while updating field to db */
+"Couldn't write field.\nMySQL said: %@" = "未能写入字段。\nMySQL提示：%@";
+
+/* create syntax for table comment */
+"Create syntax for" = "CREATE语法 -";
+
+/* Create syntax label */
+"Create syntax for %@ '%@'" = "%1$@ '%2$@'的CREATE语法";
+
+/* Create syntaxes for selected items label */
+"Create syntaxes for selected items" = "所选项目的CREATE语法";
+
+/* Table Info Section : table create options */
+"create_options: %@" = "创建选项：%@";
+
+/* created: %@
+ Table Info Section : time+date table was created at */
+"created: %@" = "创建于：%@";
+
+/* description of polygon */
+"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "用一个LinearRing（形成简单封闭图形的LineString）作为外边界，若干个内圈的LinearRing作为“洞”，共同确定的平面。";
+
+/* Creating table task string */
+"Creating %@..." = "正在创建%@...";
+
+/* Bundle Editor : Fallback Input source dropdown : 'current line' item */
+"Current Line" = "当前行";
+
+/* Bundle Editor : Fallback Input source dropdown : 'current query' item */
+"Current Query" = "当前查询";
+
+/* header for current selection in filtered list */
+"CURRENT SELECTION" = "当前选中";
+
+/* Bundle Editor : Fallback Input source dropdown : 'current word' item */
+"Current Word" = "当前词语";
+
+/* SSH connection : debug header with user-defined ssh binary */
+"Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "启用了自定义的SSH二进制程序。请在偏好设置中关闭以排除兼容性问题！";
+
+/* customize file name label */
+"Customize Filename (%@)" = "自定义文件名（%@）";
+
+/* data access: %@ (%@) */
+"data access: %@ (%@)" = "访问数据：%1$@（%2$@）";
+
+/* Bundle Editor : Scope dropdown : 'data table' item
+ data table menu item label */
+"Data Table" = "数据表";
+
+/* Bundle Editor : Outline View : 'Data Table' item : tooltip */
+"Data Table Scope\ncommands will run on the Content and Query data tables" = "数据表范围\n指令将在内容与查询的数据表上运行";
+
+/* export filename database token
+ export header database label
+ export source
+ Table Structure : Collation dropdown : 'item is the same as the collation of database' marker
+ Table Structure : Encoding dropdown : 'item is database default' marker */
+"Database" = "数据库";
+
+/* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
+ Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
+"Database changed" = "数据库编辑";
+
+/* message of panel when no db name is given */
+"Database must have a name." = "数据库需要名称。";
+
+/* databsse rename unsupported message */
+"Database Rename Unsupported" = "不支持重命名数据库";
+
+/* export filename date token */
+"Date" = "日期";
+
+/* export filename date token */
+"Day" = "日";
+
+/* Add Table Sheet : Collation : Default (unknown)
+ Collation Dropdown : Default (unknown)
+ default label
+ Table Structure : Collation dropdown : 'item is the same as the default collation of the row's charset' marker */
+"Default" = "默认值";
+
+/* Add Table : Collation : Default ($1 = collation name)
+ Charset Dropdown : Default item ($1 = charset name)
+ Collation Dropdown : Default ($1 = collation name)
+ Collation Dropdown : Default collation for given charset ($1 = collation name)
+ New Table Sheet : Table Engine Dropdown : Default */
+"Default (%@)" = "默认值（%@）";
+
+/* default bundles update */
+"Default Bundles Update" = "更新默认包";
+
+/* import : csv field mapping : field default value */
+"Default: %@" = "默认值：%@";
+
+/* Query snippet default value placeholder */
+"default_value" = "缺省值";
+
+/* definer label (Navigator) */
+"Definer" = "定义符";
+
+/* definer: %@ */
+"definer: %@" = "定义符：%@";
+
+/* description of enum */
+"Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "定义一系列对象，每个字段最多可以使用一个。内容将根据其索引排序，以0为第一个成员。";
+
+/* delete button */
+"Delete" = "删除";
+
+/* delete table/view message */
+"Delete %@ '%@'?" = "是否删除%1$@ '%2$@'？";
+
+/* delete all rows message */
+"Delete all rows?" = "是否删除所有条目？";
+
+/* table structure : indexes : delete index : error 1553 : delete index and FK button */
+"Delete Both" = "同时删除";
+
+/* delete database message */
+"Delete database '%@'?" = "是否删除数据库'%@'？";
+
+/* delete database message */
+"Delete favorite '%@'?" = "是否删除个人收藏'%@'？";
+
+/* delete field message */
+"Delete field '%@'?" = "是否删除字段'%@'？";
+
+/* delete func menu title */
+"Delete Function" = "删除函数";
+
+/* delete functions menu title */
+"Delete Functions" = "删除函数";
+
+/* delete database message */
+"Delete group '%@'?" = "是否删除组'%@'？";
+
+/* delete index message */
+"Delete index '%@'?" = "是否删除索引'%@'？";
+
+/* delete items menu title */
+"Delete Items" = "删除项目";
+
+/* delete proc menu title */
+"Delete Procedure" = "删除存储过程";
+
+/* delete procedures menu title */
+"Delete Procedures" = "删除存储过程";
+
+/* delete relation menu item */
+"Delete Relation" = "删除关系";
+
+/* delete relation message */
+"Delete relation" = "删除关系";
+
+/* delete relations menu item */
+"Delete Relations" = "删除关系";
+
+/* delete row menu item singular */
+"Delete Row" = "删除条目";
+
+/* delete rows menu item plural */
+"Delete Rows" = "删除条目";
+
+/* delete rows message */
+"Delete rows?" = "是否删除条目？";
+
+/* delete tables/views message */
+"Delete selected %@?" = "是否删除所选中的%@？";
+
+/* delete selected row message */
+"Delete selected row?" = "是否删除所选中的条目？";
+
+/* delete table menu title */
+"Delete Table..." = "Delete Table...";
+
+/* delete tables menu title */
+"Delete Tables" = "删除表";
+
+/* delete trigger menu item */
+"Delete Trigger" = "删除触发器";
+
+/* delete trigger message */
+"Delete trigger" = "删除触发器";
+
+/* delete triggers menu item */
+"Delete Triggers" = "删除触发器";
+
+/* delete view menu title */
+"Delete View" = "删除视图";
+
+/* delete views menu title */
+"Delete Views" = "删除视图";
+
+/* Preferences : Network : SSL Chiper suites : List seperator */
+"Disabled Cipher Suites" = "SSL Cipher Suites已禁用";
+
+/* force table deltion button text tooltip */
+"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "在删除前禁用外键检查（FOREIGN_KEY_CHECKS）并在删除完成后重新启用。";
+
+/* discard changes button */
+"Discard changes" = "放弃更改";
+
+/* description for disconnected notification */
+"Disconnected from %@" = "已断开与%@的连接";
+
+/* do update operator tooltip */
+"Do UPDATE where field contents match" = "字段内容匹配时执行UPDATE指令";
+
+/* message of panel asking for confirmation for loading large text into the query editor */
+"Do you really want to load a SQL file with %@ of data into the Query Editor?" = "确定要将包含%@数据的SQL文件导入到查询编辑器中吗？";
+
+/* message of panel asking for confirmation for inserting large text from dragging action */
+"Do you really want to proceed with %@ of data?" = "确定要操作%@数据吗？";
+
+/* shutdown server : confirmation dialog : title */
+"Do you really want to shutdown the server?" = "确定要关闭服务器吗？";
+
+/* dtd identifier label (Navigator) */
+"DTD Identifier" = "DTD标识符";
+
+/* sql export dump of table label */
+"Dump of table" = "转储表";
+
+/* text showing that app is writing dump */
+"Dumping..." = "正在转储...";
+
+/* duplicate object message */
+"Duplicate %@ '%@' to:" = "复制%1$@ '%2$@'到：";
+
+/* duplicate func menu title */
+"Duplicate Function..." = "复制函数...";
+
+/* duplicate host message */
+"Duplicate Host" = "复制主机";
+
+/* duplicate proc menu title */
+"Duplicate Procedure..." = "复制存储过程...";
+
+/* duplicate table menu title */
+"Duplicate Table..." = "复制表...";
+
+/* duplicate user message */
+"Duplicate User" = "复制用户";
+
+/* duplicate view menu title */
+"Duplicate View..." = "复制视图...";
+
+/* partial copy database support informative message */
+"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "只支持部分复制数据库'%@'，因为其中包含表之外的其他内容（视图、存储过程、函数等），将不会拷贝它们。\n\n确定要继续吗？";
+
+/* edit filter */
+"Edit Filters…" = "编辑过滤器…";
+
+/* Edit row button */
+"Edit row" = "编辑条目";
+
+/* toolbar item label for switching to the Table Structure tab */
+"Edit Table Structure" = "编辑表结构";
+
+/* edit theme list label */
+"Edit Theme List…" = "编辑主题列表…";
+
+/* edit user-defined filter */
+"Edit user-defined Filters…" = "编辑自定义过滤器…";
+
+/* empty query message */
+"Empty query" = "空查询";
+
+/* MySQL search language code - eg in http://search.mysql.com/search?q=select&site=refman-50&lr=lang_en */
+"en" = "zh-CN";
+
+/* encoding label (Navigator) */
+"Encoding" = "文本编码";
+
+/* Table Info Section : $1 = table charset */
+"encoding: %1$@" = "文本编码：%1$@";
+
+/* Table Info Section : $1 = table charset, $2 = table collation */
+"encoding: %1$@ (%2$@)" = "文本编码：%1$@（%2$@）";
+
+/* Table Info Section : Table Engine */
+"engine: %@" = "存储引擎：%@";
+
+/* enter connection details label */
+"Enter connection details below, or choose a favorite" = "填写以下连接信息，或从个人收藏中选择：";
+
+/* SSH key password prompt */
+"Enter your password for the SSH key\n\"%@\"" = "输入SSH密钥\"%@\"的密码\n";
+
+/* Bundle Editor : Fallback Input source dropdown : 'entire content' item
+ Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
+"Entire Content" = "所有内容";
+
+/* Bundle Editor : Copy-Command-Error : error dialog title
+ error */
+"Error" = "错误";
+
+/* error adding field message */
+"Error adding field" = "添加字段时发生错误";
+
+/* error adding new column message */
+"Error adding new column" = "添加新栏时发生错误";
+
+/* error adding new table message */
+"Error adding new table" = "添加新表时发生错误";
+
+/* error adding password to keychain message */
+"Error adding password to Keychain" = "将密码导入钥匙串时发生错误";
+
+/* error changing field message */
+"Error changing field" = "编辑字段时发生错误";
+
+/* error changing table collation message */
+"Error changing table collation" = "更改表字符序时发生错误";
+
+/* error changing table comment message */
+"Error changing table comment" = "编辑表注释时发生错误";
+
+/* error changing table encoding message */
+"Error changing table encoding" = "更改表文本编码时发生错误";
+
+/* error changing table type message */
+"Error changing table type" = "更改表类型时发生错误";
+
+/* error creating relation message */
+"Error creating relation" = "创建关系时发生错误";
+
+/* error creating trigger message */
+"Error creating trigger" = "创建触发器时发生错误";
+
+/* error for message */
+"Error for" = "发生错误";
+
+/* error for bash command ($1), $2=message */
+"Error for “%1$@”:\n%2$@" = "“%1$@”发生错误：\n%2$@";
+
+/* error moving field message */
+"Error moving field" = "移动字段时发生错误";
+
+/* error occurred */
+"error occurred" = "发生错误";
+
+/* error reading import file */
+"Error reading import file." = "读取导入文件时发生错误。";
+
+/* error finding keychain item to edit message */
+"Error retrieving Keychain item to edit" = "获取要编辑的钥匙串项目时发生错误";
+
+/* error retrieving table information message */
+"Error retrieving table information" = "获取表信息时发生错误";
+
+/* error retrieving trigger information message */
+"Error retrieving trigger information" = "获取触发器信息时发生错误";
+
+/* error truncating table message */
+"Error truncating table" = "清空表时发生错误";
+
+/* error updating keychain item message */
+"Error updating Keychain item" = "更新钥匙串项目时发生错误";
+
+/* error while analyzing selected items message */
+"Error while analyzing selected items" = "分析所选项目时发生错误";
+
+/* error while checking selected items message */
+"Error while checking selected items" = "检查所选项目时发生错误";
+
+/* error while converting color scheme data */
+"Error while converting color scheme data" = "转换配色方案数据时发生错误";
+
+/* error while converting connection data */
+"Error while converting connection data" = "转换连接数据时发生错误";
+
+/* Content filters could not be converted to plist upon export - message title (ContentFilterManager) */
+"Error while converting content filter data" = "转换内容过滤器数据时发生错误";
+
+/* error while converting query favorite data */
+"Error while converting query favorite data" = "转换个人收藏查询数据时发生错误";
+
+/* error while converting session data */
+"Error while converting session data" = "转换会话数据时发生错误";
+
+/* Error while deleting field */
+"Error while deleting field" = "删除字段时发生错误";
+
+/* Bundle Editor : Copy-Command-Error : Copying failed error message */
+"Error while duplicating Bundle content." = "复制包内容时发生错误。";
+
+/* error while executing javascript bash command */
+"Error while executing JavaScript BASH command" = "执行JavaScript BASH指令时发生错误";
+
+/* error while fetching the optimized field type message */
+"Error while fetching the optimized field type" = "获取最优字段类型时发生错误";
+
+/* error while flushing selected items message */
+"Error while flushing selected items" = "刷新所选项目时发生错误";
+
+/* error while importing table message */
+"Error while importing table" = "导入表时发生错误";
+
+/* Open Files : Bundle : Install-Error : error dialog title
+ Open Files : Bundle : UUID : Error dialog title */
+"Error while installing Bundle" = "安装包时发生错误";
+
+/* error while installing color theme file */
+"Error while installing color theme file" = "安装颜色主题文件时发生错误";
+
+/* Bundle Editor : Trash-Bundle(s)-Error : error dialog title
+ error while moving %@ to trash
+ Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version. */
+"Error while moving %@ to Trash." = "将“%@”移动到废纸篓时发生错误。";
+
+/* error while optimizing selected items message */
+"Error while optimizing selected items" = "优化所选项目时发生错误";
+
+/* error while parsing CREATE TABLE syntax */
+"Error while parsing CREATE TABLE syntax" = "解析CREATE TABLE语法时发生错误";
+
+/* error while reading connection data file */
+"Error while reading connection data file" = "读取连接数据文件时发生错误";
+
+/* error while reading data file */
+"Error while reading data file" = "读取数据文件时发生错误";
+
+/* error while repairing selected items message */
+"Error while repairing selected items" = "修复所选项目时发生错误";
+
+/* Bundle Editor : Save-Bundle-Error : error dialog title */
+"Error while saving the Bundle." = "保存包时发生错误。";
+
+/* Bundle Editor : Save-and-Close-Error : error dialog title */
+"Error while saving %@." = "保存“%@”时发生错误。";
+
+/* Errors title */
+"Errors" = "错误";
+
+/* Mysql Help Viewer : Help Topic: Example section title */
+"Example:" = "示例：";
+
+/* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
+"exclude BLOB" = "排除BLOB文件";
+
+/* execution privilege label (Navigator) */
+"Execution Privilege" = "执行权限";
+
+/* execution privilege: %@ */
+"execution privilege: %@" = "执行权限：%@";
+
+/* execution stopped message */
+"Execution stopped!\n" = "已中断执行！\n";
+
+/* export selected favorites menu item */
+"Export Selected..." = "导出所选项目...";
+
+/* text showing that the application is importing a supplied format */
+"Exporting %@" = "正在导出%@";
+
+/* text showing that the application is exporting a Dot file */
+"Exporting Dot File" = "正在导出Dot文件";
+
+/* text showing that the application is exporting SQL */
+"Exporting SQL" = "正在导出SQL文件";
+
+/* extra label (Navigator) */
+"Extra" = "附加";
+
+/* table structure : indexes : delete index : no columns error : title */
+"Failed to remove index '%@'" = "未能移除索引'%@'";
+
+/* fatal error */
+"Fatal Error" = "致命错误";
+
+/* export filename favorite name token */
+"Favorite" = "个人收藏";
+
+/* favorites label */
+"Favorites" = "个人收藏";
+
+/* favorites export error message */
+"Favorites export error" = "个人收藏导出错误";
+
+/* favorites import error message */
+"Favorites import error" = "个人收藏导入错误";
+
+/* export label showing that the app is fetching data */
+"Fetching data..." = "正在获取数据...";
+
+/* fetching database structure data in progress */
+"fetching database structure data in progress" = "正在获取数据库结构数据";
+
+/* fetching database structure in progress */
+"fetching database structure in progress" = "正在获取数据库结构";
+
+/* fetching table data for completion in progress message */
+"fetching table data…" = "正在获取表数据…";
+
+/* popup menuitem for field (showing only if disabled) */
+"field" = "字段";
+
+/* Field */
+"Field" = "字段";
+
+/* Query result editing error - could not match row being edited uniquely */
+"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "不能编辑字段，因为未能唯一确定字段来源（%ld个匹配）。";
+
+/* field is not editable due to no table/database */
+"Field is not editable. Field has no or multiple table or database origin(s)." = "不能编辑字段，因为该字段没有，或有多个表与数据库作为来源。";
+
+/* Custom Query result editing error - could not identify original row */
+"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "不能编辑字段，因为找不到对应的记录。\n请重新加载数据、检查文本编码，或尝试在您对表'%@'的SELECT语句中增加主键或其他字段，以唯一确定字段来源。";
+
+/* Table Content result editing error - could not identify original row */
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "不能编辑字段，因为找不到对应的记录。\n请重新加载表、检查文本编码，或尝试在'%@'的视图声明中增加主键或其他字段，以唯一确定字段来源。";
+
+/* error while reading data file */
+"File couldn't be read." = "未能读取文件。";
+"File couldn't be read: %@\n\nIt will be deleted." = "未能读取文件：%@\n\n它将会被删除。";
+
+/* File read error title (Import Dialog) */
+"File read error" = "文件读取错误";
+
+/* All export files already exist explanatory text */
+"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "目标文件夹中包含所有同名文件，继续操作将会覆盖其原有内容。";
+
+/* filter label */
+"Filter" = "过滤器";
+
+/* filter tables menu item */
+"Filter Tables" = "过滤表";
+
+/* export source */
+"Filtered table content" = "表内容（已过滤）";
+
+/* filtering failed. please try again. tooltip */
+"Filtering failed. Please try again." = "过滤失败，请重试。";
+
+/* Filtering table task description */
+"Filtering table..." = "正在过滤表...";
+
+/* description for finished exporting notification */
+"Finished exporting to %@" = "已导出至%@";
+
+/* description for finished importing notification */
+"Finished importing %@" = "已导入%@";
+
+/* FLUSH one or more tables - result title */
+"Flush %@" = "刷新%@";
+
+/* flush selected items menu item */
+"Flush Selected Items" = "刷新所选项目";
+
+/* flush table menu item */
+"Flush Table" = "刷新表";
+
+/* flush table failed message */
+"Flush table failed." = "表刷新失败。";
+
+/* flush view menu item */
+"Flush View" = "刷新视图";
+
+/* title of panel when successfully flushed privs */
+"Flushed Privileges" = "权限已刷新";
+
+/* For BIT fields only “1” or “0” are allowed. */
+"For BIT fields only “1” or “0” are allowed." = "BIT字段只允许1和0两种值。";
+
+/* force table deletion button text */
+"Force delete (disables integrity checks)" = "强制删除（不进行完整性检查）";
+
+/* full text index menu item title */
+"FULLTEXT" = "全文";
+
+/* function */
+"function" = "函数";
+
+/* header for function info pane */
+"FUNCTION INFORMATION" = "函数信息";
+
+/* functions */
+"functions" = "函数";
+
+/* Bundle Editor : Scope dropdown : 'general' item
+ general menu item label
+ general preference pane name */
+"General" = "通用";
+
+/* general preference pane tooltip */
+"General Preferences" = "通用偏好设置";
+
+/* Bundle Editor : Outline View : 'General' item : tooltip */
+"General Scope\ncommands will run application-wide" = "通用范围\n指令将在整个应用程序上运行";
+
+/* generating print document status message */
+"Generating print document..." = "正在生成打印文稿...";
+
+/* export header generation time label */
+"Generation Time" = "生成时间";
+
+/* Content Filter Manager : Filter Entry List: 'Global' Header
+ Query Favorites : List : Section Heading : global query favorites */
+"Global" = "全局";
+
+/* Query Favorites : List : Section Heading : global : tooltip */
+"Globally stored favorites" = "个人收藏 - 全局";
+
+/* Preferences : Notifications : status text : notification setup */
+"Notifications are delivered via the Notification Center." = "通知将通过macOS通知中心放出。";
+
+/* Gzip compression export summary - within a sentence */
+"Gzip compression" = "Gzip压缩算法";
+
+/* MySQL Help Viewer : Results list : Page title */
+"Help topics for %@" = "“%@”的帮助主题";
+
+/* hide console */
+"Hide Console" = "隐藏控制台";
+
+/* hide navigator */
+"Hide Navigator" = "隐藏导航器";
+
+/* hide tab bar */
+"Hide Tab Bar" = "隐藏标签页栏";
+
+/* Hide Toolbar menu item */
+"Hide Toolbar" = "隐藏工具栏";
+
+/* export filename host token
+ export header host label */
+"Host" = "主机";
+
+/* Localized help page for query favourites - do not localize if no translated webpage is available */
+"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
+
+/* description of double */
+"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754确定的双精度浮点值，其中M为最大位数，并可以包含小数点后的D。注意：许多十进制数会因浮点值丧失精度，若需要确切值请参考DECIMAL类型。";
+
+/* description of float */
+"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754确定的单精度浮点值，其中M为最大位数，并可以包含小数点后的D。注意：许多十进制数会因浮点值丧失精度，若需要确切值请参考DECIMAL类型。";
+
+/* ignore button */
+"Ignore" = "忽略";
+
+/* ignore errors button */
+"Ignore All Errors" = "忽略所有错误";
+
+/* ignore all fields menu item */
+"Ignore all Fields" = "忽略所有字段";
+
+/* ignore field label */
+"Ignore field" = "忽略字段";
+
+/* ignore field label */
+"Ignore Field" = "忽略字段";
+
+/* import button */
+"Import" = "导入";
+
+/* import all fields menu item */
+"Import all Fields" = "导入所有字段";
+
+/* sql import : charset error alert : continue button */
+"Import Anyway" = "仍然导入";
+
+/* import cancelled message */
+"Import cancelled!\n" = "导入已取消！\n";
+
+/* Import Error title */
+"Import Error" = "导入错误";
+
+/* import field operator tooltip */
+"Import field" = "导入字段";
+
+/* import file does not exist message */
+"Import file does not exist." = "导入文件不存在。";
+
+/* Export file format cannot be imported warning */
+"Import of the selected data is currently not supported." = "所选的数据目前不支持导入。";
+
+/* SQL import progress text */
+"Imported %@ of %@" = "已导入%2$@中的%1$@";
+
+/* CSV import progress text where total size is unknown */
+"Imported %@ of CSV data" = "已导入CSV数据的%@";
+
+/* SQL import progress text where total size is unknown */
+"Imported %@ of SQL" = "已导入SQL数据的%@";
+
+/* text showing that the application is importing CSV */
+"Importing CSV" = "正在导入CSV";
+
+/* text showing that the application is importing SQL */
+"Importing SQL" = "正在导入SQL";
+
+/* Bundle Editor : BLOB dropdown : 'include BLOB' item */
+"include BLOB" = "包括BLOB文件";
+
+/* include content table column tooltip */
+"Include content" = "包括内容";
+
+/* sql import error message */
+"Incompatible encoding in SQL file" = "SQL文件文本编码不兼容";
+
+/* header for blank info pane */
+"INFORMATION" = "信息";
+
+/* New Table Sheet : Table Collation Dropdown : Default inherited from database
+ New Table Sheet : Table Encoding Dropdown : Default inherited from database */
+"Inherit from database (%@)" = "继承自数据库（%@）";
+
+/* initializing export label */
+"Initializing..." = "正在初始化...";
+
+/* Bundle Editor : Scope dropdown : 'input field' item
+ input field menu item label */
+"Input Field" = "输入字段";
+
+/* input field  doesn't support insertion of snippets. */
+"Input Field doesn't support insertion of snippets." = "输入字段不支持片段插入。";
+
+/* input field is not editable. */
+"Input Field is not editable." = "不能编辑输入字段。";
+
+/* Bundle Editor : Outline View : 'Input Field' item : tooltip */
+"Input Field Scope\ncommands will run on each text input field" = "输入字段范围\n指令将在每个输入字段上运行";
+
+/* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
+"Insert as Snippet" = "插入为片段";
+
+/* Bundle Editor : Scope=Field : Output dropdown : 'insert as text' item */
+"Insert as Text" = "插入为文本";
+
+/* Bundle Editor : Outline View : 'BUNDLES' item : tooltip */
+"Installed Bundles" = "已安装的包";
+
+/* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
+"Installing Bundle" = "正在安装包";
+
+/* insufficient details message */
+"Insufficient connection details" = "连接信息不足";
+
+/* insufficient details informative message */
+"Insufficient details provided to establish a connection. Please enter at least the hostname." = "提供的信息不足以建立连接，至少需要一个主机名。";
+
+/* insufficient SSH tunnel details informative message */
+"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "提供的信息不足以建立连接。请输入SSH端口广播的主机名或禁用SSH端口广播。";
+
+/* insufficient details informative message */
+"Insufficient details provided to establish a connection. Please provide at least a host." = "提供的信息不足以建立连接，至少需要给出一个主机。";
+
+/* Interpret data as: */
+"Interpret data as:" = "将数据读取为：";
+
+/* Invalid database very short status message */
+"Invalid database" = "无效的数据库";
+
+/* export : import settings : file error title */
+"Invalid file supplied!" = "提供的文件无效！";
+
+/* table content : editing : error message title when parsing as hex string failed */
+"Invalid hexadecimal value" = "无效的十六进制值";
+
+/* is deterministic label (Navigator) */
+"Is Deterministic" = "可确定";
+
+/* is nullable label (Navigator) */
+"Is Nullable" = "可为空";
+
+/* is updatable: %@ */
+"is updatable: %@" = "可更新：%@";
+
+/* items */
+"items" = "项目";
+
+/* javascript exception */
+"JavaScript Exception" = "JavaScript异常";
+
+/* javascript parsing error */
+"JavaScript Parsing Error" = "JavaScript解析错误";
+
+/* key label (Navigator) */
+"Key" = "值";
+
+/* keyword label for color table (Prefs > Editor) */
+"Keyword" = "关键字";
+
+/* kill button */
+"Kill" = "关闭";
+
+/* kill connection message */
+"Kill connection?" = "是否关闭连接？";
+
+/* kill query message */
+"Kill query?" = "是否中止查询？";
+
+/* Last Error Message */
+"Last Error Message" = "上一条错误信息";
+
+/* Last Used entry in favorites menu */
+"Last Used" = "最近使用";
+
+/* range for json type */
+"Limited to @@max_allowed_packet" = "上限为@@max_allowed_packet";
+
+/* Loading table task string */
+"Loading %@..." = "正在加载%@...";
+
+/* Loading database task string */
+"Loading database '%@'..." = "正在加载数据库'%@'...";
+
+/* Loading history entry task desc */
+"Loading history entry..." = "正在加载历史条目...";
+
+/* Loading table page task string */
+"Loading page %lu..." = "正在加载第%lu页...";
+
+/* Loading referece task string */
+"Loading reference..." = "正在加载引用...";
+
+/* Loading table data string */
+"Loading table data..." = "正在加载表数据...";
+
+/* Low memory export summary */
+"Low memory" = "内存不足";
+
+/* range of decimal */
+"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M（精确度）：高达65位\nD（指数）：0至30位";
+
+/* range for blob type
+ range for varbinary type */
+"M: %@ to %@ bytes" = "M：%1$@至%2$@字节";
+
+/* range for text type
+ range for varchar type */
+"M: %@ to %@ characters" = "M：%1$@至%2$@个字符";
+
+/* range for longtext type */
+"M: %@ to %@ characters (4 GiB)" = "M：%1$@至%2$@个字符（4 GiB）";
+
+/* range for binary type */
+"M: 0 to 255 bytes" = "M：0至255字节";
+
+/* range for char type */
+"M: 0 to 255 characters" = "M：0至255个字符";
+
+/* range for bit type */
+"M: 1 (default) to 64" = "M：1（默认值）至64";
+
+/* connection view : ssl : key file picker : wrong format error description */
+"Make sure the file contains a RSA private key and is using PEM encoding." = "请确保文件包含RSA私钥并使用PEM文本编码。";
+
+/* connection view : ssl : client cert picker : wrong format error description */
+"Make sure the file contains a X.509 client certificate and is using PEM encoding." = "请确保文件包含X.509客户端证书并使用PEM文本编码。";
+
+/* match field menu item */
+"Match Field" = "匹配字段";
+
+/* Shown when user inserts too many arguments (ContentFilterManager) */
+"Maximum number of arguments is 2!" = "最大参数个数为2！";
+
+/* Maximum text length is set to %ld. */
+"Maximum text length is set to %ld." = "文本长度上限已设置为%ld。";
+
+/* Maximum text length is set to %ld. Inserted text was truncated. */
+"Maximum text length is set to %ld. Inserted text was truncated." = "由于文本长度上限为%ld，插入的文本已被截断。";
+
+/* Maximum text length is set to %llu. */
+"Maximum text length is set to %llu." = "文本长度上限已设置为%llu。";
+
+/* Maximum text length is set to %llu. Inserted text was truncated. */
+"Maximum text length is set to %llu. Inserted text was truncated." = "由于文本长度上限为%llu，插入的文本已被截断。";
+
+/* message column title */
+"Message" = "信息";
+
+/* mgtemplateengine error */
+"MGTemplateEngine Error" = "MGTemplateEngine错误";
+
+/* export filename date token */
+"Month" = "月";
+
+/* multiple selection */
+"multiple selection" = "多重选择";
+
+/* MySQL connecting very short status message */
+"MySQL connecting..." = "MySQL正在连接...";
+
+/* mysql error message */
+"MySQL Error" = "MySQL错误";
+
+/* mysql help */
+"MySQL Help" = "MySQL帮助";
+
+/* MySQL Help for Selection */
+"MySQL Help for Selection" = "MySQL帮助 - 选择";
+
+/* MySQL Help for Word */
+"MySQL Help for Word" = "MySQL帮助 - 关键字";
+
+/* mysql help categories */
+"MySQL Help – Categories" = "MySQL帮助 - 帮助目录";
+
+/* mysql said message */
+"MySQL said:" = "MySQL提示：";
+
+/* shutdown server : error dialog : message */
+"MySQL said:\n%@" = "MySQL提示：\n%@";
+
+/* message of panel when error while adding row to db */
+"MySQL said:\n\n%@" = "MySQL提示：\n\n%@";
+
+/* Preferences : Themes : Initial filename for 'Export' */
+"MyTheme" = "MyTheme";
+
+/* network preference pane name */
+"Network" = "网络";
+
+/* network preference pane tooltip */
+"Network Preferences" = "网络偏好设置";
+
+/* file preference pane name */
+"Files" = "文件";
+
+/* file preference pane tooltip */
+"File Preferences" = "文件偏好设置";
+
+/* Bundle Editor : Default name for new bundle in the list on the left */
+"New Bundle" = "未命名包";
+
+/* new column name placeholder string */
+"New Column Name" = "栏名称";
+
+/* new favorite name */
+"New Favorite" = "未命名";
+
+/* Content Filter Manager : Initial name for new filter */
+"New Filter" = "未命名过滤器";
+
+/* new folder placeholder name */
+"New Folder" = "未命名文件夹";
+
+/* Bundle Editor : Default name for a new bundle in the menu */
+"New Name" = "新名称";
+
+/* new table menu item */
+"New Table" = "未命名表";
+
+/* error that no color theme found */
+"No color theme data found." = "找不到颜色主题数据。";
+
+/* No compression export summary - within a sentence */
+"no compression" = "未压缩";
+
+/* no connection available message */
+"No connection available" = "无可用连接";
+
+/* no connection data found */
+"No connection data found." = "找不到连接数据。";
+
+/* No content filters were found in file to import (ContentFilterManager) */
+"No content filters found." = "找不到内容过滤器。";
+
+/* no data found */
+"No data found." = "找不到数据。";
+
+/* No errors title */
+"No errors" = "无错误";
+
+/* No favorites entry in favorites menu */
+"No Favorties" = "无个人收藏";
+
+/* All export files creation error title */
+"No files could be created" = "未能创建任一文件";
+
+/* no item found message */
+"No item found" = "找不到项目";
+
+/* SSH tunnel could not be created because no local port could be allocated */
+"No local port could be allocated for the SSH Tunnel." = "未能为SSH端口广播分配本地端口。";
+
+/* header for no matches in filtered list */
+"NO MATCHES" = "无匹配项";
+
+/* no optimized field type found. message */
+"No optimized field type found." = "未能找到最优字段类型。";
+
+/* error that no query favorites found */
+"No query favorites found." = "未找到个人收藏查询";
+
+/* Mysql Help Viewer : Search : No results */
+"No results found." = "未找到结果。";
+
+/* Bundle Editor : Fallback Input source dropdown : 'none' item
+ Bundle Editor : Scope=? : ? dropdown: 'None' item
+ Bundle Editor : Scope=Data-Table : Input source dropdown: 'none' item
+ Bundle Editor : Scope=Data-Table : Output dropdown : 'none' item
+ Bundle Editor : Scope=Data-Table : Trigger dropdown : 'none' item
+ Bundle Editor : Scope=Field : Input source dropdown: 'None' item
+ Bundle Editor : Scope=Field : Output dropdown : 'none' item
+ Bundle Editor : Scope=Field : Trigger dropdown : 'none' item
+ Bundle Editor : Scope=General : Input source dropdown: 'None' item
+ Bundle Editor : Scope=General : Output dropdown : 'none' item
+ Bundle Editor : Scope=General : Trigger dropdown : 'none' item
+ compression: none */
+"None" = "无";
+
+/* not available label */
+"Not available" = "不可用";
+
+/* Argument count (ContentFilterManager) */
+"Number of arguments: %lu" = "参数个数：%lu";
+
+/* numeric label for color table (Prefs > Editor) */
+"Numeric" = "数字值";
+
+/* Bundle Editor : Copy-Command-Error : OK button
+ Bundle Editor : Save-and-Close-Error : OK button
+ Bundle Editor : Save-Bundle-Error : OK button
+ Bundle Editor : Trash-Bundle(s)-Error : OK button
+ OK
+ OK button
+ Open Files : Bundle : Already-Installed : Delete-Old-Error : OK button
+ Open Files : Bundle : Install-Error : OK button
+ Open Files : Bundle : UUID : OK button
+ Preferences : Network : Custom SSH client : warning dialog : accept button */
+"OK" = "好";
+
+/* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
+"One additional row was removed!" = "额外移除了一行！";
+
+/* Table Content : Remove Row : Result : Too Few : Part 1 : Only n-1 of n selected rows were deleted. */
+"One row was not removed." = "少移除了一行。";
+
+/* Only one dragged item allowed. */
+"Only one dragged item allowed." = "每次只允许拖拽一个项目。";
+
+/* partial copy database support message */
+"Only Partially Supported" = "仅部分支持";
+
+/* open function in new table title */
+"Open Function in New Tab" = "在新标签页中打开函数";
+
+/* Table List : Context Menu : duplicate connection to new window
+ Table List : Gear Menu : duplicate connection to new window */
+"Open Function in New Window" = "在新窗口中打开函数";
+
+/* open connection in new tab context menu item */
+"Open in New Tab" = "在新标签页中打开";
+
+/* menu item open in new window */
+"Open in New Window" = "在新窗口中打开";
+
+/* open procedure in new table title */
+"Open Procedure in New Tab" = "在新标签页中打开存储过程";
+
+/* Table List : Context Menu : duplicate connection to new window
+ Table List : Gear Menu : duplicate connection to new window */
+"Open Procedure in New Window" = "在新窗口中打开存储过程";
+
+/* open table in new tab title
+ open table in new table title */
+"Open Table in New Tab" = "在新标签页中打开表";
+
+/* Table List : Context Menu : Duplicate connection to new window
+ Table List : Gear Menu : Duplicate connection to new window */
+"Open Table in New Window" = "在新窗口中打开表";
+
+/* open view in new tab title
+ open view in new table title */
+"Open View in New Tab" = "在新标签页中打开视图";
+
+/* Tables List : Context Menu : Duplicate connection to new window
+ Tables List : Gear Menu : Duplicate connection to new window */
+"Open View in New Window" = "在新窗口中打开视图";
+
+/* menu item open %@ in new window */
+"Open %@ in New Window" = "在新窗口中打开“%@”";
+
+/* OPTIMIZE one or more tables - result title */
+"Optimize %@" = "优化%@";
+
+/* optimize selected items menu item */
+"Optimize Selected Items" = "优化所选项目";
+
+/* optimize table menu item */
+"Optimize Table" = "优化表";
+
+/* optimize table failed message */
+"Optimize table failed." = "表优化失败。";
+
+/* Optimized type for field %@ */
+"Optimized type for field '%@'" = "已为字段'%@'优化类型";
+
+/* optional placeholder string */
+"optional" = "选填";
+
+/* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
+"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "无法识别传入的参数。只接受字符串或两个元素的数组作为参数。";
+
+/* Permission Denied */
+"Permission Denied" = "权限不足";
+
+/* please choose a favorite connection view label */
+"Please choose a favorite" = "请选择个人收藏项目：";
+
+/* message of panel when ssh details are incomplete */
+"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "请输入SSH端口广播的域名或关闭SSH端口广播。";
+
+/* Please enter the password */
+"Please enter the password for ‘%@’:" = "请输入‘%@’的密码：";
+
+/* print button */
+"Print" = "打印";
+
+/* print page menu item title */
+"Print Page…" = "打印页面…";
+
+/* privileges label (Navigator) */
+"Privileges" = "权限";
+
+/* procedure */
+"procedure" = "存储过程";
+
+/* header for procedure info pane */
+"PROCEDURE INFORMATION" = "存储过程信息";
+
+/* procedures */
+"procedures" = "存储过程";
+
+/* proceed button */
+"Proceed" = "继续";
+
+/* header for procs & funcs list */
+"PROCS & FUNCS" = "存储过程与函数";
+
+/* toolbar item label for switching to the Run Query tab */
+"Query" = "查询";
+
+/* query background label for color table (Prefs > Editor) */
+"Query Background" = "查询背景";
+
+/* Query cancelled error */
+"Query cancelled." = "查询已取消。";
+
+/* Query cancel by resetting connection error */
+"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "查询已取消。请注意这将导致连接重置，连接中的操作与变量将丢失。";
+
+/* query editor preference pane name */
+"Query Editor" = "查询编辑器";
+
+/* query editor preference pane tooltip */
+"Query Editor Preferences" = "查询编辑器偏好设置";
+
+/* query logging currently disabled label
+ query logging disabled label */
+"Query logging is currently disabled" = "查询记录已被禁用";
+
+/* query result print heading */
+"Query Result" = "查询结果";
+
+/* export source */
+"Query results" = "查询结果";
+
+/* Query Status */
+"Query Status" = "查询状态";
+
+/* table status : row count query failed : error title */
+"Querying row count failed" = "条数查询失败";
+
+/* Quick connect item label */
+"Quick Connect" = "快速连接";
+
+/* quote label for color table (Prefs > Editor) */
+"Quote" = "引用";
+
+/* databsse rename unsupported informative message */
+"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "目前不能重命名数据库'%@'，因为其中包含表之外的其他内容（视图、存储过程、函数等）。\n\n为了重命名，您可以使用“复制数据库”并手动移动表之外的元素，再使用DROP命令删除原数据库。";
+
+/* range for serial type */
+"Range: %@ to %@" = "范围：%1$@至%2$@";
+
+/* range for time type */
+"Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)" = "范围：-838:59:59.0至838:59:59.0\nF（精确度）：0（1s）至6（1µs）";
+
+/* range for year type */
+"Range: 0000, 1901 to 2155" = "范围：1901至2155，或0000";
+
+/* range for set type */
+"Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage" = "范围：1至64个成员\n1, 2, 3, 4或8字节的存储单位";
+
+/* range for datetime type */
+"Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)" = "范围：1000-01-01 00:00:00.0至9999-12-31 23:59:59.999999\nF（精确度）：0（1s）至6（1µs）";
+
+/* range for date type */
+"Range: 1000-01-01 to 9999-12-31" = "范围：1000-01-01至9999-12-31";
+
+/* range for timestamp type */
+"Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)" = "范围：1970-01-01 00:00:01.0至2038-01-19 03:14:07.999999\nF（精确度）：0（1s）至6（1µs）";
+
+/* text showing that app is reading dump */
+"Reading..." = "正在读取...";
+
+/* menu item to refresh databases */
+"Refresh Databases" = "重新加载数据库";
+
+/* refresh list menu item */
+"Refresh List" = "重新加载列表";
+
+/* toolbar item label for switching to the Table Relations tab */
+"Relations" = "关系";
+
+/* Relations tab subtitle showing table name */
+"Relations for table: %@" = "表%@关系";
+
+/* reload bundles menu item label */
+"Reload Bundles" = "重新加载包";
+
+/* Reloading data task description */
+"Reloading data..." = "正在重新加载数据...";
+
+/* Reloading table task string */
+"Reloading..." = "正在重新加载...";
+
+/* remote error */
+"Remote Error" = "远程端发生错误";
+
+/* Bundle Editor : Remove-Bundle: remove button
+ remove button */
+"Remove" = "移除";
+
+/* remove all button */
+"Remove All" = "全部移除";
+
+/* remove all query favorites message */
+"Remove all query favorites?" = "是否移除所有个人收藏查询？";
+
+/* Bundle Editor : Remove-Bundle: remove dialog title */
+"Remove selected Bundle?" = "是否移除所选的包？";
+
+/* remove selected content filters message */
+"Remove selected content filters?" = "是否移除所选的内容过滤器？";
+
+/* remove selected query favorites message */
+"Remove selected query favorites?" = "是否移除所选的个人收藏查询？";
+
+/* removing field task status message */
+"Removing field..." = "正在移除字段...";
+
+/* removing index task status message */
+"Removing index..." = "正在移除索引...";
+
+/* rename database message */
+"Rename database '%@' to:" = "将数据库'%@'重命名为：";
+
+/* rename func menu title */
+"Rename Function..." = "重命名函数...";
+
+/* rename proc menu title */
+"Rename Procedure..." = "重命名存储过程...";
+
+/* rename table menu title */
+"Rename Table..." = "重命名表...";
+
+/* rename view menu title */
+"Rename View..." = "重命名视图...";
+
+/* REPAIR one or more tables - result title */
+"Repair %@" = "修复%@";
+
+/* repair selected items menu item */
+"Repair Selected Items" = "修复所选项目";
+
+/* repair table menu item */
+"Repair Table" = "修复表";
+
+/* repair table failed message */
+"Repair table failed." = "表修复失败。";
+
+/* Replace button */
+"Replace" = "替换";
+
+/* Bundle Editor : Scope=Field : Output dropdown : 'replace entire content' item */
+"Replace Entire Content" = "替换所有内容";
+
+/* Bundle Editor : Scope=Field : Output dropdown : 'replace selection' item */
+"Replace Selection" = "替换所选项目";
+
+/* description of year */
+"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "表示一个四位数的年份，存储为1字节。无效值会被转换为0000，0至69依次转换为2000至2069，70至99则转换为1970至1999。\nYEAR(2)类型在MySQL 5.7.5中被移除。";
+
+/* description of multilinestring */
+"Represents a collection of LineStrings." = "一系列LineString的集合。";
+
+/* description of geometrycollection */
+"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "一系列单元素或多元素的空间类型对象的集合，只需要所有对象共用坐标系即可。";
+
+/* description of multipolygon */
+"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "一系列两两不相交的POLYGON的集合。";
+
+/* description of multipoint */
+"Represents a set of Points without specifying any kind of relation and/or order between them." = "一系列POINT的集合，不包含它们之间的关系或先后顺序。";
+
+/* description of point */
+"Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional." = "用X与Y坐标表示坐标平面上的一个点，点本身为零维。";
+
+/* description of linestring */
+"Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "一系列坐标的有序集合，由各点按顺序连线确定形状。";
+
+/* required placeholder string */
+"required" = "必填项";
+
+/* description of smallint */
+"Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "需要2字节存储空间。M是可选的显示宽度，不影响表示值的范围。";
+
+/* description of mediumint */
+"Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range." = "需要3字节存储空间。M是可选的显示宽度，不影响表示值的范围。";
+
+/* description of int */
+"Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type." = "需要4字节存储空间。M是可选的显示宽度，不影响表示值的范围。别名为INTEGER。";
+
+/* description of bigint */
+"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "需要8字节存储空间。M是可选的显示宽度，不影响表示值的范围。注意，对较大的数的代数运算可能发生错误。";
+
+/* reset auto_increment after deletion of all rows message */
+"Reset AUTO_INCREMENT after deletion?" = "是否在删除后重置AUTO_INCREMENT累加值？";
+
+/* Restoring session task description */
+"Restoring session..." = "正在恢复会话...";
+
+/* return type label (Navigator) */
+"Return Type" = "返回值类型";
+
+/* return type: %@ */
+"return type: %@" = "返回值类型：%@";
+
+/* singular word for row */
+"row" = "条";
+
+/* plural word for rows */
+"rows" = "条";
+
+/* text showing how many rows are in the limited filter match */
+"Rows %@ - %@ from filtered matches" = "已过滤 - %1$@至%2$@条";
+
+/* text showing how many rows are in the limited result */
+"Rows %@ - %@ of %@%@ from table" = "表包含%3$@%4$@条 - %1$@至%2$@条";
+
+/* Table Info Section : number of rows (exact value) */
+"rows: %@" = "行数：%@";
+
+/* Table Info Section : number of rows (estimated value) */
+"rows: ~%@" = "行数：约%@";
+
+/* run all button */
+"Run All" = "全部运行";
+
+/* Run All menu item title */
+"Run All Queries" = "运行所有查询";
+
+/* Title of button to run current query in custom query view */
+"Run Current" = "运行当前查询";
+
+/* Title of action menu item to run current query in custom query view */
+"Run Current Query" = "运行当前查询";
+
+/* toolbar item label for switching to the Run Query tab */
+"Run Custom Query" = "运行自定义查询";
+
+/* Title of button to run query just before text caret in custom query view */
+"Run Previous" = "运行上一条查询";
+
+/* Title of action menu item to run query just before text caret in custom query view */
+"Run Previous Query" = "运行上一条查询";
+
+/* Title of action menu item to run selected text in custom query view */
+"Run Selected Text" = "运行所选文本";
+
+/* Title of button to run selected text in custom query view */
+"Run Selection" = "运行所选";
+
+/* Running multiple queries string */
+"Running query %i of %lu..." = "运行查询%2$lu中的%1$i...";
+
+/* Running multiple queries string */
+"Running query %ld of %lu..." = "运行查询%2$lu中的%1$ld...";
+
+/* Running single query string */
+"Running query..." = "正在运行查询...";
+
+/* Save trigger button label */
+"Save" = "存储";
+
+/* Save All to Favorites */
+"Save All to Favorites" = "全部添加到个人收藏";
+
+/* save as button title */
+"Save As..." = "另存为...";
+
+/* Bundle Editor : BLOB dropdown : 'save BLOB as dat file' item */
+"save BLOB as dat file" = "将BLOB另存为.dat文件";
+
+/* Bundle Editor : BLOB dropdown : 'save BLOB as image file' item */
+"save BLOB as image file" = "将BLOB另存为图像";
+
+/* Save Current Query to Favorites */
+"Save Current Query to Favorites" = "将当前查询添加到个人收藏";
+
+/* save page as menu item title */
+"Save Page As…" = "页面另存为…";
+
+/* Save Queries… */
+"Save Queries…" = "保存查询…";
+
+/* Save Query… */
+"Save Query…" = "保存查询…";
+
+/* Save Selection to Favorites */
+"Save Selection to Favorites" = "将所选项目添加到个人收藏";
+
+/* save view as button title */
+"Save View As..." = "视图另存为...";
+
+/* schema path header for completion tooltip */
+"Schema path:" = "方案位置：";
+
+/* Search in MySQL Documentation */
+"Search in MySQL Documentation" = "在MySQL帮助文档中搜索";
+
+/* Search in MySQL Help */
+"Search in MySQL Help" = "在MySQL帮助中搜索";
+
+/* Select Active Query */
+"Select Active Query" = "选择当前查询";
+
+/* toolbar item for selecting a db */
+"Select Database" = "选择数据库";
+
+/* selected items */
+"selected items" = "所选项目";
+
+/* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
+"Selected Rows (CSV)" = "所选条目（CSV）";
+
+/* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as SQL' item */
+"Selected Rows (SQL)" = "所选条目（SQL）";
+
+/* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as tab-separated' item */
+"Selected Rows (TSV)" = "所选条目（TSV）";
+
+/* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
+"Selected Text" = "所选文本";
+
+/* selection label for color table (Prefs > Editor) */
+"Selection" = "选择";
+
+/* table structure : indexes : delete index : no columns error : description */
+"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace找不到该索引对应的任何栏。请检查索引是否存在。";
+
+/* Preferences : Network : Custom SSH client : warning dialog message */
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace只在Mac OS X附带的OpenSSH客户端版本中测试有效并保证支持。使用其他客户端可能会导致连接问题、安全问题或根本无法工作。\n\n请注意我们无法为此类配置提供技术支持。";
+
+/* sequelace URL scheme command not supported. */
+"sequelace URL scheme command not supported." = "不支持Sequal Ace的URL SCHEME指令。";
+
+/* sequelace url Scheme Error */
+"sequelace URL Scheme Error" = "Sequal Ace的URL SCHEME指令错误";
+
+/* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
+ Table Structure : Encoding dropdown : 'item is server default' marker */
+"Server" = "服务器";
+
+/* Add Database : Charset dropdown : default item ($1 = charset name)
+ Add Database : Collation dropdown : default item ($1 = collation name) */
+"Server Default (%@)" = "服务器缺省值（%@）";
+
+/* server processes window title (var = hostname) */
+"Server Processes on %@" = "%@上的服务器进程";
+
+/* Initial filename for 'Save session' file */
+"Session" = "Session";
+
+/* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html' item
+ Bundle Editor : Scope=Field : Output dropdown : 'show as html' item
+ Bundle Editor : Scope=General : Output dropdown : 'show as html' item */
+"Show as HTML" = "显示为HTML";
+
+/* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html tooltip' item
+ Bundle Editor : Scope=Field : Output dropdown : 'show as html tooltip' item
+ Bundle Editor : Scope=General : Output dropdown : 'show as html tooltip' item */
+"Show as HTML Tooltip" = "显示为HTML悬浮文本";
+
+/* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as text tooltip' item
+ Bundle Editor : Scope=Field : Output dropdown : 'show as text tooltip' item
+ Bundle Editor : Scope=General : Output dropdown : 'show as text tooltip' item */
+"Show as Text Tooltip" = "显示为纯悬浮文本";
+
+/* show console */
+"Show Console" = "显示控制台";
+
+/* show create func syntax menu item */
+"Show Create Function Syntax..." = "显示CREATE FUNCTION语法...";
+
+/* show create proc syntax menu item */
+"Show Create Procedure Syntax..." = "显示CREATE PROCEDURE语法...";
+
+/* show create syntaxes menu item */
+"Show Create Syntaxes..." = "显示CREATE语法...";
+
+/* show create table syntax menu item */
+"Show Create Table Syntax..." = "显示CREATE TABLE语法...";
+
+/* show create view syntax menu item */
+"Show Create View Syntax..." = "显示CREATE VIEW语法...";
+
+/* Show detail button */
+"Show Detail" = "显示简介";
+
+/* MySQL Help Viewer : Results list : Link tooltip */
+"Show MySQL help for %@" = "显示“%@”的MySQL帮助";
+
+/* show navigator */
+"Show Navigator" = "显示导航器";
+
+/* show tab bar */
+"Show Tab Bar" = "显示标签页栏";
+
+/* tooltip for toolbar item for show console */
+"Show the console which shows all MySQL commands performed by Sequel Ace" = "显示控制台内Sequel Ace执行的MySQL指令的记录";
+
+/* Show Toolbar menu item */
+"Show Toolbar" = "显示工具栏";
+
+/* filtered item count */
+"Showing %lu of %lu processes" = "显示%2$lu中的%1$lu个进程";
+
+/* shutdown server : confirmation dialog : shutdown button */
+"Shutdown" = "关闭";
+
+/* shutdown server : error dialog : title */
+"Shutdown failed!" = "关闭失败！";
+
+/* range of integer types */
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "有符号整数：%1$@至%2$@\n无符号整数：%3$@至%4$@";
+
+/* Table Info Section : table size on disk */
+"size: %@" = "大小：%@";
+
+/* skip existing button */
+"Skip existing" = "跳过已存在项目";
+
+/* skip problems button */
+"Skip problems" = "跳过出现问题的项目";
+
+/* beta build label */
+"Beta Build" = "Beta Build";
+
+/* socket connection failed title */
+"Socket connection failed!" = "套接字连接失败！";
+
+/* socket not found title */
+"Socket not found!" = "找不到套接字文件！";
+
+/* Some export folders not writable explanatory text */
+"Some of the target export folders are not writable.  Please select a new export location and try again." = "部分导出目标位置不可写。请选择新的导出位置并重试。";
+
+/* Some export folders missing explanatory text */
+"Some of the target export folders no longer exist.  Please select a new export location and try again." = "部分导出目标位置不存在。请选择新的导出位置并重试。";
+
+/* Sorting table task description */
+"Sorting table..." = "正在为表排序...";
+
+/* spatial index menu item title */
+"SPATIAL" = "空间";
+
+/* sql data access label (Navigator) */
+"SQL Data Access" = "SQL数据访问";
+
+/* SSH connected titlebar marker */
+"SSH Connected" = "SSH已连接";
+
+/* SSH connecting very short status message */
+"SSH connecting..." = "SSH正在连接...";
+
+/* SSH connecting titlebar marker */
+"SSH Connecting…" = "SSH正在连接…";
+
+/* SSH connection failed title */
+"SSH connection failed!" = "SSH连接失败！";
+
+/* SSH disconnected titlebar marker */
+"SSH Disconnected" = "SSH已断开连接";
+
+/* SSH key check error */
+"SSH Key not found" = "找不到SSH密钥";
+
+/* title when ssh tunnel port forwarding failed */
+"SSH port forwarding failed" = "SSH端口广播失败";
+
+/* SSL certificate authority file check error */
+"SSL Certificate Authority File not found" = "找不到CA根证书文件";
+
+/* SSL certificate file check error */
+"SSL Certificate File not found" = "找不到SSL证书文件";
+
+/* SSL requested but not used title */
+"SSL connection not established" = "未建立SSL连接";
+
+/* SSL key file check error */
+"SSL Key File not found" = "找不到SSL密钥文件";
+
+/* Standard memory export summary */
+"Standard memory" = "标准内存";
+
+/* started */
+"started" = "已启动";
+
+/* status file for sequelace url scheme command couldn't be written error message */
+"Status file for sequelace url scheme command couldn't be written!" = "未能写入Sequel Ace的URL SCHEME指令的状态文件！";
+
+/* stop button */
+"Stop" = "停止";
+
+/* Stop queries string */
+"Stop queries" = "停止查询";
+
+/* Stop query string */
+"Stop query" = "停止查询";
+
+/* description of timestamp */
+"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "存储日期和时间，以UNIX计时原点（1970-01-01 00:00:00）为基点。显示与存储的值都受连接中的@@time_zone设置影响。\n显示方式与DATETIME一致。无效值和“0秒”都会被转换为0000-00-00 00:00:00.0。MySQL 5.6.4中加入了精确到微秒（10e-6）的分数秒，以F为标志。其他规则可能同时适用。";
+
+/* description of datetime */
+"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "存储日期和时间，以UNIX计时原点（1970-01-01 00:00:00）为基点。显示格式为YYYY-MM-DD HH:MM:SS[.I*]，其中I表示分数秒。该值不受时区设定影响。无效值会被转换为0000-00-00 00:00:00.0。MySQL 5.6.4中加入了精确到微秒（10e-6）的分数秒，以F为标志。";
+
+/* description of date */
+"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "存储日期而不包含时间，显示格式为YYYY-MM-DD。该值不受时区设定影响。无效值会被转换为0000-00-00。";
+
+/* description of time */
+"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "存储一个时间点或一段时间长度。显示格式为HH:MM:SS[.I*]，其中I表示分数秒。该值不受时区设定影响。无效值会被转换为0000-00-00 00:00:00.0。MySQL 5.6.4中加入了精确到微秒（10e-6）的分数秒，以F为标志。";
+
+/* toolbar item label for switching to the Table Structure tab */
+"Structure" = "结构";
+
+/* successfully analyzed all selected items message */
+"Successfully analyzed all selected items." = "所选项目已分析。";
+
+/* analyze table successfully passed message */
+"Successfully analyzed table." = "表已分析。";
+
+/* successfully flushed all selected items message */
+"Successfully flushed all selected items." = "所选项目已刷新。";
+
+/* message of panel when successfully flushed privs */
+"Successfully flushed privileges." = "权限已刷新。";
+
+/* flush table successfully passed message */
+"Successfully flushed table." = "表已刷新。";
+
+/* successfully optimized all selected items message */
+"Successfully optimized all selected items." = "所选项目已优化。";
+
+/* optimize table successfully passed message */
+"Successfully optimized table." = "表已优化。";
+
+/* successfully repaired all selected items message */
+"Successfully repaired all selected items." = "所选项目已修复。";
+
+/* repair table successfully passed message */
+"Successfully repaired table." = "表已修复。";
+
+/* tooltip for toolbar item for switching to the Run Query tab */
+"Switch to the Run Query tab" = "切换到“运行查询”标签页";
+
+/* tooltip for toolbar item for switching to the Table Content tab */
+"Switch to the Table Content tab" = "切换到“表内容”标签页";
+
+/* tooltip for toolbar item for switching to the Table Info tab */
+"Switch to the Table Info tab" = "切换到“表信息”标签页";
+
+/* tooltip for toolbar item for switching to the Table Relations tab */
+"Switch to the Table Relations tab" = "切换到“表关系”标签页";
+
+/* tooltip for toolbar item for switching to the Table Structure tab */
+"Switch to the Table Structure tab" = "切换到“表结构”标签页";
+
+/* tooltip for toolbar item for switching to the Table Triggers tab */
+"Switch to the Table Triggers tab" = "切换到“表触发器”标签页";
+
+/* tooltip for toolbar item for switching to the User Manager tab */
+"Switch to the User Manager tab" = "切换到“用户管理”标签页";
+
+/* description for table syntax copied notification */
+"Syntax for %@ table copied" = "已复制表%@的语法";
+
+/* table */
+"table" = "表";
+
+/* csv export table heading
+ table
+ Table Structure : Collation dropdown : 'item is the same as the collation of table' marker
+ Table Structure : Encoding dropdown : 'item is table default' marker */
+"Table" = "表";
+
+/* export label showing that the app is fetching data for a specific table */
+"Table %lu of %lu (%@): Fetching data..." = "%2$lu张表中的%1$lu（%3$@）：正在获取数据...";
+
+/* export label showing app is fetching relations data for a specific table */
+"Table %lu of %lu (%@): Fetching relations data..." = "%2$lu张表中的%1$lu（%3$@）：正在获取关系数据...";
+
+/* export label showing app if writing data for a specific table */
+"Table %lu of %lu (%@): Writing data..." = "%2$lu张表中的%1$lu（%3$@）：正在写入数据...";
+
+/* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table changed' item
+ Bundle Editor : Scope=General : Trigger dropdown : 'table changed' item */
+"Table changed" = "表编辑";
+
+/* table checksum message */
+"Table checksum" = "表校验码";
+
+/* table checksum: %@ */
+"Table checksum: %@" = "表校验码：%@";
+
+/* table content print heading */
+"Table Content" = "表内容";
+
+/* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
+"Table Content (CSV)" = "表内容（CSV）";
+
+/* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as SQL' item */
+"Table Content (SQL)" = "表内容（SQL）";
+
+/* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as tab-separated' item */
+"Table Content (TSV)" = "表内容（TSV）";
+
+/* toolbar item for navigation history */
+"Table History" = "表历史记录";
+
+/* toolbar item label for switching to the Table Info tab */
+"Table Info" = "表信息";
+
+/* header for table info pane */
+"TABLE INFORMATION" = "表信息";
+
+/* table information print heading */
+"Table Information" = "表信息";
+
+/* message of panel when no name is given for table */
+"Table must have a name." = "表需要名称。";
+
+/* general preference pane tooltip */
+"Table Preferences" = "表偏好设置";
+
+/* toolbar item label for switching to the Table Relations tab */
+"Table Relations" = "表关系";
+
+/* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table row changed' item */
+"Table Row changed" = "表条目编辑";
+
+/* table structure print heading */
+"Table Structure" = "表结构";
+
+/* toolbar item label for switching to the Table Triggers tab */
+"Table Triggers" = "表触发器";
+
+/* Add Relation sheet title, showing table name */
+"Table: %@" = "当前表：%@";
+
+/* tables preference pane name */
+"Tables" = "表";
+
+/* tables */
+"tables" = "表";
+
+/* header for table list */
+"TABLES" = "表";
+
+/* header for table & views list */
+"TABLES & VIEWS" = "表与视图";
+
+/* Connection test very short status message */
+"Testing connection..." = "正在测试连接...";
+
+/* MySQL connection test very short status message */
+"Testing MySQL..." = "正在测试MySQL...";
+
+/* SSH testing very short status message */
+"Testing SSH..." = "正在测试SSH...";
+
+/* text label for color table (Prefs > Editor) */
+"Text" = "文本";
+
+/* Text is too long. Maximum text length is set to %llu. */
+"Text is too long. Maximum text length is set to %llu." = "文本过长。长度上限为%llu。";
+
+/* Release notes dialog title thanking user for upgrade */
+"Thanks for updating Sequel Ace!" = "感谢您更新Sequel Ace！";
+
+/* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
+"The Bundle ‘%@’ already exists." = "包‘%@’已安装。";
+
+/* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
+"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "包‘%@’未包含区分已安装的包所必需的的UUID。";
+
+"‘%@’ Bundle contains legacy components" = "包‘%@’含有旧版组件";
+
+"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "涉及文件：\n\n%@\n\n是否继续安装？";
+
+/* message while reading a spf file which matches non-supported formats. */
+"The chosen file %@ contains ‘%@’ data." = "选中的文件“%1$@”含有‘%2$@’数据。";
+
+/* the color theme ‘%@’ already exists. */
+"The color theme ‘%@’ already exists." = "颜色主题‘%@’已存在";
+
+/* the connection is busy. please wait and try again tooltip */
+"The connection is busy. Please wait and try again." = "连接忙，请稍后重试。";
+
+/* the connection of the active connection window is not identical tooltip */
+"The connection of the active connection window is not identical." = "活动连接不一致。";
+
+/* Connection lost during import error message */
+"The connection to the server was lost during the import.  The import is only partially complete." = "由于导入过程中连接丢失，只完成了一部分。";
+
+/* Create syntax permission denied detail */
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "由于权限错误，未能获取CREATE语法。\n\n请同您的管理员确定用户权限。";
+
+/* CSV file open error */
+"The CSV file you selected could not be found or read." = "未能读取您选择的CSV文件。";
+
+/* Error when CSV appears to have too many columns to import, probably due to line ending mismatch */
+"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "从该CSV文件读取到了多于512列，这超过了Sequel Ace出于运行速度考虑而允许的最大列数。\n\n这一般是因为读取CSV文件时发生错误，请检查尝试导入的CSV文件，以及“选择CSV文件”对话框底部换行符和转义字符的设置。";
+
+/* unsaved theme informative message */
+"The current color theme is unsaved. Do you want to proceed without saving it?" = "未保存当前颜色主题，是否在不保存的情况下继续？";
+
+/* Short important release note for swap of custom query buttons */
+"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "自定义查询中“运行”和“全部运行”的按键位置及其快捷键已被交换。";
+
+/* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
+"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "以下默认包被更新：\n%@\n您的修改已被存储为“(user)”.";
+
+/* favorites export error informative message */
+"The following error occurred during the export process:\n\n%@" = "导出过程中发生以下错误：\n\n%@";
+
+/* favorites import error informative message */
+"The following error occurred during the import process:\n\n%@" = "导入过程中发生以下错误：\n\n%@";
+
+/* table structure : indexes : delete index : error 1553 : description */
+"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "索引'%2$@'依赖于外键关系'%1$@'，需要移除关系才能删除索引。\n\n确定要同时删除关系和索引吗？您无法撤销该操作。";
+
+/* table list change alert message */
+"The list of tables has changed" = "表列表发生变化";
+
+/* message when trying to rename a table/view/proc/etc to an already used name */
+"The name '%@' is already used." = "名称'%@'已被占用。";
+
+/* table list change alert informative message */
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "打开导出对话框后数据库中的表个数发生了改变，新增了%lu个表，最有可能是来自于外部程序。\n\n是否继续？";
+
+/* message of panel when no rows have been affected after writing to the db */
+"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "未能在MySQL数据库中写入条目，您可能未改变任何内容。\n请重新加载表格以确保该条存在并使用了表中的一个主键。\n（可以通过偏好设置忽略该错误。）";
+
+/* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "您选择的设置文件导出于%1$ld版本，但只有以下版本的设置文件可以被导入：%2$@。\n\n请用向后兼容的方式存储设置文件或更新您的Sequel Ace版本。";
+
+/* export : import settings : spf content type error description */
+"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "所选文件包含“%1$@”数据类型，但需要的类型是“%2$@”。请更换文件。";
+
+/* export : import settings : file error description */
+"The selected file is either not a valid SPF file or severely corrupted." = "所选择的文件不是一个有效的SPF文件，或者已严重损坏。";
+
+/* error deleting relation informative message */
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "未能删除所选择的关系。\n\nMySQL提示：%@";
+
+/* error deleting trigger informative message */
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "未能删除所选择的触发器。\n\nMySQL提示：%@";
+
+/* description of tinyint */
+"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "最小的整数类型，需要1字节存储空间。M是可选的显示宽度，不影响表示值的范围。";
+
+/* message of panel when connection to socket failed because optional socket could not be found */
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "未能在任何通用位置找到套接字文件。请提供有效的套接字文件位置。\n\nMySQL提示：%@";
+
+/* error creating relation informative message */
+"The specified relation could not be created.\n\nMySQL said: %@" = "未能创建所请求的关系。\n\nMySQL提示：%@";
+
+/* error creating trigger informative message */
+"The specified trigger was unable to be created.\n\nMySQL said: %@" = "未能创建所请求的触发器。\n\nMySQL提示：%@";
+
+/* sql import : charset error alert : detail message */
+"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "该SQL文件使用了utf8mb4文本编码，但您使用的MySQL版本只支持其受限的子集utf8。\n\n您可以继续导入，但文件中的非BMP字符（如一些印刷学与科学特殊字符、较早的CJK意音文字与emoji表情）将会丢失且无法恢复！";
+
+/* SQL file open error */
+"The SQL file you selected could not be found or read." = "未能读取您选择的SQL文件。";
+
+/* Prompt for SSH password when keychain fetch failed */
+"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "未能从钥匙串加载SSH密码。请输入%@的密码：";
+
+/* Prompt for SSH password when direct fetch failed */
+"The SSH password could not be loaded; please enter the SSH password for %@:" = "未能加载SSH密码。请输入%@的密码：";
+
+/* SSH tunnel authentication failed message */
+"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "SSH端口广播未能通过远程主机验证，请检查您的密码与访问权限。";
+
+/* SSH tunnel unexpectedly closed */
+"The SSH Tunnel has unexpectedly closed." = "SSH端口广播意外关闭。";
+
+/* SSH tunnel was closed by remote host message */
+"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout." = "SSH端口广播“被远程主机关闭”，这一般说明是网络问题或连接超时。";
+
+/* SSH tunnel forwarding port connection refused message */
+"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "SSH端口广播建立成功但未能将数据传输至远程端口，因为连接被拒绝。";
+
+/* SSH tunnel unable to bind to local port message */
+"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "SSH端口广播未能绑定本地端口。如果您已经建立了与这个服务器的SSH连接并且启动了'LocalForward'配置，则可能发生此错误。\n\n是否退回到与localhost的标准连接以使用现有的端口广播？";
+
+/* SSH tunnel failed or timed out message */
+"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSH端口广播与主机%1$@的连接失败或超时。\n\n请确保地址正确且权限有效，或提高超时的等待时间（当前值为%2$ld秒）。";
+
+/* message of panel when loading of table failed and presumably due to used filter argument */
+"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "未能加载表中数据。这很可能是所使用的过滤器参数导致的。\n\nMySQL提示：%@";
+
+/* message of panel when loading of table failed */
+"The table data couldn't be loaded.\n\nMySQL said: %@" = "未能加载表中数据。\n\nMySQL提示：%@";
+
+/* Export folder not writable explanatory text */
+"The target export folder is not writable.  Please select a new export location and try again." = "导出目标文件夹不可写，请选择新的导出位置并重试。";
+
+/* Export folder not chosen by user explanatory text */
+"No directory selected.  Please select a new export location and try again." = "未选择文件夹，请选择新的导出位置并重试。";
+"No directory selected." = "未选择文件夹。";
+"Please select a new export location and try again." = "请选择新的导出位置并重试。";
+
+/* Export folder missing explanatory text */
+"The target export folder no longer exists.  Please select a new export location and try again." = "导出目标文件夹不存在，请选择新的导出位置并重试。";
+
+/* theme name label */
+"Theme Name:" = "主题名称：";
+
+/* themes installation error */
+"Themes Installation Error" = "主题安装错误";
+
+/* message of panel when table content cannot be copied */
+"There have been errors while copying table content. Please check the new table." = "拷贝表内容时发生错误，请检查新表。";
+
+/* Cannot duplicate a table with triggers to a different database */
+"Cannot duplicate a table with triggers to a different database." = "不能将包含触发器的表格拷贝到另一个数据库中。";
+
+/* text shown when query was successfull */
+"There were no errors." = "没有发生错误。";
+
+/* delete field and foreign key informative message */
+"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "该字段属于表'%@'中的一个外键关系，需要移除关系才能才能删除字段。\n\n确定要同时删除关系和字段吗？您无法撤销该操作。";
+
+/* table structure : indexes : delete index : error 1553, no FK found : description */
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "未能删除该索引，因为一个现有的外键关系正在使用它。\n\n请先移除该关系再尝试删除该索引。\n\nMySQL提示：%@";
+
+/* description of serial */
+"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "这是BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE的别名。";
+
+/* description of dec
+ description of fixed
+ description of numeric */
+"This is an alias for DECIMAL." = "这是DECIMAL的别名。";
+
+/* description of double real */
+"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "这是DOUBLE的别名，除非设置了REAL_AS_FLOAT。";
+
+/* description of double precision */
+"This is an alias for DOUBLE." = "这是DOUBLE的别名。";
+
+/* description of bool
+ description of boolean */
+"This is an alias for TINYINT(1)." = "这是TINYINT(1)的别名。";
+
+/* Table Structure : Collation dropdown : database marker tooltip */
+"This is the default collation of database %@." = "这是数据库“%@”的默认字符序。";
+
+/* Table Structure : Collation dropdown : default marker tooltip */
+"This is the default collation of encoding %@." = "这是文本编码“%@”的默认字符序。";
+
+/* Table Structure : Collation dropdown : table marker tooltip */
+"This is the default collation of table %@." = "这是表“%@”的默认字符序。";
+
+/* Table Structure : Collation dropdown : server marker tooltip */
+"This is the default collation of this server." = "这是该服务器的默认字符序。";
+
+/* Table Structure : Encoding dropdown : database marker tooltip */
+"This is the default encoding of database %@." = "这是数据库“%@”的默认文本编码。";
+
+/* Table Structure : Encoding dropdown : table marker tooltip */
+"This is the default encoding of table %@." = "这是表“%@”的默认文本编码。";
+
+/* Table Structure : Encoding dropdown : server marker tooltip */
+"This is the default encoding of this server." = "这是该服务器的默认文本编码。";
+
+/* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
+"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "该表目前不支持关系，因为它使用的不是InnoDB引擎。";
+
+/* user has no hosts informative message */
+"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "该用户没有对应的主机，如果不添加一个主机，该用户将被删除";
+
+/* error removing host informative message */
+"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "该用户没有对应的主机，如果不添加一个主机，该用户将被删除。";
+
+/* shutdown server : confirmation dialog : message */
+"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "接下来将等待已启动的操作完成，并退出MySQL的守护进程。在这之后您或者其他任何人都将无法连接到该数据库！\n\n需要服务器操作系统的管理员权限才能重启MySQL！";
+
+/* export filename time token */
+"Time" = "时间";
+
+/* toolbar item label for switching to the Table Triggers tab */
+"Triggers" = "触发器";
+
+/* triggers for table label */
+"Triggers for table: %@" = "该表的触发器：%@";
+
+/* truncate button */
+"Truncate" = "清空";
+
+/* truncate tables message */
+"Truncate selected tables?" = "是否清空所选表？";
+
+/* truncate table menu title */
+"Truncate Table..." = "Truncate Table...";
+
+/* truncate table message */
+"Truncate table '%@'?" = "是否清空表'%@'？";
+
+/* truncate tables menu item */
+"Truncate Tables" = "清空表";
+
+/* type label (Navigator) */
+"Type" = "类型";
+
+/* type declaration header */
+"Type Declaration:" = "类型声明：";
+
+/* add index error message */
+"Unable to add index" = "未能添加索引";
+
+/* unable to analyze selected items message */
+"Unable to analyze selected items" = "未能分析所选项目";
+
+/* unable to analyze table message */
+"Unable to analyze table" = "未能分析表";
+
+/* unable to check selected items message */
+"Unable to check selected items" = "未能检查所选项目";
+
+/* unable to check table message */
+"Unable to check table" = "未能检查表";
+
+/* message of panel when connection to host failed due to access denied error */
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "未能连接主机%1$@，因为访问被拒绝。\n\n请检查您的用户名与密码并确保您所在的位置可以访问该主机。\n\nMySQL提示：%2$@";
+
+/* message of panel when SSH port forwarding failed */
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "未能连接主机%1$@，因为SSH连接被拒绝。\n\n请确保您的MySQL主机允许TCP/IP连接（例如没有--skip-networking参数）并且对您端口广播使用的主机开放连接。\n\n同时请检查您使用的端口号是否正确、权限是否有效。\n\n查看错误详情将会显示SSH调试日志，可能提供更多信息。\n\nMySQL提示：%2$@";
+
+/* message of panel when connection to host failed */
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "与主机%1$@的连接失败或超时。\n\n请确保地址正确且权限有效，或提高超时的等待时间（当前值为%2$ld秒）。\n\nMySQL提示：%3$@";
+
+/* message of panel when connection to host failed */
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "套接字连接失败或超时。\n\n请确保套接字文件位置正确，您拥有对应的权限，并且服务器正在运行。\n\nMySQL提示：%@";
+
+/* unable to copy database message */
+"Unable to copy database" = "未能拷贝数据库";
+
+/* error deleting index message */
+"Unable to delete index" = "未能删除索引";
+
+/* error deleting relation message */
+"Unable to delete relation" = "未能删除关系";
+
+/* error deleting trigger message */
+"Unable to delete trigger" = "未能删除触发器";
+
+/* unable to flush selected items message */
+"Unable to flush selected items" = "未能刷新所选项目";
+
+/* unable to flush table message */
+"Unable to flush table" = "未能刷新表";
+
+/* unable to get list of users message */
+"Unable to get list of users" = "未能获取用户列表";
+
+/* error killing connection message */
+"Unable to kill connection" = "未能断开连接";
+
+/* error killing query message */
+"Unable to kill query" = "未能取消查询";
+
+/* unable to optimze selected items message */
+"Unable to optimze selected items" = "未能优化所选项目";
+
+/* unable to optimze table message */
+"Unable to optimze table" = "未能优化表";
+
+/* unable to perform the checksum */
+"Unable to perform the checksum" = "未能校验完整性";
+
+/* error removing host message */
+"Unable to remove host" = "未能移除主机";
+
+/* unable to rename database message */
+"Unable to rename database" = "未能重命名数据库";
+
+/* unable to repair selected items message */
+"Unable to repair selected items" = "未能修复所选项目";
+
+/* unable to repair table message */
+"Unable to repair table" = "未能修复表";
+
+/* message of panel when connection to db failed after selecting from popupbutton */
+"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "未能选定数据库%@。\n请确保您拥有访问数据库的权限且数据库仍然存在。";
+
+/* Unable to write row error */
+"Unable to write row" = "未能写入条目";
+
+/* Table Content : Remove Row : Result : n Error title */
+"Unexpected number of rows removed!" = "删除条数不符合预期值！";
+
+/* warning */
+"Unknown file format" = "未知文件类型";
+
+/* unsaved changes message */
+"Unsaved changes" = "未保存的更改";
+
+/* unsaved theme message */
+"Unsaved Theme" = "未保存的主题";
+
+/* Preferences : Network : Custom SSH client : warning dialog title */
+"Unsupported configuration!" = "不支持的配置！";
+
+/* export : import settings : file version error title */
+"Unsupported version for export settings!" = "不支持导出设置的版本！";
+
+/* Name for an untitled connection */
+"Untitled" = "未命名";
+
+/* Title of a new Sequel Ace Document */
+"Untitled %ld" = "未命名%ld";
+
+/* range for mediumblob type */
+"Up to %@ bytes (16 MiB)" = "多达%@字节（16 MiB）";
+
+/* range for longblob type */
+"Up to %@ bytes (4 GiB)" = "多达%@字节（4 GiB）";
+
+/* range for mediumtext type */
+"Up to %@ characters (16 MiB)" = "多达%@个字符（16 MiB）";
+
+/* range for enum type */
+"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "多达%1$@个不同成员（实际使用中<%2$@）\n1至2字节存储空间";
+
+/* range for tinyblob type */
+"Up to 255 bytes" = "多达255字节";
+
+/* range for tinytext type */
+"Up to 255 characters" = "多达255个字符";
+
+/* Open Files : Bundle : Already-Installed : Update button */
+"Update" = "更新";
+
+/* updated: %@ */
+"updated: %@" = "已更新：%@";
+
+/* message of panel when error while updating field to db after enabling it */
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "未能更新字段内容，因为未能唯一确定字段来源（%1$ld个匹配）。很有可能更改该字段时它在表“%2$@”中发生了变化。";
+
+/* message of panel when error while updating field to db after enabling it */
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "未能更新字段内容，因为未能唯一确定字段来源（%1$ld个匹配）。很有可能更改该字段时另一用户在表“%2$@”中编辑了它。";
+
+/* updating field task description */
+"Updating field data..." = "正在更新字段数据...";
+
+/* URL scheme command couldn't authenticated */
+"URL scheme command couldn't authenticated" = "URL SCHEME命令未能验证真实性";
+
+/* URL scheme command was terminated by user */
+"URL scheme command was terminated by user" = "URL SCHEME指令被用户中止";
+
+/* URL scheme command %@ unsupported */
+"URL scheme command %@ unsupported" = "不支持URL SCHEME指令“%@”";
+
+/* Use 127.0.0.1 button */
+"Use 127.0.0.1" = "使用127.0.0.1";
+
+/* use standard connection button */
+"Use Standard Connection" = "使用标准连接";
+
+/* user has no hosts message */
+"User has no hosts" = "用户没有对应主机";
+
+/* user-defined value */
+"User-defined value" = "用户定义的变量值";
+
+/* toolbar item label for switching to the User Manager tab */
+"Users" = "用户";
+
+/* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
+"Value will be imported as MySQL NULL" = "值将被导入为MySQL NULL";
+
+/* variable label for color table (Prefs > Editor) */
+"Variable" = "变量";
+
+/* version */
+"version" = "版本";
+
+/* export header version label */
+"Version" = "版本号：";
+
+/* view */
+"view" = "视图";
+
+/* Release notes button title */
+"View full release notes" = "查看完整的发行日志";
+
+/* header for view info pane */
+"VIEW INFORMATION" = "视图信息";
+
+/* view html source code menu item title */
+"View Source" = "查看源代码";
+
+/* view structure print heading */
+"View Structure" = "查看结构";
+
+/* views */
+"views" = "视图";
+
+/* warning */
+"Warning" = "警告";
+
+/* Short important release note for why password prompts may occur */
+"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "为保证与GateKeeper的兼容性，Sequel Ace更改了数字签名。您可能需要再次允许Sequel Ace访问密码。";
+
+/* Important release notes informational text, single change */
+"We've made a few changes but we thought you should know about one particularly important one:" = "我们做出了一些修改，但其中有一项非常重要，需要您过目：";
+
+/* Important release notes informational text, multiple changes */
+"We've made a few changes but we thought you should know about some particularly important ones:" = "我们做出了一些修改，但其中有几项非常重要，需要您过目：";
+
+/* WHERE clause not valid */
+"WHERE clause not valid" = "WHERE句段无效";
+
+/* Title of filter preview area when the query WHERE is negated */
+"WHERE NOT query" = "WHERE NOT查询";
+
+/* Title of filter preview area when the query WHERE is normal */
+"WHERE query" = "WHERE查询";
+
+/* Generic working description */
+"Working..." = "请稍等...";
+
+/* export label showing app is writing data */
+"Writing data..." = "正在写入数据...";
+
+/* text showing that app is writing text file */
+"Writing..." = "正在写入...";
+
+/* wrong data format or password */
+"Wrong data format or password." = "数据格式或密码错误。";
+
+/* wrong data format */
+"Wrong data format." = "数据格式错误。";
+
+/* export : import settings : spf content type error title */
+"Wrong SPF content type!" = "SPF内容类型错误！";
+
+/* export filename date token */
+"Year" = "年";
+
+/* message of panel when trying to copy multiple rows */
+"You can only copy single rows." = "每次只能拷贝一行。";
+
+/* message of panel when trying to edit tables without index and with hidden blob/text fields */
+"You can't hide blob and text fields when working with tables without index." = "表不包含索引时不能隐藏BLOB和文本字段。";
+
+/* You cannot delete the last field in a table. Delete the table instead. */
+"You cannot delete the last field in a table. Delete the table instead." = "不能删除表中的最后一个字段。请删除整张表。";
+
+/* SSL connection requested but not established error detail */
+"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "您选择了SSL连接，但MySQL未使用SSL。\n\n这可能是因为服务器不支持或禁用了SSL连接，或者提供的信息不足以建立SSL连接。\n\n本次连接不会被加密。";
+
+/* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
+"‘%@’ based favorites" = "来自‘%@’的个人收藏";
+
+/* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
+"‘%@’ Fields Content Filters" = "‘%@’字段的内容过滤器";
+
+/* Export file already exists message */
+"%@ already exists. Do you want to replace it?" = "“%@”已经存在。是否替换？";
+
+/* Bundle Editor : Outline View : Bundle item : tooltip */
+"%@ Bundle" = "包“%@”";
+
+/* Export file creation error title */
+"%@ could not be created" = "未能创建“%@”";
+
+/* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "未能解析“%@”。您可以修改栏设置，但栏将无法在内容视图中显示。请通过“帮助”菜单里的选项将该问题报告给Sequel Ace团队。";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"%@ is not a valid client certificate file." = "“%@”不是有效的客户端证书文件。";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"%@ is not a valid private key file." = "“%@”不是有效的私钥文件。";
+
+/* text shown when there are App Sandbox Issues */
+"App Sandbox Issue" = "应用程序沙箱错误";
+
+/* Stale Bookmarks error title */
+"Stale Bookmarks" = "旧版书签";
+
+/* App Sandbox info link text */
+"App Sandbox Info" = "App Sandbox Info";
+
+/* error while selecting file title */
+"File Selection Error" = "File Selection Error";
+
+/* error while selecting file message */
+"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
+
+/* known hosts not writable error message */
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+
+/* known hosts not writable error title */
+"Known Hosts Error" = "Known Hosts Error";
+
+/* SSH Tunnel Debugging menu and window title */
+"SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
+
+/* Question to user to see if they would like to re-request access */
+"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "您有以下旧版书签：\n\n%@\n\n是否重新请求访问？";
+
+/* Question to user to see if they would like to request access to missing bookmarks */
+"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
+
+/* known hosts advance menu item title */
+"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
+
+/* The answer, yes */
+"Yes" = "是";
+
+/* Shown to remind users of their stale bookmarks */
+"A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "有关旧版安全书签的提醒：<br /><br />%@<br />";
+
+/* Title for Stale Secure Bookmarks help window */
+"Stale Secure Bookmarks" = "旧版安全书签";
+
+/* Title for Export Error alert */
+"Export Error" = "导出错误";
+
+/* Message for Export Error alert */
+"Error while writing to the export file. Could not open file: %@" = "写入导出文件时发生错误。未能打开文件%@";
+
+/* Message for User window error */
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "mysql.user返回的Resultset类对象不包含Password或authentication_string栏。";
+
+/* Title for User window error */
+"User Data Error" = "用户数据错误";
+
+/* Title for Stale Bookmark file selection dialog */
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "请重新选择'%@'以恢复Sequel Ace的访问权限。";
+
+/* Title for File Preference file selection dialog */
+"Please choose a file or folder to grant Sequel Ace access to." = "请选择给予Sequel Ace访问权限的文件或文件夹。";
+
+/* Title for Network Preference ssh config file selection dialog */
+"Please choose your ssh config files(s)" = "请选择您的SSH配置文件";
+
+/* Title for Network Preference ssh known hosts file selection dialog */
+"Please choose your known hosts file" = "Please choose your known hosts file";
+
+/* Message for field editor JSON segment when JSON is invalid */
+"Invalid JSON" = "无效的JSON";
+
+/* Applying syntax highlighting task description */
+"Applying syntax highlighting..." = "正在应用语法高亮...";
+
+/* Error message when a bash task fails to start */
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
+
+/* Error message title when we failed to create new connection view */
+"New Connection Error" = "New Connection Error";
+
+/* New Connection Error informative message */
+"Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
+
+/* new version is available alert title */
+"A new version is available" = "A new version is available";
+
+/* new version is available download button title */
+"Download" = "Download";
+
+/* new version is available alert informativeText */
+"Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+
+/* downloading new version window title */
+"Download Progress" = "Download Progress";
+
+/* downloading new version time remaining placeholder text */
+"Calculating time remaining..." = "Calculating time remaining...";
+
+/* downloading new version window message */
+"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
+
+/* downloading new version time remaining estimate text */
+"About %.1f seconds left" = "About %.1f seconds left";
+
+/* downloading new version failure alert title */
+"Download Failed" = "Download Failed";
+
+/* Tool tip for the Show alert when update is available preference on the Notifications pane */
+"Only available for GitHub downloads" = "Only available for GitHub downloads";
+
+/* Tool tip warning for when the user sets auto-complete delay to zero */
+"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
+
+/* downloading new version bytes of bytes done */
+"%@ of %@" = "%@ of %@";
+
+/* Time zone set failed informative message */
+"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
+
+/* Menu item title for checking for updates */
+"Check for updates" = "Check for updates";
+
+/* Warning message during connection in case the variable skip-show-database is set to ON */
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
+
+/* Error alert title when the request to GitHub fails */
+"GitHub Request Failed" = "GitHub Request Failed";
+
+/* Info alert title when there are Newer Releases Available */
+"No Newer Release Available" = "No Newer Release Available";
+
+/* Info alert message when there are Newer Releases Available */
+"You are currently running the latest release." = "You are currently running the latest release.";

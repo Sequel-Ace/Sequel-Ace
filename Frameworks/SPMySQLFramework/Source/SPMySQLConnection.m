@@ -34,6 +34,14 @@
 #include <pthread.h>
 #include <SystemConfiguration/SCNetworkReachability.h>
 #import "SPMySQLUtilities.h"
+#import "SPMySQLArrayAdditions.h"
+#import "SPMySQLMutableDictionaryAdditions.h"
+
+@interface SPMySQLConnection ()
+
+@property (readwrite, copy) NSString *timeZoneIdentifier;
+
+@end
 
 // Thread flag constant
 static pthread_key_t mySQLThreadInitFlagKey;
@@ -50,7 +58,6 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 // List of permissible ciphers to use for SSL connections
 const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:AES128-SHA:AES256-RMD:AES128-RMD:DES-CBC3-RMD:DHE-RSA-AES256-RMD:DHE-RSA-AES128-RMD:DHE-RSA-DES-CBC3-RMD:RC4-SHA:RC4-MD5:DES-CBC3-SHA:DES-CBC-SHA:EDH-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC-SHA";
 
-
 @implementation SPMySQLConnection
 
 #pragma mark -
@@ -59,9 +66,12 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 @synthesize host;
 @synthesize username;
 @synthesize password;
+@synthesize database;
 @synthesize port;
 @synthesize useSocket;
 @synthesize socketPath;
+@synthesize allowDataLocalInfile;
+@synthesize enableClearTextPlugin;
 @synthesize useSSL;
 @synthesize sslKeyFilePath;
 @synthesize sslCertificatePath;
@@ -115,7 +125,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  * Typically initialisation would be followed by setting the connection details
  * and then calling -connect.
  */
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		mySQLConnection = NULL;
@@ -126,6 +136,8 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 		initialConnectTime = 0;
 
 		port = 3306;
+
+		_timeZoneIdentifier = @"";
 
 		// Default to socket connections if no other details have been provided
 		useSocket = YES;
@@ -149,7 +161,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 		keepAliveLastPingBlocked = NO;
 
 		// Set up default encoding variables
-		encoding = [[NSString alloc] initWithString:@"utf8"];
+        encoding = @"utf8mb4";
 		stringEncoding = NSUTF8StringEncoding;
 		encodingUsesLatin1Transport = NO;
 		encodingToRestore = nil;
@@ -183,7 +195,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 		// Start with empty cancellation details
 		lastQueryWasCancelled = NO;
-		lastQueryWasCancelledUsingReconnect = NO;
 
 		// Empty or reset the timing variables
 		lastConnectionUsedTime = 0;
@@ -222,7 +233,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 	// Clear the keepalive timer
 	[keepAliveTimer invalidate];
-	[keepAliveTimer release];
 
 	// If a keepalive thread is active, cancel it
 	[self _cancelKeepAlives];
@@ -233,7 +243,6 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	// Clean up the connection proxy, if any
 	if (proxy) {
 		[proxy setConnectionStateChangeSelector:NULL delegate:nil];
-		[proxy release];
 	}
 	
 	[self setSslCipherList:nil];
@@ -242,24 +251,8 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	if ([connectionLock condition] != SPMySQLConnectionIdle) {
 		[self _unlockConnection];
 	}
-	[connectionLock release], connectionLock = nil;
-
-	[encoding release];
-	if (encodingToRestore) [encodingToRestore release], encodingToRestore = nil;
-	if (previousEncoding) [previousEncoding release], previousEncoding = nil;
-
-	if (database) [database release], database = nil;
-	if (databaseToRestore) [databaseToRestore release], databaseToRestore = nil;
-	if (serverVariableVersion) [serverVariableVersion release], serverVariableVersion = nil;
-	if (queryErrorMessage) [queryErrorMessage release], queryErrorMessage = nil;
-	if (querySqlstate) [querySqlstate release], querySqlstate = nil;
-	[delegateDecisionLock release];
-
-	[_debugLastConnectedEvent release];
 
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-
-	[super dealloc];
 }
 
 #pragma mark -
@@ -272,6 +265,8 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)connect
 {
+    SPLog(@"connect");
+
 	userTriggeredDisconnect = NO;
 	return [self _connect];
 }
@@ -288,6 +283,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)reconnect
 {
+    SPLog(@"reconnect");
 	userTriggeredDisconnect = NO;
 	return [self _reconnectAllowingRetries:YES];
 }
@@ -297,6 +293,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (void)disconnect
 {
+    SPLog(@"calling _disconnect");
 	userTriggeredDisconnect = YES;
 	[self _disconnect];
 }
@@ -313,6 +310,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 {
 	// If the connection has been allowed to drop in the background, restore it if posslbe
 	if (state == SPMySQLConnectionLostInBackground) {
+        SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
 		[self _reconnectAllowingRetries:YES];
 	}
 
@@ -339,36 +337,48 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
  */
 - (BOOL)checkConnection
 {
+    SPLog(@"checkConnection");
+
 	// If the connection is not seen as active, don't proceed
-	if (state != SPMySQLConnected) return NO;
+    if (state != SPMySQLConnected){
+        SPLog(@"state != SPMySQLConnected, returning NO");
+        return NO;
+    }
 
 	// Similarly, if the connection is currently locked, that indicates it's in use.  This
 	// could be because queries are actively being run, or that a ping is running.
 	if ([connectionLock condition] == SPMySQLConnectionBusy) {
+        SPLog(@"SPMySQLConnectionBusy");
 
 		// If a ping thread is not active queries are being performed - return success.
 		if (!keepAlivePingThreadActive) return YES;
 
 		// If a ping thread is active, wait for it to complete before checking the connection
+        SPLog(@"ping thread is active, wait for it to complete before checking the connection");
+
 		while (keepAlivePingThreadActive) {
 			usleep(10000);
 		}
 	}
 
+
+    SPLog(@"calling _pingConnectionUsingLoopDelay");
 	// Confirm whether the connection is still responding by using a ping
 	BOOL connectionVerified = [self _pingConnectionUsingLoopDelay:400];
+    SPLog(@"_pingConnectionUsingLoopDelay finished");
 
 	// If the connection didn't respond, trigger a reconnect.  This will automatically
 	// attempt to reconnect once, and if that fails will ask the user how to proceed - whether
 	// to keep reconnecting, or whether to disconnect.
 	if (!connectionVerified) {
+        SPLog(@"!connectionVerified, calling _reconnectAllowingRetries");
 		connectionVerified = [self _reconnectAllowingRetries:YES];
 	}
 
 	// Update the connection tracking use variable if the connection was confirmed,
 	// as at least a mysql_ping will have been used.
 	if (connectionVerified) {
-		lastConnectionUsedTime = mach_absolute_time();
+        lastConnectionUsedTime = _monotonicTime();
 	}
 
 	return connectionVerified;
@@ -390,11 +400,12 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	// If the connection has been dropped in the background, trigger a
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
+        SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
 		return [self _reconnectAllowingRetries:YES];
 	}
 	
 	// If the connection was recently used, return success
-	if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 30) {
+	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 30) {
 		return YES;
 	}
 	
@@ -412,7 +423,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 {
 	if (initialConnectTime == 0) return -1;
 
-	return _elapsedSecondsSinceAbsoluteTime(initialConnectTime);
+	return _timeIntervalSinceMonotonicTime(initialConnectTime);
 }
 
 /**
@@ -472,6 +483,35 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	return nil;
 }
 
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
+    if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
+        return;
+    }
+
+    self.timeZoneIdentifier = nil;
+    if (!timeZoneIdentifier || [timeZoneIdentifier isEqualToString:@""]) {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = @@GLOBAL.time_zone"]];
+    } else {
+        [self queryString:[NSString stringWithFormat:@"SET time_zone = %@", [timeZoneIdentifier mySQLTickQuotedString]]];
+        if ([self lastErrorMessage] == nil) {
+            self.timeZoneIdentifier = timeZoneIdentifier;
+        }
+        else{
+            NSMutableString *lastErrorMessage = [[NSMutableString alloc] init];
+            [lastErrorMessage setString:[self lastErrorMessage]];
+            SPLog(@"Failed to set time_zone. Error: %@", lastErrorMessage);
+            self.timeZoneIdentifier = nil;
+            if (delegate && [delegate respondsToSelector:@selector(queryGaveError:connection:)]) {
+                [delegate queryGaveError:lastErrorMessage connection:self];
+            }
+            if ([delegate respondsToSelector:@selector(showErrorWithTitle:message:)]) {
+                [lastErrorMessage appendString:NSLocalizedString(@"\n\ntime_zone will be set to SYSTEM.", @"\n\ntime_zone will be set to SYSTEM.")];
+                [delegate showErrorWithTitle:NSLocalizedString(@"Error", @"error") message:lastErrorMessage];
+            }
+        }
+    }
+}
+
 @end
 
 #pragma mark -
@@ -479,7 +519,7 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 
 //http://alastairs-place.net/blog/2013/01/10/interesting-os-x-crash-report-tidbits/
 /* CrashReporter info */
-const char *__crashreporter_info__ = NULL;
+char *__crashreporter_info__ = NULL;
 asm(".desc ___crashreporter_info__, 0x10");
 
 @implementation SPMySQLConnection (PrivateAPI)
@@ -489,13 +529,16 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_connect
 {
+    SPLog(@"_connect");
+
 	// If a connection is already active in some form, throw an exception
 	if (state != SPMySQLDisconnected && state != SPMySQLConnectionLostInBackground) {
 		@synchronized (self) {
-			double diff = _elapsedSecondsSinceAbsoluteTime(initialConnectTime);
+			double diff = _timeIntervalSinceMonotonicTime(initialConnectTime);
 			asprintf(&__crashreporter_info__, "Attempted to connect a connection that is not disconnected (SPMySQLConnectionState=%d).\nIf state==2: Previous connection made %lfs ago from: %s", state, diff, [_debugLastConnectedEvent cStringUsingEncoding:NSUTF8StringEncoding]);
-			__builtin_trap();
+            SPLog(@"Attempted to connect a connection that is not disconnected (SPMySQLConnectionState=%d).\nIf state==2: Previous connection made %lfs ago from: %s", state, diff, [_debugLastConnectedEvent cStringUsingEncoding:NSUTF8StringEncoding]);
 		}
+
 		[NSException raise:NSInternalInconsistencyException format:@"Attempted to connect a connection that is not disconnected (SPMySQLConnectionState=%d).", state];
 		return NO;
 	}
@@ -513,6 +556,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If the connection failed, reset state and return
 	if (!mySQLConnection) {
+        SPLog(@"!mySQLConnection, unlock");
+
 		[self _unlockConnection];
 		state = SPMySQLDisconnected;
 		return NO;
@@ -530,16 +575,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnected;
 
 	@synchronized (self) {
-		initialConnectTime = mach_absolute_time();
-		[_debugLastConnectedEvent release];
+		initialConnectTime = _monotonicTime();
 		_debugLastConnectedEvent = [[NSString alloc] initWithFormat:@"thread=%@ stack=%@",[NSThread currentThread],[NSThread callStackSymbols]];
 	}
 
 	mysqlConnectionThreadId = mySQLConnection->thread_id;
 	lastConnectionUsedTime = initialConnectTime;
 
-	// Copy the server version string to the instance variable
-	if (serverVariableVersion) [serverVariableVersion release], serverVariableVersion = nil;
 	// the mysql_get_server_info() function
 	//   * returns the version name that is part of the initial connection handshake.
 	//   * Unless the connection failed, it will always return a non-null buffer containing at least a '\0'.
@@ -604,6 +646,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// options, encodings and connection state.
 	bool falseMyBool = FALSE;
 	mysql_options(theConnection, MYSQL_OPT_RECONNECT, &falseMyBool);
+    
+    // Set the connection protocol properly (needed so localhost can be used for TCP/IP)
+    if (useSocket) {
+        const uint proto = MYSQL_PROTOCOL_SOCKET;
+        mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
+    } else {
+        const uint proto = MYSQL_PROTOCOL_TCP;
+        mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
+    }
 
 	// Set the connection timeout
 	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&timeout);
@@ -615,6 +666,16 @@ asm(".desc ___crashreporter_info__, 0x10");
     // Some servers have issues when we try caching_sha2_password first; let's always try mysql_native_password first; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/141
     mysql_options(theConnection, MYSQL_DEFAULT_AUTH, [@"mysql_native_password" UTF8String]);
 
+    // Allow using LOAD DATA LOCAL INFILE ...; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/245
+    if(allowDataLocalInfile) {
+        mysql_options(theConnection, MYSQL_OPT_LOCAL_INFILE, [@"On" UTF8String]);
+    }
+    
+	// Allow using ENABLE CLEARTEXT PLUGIN; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/368
+	if (enableClearTextPlugin) {
+		mysql_options(theConnection, MYSQL_ENABLE_CLEARTEXT_PLUGIN, [@"On" UTF8String]);
+	}
+    
 	// Set up the connection variables in the format MySQL needs, from the class-wide variables
 	const char *theHost = NULL;
 	const char *theUsername = "";
@@ -622,7 +683,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	const char *theSocket = NULL;
 
 	if (host) theHost = [host UTF8String]; //mysql calls getaddrinfo on the hostname. Apples code uses -UTF8String in that situation.
-	if (username) theUsername = _cStringForStringWithEncoding(username, connectEncodingNS, NULL); //during connect this is in MYSQL_SET_CHARSET_NAME encoding
+    if (username) theUsername = [username cStringUsingEncoding:connectEncodingNS]; //during connect this is in MYSQL_SET_CHARSET_NAME encoding
 
 	// If a password was supplied, use it; otherwise ask the delegate if appropriate.
 	//
@@ -635,9 +696,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// MAY choose to do a charset conversion as appropriate before handing it to whatever backend is used.
 	// Since we don't know which auth plugin server and client will agree upon, we'll do as the manual says...
 	if (password) {
-		thePassword = _cStringForStringWithEncoding(password, connectEncodingNS, NULL);
+		thePassword = [password cStringUsingEncoding:connectEncodingNS];
 	} else if ([delegate respondsToSelector:@selector(keychainPasswordForConnection:)]) {
-		thePassword = _cStringForStringWithEncoding([delegate keychainPasswordForConnection:self], connectEncodingNS, NULL);
+        thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
 	}
 
 	// If set to use a socket and a socket was supplied, use it; otherwise, search for a socket to use
@@ -751,6 +812,8 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
+
+    SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
 	BOOL reconnectSucceeded = NO;
 
@@ -763,11 +826,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
 			// takes less than the requested 0.1s, sleep instead.
 			while (reconnectingThread) {
-				uint64_t loopIterationStart_t = mach_absolute_time();
+                SPLog(@"a reconnection attempt is already being made, waiting");
+
+				uint64_t loopIterationStart_t = _monotonicTime();
 
 				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-				if (_elapsedSecondsSinceAbsoluteTime(loopIterationStart_t) < 0.1) {
-					usleep(100000 - (useconds_t)(1000000 * _elapsedSecondsSinceAbsoluteTime(loopIterationStart_t)));
+				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.1) {
+					usleep(100000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
 				}
 			}
 
@@ -778,6 +843,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 		}
 
 		if ([[NSThread currentThread] isCancelled]) {
+            SPLog(@"NSThread currentThread] isCancelled, returning");
+
 			return NO;
 		}
 
@@ -805,6 +872,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _waitForNetworkConnectionWithTimeout:10];
 
 		if ([[NSThread currentThread] isCancelled]) {
+            SPLog(@"NSThread currentThread] isCancelled, returning");
+
 			[self _unlockConnection];
 			reconnectingThread = NULL;
 			return NO;
@@ -812,43 +881,55 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If there is a proxy, attempt to reconnect it in blocking fashion
 		if (proxy) {
+
+            SPLog(@"we have a proxy");
+
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
 
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
 			// to allow it to disconnect.
 			if ([proxy state] != SPMySQLProxyIdle) {
 
-				proxyWaitStart_t = mach_absolute_time();
+                SPLog(@"proxy not idle, waiting");
+
+				proxyWaitStart_t = _monotonicTime();
 				while ([proxy state] != SPMySQLProxyIdle) {
-					loopIterationStart_t = mach_absolute_time();
+					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_elapsedSecondsSinceAbsoluteTime(proxyWaitStart_t) > timeout) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
-					if (_elapsedSecondsSinceAbsoluteTime(loopIterationStart_t) < 0.25) {
-						usleep(250000 - (useconds_t)(1000000 * _elapsedSecondsSinceAbsoluteTime(loopIterationStart_t)));
+					if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
+						usleep(250000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
 					}
 				}
 			}
 
 			// Request that the proxy re-establishes its connection
+            SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
+
 			[proxy connect];
 
 			// Wait while the proxy connects
-			proxyWaitStart_t = mach_absolute_time();
+			proxyWaitStart_t = _monotonicTime();
 			while (1) {
-				loopIterationStart_t = mach_absolute_time();
+				loopIterationStart_t = _monotonicTime();
+
+                SPLog(@"Wait while the proxy connects");
 
 				// If the proxy has connected, record the new local port and break out of the loop
 				if ([proxy state] == SPMySQLProxyConnected) {
+                    SPLog(@"SPMySQLProxyConnected. port: %lu",(unsigned long)[proxy localPort] );
+
 					port = [proxy localPort];
 					break;
 				}
 
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_elapsedSecondsSinceAbsoluteTime(proxyWaitStart_t) > (timeout + 1)) {
+				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
+                    SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[proxy disconnect];
 					break;
 				}
@@ -857,13 +938,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 				// the proxy. Capture how long this interface action took, standardising the
 				// overall time.
 				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
-				if (_elapsedSecondsSinceAbsoluteTime(loopIterationStart_t) < 0.25) {
-					usleep((useconds_t)(250000 - (1000000 * _elapsedSecondsSinceAbsoluteTime(loopIterationStart_t))));
+				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
+					usleep((useconds_t)(250000 - (1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t))));
 				}
 
 				// Extend the connection timeout by any interface time
 				if ([proxy state] == SPMySQLProxyWaitingForAuth) {
-					proxyWaitStart_t += mach_absolute_time() - loopIterationStart_t;
+					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
 				}
 			}
 
@@ -885,12 +966,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectSucceeded = YES;
 			if (databaseToRestore) {
 				[self selectDatabase:databaseToRestore];
-				[databaseToRestore release], databaseToRestore = nil;
 			}
 			if (encodingToRestore) {
 				[self setEncoding:encodingToRestore];
 				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
-				[encodingToRestore release], encodingToRestore = nil;
 			}
 		}
 			// If the connection failed and the connection is permitted to retry,
@@ -923,6 +1002,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					// By default attempt a reconnect
 				default:
 					reconnectingThread = NULL;
+                    SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
 					reconnectSucceeded = [self _reconnectAllowingRetries:YES];
 			}
 		}
@@ -945,19 +1025,20 @@ asm(".desc ___crashreporter_info__, 0x10");
 	return (state == SPMySQLConnected);
 }
 
-
 /**
  * Loop while a connection isn't available; allows blocking while the network is disconnected
  * or still connecting (eg Airport still coming up after sleep).
  */
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds
 {
+
+    SPLog(@"_waitForNetworkConnectionWithTimeout: %f", timeoutSeconds);
 	// Set up the reachability target - the host is not important, and is not connected to.
-	SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, "dev.mysql.com");
+    SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, "google.com"); 
 
 	BOOL hostReachable;
 	// In a loop until success or the timeout, test reachability
-	uint64_t loopStart_t = mach_absolute_time();
+	uint64_t loopStart_t = _monotonicTime();
 	while (1) {
 		SCNetworkReachabilityFlags reachabilityStatus;
 
@@ -976,13 +1057,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (hostReachable) break;
 
 		// If the timeout has been exceeded, break out of the loop
-		if (_elapsedSecondsSinceAbsoluteTime(loopStart_t) >= timeoutSeconds) break;
+		if (_timeIntervalSinceMonotonicTime(loopStart_t) >= timeoutSeconds) break;
 
 		// Sleep before the next loop iteration
 		usleep(250000);
 	}
 
 	CFRelease(reachabilityTarget);
+
+    SPLog(@"return hostReachable: %d", hostReachable);
+
 	return hostReachable;
 }
 
@@ -991,6 +1075,8 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (void)_disconnect
 {
+    SPLog(@"_disconnect");
+
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
 		state = SPMySQLDisconnected;
@@ -1007,28 +1093,28 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLDisconnecting;
 
 	// Allow any pings or cancelled queries  to complete, inside a time limit of ten seconds
-	uint64_t disconnectStartTime_t = mach_absolute_time();
+	uint64_t disconnectStartTime_t = _monotonicTime();
 	while (![self _tryLockConnection]) {
 		usleep(100000);
-		if (_elapsedSecondsSinceAbsoluteTime(disconnectStartTime_t) > 10) {
+		if (_timeIntervalSinceMonotonicTime(disconnectStartTime_t) > 10) {
 			NSLog(@"%s: Could not acquire connection lock within time limit (10s). Forcing unlock!",__PRETTY_FUNCTION__);
 			break;
 		}
 	}
+
 	[self _unlockConnection];
 	[self _cancelKeepAlives];
-
 	[self _lockConnection];
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.
 	if (mySQLConnection && !mySQLConnection->net.reading_or_writing && mySQLConnection->net.vio && mySQLConnection->net.buff) {
+        SPLog(@"calling mysql_close(mySQLConnection)");
+
 		mysql_close(mySQLConnection);
 	}
 	mySQLConnection = NULL;
-	if (serverVariableVersion) [serverVariableVersion release], serverVariableVersion = nil;
 	serverVersionNumber = 0;
-	if (database) [database release], database = nil;
 	state = SPMySQLDisconnected;
 	[self _unlockConnection];
 
@@ -1057,7 +1143,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
 	NSMutableDictionary *variables = [NSMutableDictionary new];
 	for (NSArray *variableRow in theResult) {
-		[variables setObject:[variableRow objectAtIndex:1] forKey:[variableRow objectAtIndex:0]];
+		[variables SPsafeSetObject:[variableRow SPsafeObjectAtIndex:1] forKey:[variableRow firstObject]];
 	}
 
 	// Get the connection encoding.  Although a specific encoding may have been requested on
@@ -1088,9 +1174,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
 
 	// Update instance variables
-	if (encoding) [encoding release];
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];
-	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[self _cStringForString:encoding]];
+	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[encoding cStringUsingEncoding:stringEncoding]];
 	encodingUsesLatin1Transport = NO;
 
 	// Check the interactive timeout - if it's below five minutes, increase it to ten
@@ -1103,8 +1188,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self queryString:@"SET wait_timeout=600"];
 		}
 	}
-
-	[variables release];
 }
 
 /**
@@ -1114,7 +1197,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 - (void)_restoreConnectionVariables
 {
 	mysqlConnectionThreadId = mySQLConnection->thread_id;
-	initialConnectTime = mach_absolute_time();
+	initialConnectTime = _monotonicTime();
 
 	[self selectDatabase:database];
 
@@ -1157,5 +1240,4 @@ asm(".desc ___crashreporter_info__, 0x10");
 {
 	mysql_thread_end();
 }
-
 @end

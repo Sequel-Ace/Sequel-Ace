@@ -35,7 +35,6 @@
 
 @implementation SPMySQLConnection (Locking)
 
-
 /**
  * Lock the connection. This must be done before performing any operation
  * that is not thread safe, eg. performing queries or pinging.
@@ -67,7 +66,6 @@
 	return YES;
 }
 
-
 /**
  * Unlock the connection.
  */
@@ -80,7 +78,7 @@
 	// it means the connection may have been unlocked twice. This is
 	// potentially dangerous, so we log this to the console
 	if ([connectionLock condition] != SPMySQLConnectionBusy) {
-		NSLog(@"SPMySQLConnection: Tried to unlock the connection, but it wasn't locked.");
+		SPLog(@"SPMySQLConnection: Tried to unlock the connection, but it wasn't locked.");
 	}
 
 	// Since we connected with CLIENT_MULTI_RESULT, we must make sure there are not more results!
@@ -92,7 +90,7 @@
 		mySQLConnection->net.buff &&
 		mysql_more_results(mySQLConnection)
 	) {
-		NSLog(@"SPMySQLConnection: Discarding unretrieved results. This is currently normal when using CALL.");
+		SPLog(@"SPMySQLConnection: Discarding unretrieved results. This is currently normal when using CALL.");
 		[self _flushMultipleResultSets];
 	}
 

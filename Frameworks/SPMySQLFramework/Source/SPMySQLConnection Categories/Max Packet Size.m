@@ -28,9 +28,9 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Max Packet Size.h"
 #import "SPMySQL Private APIs.h"
+#import "SPMySQLArrayAdditions.h"
 
 @implementation SPMySQLConnection (Max_Packet_Size)
 
@@ -109,7 +109,7 @@
 	[result setReturnDataAsStrings:YES];
 
 	// Get the maximum size string
-	NSString *maxQuerySizeString = [[result getRowAsArray] objectAtIndex:colIdx];
+	NSString *maxQuerySizeString = [[result getRowAsArray] SPsafeObjectAtIndex:colIdx];
 
 	NSInteger _maxQuerySize = maxQuerySizeString ? [maxQuerySizeString integerValue] : 0;
 
@@ -186,9 +186,12 @@
 	if ([delegate respondsToSelector:@selector(showErrorWithTitle:message:)]) {
 		[delegate showErrorWithTitle:NSLocalizedString(@"Error", @"error") message:errorMessage];
 	} else {
-		NSRunAlertPanel(NSLocalizedString(@"Error", @"error"), @"%@", @"OK", nil, nil, errorMessage);
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = NSLocalizedString(@"Error", @"error");
+        alert.informativeText = errorMessage;
+        [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+        [alert runModal];
 	}
-
 	return NO;
 }
 

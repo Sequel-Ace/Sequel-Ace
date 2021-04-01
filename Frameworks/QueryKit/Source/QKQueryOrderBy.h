@@ -26,7 +26,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 
-#import "QKQueryConstruct.h"
+#import <QueryKit/QKQueryConstruct.h>
 
 /**
  * @class QKQueryOrderBy QKQueryOrderBy.h
@@ -44,7 +44,7 @@
 /**
  * @property orderByField
  */
-@property(readwrite, retain) NSString *orderByField;
+@property(readwrite, copy) NSString *orderByField;
 
 /**
  * @property orderByDescending
@@ -53,6 +53,6 @@
 
 + (QKQueryOrderBy *)orderByField:(NSString *)field descending:(BOOL)descending;
 
-- (id)initWithField:(NSString *)field descending:(BOOL)descending;
+- (instancetype)initWithField:(NSString *)field descending:(BOOL)descending;
 
 @end

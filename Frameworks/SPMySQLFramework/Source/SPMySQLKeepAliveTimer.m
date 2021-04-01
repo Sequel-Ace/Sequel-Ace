@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "SPMySQLKeepAliveTimer.h"
 
 @interface SPMySQLKeepAliveTimer () // Private API
@@ -93,12 +92,6 @@
 	}
 }
 
-- (void)dealloc
-{
-	[wrappedTimer release];
-	[super dealloc];
-}
-
 #pragma mark - Private API
 
 /**
@@ -107,7 +100,7 @@
  */
 - (void)_initKeepAliveTimer
 {
-	wrappedTimer = [[NSTimer scheduledTimerWithTimeInterval:timerRepeatInterval target:self	selector:@selector(_forwardPing) userInfo:nil repeats:YES] retain];
+	wrappedTimer = [NSTimer scheduledTimerWithTimeInterval:timerRepeatInterval target:self	selector:@selector(_forwardPing) userInfo:nil repeats:YES];
 }
 
 /**
@@ -116,7 +109,9 @@
  */
 - (void)_forwardPing
 {
-	[timerTarget performSelector:timerSelector];
+    if ([timerTarget respondsToSelector:timerSelector]) {
+        [timerTarget performSelector:timerSelector];
+    }
 }
 
 @end

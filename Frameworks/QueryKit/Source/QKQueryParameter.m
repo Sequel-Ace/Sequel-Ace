@@ -34,17 +34,15 @@
 
 @implementation QKQueryParameter
 
-@synthesize operator = _operator;
-
 #pragma mark -
 #pragma mark Initialisation
 
 + (QKQueryParameter *)queryParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value
 {
-	return [[[QKQueryParameter alloc] initParamWithField:field operator:op value:value] autorelease];
+	return [[QKQueryParameter alloc] initParamWithField:field operator:op value:value];
 }
 
-- (id)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value
+- (instancetype)initParamWithField:(NSString *)field operator:(QKQueryOperator)op value:(id)value
 {
 	if ((self = [super init])) {
 		[self setField:field];
@@ -61,11 +59,11 @@
 {
 	NSMutableString *string = [NSMutableString string]; 
 		
-	NSString *field = [_field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *field = [self.field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	
 	[string appendFormat:@"%1$@%2$@%1$@", [self useQuotedIdentifier] ? _identiferQuote : EMPTY_STRING, field];
-	[string appendFormat:@" %@ ", [QKQueryUtilities stringRepresentationOfQueryOperator:_operator]];
-	[string appendFormat:![_value isKindOfClass:[NSNumber class]] ? @"'%@'" : @"%@", [_value description]];
+	[string appendFormat:@" %@ ", [QKQueryUtilities stringRepresentationOfQueryOperator:self.operator]];
+	[string appendFormat:![self.value isKindOfClass:[NSNumber class]] ? @"'%@'" : @"%@", [self.value description]];
 	
 	return string;
 }

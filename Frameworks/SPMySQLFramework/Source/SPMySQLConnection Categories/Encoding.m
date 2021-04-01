@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Encoding.h"
 #import "SPMySQLStringAdditions.h"
 
@@ -82,11 +81,6 @@
  */
 - (BOOL)setEncoding:(NSString *)theEncoding
 {
-	// MySQL versions prior to 4.1 don't support encoding changes; return NO on those
-	// versions.
-	if (![self serverVersionIsGreaterThanOrEqualTo:4 minorVersion:1 releaseVersion:0]) {
-		return NO;
-	}
 
 	// If the supplied encoding is already set, return success
 	if ([encoding isEqualToString:theEncoding] && !encodingUsesLatin1Transport) {
@@ -101,7 +95,6 @@
 
 	// Connection encoding was successfully set, update the instance settings,
 	// and return success.
-	[encoding release];
 	encoding = [[NSString alloc] initWithString:theEncoding];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[theEncoding UTF8String]];
 	encodingUsesLatin1Transport = NO;
@@ -122,12 +115,6 @@
  */
 - (BOOL)setEncodingUsesLatin1Transport:(BOOL)useLatin1
 {
-	// MySQL versions prior to 4.1 don't support encoding changes; return NO on those
-	// versions.
-	if (![self serverVersionIsGreaterThanOrEqualTo:4 minorVersion:1 releaseVersion:0]) {
-		return NO;
-	}
-
 	// If the Latin1 mode is already set, return success
 	if (encodingUsesLatin1Transport == useLatin1) {
 		return YES;
@@ -163,14 +150,12 @@
 #pragma mark -
 #pragma mark Encoding storage and restoration
 
-
 /**
  * Store a previous encoding setting, to allow it to be easily restored
  * later - used when the encoding needs to be temporarily changed.
  */
 - (void)storeEncodingForRestoration
 {
-	if (previousEncoding) [previousEncoding release];
 	previousEncoding = [[NSString alloc] initWithString:encoding];
 	previousEncodingUsesLatin1Transport = encodingUsesLatin1Transport;
 }
@@ -207,7 +192,9 @@
 + (NSStringEncoding)stringEncodingForMySQLCharset:(const char *)mysqlCharset
 {
 	// Handle the most common cases first
-	if (!strcmp(mysqlCharset, "utf8")) {
+    if (!strcmp(mysqlCharset, "utf8mb4")) {
+        return NSUTF8StringEncoding;
+    } else if (!strcmp(mysqlCharset, "utf8")) {
 		return NSUTF8StringEncoding;
 	} else if (!strcmp(mysqlCharset, "latin1")) {
 		return NSWindowsCP1252StringEncoding; // Warning: This is NOT the same as ISO-8859-1 (aka "ISO Latin 1")
@@ -259,8 +246,6 @@
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSLatin2);
 	} else if (!strcmp(mysqlCharset, "latin7")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin7);
-	} else if (!strcmp(mysqlCharset, "utf8mb4")) {
-		return NSUTF8StringEncoding;
 	} else if (!strcmp(mysqlCharset, "cp1251")) {
 		return NSWindowsCP1251StringEncoding;
 	} else if (!strcmp(mysqlCharset, "utf16")) {

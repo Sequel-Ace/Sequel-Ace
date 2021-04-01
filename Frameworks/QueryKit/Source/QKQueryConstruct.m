@@ -36,7 +36,7 @@
 #pragma mark -
 #pragma mark Initialisation
 
-- (id)init
+- (instancetype)init
 {
 	if ((self = [super init])) {
 		[self setUseQuotedIdentifier:YES];
@@ -44,15 +44,6 @@
 	}
 	
 	return self;
-}
-
-#pragma mark -
-
-- (void)dealloc
-{
-    if (_identiferQuote) (void)([_identiferQuote release]), _identiferQuote = nil;
-	
-	[super dealloc];
 }
 
 @end

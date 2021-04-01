@@ -68,7 +68,7 @@
  */
 - (void)setProxy:(NSObject <SPMySQLConnectionProxy> *)aProxy
 {
-	proxy = [aProxy retain];
+	proxy = aProxy;
 	previousProxyState = [aProxy state];
 
 	[proxy setConnectionStateChangeSelector:@selector(_proxyStateChange:) delegate:self];
@@ -93,36 +93,49 @@
  */
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy
 {
+    SPLog(@"_proxyStateChange");
+
 	NSThread *reconnectionThread;
 
 	// Perform no actions if this isn't the current connection proxy, or if notifications
 	// are currently set to be ignored
-	if (aProxy != proxy || proxyStateChangeNotificationsIgnored) return;
+    if (aProxy != proxy || proxyStateChangeNotificationsIgnored){
+        SPLog(@"aProxy != proxy || proxyStateChangeNotificationsIgnored, returning");
+        return;
+    }
 
 	SPMySQLConnectionProxyState newState = [aProxy state];
-	
+
+    SPLog(@"state = %i", newState);
+
 	// If the connection proxy disconnects, trigger a reconnect; use a new thread to allow the
 	// main thread to process events as required.
 	if (state == SPMySQLConnected && newState == SPMySQLProxyIdle && previousProxyState == SPMySQLProxyConnected) {
+
+        SPLog(@"state == SPMySQLConnected && newState == SPMySQLProxyIdle && previousProxyState == SPMySQLProxyConnected");
 
 		// Clear the state change selector on the proxy until a connection is re-established
 		proxyStateChangeNotificationsIgnored = YES;
 
 		// Trigger a reconnect depending on connection usage recently.  If the connection has
 		// actively been used in the last couple of minutes, trigger a full reconnection attempt.
-		if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 60 * 2) {
-			reconnectionThread = [[[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES] autorelease];
+		if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 2) {
+            SPLog(@"If the connection has actively been used in the last couple of minutes, trigger a full reconnection attempt");
+            SPLog(@"create new reconnectionThread");
+			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES];
 			[reconnectionThread setName:@"SPMySQL reconnection thread (full)"];
 			[reconnectionThread start];
 
 		// If used within the last fifteen minutes, trigger a background/single reconnection attempt
-		} else if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 60 * 15) {
-			reconnectionThread = [[[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil] autorelease];
+		} else if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
+            SPLog(@"If used within the last fifteen minutes, trigger a background/single reconnection attempt");
+			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil];
 			[reconnectionThread setName:@"SPMySQL reconnection thread (limited)"];
 			[reconnectionThread start];
 
 		// Otherwise set the state to connection lost for automatic reconnect on next use
 		} else {
+            SPLog(@"Otherwise set the state to connection lost for automatic reconnect on next use");
 			state = SPMySQLConnectionLostInBackground;
 		}
 	}
@@ -151,7 +164,21 @@
 	} else {
 
 		// First check whether the application is in a modal state; if so, wait
-		while ([NSApp modalWindow]) usleep(100000);
+        do {
+            NSWindow __block *modalWindow = nil;
+            
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                modalWindow = [NSApp modalWindow];
+            });
+
+            if(modalWindow == nil){
+                break;
+            }
+            else{
+                usleep(100000);
+            }
+
+        } while(0);
 
 		[self performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection) withObject:nil waitUntilDone:YES];
 		[delegateDecisionLock lock];

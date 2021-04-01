@@ -36,10 +36,10 @@
 
 + (QKQueryUpdateParameter *)queryUpdateParamWithField:(NSString *)field value:(id)value
 {
-	return [[[QKQueryUpdateParameter alloc] initUpdateParamWithField:field value:value] autorelease];
+	return [[QKQueryUpdateParameter alloc] initUpdateParamWithField:field value:value];
 }
 
-- (id)initUpdateParamWithField:(NSString *)field value:(id)value
+- (instancetype)initUpdateParamWithField:(NSString *)field value:(id)value
 {
 	if ((self = [super init])) {
 		[self setField:field];
@@ -55,11 +55,11 @@
 {
 	NSMutableString *string = [NSMutableString string]; 
 	
-	NSString *field = [_field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	NSString *field = [self.field stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	
 	[string appendFormat:@"%1$@%2$@%1$@", [self useQuotedIdentifier] ? _identiferQuote : EMPTY_STRING, field];
 	[string appendString:@" = "];
-	[string appendFormat:(![_value isKindOfClass:[NSNumber class]]) ? @"'%@'" : @"%@", [_value description]];
+	[string appendFormat:(![self.value isKindOfClass:[NSNumber class]]) ? @"'%@'" : @"%@", [self.value description]];
 	
 	return string;
 }

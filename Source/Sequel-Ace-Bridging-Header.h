@@ -27,3 +27,9 @@
 //  Use this file to import your target's public headers that you would like to expose to Swift.
 //
 
+#import "SPAppController.h"
+#import "SPDatabaseDocument.h"
+
+#import "SPConstants.h"
+
+#import "SPFileManagerAdditions.h"

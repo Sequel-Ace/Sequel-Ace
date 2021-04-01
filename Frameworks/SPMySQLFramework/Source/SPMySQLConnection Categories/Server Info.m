@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Server Info.h"
 #import "SPMySQL Private APIs.h"
 
@@ -117,14 +116,14 @@
 
 	// Get the process list
 	MYSQL_RES *mysqlResult = mysql_list_processes(mySQLConnection);
-	lastConnectionUsedTime = mach_absolute_time();
+	lastConnectionUsedTime = _monotonicTime();
 
 	// Convert to SPMySQLResult
 	SPMySQLResult *theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:stringEncoding];
 
 	// Unlock and return
 	[self _unlockConnection];
-	return [theResult autorelease];
+	return theResult;
 }
 
 /**
@@ -138,10 +137,13 @@
 {
 	// Note that mysql_kill has been deprecated, so use a query to perform this task.
 	NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
-	if ([self serverVersionIsGreaterThanOrEqualTo:5 minorVersion:0 releaseVersion:0]) {
-		[killQuery appendString:@" QUERY"];
+    
+    //Special suppot for TiDB SQL variant
+	if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+		[killQuery appendString:@" TIDB"];
 	}
-	[killQuery appendFormat:@" %lu", theThreadID];
+
+	[killQuery appendFormat:@" QUERY %lu", theThreadID];
 
 	// Run the query
 	[self queryString:killQuery];

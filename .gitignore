@@ -1,5 +1,28 @@
-.DS_Store
-xcuserdata
-project.xcworkspace
-*.pbxuser
-icon?
+## OSX generated files
+.DS_store
+
+## User settings
+xcuserdata/
+
+## Build generated
+build/
+DerivedData/
+
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Custom
+Pods/*
+!Pods/SwiftLint
+fastlane/metadata
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/build_folder
+fastlane/.env
+prebuild.log
+/docs/_site

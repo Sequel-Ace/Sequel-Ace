@@ -28,7 +28,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-
 #import "Ping & KeepAlive.h"
 #import "SPMySQL Private APIs.h"
 #import "Locking.h"
@@ -62,9 +61,9 @@ typedef struct {
 	// and keepalive times against the keepalive interval.
 	// Compare against interval-1 to allow default keepalive intervals to repeat
 	// at the correct intervals (eg no timer interval delay).
-	uint64_t currentTime = mach_absolute_time();
-	if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < keepAliveInterval - 1
-		|| _elapsedSecondsSinceAbsoluteTime(lastKeepAliveTime) < keepAliveInterval - 1)
+	uint64_t currentTime = _monotonicTime();
+	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < keepAliveInterval - 1
+		|| _timeIntervalSinceMonotonicTime(lastKeepAliveTime) < keepAliveInterval - 1)
 	{
 		return;
 	}
@@ -102,7 +101,7 @@ typedef struct {
 
 			// If the connection has been used within the last fifteen minutes,
 			// attempt a single reconnection in the background
-			if (_elapsedSecondsSinceAbsoluteTime(lastConnectionUsedTime) < 60 * 15) {
+			if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
 				[self _reconnectAfterBackgroundConnectionLoss];
 			}
 			// Otherwise set the state to connection lost for automatic reconnect on
@@ -144,6 +143,8 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
+    SPLog(@"_pingConnectionUsingLoopDelay");
+
 	if (state != SPMySQLConnected) return NO;
 
 	uint64_t pingStartTime_t;
@@ -154,6 +155,7 @@ end_cleanup:
 	[self _lockConnection];
 	//we might find ourselves at the losing end of a contest with -[self _disconnect]
 	if(!mySQLConnection) {
+        SPLog(@"!mySQLConnection, calling _unlockConnection, return NO");
 		[self _unlockConnection];
 		return NO;
 	}
@@ -172,8 +174,9 @@ end_cleanup:
 		.mySQLConnection = mySQLConnection,
 		.keepAliveLastPingSuccessPointer = &keepAliveLastPingSuccess,
 		.keepAlivePingThreadActivePointer = &keepAlivePingThreadActive,
-		.parentId = self
+        .parentId = (__bridge void *)(self)
 	};
+
 
 	// Create a pthread for the ping
 	pthread_t keepAlivePingThread_t;
@@ -184,12 +187,12 @@ end_cleanup:
 	pthread_create(&keepAlivePingThread_t, &attr, (void *)&_backgroundPingTask, &pingDetails);
 
 	// Record the ping start time
-	pingStartTime_t = mach_absolute_time();
+	pingStartTime_t = _monotonicTime();
 
 	// Loop until the ping completes
 	do {
 		usleep((useconds_t)loopDelay);
-		pingElapsedTime = _elapsedSecondsSinceAbsoluteTime(pingStartTime_t);
+		pingElapsedTime = _timeIntervalSinceMonotonicTime(pingStartTime_t);
 
 		// If the ping timeout has been exceeded, or the ping thread has been
 		// cancelled, force a timeout; double-check that the thread is still active.
@@ -210,7 +213,11 @@ end_cleanup:
 			keepAliveLastPingBlocked = YES;
 		}
 	} while (keepAlivePingThreadActive);
-	
+
+
+    SPLog(@"threadCancelled: %d", threadCancelled);
+    SPLog(@"pingElapsedTime: %f", pingElapsedTime);
+
 	//wait for thread to go away, otherwise pingDetails may go away before _pingThreadCleanup() finishes
 	pthread_join(keepAlivePingThread_t, NULL);
 
@@ -220,6 +227,8 @@ end_cleanup:
 
 	// Unlock the connection
 	[self _unlockConnection];
+
+    SPLog(@"keepAliveLastPingSuccess: %d", keepAliveLastPingSuccess);
 
 	return keepAliveLastPingSuccess;
 }
@@ -232,6 +241,8 @@ end_cleanup:
  */
 void _backgroundPingTask(void *ptr)
 {
+    SPLog(@"_backgroundPingTask");
+
 	SPMySQLConnectionPingDetails *pingDetails = (SPMySQLConnectionPingDetails *)ptr;
 	
 	char threadNameBuf[80];
@@ -246,6 +257,11 @@ void _backgroundPingTask(void *ptr)
 
 	// Set up a signal handler for SIGUSR1, to handle forced timeouts.
 	signal(SIGUSR1, _forceThreadExit);
+
+#ifdef DEBUG
+    BOOL ret = (BOOL)(!mysql_ping(pingDetails->mySQLConnection));
+    SPLog(@"mysql_ping retcode = %d", ret);
+#endif
 
 	// Perform a ping
 	*(pingDetails->keepAliveLastPingSuccessPointer) = (BOOL)(!mysql_ping(pingDetails->mySQLConnection));
@@ -287,6 +303,8 @@ void _pingThreadCleanup(void *pingDetails)
  */
 - (BOOL)_cancelKeepAlives
 {
+    SPLog(@"_cancelKeepAlives");
+
 	// If no keepalive thread is active, return
 	if (keepAliveThread) {
 
@@ -311,10 +329,10 @@ void _pingThreadCleanup(void *pingDetails)
 		}
 
 		// Wait inside a time limit of ten seconds for it to exit
-		uint64_t threadCancelStartTime_t = mach_absolute_time();
+		uint64_t threadCancelStartTime_t = _monotonicTime();
 		do {
 			usleep(100000);
-			if (_elapsedSecondsSinceAbsoluteTime(threadCancelStartTime_t) > 10) return NO;
+			if (_timeIntervalSinceMonotonicTime(threadCancelStartTime_t) > 10) return NO;
 		} while (keepAliveThread);
 	
 	}

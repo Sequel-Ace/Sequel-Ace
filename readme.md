@@ -22,26 +22,44 @@ mas install 1518036000 # Sequel Ace
 
 ### Homebrew
 
-To install an unoffical community maintained [Homebrew](https://brew.sh) [Cask](https://github.com/Homebrew/homebrew-cask) of the [GitHub Release](https://github.com/sequel-ace/sequel-ace/releases)
-
+To install an unofficial community maintained [Homebrew](https://brew.sh) [Cask](https://github.com/Homebrew/homebrew-cask) of the [GitHub Release](https://github.com/sequel-ace/sequel-ace/releases)
 
 ```sh
-brew cask install sequel-ace
+brew install --cask sequel-ace
 ```
+
+## Building locally
+
+To run Sequel Ace locally from XCode, please:
+- download `.zip` archive of this repo / clone locally
+- open `sequel-ace.xcworkspace` and run `Sequel Ace Local Testing` schema
+
+If you encounter any issue, let us know by [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose).
+
+## Moving saved connections from Sequel Pro
+
+To move your favorites, please check [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
 
 ## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
 
-Please always checkout from the `dev` branch and submit PRs against this branch as well. The `master` branch is reserved for macOS App Store releases only.
-
 Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects). This lists the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
+
+## Branches
+
+- main: Main is our active development branch. All contribution PRs should be pointed at main!
+- staging: Staging is used for pending app store submissions and release candidates
+- release: Release represents what's currently on the app store. All non-release PRs to release will be rejected.
 
 ## Compatibility
 
-- macOS >= 10.10
-- MySQL >= 5.6
-- MariaDB
+- **macOS:** >= 10.12
+- **Processor:** Intel & Apple Silicon
+- **MySQL:** >= 5.6
+- **MariaDB:** >= 10.0
+
+_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/sequel-ace/sequel-ace/releases) is available to download for macOS versions 10.10 and 10.11, however support is limited and we encourage upgrading to the latest macOS and Sequel Ace._
 
 ## License
 

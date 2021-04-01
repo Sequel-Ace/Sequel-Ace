@@ -83,7 +83,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 	free(aRow);
 }
 
-
 #pragma mark - Setup and teardown
 
 /**
@@ -275,10 +274,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	// Destroy the linked list lock
 	pthread_mutex_destroy(&dataLock);
-
-	// Call dealloc on super to clean up everything else, and to throw an exception if
-	// the parent connection hasn't been cleaned up correctly.
-	[super dealloc];
 }
 
 #pragma mark - Result set information
@@ -318,7 +313,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 	// Construct a mutable array and add all the cells in the row
 	NSMutableArray *rowArray = [NSMutableArray arrayWithCapacity:numberOfFields];
 	for (NSUInteger columnIndex = 0; columnIndex < numberOfFields; columnIndex++) {
-		CFArrayAppendValue((CFMutableArrayRef)rowArray, SPMySQLResultStoreObjectAtRowAndColumn(self, rowIndex, columnIndex));
+		CFArrayAppendValue((CFMutableArrayRef)rowArray, (__bridge const void *)(SPMySQLResultStoreObjectAtRowAndColumn(self, rowIndex, columnIndex)));
 	}
 
 	return rowArray;
@@ -345,7 +340,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 		[NSException raise:NSRangeException format:@"Requested storage index (row %llu, col %llu) beyond bounds (%llu, %llu)", (unsigned long long)rowIndex, (unsigned long long)columnIndex, (unsigned long long)numberOfRows, (unsigned long long)numberOfFields];
 	}
 
-	id cellData = nil;
+	id __autoreleasing cellData = nil;
 	char *rawCellDataStart;
 	SPMySQLStreamingResultStoreRowData *rowData = dataStorage[rowIndex];
 
@@ -499,9 +494,9 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
  * Note that rows are currently retrieved individually to avoid mutation and locking issues,
  * although this could be improved on.
  */
-- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id *)stackbuf count:(NSUInteger)len
+- (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained *)stackbuf count:(NSUInteger)len
 {
-	NSMutableArray *theRow = SPMySQLResultStoreGetRow(self, state->state);
+	NSMutableArray __autoreleasing *theRow = SPMySQLResultStoreGetRow(self, state->state);
 
 	// If no row was available, return 0 to stop iteration.
 	if (!theRow) return 0;
@@ -511,7 +506,7 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 	state->state += 1;
 	state->itemsPtr = stackbuf;
-	state->mutationsPtr = (unsigned long *)self;
+	state->mutationsPtr = &state->extra[0];
 
 	return 1;
 }
@@ -686,12 +681,14 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 
 		// Loop through the rows until the end of the data is reached - indicated via a NULL
 		while (
-			(*isConnectedPtr)(parentConnection, isConnectedSelector)
+			([parentConnection isConnected])
 				&& (theRow = mysql_fetch_row(resultSet))
 			) {
+
 			// If the load has been cancelled, skip any processing - we're only interested
 			// in ensuring that mysql_fetch_row is called for all rows.
 			if (loadCancelled) {
+                SPLog(@"loadCancelled");
 				continue;
 			}
 
@@ -800,11 +797,6 @@ static inline void SPMySQLStreamingResultStoreFreeRowData(SPMySQLStreamingResult
 		// Unlock the parent connection now all data has been retrieved
 		[parentConnection _unlockConnection];
 		connectionUnlocked = YES;
-
-		// If the connection query may have been cancelled with a query kill, double-check connection
-		if ([parentConnection lastQueryWasCancelled] && [parentConnection serverMajorVersion] < 5) {
-			[parentConnection checkConnection];
-		}
 
 		dataDownloaded = YES;
 
