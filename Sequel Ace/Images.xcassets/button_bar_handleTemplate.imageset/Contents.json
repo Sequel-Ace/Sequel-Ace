@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "button_bar_handleTemplate.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "button_clearTemplate.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

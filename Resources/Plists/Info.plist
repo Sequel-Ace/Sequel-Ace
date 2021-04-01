@@ -163,8 +163,6 @@
 	<string>english_help</string>
 	<key>CFBundleHelpBookName</key>
 	<string>Sequel Ace Help</string>
-	<key>CFBundleIconFile</key>
-	<string>appIcon.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
