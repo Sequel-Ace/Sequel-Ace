@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "button_addTemplate.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

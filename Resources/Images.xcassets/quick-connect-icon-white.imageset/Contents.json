@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "quick-connect-icon-white.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

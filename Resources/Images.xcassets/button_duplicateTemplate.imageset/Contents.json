@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "button_duplicateTemplate.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
