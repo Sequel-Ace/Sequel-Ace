@@ -1,3 +1,30 @@
+## [3.3.0]
+
+### Added
+- 57f0bbfb,  Ability to choose custom known_hosts file
+
+### Fixed
+- 8d56fa4f, re-added Edit inline or popup 
+- 21e80ddb, Improve memory handling on SQL export 
+- 672b44a4, #changed/ - Feature requests 955
+- 588d1c42,  custom query result sorting
+- 1dd4b0f0,  various small legibility issues across the documentation
+- a792bd67,  Auto pair characters changing font
+- e7b089b2,  exporting database with no selected table
+
+### Changed
+- c5f1a35c, Windows & Tabs refactoring: Remove Custom tabbing, implement native tabbed windows, rewrite app structure & hierarchy 
+- 672b44a4, /#fixed - Feature requests 955
+- 6018892c,  - foreign key creation when skip-show-database is on
+
+### Removed
+- 25942e3a, Remove unused SPFlippedView 
+- 479f8a8a, Remove titleAccessoryView 
+
+### Infra
+- 4879793e, re-added SPTaskAdditions.m 
+- 574bad74, Move NSWindowDelegate to Swift 
+
 ## [3.2.3]
 
 ### Added
