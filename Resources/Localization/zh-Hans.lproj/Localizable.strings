@@ -1039,7 +1039,7 @@
 "Delete selected row?" = "是否删除所选中的条目？";
 
 /* delete table menu title */
-"Delete Table..." = "Delete Table...";
+"Delete Table..." = "删除表...";
 
 /* delete tables menu title */
 "Delete Tables" = "删除表";
@@ -2887,7 +2887,7 @@
 "Truncate selected tables?" = "是否清空所选表？";
 
 /* truncate table menu title */
-"Truncate Table..." = "Truncate Table...";
+"Truncate Table..." = "清空表...";
 
 /* truncate table message */
 "Truncate table '%@'?" = "是否清空表'%@'？";
@@ -3178,31 +3178,31 @@
 "Stale Bookmarks" = "旧版书签";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "App Sandbox Info";
+"App Sandbox Info" = "App Sandbox 信息";
 
 /* error while selecting file title */
-"File Selection Error" = "File Selection Error";
+"File Selection Error" = "文件选择错误";
 
 /* error while selecting file message */
-"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
+"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "选中的文件不是有效的文件。\n\n请再试一次。\n\nClass： %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "选定的 known hosts 文件不可写。\n\n%@\n\n请检查并重试。";
 
 /* known hosts not writable error title */
-"Known Hosts Error" = "Known Hosts Error";
+"Known Hosts Error" = "Known Hosts 错误";
 
 /* SSH Tunnel Debugging menu and window title */
-"SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
+"SSH Tunnel Debugging Info" = "SSH 隧道调试信息";
 
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "您有以下旧版书签：\n\n%@\n\n是否重新请求访问？";
 
 /* Question to user to see if they would like to request access to missing bookmarks */
-"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
+"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "您缺少安全书签：\n\n%@\n\n您想现在请求访问吗？";
 
 /* known hosts advance menu item title */
-"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
+"Use known hosts from ssh config (ADVANCED)" = "使用 ssh 配置文件的 known hosts (高级)";
 
 /* The answer, yes */
 "Yes" = "是";
@@ -3235,7 +3235,7 @@
 "Please choose your ssh config files(s)" = "请选择您的SSH配置文件";
 
 /* Title for Network Preference ssh known hosts file selection dialog */
-"Please choose your known hosts file" = "Please choose your known hosts file";
+"Please choose your known hosts file" = "请选择您的 known hosts 文件";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "无效的JSON";
@@ -3244,61 +3244,61 @@
 "Applying syntax highlighting..." = "正在应用语法高亮...";
 
 /* Error message when a bash task fails to start */
-"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "无法启动任务 \n异常原因： %@ \nENV 长度： %lu";
 
 /* Error message title when we failed to create new connection view */
-"New Connection Error" = "New Connection Error";
+"New Connection Error" = "新建连接错误";
 
 /* New Connection Error informative message */
-"Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
+"Failed to create new database connection window. Please restart Sequel Ace and try again." = "创建数据库连接窗口失败，请重启Sequel Ace然后重试。";
 
 /* new version is available alert title */
-"A new version is available" = "A new version is available";
+"A new version is available" = "有新版本可用";
 
 /* new version is available download button title */
-"Download" = "Download";
+"Download" = "下载";
 
 /* new version is available alert informativeText */
-"Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+"Version %@ is available. You are currently running %@" = "有新版本 %@ 可用. 您目前正在运行的是 %@";
 
 /* downloading new version window title */
-"Download Progress" = "Download Progress";
+"Download Progress" = "下载进度";
 
 /* downloading new version time remaining placeholder text */
-"Calculating time remaining..." = "Calculating time remaining...";
+"Calculating time remaining..." = "正在计算剩余时间...";
 
 /* downloading new version window message */
-"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
+"Downloading Sequel Ace - %@" = "正在下载 Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
-"About %.1f seconds left" = "About %.1f seconds left";
+"About %.1f seconds left" = "还剩 %.1f 秒";
 
 /* downloading new version failure alert title */
-"Download Failed" = "Download Failed";
+"Download Failed" = "下载失败";
 
 /* Tool tip for the Show alert when update is available preference on the Notifications pane */
-"Only available for GitHub downloads" = "Only available for GitHub downloads";
+"Only available for GitHub downloads" = "仅用于 GitHub 下载";
 
 /* Tool tip warning for when the user sets auto-complete delay to zero */
-"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
+"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "警告：将自动完成的延迟设置为 0.0 可能会导致奇怪的输出。";
 
 /* downloading new version bytes of bytes done */
-"%@ of %@" = "%@ of %@";
+"%@ of %@" = "%@ / %@";
 
 /* Time zone set failed informative message */
-"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
+"\n\ntime_zone will be set to SYSTEM." = "\n\n时区将被设置为系统所在时区";
 
 /* Menu item title for checking for updates */
-"Check for updates" = "Check for updates";
+"Check for updates" = "检查更新";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
-"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "数据库服务器的 skip-show-data 变量已设置为 ON。 因此，除非您拥有 SHOW DATABASES 权限，否则您将无法列出数据库。\n\n然而，数据库仍然可以直接通过 SQL 查询访问，这取决于您的权限。";
 
 /* Error alert title when the request to GitHub fails */
-"GitHub Request Failed" = "GitHub Request Failed";
+"GitHub Request Failed" = "GitHub 请求失败";
 
 /* Info alert title when there are Newer Releases Available */
-"No Newer Release Available" = "No Newer Release Available";
+"No Newer Release Available" = "没有更新的版本可用";
 
 /* Info alert message when there are Newer Releases Available */
-"You are currently running the latest release." = "You are currently running the latest release.";
+"You are currently running the latest release." = "你当前运行的已经是最新版本";
