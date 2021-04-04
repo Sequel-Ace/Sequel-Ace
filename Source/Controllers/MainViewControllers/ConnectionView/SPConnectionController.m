@@ -3239,7 +3239,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		// Create a NSOutlineView cell for the Quick Connect group
 		quickConnectCell = [[SPFavoriteTextFieldCell alloc] init];
-		[quickConnectCell setDrawsDividerUnderCell:YES];
 		[quickConnectCell setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 
 		// Update the UI

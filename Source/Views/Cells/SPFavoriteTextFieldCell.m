@@ -32,53 +32,13 @@
 
 @implementation SPFavoriteTextFieldCell
 
-- (instancetype)init
-{
-	if ((self = [super init])) {
-		drawsDividerUnderCell = NO;
-	}
-	return self;
-}
-
-- (id)copyWithZone:(NSZone *)zone 
-{
-    SPFavoriteTextFieldCell *cell = (SPFavoriteTextFieldCell *)[super copyWithZone:zone];
-
-	cell->drawsDividerUnderCell = drawsDividerUnderCell;
-	cell->labelColor = [labelColor copyWithZone:zone];
-	return cell;
-}
-
-/**
- * Returns whether this cell is set to draw a divider in the space directly below
- * the cell (whatever currently populates that space).
- */
-- (BOOL)drawsDividerUnderCell
-{
-	return drawsDividerUnderCell;
-}
-
-/**
- * Set whether this cell should draw a divider in the space directly below
- * the cell (whatever currently populates that space).
- */
-- (void)setDrawsDividerUnderCell:(BOOL)drawsDivider
-{
-	drawsDividerUnderCell = drawsDivider;
-}
-
-@synthesize labelColor;
-
-#pragma mark -
-
-- (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
-{
-	if (labelColor) {
+- (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
+	if (self.labelColor) {
 		CGFloat round = (cellFrame.size.height/2);
 		NSBezierPath *bg = [NSBezierPath bezierPathWithRoundedRect:cellFrame xRadius:round yRadius:round];
 
 		CGFloat h,s,b,a;
-		[[labelColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] getHue:&h saturation:&s brightness:&b alpha:&a];
+		[[self.labelColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] getHue:&h saturation:&s brightness:&b alpha:&a];
 
 		[[NSColor colorWithCalibratedHue:h saturation:s*1.21 brightness:b*1.1 alpha:a] set];
 		[bg fill];
@@ -87,48 +47,8 @@
 	[super drawWithFrame:cellFrame inView:controlView];
 }
 
-/**
- * Draws the actual cell, with a divider if appropriate.
- */
-- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
-{
-	[super drawInteriorWithFrame:cellFrame inView:controlView];
-
-	if (drawsDividerUnderCell) {
-		NSRect viewFrame = [controlView frame];
-
-		NSPoint startPoint = NSMakePoint(viewFrame.origin.x + 7.f, viewFrame.origin.y);
-		NSPoint endPoint = NSMakePoint(viewFrame.origin.x + viewFrame.size.width - 7.f, viewFrame.origin.y);
-
-		if ([controlView isFlipped]) {
-			startPoint.y += cellFrame.size.height + 8.5f;
-			endPoint.y += cellFrame.size.height + 8.5f;
-		}
-		else {
-			startPoint.y -= cellFrame.size.height + 8.5f;
-			endPoint.y -= cellFrame.size.height + 8.5f;
-		}
-
-		[NSGraphicsContext saveGraphicsState];
-		[[NSColor gridColor] set];
-
-		NSShadow *lineGlow = [[NSShadow alloc] init];
-
-		[lineGlow setShadowBlurRadius:1];
-		[lineGlow setShadowColor:[[NSColor controlLightHighlightColor] colorWithAlphaComponent:0.75f]];
-		[lineGlow setShadowOffset:NSMakeSize(0, -1)];
-		[lineGlow set];
-
-		[NSBezierPath strokeLineFromPoint:startPoint toPoint:endPoint];
-
-		[NSGraphicsContext restoreGraphicsState];
-	}
-}
-
-- (void)dealloc
-{
+- (void)dealloc {
 	[self setLabelColor:nil];
-	
 }
 
 @end
