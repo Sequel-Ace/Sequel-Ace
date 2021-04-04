@@ -9,7 +9,7 @@ If you would like to sponsor Sequel Ace, please check out our [Open Collective](
 
 ## Installation
 
-### Mac AppStore
+### Mac AppStore <a href="https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1"><img alt="Download on the Mac AppStore" src="https://sequel-ace.com/images/download_on_mas.png" align="right" height="70"></a>
 
 Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
 
