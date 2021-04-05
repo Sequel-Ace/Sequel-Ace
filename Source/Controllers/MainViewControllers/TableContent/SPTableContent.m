@@ -172,9 +172,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		tableLoadTimer = nil;
 
-		textForegroundColor  = [NSColor controlTextColor]; // this color dynamically adapts to the rest of the UI
-		nullHighlightColor   = [NSColor lightGrayColor];
-		binhexHighlightColor = [NSColor blueColor];
+		textForegroundColor  = [NSColor controlTextColor];
+		nullHighlightColor   = [NSColor systemGrayColor];
+		binhexHighlightColor = [NSColor systemBlueColor];
 
 		kCellEditorErrorNoMatch = NSLocalizedString(@"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.", @"Table Content result editing error - could not identify original row");
 		kCellEditorErrorNoMultiTabDb = NSLocalizedString(@"Field is not editable. Field has no or multiple table or database origin(s).",@"field is not editable due to no table/database");
