@@ -250,7 +250,7 @@
     // so to address issue #865, where creating a table with a trigger discards NO_AUTO_VALUE_ON_ZERO,
     // by setting SESSION SQL_MODE to the mode used when the trigger was created then resetting SQL_MODE to @OLD_SQL_MODE
     // we add NO_AUTO_VALUE_ON_ZERO to @OLD_SQL_MODE here, for the export file to properly work.
-    [metaString appendString:@"/*!40101 SET @OLD_SQL_MODE='NO_AUTO_VALUE_ON_ZERO', SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n"];
+    [metaString appendString:@"/*!40101 SET @OLD_SQL_MODE='@@SQL_MODE', SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n"];
     [metaString appendString:@"/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n\n\n"];
 
     [self writeString:metaString];
