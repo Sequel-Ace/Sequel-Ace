@@ -3328,7 +3328,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Focus on table content filter
-    if (action == @selector(focusOnTableContentFilter:) || [menuItem action] == @selector(showFilterTable:)) {
+    if (action == @selector(focusOnTableContentFilter:) || action == @selector(showFilterTable:)) {
         return ([self table] != nil && [[self table] isNotEqualTo:@""]);
     }
 
