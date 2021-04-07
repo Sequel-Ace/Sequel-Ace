@@ -529,6 +529,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return ([[self frontDocument] getConnection] != nil);
     }
 
+    if (action == @selector(performFindPanelAction:)) {
+        
+    }
+
     if (self.tabManager.activeWindowController.databaseDocument) {
         return [self.tabManager.activeWindowController.databaseDocument validateMenuItem:menuItem];
     }
