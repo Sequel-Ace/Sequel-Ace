@@ -45,7 +45,13 @@ To move your favorites, please check [migration guide](https://sequel-ace.com/ge
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
 
-Please see our [projects page](https://github.com/sequel-ace/sequel-ace/projects). This lists the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
+### Translations
+
+If you wanna help us with translation, please sign up for Crowdin and join our [Crowdin project](https://crowdin.com/project/sequel-ace) to translate Sequel Ace into supported languages. If you want to add a new language, please open new Issue and we will add that language for you!
+
+### Development
+
+If you wanna help us with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or issues with relevant labels. These lists contain the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
 
 ## Branches
 
