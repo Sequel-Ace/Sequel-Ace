@@ -3589,7 +3589,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(showUserManager:)];
+        [toolbarItem setAction:@selector(showUserManager)];
 
     } else {
         //itemIdentifier refered to a toolbar item that is not provided or supported by us or cocoa
