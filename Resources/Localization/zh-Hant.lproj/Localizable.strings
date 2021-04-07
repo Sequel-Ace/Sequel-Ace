@@ -3181,7 +3181,7 @@
 "App Sandbox Info" = "App Sandbox Info";
 
 /* error while selecting file title */
-"File Selection Error" = "File Selection Error";
+"File Selection Error" = "檔案選取錯誤";
 
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選取的檔案是無效檔案。\n\n請重試。\n\nClass: %@";
@@ -3247,7 +3247,7 @@
 "Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "無法啟動作業。\n錯誤原因：%@\n ENV 長度：%lu";
 
 /* Error message title when we failed to create new connection view */
-"New Connection Error" = "New Connection Error";
+"New Connection Error" = "新增連線錯誤";
 
 /* New Connection Error informative message */
 "Failed to create new database connection window. Please restart Sequel Ace and try again." = "建立資料庫連線視窗失敗。請重新啟動 Sequel Ace 並重試。";
@@ -3283,7 +3283,7 @@
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "警告：將自動完成的延遲設定為 0.0 可能會導致奇怪的輸出。";
 
 /* downloading new version bytes of bytes done */
-"%@ of %@" = "%@ of %@";
+"%@ of %@" = "%@ / %@";
 
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
@@ -3295,10 +3295,10 @@
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "伺服器已將 skip-show-database 設定為 ON。除非你擁有 SHOW DATABASES 權限，否則無法列出資料庫。\n\n視你的權限，你仍然可以透過 SQL 查詢直接存取資料庫。";
 
 /* Error alert title when the request to GitHub fails */
-"GitHub Request Failed" = "GitHub Request Failed";
+"GitHub Request Failed" = "GitHub 請求失敗";
 
 /* Info alert title when there are Newer Releases Available */
-"No Newer Release Available" = "没有更新的版本可用";
+"No Newer Release Available" = "没有新的版本可用";
 
 /* Info alert message when there are Newer Releases Available */
-"You are currently running the latest release." = "你目前使用的版本已經是最新版。";
+"You are currently running the latest release." = "目前的版本已經是最新版。";

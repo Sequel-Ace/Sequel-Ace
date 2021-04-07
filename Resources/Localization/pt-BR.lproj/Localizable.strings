@@ -1,63 +1,63 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Überprüfen Sie die Konsole auf mögliche Fehler in Primärschlüssel(n) dieser Tabelle!";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " Check the Console for possible errors inside the primary key(s) of this table!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Bitte überprüfe die Konsole und benachrichtige das Sequel Ace Team!";
+" Please check the Console and inform the Sequel Ace team!" = " Please check the Console and inform the Sequel Ace team!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
-" Reload the table to be sure that the contents have not changed in the meantime." = " Laden Sie die Tabelle erneut, um eventuelle zwischenzeitliche Änderungen zu sehen.";
+" Reload the table to be sure that the contents have not changed in the meantime." = " Reload the table to be sure that the contents have not changed in the meantime.";
 
 /* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
-" You should also add a primary key to this table!" = " Sie sollten der Tabelle auch einen Primärschlüssel hinzufügen!";
+" You should also add a primary key to this table!" = " You should also add a primary key to this table!";
 
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ ausgewählt";
+"%@ %@ selected" = "%1$@ %2$@ selected";
 
 /* History item filtered by values label */
-"%@ (Filtered by %@)" = "%1$@ (gefiltert durch %2$@)";
+"%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
 
 /* History item with page number label */
-"%@ (Page %lu)" = "%1$@ (Seite %2$lu)";
+"%@ (Page %lu)" = "%1$@ (Page %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Kopie";
+"%@ Copy" = "%@ Copy";
 
 /* text showing a single row a partially loaded result */
-"%@ row in partial load" = "%@ Datensatz teilweise geladen";
+"%@ row in partial load" = "%@ row in partial load";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ Datensatz der Tabelle";
+"%@ row in table" = "%@ row in table";
 
 /* text showing how a single rows matched filter */
-"%@ row of %@%@ matches filter" = "%1$@ Datensatz von %2$@%3$@ trifft den Filter";
+"%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
 
 /* text showing how many rows are in a partially loaded result */
-"%@ rows in partial load" = "%@ Datensätze teilweise geladen";
+"%@ rows in partial load" = "%@ rows in partial load";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ Datensätze in der Tabelle";
+"%@ rows in table" = "%@ rows in table";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ Datensätze von %2$@%3$@ treffen den Filter";
+"%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld Datensätze betroffen";
+"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld Datensätze von %3$ld Abfragen, die %4$@ verwenden, betroffen";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; Ein Datensatz betroffen";
+"%@; 1 row affected" = "%@; 1 row affected";
 
 /* text showing one row has been affected by multiple queries */
-"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; ein Datensatz durch %2$ld Abfragen mit %3$@ betroffen";
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
 
 /* text showing a query was cancelled */
-"%@; Cancelled after %@" = "%1$@; Nach %2$@ abgebrochen";
+"%@; Cancelled after %@" = "%1$@; Cancelled after %2$@";
 
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";

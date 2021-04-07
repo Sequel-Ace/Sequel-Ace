@@ -83,6 +83,14 @@ for CURRENT_DIR in */ ; do
     # Then adjust settings for XCode Spanish compatible format
     echo "Converting Crowdin Spanish (Spain) into Xcode compatible universal spanish code"
     TARGET_DIR="es.lproj/"
+  elif [ "$TARGET_DIR" = "pt-PT.lproj/" ]; then
+    # Process pt-PT.lproj and then adjust settings for XCode compatible format
+    DIRECTORY="${OUTPUT_DIR}${TARGET_DIR}"
+    echo "Updating language for code: $TARGET_DIR"
+    cp -f "${CURRENT_DIR}Localizable.strings" "${DIRECTORY}Localizable.strings"
+    # Then adjust settings for XCode Spanish compatible format
+    echo "Converting Crowdin Portugese (Portugal) into Xcode compatible universal Portugese code"
+    TARGET_DIR="pt.lproj/"
   elif [ "$TARGET_DIR" = "zh-CN.lproj/" ]; then
     echo "Converting Crowdin Chinese Simplified code to Xcode chinese code"
     TARGET_DIR="zh-Hans.lproj/"
