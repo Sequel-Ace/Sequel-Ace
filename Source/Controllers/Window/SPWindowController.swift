@@ -43,18 +43,22 @@ import SnapKit
         }
 
         setupAppearance()
+        setupConstraints()
     }
 
     // MARK: - Accessory
 
-    private lazy var tabAccessoryView: NSView = {
-        let view = NSView()
-        view.wantsLayer = true
-        view.snp.makeConstraints {
-            $0.size.equalTo(20)
-        }
-        view.layer?.cornerRadius = 10
-        return view
+    private lazy var tabAccessoryView: NSView = NSView()
+    private lazy var tabAccessoryColorView: NSView = NSView()
+    private lazy var tabText: NSTextField = {
+        let text = NSTextField()
+        text.userActivity = .none
+        text.backgroundColor = .clear
+        text.isEditable = false
+        text.isHidden = false
+        text.alignment = .center
+        text.isBordered = false
+        return text
     }()
 
     private lazy var tabAccessoryViewImage: NSImageView = {
@@ -78,13 +82,28 @@ private extension SPWindowController {
         window?.contentView?.addSubview(databaseDocument.databaseView())
         databaseDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
 
-        tabAccessoryView.addSubview(tabAccessoryViewImage)
-        tabAccessoryViewImage.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
+        tabAccessoryView.addSubviews(tabAccessoryColorView, tabAccessoryViewImage, tabText)
 
         if #available(macOS 10.13, *) {
             window?.tab.accessoryView = tabAccessoryView
+        }
+    }
+
+    func setupConstraints() {
+        tabAccessoryColorView.snp.makeConstraints {
+            $0.height.equalTo(5)
+            $0.bottom.leading.trailing.equalToSuperview()
+        }
+        tabText.snp.makeConstraints {
+            $0.bottom.equalTo(tabAccessoryColorView.snp.top)
+            $0.leading.top.equalToSuperview()
+            $0.trailing.equalTo(tabAccessoryViewImage.snp.leading)
+        }
+
+        tabAccessoryViewImage.snp.makeConstraints {
+            $0.size.equalTo(20)
+            $0.trailing.equalToSuperview()
+            $0.centerY.equalToSuperview()
         }
     }
 }
@@ -94,11 +113,20 @@ private extension SPWindowController {
 @objc extension SPWindowController {
     func updateWindow(title: String) {
         window?.title = title
+        if tabAccessoryView.superview != nil {
+            tabText.stringValue = title
+        }
     }
 
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
-        tabAccessoryView.layer?.backgroundColor = color?.cgColor
+        tabAccessoryColorView.layer?.backgroundColor = color?.cgColor
         tabAccessoryViewImage.isHidden = !isSSL
+        tabAccessoryView.snp.remakeConstraints {
+            $0.leading.equalToSuperview().offset(35)
+            $0.trailing.equalToSuperview().offset(-35)
+            $0.top.equalToSuperview().offset(5)
+            $0.bottom.equalToSuperview()
+        }
     }
 }
 
