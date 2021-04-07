@@ -47,17 +47,20 @@ We have a lot of work to do, but we're here to provide, with your help, an alway
 
 ### Translations
 
-If you wanna help us with translation, please sign up for Crowdin and join our [Crowdin project](https://crowdin.com/project/sequel-ace) to translate Sequel Ace into supported languages. If you want to add a new language, please open new Issue and we will add that language for you!
+If you would like to help with translations, please sign up for Crowdin and join our [Crowdin project](https://crowdin.com/project/sequel-ace) to translate Sequel Ace into supported languages. If you want to add a new language, please [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose) and we will be happy to enable that language for you to translate!
 
 ### Development
 
-If you wanna help us with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or issues with relevant labels. These lists contain the issues where we would most like your help. There are simple and difficult tasks there so new contributors should be able to get started.
+If you would like to help with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or [issues](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose) with relevant labels such as [Help Wanted](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22), [Bug](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3ABug), [Feature Request](https://github.com/Sequel-Ace/Sequel-Ace/labels/Feature%20Request), and [PR Welcome](https://github.com/Sequel-Ace/Sequel-Ace/labels/PR%20Welcome). These lists contain the issues where we would most like your help. There are both simple and difficult tasks there so new contributors should be able to get started.
 
 ## Branches
 
 - main: Main is our active development branch. All contribution PRs should be pointed at main!
-- staging: Staging is used for pending app store submissions and release candidates
-- release: Release represents what's currently on the app store. All non-release PRs to release will be rejected.
+
+## Tags & Releases
+
+- production/ tags represent submissions to the macOS App Store. These are marked as "Pre-Release" until approved by Apple and officially released by the team. Both release candidates and final releases use production/ tags. Release candidates will have RC or Release Candidate in their title.
+- beta/ tags represent pre-release versions of Sequel Ace that are intended to test new features and bug fixes. The downloadable app in a beta/ tag has a different name and identifier (Sequel Ace Beta), meaning you can install it side-by-side with the latest App Store release. Beta releases also have increased logging turned on to help us identify critical issues.
 
 ## Compatibility
 
@@ -66,7 +69,7 @@ If you wanna help us with code and development, please see either our [projects 
 - **MySQL:** >= 5.6
 - **MariaDB:** >= 10.0
 
-_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/sequel-ace/sequel-ace/releases) is available to download for macOS versions 10.10 and 10.11, however support is limited and we encourage upgrading to the latest macOS and Sequel Ace._
+_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11, however support is limited and we encourage upgrading to the latest macOS and Sequel Ace._
 
 ## License
 
