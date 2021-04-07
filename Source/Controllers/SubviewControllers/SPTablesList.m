@@ -71,7 +71,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)_addTableWithDetails:(NSDictionary *)tableDetails;
 - (void)_copyTable;
 - (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName;
-- (void)_duplicateConnectionToFrontTab;
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type;
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type;
 
@@ -714,40 +713,41 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 /**
  * Open the table in a new tab.
  */
-- (IBAction)openTableInNewTab:(id)sender
-{
-	// Add a new tab to the window
-    // TODO
-//	[[tableDocumentInstance parentWindowController] addNewConnection];
-//
-//	[self _duplicateConnectionToFrontTab];
+- (IBAction)openTableInNewTab:(id)sender {
+    // Get the current state
+    NSDictionary *allStateDetails = @{
+        @"connection" : @YES,
+        @"history"    : @YES,
+        @"session"    : @YES,
+        @"query"      : @YES,
+        @"password"   : @YES
+    };
+    NSMutableDictionary *documentState = [NSMutableDictionary dictionaryWithDictionary:[tableDocumentInstance stateIncludingDetails:allStateDetails]];
+
+    // Ensure it's set to autoconnect, and clear the table
+    [documentState setObject:@YES forKey:@"auto_connect"];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentDuplicateTabNotification object:nil userInfo:documentState];
 }
 
-- (void)_duplicateConnectionToFrontTab
-{
-	// Get the state of the document
-	NSDictionary *allStateDetails = @{
-			@"connection" : @YES,
-			@"history"    : @YES,
-			@"session"    : @YES,
-			@"query"      : @YES,
-			@"password"   : @YES
-	};
-	NSMutableDictionary *documentState = [NSMutableDictionary dictionaryWithDictionary:[tableDocumentInstance stateIncludingDetails:allStateDetails]];
-	
-	// Ensure it's set to autoconnect
-	[documentState setObject:@YES forKey:@"auto_connect"];
-	
-	// Set the connection on the new tab
-	[[SPAppDelegate frontDocument] setState:documentState];
-}
-
-- (IBAction)openTableInNewWindow:(id)sender
-{
-	//create new window
+- (IBAction)openTableInNewWindow:(id)sender {
+	// Create new window
 	[SPAppDelegate newWindow:self];
-	
-	[self _duplicateConnectionToFrontTab];
+
+    NSDictionary *allStateDetails = @{
+        @"connection" : @YES,
+        @"history"    : @YES,
+        @"session"    : @YES,
+        @"query"      : @YES,
+        @"password"   : @YES
+    };
+    NSMutableDictionary *documentState = [NSMutableDictionary dictionaryWithDictionary:[tableDocumentInstance stateIncludingDetails:allStateDetails]];
+
+    // Ensure it's set to autoconnect, and clear the table
+    [documentState setObject:@YES forKey:@"auto_connect"];
+
+    // Set the connection on the new tab
+    [[SPAppDelegate frontDocument] setState:documentState];
 }
 
 /**
