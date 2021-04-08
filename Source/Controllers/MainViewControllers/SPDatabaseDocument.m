@@ -3409,9 +3409,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Add the path to the window title
         [windowTitle appendString:pathName];
 
-        // Add the MySQL version to the window title if enabled in prefs
-        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
-
         // Add the name to the window
         [windowTitle appendString:[self name]];
 
@@ -3424,6 +3421,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
         }
+        
+        // Add the MySQL version to the window title if enabled in prefs
+        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) [windowTitle appendFormat:@" (MySQL %@)", mySQLVersion];
+        
         [self.parentWindowController updateWindowWithTitle:windowTitle];
         [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
