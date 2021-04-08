@@ -113,10 +113,13 @@ private extension SPWindowController {
 // MARK: - Public API
 
 @objc extension SPWindowController {
-    func updateWindow(title: String) {
+    func updateWindow(title: String, tabTitle: String) {
         window?.title = title
+        if #available(macOS 10.13, *) {
+            window?.tab.title = tabTitle
+        }
         if tabAccessoryView.superview != nil {
-            tabText.stringValue = title
+            tabText.stringValue = tabTitle
         }
     }
 
