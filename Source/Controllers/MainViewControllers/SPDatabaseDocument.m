@@ -3400,9 +3400,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if ([connectionController isConnecting]) {
-        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")]];
+        NSString *title = NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting");
+        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
     } else if (!_isConnected) {
-        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]]];
+        NSString *title = [NSString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
+        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
     } else {
         NSMutableString *windowTitle = [NSMutableString string];
 
@@ -3410,21 +3412,26 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [windowTitle appendString:pathName];
 
         // Add the MySQL version to the window title if enabled in prefs
-        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
+        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
+            [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
+        }
 
         // Add the name to the window
         [windowTitle appendString:[self name]];
 
+        NSMutableString *tabTitle = [NSMutableString string];
         // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
         if ([self database]) {
             [windowTitle appendFormat:@"/%@", [self database]];
+            [tabTitle appendFormat:@"%@", [self database]];
         }
 
         // Add the table name if one is selected
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
+            [tabTitle appendFormat:@"/%@", [self table]];
         }
-        [self.parentWindowController updateWindowWithTitle:windowTitle];
+        [self.parentWindowController updateWindowWithTitle:windowTitle tabTitle:tabTitle];
         [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
 }
