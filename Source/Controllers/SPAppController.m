@@ -528,6 +528,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if (action == @selector(duplicateTab:)) {
         return ([[self frontDocument] getConnection] != nil);
     }
+    if (action == @selector(openAboutPanel:) || action == @selector(openPreferences:) || action == @selector(visitWebsite:) || action == @selector(checkForNewVersionFromMenu)) {
+        return YES;
+    }
 
     if (self.tabManager.activeWindowController.databaseDocument) {
         return [self.tabManager.activeWindowController.databaseDocument validateMenuItem:menuItem];
