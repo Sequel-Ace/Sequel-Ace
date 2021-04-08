@@ -337,7 +337,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Add the progress window to this window
     [self centerTaskWindow];
-    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     // If not connected, update the favorite selection
     if (!_isConnected) {
@@ -1222,6 +1221,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Keep the window hidden for the first ~0.5 secs
     if (timeSinceFadeInStart < 0.5) return;
 
+    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+
     CGFloat alphaValue = [taskProgressWindow alphaValue];
 
     // If the task progress window is still hidden, center it before revealing it
@@ -1363,6 +1364,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [taskProgressIndicator stopAnimation:self];
         }
         [taskProgressWindow setAlphaValue:0.0f];
+        [self.parentWindowControllerWindow removeChildWindow:taskProgressWindow];
         taskDisplayIsIndeterminate = YES;
         [taskProgressIndicator setIndeterminate:YES];
 
@@ -1421,8 +1423,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Action sent by the cancel button when it's active.
  */
-- (IBAction)cancelTask:(id)sender
-{
+- (IBAction)cancelTask:(id)sender {
     if (!taskCanBeCancelled) return;
 
     [taskCancelButton setEnabled:NO];

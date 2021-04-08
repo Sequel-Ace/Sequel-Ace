@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097.3" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097.3"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="SPDatabaseDocument">
             <connections>
-                <outlet property="taskCancelButton" destination="45" id="50"/>
+                <outlet property="taskCancelButton" destination="45" id="VCO-R0-XTG"/>
                 <outlet property="taskDescriptionText" destination="15" id="33"/>
                 <outlet property="taskDurationTime" destination="fHc-do-wgk" id="BOc-zI-65F"/>
                 <outlet property="taskProgressIndicator" destination="11" id="25"/>
@@ -65,12 +65,12 @@
                                             <rect key="frame" x="288" y="10" width="128" height="19"/>
                                             <buttonCell key="cell" type="roundRect" title="Cancel" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="46">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" metaFont="controlContent"/>
+                                                <font key="font" metaFont="cellTitle"/>
                                                 <string key="keyEquivalent">.</string>
                                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                             </buttonCell>
                                             <connections>
-                                                <action selector="cancelTask:" target="-2" id="49"/>
+                                                <action selector="cancelTask:" target="-2" id="7lt-gC-FmT"/>
                                             </connections>
                                         </button>
                                     </subviews>
