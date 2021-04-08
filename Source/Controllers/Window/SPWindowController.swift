@@ -71,6 +71,8 @@ import SnapKit
         imageView.isHidden = true
         return imageView
     }()
+
+    private var tabAccessoryConstraintsSetup: Bool = false
 }
 
 // MARK: - Private API
@@ -121,11 +123,15 @@ private extension SPWindowController {
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
         tabAccessoryColorView.layer?.backgroundColor = color?.cgColor
         tabAccessoryViewImage.isHidden = !isSSL
-        tabAccessoryView.snp.remakeConstraints {
-            $0.leading.equalToSuperview().offset(35)
-            $0.trailing.equalToSuperview().offset(-35)
-            $0.top.equalToSuperview().offset(5)
-            $0.bottom.equalToSuperview()
+
+        if tabAccessoryView.superview != nil, !tabAccessoryConstraintsSetup {
+            tabAccessoryConstraintsSetup = true
+            tabAccessoryView.snp.makeConstraints {
+                $0.leading.equalToSuperview().offset(35)
+                $0.trailing.equalToSuperview().offset(-35)
+                $0.top.equalToSuperview().offset(5)
+                $0.bottom.equalToSuperview()
+            }
         }
     }
 }
