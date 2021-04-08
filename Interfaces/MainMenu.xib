@@ -913,13 +913,6 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="985"/>
-                            <menuItem title="Move Tab to New Window" id="1102">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="moveSelectedTabInNewWindow:" target="-1" id="1115"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem isSeparatorItem="YES" id="1101"/>
                             <menuItem title="Bring All to Front" id="5">
                                 <connections>
                                     <action selector="arrangeInFront:" target="-1" id="39"/>
