@@ -913,24 +913,6 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="985"/>
-                            <menuItem title="Select Next Tab" toolTip="Select the next tab in this window.  Can also be accessed via ⇧⌘] or ⌥⌘→" id="1103">
-                                <string key="keyEquivalent" base64-UTF8="YES">
-CQ
-</string>
-                                <modifierMask key="keyEquivalentModifierMask" control="YES"/>
-                                <connections>
-                                    <action selector="selectNextDocumentTab:" target="-1" id="1106"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Select Previous Tab" toolTip="Select the previous tab in this window.  Can also be accessed via ⇧⌘[ or ⌥⌘←" id="1104">
-                                <string key="keyEquivalent" base64-UTF8="YES">
-CQ
-</string>
-                                <modifierMask key="keyEquivalentModifierMask" shift="YES" control="YES"/>
-                                <connections>
-                                    <action selector="selectPreviousDocumentTab:" target="-1" id="1105"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Move Tab to New Window" id="1102">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
