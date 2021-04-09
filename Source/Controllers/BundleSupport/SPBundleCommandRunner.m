@@ -31,6 +31,7 @@
 #import "SPBundleCommandRunner.h"
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
+#import "SPWindow.h"
 #import "sequel-ace-Swift.h"
 #import <sys/syslimits.h>
 
@@ -39,13 +40,6 @@
 
 - (NSString *)lastBundleBlobFilesDirectory;
 - (void)setLastBundleBlobFilesDirectory:(NSString *)path;
-
-@end
-
-// Defined to suppress warnings
-@interface NSObject (SPWindowControllerTabMethods)
-
-- (id)selectedTableDocument;
 
 @end
 
@@ -160,17 +154,18 @@
 	// for each sequelace:// scheme command as user to be able to identify the url scheme command.
 	// Furthermore this id is used to communicate with the called command as file name.
 	SPDatabaseDocument *databaseDocument = nil;
-    if ([[[NSApp mainWindow] delegate] isKindOfClass:[SPWindowController class]]) {
-        databaseDocument = [(SPWindowController *)[[NSApp mainWindow] delegate] selectedTableDocument];
+    if ([[[NSApp mainWindow] delegate] isKindOfClass:[SPAppController class]]) {
+        SPAppController *appController = (SPAppController *)[[NSApp mainWindow] delegate];
+        databaseDocument = appController.frontDocument;
     }
 	// Check if connected
     if ([databaseDocument getConnection] == nil) {
         databaseDocument = nil;
     } else {
-        for (NSWindow *window in [NSApp orderedWindows]) {
-            if ([[[window windowController] class] isKindOfClass:[SPWindowController class]]) {
+        for (SPWindow *window in [NSApp orderedWindows]) {
+            if ([[window windowController] isKindOfClass:[SPWindowController class]]) {
                 // Check if connected
-                SPDatabaseDocument *document = [(SPWindowController *)[window windowController] selectedTableDocument];
+                SPDatabaseDocument *document = [(SPWindowController *)[window windowController] databaseDocument];
                 if ([document getConnection]) {
                     databaseDocument = document;
                 } else {
