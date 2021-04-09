@@ -58,6 +58,7 @@ import SnapKit
         text.isHidden = false
         text.alignment = .center
         text.isBordered = false
+        text.textColor = .labelColor
         return text
     }()
 
