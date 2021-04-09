@@ -1,3 +1,26 @@
+## [3.3.1]
+
+### Added
+
+
+### Fixed
+- 8eee143e, Stop query button works as expected 
+- a86bee7a, Fix tab title to show different string than window title 
+- b7019ec0, Shortcuts for switching between tabs work as expected 
+- 40e1cb9b, Open table in new tab works as expected 
+- 6c8b05d0, Users icon is clickable and doesn't crash 
+- 95fa0270, Improve tabs coloring 
+- 5749f2bd, Display binary data as hex color in dark mode 
+
+### Changed
+
+
+### Removed
+- a8f67d0a, Remove favorites divider 
+
+### Infra
+
+
 ## [3.3.0]
 
 ### Added
