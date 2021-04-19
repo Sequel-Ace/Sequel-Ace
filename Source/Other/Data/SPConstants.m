@@ -143,6 +143,7 @@ NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecuteQue
 NSString *SPQueryWarningEnabledSuppressed        = @"SPQueryWarningEnabledSuppressed";
 NSString *SPShowUpdateAvailable                  = @"ShowUpdateAvailable";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
+NSString *SPShowWarningSkipShowDatabase          = @"ShowWarningSkipShowDatabase";
 NSString *SPConsoleEnableLogging                 = @"ConsoleEnableLogging";
 NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLogging";
 NSString *SPConsoleEnableCustomQueryLogging      = @"ConsoleEnableCustomQueryLogging";

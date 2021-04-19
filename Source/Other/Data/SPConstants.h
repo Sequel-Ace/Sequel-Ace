@@ -335,6 +335,7 @@ extern NSString *SPFavorites;
 // Notifications Prefpane
 extern NSString *SPQueryWarningEnabled;
 extern NSString *SPShowNoAffectedRowsError;
+extern NSString *SPShowWarningSkipShowDatabase;
 extern NSString *SPConsoleEnableLogging;
 extern NSString *SPConsoleEnableInterfaceLogging;
 extern NSString *SPConsoleEnableCustomQueryLogging;
