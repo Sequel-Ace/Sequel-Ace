@@ -3302,3 +3302,6 @@
 
 /* Info alert message when there are Newer Releases Available */
 "You are currently running the latest release." = "You are currently running the latest release.";
+
+/* Alert button, disable the warnng when skip-show-database is set to on */
+"Disable the warning" = "Disable the warning";
