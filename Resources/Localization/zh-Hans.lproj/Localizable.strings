@@ -3302,3 +3302,6 @@
 
 /* Info alert message when there are Newer Releases Available */
 "You are currently running the latest release." = "你当前运行的已经是最新版本";
+
+/* Alert button, disable the warning when skip-show-database is set to on */
+"Never show this again" = "Never show this again";
