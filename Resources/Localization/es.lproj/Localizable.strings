@@ -3289,7 +3289,7 @@
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
 
 /* Menu item title for checking for updates */
-"Check for updates" = "Check for updates";
+"Check for Updates..." = "Check for Updates...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
