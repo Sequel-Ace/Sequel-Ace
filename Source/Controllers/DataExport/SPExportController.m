@@ -1522,6 +1522,7 @@ set_input:
 		[sqlExporter setSqlOutputEncodeBLOBasHex:[exportSQLBLOBFieldsAsHexCheck state]];
 		[sqlExporter setSqlOutputIncludeErrors:[exportSQLIncludeErrorsCheck state]];
 		[sqlExporter setSqlOutputIncludeAutoIncrement:([exportSQLIncludeStructureCheck state] && [exportSQLIncludeAutoIncrementValueButton state])];
+        [sqlExporter setSqlOutputIncludeGeneratedColumns:[exportSQLIncludeGeneratedColumnsCheck state]];
 
 		[sqlExporter setSqlInsertAfterNValue:[exportSQLInsertNValueTextField integerValue]];
 		[sqlExporter setSqlInsertDivider:[exportSQLInsertDividerPopUpButton indexOfSelectedItem]];
@@ -3340,6 +3341,7 @@ set_input:
 																				@"SQLIncludeDROP":      IsOn(exportSQLIncludeDropSyntaxCheck),
 																				@"SQLUseUTF8BOM":       IsOn(exportUseUTF8BOMButton),
 																				@"SQLBLOBFieldsAsHex":  IsOn(exportSQLBLOBFieldsAsHexCheck),
+                                                                                @"SQLIncludeGenerated": IsOn(exportSQLIncludeGeneratedColumnsCheck),
 																				@"SQLInsertNValue":     @([exportSQLInsertNValueTextField integerValue]),
 																				@"SQLInsertDivider":    [[self class] describeSQLExportInsertDivider:(SPSQLExportInsertDivider)[exportSQLInsertDividerPopUpButton indexOfSelectedItem]]
 																				}];
@@ -3371,6 +3373,7 @@ set_input:
 	if((o = [settings safeObjectForKey:@"SQLIncludeErrors"]))    SetOnOff(o, exportSQLIncludeErrorsCheck);
 	if((o = [settings safeObjectForKey:@"SQLUseUTF8BOM"]))       SetOnOff(o, exportUseUTF8BOMButton);
 	if((o = [settings safeObjectForKey:@"SQLBLOBFieldsAsHex"]))  SetOnOff(o, exportSQLBLOBFieldsAsHexCheck);
+    if((o = [settings safeObjectForKey:@"SQLIncludeGenerated"])) SetOnOff(o, exportSQLIncludeGeneratedColumnsCheck);
 	if((o = [settings safeObjectForKey:@"SQLInsertNValue"]))     [exportSQLInsertNValueTextField setIntegerValue:[o integerValue]];
 	if((o = [settings safeObjectForKey:@"SQLInsertDivider"]) && [[self class] copySQLExportInsertDividerForDescription:o to:&div]) [exportSQLInsertDividerPopUpButton selectItemAtIndex:div];
 
