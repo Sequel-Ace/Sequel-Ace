@@ -3289,7 +3289,7 @@
 "\n\ntime_zone will be set to SYSTEM." = "\n\n时区将被设置为系统所在时区";
 
 /* Menu item title for checking for updates */
-"Check for Updates..." = "检查更新...";
+"Check for Updates..." = "Check for Updates...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "数据库服务器的 skip-show-data 变量已设置为 ON。 因此，除非您拥有 SHOW DATABASES 权限，否则您将无法列出数据库。\n\n然而，数据库仍然可以直接通过 SQL 查询访问，这取决于您的权限。";

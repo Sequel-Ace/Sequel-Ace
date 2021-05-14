@@ -3425,14 +3425,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
         }
 
+        NSMutableString *tabTitle = [NSMutableString string];
+
         // Add the name to the window
         [windowTitle appendString:[self name]];
+        [tabTitle appendString:[self name]];
 
-        NSMutableString *tabTitle = [NSMutableString string];
         // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
         if ([self database]) {
             [windowTitle appendFormat:@"/%@", [self database]];
-            [tabTitle appendFormat:@"%@", [self database]];
+            [tabTitle appendFormat:@"/%@", [self database]];
         }
 
         // Add the table name if one is selected

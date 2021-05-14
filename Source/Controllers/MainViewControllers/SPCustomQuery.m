@@ -702,20 +702,19 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     for(NSString *tmpStr in queries){
         SPLog(@"len: %lu", (unsigned long)tmpStr.length);
-        [theQueries appendString:tmpStr];
-        [theQueries appendString:@"\n\n"];
+        [theQueries appendString:[tmpStr stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+        [theQueries appendString:@"\n"];
     }
     
     SPLog(@"theQueriesLen: %lu", theQueries.length);
     
-    NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"),theQueries];
-    
-    if(queries.count > 1){
-        infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with these queries?\n\n %@", @"message of panel asking for confirmation for exec query"),theQueries];
-    }
+    NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"), theQueries];
     
     if(theQueries.length > SPMaxQueryLengthForWarning){
         theQueries = (NSMutableString*)[theQueries summarizeToLength:SPMaxQueryLengthForWarning withEllipsis:YES];
+    }
+
+    if(queries.count > 1){
         infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with these queries?\n\n %@", @"message of panel asking for confirmation for exec query"), theQueries];
     }
     
