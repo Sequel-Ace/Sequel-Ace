@@ -1,3 +1,21 @@
+## [3.3.2]
+
+### Added
+- f26d498b, New Nord theme 
+
+### Fixed
+- 878a9553, Fix grammar of "Check for Updates..." menu item 
+- 09845e14, Fix getting windows for bundles 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [3.3.1]
 
 ### Added
