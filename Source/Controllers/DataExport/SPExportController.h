@@ -107,7 +107,8 @@
 	IBOutlet NSTextField *exportSQLInsertNValueTextField;
 	IBOutlet NSPopUpButton *exportSQLInsertDividerPopUpButton;
 	IBOutlet NSButton *exportSQLIncludeAutoIncrementValueButton;
-	
+    IBOutlet NSButton *exportSQLIncludeGeneratedColumnsCheck;
+
 	// CSV
 	IBOutlet NSButton *exportCSVIncludeFieldNamesCheck;
 	IBOutlet NSComboBox *exportCSVFieldsTerminatedField;

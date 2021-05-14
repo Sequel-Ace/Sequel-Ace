@@ -1291,8 +1291,9 @@ static const NSInteger kBlobAsImageFile = 4;
 	if ([cellValue isKindOfClass:[NSData class]]) {
 		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]];
 	}
-
-    SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
+    if (![cellValue isNSNull]) {
+        SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
+    }
 
 	if (![cellValue isNSNull]
 		&& [columnType isEqualToString:@"string"]
