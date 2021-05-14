@@ -1557,7 +1557,7 @@ static const NSInteger kBlobAsImageFile = 4;
 				NSPoint pos = [NSEvent mouseLocation];
 				pos.y -= 16;
 
-				if([action isEqualToString:SPBundleOutputActionShowAsTextTooltip]) {
+				if([action isEqualToString:SPBundleOutputActionShowAsTextTooltip] && [output length] > 0) {
 					[SPTooltip showWithObject:output atLocation:pos];
 				}
 
