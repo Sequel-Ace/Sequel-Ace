@@ -702,8 +702,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     for(NSString *tmpStr in queries){
         SPLog(@"len: %lu", (unsigned long)tmpStr.length);
-        [theQueries appendString:tmpStr];
-        [theQueries appendString:@"\n\n"];
+        [theQueries appendString:[tmpStr stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+        [theQueries appendString:@"\n"];
     }
     
     SPLog(@"theQueriesLen: %lu", theQueries.length);
