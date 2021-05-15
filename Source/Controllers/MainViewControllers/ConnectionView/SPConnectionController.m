@@ -2055,6 +2055,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			}
 		}
 
+		if ([self password] == nil) {
+			[self setPassword:@""];
+		}
+
 		// Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
 		if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
 			[mySQLConnection setPassword:[self password]];

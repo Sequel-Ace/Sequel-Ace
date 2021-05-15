@@ -54,6 +54,7 @@
 	BOOL sqlOutputEncodeBLOBasHex;
 	BOOL sqlOutputIncludeErrors;
 	BOOL sqlOutputIncludeAutoIncrement;
+    BOOL sqlOutputIncludeGeneratedColumns;
 	
 	SPSQLExportInsertDivider sqlInsertDivider;
 
@@ -117,6 +118,11 @@
  * @property sqlOutputIncludeAutoIncrement Include auto increment in structure definition
  */
 @property(readwrite, assign) BOOL sqlOutputIncludeAutoIncrement;
+
+/**
+ * @property sqlOutputIncludeGeneratedColumns Include GENERATED columns in raws
+ */
+@property(readwrite, assign) BOOL sqlOutputIncludeGeneratedColumns;
 
 /**
  * @property sqlCurrentTableExportIndex Number of tables processed by exporter
