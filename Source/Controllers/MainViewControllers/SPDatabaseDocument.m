@@ -1178,7 +1178,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         databaseListIsSelectable = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
         [self.mainToolbar validateVisibleItems];
-        [chooseDatabaseButton setEnabled:NO];
 
         SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
 
