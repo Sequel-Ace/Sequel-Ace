@@ -323,7 +323,7 @@
 "An error occurred while trying to delete the index.\n\nMySQL said: %@" = "Beim Löschen des Index trat ein Fehler auf.\n\nMySQL Ergebnis: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "Beim Versuch, die Anzahl der Zeilen für \"%1\" zu ermitteln, ist ein Fehler aufgetreten %3$lu.";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "Beim Umbenennen der Datenbank '%1$@' zu '%2$@' trat ein Fehler auf.";
@@ -464,7 +464,7 @@
 "Are you sure you want to clear the global history list? This action cannot be undone." = "Soll das globale Protokoll wirklich unwiderruflich geleert werden?";
 
 /* clear history list for %@ informative message */
-"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Soll das globale Protokoll wirklich unwiderruflich geleert werden?";
+"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Are you sure you want to clear the history list for %@? This action cannot be undone.";
 
 /* truncate tables informative message */
 "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Sollen wirklich ALLE Datensätze der gewählten Tabellen unwiderruflich gelöscht werden?";
@@ -530,7 +530,7 @@
 "Are you sure you want to remove all selected query favorites? This action cannot be undone." = "Sollen wirklich alle ausgewählten Abfragen unwiderruflich aus den Favoriten gelöscht werden?";
 
 /* Table Info Section : current value of auto_increment */
-"auto_increment: %@" = "auto_increment: % @";
+"auto_increment: %@" = "auto_increment: %@";
 
 /* Encoding autodetect menu item */
 "Autodetect" = "Automatische Erkennung";
@@ -566,7 +566,7 @@
 "BUNDLES" = "Subtypen";
 
 /* Bundle Editor : Outline View : Menu Category item : tooltip */
-"Bundles in category %@" = "Bundles in Kategorie % @";
+"Bundles in category %@" = "Bundles in Kategorie %@";
 
 /* bundles installation error */
 "Bundles Installation Error" = "Bundle-Installationsfehler";
