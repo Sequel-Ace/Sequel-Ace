@@ -2401,7 +2401,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Showing %lu of %lu processes" = "%1$lu von %2$lu Prozessen";
 
 /* shutdown server : confirmation dialog : shutdown button */
-"Shutdown" = "Shutdown";
+"Shutdown" = "Herunterfahren";
 
 /* shutdown server : error dialog : title */
 "Shutdown failed!" = "Shutdown fehlgeschlagen!";
@@ -2419,7 +2419,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Skip problems" = "Probleme überspringen";
 
 /* beta build label */
-"Beta Build" = "Beta Build";
+"Beta Build" = "Beta-Build";
 
 /* socket connection failed title */
 "Socket connection failed!" = "Socket Verbindung fehlgeschlagen!";
@@ -2801,7 +2801,7 @@ Befehle werden anwendungsweit ausgeführt";
 "The target export folder no longer exists.  Please select a new export location and try again." = "%lu der Export-Dateien wurden nicht erzeugt, weil der Zielordner nicht gefunden wurde. Der Export sollte mit einem anderen Zielordner wiederholt werden.";
 
 /* theme name label */
-"Theme Name:" = "Theme Name:";
+"Theme Name:" = "Design Name:";
 
 /* themes installation error */
 "Themes Installation Error" = "Themes-Installationsfehler";
@@ -3257,7 +3257,7 @@ Befehle werden anwendungsweit ausgeführt";
 "A new version is available" = "Eine neue Version ist verfügbar";
 
 /* new version is available download button title */
-"Download" = "Download";
+"Download" = "Herunterladen";
 
 /* new version is available alert informativeText */
 "Version %@ is available. You are currently running %@" = "Version %@ ist verfügbar. Die gegenwärtige Version ist %@";
@@ -3290,7 +3290,7 @@ Befehle werden anwendungsweit ausgeführt";
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone wird gemäß SYSTEM gesetzt.";
 
 /* Menu item title for checking for updates */
-"Check for Updates..." = "Check for Updates...";
+"Check for Updates..." = "Auf neuere Version prüfen...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "Die skip-show-databse Variable des Datenbank-Servers steht auf EIN. Daher werden Listen von Datenbanken nur gezeigt, wenn der Benutzer den Zugriff SHOW DATABASES eingeräumt erhielt.\n\nAuf die Datenbanken gemäß den anderen Zugriffsrechten per SQL zugriffen werden.";
@@ -3305,4 +3305,4 @@ Befehle werden anwendungsweit ausgeführt";
 "You are currently running the latest release." = "Sie verwenden die aktuelle Version.";
 
 /* Alert button, disable the warning when skip-show-database is set to on */
-"Never show this again" = "Never show this again";
+"Never show this again" = "Nicht erneut anzeigen";
