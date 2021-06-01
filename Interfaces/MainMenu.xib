@@ -687,11 +687,6 @@
                                                 <action selector="chooseEncoding:" target="-1" id="663"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="UTF-8 Partial Unicode (utf8mb3)" tag="191" id="LTQ-U1-wH1">
-                                            <connections>
-                                                <action selector="chooseEncoding:" target="-1" id="chj-OL-wEu"/>
-                                            </connections>
-                                        </menuItem>
                                         <menuItem title="UTF-8 Full Unicode (utf8mb4)" tag="190" id="JtW-Ko-SuZ">
                                             <connections>
                                                 <action selector="chooseEncoding:" target="-1" id="KxK-Oo-Rsq"/>

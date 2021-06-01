@@ -77,7 +77,7 @@ const SPMySQLResultCharset SPMySQLCharsetMap[] =
 	{30,  "latin5", "latin5_turkish_ci", 1, 1},
 	{31,  "latin1", "latin1_german2_ci", 1, 1},
 	{32,  "armscii8", "armscii8_general_ci", 1, 1},
-	{33,  "utf8mb3", "utf8_general_ci", 1, 3},
+	{33,  "utf8", "utf8_general_ci", 1, 3}, //utf8mb3
 	{34,  "cp1250", "cp1250_czech_cs", 1, 1},
 	{35,  "ucs2", "ucs2_general_ci", 2, 2},
 	{36,  "cp866", "cp866_general_ci", 1, 1},
@@ -220,31 +220,31 @@ const SPMySQLResultCharset SPMySQLCharsetMap[] =
     {182, "utf32", "utf32_unicode_520_ci", 1, 4},
     {183, "utf32", "utf32_vietnamese_ci", 1, 4},
     //No 184-191?
-	{192, "utf8mb3", "utf8mb3_general_ci", 1, 3},
-	{193, "utf8mb3", "utf8mb3_icelandic_ci", 1, 3},
-	{194, "utf8mb3", "utf8mb3_latvian_ci", 1, 3},
-	{195, "utf8mb3", "utf8mb3_romanian_ci", 1, 3},
-	{196, "utf8mb3", "utf8mb3_slovenian_ci", 1, 3},
-	{197, "utf8mb3", "utf8mb3_polish_ci", 1, 3},
-	{198, "utf8mb3", "utf8mb3_estonian_ci", 1, 3},
-	{199, "utf8mb3", "utf8mb3_spanish_ci", 1, 3},
-	{200, "utf8mb3", "utf8mb3_swedish_ci", 1, 3},
-	{201, "utf8mb3", "utf8mb3_turkish_ci", 1, 3},
-	{202, "utf8mb3", "utf8mb3_czech_ci", 1, 3},
-	{203, "utf8mb3", "utf8mb3_danish_ci", 1, 3},
-	{204, "utf8mb3", "utf8mb3_lithunian_ci", 1, 3},
-	{205, "utf8mb3", "utf8mb3_slovak_ci", 1, 3},
-	{206, "utf8mb3", "utf8mb3_spanish2_ci", 1, 3},
-	{207, "utf8mb3", "utf8mb3_roman_ci", 1, 3},
-	{208, "utf8mb3", "utf8mb3_persian_ci", 1, 3},
-	{209, "utf8mb3", "utf8mb3_esperanto_ci", 1, 3},
-	{210, "utf8mb3", "utf8mb3_hungarian_ci", 1, 3},
-    {211, "utf8mb3", "utf8mb3_sinhala_ci", 1, 3},
-    {212, "utf8mb3", "utf8mb3_german2_ci", 1, 3},
-    {213, "utf8mb3", "utf8mb3_croatian_ci", 1, 3},
-    {214, "utf8mb3", "utf8mb3_unicode_520_ci", 1, 3},
-    {215, "utf8mb3", "utf8mb3_vietnamese_ci", 1, 3},
-    {223, "utf8mb3", "utf8mb3_general_mysql500_ci", 1, 3},
+	{192, "utf8", "utf8_general_ci", 1, 3}, //utf8mb3
+	{193, "utf8", "utf8_icelandic_ci", 1, 3}, //utf8mb3
+	{194, "utf8", "utf8_latvian_ci", 1, 3}, //utf8mb3
+	{195, "utf8", "utf8_romanian_ci", 1, 3}, //utf8mb3
+	{196, "utf8", "utf8_slovenian_ci", 1, 3}, //utf8mb3
+	{197, "utf8", "utf8_polish_ci", 1, 3}, //utf8mb3
+	{198, "utf8", "utf8_estonian_ci", 1, 3}, //utf8mb3
+	{199, "utf8", "utf8_spanish_ci", 1, 3}, //utf8mb3
+	{200, "utf8", "utf8_swedish_ci", 1, 3}, //utf8mb3
+	{201, "utf8", "utf8_turkish_ci", 1, 3}, //utf8mb3
+	{202, "utf8", "utf8_czech_ci", 1, 3}, //utf8mb3
+	{203, "utf8", "utf8_danish_ci", 1, 3}, //utf8mb3
+	{204, "utf8", "utf8_lithunian_ci", 1, 3}, //utf8mb3
+	{205, "utf8", "utf8_slovak_ci", 1, 3}, //utf8mb3
+	{206, "utf8", "utf8_spanish2_ci", 1, 3}, //utf8mb3
+	{207, "utf8", "utf8_roman_ci", 1, 3}, //utf8mb3
+	{208, "utf8", "utf8_persian_ci", 1, 3}, //utf8mb3
+	{209, "utf8", "utf8_esperanto_ci", 1, 3}, //utf8mb3
+	{210, "utf8", "utf8_hungarian_ci", 1, 3}, //utf8mb3
+    {211, "utf8", "utf8_sinhala_ci", 1, 3}, //utf8mb3
+    {212, "utf8", "utf8_german2_ci", 1, 3}, //utf8mb3
+    {213, "utf8", "utf8_croatian_ci", 1, 3}, //utf8mb3
+    {214, "utf8", "utf8_unicode_520_ci", 1, 3}, //utf8mb3
+    {215, "utf8", "utf8_vietnamese_ci", 1, 3}, //utf8mb3
+    {223, "utf8", "utf8_general_mysql500_ci", 1, 3}, //utf8mb3
 	{224, "utf8mb4", "utf8_unicode_ci", 1, 4},
 	{225, "utf8mb4", "utf8_icelandic_ci", 1, 4},
 	{226, "utf8mb4", "utf8_latvian_ci", 1, 4},
@@ -272,7 +272,7 @@ const SPMySQLResultCharset SPMySQLCharsetMap[] =
     {248, "gb18030", "gb18030_chinese_ci", 1, 4},
     {249, "gb18030", "gb18030_bin", 1, 4},
     {250, "gb18030", "gb18030_unicode_520_ci", 1, 4},
-	{254, "utf8mb3", "utf8mb3_general_cs", 1, 3},
+	{254, "utf8", "utf8_general_cs", 1, 3}, //utf8mb3
 
 	{0, NULL, NULL, 0, 0}
 };

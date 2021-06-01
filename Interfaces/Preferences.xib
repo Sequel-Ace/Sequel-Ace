@@ -501,18 +501,17 @@ Gw
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="zsc-aw-Grt"/>
                     </constraints>
-                    <popUpButtonCell key="cell" type="push" title="Autodetect" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="50" id="25">
+                    <popUpButtonCell key="cell" type="push" title="Autodetect" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="50" id="25">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="menu"/>
                         <menu key="menu" title="OtherViews" id="26">
                             <items>
-                                <menuItem title="Autodetect" id="50"/>
+                                <menuItem title="Autodetect" state="on" id="50"/>
                                 <menuItem isSeparatorItem="YES" tag="-1" id="49">
                                     <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                 </menuItem>
                                 <menuItem title="UCS-2 Unicode (ucs2)" tag="10" id="33"/>
                                 <menuItem title="UTF-8 Unicode BMP (utf8)" tag="20" id="34"/>
-                                <menuItem title="UTF-8 Partial Unicode (utf8mb3)" tag="191" id="Sil-LT-KUW"/>
                                 <menuItem title="UTF-8 Full Unicode (utf8mb4)" tag="190" id="7W6-DM-PG1"/>
                                 <menuItem isSeparatorItem="YES" tag="-1" id="38">
                                     <modifierMask key="keyEquivalentModifierMask" command="YES"/>

@@ -1578,8 +1578,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         @"sjis"     : @(SPEncodingShiftJISJapanese),
         @"ujis"     : @(SPEncodingEUCJPJapanese),
         @"euckr"    : @(SPEncodingEUCKRKorean),
-        @"utf8mb4"  : @(SPEncodingUTF8MB4),
-        @"utf8mb3"  : @(SPEncodingUTF8MB3)
+        @"utf8mb4"  : @(SPEncodingUTF8MB4)
     };
     NSNumber *encodingTag = [translationMap valueForKey:mysqlEncoding];
 
@@ -1614,7 +1613,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                     @"ujis",     [NSString stringWithFormat:@"%i", SPEncodingEUCJPJapanese],
                                     @"euckr",    [NSString stringWithFormat:@"%i", SPEncodingEUCKRKorean],
                                     @"utf8mb4",  [NSString stringWithFormat:@"%i", SPEncodingUTF8MB4],
-                                    @"utf8mb3",  [NSString stringWithFormat:@"%i", SPEncodingUTF8MB3],
                                     nil];
     NSString *mysqlEncoding = [translationMap valueForKey:[NSString stringWithFormat:@"%i", [encodingTag intValue]]];
 
