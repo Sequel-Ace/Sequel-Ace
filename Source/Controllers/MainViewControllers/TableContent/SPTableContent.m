@@ -1829,10 +1829,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
 	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
-    BOOL isDeleteRowsRequest = alertReturnCode == NSAlertFirstButtonReturn;
-    BOOL isDeleteAllRequest = allowDeletingAllRows && alertReturnCode == NSAlertSecondButtonReturn;
+    BOOL isDeleteSomeRowsRequest = alertReturnCode == NSAlertFirstButtonReturn;
+    BOOL isDeleteAllRowsRequest = allowDeletingAllRows && alertReturnCode == NSAlertSecondButtonReturn;
 
-    BOOL __block retCode = (isDeleteRowsRequest || isDeleteAllRequest);
+    BOOL __block retCode = (isDeleteSomeRowsRequest || isDeleteAllRowsRequest);
 
 	if (retCode == YES && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
         [NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")] message:@"Double checking as you have 'Show warning before executing a query' set in Preferences" suppressionKey:SPQueryWarningEnabledSuppressed primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed") primaryButtonHandler:^{
@@ -1853,7 +1853,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		return;
 	}
 
-	if (isDeleteAllRequest) {
+	if (isDeleteAllRowsRequest) {
         // Check if the user is currently editing a row, and revert to ensure a somewhat
         // consistent state if deletion fails.
         if (isEditingRow) [self cancelRowEditing];
@@ -1883,7 +1883,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
                     nil]
                 afterDelay:0.3];
         }
-	} else if (isDeleteRowsRequest) {
+	} else if (isDeleteSomeRowsRequest) {
         [selectedRows addIndexes:[tableContentView selectedRowIndexes]];
 
         //check if the user is currently editing a row
