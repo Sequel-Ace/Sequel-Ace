@@ -469,7 +469,7 @@
 
 - (void)focusOnTableContentFilter;
 - (void)showFilterTable;
-- (void)copyCreateTableSyntax;
+- (void)copyCreateTableSyntax:(SPDatabaseDocument *)sender;
 - (void)showCreateTableSyntax:(SPDatabaseDocument *)sender;
 - (void)checkTable;
 - (void)repairTable;

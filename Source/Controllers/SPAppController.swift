@@ -166,7 +166,7 @@ extension SPAppController {
     }
 
     @IBAction func copyCreateTableSyntax(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.copyCreateTableSyntax()
+        tabManager.activeWindowController?.databaseDocument.copyCreateTableSyntax(nil)
     }
 
     @IBAction func showCreateTableSyntax(_ sender: Any) {
