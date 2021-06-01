@@ -1691,6 +1691,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self removeObserver:self forKeyPath:SPShowUpdateAvailable];
+    if(SecureBookmarkManager.sharedInstance != nil) {
+        [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
+    }
 
 }
 

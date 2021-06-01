@@ -74,7 +74,6 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 {
     SPLog(@"dealloc");
     [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
-    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 }
 
 - (void)_refreshBookmarks{
