@@ -1431,7 +1431,6 @@ set_input:
  */
 - (void)exportTables:(NSArray *)exportTables orDataArray:(NSArray *)dataArray
 {
-    [exportPathField stringValue]
 	BOOL singleFileHandleSet = NO;
 	SPExportFile *singleExportFile = nil, *file = nil;
 
