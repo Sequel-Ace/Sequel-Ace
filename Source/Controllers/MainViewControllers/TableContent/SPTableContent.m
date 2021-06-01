@@ -1763,9 +1763,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// cancel editing (maybe this is not the ideal method -- see xcode docs for that method)
 	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
 
+    if (![tableContentView numberOfSelectedRows]) return;
+
     BOOL allowDeletingAllRows = ([tableContentView numberOfSelectedRows] == [tableContentView numberOfRows]) && !isFiltered && !isLimited && !isInterruptedLoad && !isEditingNewRow;
 
-	if (![tableContentView numberOfSelectedRows]) return;
 
 	NSAlert *alert = [[NSAlert alloc] init];
     if ([tableContentView numberOfSelectedRows] == 1) {
