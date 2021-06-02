@@ -1791,7 +1791,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Copies the CREATE TABLE syntax of the selected table to the pasteboard.
  */
-- (void)copyCreateTableSyntax {
+- (void)copyCreateTableSyntax:(SPDatabaseDocument *)sender {
     [self showCreateTableSyntax:self];
 
     return;

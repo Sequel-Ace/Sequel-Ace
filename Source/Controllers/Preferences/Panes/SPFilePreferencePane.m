@@ -182,7 +182,6 @@
 - (void)dealloc
 {
     SPLog(@"dealloc");
-    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess]; // FIXME: not sure about this... just because this pane is deallocated, we don't need to revoke access?
 }
 
 - (void)_refreshBookmarks{
