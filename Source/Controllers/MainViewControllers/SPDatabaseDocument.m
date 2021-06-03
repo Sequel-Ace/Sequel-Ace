@@ -6206,6 +6206,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [NSApp endSheet:connectionErrorDialog];
         [connectionErrorDialog orderOut:nil];
 
+        queryStartDate = [[NSDate alloc] init];
+
         // If 'disconnect' was selected, trigger a window close.
         if (connectionErrorCode == SPMySQLConnectionLostDisconnect) {
             [self performSelectorOnMainThread:@selector(closeAndDisconnect) withObject:nil waitUntilDone:YES];
