@@ -99,7 +99,7 @@
         options.canChooseDirectories = YES;
         options.isForStaleBookmark = YES;
         options.isForKnownHostsFile = NO;
-        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess);
+        options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope);
         options.title = NSLocalizedString(@"Please re-select the file '%@' in order to restore Sequel Ace's access.", "Title for Stale Bookmark file selection dialog");
 
         BOOL __block match = NO;
@@ -381,7 +381,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     options.isForKnownHostsFile = NO;
     options.title = NSLocalizedString(@"Please choose a file or folder to grant Sequel Ace access to.", "Please choose a file or folder to grant Sequel Ace access to.");
     options.fileNames = nil;
-    options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope|NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess);
+    options.bookmarkCreationOptions = (NSURLBookmarkCreationWithSecurityScope);
 
     SPLog(@"calling chooseFileWithOptions: %@", [options jsonStringWithPrettyPrint:YES]);
     
