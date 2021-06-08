@@ -1,3 +1,22 @@
+## [3.3.3]
+
+### Added
+- 22493671, Options when Deleting All Rows from Table 
+
+### Fixed
+- 3ecace04, Fix query timer after reconnect 
+- 36c79bb8, Fix text jump and crash in query editor 
+
+### Changed
+- 879307e5, Take 2 at UTF8mb3 Support 
+- bbf6f99c, Update encodings mappings 
+
+### Removed
+
+
+### Infra
+
+
 ## [3.3.2]
 
 ### Added
