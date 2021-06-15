@@ -2888,26 +2888,23 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (NSString *)fieldListForQuery
 {
-	if (([prefs boolForKey:SPLoadBlobsAsNeeded]) && [dataColumns count]) {
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
+    NSString *fieldName;
 
-		NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
-		BOOL tableHasBlobs = NO;
-		NSString *fieldName;
+    if ([dataColumns count]) {
+        bool lazyLoad = [prefs boolForKey:SPLoadBlobsAsNeeded];
 
-		for (NSDictionary* field in dataColumns)
-			if (![tableDataInstance columnIsBlobOrText:fieldName = [field objectForKey:@"name"]] )
-				[fields addObject:[fieldName backtickQuotedString]];
-			else {
-				// For blob/text fields, select a null placeholder so the column count is still correct
-				[fields addObject:@"NULL"];
-				tableHasBlobs = YES;
-			}
+        for (NSDictionary* field in dataColumns) {
+            fieldName = [field objectForKey:@"name"];
+            if (lazyLoad && [tableDataInstance columnIsBlobOrText: fieldName]) {
+                [fields addObject:@"NULL"];
+            } else {
+                [fields addObject:[fieldName backtickQuotedString]];
+            }
+        }
+    }
 
-		return (tableHasBlobs) ? [fields componentsJoinedByString:@", "] : @"*";
-
-	}
-		return @"*";
-
+    return [fields count] ? [fields componentsJoinedByString:@", "] : @"*";
 }
 
 /**
