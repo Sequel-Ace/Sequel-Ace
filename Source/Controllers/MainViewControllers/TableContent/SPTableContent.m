@@ -2890,15 +2890,21 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 {
     NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
     NSString *fieldName;
+    NSNumber *selectable;
 
     if ([dataColumns count]) {
-        bool lazyLoad = [prefs boolForKey:SPLoadBlobsAsNeeded];
+        BOOL lazyLoad = [prefs boolForKey:SPLoadBlobsAsNeeded];
 
         for (NSDictionary* field in dataColumns) {
             fieldName = [field objectForKey:@"name"];
-            if (lazyLoad && [tableDataInstance columnIsBlobOrText: fieldName]) {
+            selectable = [field objectForKey:@"selectable"];
+            if ([selectable isLessThan:@YES]) {
                 [fields addObject:@"NULL"];
-            } else {
+            }
+            else if (lazyLoad && [tableDataInstance columnIsBlobOrText: fieldName]) {
+                [fields addObject:@"NULL"];
+            }
+            else {
                 [fields addObject:[fieldName backtickQuotedString]];
             }
         }

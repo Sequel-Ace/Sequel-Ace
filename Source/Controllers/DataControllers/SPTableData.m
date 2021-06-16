@@ -467,12 +467,17 @@
     // Retrieve the CREATE TABLE syntax for the table
     SPMySQLResult *theResult;
     NSString *queryStr;
+    // Retrieve the SHOW COLUMNS for the table
+    SPMySQLResult *selectableColumnsResult;
+    NSString *selectableColumnsQueryStr;
 
     if (database){
         queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [database backtickQuotedString], [tableName backtickQuotedString]];
+        selectableColumnsQueryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@", [database backtickQuotedString], [tableName backtickQuotedString]];
     }
-    else{
+    else {
         queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]];
+        selectableColumnsQueryStr = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [tableName backtickQuotedString]];
     }
 
     theResult = [mySQLConnection queryString:queryStr];
@@ -542,6 +547,31 @@
     if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
     SPLog(@"cols count: %lu", ((NSDictionary*)[tableData safeObjectForKey:@"columns"]).count);
+
+    // augment the table data with which columns we have permission to query
+    selectableColumnsResult = [mySQLConnection queryString:selectableColumnsQueryStr];
+    NSNumber *isSelectableDefault = [mySQLConnection queryErrored] ? @YES : @NO;
+
+    SPLog(@"selectableColumnsQueryStr: %@", selectableColumnsQueryStr);
+
+    // Retrieve the table syntax string
+    NSArray *selectableColumnsRows = [selectableColumnsResult getAllRows];
+
+    NSMutableDictionary *selectableColumns = [[NSMutableDictionary alloc] initWithCapacity:selectableColumnsRows.count];
+    for (NSDictionary *row in selectableColumnsRows) {
+        [selectableColumns setValue:@YES forKey:[row valueForKey:@"Field"]];
+    }
+
+    // if we errored trying to figure out what columns we are allowed to query assume we can query them
+    for (NSMutableDictionary *tblCol in [tableData safeObjectForKey:@"columns"]) {
+        NSNumber *isSelectable = [selectableColumns valueForKey:[tblCol valueForKey:@"name"]];
+        if (isSelectable == nil) {
+            isSelectable = isSelectableDefault;
+        }
+
+        [tblCol setValue:isSelectable forKey:@"selectable"];
+    }
+
 
     return tableData;
 }
