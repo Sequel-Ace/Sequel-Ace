@@ -978,9 +978,6 @@
 /* delete table/view message */
 "Delete %@ '%@'?" = "Excluir %1$@ de%2$@?";
 
-/* delete all rows message */
-"Delete all rows?" = "Excluir todas as linhas?";
-
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "Excluir ambos";
 
@@ -2188,7 +2185,16 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requer espaço de armazenamento de 8 bytes. M é a largura de exibição opcional e não afeta o possível intervalo do valor. Nota: Operações aritméticas podem falhar para números grandes.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion?" = "Redefinir AUTO_INCREMENT após a exclusão?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+
+/* delete selected row button */
+"Delete Selected Row" = "Delete Selected Row";
+
+/* delete selected rows button */
+"Delete Selected Rows" = "Delete Selected Rows";
+
+/* delete all rows in table button */
+"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
 /* Restoring session task description */
 "Restoring session..." = "Restaurando sessão...";
@@ -3289,7 +3295,7 @@
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone será definido como SYSTEM.";
 
 /* Menu item title for checking for updates */
-"Check for Updates..." = "Check for Updates...";
+"Check for Updates..." = "Verificar Atualizações...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "A variável Skip-show-database do servidor de banco de dados está definida para LIGADO. Assim, você não poderá listar os bancos de dados a menos que tenha o privilégio SHOW DATABASES.\n\nNo entanto, os bancos de dados ainda são acessíveis diretamente através de consultas SQL, dependendo de seus privilégios.";
@@ -3304,4 +3310,4 @@
 "You are currently running the latest release." = "Você está executando a versão mais recente.";
 
 /* Alert button, disable the warning when skip-show-database is set to on */
-"Never show this again" = "Never show this again";
+"Never show this again" = "Não mostre isso novamente";

@@ -978,9 +978,6 @@
 /* delete table/view message */
 "Delete %@ '%@'?" = "是否删除%1$@ '%2$@'？";
 
-/* delete all rows message */
-"Delete all rows?" = "是否删除所有条目？";
-
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "同时删除";
 
@@ -2188,7 +2185,16 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "需要8字节存储空间。M是可选的显示宽度，不影响表示值的范围。注意，对较大的数的代数运算可能发生错误。";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion?" = "是否在删除后重置AUTO_INCREMENT累加值？";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+
+/* delete selected row button */
+"Delete Selected Row" = "Delete Selected Row";
+
+/* delete selected rows button */
+"Delete Selected Rows" = "Delete Selected Rows";
+
+/* delete all rows in table button */
+"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
 /* Restoring session task description */
 "Restoring session..." = "正在恢复会话...";

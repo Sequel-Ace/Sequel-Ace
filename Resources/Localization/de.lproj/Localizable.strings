@@ -978,9 +978,6 @@
 /* delete table/view message */
 "Delete %@ '%@'?" = "%1$@ '%2$@' löschen?";
 
-/* delete all rows message */
-"Delete all rows?" = "Alle Zeilen löschen?";
-
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "Beide löschen";
 
@@ -2189,7 +2186,16 @@ Befehle werden anwendungsweit ausgeführt";
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Erfordert 8 Bytes Speicherplatz. M ist die fakultative Darstellungsbreite ohne Einfluss auf den möglichen Wertebereich. Hinweis: Arithmetische Operationen könnten bei großen Zahlen fehlschlagen.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion?" = "Nach dem Löschen AUTO_INCREMENT zurücksetzen?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+
+/* delete selected row button */
+"Delete Selected Row" = "Delete Selected Row";
+
+/* delete selected rows button */
+"Delete Selected Rows" = "Delete Selected Rows";
+
+/* delete all rows in table button */
+"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
 /* Restoring session task description */
 "Restoring session..." = "Sitzung wiederherstellen …";
