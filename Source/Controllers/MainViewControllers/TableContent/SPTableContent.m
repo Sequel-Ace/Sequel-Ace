@@ -2610,11 +2610,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
             if(![whereArg length]) {
                 SPLog(@"Did not find plausible WHERE condition for UPDATE.");
                 NSBeep();
-                return (NSMutableString*)@"";
+                return [[NSMutableString alloc] initWithString:@""];
             }
             [queryString appendFormat:@" WHERE %@", whereArg];
         } else {
-            return (NSMutableString*)@"";
+            return [[NSMutableString alloc] initWithString:@""];
         }
 	}
 	
