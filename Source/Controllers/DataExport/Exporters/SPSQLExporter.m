@@ -364,8 +364,8 @@
                     for (NSUInteger j = 0; j < colCount; j++)
                     {
                         NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
-                        NSString *theUnparsed = [theColumnDetail objectForKey:@"unparsed"];
-                        if (theUnparsed && [theUnparsed rangeOfString:@"GENERATED ALWAYS" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                        NSString *generatedAlways = [theColumnDetail objectForKey:@"generatedalways"];
+                        if (generatedAlways) {
                             colCountRetained--;
                         }
                     }
@@ -383,9 +383,9 @@
                 {
                     NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
                     NSString *theTypeGrouping = [theColumnDetail objectForKey:@"typegrouping"];
-                    NSString *theUnparsed = [theColumnDetail objectForKey:@"unparsed"];
+                    NSString *generatedAlways = [theColumnDetail objectForKey:@"generatedalways"];
 
-                    if ( sqlOutputIncludeGeneratedColumns || (!theUnparsed || [theUnparsed rangeOfString:@"GENERATED ALWAYS" options:NSCaseInsensitiveSearch].location == NSNotFound) ) {
+                    if ( sqlOutputIncludeGeneratedColumns || !generatedAlways ) {
                         // Start by setting the column as non-safe
                         useRawDataForColumnAtIndex[jj] = NO;
                         useRawHexDataForColumnAtIndex[jj] = NO;

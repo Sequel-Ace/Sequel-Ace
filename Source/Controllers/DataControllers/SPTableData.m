@@ -1403,6 +1403,21 @@
 			}
 			definitionPartsIndex++;
 
+        // Whether field is generated always as xxxx (VIRTUAL or STORED)
+        } else if ([detailString isEqualToString:@"GENERATED"] && (definitionPartsIndex + 4 < partsArrayLength)
+                    && [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"ALWAYS"]
+                    && [[[definitionParts safeObjectAtIndex:definitionPartsIndex+2] uppercaseString] isEqualToString:@"AS"]) {
+            if ([[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+4] uppercaseString] isEqualToString:@"VIRTUAL"]) {
+                [fieldDetails setValue:aValue forKey:@"generatedalways"];
+                [[fieldDetails objectForKey:@"unparsed"] appendString:@" "];
+                [[fieldDetails objectForKey:@"unparsed"] appendString:[definitionParts safeObjectAtIndex:definitionPartsIndex+3]];
+            } else if ([[aValue = [definitionParts safeObjectAtIndex:definitionPartsIndex+4] uppercaseString] isEqualToString:@"STORED"]) {
+                [fieldDetails setValue:aValue forKey:@"generatedalways"];
+                [[fieldDetails objectForKey:@"unparsed"] appendString:@" "];
+                [[fieldDetails objectForKey:@"unparsed"] appendString:[definitionParts safeObjectAtIndex:definitionPartsIndex+3]];
+            }
+            definitionPartsIndex += 4;
+
 		// Whether fields are NOT NULL
 		} else if ([detailString isEqualToString:@"NOT"] && (definitionPartsIndex + 1 < partsArrayLength)
 					&& [[[definitionParts safeObjectAtIndex:definitionPartsIndex+1] uppercaseString] isEqualToString:@"NULL"]) {

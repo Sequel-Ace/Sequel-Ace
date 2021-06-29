@@ -1495,6 +1495,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[theField setObject:@"auto_increment" forKey:@"Extra"];
 		}
 
+        // Check for "generated always virtual | stored" and set Extra accordingly
+        if ([theField objectForKey:@"generatedalways"]) {
+            if ([[theField objectForKey:@"generatedalways"] isEqual:@"VIRTUAL"]) {
+                [theField setObject:@"VIRTUAL GENERATED" forKey:@"Extra"];
+            } else if ([[theField objectForKey:@"generatedalways"] isEqual:@"STORED"]) {
+                [theField setObject:@"STORED GENERATED" forKey:@"Extra"];
+            }
+        }
+
 		// For timestamps/datetime check to see whether "on update CURRENT_TIMESTAMP"  and set Extra accordingly
 		else if ([type isInArray:@[@"TIMESTAMP",@"DATETIME"]] && [[theField objectForKey:@"onupdatetimestamp"] boolValue]) {
 			NSString *ouct = @"on update CURRENT_TIMESTAMP";
