@@ -2599,23 +2599,22 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Otherwise use an UPDATE syntax to save only the changed cells - if this point is reached,
 	// the equality test has failed and so there is always at least one changed cell (Except in the case where the cell is of the "generated column" type, the number of cell changed can be 0)
 	} else {
-        if ([rowFieldsToSave count] > 0) {
-            queryString = [NSMutableString stringWithFormat:@"UPDATE %@ SET ", [selectedTable backtickQuotedString]];
-            for (i = 0; i < [rowFieldsToSave count]; i++) {
-                if (i) [queryString appendString:@", "];
-                [queryString appendFormat:@"%@ = %@",
-                                           [[rowFieldsToSave safeObjectAtIndex:i] backtickQuotedString], [rowValuesToSave safeObjectAtIndex:i]];
-            }
-            NSString *whereArg = [self argumentForRow:-2];
-            if(![whereArg length]) {
-                SPLog(@"Did not find plausible WHERE condition for UPDATE.");
-                NSBeep();
-                return [[NSMutableString alloc] initWithString:@""];
-            }
-            [queryString appendFormat:@" WHERE %@", whereArg];
-        } else {
+        if ([rowFieldsToSave count] == 0) {
             return [[NSMutableString alloc] initWithString:@""];
         }
+        queryString = [NSMutableString stringWithFormat:@"UPDATE %@ SET ", [selectedTable backtickQuotedString]];
+        for (i = 0; i < [rowFieldsToSave count]; i++) {
+            if (i) [queryString appendString:@", "];
+            [queryString appendFormat:@"%@ = %@",
+                                       [[rowFieldsToSave safeObjectAtIndex:i] backtickQuotedString], [rowValuesToSave safeObjectAtIndex:i]];
+        }
+        NSString *whereArg = [self argumentForRow:-2];
+        if(![whereArg length]) {
+            SPLog(@"Did not find plausible WHERE condition for UPDATE.");
+            NSBeep();
+            return [[NSMutableString alloc] initWithString:@""];
+        }
+        [queryString appendFormat:@" WHERE %@", whereArg];
 	}
 	
 	SPLog(@"query: %@", queryString);
