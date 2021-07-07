@@ -1314,6 +1314,25 @@ static const NSInteger kBlobAsImageFile = 4;
 	return NO;
 }
 
+/**
+ * Determine whether to use the sheet for editing; do so if the multipleLineEditingButton is enabled,
+ * or if the column was a blob or a text, or if it contains linebreaks.
+ */
+- (BOOL)shouldNotEditGeneratedFieldForColumn:(NSUInteger)colIndex
+{
+    // Retrieve the column definition
+    NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
+    NSString *generatedalways = [columnDefinition objectForKey:@"generatedalways"];
+
+    if (generatedalways) {
+        SPLog(@"got a generated column");
+        return YES;
+    }
+
+    // Otherwise, not a generated field
+    return NO;
+}
+
 #pragma mark -
 #pragma mark Bundle Command Support
 
