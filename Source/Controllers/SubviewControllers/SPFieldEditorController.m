@@ -661,8 +661,8 @@ typedef enum {
         NSTextStorage *editTVtextStorage = [editTextView textStorage];
         NSString *editTVString = [editTVtextStorage string];
         
-		if (maxLength > 0 && [[editTVtextStorage string] characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
-			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [[editTVtextStorage string] characterCount] - (NSUInteger)maxLength)];
+		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
+			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVString characterCount] - (NSUInteger)maxLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxTextLength]];
 			
