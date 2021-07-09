@@ -1315,22 +1315,22 @@ static const NSInteger kBlobAsImageFile = 4;
 }
 
 /**
- * Determine whether to use the sheet for editing; do so if the multipleLineEditingButton is enabled,
- * or if the column was a blob or a text, or if it contains linebreaks.
+ * Determine whether the column can be editable or not.
  */
-- (BOOL)shouldNotEditGeneratedFieldForColumn:(NSUInteger)colIndex
+- (BOOL)isColumnEditable:(NSUInteger)colIndex
 {
     // Retrieve the column definition
     NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
-    NSString *generatedalways = [columnDefinition objectForKey:@"generatedalways"];
 
+    // Generated column is not editable
+    NSString *generatedalways = [columnDefinition objectForKey:@"generatedalways"];
     if (generatedalways) {
         SPLog(@"got a generated column");
-        return YES;
+        return NO;
     }
 
-    // Otherwise, not a generated field
-    return NO;
+    // Otherwise, it's editable
+    return YES;
 }
 
 #pragma mark -

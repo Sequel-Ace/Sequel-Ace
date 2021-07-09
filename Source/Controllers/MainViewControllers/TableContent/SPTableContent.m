@@ -4113,7 +4113,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 
         // Field is not editable if it is a generated columun.
-        if ([tableContentView shouldNotEditGeneratedFieldForColumn:[[tableColumn identifier] integerValue]]) {
+        if (![tableContentView isColumnEditable:[[tableColumn identifier] integerValue]]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"The current field is a generated column, you cannot edit it!", @"Info alert when editing a generated column") callback:nil];
             return NO;
         }

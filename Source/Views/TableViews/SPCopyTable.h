@@ -204,7 +204,7 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 */
 - (BOOL)shouldUseFieldEditorForRow:(NSUInteger)rowIndex column:(NSUInteger)colIndex checkWithLock:(pthread_mutex_t *)dataLock;
 
-- (BOOL)shouldNotEditGeneratedFieldForColumn:(NSUInteger)colIndex;
+- (BOOL)isColumnEditable:(NSUInteger)colIndex;
 
 - (IBAction)executeBundleItemForDataTable:(id)sender;
 
