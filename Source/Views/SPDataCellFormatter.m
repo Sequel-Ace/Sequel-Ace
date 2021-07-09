@@ -31,6 +31,8 @@
 #import "SPDataCellFormatter.h"
 #import "SPTooltip.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPDataCellFormatter
 
 @synthesize textLimit;
@@ -116,13 +118,13 @@
     }
 
 	// A single character over the length of the string - likely typed.  Prevent the change - JCS - Unless it's NULL
-	if ((NSInteger)[partialString length] == textLimit + 1 && [nullValue contains:partialString] == NO) {
+	if ((NSInteger)[partialString characterCount] == textLimit + 1 && [nullValue contains:partialString] == NO) {
 		[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld.", @"Maximum text length is set to %ld."), (long)textLimit]];
 		return NO;
 	}
 
 	// If the string is considerably longer than the limit, likely pasted.  Accept but truncate. - JCS - Unless it's NULL
-	if ((NSInteger)[partialString length] > textLimit && partialString.length > nullValue.length) {
+	if ((NSInteger)[partialString characterCount] > textLimit && partialString.length > nullValue.length) {
 		[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld. Inserted text was truncated.", @"Maximum text length is set to %ld. Inserted text was truncated."), (long)textLimit]];
 		*newString = [NSString stringWithString:[partialString substringToIndex:textLimit]];
 		return NO;
