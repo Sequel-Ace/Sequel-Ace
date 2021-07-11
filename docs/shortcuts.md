@@ -18,9 +18,10 @@ Get the most out of Sequel Ace by remembering the following keyboard shortcuts.
 | `⌘ 1`             | Table Structure |
 | `⌘ 2`             | Table Content   |
 | `⌘ 3`             | Table Relations |
-| `⌘ 4`             | Table Info      |
-| `⌘ 5`             | Custom Query    |
-| `⌘ 6`             | Table Triggers  |
+| `⌘ 4`             | Table Triggers  |
+| `⌘ 5`             | Table Info      |
+| `⌘ 6`             | Custom Query    |
+
 
 #### General Shortcuts
 
