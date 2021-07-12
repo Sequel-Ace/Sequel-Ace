@@ -199,6 +199,11 @@ extension String {
 		return (self as String).dropPrefix(prefix as String) as NSString
 	}
 
+
+    public func characterCount() -> Int {
+        return (self as String).count;
+    }
+
 	public func dropSuffix(suffix: NSString) -> NSString {
 		return (self as String).dropSuffix(suffix as String) as NSString
 	}

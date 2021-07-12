@@ -661,8 +661,8 @@ typedef enum {
         NSTextStorage *editTVtextStorage = [editTextView textStorage];
         NSString *editTVString = [editTVtextStorage string];
         
-		if (maxLength > 0 && [editTVtextStorage length] > maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
-			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVtextStorage length] - (NSUInteger)maxLength)];
+		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
+			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVString characterCount] - (NSUInteger)maxLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxTextLength]];
 			
@@ -1268,8 +1268,8 @@ typedef enum {
  */
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
-    if (replacementString == nil) {
-        return NO;
+    if (replacementString == nil || [replacementString characterCount] == 0) {
+        return YES;
     }
     
 	if (textView == editTextView && 
@@ -1294,7 +1294,7 @@ typedef enum {
 		if ([textView hasMarkedText] && (maxTextLength > 0) && (r.location < maxTextLength)) {
 
 			// User tries to insert a new char but max text length was already reached - return NO
-			if (!r.length && ([[textView textStorage] length] >= maxTextLength)) {
+			if (!r.length && ([[[textView textStorage] string] characterCount] >= (NSInteger)maxTextLength)) {
 				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), maxTextLength]];
 				[textView unmarkText];
 				
@@ -1312,9 +1312,9 @@ typedef enum {
 		}
 
 		// Calculate the length of the text after the change.
-		newLength = [[[textView textStorage] string] length] + [replacementString length] - r.length;
+		newLength = [[[textView textStorage] string] characterCount] + [replacementString characterCount] - r.length;
 
-		NSUInteger textLength = [[[textView textStorage] string] length];
+		NSUInteger textLength = [[[textView textStorage] string] characterCount];
 		
 		unsigned long long originalMaxTextLength = maxTextLength;
 		
@@ -1334,7 +1334,7 @@ typedef enum {
 		// If it's too long, disallow the change but try
 		// to insert a text chunk partially to maxTextLength.
 		if ((NSUInteger)newLength > maxTextLength) {
-			if ((maxTextLength - textLength + [textView selectedRange].length) <= [replacementString length]) {	
+			if ((maxTextLength - textLength + [textView selectedRange].length) <= [replacementString characterCount]) {
 			
 				NSString *tooltip = nil;
 				
