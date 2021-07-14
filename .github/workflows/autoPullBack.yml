@@ -1,7 +1,7 @@
 name: autoupdate
 on:
   push:
-    branches-ignore:
+    branches:
       - "main"
 jobs:
   autoupdate:
