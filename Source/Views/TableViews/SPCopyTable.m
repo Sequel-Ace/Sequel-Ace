@@ -1291,8 +1291,9 @@ static const NSInteger kBlobAsImageFile = 4;
 	if ([cellValue isKindOfClass:[NSData class]]) {
 		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]];
 	}
-
-    SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
+    if (![cellValue isNSNull]) {
+        SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
+    }
 
 	if (![cellValue isNSNull]
 		&& [columnType isEqualToString:@"string"]
@@ -1311,6 +1312,25 @@ static const NSInteger kBlobAsImageFile = 4;
 
 	// Otherwise, use standard editing
 	return NO;
+}
+
+/**
+ * Determine whether the column can be editable or not.
+ */
+- (BOOL)isColumnEditable:(NSUInteger)colIndex
+{
+    // Retrieve the column definition
+    NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
+
+    // Generated column is not editable
+    NSString *generatedalways = [columnDefinition objectForKey:@"generatedalways"];
+    if (generatedalways) {
+        SPLog(@"got a generated column");
+        return NO;
+    }
+
+    // Otherwise, it's editable
+    return YES;
 }
 
 #pragma mark -
@@ -1557,7 +1577,7 @@ static const NSInteger kBlobAsImageFile = 4;
 				NSPoint pos = [NSEvent mouseLocation];
 				pos.y -= 16;
 
-				if([action isEqualToString:SPBundleOutputActionShowAsTextTooltip]) {
+				if([action isEqualToString:SPBundleOutputActionShowAsTextTooltip] && [output length] > 0) {
 					[SPTooltip showWithObject:output atLocation:pos];
 				}
 

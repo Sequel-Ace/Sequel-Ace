@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="18122" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="18122"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -82,7 +82,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowCollectionBehavior key="collectionBehavior" fullScreenAuxiliary="YES"/>
             <rect key="contentRect" x="430" y="486" width="700" height="100"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="540" height="100"/>
             <value key="maxSize" type="size" width="1500" height="700"/>
             <value key="minFullScreenContentSize" type="size" width="540" height="100"/>
@@ -100,7 +100,7 @@
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="481" width="227" height="114"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="227" height="114"/>
             <value key="maxSize" type="size" width="247" height="124"/>
             <view key="contentView" id="1717">
@@ -204,7 +204,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="370" width="264" height="234"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
             <value key="minSize" type="size" width="264" height="225"/>
             <value key="maxSize" type="size" width="264" height="274"/>
             <view key="contentView" id="1757">
@@ -265,7 +265,7 @@ Gw
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <button toolTip="Remove Theme" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2255">
-                                    <rect key="frame" x="30" y="0.0" width="26.5" height="25"/>
+                                    <rect key="frame" x="30" y="0.0" width="27" height="25"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                     <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSRemoveTemplate" imagePosition="only" alignment="center" alternateImage="NSRemoveTemplate" inset="2" id="2256">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -279,7 +279,7 @@ Gw
                                     </connections>
                                 </button>
                                 <button toolTip="Duplicate Theme" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2253">
-                                    <rect key="frame" x="0.0" y="0.5" width="25.5" height="25"/>
+                                    <rect key="frame" x="0.0" y="1" width="26" height="25"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                     <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSAddTemplate" imagePosition="only" alignment="center" alternateImage="NSAddTemplate" inset="2" id="2258">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -501,12 +501,12 @@ Gw
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="zsc-aw-Grt"/>
                     </constraints>
-                    <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" id="25">
+                    <popUpButtonCell key="cell" type="push" title="Autodetect" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="50" id="25">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="menu"/>
                         <menu key="menu" title="OtherViews" id="26">
                             <items>
-                                <menuItem title="Autodetect" id="50"/>
+                                <menuItem title="Autodetect" state="on" id="50"/>
                                 <menuItem isSeparatorItem="YES" tag="-1" id="49">
                                     <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                                 </menuItem>
@@ -815,7 +815,7 @@ Gw
             <point key="canvasLocation" x="-52" y="1050"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="512" userLabel="Tables">
-            <rect key="frame" x="0.0" y="0.0" width="540" height="355"/>
+            <rect key="frame" x="0.0" y="-2" width="540" height="355"/>
             <userGuides>
                 <userLayoutGuide location="195" affinity="minX"/>
             </userGuides>
@@ -1140,9 +1140,9 @@ Gw
             <point key="canvasLocation" x="-52" y="605.5"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="56" userLabel="Notifications">
-            <rect key="frame" x="0.0" y="0.0" width="500" height="284"/>
+            <rect key="frame" x="0.0" y="0.0" width="500" height="315"/>
             <userGuides>
-                <userLayoutGuide location="352" affinity="minX"/>
+                <userLayoutGuide location="365" affinity="minX"/>
             </userGuides>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1154">
@@ -1215,7 +1215,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="345">
-                    <rect key="frame" x="18" y="246" width="462" height="24"/>
+                    <rect key="frame" x="18" y="277" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Lnx-83-Yt5"/>
                     </constraints>
@@ -1228,7 +1228,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="7O5-LC-aVK">
-                    <rect key="frame" x="18" y="215" width="462" height="24"/>
+                    <rect key="frame" x="18" y="246" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="6fj-Ot-Cxl"/>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="6gV-bD-sZv"/>
@@ -1248,7 +1248,7 @@ Gw
                     </constraints>
                 </box>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nmG-Wb-i0O">
-                    <rect key="frame" x="18" y="184" width="462" height="24"/>
+                    <rect key="frame" x="18" y="215" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="sLt-fe-2TR"/>
                     </constraints>
@@ -1260,11 +1260,25 @@ Gw
                         <binding destination="117" name="value" keyPath="values.ShowUpdateAvailable" id="1oJ-hg-ND4"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wue-rM-fp8">
+                    <rect key="frame" x="18" y="184" width="462" height="24"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="22" id="mXS-o1-Dcv"/>
+                    </constraints>
+                    <buttonCell key="cell" type="check" title="Show warning when skip-show-database is set to ON" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="ekC-Ch-sc1">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.ShowWarningSkipShowDatabase" id="0Sk-fz-fz5"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
                 <constraint firstItem="7O5-LC-aVK" firstAttribute="top" secondItem="345" secondAttribute="bottom" constant="9" id="4hk-QI-vYg"/>
                 <constraint firstItem="1154" firstAttribute="top" secondItem="1150" secondAttribute="bottom" constant="9" id="5xt-fT-Nra"/>
                 <constraint firstItem="7O5-LC-aVK" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="6LL-xO-Ipe"/>
+                <constraint firstItem="1156" firstAttribute="top" secondItem="wue-rM-fp8" secondAttribute="bottom" constant="12" id="8y9-U6-0ks"/>
                 <constraint firstItem="1148" firstAttribute="width" secondItem="1156" secondAttribute="width" constant="-30" id="AUV-oU-dRf"/>
                 <constraint firstItem="345" firstAttribute="top" secondItem="56" secondAttribute="top" constant="15" id="FaQ-vm-fTJ"/>
                 <constraint firstItem="nmG-Wb-i0O" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="Gtd-lM-WPR"/>
@@ -1273,6 +1287,7 @@ Gw
                 <constraint firstItem="1150" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="Lsc-pn-thj"/>
                 <constraint firstItem="1143" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="MfT-bw-sdu"/>
                 <constraint firstItem="1152" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="N41-h7-ADA"/>
+                <constraint firstItem="wue-rM-fp8" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="PW6-pm-PGb"/>
                 <constraint firstItem="1143" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="Slw-5B-F9E"/>
                 <constraint firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" constant="20" id="WYZ-zS-Rpv"/>
                 <constraint firstItem="1143" firstAttribute="top" secondItem="1156" secondAttribute="bottom" constant="12" id="Wht-jN-U7j"/>
@@ -1282,6 +1297,7 @@ Gw
                 <constraint firstItem="1150" firstAttribute="top" secondItem="1152" secondAttribute="bottom" constant="9" id="eTF-EK-Z2n"/>
                 <constraint firstItem="1154" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="gDz-zf-ZSa"/>
                 <constraint firstItem="1152" firstAttribute="top" secondItem="1148" secondAttribute="bottom" constant="9" id="pKc-k0-Baa"/>
+                <constraint firstItem="wue-rM-fp8" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="qwL-ww-iaC"/>
                 <constraint firstItem="345" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="r5i-Dc-ygG"/>
                 <constraint firstItem="nmG-Wb-i0O" firstAttribute="top" secondItem="7O5-LC-aVK" secondAttribute="bottom" constant="9" id="rZY-VQ-JlH"/>
                 <constraint firstItem="1148" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="tEh-zH-OaF"/>
@@ -1289,7 +1305,7 @@ Gw
                 <constraint firstItem="1154" firstAttribute="leading" secondItem="1148" secondAttribute="leading" id="ujG-Zl-wft"/>
                 <constraint firstItem="7O5-LC-aVK" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="vhW-dH-m4v"/>
                 <constraint firstItem="1148" firstAttribute="top" secondItem="1143" secondAttribute="bottom" constant="6" id="wbi-xL-mtz"/>
-                <constraint firstItem="1156" firstAttribute="top" secondItem="nmG-Wb-i0O" secondAttribute="bottom" constant="12" id="wcE-8E-gGf"/>
+                <constraint firstItem="wue-rM-fp8" firstAttribute="top" secondItem="nmG-Wb-i0O" secondAttribute="bottom" constant="9" id="x4k-LN-e54"/>
             </constraints>
             <point key="canvasLocation" x="751" y="153"/>
         </customView>
@@ -1413,7 +1429,7 @@ Gw
                     <rect key="frame" x="180" y="40" width="340" height="160"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
                         <rect key="frame" x="1" y="1" width="338" height="158"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" id="RuH-Yq-cdH">
                                 <rect key="frame" x="0.0" y="0.0" width="338" height="158"/>
@@ -1856,7 +1872,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <rect key="frame" x="20" y="42" width="231" height="389"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
                         <rect key="frame" x="1" y="1" width="229" height="387"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" id="1685">
                                 <rect key="frame" x="0.0" y="0.0" width="229" height="387"/>

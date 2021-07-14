@@ -32,16 +32,14 @@
 #import "SPServerSupport.h"
 #import "sequel-ace-Swift.h"
 
+#import "SPFunctions.h"
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseData ()
 
 - (NSString *)_getSingleVariableValue:(NSString *)variable;
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query;
-+ (NSArray *)_relabelCollationResult:(NSArray *)data;
 
-NSInteger _sortMySQL4CharsetEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
-NSInteger _sortMySQL4CollationEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
 NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
 
 @end
@@ -154,9 +152,18 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			// Try to retrieve the available collations for the supplied encoding from the database
             [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
 
+            //Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
+            if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
+                [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
+            } else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
+                [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
+            }
+
 			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
 			if (![characterSetCollations count]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations for given encoding", @"Unable to get database collations for given encoding") callback:nil];
+                SPMainQSync(^{
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations for given encoding", @"Unable to get database collations for given encoding") callback:nil];
+                });
 			}
 
 			if ([characterSetCollations count]) {
@@ -408,44 +415,6 @@ copy_return:
 	return [result getAllRows];
 }
 
-/**
- * Converts the output of a MySQL 4.1 style "SHOW COLLATION" to the format of a MySQL 5.0 style "SELECT * FROM information_schema.collations"
- */
-+ (NSArray *)_relabelCollationResult:(NSArray *)data
-{
-	NSMutableArray *outData = [[NSMutableArray alloc] initWithCapacity:[data count]];
-	
-	for (NSDictionary *aCollation in data)
-	{
-		NSDictionary *convertedCollation = [NSDictionary dictionaryWithObjectsAndKeys:
-											[aCollation objectForKey:@"Collation"], @"COLLATION_NAME",
-											[aCollation objectForKey:@"Charset"],   @"CHARACTER_SET_NAME",
-											[aCollation objectForKey:@"Id"],        @"ID",
-											[aCollation objectForKey:@"Default"],   @"IS_DEFAULT",
-											[aCollation objectForKey:@"Compiled"],  @"IS_COMPILED",
-											[aCollation objectForKey:@"Sortlen"],   @"SORTLEN",
-											nil];
-		
-		[outData addObject:convertedCollation];
-	}
-	return outData;
-}
-
-/**
- * Sorts a 4.1-style SHOW CHARACTER SET result by the Charset key.
- */
-NSInteger _sortMySQL4CharsetEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context)
-{
-	return [[itemOne objectForKey:@"Charset"] compare:[itemTwo objectForKey:@"Charset"]];
-}
-
-/**
- * Sorts a 4.1-style SHOW COLLATION result by the Collation key.
- */
-NSInteger _sortMySQL4CollationEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context)
-{
-	return [[itemOne objectForKey:@"Collation"] compare:[itemTwo objectForKey:@"Collation"]];
-}
 
 /**
  * Sorts a storage engine array by the Engine key.

@@ -48,7 +48,6 @@
 #import "SPHelpViewerClient.h"
 #import "SPTableData.h"
 #import "SPBundleManager.h"
-#import "SPFunctions.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -2445,23 +2444,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
     if (pasteLength < SP_TEXT_SIZE_MAX_PASTE_LENGTH) {
         SPLog(@"paste len %lu < %i, calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);
         [self doSyntaxHighlightingWithForce:YES];
-
-        // pasting first time doesn't always trigger
-        // full syntax highlighting, e.g. UPPERCASE KEYWORDS
-        // this adds a space to the end that
-        // triggers a text change notification
-        // which fully formats the query
-        // then we need to remove it for issue #843
-        executeOnMainThreadAfterADelay(^{
-            [self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@" "]];
-        }, 0.1);
-        executeOnMainThreadAfterADelay(^{
-            SPLog(@"NSMakeRange(self.textStorage.length-1, 1) : %lu", self.textStorage.length-1);
-            [self.textStorage safeDeleteCharactersInRange:NSMakeRange(self.textStorage.length-1, 1)];
-        }, 0.2);
-
-
-
     }
     else{
         SPLog(@"paste len %lu > %i, NOT calling doSyntaxHighlightingWithForce", pasteLength, SP_TEXT_SIZE_MAX_PASTE_LENGTH);

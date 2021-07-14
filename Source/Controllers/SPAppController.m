@@ -311,7 +311,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)addCheckForUpdatesMenuItem {
     if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
         SPLog(@"Adding menu item to check for updates");
-        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for updates", @"menu item Check for updates") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
+        NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];
     }
 }
@@ -319,7 +319,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)removeCheckForUpdatesMenuItem {
 
     [mainMenu.itemArray enumerateObjectsUsingBlock:^(NSMenuItem *item2, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([item2.title isEqualToString:NSLocalizedString(@"Check for updates", @"menu item Check for updates")]) {
+        if ([item2.title isEqualToString:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...")]) {
             SPLog(@"Removing menu item to check for updates");
             [mainMenu removeItemAtIndex:idx];
             *stop = YES;
@@ -527,6 +527,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
     if (action == @selector(duplicateTab:)) {
         return ([[self frontDocument] getConnection] != nil);
+    }
+    if (action == @selector(openAboutPanel:) || action == @selector(openPreferences:) || action == @selector(visitWebsite:) || action == @selector(checkForNewVersionFromMenu)) {
+        return YES;
     }
 
     if (self.tabManager.activeWindowController.databaseDocument) {
@@ -1688,6 +1691,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self removeObserver:self forKeyPath:SPShowUpdateAvailable];
+    if(SecureBookmarkManager.sharedInstance != nil) {
+        [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
+    }
 
 }
 

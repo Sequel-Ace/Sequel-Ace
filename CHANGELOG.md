@@ -1,3 +1,63 @@
+## [3.3.3]
+
+### Added
+- 22493671, Options when Deleting All Rows from Table 
+
+### Fixed
+- 3ecace04, Fix query timer after reconnect 
+- 36c79bb8, Fix text jump and crash in query editor 
+
+### Changed
+- 879307e5, Take 2 at UTF8mb3 Support 
+- bbf6f99c, Update encodings mappings 
+
+### Removed
+
+
+### Infra
+
+
+## [3.3.2]
+
+### Added
+- f26d498b, New Nord theme 
+
+### Fixed
+- 878a9553, Fix grammar of "Check for Updates..." menu item 
+- 09845e14, Fix getting windows for bundles 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [3.3.1]
+
+### Added
+
+
+### Fixed
+- 8eee143e, Stop query button works as expected 
+- a86bee7a, Fix tab title to show different string than window title 
+- b7019ec0, Shortcuts for switching between tabs work as expected 
+- 40e1cb9b, Open table in new tab works as expected 
+- 6c8b05d0, Users icon is clickable and doesn't crash 
+- 95fa0270, Improve tabs coloring 
+- 5749f2bd, Display binary data as hex color in dark mode 
+
+### Changed
+
+
+### Removed
+- a8f67d0a, Remove favorites divider 
+
+### Infra
+
+
 ## [3.3.0]
 
 ### Added

@@ -209,6 +209,8 @@
 	<false/>
 	<key>ShowWarningBeforeExecuteQuery</key>
 	<false/>
+	<key>ShowWarningSkipShowDatabase</key>
+	<true/>
 	<key>ShowUpdateAvailable</key>
 	<true/>
 	<key>NSApplicationCrashOnExceptions</key>

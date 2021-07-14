@@ -1981,8 +1981,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (sshTunnel) {
 		[sshTunnel setConnectionStateChangeSelector:nil delegate:nil];
 	}
-	
-    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
+
 
 }
 
@@ -2053,6 +2052,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 				if ([[self port] length]) [mySQLConnection setPort:[[self port] integerValue]];
 			}
+		}
+
+		if ([self password] == nil) {
+			[self setPassword:@""];
 		}
 
 		// Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
@@ -3657,7 +3660,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
     [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
 
-    [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
 
 	[self setConnectionKeychainID:nil];
 

@@ -194,6 +194,8 @@
 	// Handle the most common cases first
     if (!strcmp(mysqlCharset, "utf8mb4")) {
         return NSUTF8StringEncoding;
+    } else if (!strcmp(mysqlCharset, "utf8mb3")) {
+        return NSUTF8StringEncoding;
     } else if (!strcmp(mysqlCharset, "utf8")) {
 		return NSUTF8StringEncoding;
 	} else if (!strcmp(mysqlCharset, "latin1")) {
@@ -329,8 +331,8 @@
 		case NSJapaneseEUCStringEncoding:
 			return @"ujis";
 
-		case NSUTF8StringEncoding:
-			return @"utf8";
+        case NSUTF8StringEncoding:
+            return @"utf8";
 
 		case NSISOLatin1StringEncoding:
 			return @"latin1";

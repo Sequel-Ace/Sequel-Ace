@@ -46,6 +46,15 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.print()
     }
 
+    // MARK: Edit menu actions
+
+    // Override default "CMD+F" for find and if we are on content view, perform Show filter
+    @IBAction func performFindPanelAction(_ sender: Any) {
+        if tabManager.activeWindowController?.databaseDocument.currentlySelectedView() == .content {
+            tabManager.activeWindowController?.databaseDocument.focusOnTableContentFilter()
+        }
+    }
+
     // MARK: View menu actions
 
     @IBAction func viewStructure(_ sender: Any) {
@@ -157,7 +166,7 @@ extension SPAppController {
     }
 
     @IBAction func copyCreateTableSyntax(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.copyCreateTableSyntax()
+        tabManager.activeWindowController?.databaseDocument.copyCreateTableSyntax(nil)
     }
 
     @IBAction func showCreateTableSyntax(_ sender: Any) {

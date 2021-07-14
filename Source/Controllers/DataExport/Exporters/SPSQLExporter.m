@@ -60,6 +60,7 @@
 @synthesize sqlOutputEncodeBLOBasHex;
 @synthesize sqlOutputIncludeErrors;
 @synthesize sqlOutputIncludeAutoIncrement;
+@synthesize sqlOutputIncludeGeneratedColumns;
 @synthesize sqlCurrentTableExportIndex;
 @synthesize sqlInsertAfterNValue;
 @synthesize sqlInsertDivider;
@@ -356,45 +357,64 @@
                 NSDictionary *tableDetails = [NSDictionary dictionaryWithDictionary:[sqlTableDataInstance informationForTable:tableName fromDatabase:nil]];
 
                 NSUInteger colCount = [[tableDetails objectForKey:@"columns"] count];
-                NSMutableArray *rawColumnNames = [NSMutableArray arrayWithCapacity:colCount];
-                NSMutableArray *queryColumnDetails = [NSMutableArray arrayWithCapacity:colCount];
+                NSUInteger colCountRetained = colCount;
 
-                BOOL *useRawDataForColumnAtIndex = calloc(colCount, sizeof(BOOL));
-                BOOL *useRawHexDataForColumnAtIndex = calloc(colCount, sizeof(BOOL));
+                // Counts the number of GENERATED type fields if columns should be excluded from rows
+                if (!sqlOutputIncludeGeneratedColumns) {
+                    for (NSUInteger j = 0; j < colCount; j++)
+                    {
+                        NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
+                        NSString *generatedAlways = [theColumnDetail objectForKey:@"generatedalways"];
+                        if (generatedAlways) {
+                            colCountRetained--;
+                        }
+                    }
+                }
+
+                NSMutableArray *rawColumnNames = [NSMutableArray arrayWithCapacity:(colCountRetained)];
+                NSMutableArray *queryColumnDetails = [NSMutableArray arrayWithCapacity:(colCountRetained)];
+
+                BOOL *useRawDataForColumnAtIndex = calloc(colCountRetained, sizeof(BOOL));
+                BOOL *useRawHexDataForColumnAtIndex = calloc(colCountRetained, sizeof(BOOL));
 
                 // Determine whether raw data can be used for each column during processing - safe numbers and hex-encoded data.
+                NSUInteger jj = 0;
                 for (NSUInteger j = 0; j < colCount; j++)
                 {
                     NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
                     NSString *theTypeGrouping = [theColumnDetail objectForKey:@"typegrouping"];
+                    NSString *generatedAlways = [theColumnDetail objectForKey:@"generatedalways"];
 
-                    // Start by setting the column as non-safe
-                    useRawDataForColumnAtIndex[j] = NO;
-                    useRawHexDataForColumnAtIndex[j] = NO;
+                    if ( sqlOutputIncludeGeneratedColumns || !generatedAlways ) {
+                        // Start by setting the column as non-safe
+                        useRawDataForColumnAtIndex[jj] = NO;
+                        useRawHexDataForColumnAtIndex[jj] = NO;
 
-                    // Determine whether the column should be retrieved as hex data from the server - for binary strings, to
-                    // avoid encoding issues when processing
-                    if ([self sqlOutputEncodeBLOBasHex]
-                        && [theTypeGrouping isEqualToString:@"string"]
-                        && ([[theColumnDetail objectForKey:@"binary"] boolValue] || [[theColumnDetail objectForKey:@"collation"] hasSuffix:@"_bin"]))
-                    {
-                        useRawHexDataForColumnAtIndex[j] = YES;
-                    }
+                        // Determine whether the column should be retrieved as hex data from the server - for binary strings, to
+                        // avoid encoding issues when processing
+                        if ([self sqlOutputEncodeBLOBasHex]
+                            && [theTypeGrouping isEqualToString:@"string"]
+                            && ([[theColumnDetail objectForKey:@"binary"] boolValue] || [[theColumnDetail objectForKey:@"collation"] hasSuffix:@"_bin"]))
+                        {
+                            useRawHexDataForColumnAtIndex[j] = YES;
+                        }
 
-                    // Floats, integers can be output directly assuming they're non-binary
-                    if (![[theColumnDetail objectForKey:@"binary"] boolValue] && ([@[@"integer",@"float"] containsObject:theTypeGrouping]))
-                    {
-                        useRawDataForColumnAtIndex[j] = YES;
-                    }
+                        // Floats, integers can be output directly assuming they're non-binary
+                        if (![[theColumnDetail objectForKey:@"binary"] boolValue] && ([@[@"integer",@"float"] containsObject:theTypeGrouping]))
+                        {
+                            useRawDataForColumnAtIndex[jj] = YES;
+                        }
 
-                    // Set up the column query string parts
-                    [rawColumnNames addObject:[theColumnDetail objectForKey:@"name"]];
+                        // Set up the column query string parts
+                        [rawColumnNames addObject:[theColumnDetail objectForKey:@"name"]];
 
-                    if (useRawHexDataForColumnAtIndex[j]) {
-                        [queryColumnDetails addObject:[NSString stringWithFormat:@"HEX(%@)", [[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]]];
-                    }
-                    else {
-                        [queryColumnDetails addObject:[[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]];
+                        if (useRawHexDataForColumnAtIndex[jj]) {
+                            [queryColumnDetails addObject:[NSString stringWithFormat:@"HEX(%@)", [[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]]];
+                        }
+                        else {
+                            [queryColumnDetails addObject:[[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]];
+                        }
+                        jj++;
                     }
                 }
 
@@ -490,7 +510,7 @@
                             [sqlString setString:@",\n\t("];
                         }
 
-                        for (NSUInteger t = 0; t < colCount; t++)
+                        for (NSUInteger t = 0; t < colCountRetained; t++)
                         {
                             id object = [row safeObjectAtIndex:t];
 

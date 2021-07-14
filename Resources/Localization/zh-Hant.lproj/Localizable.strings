@@ -978,9 +978,6 @@
 /* delete table/view message */
 "Delete %@ '%@'?" = "是否刪除%1$@ '%2$@'？";
 
-/* delete all rows message */
-"Delete all rows?" = "是否刪除所有條目？";
-
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "同時刪除";
 
@@ -2188,7 +2185,16 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "需要8字節存儲空間。M是可選的顯示寬度，不影響表示值的範圍。注意，對較大的數的代數運算可能發生錯誤。";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion?" = "是否在刪除後重置AUTO_INCREMENT累加值？";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+
+/* delete selected row button */
+"Delete Selected Row" = "Delete Selected Row";
+
+/* delete selected rows button */
+"Delete Selected Rows" = "Delete Selected Rows";
+
+/* delete all rows in table button */
+"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
 /* Restoring session task description */
 "Restoring session..." = "正在恢復會話...";
@@ -3181,7 +3187,7 @@
 "App Sandbox Info" = "App Sandbox Info";
 
 /* error while selecting file title */
-"File Selection Error" = "File Selection Error";
+"File Selection Error" = "檔案選取錯誤";
 
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選取的檔案是無效檔案。\n\n請重試。\n\nClass: %@";
@@ -3247,7 +3253,7 @@
 "Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "無法啟動作業。\n錯誤原因：%@\n ENV 長度：%lu";
 
 /* Error message title when we failed to create new connection view */
-"New Connection Error" = "New Connection Error";
+"New Connection Error" = "新增連線錯誤";
 
 /* New Connection Error informative message */
 "Failed to create new database connection window. Please restart Sequel Ace and try again." = "建立資料庫連線視窗失敗。請重新啟動 Sequel Ace 並重試。";
@@ -3283,22 +3289,25 @@
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "警告：將自動完成的延遲設定為 0.0 可能會導致奇怪的輸出。";
 
 /* downloading new version bytes of bytes done */
-"%@ of %@" = "%@ of %@";
+"%@ of %@" = "%@ / %@";
 
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
 
 /* Menu item title for checking for updates */
-"Check for updates" = "檢查更新";
+"Check for Updates..." = "Check for Updates...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "伺服器已將 skip-show-database 設定為 ON。除非你擁有 SHOW DATABASES 權限，否則無法列出資料庫。\n\n視你的權限，你仍然可以透過 SQL 查詢直接存取資料庫。";
 
 /* Error alert title when the request to GitHub fails */
-"GitHub Request Failed" = "GitHub Request Failed";
+"GitHub Request Failed" = "GitHub 請求失敗";
 
 /* Info alert title when there are Newer Releases Available */
-"No Newer Release Available" = "没有更新的版本可用";
+"No Newer Release Available" = "没有新的版本可用";
 
 /* Info alert message when there are Newer Releases Available */
-"You are currently running the latest release." = "你目前使用的版本已經是最新版。";
+"You are currently running the latest release." = "目前的版本已經是最新版。";
+
+/* Alert button, disable the warning when skip-show-database is set to on */
+"Never show this again" = "Never show this again";

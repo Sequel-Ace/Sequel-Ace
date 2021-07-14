@@ -169,6 +169,7 @@ private extension TabManager {
         guard let newWindow = addManagedWindow(windowController: newWindowController)?.window else { preconditionFailure() }
 
         window.addChildWindow(newWindow, ordered: orderingMode)
+        newWindow.collectionBehavior = [newWindow.collectionBehavior, .participatesInCycle]
         newWindow.makeKeyAndOrderFront(nil)
     }
 

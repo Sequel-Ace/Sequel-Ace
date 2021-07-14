@@ -337,7 +337,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Add the progress window to this window
     [self centerTaskWindow];
-    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     // If not connected, update the favorite selection
     if (!_isConnected) {
@@ -438,12 +437,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [mySQLConnection setEncoding:@"utf8mb4"];
 
     // Check if skip-show-database is set to ON
-    SPMySQLResult *result = [mySQLConnection queryString:@"SHOW VARIABLES LIKE 'skip_show_database'"];
-    [result setReturnDataAsStrings:YES];
-    if(![mySQLConnection queryErrored] && [result numberOfRows] == 1) {
-        NSString *skip_show_database = [[result getRowAsDictionary] objectForKey:@"Value"];
-        if ([skip_show_database.lowercaseString isEqualToString:@"on"]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning",@"warning") message:NSLocalizedString(@"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.", @"Warning message during connection in case the variable skip-show-database is set to ON") callback:nil];
+    if ( [prefs boolForKey:SPShowWarningSkipShowDatabase] ) {
+        SPMySQLResult *result = [mySQLConnection queryString:@"SHOW VARIABLES LIKE 'skip_show_database'"];
+        [result setReturnDataAsStrings:YES];
+        if(![mySQLConnection queryErrored] && [result numberOfRows] == 1) {
+            NSString *skip_show_database = [[result getRowAsDictionary] objectForKey:@"Value"];
+            if ([skip_show_database.lowercaseString isEqualToString:@"on"]) {
+                [NSAlert createAlertWithTitle:NSLocalizedString(@"Warning",@"warning")
+                                      message:NSLocalizedString(@"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.", @"Warning message during connection in case the variable skip-show-database is set to ON")
+                           primaryButtonTitle:NSLocalizedString(@"OK", @"OK button")
+                         secondaryButtonTitle:NSLocalizedString(@"Never show this again", @"Never show this again")
+                         primaryButtonHandler:^{ }
+                       secondaryButtonHandler:^{ [self->prefs setBool:false forKey:SPShowWarningSkipShowDatabase]; }
+                 ];
+            }
         }
     }
 
@@ -1171,7 +1178,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         databaseListIsSelectable = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
         [self.mainToolbar validateVisibleItems];
-        [chooseDatabaseButton setEnabled:NO];
 
         SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
 
@@ -1221,6 +1227,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Keep the window hidden for the first ~0.5 secs
     if (timeSinceFadeInStart < 0.5) return;
+
+    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     CGFloat alphaValue = [taskProgressWindow alphaValue];
 
@@ -1363,6 +1371,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [taskProgressIndicator stopAnimation:self];
         }
         [taskProgressWindow setAlphaValue:0.0f];
+        [self.parentWindowControllerWindow removeChildWindow:taskProgressWindow];
         taskDisplayIsIndeterminate = YES;
         [taskProgressIndicator setIndeterminate:YES];
 
@@ -1421,8 +1430,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Action sent by the cancel button when it's active.
  */
-- (IBAction)cancelTask:(id)sender
-{
+- (IBAction)cancelTask:(id)sender {
     if (!taskCanBeCancelled) return;
 
     [taskCancelButton setEnabled:NO];
@@ -1783,7 +1791,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Copies the CREATE TABLE syntax of the selected table to the pasteboard.
  */
-- (void)copyCreateTableSyntax {
+- (void)copyCreateTableSyntax:(SPDatabaseDocument *)sender {
     [self showCreateTableSyntax:self];
 
     return;
@@ -3328,7 +3336,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Focus on table content filter
-    if (action == @selector(focusOnTableContentFilter:) || [menuItem action] == @selector(showFilterTable:)) {
+    if (action == @selector(focusOnTableContentFilter:) || action == @selector(showFilterTable:)) {
         return ([self table] != nil && [[self table] isNotEqualTo:@""]);
     }
 
@@ -3400,9 +3408,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if ([connectionController isConnecting]) {
-        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithString:NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting")]];
+        NSString *title = NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting");
+        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
     } else if (!_isConnected) {
-        [self.parentWindowController updateWindowWithTitle:[NSMutableString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]]];
+        NSString *title = [NSString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
+        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
     } else {
         NSMutableString *windowTitle = [NSMutableString string];
 
@@ -3410,21 +3420,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [windowTitle appendString:pathName];
 
         // Add the MySQL version to the window title if enabled in prefs
-        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
+        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
+            [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
+        }
+
+        NSMutableString *tabTitle = [NSMutableString string];
 
         // Add the name to the window
         [windowTitle appendString:[self name]];
+        [tabTitle appendString:[self name]];
 
         // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
         if ([self database]) {
             [windowTitle appendFormat:@"/%@", [self database]];
+            [tabTitle appendFormat:@"/%@", [self database]];
         }
 
         // Add the table name if one is selected
         if ([[self table] length]) {
             [windowTitle appendFormat:@"/%@", [self table]];
+            [tabTitle appendFormat:@"/%@", [self table]];
         }
-        [self.parentWindowController updateWindowWithTitle:windowTitle];
+        [self.parentWindowController updateWindowWithTitle:windowTitle tabTitle:tabTitle];
         [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
 }
@@ -3589,7 +3606,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         //set up the target action
         [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(showUserManager:)];
+        [toolbarItem setAction:@selector(showUserManager)];
 
     } else {
         //itemIdentifier refered to a toolbar item that is not provided or supported by us or cocoa
@@ -6188,6 +6205,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         [NSApp endSheet:connectionErrorDialog];
         [connectionErrorDialog orderOut:nil];
+
+        queryStartDate = [[NSDate alloc] init];
 
         // If 'disconnect' was selected, trigger a window close.
         if (connectionErrorCode == SPMySQLConnectionLostDisconnect) {
