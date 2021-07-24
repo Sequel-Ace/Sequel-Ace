@@ -1314,6 +1314,25 @@ static const NSInteger kBlobAsImageFile = 4;
 	return NO;
 }
 
+/**
+ * Determine whether the column can be editable or not.
+ */
+- (BOOL)isColumnEditable:(NSUInteger)colIndex
+{
+    // Retrieve the column definition
+    NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
+
+    // Generated column is not editable
+    NSString *generatedalways = [columnDefinition objectForKey:@"generatedalways"];
+    if (generatedalways) {
+        SPLog(@"got a generated column");
+        return NO;
+    }
+
+    // Otherwise, it's editable
+    return YES;
+}
+
 #pragma mark -
 #pragma mark Bundle Command Support
 

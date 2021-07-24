@@ -29,7 +29,7 @@ To install an unofficial community maintained [Homebrew](https://brew.sh) [Cask]
 brew install --cask sequel-ace
 ```
 
-## Building locally
+## Building Locally
 
 To run Sequel Ace locally from XCode, please:
 - download `.zip` archive of this repo / clone locally
@@ -37,13 +37,15 @@ To run Sequel Ace locally from XCode, please:
 
 If you encounter any issue, let us know by [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose).
 
-## Moving saved connections from Sequel Pro
+## Moving Saved Connections from Sequel Pro
 
 To move your favorites, please check [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
 
 ## Contributing
 
 We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
+
+We use Slack for communication - feel free to join our [Slack workspace](https://join.slack.com/t/sequel-ace/shared_invite/zt-g9bg1q6o-gDWyGCzauwPdg8BjmBCqKg)
 
 ### Translations
 

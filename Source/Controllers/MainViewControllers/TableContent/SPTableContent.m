@@ -2677,6 +2677,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 							 cancelButtonHandler:^{
 				SPLog(@"Cancel pressed");
 				self->isEditingRow = NO;
+                self->isSavingRow = NO;
 				self->currentlyEditingRow = -1;
 				// reload
 				[self loadTableValues];
@@ -2686,6 +2687,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		else{
 			SPLog(@"No query string");
 			isEditingRow = NO;
+            isSavingRow = NO;
 			currentlyEditingRow = -1;
 			// reload
 			[self loadTableValues];
@@ -2700,6 +2702,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         } else {
             SPLog(@"No query string");
             isEditingRow = NO;
+            isSavingRow = NO;
             currentlyEditingRow = -1;
             // reload
             [self loadTableValues];
@@ -4109,8 +4112,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView reloadData];
 		}
 
-		// Retrieve the column definition
-		NSDictionary *columnDefinition = [cqColumnDefinition objectAtIndex:[[tableColumn identifier] integerValue]];
+        // Field is not editable if it is a generated columun.
+        if (![tableContentView isColumnEditable:[[tableColumn identifier] integerValue]]) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"The current field is a generated column, you cannot edit it!", @"Info alert when editing a generated column") callback:nil];
+            return NO;
+        }
+
+        // Retrieve the column definition
+        NSDictionary *columnDefinition = [cqColumnDefinition objectAtIndex:[[tableColumn identifier] integerValue]];
 
 		// Open the editing sheet if required
 		if ([tableContentView shouldUseFieldEditorForRow:rowIndex column:[[tableColumn identifier] integerValue] checkWithLock:NULL]) {
