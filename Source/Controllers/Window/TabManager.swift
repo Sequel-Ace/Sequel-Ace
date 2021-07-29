@@ -138,6 +138,7 @@ import AppKit
     @objc func replaceTabServiceWithInitialWindow() -> SPWindowController {
         let windowController = createNewWindowController()
         addManagedWindow(windowController: windowController)
+        windowController.showWindow(self)
         return windowController
     }
 
@@ -152,7 +153,6 @@ private extension TabManager {
     func createNewWindowController() -> SPWindowController {
         let windowController = SPWindowController(windowNibName: "MainWindow")
         windowController.window?.delegate = appController
-        windowController.showWindow(self)
         return windowController
     }
 
