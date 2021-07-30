@@ -3313,4 +3313,4 @@
 "Never show this again" = "Never show this again";
 
 /* Info alert when editing a generated column */
-"The current field is a generated column, you cannot edit it!" = "The current field is a generated column, you cannot edit it!";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
