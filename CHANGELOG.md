@@ -1,22 +1,3 @@
-## [3.4.0]
-
-### Added
-
-
-### Fixed
-- 3dbc261f, Fix tabbing, titles and window order 
-- 304f4d62, Fixed buggy behavior when trying to edit a generated column 
-- a30214a9, Fix character counts for multi-byte strings 
-
-### Changed
-
-
-### Removed
-
-
-### Infra
-
-
 ## [3.3.3]
 
 ### Added
