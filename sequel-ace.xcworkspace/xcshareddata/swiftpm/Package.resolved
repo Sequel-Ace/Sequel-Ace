@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/Alamofire/Alamofire.git",
         "state": {
           "branch": null,
-          "revision": "eaf6e622dd41b07b251d8f01752eab31bc811493",
-          "version": "5.4.1"
+          "revision": "f96b619bcb2383b43d898402283924b80e2c4bae",
+          "version": "5.4.3"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/microsoft/appcenter-sdk-apple",
         "state": {
           "branch": null,
-          "revision": "013bffe628b49433d7bc334146a4ed8c507c0e32",
-          "version": "4.1.1"
+          "revision": "6d60d2361445e959b4fbb3a9d0dbae0e07eead1a",
+          "version": "4.2.0"
         }
       },
       {
@@ -33,8 +33,8 @@
         "repositoryURL": "https://github.com/microsoft/PLCrashReporter.git",
         "state": {
           "branch": null,
-          "revision": "de6b8f9db4b2a0aa859a5507550a70548e4da936",
-          "version": "1.8.1"
+          "revision": "d747ab5de269cd44022bbe96ff9609d8626694ab",
+          "version": "1.9.0"
         }
       },
       {
