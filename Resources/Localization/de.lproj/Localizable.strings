@@ -3312,3 +3312,6 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* Alert button, disable the warning when skip-show-database is set to on */
 "Never show this again" = "Nicht erneut anzeigen";
+
+/* Info alert when editing a generated column */
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";

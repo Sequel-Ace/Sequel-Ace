@@ -1006,10 +1006,10 @@
 "Delete Items" = "項目を削除";
 
 /* delete proc menu title */
-"Delete Procedure" = "Delete Procedure";
+"Delete Procedure" = "プロシージャの削除";
 
 /* delete procedures menu title */
-"Delete Procedures" = "Delete Procedures";
+"Delete Procedures" = "プロシージャの削除";
 
 /* delete relation menu item */
 "Delete Relation" = "関連の削除";
@@ -1093,13 +1093,13 @@
 "Duplicate %@ '%@' to:" = "Duplicate %1$@ '%2$@' to:";
 
 /* duplicate func menu title */
-"Duplicate Function..." = "Duplicate Function...";
+"Duplicate Function..." = "ファンクションの複製...";
 
 /* duplicate host message */
 "Duplicate Host" = "ホストを複製";
 
 /* duplicate proc menu title */
-"Duplicate Procedure..." = "Duplicate Procedure...";
+"Duplicate Procedure..." = "プロシージャの複製...";
 
 /* duplicate table menu title */
 "Duplicate Table..." = "テーブルを複製...";
@@ -1396,7 +1396,7 @@
 "Filtered table content" = "フィルタされたテーブルの内容";
 
 /* filtering failed. please try again. tooltip */
-"Filtering failed. Please try again." = "Filtering failed. Please try again.";
+"Filtering failed. Please try again." = "フィルタに失敗しました。再試行してください。";
 
 /* Filtering table task description */
 "Filtering table..." = "テーブルのフィルタリング中...";
@@ -1648,13 +1648,13 @@
 "Keyword" = "キーワード";
 
 /* kill button */
-"Kill" = "Kill";
+"Kill" = "強制終了";
 
 /* kill connection message */
-"Kill connection?" = "Kill connection?";
+"Kill connection?" = "接続を終了しますか?";
 
 /* kill query message */
-"Kill query?" = "Kill query?";
+"Kill query?" = "クエリを終了しますか?";
 
 /* Last Error Message */
 "Last Error Message" = "最終エラー メッセージ";
@@ -1752,13 +1752,13 @@
 "MySQL Error" = "MySQL Error";
 
 /* mysql help */
-"MySQL Help" = "MySQL Help";
+"MySQL Help" = "MySQLヘルプ";
 
 /* MySQL Help for Selection */
-"MySQL Help for Selection" = "MySQL Help for Selection";
+"MySQL Help for Selection" = "MySQLヘルプ 選択";
 
 /* MySQL Help for Word */
-"MySQL Help for Word" = "MySQL Help for Word";
+"MySQL Help for Word" = "MySQLヘルプ 用語";
 
 /* mysql help categories */
 "MySQL Help – Categories" = "MySQL Help – Categories";
@@ -1908,33 +1908,33 @@
 "Open Function in New Window" = "Open Function in New Window";
 
 /* open connection in new tab context menu item */
-"Open in New Tab" = "Open in New Tab";
+"Open in New Tab" = "新しいタブを開く";
 
 /* menu item open in new window */
 "Open in New Window" = "Open in New Window";
 
 /* open procedure in new table title */
-"Open Procedure in New Tab" = "Open Procedure in New Tab";
+"Open Procedure in New Tab" = "新しいタブでプロシージャを開く";
 
 /* Table List : Context Menu : duplicate connection to new window
  Table List : Gear Menu : duplicate connection to new window */
-"Open Procedure in New Window" = "Open Procedure in New Window";
+"Open Procedure in New Window" = "新しいウインドウでプロシージャを開く";
 
 /* open table in new tab title
  open table in new table title */
-"Open Table in New Tab" = "Open Table in New Tab";
+"Open Table in New Tab" = "新しいタブでテーブルを開く";
 
 /* Table List : Context Menu : Duplicate connection to new window
  Table List : Gear Menu : Duplicate connection to new window */
-"Open Table in New Window" = "Open Table in New Window";
+"Open Table in New Window" = "新しいウインドウでテーブルを開く";
 
 /* open view in new tab title
  open view in new table title */
-"Open View in New Tab" = "Open View in New Tab";
+"Open View in New Tab" = "新しいタブでビューを開く";
 
 /* Tables List : Context Menu : Duplicate connection to new window
  Tables List : Gear Menu : Duplicate connection to new window */
-"Open View in New Window" = "Open View in New Window";
+"Open View in New Window" = "新しいウインドウでビューを開く";
 
 /* menu item open %@ in new window */
 "Open %@ in New Window" = "Open %@ in New Window";
@@ -1964,7 +1964,7 @@
 "Permission Denied" = "権限がありません";
 
 /* please choose a favorite connection view label */
-"Please choose a favorite" = "Please choose a favorite";
+"Please choose a favorite" = "お気に入りを選択してください";
 
 /* message of panel when ssh details are incomplete */
 "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
@@ -2064,7 +2064,7 @@
 "Reading..." = "読み込み中...";
 
 /* menu item to refresh databases */
-"Refresh Databases" = "Refresh Databases";
+"Refresh Databases" = "データベースの再表示";
 
 /* refresh list menu item */
 "Refresh List" = "リストを更新";
@@ -2116,7 +2116,7 @@
 "Rename database '%@' to:" = "データベース '%@' の名前を変更:";
 
 /* rename func menu title */
-"Rename Function..." = "Rename Function...";
+"Rename Function..." = "ファンクションの名前を変更...";
 
 /* rename proc menu title */
 "Rename Procedure..." = "プロシージャの名前を変更...";
@@ -2125,7 +2125,7 @@
 "Rename Table..." = "テーブルの名前を変更...";
 
 /* rename view menu title */
-"Rename View..." = "Rename View...";
+"Rename View..." = "ビューの名前を変更...";
 
 /* REPAIR one or more tables - result title */
 "Repair %@" = "%@を修復";
@@ -2587,7 +2587,7 @@
 "Table changed" = "テーブルが変更されました";
 
 /* table checksum message */
-"Table checksum" = "Table checksum";
+"Table checksum" = "テーブルチェックサム";
 
 /* table checksum: %@ */
 "Table checksum: %@" = "テーブルチェックサム: %@";
@@ -2974,7 +2974,7 @@
 "Unable to remove host" = "Unable to remove host";
 
 /* unable to rename database message */
-"Unable to rename database" = "Unable to rename database";
+"Unable to rename database" = "データベースの名前が変更できませんでした";
 
 /* unable to repair selected items message */
 "Unable to repair selected items" = "Unable to repair selected items";
@@ -3311,3 +3311,6 @@
 
 /* Alert button, disable the warning when skip-show-database is set to on */
 "Never show this again" = "Never show this again";
+
+/* Info alert when editing a generated column */
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";

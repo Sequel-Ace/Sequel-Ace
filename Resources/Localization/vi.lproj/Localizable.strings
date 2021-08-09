@@ -1,108 +1,108 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Check the Console for possible errors inside the primary key(s) of this table!";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " Vui lòng kiểm tra bảng điều khiển để biết các lỗi có thể xảy ra bên trong (các) khóa chính của bảng này!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Please check the Console and inform the Sequel Ace team!";
+" Please check the Console and inform the Sequel Ace team!" = " Vui lòng kiểm tra Bảng điều khiển và thông báo cho đội ngũ Sequel Ace!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
-" Reload the table to be sure that the contents have not changed in the meantime." = " Reload the table to be sure that the contents have not changed in the meantime.";
+" Reload the table to be sure that the contents have not changed in the meantime." = " Vui lòng tải lại bảng để đảm bảo rằng nội dung không thay đổi trong thời gian chờ đợi.";
 
 /* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
-" You should also add a primary key to this table!" = " You should also add a primary key to this table!";
+" You should also add a primary key to this table!" = " Bạn cũng nên thêm khóa chính vào bảng này!";
 
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ selected";
+"%@ %@ selected" = "%1$@ %2$@ đã chọn";
 
 /* History item filtered by values label */
-"%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
+"%@ (Filtered by %@)" = "%1$@ (Được lọc bởi %2$@)";
 
 /* History item with page number label */
-"%@ (Page %lu)" = "%1$@ (Page %2$lu)";
+"%@ (Page %lu)" = "%1$@ (Trang %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Copy";
+"%@ Copy" = "Sao chép %@";
 
 /* text showing a single row a partially loaded result */
-"%@ row in partial load" = "%@ row in partial load";
+"%@ row in partial load" = "có %@ trong một phần kết quả lấy được";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ row in table";
+"%@ row in table" = "có %@ hàng trong bảng";
 
 /* text showing how a single rows matched filter */
-"%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
+"%@ row of %@%@ matches filter" = "%1$@ hàng của %2$@%3$@ phù hợp với bộ lọc";
 
 /* text showing how many rows are in a partially loaded result */
-"%@ rows in partial load" = "%@ rows in partial load";
+"%@ rows in partial load" = "có %@ trong một phần kết quả lấy được";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ rows in table";
+"%@ rows in table" = "có %@ hàng trong bảng";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
+"%@ rows of %@%@ match filter" = "%1$@ hàng của %2$@%3$@ phù hợp với bộ lọc";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
+"%@; %ld rows affected" = "%1$@; %2$ld hàng đã bị ảnh hưởng";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld hàng đã bị ảnh hưởng bởi %3$ld try vấn chiếm %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 row affected";
+"%@; 1 row affected" = "%@; 1 hàng đã bị ảnh hưởng";
 
 /* text showing one row has been affected by multiple queries */
-"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 hàng đã bị ảnh hưởng bởi %2$ld try vẫn chiếm %3$@";
 
 /* text showing a query was cancelled */
-"%@; Cancelled after %@" = "%1$@; Cancelled after %2$@";
+"%@; Cancelled after %@" = "%1$@; tốn %2$@ sau khi hủy";
 
 /* text showing multiple queries were cancelled */
-"%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
+"%@; Cancelled in query %ld, after %@" = "%1$@; đã hủy trong truy vấn %2$ld, sau %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nThông báo của MySQL: %2$@";
 
 /* favorite singular label (%d == 1) */
-"%lu favorite" = "%lu favorite";
+"%lu favorite" = "%lu ưa thích";
 
 /* favorites plural label (%d != 1) */
-"%lu favorites" = "%lu favorites";
+"%lu favorites" = "%lu ưa thích";
 
 /* favorite group singular label (%d == 1) */
-"%lu group" = "%lu group";
+"%lu group" = "%lu nhóm";
 
 /* favorite groups plural label (%d != 1) */
-"%lu groups" = "%lu groups";
+"%lu groups" = "%lu nhóm";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
-"%ld additional rows were removed!" = "%ld additional rows were removed!";
+"%ld additional rows were removed!" = "%ld hàng bổ sung đã bị xóa";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld of %2$lu record(s)";
+"%ld of %lu record(s)" = "%1$ld của %2$lu bản ghi";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
-"%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";
+"%ld of first %lu record(s)" = "%1$ld của %2$lu bản ghi đầu tiên";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld hàng đã không bị xóa";
 
 /* Export file already exists message */
-"%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
+"%lu files already exist. Do you want to replace them?" = "%lu tệp tin đã tồn tại. Bạn có muốn thay thế chúng không?";
 
 /* Export files creation error title */
-"%lu files could not be created" = "%lu files could not be created";
+"%lu files could not be created" = "%lu tệp tin đã không thể tạo được tệp tin";
 
 /* Some export files already exist explanatory text */
-"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu tệp tin cùng tên đã tồn tại trong thư mục đích. Thao tác tiếp tục sẽ ghi đè lên nội dung hiện tại của chúng.";
 
 /* filtered item count */
-"%lu of %lu" = "%1$lu of %2$lu";
+"%lu of %lu" = "%1$lu của %2$lu";
 
 /* Export folder not writable for some files explanatory text */
-"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again.";
+"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "Không thể tạo tệp %lu trong tệp xuất vì thư mục đích không thể ghi được. Vui lòng chọn một vị trí xuất khác và thử lại.";
 
 /* Export folder missing for some files explanatory text */
 "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again.";
@@ -3311,3 +3311,6 @@
 
 /* Alert button, disable the warning when skip-show-database is set to on */
 "Never show this again" = "Never show this again";
+
+/* Info alert when editing a generated column */
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
