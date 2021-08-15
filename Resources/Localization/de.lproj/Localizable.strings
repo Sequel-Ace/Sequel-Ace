@@ -323,7 +323,7 @@
 "An error occurred while trying to delete the index.\n\nMySQL said: %@" = "Beim Löschen des Index trat ein Fehler auf.\n\nMySQL Ergebnis: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "Beim Versuch, die Anzahl der Zeilen für “%1$@” zu ermitteln, ist ein Fehler aufgetreten.\nMySQL meldet: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "Beim Umbenennen der Datenbank '%1$@' zu '%2$@' trat ein Fehler auf.";
@@ -658,7 +658,7 @@
 "Cleaning up..." = "Aufräumen …";
 
 /* clear button */
-"Clear" = "Clear";
+"Clear" = "Leeren";
 
 /* toolbar item for clear console */
 "Clear Console" = "Konsole leeren";
@@ -945,20 +945,20 @@
  Collation Dropdown : Default (unknown)
  default label
  Table Structure : Collation dropdown : 'item is the same as the default collation of the row's charset' marker */
-"Default" = "Default";
+"Default" = "Standard";
 
 /* Add Table : Collation : Default ($1 = collation name)
  Charset Dropdown : Default item ($1 = charset name)
  Collation Dropdown : Default ($1 = collation name)
  Collation Dropdown : Default collation for given charset ($1 = collation name)
  New Table Sheet : Table Engine Dropdown : Default */
-"Default (%@)" = "Default (%@)";
+"Default (%@)" = "Standard (%@)";
 
 /* default bundles update */
 "Default Bundles Update" = "Standard-Bundles-Update";
 
 /* import : csv field mapping : field default value */
-"Default: %@" = "Default: %@";
+"Default: %@" = "Standard: %@";
 
 /* Query snippet default value placeholder */
 "default_value" = "default_value";
@@ -1408,7 +1408,7 @@
 "Finished importing %@" = "Import von %@ abgeschlossen";
 
 /* FLUSH one or more tables - result title */
-"Flush %@" = "Flush %@";
+"Flush %@" = "%@ leeren";
 
 /* flush selected items menu item */
 "Flush Selected Items" = "Flush der ausgewählten Items";

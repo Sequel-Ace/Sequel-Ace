@@ -162,29 +162,29 @@
  description of longblob
  description of mediumblob
  description of tinyblob */
-"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length." = "A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length.";
+"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length." = "可変長のバイト配列。VARBINARYとは異なり、この型は行の最大長にはカウントされません。";
 
 /* description of tinytext */
-"A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
+"A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "255バイトまで保存できますが、短い値の場合はスペースが少なくなります。 実際の文字数は、使用されるエンコーディングによってさらに制限されます。VARCHAR とは異なり、このタイプは行の最大長にはカウントされません。";
 
 /* description of varchar */
-"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row." = "A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row.";
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row." = "Mバイトまで保存できますが、短い値の場合はスペースが少なくなります。 実際の文字数は、使用されるエンコードと行の他のフィールドの値によってさらに制限されます。";
 
 /* description of text */
-"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Mバイトまで保存できますが、短い値の場合はスペースが少なくなります。 実際の文字数は、使用されるエンコーディングによってさらに制限されます。VARCHAR とは異なり、このタイプは行の最大長にはカウントされません。";
 
 /* description of char */
-"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding.";
+"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "実際のコンテンツの長さに関係なく、行ごとにM×wバイトを必要とする文字列。 wは、与えられたエンコーディングで、単一の文字が使用できる最大バイト数です。";
 
 /* description of longtext
  description of mediumtext */
-"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
+"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "可変長の文字列。実際の文字数は、使用されるエンコードによってさらに制限されます。 VARCHAR とは異なり、このタイプは行の最大長にはカウントされません。";
 
 /* description of json */
-"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.";
+"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "INSERT 上の JSON データを検証し、内部的に両方のバイナリ形式で保存するデータ型。 テキスト形式の JSON よりもコンパクトで高速にアクセスできます。\nMySQL 5.7.8から利用できます。";
 
 /* Export file already exists explanatory text */
-"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents.";
+"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "同じ名前のファイルが既にターゲットフォルダに存在します。置き換えると、現在の内容が上書きされます。";
 
 /* description of decimal */
 "A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "固定小数点の正確な小数値。Mは数字の最大数で、Dは小数点の後になる可能性があります。 丸めるとき、0-4は常に切り下げられ、5-9は上に切り上げられます（「最も近い方に向かってラウンド」）。";
@@ -194,10 +194,10 @@
 "A foreign key needs this index" = "外部キーにはこのインデックスが必要です";
 
 /* description of set */
-"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.";
+"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "SETは、最大64人のメンバー(文字列として)を定義することができ、そのうちの1つまたは複数のフィールドをカンマ区切りのリストを使用することができます。 挿入すると、メンバーの順序が自動的に正規化され、重複したメンバーは削除されます。 数値の割り当ては、BITタイプと同じセマンティクスを使用してサポートされています。";
 
 /* SSH key not found message */
-"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.";
+"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "SSHキーの場所が指定されましたが、指定された場所にファイルが見つかりませんでした。キーを再度選択してやり直してください。";
 
 /* SSL CA certificate file not found message */
 "A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "SSL 証明書の場所が指定されましたが、指定された場所にファイルが見つかりませんでした。証明書を再度選択して、もう一度やり直してください。";
@@ -263,82 +263,82 @@
 "All Databases (%)" = "すべてのデータベース (%)";
 
 /* All export files already exist message */
-"All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
+"All the export files already exist. Do you want to replace them?" = "すべてのエクスポートファイルは既に存在します。置き換えますか？";
 
 /* An error for sequelace URL scheme command occurred. Probably no corresponding connection window found. */
-"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.";
+"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "シーケンスURLスキームコマンドのエラーが発生しました。おそらく対応する接続ウィンドウが見つかりません。";
 
 /* no connection available informatie message */
-"An error has occurred and there doesn't seem to be a connection available." = "An error has occurred and there doesn't seem to be a connection available.";
+"An error has occurred and there doesn't seem to be a connection available." = "エラーが発生しました。接続できないようです。";
 
 /* an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane. */
-"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.";
+"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "schemeコマンドの実行中にエラーが発生します。 schemeコマンドがBundleコマンドによって呼び出された場合、そのコマンドがまだ実行される可能性があります。 ⌘+キーを押し、またはアクティビティペインを介して終了しようとすることができます。";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "接続 %1$lldのキル中にエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill the query associated with connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "接続 %1$lldに関連付けられたクエリのキル中にエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* Error shown when unable to show create table syntax */
-"An error occurred while creating table syntax.\n\n: %@" = "An error occurred while creating table syntax.\n\n: %@";
+"An error occurred while creating table syntax.\n\n: %@" = "テーブル構文の作成中にエラーが発生しました。\n\n: %@";
 
 /* rename table error - no temporary name found */
-"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.";
+"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "'%@'の名前を変更中にエラーが発生しました。一時的な名前が見つかりませんでした。最初に別の名前に変更してみてください。";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "An error occurred while renaming '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "'%1$@'の名前を変更中にエラーが発生しました。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
-"An error occurred while renaming. '%@' is of an unknown type." = "An error occurred while renaming. '%@' is of an unknown type.";
+"An error occurred while renaming. '%@' is of an unknown type." = "名前の変更中にエラーが発生しました。'%@' は不明なタイプです。";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "名前の変更中にエラーが発生しました。'%1$@'を削除できませんでした。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't recreate '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "名前の変更中にエラーが発生しました。'%1$@'を再作成できませんでした。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't retrieve the syntax for '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "名前の変更中にエラーが発生しました。'%1$@'の構文を取得できませんでした。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename error - invalid create syntax */
-"An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed.";
+"An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "名前の変更中にエラーが発生しました。'%@' の作成構文を解析できませんでした。";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "An error occurred while retrieving status data.\n\nMySQL said: %@";
+"An error occurred while retrieving status data.\n\nMySQL said: %@" = "ステータスデータの取得中にエラーが発生しました。\n\nMySQL は %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "An error occurred while retrieving the create syntax for '%1$@'.\nMySQL said: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "'%1$@'の構文の取得中にエラーが発生しました。\nMySQLは次のとおりです: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "An error occurred while trying to add the index.\n\nMySQL said: %@";
+"An error occurred while trying to add the index.\n\nMySQL said: %@" = "インデックスの追加中にエラーが発生しました。\n\nMySQL は %@ です。";
 
 /* error adding password to keychain informative message */
-"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
+"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "キーチェーンにパスワードを追加中にエラーが発生しました。 キーチェーンを修復すると問題が解決するかもしれませんが、それが解決しない場合は、エラーコード %iを提供して、シーケンスエースチームに報告してください。";
 
 /* unable to copy database message informative message */
-"An error occurred while trying to copy the database '%@' to '%@'." = "An error occurred while trying to copy the database '%1$@' to '%2$@'.";
+"An error occurred while trying to copy the database '%@' to '%@'." = "データベース '%1$@' を '%2$@ ' にコピー中にエラーが発生しました。";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "An error occurred while trying to delete the index.\n\nMySQL said: %@";
+"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "インデックスの削除中にエラーが発生しました。\n\nMySQL は %@ です。";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "\"%1$@\" の行数を決定しようとしてエラーが発生しました。\nMySQL は %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
-"An error occurred while trying to rename the database '%@' to '%@'." = "An error occurred while trying to rename the database '%1$@' to '%2$@'.";
+"An error occurred while trying to rename the database '%@' to '%@'." = "データベース '%1$@' を '%2$@ ' にリネーム中にエラーが発生しました。";
 
 /* error finding keychain item to edit informative message */
-"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
+"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "編集しようとしているキーチェーンアイテムの取得中にエラーが発生しました。 キーチェーンを修復すると問題が解決するかもしれませんが、それが解決しない場合は、エラーコード %iを提供して、シーケンスエースチームに報告してください。";
 
 /* error updating keychain item informative message */
-"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
+"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "キーチェーン項目を更新中にエラーが発生しました。 キーチェーンを修復すると問題が解決するかもしれませんが、それが解決しない場合は、エラーコード %iを提供して、シーケンスエースチームに報告してください。";
 
 /* mysql error occurred message */
 "An error occurred" = "エラーが発生しました";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "An error occurred retrieving table information.  MySQL said: %@";
+"An error occurred retrieving table information.  MySQL said: %@" = "テーブル情報の取得中にエラーが発生しました。MySQLは次のとおりです: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
@@ -347,10 +347,10 @@
 "An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "An error occurred when reading the file, as it could not be read using the encoding you selected (%1$@).\n\nOnly %2$ld rows were imported.";
 
 /* SQL read error, including detail from system */
-"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld queries were executed.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "ファイルの読み込み中にエラーが発生しました。\n\n %1$ld クエリのみが実行されました。\n\n(%2$@)";
 
 /* CSV read error, including detail string from system */
-"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld rows were imported.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "ファイルの読み込み中にエラーが発生しました。\n\n %1$ld 行のみインポートされました。\n\n(%2$@)";
 
 /* error adding field informative message */
 "An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to add the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
@@ -359,91 +359,91 @@
 "An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to change the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table collation to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "テーブルの照合順序を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table encoding to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "テーブルエンコーディングを '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQLは次のとおりです: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table type to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "テーブル型を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table's comment to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "テーブルのコメントを '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "An error occurred while analyzing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "%1$@の解析中にエラーが発生しました。\n\nMySQLは次のとおりです:%2$@";
 
 /* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "An error occurred while fetching the optimized field type.\n\nMySQL said:%@";
+"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "最適化されたフィールドタイプの取得中にエラーが発生しました。\n\nMySQL は%@ です。";
 
 /* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "An error occurred while flushing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while flushing the %@.\n\nMySQL said:%@" = "%1$@のフラッシュ中にエラーが発生しました。\n\nMySQL は%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "SQLのインポート中にエラーが発生しました";
 
 /* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "An error occurred while optimzing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "%1$@の最適化中にエラーが発生しました。\n\nMySQL は次のとおりです:%2$@";
 
 /* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "An error occurred while performing the checksum on %1$@.\n\nMySQL said:%2$@";
+"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "%1$@のチェックサム中にエラーが発生しました。\n\nMySQL は次のとおりです:%2$@";
 
 /* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "An error occurred while repairing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while repairing the %@.\n\nMySQL said:%@" = "%1$@の修復中にエラーが発生しました。\n\nMySQL は%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "An error occurred while retrieving information.\nMySQL said: %@";
+"An error occurred while retrieving information.\nMySQL said: %@" = "情報の取得中にエラーが発生しました。\nMySQLは次のとおりです: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "An error occurred while retrieving the information for table '%1$@'. Please try again.\n\nMySQL said: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' の情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL : %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "An error occurred while retrieving the trigger information for table '%1$@'. Please try again.\n\nMySQL said: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new column '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "新しい列「%1$@' 」を\n\n%2$@に追加しようとしてエラーが発生しました。\n\nMySQL: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "新しいテーブル '%1$@' を\n\n%2$@によって追加しようとしてエラーが発生しました。\n\nMySQL: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "新しいテーブル「%1$@'」の追加中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to alter table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "テーブル「%1$@」の変更中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "An error occurred while trying to check the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "%1$@の確認中にエラーが発生しました。\n\nMySQL は%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "An error occurred while trying to delete the relation '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "リレーション「%1$@'」の削除中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* unable to get list of users informative message */
-"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table.";
+"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "ユーザーのリストの取得中にエラーが発生しました。 mysql.userテーブルへのアクセスを含め、ユーザー管理を実行するために必要な権限があることを確認してください。";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "An error occurred while trying to import a table via: \n%1$@\n\n\nMySQL said: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "テーブルのインポート中にエラーが発生しました: \n%1$@\n\n\nMySQL: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "An error occurred while trying to move the field.\n\nMySQL said: %@";
+"An error occurred while trying to move the field.\n\nMySQL said: %@" = "フィールドの移動中にエラーが発生しました。\n\nMySQL: %@ ";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to reset AUTO_INCREMENT of table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "テーブル'%1$@'のAUTO_INCREMENTをリセット中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to truncate the table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "テーブル「%1$@'」を切り捨てようとしてエラーが発生しました。\n\nMySQL: %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@";
+"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "操作の実行中にエラーが発生しました。\n\nMySQL : %@ ";
 
 /* Export files creation error explanatory text */
-"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "エクスポートファイルの %lu を作成しようとしたときに処理されないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
 
 /* All export files creation error explanatory text */
-"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "各エクスポートファイルの作成時に処理されていないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
 
 /* Export file creation error explanatory text */
-"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "An unhandled error occurred when attempting to create the export file.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "エクスポートファイルの作成時に処理されないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
 
 /* ANALYZE one or more tables - result title */
 "Analyze %@" = "%@ を分析";
@@ -461,67 +461,67 @@
 "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.";
 
 /* clear global history list informative message */
-"Are you sure you want to clear the global history list? This action cannot be undone." = "Are you sure you want to clear the global history list? This action cannot be undone.";
+"Are you sure you want to clear the global history list? This action cannot be undone." = "グローバル履歴リストをクリアしてもよろしいですか？この操作は元に戻せません。";
 
 /* clear history list for %@ informative message */
-"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Are you sure you want to clear the history list for %@? This action cannot be undone.";
+"Are you sure you want to clear the history list for %@? This action cannot be undone." = "%@の履歴リストをクリアしてもよろしいですか？この操作は元に戻せません。";
 
 /* truncate tables informative message */
-"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.";
+"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "選択したテーブル内のすべてのレコードを削除してもよろしいですか？この操作は元に戻せません。";
 
 /* truncate table informative message */
-"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone.";
+"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "テーブル '%@' 内のすべてのレコードを削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete all rows informative message */
-"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Are you sure you want to delete all the rows from this table? This action cannot be undone.";
+"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "このテーブルからすべての行を削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete table/view informative message */
-"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Are you sure you want to delete the %1$@ '%2$@'? This operation cannot be undone.";
+"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "%1$@ '%2$@を削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete database informative message */
-"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "Are you sure you want to delete the database '%@'? This operation cannot be undone.";
+"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "データベース '%@' を削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete database informative message */
-"Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "Are you sure you want to delete the favorite '%@'? This operation cannot be undone.";
+"Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "お気に入りの '%@' を削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete field informative message */
-"Are you sure you want to delete the field '%@'? This action cannot be undone." = "Are you sure you want to delete the field '%@'? This action cannot be undone.";
+"Are you sure you want to delete the field '%@'? This action cannot be undone." = "フィールド '%@' を削除してもよろしいですか? この操作は元に戻せません。";
 
 /* delete database informative message */
-"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone." = "Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone.";
+"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone." = "グループ '%@' を削除してもよろしいですか？このグループ内のすべてのグループとお気に入りも削除されます。 この操作は元に戻せません。";
 
 /* delete index informative message */
-"Are you sure you want to delete the index '%@'? This action cannot be undone." = "Are you sure you want to delete the index '%@'? This action cannot be undone.";
+"Are you sure you want to delete the index '%@'? This action cannot be undone." = "インデックス '%@'を削除してもよろしいですか? この操作は元に戻せません。";
 
 /* delete tables/views informative message */
-"Are you sure you want to delete the selected %@? This operation cannot be undone." = "Are you sure you want to delete the selected %@? This operation cannot be undone.";
+"Are you sure you want to delete the selected %@? This operation cannot be undone." = "選択した %@を削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete rows informative message */
-"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone.";
+"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "選択した %ld 行をこのテーブルから削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete selected relation informative message */
-"Are you sure you want to delete the selected relations? This action cannot be undone." = "Are you sure you want to delete the selected relations? This action cannot be undone.";
+"Are you sure you want to delete the selected relations? This action cannot be undone." = "選択したリレーションを削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete selected row informative message */
-"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "Are you sure you want to delete the selected row from this table? This action cannot be undone.";
+"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "このテーブルから選択した行を削除してもよろしいですか？この操作は元に戻せません。";
 
 /* delete selected trigger informative message */
-"Are you sure you want to delete the selected triggers? This action cannot be undone." = "Are you sure you want to delete the selected triggers? This action cannot be undone.";
+"Are you sure you want to delete the selected triggers? This action cannot be undone." = "選択したトリガーを削除してもよろしいですか？この操作は元に戻せません。";
 
 /* kill connection informative message */
-"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.";
+"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "本当に接続 ID %lldを終了しますか？ format@@0\n\nこの接続を停止し続けるとデータが破損する可能性があることにご注意ください。 慎重に進んでください。";
 
 /* kill query informative message */
-"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.";
+"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "接続 ID %lldで実行中の現在のクエリを本当に終了しますか？ format@@0\n\nこの問い合わせを続けるとデータが破損する可能性があることに注意してください。 慎重に進んでください。";
 
 /* Bundle Editor : Remove-Bundle: remove dialog message */
-"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Are you sure you want to move the selected Bundle to the Trash and remove them respectively?";
+"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "選択したバンドルをゴミ箱に移動し、それぞれ削除してもよろしいですか？";
 
 /* continue to print informative message */
-"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Are you sure you want to print the current content view of the table '%1$@'?\n\nIt currently contains %2$@ rows, which may take a significant amount of time to print.";
+"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "テーブル '%1$@' の現在のコンテンツビューを印刷してもよろしいですか？ format@@0\n\n現在、 %2$@ 行を含んでおり、印刷にはかなりの時間がかかる場合があります。";
 
 /* remove all query favorites informative message */
-"Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "Are you sure you want to remove all of your saved query favorites? This action cannot be undone.";
+"Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "保存したクエリのお気に入りをすべて削除してもよろしいですか？この操作は元に戻せません。";
 
 /* remove all selected content filters informative message */
 "Are you sure you want to remove all selected content filters? This action cannot be undone." = "選択したすべてのコンテンツフィルタを削除してもよろしいですか？この操作は元に戻せません。";
@@ -539,7 +539,7 @@
 "Background" = "バックグラウンド";
 
 /* backtick quote label for color table (Prefs > Editor) */
-"Backtick Quote" = "Backtick Quote";
+"Backtick Quote" = "バックティックの引用";
 
 /* bash error */
 "BASH Error" = "BASH エラー";
@@ -616,7 +616,7 @@
 "Check %@" = "%@ をチェック";
 
 /* check of all selected items successfully passed message */
-"Check of all selected items successfully passed." = "Check of all selected items successfully passed.";
+"Check of all selected items successfully passed." = "選択したすべての項目を正常に完了しました。";
 
 /* check option: %@ */
 "check option: %@" = "チェックオプション: %@";
@@ -637,7 +637,7 @@
 "Check View" = "ビューをチェック";
 
 /* checking field data for editing task description */
-"Checking field data for editing..." = "Checking field data for editing...";
+"Checking field data for editing..." = "編集するフィールドデータを確認しています...";
 
 /* checksum %@ message */
 "Checksum %@" = "チェックサム %@";
@@ -673,13 +673,13 @@
 "Clear History?" = "履歴を消去しますか？";
 
 /* tooltip for toolbar item for clear console */
-"Clear the console which shows all MySQL commands performed by Sequel Ace" = "Clear the console which shows all MySQL commands performed by Sequel Ace";
+"Clear the console which shows all MySQL commands performed by Sequel Ace" = "Sequel Aceによって実行されるすべてのMySQLコマンドを表示するコンソールをクリアします";
 
 /* clear the document-based history list tooltip message */
-"Clear the document-based history list" = "Clear the document-based history list";
+"Clear the document-based history list" = "ドキュメントベースの履歴リストをクリア";
 
 /* clear the global history list tooltip message */
-"Clear the global history list" = "Clear the global history list";
+"Clear the global history list" = "グローバル履歴リストをクリア";
 
 /* Close menu item */
 "Close" = "閉じる";
@@ -718,7 +718,7 @@
 "Connected to %@" = "%@ に接続しました";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connected to host, but unable to connect to database %1$@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "ホストに接続しましたが、データベース %1$@に接続できません。 format@@0\n\nデータベースが存在し、必要な権限があることを確認してください。\n\nMySQL は %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "接続中...";
@@ -727,16 +727,16 @@
 "Connecting…" = "接続中...";
 
 /* error while reading connection data file */
-"Connection data file couldn't be read." = "Connection data file couldn't be read.";
+"Connection data file couldn't be read." = "接続データファイルを読み取れませんでした。";
 
 /* message error while reading connection data file and suggesting to save it under a differnet name */
-"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "Connection data file %@ couldn't be read. Please try to save the document under a different name.";
+"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "接続データファイル %@ を読み取ることができませんでした。別の名前でドキュメントを保存してみてください。";
 
 /* connection failed title */
 "Connection failed!" = "接続に失敗しました ！";
 
 /* Connection file is encrypted */
-"Connection file is encrypted" = "Connection file is encrypted";
+"Connection file is encrypted" = "接続ファイルが暗号化されています";
 
 /* Connection success very short status message */
 "Connection succeeded" = "接続が成功しました";
@@ -751,7 +751,7 @@
 "Content" = "内容";
 
 /* content filter clause is empty tooltip. */
-"Content Filter clause is empty." = "Content Filter clause is empty.";
+"Content Filter clause is empty." = "コンテンツフィルタ句は空です。";
 
 /* continue button
  Continue button title */
@@ -765,27 +765,27 @@
 
 /* copy create func syntax menu item
  Table List : Context Menu : copy CREATE FUNCTION syntax */
-"Copy Create Function Syntax" = "Copy Create Function Syntax";
+"Copy Create Function Syntax" = "関数構文をコピー";
 
 /* copy create proc syntax menu item
  Table List : Context Menu : Copy CREATE PROCEDURE syntax
  Table List : Gear Menu : Copy CREATE PROCEDURE syntax */
-"Copy Create Procedure Syntax" = "Copy Create Procedure Syntax";
+"Copy Create Procedure Syntax" = "作成手順の構文をコピー";
 
 /* copy create syntaxes menu item
  Table List : Context Menu : Copy CREATE syntax (multiple selection)
  Table List : Gear Menu : Copy CREATE syntax (multiple selection) */
-"Copy Create Syntaxes" = "Copy Create Syntaxes";
+"Copy Create Syntaxes" = "構文のコピー作成";
 
 /* copy create table syntax menu item
  Table List : Context Menu : Copy CREATE syntax (single table)
  Table List : Gear Menu : Copy CREATE syntax (single table) */
-"Copy Create Table Syntax" = "Copy Create Table Syntax";
+"Copy Create Table Syntax" = "テーブル構文のコピー作成";
 
 /* copy create view syntax menu item
  Table List : Context Menu : Copy CREATE view statement
  Table List : Gear Menu : Copy CREATE view statement */
-"Copy Create View Syntax" = "Copy Create View Syntax";
+"Copy Create View Syntax" = "ビュー構文のコピー作成";
 
 /* copy server variable name menu item */
 "Copy Variable Name" = "変数名をコピー";
@@ -800,85 +800,85 @@
 "Copy Variable Values" = "変数名をコピー";
 
 /* Procedure/function export permission error */
-"Could not export the %@ '%@' because of a permissions error.\n" = "Could not export the %1$@ '%2$@' because of a permissions error.\n";
+"Could not export the %@ '%@' because of a permissions error.\n" = "パーミッションエラーのため %1$@ '%2$@' をエクスポートできませんでした。\n";
 
 /* Error when we can't parse/split file as CSV */
-"Could not parse file as CSV" = "Could not parse file as CSV";
+"Could not parse file as CSV" = "CSVファイルをパースできませんでした";
 
 /* message when database selection failed */
-"Could not select database" = "Could not select database";
+"Could not select database" = "データベースを選択できませんでした";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Couldn't alter database.\nMySQL said: %@";
+"Couldn't alter database.\nMySQL said: %@" = "データベースを変更できませんでした。\nMySQL: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
-"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Couldn't copy default themes to Application Support Theme folder!\nError: %@";
+"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Application Support Theme フォルダにデフォルトのテーマをコピーできませんでした!\nエラー: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "Couldn't create '%1$@'.\nMySQL said: %2$@";
+"Couldn't create '%@'.\nMySQL said: %@" = "'%1$@' を作成できませんでした。\nMySQL は %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
-"Couldn't create Application Support Bundle folder!\nError: %@" = "Couldn't create Application Support Bundle folder!\nError: %@";
+"Couldn't create Application Support Bundle folder!\nError: %@" = "Application Support Bundle フォルダを作成できませんでした!\nエラー: %@";
 
 /* Couldn't create Application Support Theme folder!\nError: %@ */
-"Couldn't create Application Support Theme folder!\nError: %@" = "Couldn't create Application Support Theme folder!\nError: %@";
+"Couldn't create Application Support Theme folder!\nError: %@" = "アプリケーションのサポートテーマフォルダを作成できませんでした!\nエラー: %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "Couldn't create database.\nMySQL said: %@";
+"Couldn't create database.\nMySQL said: %@" = "データベースを作成できませんでした。\nMySQL は: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nMySQL said: %@" = "'%1$@'を削除できませんでした。\n\nMySQL: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
 "Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Couldn't delete field %1$@.\nMySQL said: %2$@";
+"Couldn't delete field %@.\nMySQL said: %@" = "'%1$@'を削除できませんでした。\nMySQL: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Couldn't delete rows.\n\nMySQL said: %@";
+"Couldn't delete rows.\n\nMySQL said: %@" = "行を削除できませんでした。\n\nMySQL は %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Couldn't delete the database.\nMySQL said: %@";
+"Couldn't delete the database.\nMySQL said: %@" = "データベースを削除できませんでした。\nMySQL は: %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "Couldn't duplicate '%1$@'.\nMySQL said: %2$@";
+"Couldn't duplicate '%@'.\nMySQL said: %@" = "'%1$@'を複製できませんでした。\nMySQLは次のとおりです: %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "Couldn't flush privileges.\nMySQL said: %@";
+"Couldn't flush privileges.\nMySQL said: %@" = "権限をフラッシュできませんでした。\nMySQL は %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "Couldn't get create syntax.\nMySQL said: %@";
+"Couldn't get create syntax.\nMySQL said: %@" = "構文を作成できませんでした。\nMySQL: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
-"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.";
+"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "フィールドの原点を明確に識別できませんでした。列 '%@' には複数のテーブルのデータが含まれています。";
 
 /* message of panel when loading of row failed */
-"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.";
+"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "行をロードできませんでした。行が存在することを確認するためにテーブルをリロードし、テーブルにプライマリキーを使用してください。";
 
 /* Couldn't read the file content of */
-"Couldn't read the file content of" = "Couldn't read the file content of";
+"Couldn't read the file content of" = "次のファイルの内容を読み取ることができませんでした";
 
 /* text shown if an error occurred while sorting the result table */
-"Couldn't sort column." = "Couldn't sort column.";
+"Couldn't sort column." = "列をソートできませんでした。";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "Couldn't sort table. MySQL said: %@";
+"Couldn't sort table. MySQL said: %@" = "テーブルをソートできませんでした。MySQL: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Couldn't write field.\nMySQL said: %@";
+"Couldn't write field.\nMySQL said: %@" = "フィールドを書き込めませんでした。\nMySQL: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "構文を作成";
 
 /* Create syntax label */
-"Create syntax for %@ '%@'" = "Create syntax for %1$@ '%2$@'";
+"Create syntax for %@ '%@'" = "%1$@ '%2$@ ' の構文を作成";
 
 /* Create syntaxes for selected items label */
-"Create syntaxes for selected items" = "Create syntaxes for selected items";
+"Create syntaxes for selected items" = "選択したアイテムの構文を作成";
 
 /* Table Info Section : table create options */
-"create_options: %@" = "create_options: %@";
+"create_options: %@" = "作成オプション: %@";
 
 /* created: %@
  Table Info Section : time+date table was created at */
@@ -897,26 +897,26 @@
 "Current Query" = "現在のクエリ";
 
 /* header for current selection in filtered list */
-"CURRENT SELECTION" = "CURRENT SELECTION";
+"CURRENT SELECTION" = "現在の選択";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current word' item */
 "Current Word" = "現在の単語";
 
 /* SSH connection : debug header with user-defined ssh binary */
-"Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!";
+"Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "カスタムSSHバイナリを有効にしました。環境設定で無効にすると互換性がありません。";
 
 /* customize file name label */
-"Customize Filename (%@)" = "Customize Filename (%@)";
+"Customize Filename (%@)" = "ファイル名をカスタマイズ (%@)";
 
 /* data access: %@ (%@) */
-"data access: %@ (%@)" = "data access: %1$@ (%2$@)";
+"data access: %@ (%@)" = "データアクセス: %1$@ (%2$@)";
 
 /* Bundle Editor : Scope dropdown : 'data table' item
  data table menu item label */
 "Data Table" = "データテーブル";
 
 /* Bundle Editor : Outline View : 'Data Table' item : tooltip */
-"Data Table Scope\ncommands will run on the Content and Query data tables" = "Data Table Scope\ncommands will run on the Content and Query data tables";
+"Data Table Scope\ncommands will run on the Content and Query data tables" = "データテーブルスコープ\nコマンドは、データテーブル上で実行されます。";
 
 /* export filename database token
  export header database label
@@ -930,7 +930,7 @@
 "Database changed" = "データベースが変更されました";
 
 /* message of panel when no db name is given */
-"Database must have a name." = "Database must have a name.";
+"Database must have a name." = "データベースには名前が必要です。";
 
 /* databsse rename unsupported message */
 "Database Rename Unsupported" = "データベース名はサポートされていません";
@@ -955,7 +955,7 @@
 "Default (%@)" = "デフォルト (%@)";
 
 /* default bundles update */
-"Default Bundles Update" = "Default Bundles Update";
+"Default Bundles Update" = "デフォルトのバンドルの更新";
 
 /* import : csv field mapping : field default value */
 "Default: %@" = "デフォルト: %@";
@@ -964,13 +964,13 @@
 "default_value" = "default_value";
 
 /* definer label (Navigator) */
-"Definer" = "Definer";
+"Definer" = "定義";
 
 /* definer: %@ */
-"definer: %@" = "definer: %@";
+"definer: %@" = "定義: %@";
 
 /* description of enum */
-"Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member).";
+"Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "すべてのフィールドが最大1つで使用できるメンバーのリストを定義します。 値はインデックス番号(最初のメンバーの場合は0から)でソートされます。";
 
 /* delete button */
 "Delete" = "削除";
@@ -1060,7 +1060,7 @@
 "Disabled Cipher Suites" = "Disabled Cipher Suites";
 
 /* force table deltion button text tooltip */
-"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.";
+"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "削除前に外部キーチェック(FOREIGN_KEY_CHECKS)を無効にし、後で再び有効にします。";
 
 /* discard changes button */
 "Discard changes" = "変更を破棄";
@@ -1072,16 +1072,16 @@
 "Do UPDATE where field contents match" = "フィールドの内容が一致するところでUPDATE を行います。";
 
 /* message of panel asking for confirmation for loading large text into the query editor */
-"Do you really want to load a SQL file with %@ of data into the Query Editor?" = "Do you really want to load a SQL file with %@ of data into the Query Editor?";
+"Do you really want to load a SQL file with %@ of data into the Query Editor?" = "クエリエディタに %@ のデータを含むSQLファイルを読み込みますか？";
 
 /* message of panel asking for confirmation for inserting large text from dragging action */
-"Do you really want to proceed with %@ of data?" = "Do you really want to proceed with %@ of data?";
+"Do you really want to proceed with %@ of data?" = "本当に %@ のデータを続行しますか？";
 
 /* shutdown server : confirmation dialog : title */
-"Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
+"Do you really want to shutdown the server?" = "本当にサーバーをシャットダウンしますか？";
 
 /* dtd identifier label (Navigator) */
-"DTD Identifier" = "DTD Identifier";
+"DTD Identifier" = "DTD 識別子";
 
 /* sql export dump of table label */
 "Dump of table" = "テーブルのダンプ";
@@ -1090,7 +1090,7 @@
 "Dumping..." = "ダンプ中...";
 
 /* duplicate object message */
-"Duplicate %@ '%@' to:" = "Duplicate %1$@ '%2$@' to:";
+"Duplicate %@ '%@' to:" = "%1$@ '%2$@' を複製:";
 
 /* duplicate func menu title */
 "Duplicate Function..." = "ファンクションの複製...";
@@ -1176,124 +1176,124 @@
 "Error changing field" = "フィールド設定時にエラー発生";
 
 /* error changing table collation message */
-"Error changing table collation" = "Error changing table collation";
+"Error changing table collation" = "テーブルの照合順序の変更に失敗しました";
 
 /* error changing table comment message */
-"Error changing table comment" = "Error changing table comment";
+"Error changing table comment" = "テーブルのコメントの変更に失敗しました";
 
 /* error changing table encoding message */
-"Error changing table encoding" = "Error changing table encoding";
+"Error changing table encoding" = "テーブルエンコーディングの変更エラー";
 
 /* error changing table type message */
-"Error changing table type" = "Error changing table type";
+"Error changing table type" = "テーブルの種類の変更に失敗しました";
 
 /* error creating relation message */
-"Error creating relation" = "Error creating relation";
+"Error creating relation" = "リレーションの作成に失敗しました";
 
 /* error creating trigger message */
 "Error creating trigger" = "トリガーの作成中にエラー";
 
 /* error for message */
-"Error for" = "Error for";
+"Error for" = "エラー：";
 
 /* error for bash command ($1), $2=message */
-"Error for “%1$@”:\n%2$@" = "Error for “%1$@”:\n%2$@";
+"Error for “%1$@”:\n%2$@" = "“%1$@”のエラー：\n%2$@";
 
 /* error moving field message */
-"Error moving field" = "Error moving field";
+"Error moving field" = "フィールド移動中にエラーが発生しました";
 
 /* error occurred */
 "error occurred" = "エラーが発生しました";
 
 /* error reading import file */
-"Error reading import file." = "Error reading import file.";
+"Error reading import file." = "インポートファイルの読み込み中にエラーが発生しました。";
 
 /* error finding keychain item to edit message */
-"Error retrieving Keychain item to edit" = "Error retrieving Keychain item to edit";
+"Error retrieving Keychain item to edit" = "編集するキーチェーンアイテムの取得に失敗しました";
 
 /* error retrieving table information message */
-"Error retrieving table information" = "Error retrieving table information";
+"Error retrieving table information" = "テーブル情報の取得に失敗しました";
 
 /* error retrieving trigger information message */
-"Error retrieving trigger information" = "Error retrieving trigger information";
+"Error retrieving trigger information" = "トリガー情報取得エラー";
 
 /* error truncating table message */
 "Error truncating table" = "テーブルの切り詰めに失敗しました";
 
 /* error updating keychain item message */
-"Error updating Keychain item" = "Error updating Keychain item";
+"Error updating Keychain item" = "キーチェーンアイテムの更新中にエラーが発生しました";
 
 /* error while analyzing selected items message */
-"Error while analyzing selected items" = "Error while analyzing selected items";
+"Error while analyzing selected items" = "選択した項目を分析中にエラーが発生しました";
 
 /* error while checking selected items message */
-"Error while checking selected items" = "Error while checking selected items";
+"Error while checking selected items" = "選択した項目を確認中にエラーが発生しました";
 
 /* error while converting color scheme data */
-"Error while converting color scheme data" = "Error while converting color scheme data";
+"Error while converting color scheme data" = "カラースキームデータの変換中にエラーが発生しました";
 
 /* error while converting connection data */
-"Error while converting connection data" = "Error while converting connection data";
+"Error while converting connection data" = "接続データの変換中にエラー";
 
 /* Content filters could not be converted to plist upon export - message title (ContentFilterManager) */
-"Error while converting content filter data" = "Error while converting content filter data";
+"Error while converting content filter data" = "コンテンツフィルタデータの変換中にエラーが発生しました";
 
 /* error while converting query favorite data */
-"Error while converting query favorite data" = "Error while converting query favorite data";
+"Error while converting query favorite data" = "クエリお気に入りデータの変換中にエラーが発生しました";
 
 /* error while converting session data */
-"Error while converting session data" = "Error while converting session data";
+"Error while converting session data" = "セッションデータの変換中にエラー";
 
 /* Error while deleting field */
-"Error while deleting field" = "Error while deleting field";
+"Error while deleting field" = "フィールド削除中にエラーが発生しました";
 
 /* Bundle Editor : Copy-Command-Error : Copying failed error message */
-"Error while duplicating Bundle content." = "Error while duplicating Bundle content.";
+"Error while duplicating Bundle content." = "バンドルコンテンツの複製中にエラーが発生しました。";
 
 /* error while executing javascript bash command */
-"Error while executing JavaScript BASH command" = "Error while executing JavaScript BASH command";
+"Error while executing JavaScript BASH command" = "JavaScript BASHコマンド実行中にエラーが発生しました";
 
 /* error while fetching the optimized field type message */
-"Error while fetching the optimized field type" = "Error while fetching the optimized field type";
+"Error while fetching the optimized field type" = "最適化されたフィールドタイプの取得中にエラーが発生しました";
 
 /* error while flushing selected items message */
-"Error while flushing selected items" = "Error while flushing selected items";
+"Error while flushing selected items" = "選択したアイテムをフラッシュ中にエラーが発生しました";
 
 /* error while importing table message */
-"Error while importing table" = "Error while importing table";
+"Error while importing table" = "テーブルのインポート中にエラーが発生しました";
 
 /* Open Files : Bundle : Install-Error : error dialog title
  Open Files : Bundle : UUID : Error dialog title */
 "Error while installing Bundle" = "バンドルのインストール中にエラーが発生しました";
 
 /* error while installing color theme file */
-"Error while installing color theme file" = "Error while installing color theme file";
+"Error while installing color theme file" = "カラーテーマファイルのインストール中にエラーが発生しました";
 
 /* Bundle Editor : Trash-Bundle(s)-Error : error dialog title
  error while moving %@ to trash
  Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version. */
-"Error while moving %@ to Trash." = "Error while moving %@ to Trash.";
+"Error while moving %@ to Trash." = "%@ をゴミ箱に移動中にエラーが発生しました。";
 
 /* error while optimizing selected items message */
-"Error while optimizing selected items" = "Error while optimizing selected items";
+"Error while optimizing selected items" = "選択した項目を最適化中にエラーが発生しました";
 
 /* error while parsing CREATE TABLE syntax */
-"Error while parsing CREATE TABLE syntax" = "Error while parsing CREATE TABLE syntax";
+"Error while parsing CREATE TABLE syntax" = "CREATE TABLE 構文の解析中にエラーが発生しました";
 
 /* error while reading connection data file */
-"Error while reading connection data file" = "Error while reading connection data file";
+"Error while reading connection data file" = "接続データファイルの読み込み中にエラーが発生しました";
 
 /* error while reading data file */
-"Error while reading data file" = "Error while reading data file";
+"Error while reading data file" = "データファイルの読み込み中にエラーが発生しました";
 
 /* error while repairing selected items message */
-"Error while repairing selected items" = "Error while repairing selected items";
+"Error while repairing selected items" = "選択した項目を修復中にエラーが発生しました";
 
 /* Bundle Editor : Save-Bundle-Error : error dialog title */
-"Error while saving the Bundle." = "Error while saving the Bundle.";
+"Error while saving the Bundle." = "バンドルの保存中にエラーが発生しました。";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
-"Error while saving %@." = "Error while saving %@.";
+"Error while saving %@." = "%@ の保存中にエラーが発生しました。";
 
 /* Errors title */
 "Errors" = "エラー";
@@ -1305,13 +1305,13 @@
 "exclude BLOB" = "BLOBを除外する";
 
 /* execution privilege label (Navigator) */
-"Execution Privilege" = "Execution Privilege";
+"Execution Privilege" = "実行権限";
 
 /* execution privilege: %@ */
-"execution privilege: %@" = "execution privilege: %@";
+"execution privilege: %@" = "実行権限: %@";
 
 /* execution stopped message */
-"Execution stopped!\n" = "Execution stopped!\n";
+"Execution stopped!\n" = "処理が停止しました！\n";
 
 /* export selected favorites menu item */
 "Export Selected..." = "選択したものをエクスポート...";
@@ -1329,7 +1329,7 @@
 "Extra" = "エクストラ";
 
 /* table structure : indexes : delete index : no columns error : title */
-"Failed to remove index '%@'" = "Failed to remove index '%@'";
+"Failed to remove index '%@'" = "インデックスの削除に失敗しました '%@'";
 
 /* fatal error */
 "Fatal Error" = "致命的エラー";
@@ -1350,10 +1350,10 @@
 "Fetching data..." = "データを取得しています...";
 
 /* fetching database structure data in progress */
-"fetching database structure data in progress" = "fetching database structure data in progress";
+"fetching database structure data in progress" = "進行中のデータベース構造データの取得中";
 
 /* fetching database structure in progress */
-"fetching database structure in progress" = "fetching database structure in progress";
+"fetching database structure in progress" = "進行中のデータベース構造の取得中";
 
 /* fetching table data for completion in progress message */
 "fetching table data…" = "テーブルデータの取得中…";
@@ -1365,26 +1365,26 @@
 "Field" = "フィールド";
 
 /* Query result editing error - could not match row being edited uniquely */
-"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
+"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "フィールドは編集できません。フィールドの原点を明確に識別できませんでした（%ld 件の一致）。";
 
 /* field is not editable due to no table/database */
-"Field is not editable. Field has no or multiple table or database origin(s)." = "Field is not editable. Field has no or multiple table or database origin(s).";
+"Field is not editable. Field has no or multiple table or database origin(s)." = "フィールドは編集できません。フィールドにはテーブルまたはデータベースの原点がありません。";
 
 /* Custom Query result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously.";
+"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "フィールドは編集できません。一致するレコードが見つかりませんでした。\nデータの再読み込み, エンコードの確認 または、テーブル'%@' '\nの SELECT ステートメントにプライマリキーフィールド\n以上のフィールド\nを追加して、フィールドの原点を明確に識別しようとします。";
 
 /* Table Content result editing error - could not identify original row */
 "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
 
 /* error while reading data file */
-"File couldn't be read." = "File couldn't be read.";
-"File couldn't be read: %@\n\nIt will be deleted." = "File couldn't be read: %@\n\nIt will be deleted.";
+"File couldn't be read." = "ファイルを読み込めませんでした。";
+"File couldn't be read: %@\n\nIt will be deleted." = "ファイルを読み込めませんでした: %@\n\n削除されます。";
 
 /* File read error title (Import Dialog) */
-"File read error" = "File read error";
+"File read error" = "ファイル読み込みエラー";
 
 /* All export files already exist explanatory text */
-"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "同じ名前のファイルが既にターゲットフォルダに存在します。置き換えると、現在の内容が上書きされます。";
 
 /* filter label */
 "Filter" = "フィルタ";
@@ -1402,34 +1402,34 @@
 "Filtering table..." = "テーブルのフィルタリング中...";
 
 /* description for finished exporting notification */
-"Finished exporting to %@" = "Finished exporting to %@";
+"Finished exporting to %@" = "%@ へのエクスポートが完了しました";
 
 /* description for finished importing notification */
-"Finished importing %@" = "Finished importing %@";
+"Finished importing %@" = "%@ のインポートが終了しました";
 
 /* FLUSH one or more tables - result title */
 "Flush %@" = "%@ をフラッシュする";
 
 /* flush selected items menu item */
-"Flush Selected Items" = "Flush Selected Items";
+"Flush Selected Items" = "選択したアイテムをフラッシュする";
 
 /* flush table menu item */
 "Flush Table" = "テーブルをフラッシュする";
 
 /* flush table failed message */
-"Flush table failed." = "Flush table failed.";
+"Flush table failed." = "テーブルのフラッシュに失敗しました。";
 
 /* flush view menu item */
 "Flush View" = "フラッシュビュー";
 
 /* title of panel when successfully flushed privs */
-"Flushed Privileges" = "Flushed Privileges";
+"Flushed Privileges" = "フラッシュ特権";
 
 /* For BIT fields only “1” or “0” are allowed. */
-"For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
+"For BIT fields only “1” or “0” are allowed." = "BITフィールドの場合、「1」または「0」のみが許可されます。";
 
 /* force table deletion button text */
-"Force delete (disables integrity checks)" = "Force delete (disables integrity checks)";
+"Force delete (disables integrity checks)" = "強制削除 (整合性チェックを無効にします)";
 
 /* full text index menu item title */
 "FULLTEXT" = "FULLTEXT";
@@ -1452,29 +1452,29 @@
 "General Preferences" = "一般設定";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
-"General Scope\ncommands will run application-wide" = "General Scope\ncommands will run application-wide";
+"General Scope\ncommands will run application-wide" = "一般的なスコープ\nコマンドは、アプリケーション全体を実行します。";
 
 /* generating print document status message */
-"Generating print document..." = "Generating print document...";
+"Generating print document..." = "印刷ドキュメントを生成しています...";
 
 /* export header generation time label */
-"Generation Time" = "Generation Time";
+"Generation Time" = "生成時間";
 
 /* Content Filter Manager : Filter Entry List: 'Global' Header
  Query Favorites : List : Section Heading : global query favorites */
 "Global" = "グローバル";
 
 /* Query Favorites : List : Section Heading : global : tooltip */
-"Globally stored favorites" = "Globally stored favorites";
+"Globally stored favorites" = "グローバルに保存されたお気に入り";
 
 /* Preferences : Notifications : status text : notification setup */
-"Notifications are delivered via the Notification Center." = "Notifications are delivered via the Notification Center.";
+"Notifications are delivered via the Notification Center." = "通知は通知センター経由で配信されます。";
 
 /* Gzip compression export summary - within a sentence */
 "Gzip compression" = "Gzip 圧縮";
 
 /* MySQL Help Viewer : Results list : Page title */
-"Help topics for %@" = "Help topics for %@";
+"Help topics for %@" = "%@のヘルプトピック";
 
 /* hide console */
 "Hide Console" = "コンソールを隠す";
@@ -1496,10 +1496,10 @@
 "http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
 
 /* description of double */
-"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
+"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 倍精度浮動小数点値。M は最大桁数で、D は小数点以降である可能性があります。 注意: 多くの小数は浮動小数点値でのみ近似できます。正確な結果が必要な場合はDECIMALを参照してください。";
 
 /* description of float */
-"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
+"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 単精度浮動小数点値。M は最大桁数で、D は小数点以降である可能性があります。 注意: 多くの小数は浮動小数点値でのみ近似できます。正確な結果が必要な場合はDECIMALを参照してください。";
 
 /* ignore button */
 "Ignore" = "無視";
@@ -1523,7 +1523,7 @@
 "Import all Fields" = "すべてのフィールドをインポート";
 
 /* sql import : charset error alert : continue button */
-"Import Anyway" = "Import Anyway";
+"Import Anyway" = "とにかくインポート";
 
 /* import cancelled message */
 "Import cancelled!\n" = "インポートがキャンセルされました!\n";
@@ -1538,16 +1538,16 @@
 "Import file does not exist." = "ファイルが存在しません。";
 
 /* Export file format cannot be imported warning */
-"Import of the selected data is currently not supported." = "Import of the selected data is currently not supported.";
+"Import of the selected data is currently not supported." = "選択したデータのインポートは現在サポートされていません。";
 
 /* SQL import progress text */
-"Imported %@ of %@" = "Imported %1$@ of %2$@";
+"Imported %@ of %@" = "%1$@ / %2$@ をインポートしました";
 
 /* CSV import progress text where total size is unknown */
-"Imported %@ of CSV data" = "Imported %@ of CSV data";
+"Imported %@ of CSV data" = "CSVデータの %@ をインポートしました";
 
 /* SQL import progress text where total size is unknown */
-"Imported %@ of SQL" = "Imported %@ of SQL";
+"Imported %@ of SQL" = "SQLの %@ をインポートしました";
 
 /* text showing that the application is importing CSV */
 "Importing CSV" = "CSVをインポート中";
@@ -1562,57 +1562,57 @@
 "Include content" = "コンテンツを含める";
 
 /* sql import error message */
-"Incompatible encoding in SQL file" = "Incompatible encoding in SQL file";
+"Incompatible encoding in SQL file" = "SQLファイル内の符号化方式に互換性がありません";
 
 /* header for blank info pane */
 "INFORMATION" = "情報";
 
 /* New Table Sheet : Table Collation Dropdown : Default inherited from database
  New Table Sheet : Table Encoding Dropdown : Default inherited from database */
-"Inherit from database (%@)" = "Inherit from database (%@)";
+"Inherit from database (%@)" = "データベースから継承する (%@)";
 
 /* initializing export label */
 "Initializing..." = "初期化中...";
 
 /* Bundle Editor : Scope dropdown : 'input field' item
  input field menu item label */
-"Input Field" = "Input Field";
+"Input Field" = "入力フィールド";
 
 /* input field  doesn't support insertion of snippets. */
-"Input Field doesn't support insertion of snippets." = "Input Field doesn't support insertion of snippets.";
+"Input Field doesn't support insertion of snippets." = "入力フィールドはスニペットの挿入をサポートしていません。";
 
 /* input field is not editable. */
-"Input Field is not editable." = "Input Field is not editable.";
+"Input Field is not editable." = "入力フィールドは編集できません。";
 
 /* Bundle Editor : Outline View : 'Input Field' item : tooltip */
-"Input Field Scope\ncommands will run on each text input field" = "Input Field Scope\ncommands will run on each text input field";
+"Input Field Scope\ncommands will run on each text input field" = "入力フィールドスコープ\nコマンドは、各テキスト入力フィールド上で実行されます。";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
-"Insert as Snippet" = "Insert as Snippet";
+"Insert as Snippet" = "スニペットとして挿入";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as text' item */
-"Insert as Text" = "Insert as Text";
+"Insert as Text" = "テキストの挿入";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item : tooltip */
-"Installed Bundles" = "Installed Bundles";
+"Installed Bundles" = "インストール済みバンドル";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
-"Installing Bundle" = "Installing Bundle";
+"Installing Bundle" = "インストール済みバンドル";
 
 /* insufficient details message */
-"Insufficient connection details" = "Insufficient connection details";
+"Insufficient connection details" = "接続の詳細が不足しています";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Insufficient details provided to establish a connection. Please enter at least the hostname.";
+"Insufficient details provided to establish a connection. Please enter at least the hostname." = "接続を確立するための詳細が不足しています。ホスト名を入力してください。";
 
 /* insufficient SSH tunnel details informative message */
-"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
+"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "接続を確立するための詳細が不足しています。SSH Tunnel のホスト名を入力するか、SSH Tunnel を無効にしてください。";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please provide at least a host." = "Insufficient details provided to establish a connection. Please provide at least a host.";
+"Insufficient details provided to establish a connection. Please provide at least a host." = "接続を確立するための詳細が不足しています。少なくともホストを提供してください。";
 
 /* Interpret data as: */
-"Interpret data as:" = "Interpret data as:";
+"Interpret data as:" = "データの解釈:";
 
 /* Invalid database very short status message */
 "Invalid database" = "無効なデータベース";
@@ -1624,10 +1624,10 @@
 "Invalid hexadecimal value" = "16進数の値が無効です";
 
 /* is deterministic label (Navigator) */
-"Is Deterministic" = "Is Deterministic";
+"Is Deterministic" = "確定的";
 
 /* is nullable label (Navigator) */
-"Is Nullable" = "Is Nullable";
+"Is Nullable" = "Null を許す";
 
 /* is updatable: %@ */
 "is updatable: %@" = "is updatable: %@";
@@ -1687,57 +1687,57 @@
 "Low memory" = "メモリ不足";
 
 /* range of decimal */
-"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (precision): Up to 65 digits\nD (scale): 0 to 30 digits";
+"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (精度)：最大 65桁\nD (スケール): 0 から 30桁まで";
 
 /* range for blob type
  range for varbinary type */
-"M: %@ to %@ bytes" = "M: %1$@ to %2$@ bytes";
+"M: %@ to %@ bytes" = "M: %1$@ から %2$@ バイト";
 
 /* range for text type
  range for varchar type */
-"M: %@ to %@ characters" = "M: %1$@ to %2$@ characters";
+"M: %@ to %@ characters" = "M: %1$@ から %2$@ 文字";
 
 /* range for longtext type */
-"M: %@ to %@ characters (4 GiB)" = "M: %1$@ to %2$@ characters (4 GiB)";
+"M: %@ to %@ characters (4 GiB)" = "M: %1$@ から %2$@ 文字 (4 GiB)";
 
 /* range for binary type */
-"M: 0 to 255 bytes" = "M: 0 to 255 bytes";
+"M: 0 to 255 bytes" = "M: 0 から 255 バイト";
 
 /* range for char type */
-"M: 0 to 255 characters" = "M: 0 to 255 characters";
+"M: 0 to 255 characters" = "M: 0 から 255 文字";
 
 /* range for bit type */
-"M: 1 (default) to 64" = "M: 1 (default) to 64";
+"M: 1 (default) to 64" = "M: 1 (デフォルト) から 64";
 
 /* connection view : ssl : key file picker : wrong format error description */
-"Make sure the file contains a RSA private key and is using PEM encoding." = "Make sure the file contains a RSA private key and is using PEM encoding.";
+"Make sure the file contains a RSA private key and is using PEM encoding." = "ファイルに RSA 秘密鍵が含まれており、PEM エンコードを使用していることを確認します。";
 
 /* connection view : ssl : client cert picker : wrong format error description */
-"Make sure the file contains a X.509 client certificate and is using PEM encoding." = "Make sure the file contains a X.509 client certificate and is using PEM encoding.";
+"Make sure the file contains a X.509 client certificate and is using PEM encoding." = "ファイルに X.509 クライアント証明書が含まれており、PEM エンコーディングを使用していることを確認します。";
 
 /* match field menu item */
 "Match Field" = "フィールドの一致";
 
 /* Shown when user inserts too many arguments (ContentFilterManager) */
-"Maximum number of arguments is 2!" = "Maximum number of arguments is 2!";
+"Maximum number of arguments is 2!" = "引数の最大数は 2 です!";
 
 /* Maximum text length is set to %ld. */
-"Maximum text length is set to %ld." = "Maximum text length is set to %ld.";
+"Maximum text length is set to %ld." = "テキストの最大長は %ld に設定されています。";
 
 /* Maximum text length is set to %ld. Inserted text was truncated. */
-"Maximum text length is set to %ld. Inserted text was truncated." = "Maximum text length is set to %ld. Inserted text was truncated.";
+"Maximum text length is set to %ld. Inserted text was truncated." = "テキストの最大長は %ldに設定されています。挿入されたテキストは切り捨てられました。";
 
 /* Maximum text length is set to %llu. */
-"Maximum text length is set to %llu." = "Maximum text length is set to %llu.";
+"Maximum text length is set to %llu." = "テキストの最大長は %llu に設定されています。";
 
 /* Maximum text length is set to %llu. Inserted text was truncated. */
-"Maximum text length is set to %llu. Inserted text was truncated." = "Maximum text length is set to %llu. Inserted text was truncated.";
+"Maximum text length is set to %llu. Inserted text was truncated." = "テキストの最大長は %lluに設定されています。挿入されたテキストは切り捨てられました。";
 
 /* message column title */
 "Message" = "メッセージ";
 
 /* mgtemplateengine error */
-"MGTemplateEngine Error" = "MGTemplateEngine Error";
+"MGTemplateEngine Error" = "MGTemplateEngine エラー";
 
 /* export filename date token */
 "Month" = "月";
@@ -1761,16 +1761,16 @@
 "MySQL Help for Word" = "MySQLヘルプ 用語";
 
 /* mysql help categories */
-"MySQL Help – Categories" = "MySQL Help – Categories";
+"MySQL Help – Categories" = "MySQL ヘルプ – カテゴリ";
 
 /* mysql said message */
-"MySQL said:" = "MySQL said:";
+"MySQL said:" = "MySQL :";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL said:\n%@";
+"MySQL said:\n%@" = "MySQL :\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL said:\n\n%@";
+"MySQL said:\n\n%@" = "MySQL :\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "MyTheme";
@@ -1809,19 +1809,19 @@
 "New Table" = "新規テーブル";
 
 /* error that no color theme found */
-"No color theme data found." = "No color theme data found.";
+"No color theme data found." = "カラーテーマデータが見つかりません。";
 
 /* No compression export summary - within a sentence */
 "no compression" = "圧縮なし";
 
 /* no connection available message */
-"No connection available" = "No connection available";
+"No connection available" = "ネットワーク接続不可";
 
 /* no connection data found */
-"No connection data found." = "No connection data found.";
+"No connection data found." = "接続データが見つかりません。";
 
 /* No content filters were found in file to import (ContentFilterManager) */
-"No content filters found." = "No content filters found.";
+"No content filters found." = "コンテンツフィルタが見つかりません。";
 
 /* no data found */
 "No data found." = "データがありません。";
@@ -1839,7 +1839,7 @@
 "No item found" = "アイテムが見つかりません";
 
 /* SSH tunnel could not be created because no local port could be allocated */
-"No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
+"No local port could be allocated for the SSH Tunnel." = "SSHトンネルに割り当てられるローカルポートはありません。";
 
 /* header for no matches in filtered list */
 "NO MATCHES" = "マッチなし";
@@ -1848,7 +1848,7 @@
 "No optimized field type found." = "最適化されたフィールドタイプが見つかりません。";
 
 /* error that no query favorites found */
-"No query favorites found." = "No query favorites found.";
+"No query favorites found." = "クエリのお気に入りが見つかりませんでした。";
 
 /* Mysql Help Viewer : Search : No results */
 "No results found." = "結果はありません";
@@ -1868,10 +1868,10 @@
 "None" = "なし";
 
 /* not available label */
-"Not available" = "Not available";
+"Not available" = "利用できません";
 
 /* Argument count (ContentFilterManager) */
-"Number of arguments: %lu" = "Number of arguments: %lu";
+"Number of arguments: %lu" = "引数の数: %lu";
 
 /* numeric label for color table (Prefs > Editor) */
 "Numeric" = "数値";
@@ -1889,29 +1889,29 @@
 "OK" = "OK";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
-"One additional row was removed!" = "One additional row was removed!";
+"One additional row was removed!" = "1つの追加行が削除されました！";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : Only n-1 of n selected rows were deleted. */
-"One row was not removed." = "One row was not removed.";
+"One row was not removed." = "1行は削除されませんでした。";
 
 /* Only one dragged item allowed. */
-"Only one dragged item allowed." = "Only one dragged item allowed.";
+"Only one dragged item allowed." = "ドラッグされたアイテムは1つだけ許可されています。";
 
 /* partial copy database support message */
-"Only Partially Supported" = "Only Partially Supported";
+"Only Partially Supported" = "一部サポートのみ";
 
 /* open function in new table title */
-"Open Function in New Tab" = "Open Function in New Tab";
+"Open Function in New Tab" = "新しいタブで関数を開く";
 
 /* Table List : Context Menu : duplicate connection to new window
  Table List : Gear Menu : duplicate connection to new window */
-"Open Function in New Window" = "Open Function in New Window";
+"Open Function in New Window" = "新しいウィンドウで関数を開く";
 
 /* open connection in new tab context menu item */
 "Open in New Tab" = "新しいタブを開く";
 
 /* menu item open in new window */
-"Open in New Window" = "Open in New Window";
+"Open in New Window" = "新しいウィンドウで開く";
 
 /* open procedure in new table title */
 "Open Procedure in New Tab" = "新しいタブでプロシージャを開く";
@@ -1937,28 +1937,28 @@
 "Open View in New Window" = "新しいウインドウでビューを開く";
 
 /* menu item open %@ in new window */
-"Open %@ in New Window" = "Open %@ in New Window";
+"Open %@ in New Window" = "新しいウィンドウで %@ を開く";
 
 /* OPTIMIZE one or more tables - result title */
 "Optimize %@" = "%@を最適化";
 
 /* optimize selected items menu item */
-"Optimize Selected Items" = "Optimize Selected Items";
+"Optimize Selected Items" = "選択したアイテムを最適化";
 
 /* optimize table menu item */
 "Optimize Table" = "テーブルの最適化";
 
 /* optimize table failed message */
-"Optimize table failed." = "Optimize table failed.";
+"Optimize table failed." = "テーブルの最適化に失敗しました。";
 
 /* Optimized type for field %@ */
-"Optimized type for field '%@'" = "Optimized type for field '%@'";
+"Optimized type for field '%@'" = "フィールド '%@ ' に最適化されたタイプ";
 
 /* optional placeholder string */
-"optional" = "optional";
+"optional" = "省略可能";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
-"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
+"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "渡されたパラメータを解釈できませんでした。文字列または配列（2つの要素を含む）のみが許可されます。";
 
 /* Permission Denied */
 "Permission Denied" = "権限がありません";
@@ -1967,10 +1967,10 @@
 "Please choose a favorite" = "お気に入りを選択してください";
 
 /* message of panel when ssh details are incomplete */
-"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
+"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "SSH Tunnel のホスト名を入力するか、SSH Tunnel を無効にしてください。";
 
 /* Please enter the password */
-"Please enter the password for ‘%@’:" = "Please enter the password for ‘%@’:";
+"Please enter the password for ‘%@’:" = "\"%@\" のパスワードを入力してください:";
 
 /* print button */
 "Print" = "印刷";
@@ -2000,13 +2000,13 @@
 "Query" = "クエリ";
 
 /* query background label for color table (Prefs > Editor) */
-"Query Background" = "Query Background";
+"Query Background" = "クエリのバックグランド実行";
 
 /* Query cancelled error */
 "Query cancelled." = "クエリがキャンセルされました。";
 
 /* Query cancel by resetting connection error */
-"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset.";
+"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "クエリはキャンセルされました。クエリをキャンセルするには、接続をリセットする必要がありました。トランザクションと接続変数がリセットされました。";
 
 /* query editor preference pane name */
 "Query Editor" = "クエリエディター";
@@ -2016,7 +2016,7 @@
 
 /* query logging currently disabled label
  query logging disabled label */
-"Query logging is currently disabled" = "Query logging is currently disabled";
+"Query logging is currently disabled" = "クエリのログは現在無効です";
 
 /* query result print heading */
 "Query Result" = "クエリの結果";
@@ -2028,7 +2028,7 @@
 "Query Status" = "クエリの状態";
 
 /* table status : row count query failed : error title */
-"Querying row count failed" = "Querying row count failed";
+"Querying row count failed" = "行数の問い合わせに失敗しました";
 
 /* Quick connect item label */
 "Quick Connect" = "クイック接続";
@@ -2037,7 +2037,7 @@
 "Quote" = "引用符";
 
 /* databsse rename unsupported informative message */
-"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
+"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "データベース '%@' の名前の変更は、テーブル以外のオブジェクト (すなわちビュー、プロシージャ、関数など) が含まれているため、現在サポートされていません。 format@@0\n\nデータベースの名前を変更したい場合は、「データベースの複製」を使用してください。 テーブル以外のオブジェクトを手動で移動し、古いデータベースをドロップします。";
 
 /* range for serial type */
 "Range: %@ to %@" = "範囲: %1$@ から %2$@";
@@ -2101,10 +2101,10 @@
 "Remove selected Bundle?" = "選択したバンドルを削除しますか?";
 
 /* remove selected content filters message */
-"Remove selected content filters?" = "Remove selected content filters?";
+"Remove selected content filters?" = "選択したコンテンツフィルタを削除しますか？";
 
 /* remove selected query favorites message */
-"Remove selected query favorites?" = "Remove selected query favorites?";
+"Remove selected query favorites?" = "選択したクエリのお気に入りを削除しますか？";
 
 /* removing field task status message */
 "Removing field..." = "フィールドを削除しています...";
@@ -2143,67 +2143,67 @@
 "Replace" = "置換";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace entire content' item */
-"Replace Entire Content" = "Replace Entire Content";
+"Replace Entire Content" = "内容全体を置換";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace selection' item */
 "Replace Selection" = "選択の置換";
 
 /* description of year */
-"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
+"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "1 バイトとして格納された 4 桁の年値を表します。 無効な値は0000に変換され、2桁の値は0から69に変換されます。2000年から2069年に変換されます。 values 70 to 99 to Year 1970 to 1999 1970 to 1999\nYEAR(2) type was removed in MySQL 5.7.5.";
 
 /* description of multilinestring */
-"Represents a collection of LineStrings." = "Represents a collection of LineStrings.";
+"Represents a collection of LineStrings." = "LineStringsのコレクションを表します。";
 
 /* description of geometrycollection */
-"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.";
+"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "他の単一または多重値の空間タイプのオブジェクトのコレクションを表します。 唯一の制限は、すべてのオブジェクトが共通の座標系を共有する必要があることです。";
 
 /* description of multipolygon */
-"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect.";
+"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "多角形のコレクションを表します。多角形を構成する多角形は交差してはいけません。";
 
 /* description of multipoint */
-"Represents a set of Points without specifying any kind of relation and/or order between them." = "Represents a set of Points without specifying any kind of relation and/or order between them.";
+"Represents a set of Points without specifying any kind of relation and/or order between them." = "ポイントのセットを表し、それらの間のリレーションおよび/または順序を指定しません。";
 
 /* description of point */
-"Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional." = "Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional.";
+"Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional." = "X座標とY座標を使用して座標空間内の単一の位置を表します。点は0次元です。";
 
 /* description of linestring */
-"Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line.";
+"Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "2 つの点の連続したペアが直線で接続されている座標セットを表します。";
 
 /* required placeholder string */
 "required" = "必須";
 
 /* description of smallint */
-"Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range.";
+"Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "2バイトのストレージスペースが必要です。Mはオプションの表示幅であり、可能な値の範囲には影響しません。";
 
 /* description of mediumint */
-"Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range." = "Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range.";
+"Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range." = "3バイトのストレージスペースが必要です。Mはオプションの表示幅であり、可能な値の範囲には影響しません。";
 
 /* description of int */
-"Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type." = "Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type.";
+"Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type." = "4バイトのストレージスペースが必要です。Mはオプションの表示幅であり、可能な値の範囲には影響しません。 INTEGERはこの型へのエイリアスです。";
 
 /* description of bigint */
-"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers.";
+"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "8バイトのストレージスペースが必要です。Mはオプションの表示幅であり、可能な値の範囲には影響しません。 注: 算術演算は多数の場合失敗する可能性があります。";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "削除後にAUTO_INCREMENTをリセット\n(テーブル内のすべてのROWSを削除する場合のみ)?";
 
 /* delete selected row button */
-"Delete Selected Row" = "Delete Selected Row";
+"Delete Selected Row" = "選択した行を削除";
 
 /* delete selected rows button */
-"Delete Selected Rows" = "Delete Selected Rows";
+"Delete Selected Rows" = "選択した行を削除";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
+"Delete ALL ROWS IN TABLE" = "テーブル内のすべてのROWを削除";
 
 /* Restoring session task description */
-"Restoring session..." = "Restoring session...";
+"Restoring session..." = "セッションを復元しています...";
 
 /* return type label (Navigator) */
-"Return Type" = "Return Type";
+"Return Type" = "戻り値";
 
 /* return type: %@ */
-"return type: %@" = "return type: %@";
+"return type: %@" = "戻り値の型: %@";
 
 /* singular word for row */
 "row" = "行";
@@ -2212,10 +2212,10 @@
 "rows" = "行";
 
 /* text showing how many rows are in the limited filter match */
-"Rows %@ - %@ from filtered matches" = "Rows %1$@ - %2$@ from filtered matches";
+"Rows %@ - %@ from filtered matches" = "行 %1$@ - %2$@ にフィルタリングされた";
 
 /* text showing how many rows are in the limited result */
-"Rows %@ - %@ of %@%@ from table" = "Rows %1$@ - %2$@ of %3$@%4$@ from table";
+"Rows %@ - %@ of %@%@ from table" = "テーブルから %1$@ - %2$@ 行目 %3$@%4$@";
 
 /* Table Info Section : number of rows (exact value) */
 "rows: %@" = "行: %@";
@@ -2251,10 +2251,10 @@
 "Run Selection" = "選択を実行";
 
 /* Running multiple queries string */
-"Running query %i of %lu..." = "Running query %1$i of %2$lu...";
+"Running query %i of %lu..." = "クエリ %1$i / %2$lu を実行中...";
 
 /* Running multiple queries string */
-"Running query %ld of %lu..." = "Running query %1$ld of %2$lu...";
+"Running query %ld of %lu..." = "クエリ %1$ld / %2$lu を実行中...";
 
 /* Running single query string */
 "Running query..." = "クエリを実行中...";
@@ -2269,13 +2269,13 @@
 "Save As..." = "別名で保存...";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as dat file' item */
-"save BLOB as dat file" = "save BLOB as dat file";
+"save BLOB as dat file" = "BLOB を dat ファイルとして保存";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as image file' item */
-"save BLOB as image file" = "save BLOB as image file";
+"save BLOB as image file" = "BLOBを画像ファイルとして保存";
 
 /* Save Current Query to Favorites */
-"Save Current Query to Favorites" = "Save Current Query to Favorites";
+"Save Current Query to Favorites" = "現在のクエリをお気に入りに保存";
 
 /* save page as menu item title */
 "Save Page As…" = "ページを別名で保存…";
@@ -2287,22 +2287,22 @@
 "Save Query…" = "クエリを保存…";
 
 /* Save Selection to Favorites */
-"Save Selection to Favorites" = "Save Selection to Favorites";
+"Save Selection to Favorites" = "選択範囲をお気に入りに保存";
 
 /* save view as button title */
 "Save View As..." = "ビューを保存...";
 
 /* schema path header for completion tooltip */
-"Schema path:" = "Schema path:";
+"Schema path:" = "スキーマパス:";
 
 /* Search in MySQL Documentation */
-"Search in MySQL Documentation" = "Search in MySQL Documentation";
+"Search in MySQL Documentation" = "MySQL ドキュメント内で検索";
 
 /* Search in MySQL Help */
-"Search in MySQL Help" = "Search in MySQL Help";
+"Search in MySQL Help" = "MySQLのヘルプで検索";
 
 /* Select Active Query */
-"Select Active Query" = "Select Active Query";
+"Select Active Query" = "アクティブなクエリを選択";
 
 /* toolbar item for selecting a db */
 "Select Database" = "データベースを選択";
@@ -2311,13 +2311,13 @@
 "selected items" = "選択した項目";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
-"Selected Rows (CSV)" = "Selected Rows (CSV)";
+"Selected Rows (CSV)" = "選択行（CSV）";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as SQL' item */
-"Selected Rows (SQL)" = "Selected Rows (SQL)";
+"Selected Rows (SQL)" = "選択行（SQL）";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as tab-separated' item */
-"Selected Rows (TSV)" = "Selected Rows (TSV)";
+"Selected Rows (TSV)" = "選択行（TSV）";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
 "Selected Text" = "テキストを選択";
@@ -2326,16 +2326,16 @@
 "Selection" = "選択";
 
 /* table structure : indexes : delete index : no columns error : description */
-"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
+"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Aceはこのインデックスに属する列を見つけることができませんでした。多分それは既に削除されていますか？";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Aceは、Mac OS Xに含まれるデフォルトのOpenSSHクライアントバージョンでのみサポートされ、テストされます。 異なるクライアントを使用すると、接続の問題、セキュリティリスク、またはまったく機能しない可能性があります。\n\nこのような構成に対するサポートを提供することはできませんのでご注意ください。";
 
 /* sequelace URL scheme command not supported. */
-"sequelace URL scheme command not supported." = "sequelace URL scheme command not supported.";
+"sequelace URL scheme command not supported." = "Sequel Ace URL scheme コマンドはサポートされていません。";
 
 /* sequelace url Scheme Error */
-"sequelace URL Scheme Error" = "sequelace URL Scheme Error";
+"sequelace URL Scheme Error" = "シーケンスURLスキームエラー";
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
@@ -2370,7 +2370,7 @@
 "Show Console" = "コンソールを表示";
 
 /* show create func syntax menu item */
-"Show Create Function Syntax..." = "Show Create Function Syntax...";
+"Show Create Function Syntax..." = "関数の構文を表示...";
 
 /* show create proc syntax menu item */
 "Show Create Procedure Syntax..." = "Show Create Procedure Syntax...";
@@ -2379,16 +2379,16 @@
 "Show Create Syntaxes..." = "構文の作成...";
 
 /* show create table syntax menu item */
-"Show Create Table Syntax..." = "Show Create Table Syntax...";
+"Show Create Table Syntax..." = "テーブルの構文の作成...";
 
 /* show create view syntax menu item */
-"Show Create View Syntax..." = "Show Create View Syntax...";
+"Show Create View Syntax..." = "ビューの構文を表示...";
 
 /* Show detail button */
 "Show Detail" = "詳細を表示";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
-"Show MySQL help for %@" = "Show MySQL help for %@";
+"Show MySQL help for %@" = "%@ の MySQL ヘルプを表示";
 
 /* show navigator */
 "Show Navigator" = "ナビゲーションを表示する";
@@ -2397,31 +2397,31 @@
 "Show Tab Bar" = "タブバーを表示";
 
 /* tooltip for toolbar item for show console */
-"Show the console which shows all MySQL commands performed by Sequel Ace" = "Show the console which shows all MySQL commands performed by Sequel Ace";
+"Show the console which shows all MySQL commands performed by Sequel Ace" = "Sequel Aceによって実行されるすべてのMySQLコマンドを表示するコンソールを表示します";
 
 /* Show Toolbar menu item */
 "Show Toolbar" = "ツールバーを表示";
 
 /* filtered item count */
-"Showing %lu of %lu processes" = "Showing %1$lu of %2$lu processes";
+"Showing %lu of %lu processes" = "%1$lu 個中の %2$lu 個のプロセスを表示中";
 
 /* shutdown server : confirmation dialog : shutdown button */
 "Shutdown" = "シャット ダウン";
 
 /* shutdown server : error dialog : title */
-"Shutdown failed!" = "Shutdown failed!";
+"Shutdown failed!" = "シャットダウン失敗！";
 
 /* range of integer types */
-"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "署名済み: %1$@ to %2$@\n未署名: %3$@ to %4$@";
 
 /* Table Info Section : table size on disk */
 "size: %@" = "サイズ：%@";
 
 /* skip existing button */
-"Skip existing" = "Skip existing";
+"Skip existing" = "既存をスキップ";
 
 /* skip problems button */
-"Skip problems" = "Skip problems";
+"Skip problems" = "問題をスキップ";
 
 /* beta build label */
 "Beta Build" = "ベータビルド";
@@ -2433,10 +2433,10 @@
 "Socket not found!" = "ソケットが見つかりません！";
 
 /* Some export folders not writable explanatory text */
-"Some of the target export folders are not writable.  Please select a new export location and try again." = "Some of the target export folders are not writable.  Please select a new export location and try again.";
+"Some of the target export folders are not writable.  Please select a new export location and try again." = "いくつかのターゲットエクスポートフォルダが書き込み可能ではありません。新しいエクスポート場所を選択して、もう一度お試しください。";
 
 /* Some export folders missing explanatory text */
-"Some of the target export folders no longer exist.  Please select a new export location and try again." = "Some of the target export folders no longer exist.  Please select a new export location and try again.";
+"Some of the target export folders no longer exist.  Please select a new export location and try again." = "ターゲットのエクスポートフォルダが存在しません。新しいエクスポート場所を選択して、もう一度お試しください。";
 
 /* Sorting table task description */
 "Sorting table..." = "テーブルをソートしています...";
@@ -2457,37 +2457,37 @@
 "SSH Connecting…" = "SSH接続中…";
 
 /* SSH connection failed title */
-"SSH connection failed!" = "SSH connection failed!";
+"SSH connection failed!" = "SSH接続に失敗しました";
 
 /* SSH disconnected titlebar marker */
-"SSH Disconnected" = "SSH Disconnected";
+"SSH Disconnected" = "SSH接続が切断されました";
 
 /* SSH key check error */
-"SSH Key not found" = "SSH Key not found";
+"SSH Key not found" = "SSH鍵が見つかりません";
 
 /* title when ssh tunnel port forwarding failed */
-"SSH port forwarding failed" = "SSH port forwarding failed";
+"SSH port forwarding failed" = "SSHポートの転送に失敗しました";
 
 /* SSL certificate authority file check error */
-"SSL Certificate Authority File not found" = "SSL Certificate Authority File not found";
+"SSL Certificate Authority File not found" = "SSL認証局ファイルが見つかりません";
 
 /* SSL certificate file check error */
-"SSL Certificate File not found" = "SSL Certificate File not found";
+"SSL Certificate File not found" = "SSL 証明書ファイルが見つかりません";
 
 /* SSL requested but not used title */
-"SSL connection not established" = "SSL connection not established";
+"SSL connection not established" = "SSL 接続が確立されていません";
 
 /* SSL key file check error */
-"SSL Key File not found" = "SSL Key File not found";
+"SSL Key File not found" = "SSH鍵が見つかりません";
 
 /* Standard memory export summary */
-"Standard memory" = "Standard memory";
+"Standard memory" = "標準メモリ";
 
 /* started */
 "started" = "開始しました";
 
 /* status file for sequelace url scheme command couldn't be written error message */
-"Status file for sequelace url scheme command couldn't be written!" = "Status file for sequelace url scheme command couldn't be written!";
+"Status file for sequelace url scheme command couldn't be written!" = "シーケンスURLスキームコマンドの状態ファイルを書き込めませんでした！";
 
 /* stop button */
 "Stop" = "停止";
@@ -2499,70 +2499,70 @@
 "Stop query" = "クエリを停止";
 
 /* description of timestamp */
-"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.";
+"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "日付と時刻をUNIX時代(1970-01-01 00:00:00)の始まりから秒単位で保存します。 表示/保存される値は、接続の @time_zone 設定の影響を受けます。\n表現は DATEME と同じです。 「second zero」と同様に無効な値は、0000-00-00 00:00.0に変換されます。MySQL 5では分数秒が追加されました。 .4 マイクロ秒 (6) までの精度を持つ。Fによって指定された追加の規則が適用される場合があります。";
 
 /* description of datetime */
-"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
+"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "日付と時刻を保存します。表現は YYYY-MM-DD HH:MM:SS[] です。 *]、分数秒です。値はタイムゾーン設定の影響を受けません。 無効な値は0000-00-00 00:00:00.0に変換されます。MySQL 5.6.4では、Fで指定された精度のマイクロ秒 (6) までの分割秒が追加されました。";
 
 /* description of date */
-"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00.";
+"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "時刻情報のない日付を保存します。表現は YYYY-MM-DD です。 この値はタイムゾーン設定の影響を受けません。無効な値は0000-00-00に変換されます。";
 
 /* description of time */
-"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
+"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "時刻、期間、または時間間隔を保存します。表現は HH:MM:SS[] です。 *]、分数秒です。値はタイムゾーン設定の影響を受けません。 無効な値は00:00:00に変換されます。MySQL 5.6.4ではFで指定された精度のマイクロ秒(6)に分数秒が追加されました。";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Structure" = "構造";
 
 /* successfully analyzed all selected items message */
-"Successfully analyzed all selected items." = "Successfully analyzed all selected items.";
+"Successfully analyzed all selected items." = "選択したすべての項目を正常に分析しました。";
 
 /* analyze table successfully passed message */
-"Successfully analyzed table." = "Successfully analyzed table.";
+"Successfully analyzed table." = "テーブルの分析に成功しました。";
 
 /* successfully flushed all selected items message */
-"Successfully flushed all selected items." = "Successfully flushed all selected items.";
+"Successfully flushed all selected items." = "選択したすべてのアイテムを正常にフラッシュしました。";
 
 /* message of panel when successfully flushed privs */
-"Successfully flushed privileges." = "Successfully flushed privileges.";
+"Successfully flushed privileges." = "権限をフラッシュしました。";
 
 /* flush table successfully passed message */
-"Successfully flushed table." = "Successfully flushed table.";
+"Successfully flushed table." = "テーブルを正常にフラッシュしました。";
 
 /* successfully optimized all selected items message */
-"Successfully optimized all selected items." = "Successfully optimized all selected items.";
+"Successfully optimized all selected items." = "選択したすべての項目を正常に最適化しました。";
 
 /* optimize table successfully passed message */
-"Successfully optimized table." = "Successfully optimized table.";
+"Successfully optimized table." = "テーブルの最適化に成功しました。";
 
 /* successfully repaired all selected items message */
-"Successfully repaired all selected items." = "Successfully repaired all selected items.";
+"Successfully repaired all selected items." = "選択したすべてのアイテムを正常に修復しました。";
 
 /* repair table successfully passed message */
 "Successfully repaired table." = "テーブルの修復に成功しました。";
 
 /* tooltip for toolbar item for switching to the Run Query tab */
-"Switch to the Run Query tab" = "Switch to the Run Query tab";
+"Switch to the Run Query tab" = "実行クエリタブに切り替える";
 
 /* tooltip for toolbar item for switching to the Table Content tab */
-"Switch to the Table Content tab" = "Switch to the Table Content tab";
+"Switch to the Table Content tab" = "テーブルコンテンツタブに切り替える";
 
 /* tooltip for toolbar item for switching to the Table Info tab */
-"Switch to the Table Info tab" = "Switch to the Table Info tab";
+"Switch to the Table Info tab" = "テーブル情報タブに切り替える";
 
 /* tooltip for toolbar item for switching to the Table Relations tab */
-"Switch to the Table Relations tab" = "Switch to the Table Relations tab";
+"Switch to the Table Relations tab" = "テーブルリレーションタブに切り替える";
 
 /* tooltip for toolbar item for switching to the Table Structure tab */
-"Switch to the Table Structure tab" = "Switch to the Table Structure tab";
+"Switch to the Table Structure tab" = "テーブル構造タブに切り替える";
 
 /* tooltip for toolbar item for switching to the Table Triggers tab */
-"Switch to the Table Triggers tab" = "Switch to the Table Triggers tab";
+"Switch to the Table Triggers tab" = "テーブルトリガータブに切り替える";
 
 /* tooltip for toolbar item for switching to the User Manager tab */
-"Switch to the User Manager tab" = "Switch to the User Manager tab";
+"Switch to the User Manager tab" = "ユーザーマネージャータブに切り替える";
 
 /* description for table syntax copied notification */
-"Syntax for %@ table copied" = "Syntax for %@ table copied";
+"Syntax for %@ table copied" = "%@ テーブルの構文がコピーされました";
 
 /* table */
 "table" = "テーブル";
@@ -2577,10 +2577,10 @@
 "Table %lu of %lu (%@): Fetching data..." = "テーブル %1$lu of %2$lu (%3$@): データを取得しています...";
 
 /* export label showing app is fetching relations data for a specific table */
-"Table %lu of %lu (%@): Fetching relations data..." = "Table %1$lu of %2$lu (%3$@): Fetching relations data...";
+"Table %lu of %lu (%@): Fetching relations data..." = "テーブル %1$lu of %2$lu (%3$@): リレーションデータを取得しています...";
 
 /* export label showing app if writing data for a specific table */
-"Table %lu of %lu (%@): Writing data..." = "Table %1$lu of %2$lu (%3$@): Writing data...";
+"Table %lu of %lu (%@): Writing data..." = "テーブル %1$lu of %2$lu (%3$@): データの書き込み...";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'table changed' item */
@@ -2662,71 +2662,71 @@
 "Text" = "テキスト";
 
 /* Text is too long. Maximum text length is set to %llu. */
-"Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
+"Text is too long. Maximum text length is set to %llu." = "テキストが長すぎます。最大文字数は %llu に設定されています。";
 
 /* Release notes dialog title thanking user for upgrade */
-"Thanks for updating Sequel Ace!" = "Thanks for updating Sequel Ace!";
+"Thanks for updating Sequel Ace!" = "Sequel Ace!を更新していただきありがとうございます。";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@’ already exists." = "The Bundle ‘%@’ already exists.";
+"The Bundle ‘%@’ already exists." = "バンドル「%@」は既に存在します。";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
-"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.";
+"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "バンドル数%@はインストールされたバンドルを識別するのに必要な UUID を持っていません。";
 
-"‘%@’ Bundle contains legacy components" = "‘%@’ Bundle contains legacy components";
+"‘%@’ Bundle contains legacy components" = "%@のバンドルにレガシーコンポーネントが含まれています";
 
-"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In these files:\n\n%@\n\nDo you still want to install the bundle?";
+"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "これらのファイルで:\n\n%@\n\nバンドルをインストールしますか？";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file %@ contains ‘%@’ data." = "The chosen file “%1$@” contains ‘%2$@’ data.";
+"The chosen file %@ contains ‘%@’ data." = "選択されたファイル「%1$@」には、%2$@のデータが含まれています。";
 
 /* the color theme ‘%@’ already exists. */
-"The color theme ‘%@’ already exists." = "The color theme ‘%@’ already exists.";
+"The color theme ‘%@’ already exists." = "カラー '%@' は既に存在します。";
 
 /* the connection is busy. please wait and try again tooltip */
-"The connection is busy. Please wait and try again." = "The connection is busy. Please wait and try again.";
+"The connection is busy. Please wait and try again." = "接続中です。しばらくしてからもう一度お試しください。";
 
 /* the connection of the active connection window is not identical tooltip */
-"The connection of the active connection window is not identical." = "The connection of the active connection window is not identical.";
+"The connection of the active connection window is not identical." = "アクティブな接続ウィンドウの接続は同じではありません。";
 
 /* Connection lost during import error message */
-"The connection to the server was lost during the import.  The import is only partially complete." = "The connection to the server was lost during the import.  The import is only partially complete.";
+"The connection to the server was lost during the import.  The import is only partially complete." = "インポート中にサーバーへの接続が失われました。インポートは部分的にのみ完了します。";
 
 /* Create syntax permission denied detail */
-"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.";
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "パーミッションエラーのため作成構文を取得できませんでした。\n\n管理者にユーザー権限を確認してください。";
 
 /* CSV file open error */
-"The CSV file you selected could not be found or read." = "The CSV file you selected could not be found or read.";
+"The CSV file you selected could not be found or read." = "選択した CSV ファイルが見つかりませんでした。";
 
 /* Error when CSV appears to have too many columns to import, probably due to line ending mismatch */
-"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog.";
+"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "CSVは、512以上の列を含むとして読み込まれ、Sequel Aceによって速度の理由で許容される最大列数を超えました。\n\nこれは通常、CSV の読み取りエラーによって発生します。 インポートするCSVと、CSV選択ダイアログ下部の行末とエスケープ文字を再確認してください。";
 
 /* unsaved theme informative message */
-"The current color theme is unsaved. Do you want to proceed without saving it?" = "The current color theme is unsaved. Do you want to proceed without saving it?";
+"The current color theme is unsaved. Do you want to proceed without saving it?" = "現在の色のテーマは保存されていません。保存せずに続行しますか？";
 
 /* Short important release note for swap of custom query buttons */
-"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "The Custom Query Run and Run All button positions and their shortcuts have been swapped.";
+"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "カスタムクエリの実行と実行 すべてのボタンの位置とそれらのショートカットが交換されました。";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
-"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”.";
+"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "次のデフォルトのバンドルが更新されました:\n%@\nあなたの変更は\"(ユーザー)\"として保存されました。";
 
 /* favorites export error informative message */
-"The following error occurred during the export process:\n\n%@" = "The following error occurred during the export process:\n\n%@";
+"The following error occurred during the export process:\n\n%@" = "エクスポート処理中に次のエラーが発生しました:\n\n%@";
 
 /* favorites import error informative message */
-"The following error occurred during the import process:\n\n%@" = "The following error occurred during the import process:\n\n%@";
+"The following error occurred during the import process:\n\n%@" = "インポート中に次のエラーが発生しました:\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
 "The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "The foreign key relationship '%1$@' has a dependency on index '%2$@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.";
 
 /* table list change alert message */
-"The list of tables has changed" = "The list of tables has changed";
+"The list of tables has changed" = "テーブルのリストが変更されました";
 
 /* message when trying to rename a table/view/proc/etc to an already used name */
-"The name '%@' is already used." = "The name '%@' is already used.";
+"The name '%@' is already used." = "{0}という名前は既に使用されています。";
 
 /* table list change alert informative message */
-"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?";
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "エクスポート ダイアログが開かれてから、このデータベースのテーブル数が変更されました。 %lu テーブルが追加されました。おそらく外部アプリケーションによって追加されます。\n\n続行しますか？";
 
 /* message of panel when no rows have been affected after writing to the db */
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)";
@@ -2735,147 +2735,147 @@
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
 
 /* export : import settings : spf content type error description */
-"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file.";
+"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "選択されたファイルには「%1$@」タイプのデータが含まれていますが、「%2$@」タイプが必要です。別のファイルを選択してください。";
 
 /* export : import settings : file error description */
-"The selected file is either not a valid SPF file or severely corrupted." = "The selected file is either not a valid SPF file or severely corrupted.";
+"The selected file is either not a valid SPF file or severely corrupted." = "選択したファイルは有効なSPFファイルではないか、ひどく破損しています。";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "The selected relation couldn't be deleted.\n\nMySQL said: %@";
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "選択したリレーションを削除できませんでした。\n\nMySQL : %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "選択したトリガーを削除できませんでした。\n\nMySQL は %@ です。";
 
 /* description of tinyint */
-"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
+"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "最小の整数型、1バイトのストレージスペースが必要です。Mはオプションの表示幅であり、可能な値の範囲には影響しません。";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "ソケットファイルが見つかりませんでした。正しいソケットの場所を指定してください。\n\nMySQL は %@ です。";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "The specified relation could not be created.\n\nMySQL said: %@";
+"The specified relation could not be created.\n\nMySQL said: %@" = "指定されたリレーションを作成できませんでした。\n\nMySQL は %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "The specified trigger was unable to be created.\n\nMySQL said: %@";
+"The specified trigger was unable to be created.\n\nMySQL said: %@" = "指定されたトリガーは作成できませんでした。\n\nMySQL は %@ です。";
 
 /* sql import : charset error alert : detail message */
-"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!";
+"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQLファイルはutf8mb4エンコーディングを使用しますが、MySQLバージョンは制限付きのutf8サブセットのみをサポートしています。\n\nインポートは続けることができますが、SQL ファイル内の任意の BMP 以外の文字(例えば。 いくつかのタイポグラフィと科学的な特殊文字は、古風なCJKロゴグラム、絵文字が回復不能に失われます!";
 
 /* SQL file open error */
-"The SQL file you selected could not be found or read." = "The SQL file you selected could not be found or read.";
+"The SQL file you selected could not be found or read." = "選択した SQL ファイルを見つけることができませんでした。";
 
 /* Prompt for SSH password when keychain fetch failed */
-"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "The SSH password could not be loaded from the keychain; please enter the SSH password for %@:";
+"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "SSHパスワードをキーチェーンから読み込めませんでした。 %@のSSHパスワードを入力してください:";
 
 /* Prompt for SSH password when direct fetch failed */
-"The SSH password could not be loaded; please enter the SSH password for %@:" = "The SSH password could not be loaded; please enter the SSH password for %@:";
+"The SSH password could not be loaded; please enter the SSH password for %@:" = "SSHパスワードを読み込めませんでした。 %@のSSHパスワードを入力してください:";
 
 /* SSH tunnel authentication failed message */
-"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.";
+"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "SSHトンネルはリモートホストで認証できませんでした。パスワードを確認し、まだアクセス可能であることを確認してください。";
 
 /* SSH tunnel unexpectedly closed */
-"The SSH Tunnel has unexpectedly closed." = "The SSH Tunnel has unexpectedly closed.";
+"The SSH Tunnel has unexpectedly closed." = "SSHトンネルは予期せず閉鎖されました。";
 
 /* SSH tunnel was closed by remote host message */
-"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout." = "The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.";
+"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout." = "SSHトンネルは「リモートホストによって」クローズされました。これはネットワークの問題やネットワークタイムアウトを示している可能性があります。";
 
 /* SSH tunnel forwarding port connection refused message */
-"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.";
+"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "SSHトンネルは正常に設置されましたが、リモートポートが接続を拒否したため、データをリモートポートに転送できませんでした。";
 
 /* SSH tunnel unable to bind to local port message */
-"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?";
+"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "SSHトンネルはローカルポートにバインドできませんでした。 このエラーは、既に同じサーバーにSSH接続があり、SSH設定で「LocalForward」設定を使用している場合に発生する可能性があります。\n\n既存のトンネルを使用するために、localhost への標準接続に戻りますか?";
 
 /* SSH tunnel failed or timed out message */
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "The SSH Tunnel was unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "おそらく使用されたフィルタ句のためテーブルデータを読み込むことができませんでした。 \n\nMySQL は %@ と言いました。";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "The table data couldn't be loaded.\n\nMySQL said: %@";
+"The table data couldn't be loaded.\n\nMySQL said: %@" = "テーブルデータを読み込めませんでした。\n\nMySQL は %@ です。";
 
 /* Export folder not writable explanatory text */
-"The target export folder is not writable.  Please select a new export location and try again." = "The target export folder is not writable.  Please select a new export location and try again.";
+"The target export folder is not writable.  Please select a new export location and try again." = "ターゲットのエクスポートフォルダは書き込み可能ではありません。新しいエクスポート場所を選択して、もう一度お試しください。";
 
 /* Export folder not chosen by user explanatory text */
-"No directory selected.  Please select a new export location and try again." = "No directory selected.  Please select a new export location and try again.";
+"No directory selected.  Please select a new export location and try again." = "ディレクトリが選択されていません。新しいエクスポート先を選択して再度お試し下さい。";
 "No directory selected." = "ディレクトリが選択されていません。";
-"Please select a new export location and try again." = "Please select a new export location and try again.";
+"Please select a new export location and try again." = "新しいエクスポート先を選択して、もう一度お試しください。";
 
 /* Export folder missing explanatory text */
-"The target export folder no longer exists.  Please select a new export location and try again." = "The target export folder no longer exists.  Please select a new export location and try again.";
+"The target export folder no longer exists.  Please select a new export location and try again." = "ターゲットのエクスポートフォルダが存在しません。新しいエクスポート場所を選択して再度お試し下さい。";
 
 /* theme name label */
 "Theme Name:" = "テーマ名:";
 
 /* themes installation error */
-"Themes Installation Error" = "Themes Installation Error";
+"Themes Installation Error" = "テーマのインストールエラー";
 
 /* message of panel when table content cannot be copied */
-"There have been errors while copying table content. Please check the new table." = "There have been errors while copying table content. Please check the new table.";
+"There have been errors while copying table content. Please check the new table." = "テーブルコンテンツのコピー中にエラーが発生しました。新しいテーブルを確認してください。";
 
 /* Cannot duplicate a table with triggers to a different database */
-"Cannot duplicate a table with triggers to a different database." = "Cannot duplicate a table with triggers to a different database.";
+"Cannot duplicate a table with triggers to a different database." = "別のデータベースにトリガーを持つテーブルは複製できません。";
 
 /* text shown when query was successfull */
-"There were no errors." = "There were no errors.";
+"There were no errors." = "エラーはありませんでした。";
 
 /* delete field and foreign key informative message */
-"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
+"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "このフィールドはテーブル'%@'との外部キー関係の一部です。 フィールドを削除する前に、このリレーションシップを削除する必要があります。 format@@0\n\nリレーションシップとフィールドを削除してもよろしいですか？この操作は元に戻せません。";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "既存の外部鍵関係で使用されているため、このインデックスは削除できません。\n\nこのインデックスを削除しようとする前に、リレーションシップを削除してください。\n\nMySQL は %@";
 
 /* description of serial */
-"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
+"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "これはBIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUEのエイリアスです。";
 
 /* description of dec
  description of fixed
  description of numeric */
-"This is an alias for DECIMAL." = "This is an alias for DECIMAL.";
+"This is an alias for DECIMAL." = "これはDECIMALのエイリアスです。";
 
 /* description of double real */
-"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured.";
+"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "REAL_AS_FLOATが設定されていない限り、これはDOUBLEのエイリアスです。";
 
 /* description of double precision */
-"This is an alias for DOUBLE." = "This is an alias for DOUBLE.";
+"This is an alias for DOUBLE." = "これはDECIMALのエイリアスです。";
 
 /* description of bool
  description of boolean */
-"This is an alias for TINYINT(1)." = "This is an alias for TINYINT(1).";
+"This is an alias for TINYINT(1)." = "これはTINYINT(1)の別名です。";
 
 /* Table Structure : Collation dropdown : database marker tooltip */
-"This is the default collation of database %@." = "This is the default collation of database %@.";
+"This is the default collation of database %@." = "これはデータベース %@ のデフォルトの照合順序です。";
 
 /* Table Structure : Collation dropdown : default marker tooltip */
-"This is the default collation of encoding %@." = "This is the default collation of encoding %@.";
+"This is the default collation of encoding %@." = "エンコーディング %@のデフォルトの照合順序です。";
 
 /* Table Structure : Collation dropdown : table marker tooltip */
-"This is the default collation of table %@." = "This is the default collation of table %@.";
+"This is the default collation of table %@." = "これはテーブル %@ のデフォルトの照合順序です。";
 
 /* Table Structure : Collation dropdown : server marker tooltip */
-"This is the default collation of this server." = "This is the default collation of this server.";
+"This is the default collation of this server." = "これはこのサーバーのデフォルトの照合順序です。";
 
 /* Table Structure : Encoding dropdown : database marker tooltip */
-"This is the default encoding of database %@." = "This is the default encoding of database %@.";
+"This is the default encoding of database %@." = "これはデータベース %@ のデフォルトエンコーディングです。";
 
 /* Table Structure : Encoding dropdown : table marker tooltip */
-"This is the default encoding of table %@." = "This is the default encoding of table %@.";
+"This is the default encoding of table %@." = "これはテーブル %@ のデフォルトエンコーディングです。";
 
 /* Table Structure : Encoding dropdown : server marker tooltip */
-"This is the default encoding of this server." = "This is the default encoding of this server.";
+"This is the default encoding of this server." = "これはこのサーバーのデフォルトのエンコーディングです。";
 
 /* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
-"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "This table currently does not support relations. Only tables that use the InnoDB storage engine support them.";
+"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "このテーブルは現在リレーションをサポートしていません。InnoDB ストレージ エンジンを使用するテーブルのみがサポートしています。";
 
 /* user has no hosts informative message */
-"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "This user doesn't have any hosts associated with it. It will be deleted unless one is added";
+"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "このユーザーは関連付けられたホストを持っていません。追加されない限り削除されます";
 
 /* error removing host informative message */
-"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "This user doesn't seem to have any associated hosts and will be removed unless a host is added.";
+"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "このユーザーは関連付けられたホストを持っていないため、ホストが追加されない限り削除されます。";
 
 /* shutdown server : confirmation dialog : message */
-"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!";
+"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "これにより、オープンなトランザクションが完了し、mysql デーモンを終了するのを待機します。 その後、あなたも他の誰もこのデータベースに接続できません！\n\nMySQLを再起動するには、サーバーのオペレーティングシステムへの完全な管理アクセスが必要です。";
 
 /* export filename time token */
 "Time" = "時刻";
@@ -2890,7 +2890,7 @@
 "Truncate" = "切り捨て";
 
 /* truncate tables message */
-"Truncate selected tables?" = "Truncate selected tables?";
+"Truncate selected tables?" = "選択したテーブルを切り捨てますか？";
 
 /* truncate table menu title */
 "Truncate Table..." = "テーブルを切り詰める...";
@@ -2911,16 +2911,16 @@
 "Unable to add index" = "インデックスを追加できません";
 
 /* unable to analyze selected items message */
-"Unable to analyze selected items" = "Unable to analyze selected items";
+"Unable to analyze selected items" = "選択した項目を分析できません";
 
 /* unable to analyze table message */
-"Unable to analyze table" = "Unable to analyze table";
+"Unable to analyze table" = "テーブルを分析できません";
 
 /* unable to check selected items message */
-"Unable to check selected items" = "Unable to check selected items";
+"Unable to check selected items" = "選択したアイテムを確認できません";
 
 /* unable to check table message */
-"Unable to check table" = "Unable to check table";
+"Unable to check table" = "テーブルを確認できません";
 
 /* message of panel when connection to host failed due to access denied error */
 "Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %2$@";
@@ -2947,64 +2947,64 @@
 "Unable to delete trigger" = "トリガーを削除できません";
 
 /* unable to flush selected items message */
-"Unable to flush selected items" = "Unable to flush selected items";
+"Unable to flush selected items" = "選択したアイテムをフラッシュできません";
 
 /* unable to flush table message */
-"Unable to flush table" = "Unable to flush table";
+"Unable to flush table" = "テーブルをフラッシュできません";
 
 /* unable to get list of users message */
-"Unable to get list of users" = "Unable to get list of users";
+"Unable to get list of users" = "ユーザーのリストを取得できません";
 
 /* error killing connection message */
-"Unable to kill connection" = "Unable to kill connection";
+"Unable to kill connection" = "接続を終了できません";
 
 /* error killing query message */
-"Unable to kill query" = "Unable to kill query";
+"Unable to kill query" = "クエリを終了できません";
 
 /* unable to optimze selected items message */
-"Unable to optimze selected items" = "Unable to optimze selected items";
+"Unable to optimze selected items" = "選択したアイテムを最適化できません";
 
 /* unable to optimze table message */
-"Unable to optimze table" = "Unable to optimze table";
+"Unable to optimze table" = "テーブルを最適化できません";
 
 /* unable to perform the checksum */
-"Unable to perform the checksum" = "Unable to perform the checksum";
+"Unable to perform the checksum" = "チェックサムを実行できません";
 
 /* error removing host message */
-"Unable to remove host" = "Unable to remove host";
+"Unable to remove host" = "ホストを削除できません";
 
 /* unable to rename database message */
 "Unable to rename database" = "データベースの名前が変更できませんでした";
 
 /* unable to repair selected items message */
-"Unable to repair selected items" = "Unable to repair selected items";
+"Unable to repair selected items" = "選択したアイテムを修理できません";
 
 /* unable to repair table message */
-"Unable to repair table" = "Unable to repair table";
+"Unable to repair table" = "テーブルを修復できません";
 
 /* message of panel when connection to db failed after selecting from popupbutton */
-"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.";
+"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "データベース %@を選択できません。\nデータベースを表示するために必要な権限があり、データベースが存在することを確認してください。";
 
 /* Unable to write row error */
-"Unable to write row" = "Unable to write row";
+"Unable to write row" = "行を書き込むことができません";
 
 /* Table Content : Remove Row : Result : n Error title */
-"Unexpected number of rows removed!" = "Unexpected number of rows removed!";
+"Unexpected number of rows removed!" = "想定外の行数が削除されました！";
 
 /* warning */
-"Unknown file format" = "Unknown file format";
+"Unknown file format" = "不明なファイル形式";
 
 /* unsaved changes message */
-"Unsaved changes" = "Unsaved changes";
+"Unsaved changes" = "保存されていない変更";
 
 /* unsaved theme message */
-"Unsaved Theme" = "Unsaved Theme";
+"Unsaved Theme" = "未保存のテーマ";
 
 /* Preferences : Network : Custom SSH client : warning dialog title */
-"Unsupported configuration!" = "Unsupported configuration!";
+"Unsupported configuration!" = "サポートされていない設定です！";
 
 /* export : import settings : file version error title */
-"Unsupported version for export settings!" = "Unsupported version for export settings!";
+"Unsupported version for export settings!" = "エクスポート設定でサポートされていないバージョンです！";
 
 /* Name for an untitled connection */
 "Untitled" = "無題";
@@ -3019,10 +3019,10 @@
 "Up to %@ bytes (4 GiB)" = "最大 %@ バイト (4 GiB)";
 
 /* range for mediumtext type */
-"Up to %@ characters (16 MiB)" = "Up to %@ characters (16 MiB)";
+"Up to %@ characters (16 MiB)" = "最大 %@ 文字 (16 MiB)";
 
 /* range for enum type */
-"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";
+"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "最大 %1$@ 個の異なるメンバー (<%2$@ 実際)\n1-2 バイトのストレージ";
 
 /* range for tinyblob type */
 "Up to 255 bytes" = "最大 255 バイト";
@@ -3043,34 +3043,34 @@
 "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.";
 
 /* updating field task description */
-"Updating field data..." = "Updating field data...";
+"Updating field data..." = "フィールドデータを更新しています...";
 
 /* URL scheme command couldn't authenticated */
-"URL scheme command couldn't authenticated" = "URL scheme command couldn't authenticated";
+"URL scheme command couldn't authenticated" = "URLスキームコマンドは認証できませんでした";
 
 /* URL scheme command was terminated by user */
-"URL scheme command was terminated by user" = "URL scheme command was terminated by user";
+"URL scheme command was terminated by user" = "URLスキームコマンドはユーザーによって終了されました";
 
 /* URL scheme command %@ unsupported */
-"URL scheme command %@ unsupported" = "URL scheme command %@ unsupported";
+"URL scheme command %@ unsupported" = "URL スキームコマンド %@ はサポートされていません";
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "127.0.0.1を使用";
 
 /* use standard connection button */
-"Use Standard Connection" = "Use Standard Connection";
+"Use Standard Connection" = "標準接続を使用";
 
 /* user has no hosts message */
-"User has no hosts" = "User has no hosts";
+"User has no hosts" = "ユーザーにホストがありません";
 
 /* user-defined value */
-"User-defined value" = "User-defined value";
+"User-defined value" = "ユーザー定義値";
 
 /* toolbar item label for switching to the User Manager tab */
 "Users" = "ユーザ";
 
 /* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
-"Value will be imported as MySQL NULL" = "Value will be imported as MySQL NULL";
+"Value will be imported as MySQL NULL" = "値はMySQL NULLとしてインポートされます";
 
 /* variable label for color table (Prefs > Editor) */
 "Variable" = "変数";
@@ -3085,7 +3085,7 @@
 "view" = "表示";
 
 /* Release notes button title */
-"View full release notes" = "View full release notes";
+"View full release notes" = "全てのリリースノートを表示";
 
 /* header for view info pane */
 "VIEW INFORMATION" = "ビュー情報";
@@ -3103,22 +3103,22 @@
 "Warning" = "警告";
 
 /* Short important release note for why password prompts may occur */
-"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again.";
+"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "GateKeeperの互換性のためにSequel Aceのデジタル署名を変更しました。パスワードへのアクセスを再度許可する必要があります。";
 
 /* Important release notes informational text, single change */
-"We've made a few changes but we thought you should know about one particularly important one:" = "We've made a few changes but we thought you should know about one particularly important one:";
+"We've made a few changes but we thought you should know about one particularly important one:" = "いくつか変更を加えましたが、特に重要なことを知っておくべきだと思いました。";
 
 /* Important release notes informational text, multiple changes */
-"We've made a few changes but we thought you should know about some particularly important ones:" = "We've made a few changes but we thought you should know about some particularly important ones:";
+"We've made a few changes but we thought you should know about some particularly important ones:" = "いくつかの変更を加えましたが、特に重要なものについて知っておくべきだと思いました。";
 
 /* WHERE clause not valid */
-"WHERE clause not valid" = "WHERE clause not valid";
+"WHERE clause not valid" = "WHERE句が無効です";
 
 /* Title of filter preview area when the query WHERE is negated */
 "WHERE NOT query" = "WHERE NOT query";
 
 /* Title of filter preview area when the query WHERE is normal */
-"WHERE query" = "WHERE query";
+"WHERE query" = "WHEREクエリ";
 
 /* Generic working description */
 "Working..." = "作業中...";
@@ -3142,58 +3142,58 @@
 "Year" = "年";
 
 /* message of panel when trying to copy multiple rows */
-"You can only copy single rows." = "You can only copy single rows.";
+"You can only copy single rows." = "コピーできるのは1行のみです。";
 
 /* message of panel when trying to edit tables without index and with hidden blob/text fields */
-"You can't hide blob and text fields when working with tables without index." = "You can't hide blob and text fields when working with tables without index.";
+"You can't hide blob and text fields when working with tables without index." = "インデックスのないテーブルで作業する場合、Blob フィールドとテキストフィールドは非表示にできません。";
 
 /* You cannot delete the last field in a table. Delete the table instead. */
-"You cannot delete the last field in a table. Delete the table instead." = "You cannot delete the last field in a table. Delete the table instead.";
+"You cannot delete the last field in a table. Delete the table instead." = "テーブルの最後のフィールドを削除することはできません。代わりにテーブルを削除してください。";
 
 /* SSL connection requested but not established error detail */
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
-"‘%@’ based favorites" = "‘%@’ based favorites";
+"‘%@’ based favorites" = "%@をベースにしたお気に入り";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
-"‘%@’ Fields Content Filters" = "‘%@’ Fields Content Filters";
+"‘%@’ Fields Content Filters" = "%@のフィールドコンテンツフィルター";
 
 /* Export file already exists message */
-"%@ already exists. Do you want to replace it?" = "%@ already exists. Do you want to replace it?";
+"%@ already exists. Do you want to replace it?" = "%@ は既に存在します。置き換えますか？";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
-"%@ Bundle" = "%@ Bundle";
+"%@ Bundle" = "%@ バンドル";
 
 /* Export file creation error title */
-"%@ could not be created" = "%@ could not be created";
+"%@ could not be created" = "%@ を作成できませんでした";
 
 /* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.";
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ は解析できませんでした。 カラムの設定は編集できますが、カラムはコンテンツビューに表示されません。 この問題は、ヘルプメニュー項目を使用して、Sequel Aceチームに報告してください。";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
-"%@ is not a valid client certificate file." = "%@ is not a valid client certificate file.";
+"%@ is not a valid client certificate file." = "%@ は有効なクライアント証明書ファイルではありません。";
 
 /* connection view : ssl : key file picker : wrong format error title */
-"%@ is not a valid private key file." = "%@ is not a valid private key file.";
+"%@ is not a valid private key file." = "%@ は有効な秘密鍵ファイルではありません。";
 
 /* text shown when there are App Sandbox Issues */
-"App Sandbox Issue" = "App Sandbox Issue";
+"App Sandbox Issue" = "App Sandbo の問題";
 
 /* Stale Bookmarks error title */
-"Stale Bookmarks" = "Stale Bookmarks";
+"Stale Bookmarks" = "古いブックマーク";
 
 /* App Sandbox info link text */
 "App Sandbox Info" = "アプリのサンドボックス情報";
 
 /* error while selecting file title */
-"File Selection Error" = "File Selection Error";
+"File Selection Error" = "ファイル選択エラー";
 
 /* error while selecting file message */
-"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
+"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選択したファイルは有効なファイルではありません。\n\nもう一度やり直してください。\n\nクラス: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "選択された既知のホストファイルは書き込み可能ではありません。\n\n%@\n\n確認してもう一度お試しください。";
 
 /* known hosts not writable error title */
 "Known Hosts Error" = "既知のホストエラー";
@@ -3202,61 +3202,61 @@
 "SSH Tunnel Debugging Info" = "SSHトンネルのデバッグ情報";
 
 /* Question to user to see if they would like to re-request access */
-"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?";
+"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "古い安全なブックマークがあります:\n\n%@\n\n今すぐアクセスをリクエストしますか？";
 
 /* Question to user to see if they would like to request access to missing bookmarks */
-"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
+"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "安全なブックマークがありません:\n\n%@\n\n今すぐアクセスをリクエストしますか？";
 
 /* known hosts advance menu item title */
-"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
+"Use known hosts from ssh config (ADVANCED)" = "ssh config (ADVANCED) から既知のホストを使用する";
 
 /* The answer, yes */
 "Yes" = "はい";
 
 /* Shown to remind users of their stale bookmarks */
-"A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "A reminder of your stale secure bookmarks:<br /><br />%@<br />";
+"A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "古い安全なブックマークのリマインダー:<br /><br />%@<br />";
 
 /* Title for Stale Secure Bookmarks help window */
-"Stale Secure Bookmarks" = "Stale Secure Bookmarks";
+"Stale Secure Bookmarks" = "古いセキュアブックマーク";
 
 /* Title for Export Error alert */
-"Export Error" = "Export Error";
+"Export Error" = "エクスポートエラー";
 
 /* Message for Export Error alert */
-"Error while writing to the export file. Could not open file: %@" = "Error while writing to the export file. Could not open file: %@";
+"Error while writing to the export file. Could not open file: %@" = "エクスポートファイルに書き込み中にエラーが発生しました: %@";
 
 /* Message for User window error */
-"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "mysql.user からの結果セットには、'Password' と 'authentication_string' 列は含まれていません。";
 
 /* Title for User window error */
-"User Data Error" = "User Data Error";
+"User Data Error" = "ユーザデータのエラー";
 
 /* Title for Stale Bookmark file selection dialog */
-"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Sequel Aceのアクセスを復元するには、ファイル '%@' を再度選択してください。";
 
 /* Title for File Preference file selection dialog */
-"Please choose a file or folder to grant Sequel Ace access to." = "Please choose a file or folder to grant Sequel Ace access to.";
+"Please choose a file or folder to grant Sequel Ace access to." = "Sequel Aceへのアクセスを許可するファイルまたはフォルダを選択してください。";
 
 /* Title for Network Preference ssh config file selection dialog */
-"Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
+"Please choose your ssh config files(s)" = "ssh 設定ファイルを選択してください";
 
 /* Title for Network Preference ssh known hosts file selection dialog */
-"Please choose your known hosts file" = "Please choose your known hosts file";
+"Please choose your known hosts file" = "既知のホストファイルを選択してください";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "不正なJSON";
 
 /* Applying syntax highlighting task description */
-"Applying syntax highlighting..." = "Applying syntax highlighting...";
+"Applying syntax highlighting..." = "シンタックスハイライトを適用しています...";
 
 /* Error message when a bash task fails to start */
-"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "タスクを起動できませんでした。\n例外理由: %@\n ENV 長さ: %lu";
 
 /* Error message title when we failed to create new connection view */
 "New Connection Error" = "新しい接続エラー";
 
 /* New Connection Error informative message */
-"Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
+"Failed to create new database connection window. Please restart Sequel Ace and try again." = "新しいデータベース接続ウィンドウの作成に失敗しました。シーケンスエースを再起動してもう一度お試しください。";
 
 /* new version is available alert title */
 "A new version is available" = "新しいバージョンが利用可能です";
@@ -3265,13 +3265,13 @@
 "Download" = "ダウンロード";
 
 /* new version is available alert informativeText */
-"Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+"Version %@ is available. You are currently running %@" = "バージョン %@ は利用可能です。現在 %@ を実行しています。";
 
 /* downloading new version window title */
 "Download Progress" = "ダウンロード進行中";
 
 /* downloading new version time remaining placeholder text */
-"Calculating time remaining..." = "Calculating time remaining...";
+"Calculating time remaining..." = "残り時間を計算しています...";
 
 /* downloading new version window message */
 "Downloading Sequel Ace - %@" = "Sequel Aceをダウンロード中 - %@";
@@ -3286,31 +3286,31 @@
 "Only available for GitHub downloads" = "GitHubダウンロードでのみ利用可能";
 
 /* Tool tip warning for when the user sets auto-complete delay to zero */
-"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
+"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "警告: 自動補完の遅延を 0.0 に設定すると、奇妙な出力になります。";
 
 /* downloading new version bytes of bytes done */
 "%@ of %@" = "%@ / %@";
 
 /* Time zone set failed informative message */
-"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
+"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone は SYSTEM.";
 
 /* Menu item title for checking for updates */
 "Check for Updates..." = "アップデートの確認...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
-"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "データベースサーバーのskip-show-database変数はONに設定されています。 したがって、データの表示権限を持たない限り、データベースを一覧表示できません。\n\nただし、特権によってはSQLクエリを介してデータベースに直接アクセスできます。";
 
 /* Error alert title when the request to GitHub fails */
 "GitHub Request Failed" = "GitHub リクエストに失敗しました";
 
 /* Info alert title when there are Newer Releases Available */
-"No Newer Release Available" = "No Newer Release Available";
+"No Newer Release Available" = "新しいリリースはありません";
 
 /* Info alert message when there are Newer Releases Available */
-"You are currently running the latest release." = "You are currently running the latest release.";
+"You are currently running the latest release." = "現在最新のリリースを実行しています。";
 
 /* Alert button, disable the warning when skip-show-database is set to on */
-"Never show this again" = "Never show this again";
+"Never show this again" = "次回から表示しない";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "現在のフィールド \"%@\" は生成された列であるため、編集できません。";
