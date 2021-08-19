@@ -186,7 +186,8 @@ private extension TabManager {
             self.removeManagedWindow(forWindow: window)
         }
         let management = ManagedWindow(windowController: windowController, window: window, closingSubscription: subscription)
-        managedWindows.append(management)
+        let currentIndex = managedWindows.firstIndex(where: { $0.window.isMainWindow }) ?? -1
+        managedWindows.insert(management, at: currentIndex + 1)
         return management
     }
 
