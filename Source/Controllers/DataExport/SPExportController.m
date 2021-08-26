@@ -109,7 +109,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 
 #pragma mark - SPExportFileUtilitiesPrivateAPI
 
-- (void)_reopenExportSheet;
+- (void)_openExportSheet;
 
 #pragma mark - SPExportControllerDelegate
 
@@ -336,26 +336,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[self _updateExportAdvancedOptionsLabel];
 	[self setExportInput:source];
 
-	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
-		// Perform the export
-		if (returnCode == NSModalResponseOK) {
 
-			[self->prefs setObject:[self currentSettingsAsDictionary] forKey:SPLastExportSettings];
-
-			// If we are about to perform a table export, cache the current number of tables within the list,
-			// refresh the list and then compare the numbers to accommodate situations where new tables are
-			// added by external applications.
-			if ((self->exportSource == SPTableExport) && (self->exportType != SPDotExport)) {
-
-				// Give the export sheet a chance to close
-				[self performSelector:@selector(_checkForDatabaseChanges) withObject:nil afterDelay:0.5];
-			}
-			else {
-				// Initialize the export after a short delay to give the alert a chance to close
-				[self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
-			}
-		}
-	}];
+    // Display the actual export sheet
+    [self performSelector:@selector(_openExportSheet) withObject:nil afterDelay:0.1];
 }
 
 /**
@@ -451,7 +434,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
 			
 			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindowControllerWindow] completionHandler:^(NSInteger returnCode) {
-				[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
+				[self performSelector:@selector(_openExportSheet) withObject:nil afterDelay:0.1];
 			}];
 			
 			// we don't want to close the sheet so return here
@@ -2069,7 +2052,7 @@ set_input:
 			[exportFiles removeAllObjects];
 
 			// Trigger restoration of the export interface
-			[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
+			[self performSelector:@selector(_openExportSheet) withObject:nil afterDelay:0.1];
 		}
 		else {
 			// Start the export after a short delay to give this sheet a chance to close
@@ -2114,15 +2097,34 @@ set_input:
 		[exporters removeAllObjects];
 
 		// Trigger restoration of the export interface
-		[self performSelector:@selector(_reopenExportSheet) withObject:nil afterDelay:0.1];
+		[self performSelector:@selector(_openExportSheet) withObject:nil afterDelay:0.1];
 	}
 }
 
 /**
  * Re-open the export sheet without resetting the interface - for use on error.
  */
-- (void)_reopenExportSheet {
-	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:nil];
+- (void)_openExportSheet {
+    [[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
+        // Perform the export
+        if (returnCode == NSModalResponseOK) {
+
+            [self->prefs setObject:[self currentSettingsAsDictionary] forKey:SPLastExportSettings];
+
+            // If we are about to perform a table export, cache the current number of tables within the list,
+            // refresh the list and then compare the numbers to accommodate situations where new tables are
+            // added by external applications.
+            if ((self->exportSource == SPTableExport) && (self->exportType != SPDotExport)) {
+
+                // Give the export sheet a chance to close
+                [self performSelector:@selector(_checkForDatabaseChanges) withObject:nil afterDelay:0.5];
+            }
+            else {
+                // Initialize the export after a short delay to give the alert a chance to close
+                [self performSelector:@selector(initializeExportUsingSelectedOptions) withObject:nil afterDelay:0.5];
+            }
+        }
+    }];
 }
 
 #pragma mark - SPExportFilenameUtilities
