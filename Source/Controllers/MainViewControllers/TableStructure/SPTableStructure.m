@@ -795,7 +795,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	
 	NSString *theRowType = @"";
 	NSString *theRowExtra = @"";
-	
+    NSString *theRowGeneratedAlways = @"";
+
 	BOOL specialFieldTypes = NO;
 
 	if ([theRow objectForKey:@"type"])
@@ -803,6 +804,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if ([theRow objectForKey:@"Extra"])
 		theRowExtra = [[[theRow objectForKey:@"Extra"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
+
+    if ([theRow objectForKey:@"generatedalways"])
+        theRowGeneratedAlways = [[[theRow objectForKey:@"generatedalways"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
 
 	queryString = [NSMutableString stringWithString:[[theRow objectForKey:@"name"] backtickQuotedString]];
 
@@ -881,15 +885,18 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 
-		if ([[theRow objectForKey:@"null"] integerValue] == 0 || [theRowExtra isEqualToString:@"SERIAL DEFAULT VALUE"]) {
-			[queryString appendString:@"\n NOT NULL"];
-		} 
-		else {
-			[queryString appendString:@"\n NULL"];
-		}
+        // Don't provide NULL / NOT NULL for generated field
+        if (![theRowGeneratedAlways length]) {
+            if ([[theRow objectForKey:@"null"] integerValue] == 0 || [theRowExtra isEqualToString:@"SERIAL DEFAULT VALUE"]) {
+                [queryString appendString:@"\n NOT NULL"];
+            }
+            else {
+                [queryString appendString:@"\n NULL"];
+            }
+        }
 
-		// Don't provide any defaults for auto-increment fields
-		if (![theRowExtra isEqualToString:@"AUTO_INCREMENT"]) {
+		// Don't provide any defaults for auto-increment & generated field
+		if (![theRowExtra isEqualToString:@"AUTO_INCREMENT"] && ![theRowGeneratedAlways length]) {
 			NSArray *matches;
 			NSString *defaultValue = [theRow objectForKey:@"default"];
 			// If a NULL value has been specified, and NULL is allowed, specify DEFAULT NULL
@@ -931,7 +938,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 
-		if ([theRowExtra length] && ![theRowExtra isEqualToString:@"NONE"]) {
+        // Generated field - set keywords GENERATED ALWAYS AS
+        if ([theRowExtra isEqualToString:@"VIRTUAL GENERATED"] || [theRowExtra isEqualToString:@"STORED GENERATED"]) {
+            [queryString appendFormat:@"\n %@", @"GENERATED ALWAYS AS"];
+        // Other extra
+        } else if ([theRowExtra length] && ![theRowExtra isEqualToString:@"NONE"]) {
 			[queryString appendFormat:@"\n %@", theRowExtra];
 			//fix our own default item if needed
 			if([theRowExtra isEqualToString:@"ON UPDATE CURRENT_TIMESTAMP"] && fieldDefIncludesLen) {
@@ -940,15 +951,20 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	// Any column comments
-	if ([(NSString *)[theRow objectForKey:@"comment"] length]) {
-		[queryString appendFormat:@"\n COMMENT %@", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
-	}
-
 	// Unparsed details - column formats, storage, reference definitions
 	if ([(NSString *)[theRow objectForKey:@"unparsed"] length]) {
 		[queryString appendFormat:@"\n %@", [theRow objectForKey:@"unparsed"]];
 	}
+
+    // Generated field can be VIRTUAL or STORED
+    if ([theRowGeneratedAlways length]) {
+        [queryString appendFormat:@"\n %@", [theRow objectForKey:@"generatedalways"]];
+    }
+
+    // Any column comments
+    if ([(NSString *)[theRow objectForKey:@"comment"] length]) {
+        [queryString appendFormat:@"\n COMMENT %@", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
+    }
 
 	return queryString;
 }
