@@ -286,9 +286,18 @@ static unsigned short getRandomPort(void);
     
     SPLog(@"connection state = %i", connectionState);
 
-    if (connectionState != SPMySQLProxyIdle || task){
-        SPLog(@"connection state != SPMySQLProxyIdle || task, returning");
+    if (connectionState != SPMySQLProxyIdle){
+        SPLog(@"launch task ssh connection state != SPMySQLProxyIdle, returning");
         return;
+    }
+
+    if (task){
+        SPLog(@"launch task already has task, aborting previous");
+        if ([task isRunning]){
+            SPLog(@"launch task calling terminate on existing task");
+            [task SPterminate];
+        }
+        task = nil;
     }
 
 	@autoreleasepool {
@@ -647,10 +656,10 @@ static unsigned short getRandomPort(void);
     }
 
 	// If there's a delegate set, clear it to prevent unexpected state change messaging
-	if (delegate) {
-		delegate = nil;
-		stateChangeSelector = NULL;
-	}
+//	if (delegate) {
+//		delegate = nil;
+//		stateChangeSelector = NULL;
+//	}
 
 	// Before terminating the tunnel, check that it's actually running. This is to accommodate tunnels which
 	// suddenly disappear as a result of network disconnections. 
