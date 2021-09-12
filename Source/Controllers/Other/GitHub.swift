@@ -33,7 +33,7 @@ final class GitHubElement: Codable, Comparable {
     let id: Int
     let author: Author
     let nodeID, tagName: String
-    let targetCommitish: TargetCommitish
+    let targetCommitish: String
     let name: String
     let draft, prerelease: Bool
     let createdAt, publishedAt: Date
@@ -59,7 +59,7 @@ final class GitHubElement: Codable, Comparable {
         case body
     }
 
-    init(url: String, assetsURL: String, uploadURL: String, htmlURL: String, id: Int, author: Author, nodeID: String, tagName: String, targetCommitish: TargetCommitish, name: String, draft: Bool, prerelease: Bool, createdAt: Date, publishedAt: Date, assets: [Asset], tarballURL: String, zipballURL: String, body: String) {
+    init(url: String, assetsURL: String, uploadURL: String, htmlURL: String, id: Int, author: Author, nodeID: String, tagName: String, targetCommitish: String, name: String, draft: Bool, prerelease: Bool, createdAt: Date, publishedAt: Date, assets: [Asset], tarballURL: String, zipballURL: String, body: String) {
         self.url = url
         self.assetsURL = assetsURL
         self.uploadURL = uploadURL
@@ -109,7 +109,7 @@ extension GitHubElement {
         author: Author? = nil,
         nodeID: String? = nil,
         tagName: String? = nil,
-        targetCommitish: TargetCommitish? = nil,
+        targetCommitish: String? = nil,
         name: String? = nil,
         draft: Bool? = nil,
         prerelease: Bool? = nil,
@@ -422,12 +422,6 @@ enum StarredURL: String, Codable {
 
 enum TypeEnum: String, Codable {
     case user = "User"
-}
-
-enum TargetCommitish: String, Codable {
-    case main = "main"
-    case release = "release"
-    case staging = "staging"
 }
 
 typealias GitHub = [GitHubElement]
