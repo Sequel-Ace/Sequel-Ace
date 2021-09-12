@@ -1188,6 +1188,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self queryString:@"SET wait_timeout=600"];
 		}
 	}
+
+
+    // Check the information_schema_stats_expiry timeout - if it's not zero, set it to 0
+    // Otherwise, stats page will lag behind reality
+    // https://github.com/Sequel-Ace/Sequel-Ace/issues/1206
+    if ([variables objectForKey:@"information_schema_stats_expiry"]) {
+        if ([[variables objectForKey:@"information_schema_stats_expiry"] integerValue] != 0) {
+            [self queryString:@"SET information_schema_stats_expiry=0"];
+        }
+    }
 }
 
 /**
