@@ -1,3 +1,23 @@
+## [3.4.1]
+
+### Added
+
+
+### Fixed
+- a0ce9cc2, Fix stats counts not updating immediately for MySQL 8 
+- 865043fa, Fix issue with Check for Update Failing 
+- dd4d3093, Possible fix for issues with reconnecting 
+- c0470af9,  Resolved 'alter table' bug for generated column
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [3.4.0]
 
 ### Added
