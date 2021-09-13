@@ -194,7 +194,7 @@
 "A foreign key needs this index" = "外部キーにはこのインデックスが必要です";
 
 /* description of set */
-"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "SETは、最大64人のメンバー(文字列として)を定義することができ、そのうちの1つまたは複数のフィールドをカンマ区切りのリストを使用することができます。 挿入すると、メンバーの順序が自動的に正規化され、重複したメンバーは削除されます。 数値の割り当ては、BITタイプと同じセマンティクスを使用してサポートされています。";
+"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "SETは、最大64人のメンバー(文字列として) を定義することができ、そのうちの1つまたは複数のフィールドをカンマ区切りのリストを使用することができます。 挿入すると、メンバーの順序が自動的に正規化され、重複したメンバーは削除されます。 数値の割り当ては、BITタイプと同じセマンティクスを使用してサポートされています。";
 
 /* SSH key not found message */
 "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "SSHキーの場所が指定されましたが、指定された場所にファイルが見つかりませんでした。キーを再度選択してやり直してください。";
@@ -395,7 +395,7 @@
 "An error occurred while retrieving information.\nMySQL said: %@" = "情報の取得中にエラーが発生しました。\nMySQLは次のとおりです: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' の情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL : %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
 
 /* error retrieving table information informative message */
 "An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
@@ -425,7 +425,7 @@
 "An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "テーブルのインポート中にエラーが発生しました: \n%1$@\n\n\nMySQL: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "フィールドの移動中にエラーが発生しました。\n\nMySQL: %@ ";
+"An error occurred while trying to move the field.\n\nMySQL said: %@" = "フィールドの移動中にエラーが発生しました。\n\nMySQL: %@";
 
 /* error resetting auto_increment informative message */
 "An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "テーブル'%1$@'のAUTO_INCREMENTをリセット中にエラーが発生しました。\n\nMySQL: %2$@";
@@ -1630,7 +1630,7 @@
 "Is Nullable" = "Null を許す";
 
 /* is updatable: %@ */
-"is updatable: %@" = "is updatable: %@";
+"is updatable: %@" = "更新: %@";
 
 /* items */
 "items" = "項目";
@@ -2373,7 +2373,7 @@
 "Show Create Function Syntax..." = "関数の構文を表示...";
 
 /* show create proc syntax menu item */
-"Show Create Procedure Syntax..." = "Show Create Procedure Syntax...";
+"Show Create Procedure Syntax..." = "プロシージャの構文を表示...";
 
 /* show create syntaxes menu item */
 "Show Create Syntaxes..." = "構文の作成...";
@@ -2723,7 +2723,7 @@
 "The list of tables has changed" = "テーブルのリストが変更されました";
 
 /* message when trying to rename a table/view/proc/etc to an already used name */
-"The name '%@' is already used." = "{0}という名前は既に使用されています。";
+"The name '%@' is already used." = "%@ という名前は既に使用されています。";
 
 /* table list change alert informative message */
 "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "エクスポート ダイアログが開かれてから、このデータベースのテーブル数が変更されました。 %lu テーブルが追加されました。おそらく外部アプリケーションによって追加されます。\n\n続行しますか？";
@@ -2741,7 +2741,7 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "選択したファイルは有効なSPFファイルではないか、ひどく破損しています。";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "選択したリレーションを削除できませんでした。\n\nMySQL : %@";
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "選択したリレーションを削除できませんでした。\n\nMySQL: %@";
 
 /* error deleting trigger informative message */
 "The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "選択したトリガーを削除できませんでした。\n\nMySQL は %@ です。";

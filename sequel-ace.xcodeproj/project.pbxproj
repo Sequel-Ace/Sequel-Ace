@@ -857,6 +857,7 @@
 		50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseActionTest.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
 		511B309F25ABBC6500D010E3 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		511E8F6926EF72FD001FC731 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5132930925F586A900D803AD /* NotificationToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationToken.swift; sourceTree = "<group>"; };
 		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
@@ -2506,6 +2507,7 @@
 				pt,
 				ja,
 				vi,
+				ru,
 			);
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
 			packageReferences = (
@@ -3083,6 +3085,7 @@
 				51C04C9D261E4DB6001F5554 /* pt */,
 				516A76C52653B4E800DC6501 /* ja */,
 				51905622267DFF1700212442 /* vi */,
+				511E8F6926EF72FD001FC731 /* ru */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
