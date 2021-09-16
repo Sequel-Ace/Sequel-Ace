@@ -1,14 +1,14 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Check the Console for possible errors inside the primary key(s) of this table!";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " Проверьте консоль на наличие возможных ошибок основного ключа(ей) этой таблицы!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Please check the Console and inform the Sequel Ace team!";
+" Please check the Console and inform the Sequel Ace team!" = " Пожалуйста, передайте необходимую информацию из консоли команде Sequel Ace!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
-" Reload the table to be sure that the contents have not changed in the meantime." = " Reload the table to be sure that the contents have not changed in the meantime.";
+" Reload the table to be sure that the contents have not changed in the meantime." = " Перезагрузите таблицу, чтобы убедиться, что содержимое не изменилось за это время.";
 
 /* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
-" You should also add a primary key to this table!" = " You should also add a primary key to this table!";
+" You should also add a primary key to this table!" = " Вы также должны добавить первичный ключ к этой таблице!";
 
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
@@ -17,20 +17,20 @@
 "%@ %@ selected" = "%1$@ %2$@ selected";
 
 /* History item filtered by values label */
-"%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
+"%@ (Filtered by %@)" = "%1$@ (отфильтровано по %2$@)";
 
 /* History item with page number label */
-"%@ (Page %lu)" = "%1$@ (Page %2$lu)";
+"%@ (Page %lu)" = "%1$@ (страница %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Copy";
+"%@ Copy" = "%@ — копия";
 
 /* text showing a single row a partially loaded result */
 "%@ row in partial load" = "%@ row in partial load";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ row in table";
+"%@ row in table" = "%@ строка в таблице";
 
 /* text showing how a single rows matched filter */
 "%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
@@ -39,7 +39,7 @@
 "%@ rows in partial load" = "%@ rows in partial load";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ rows in table";
+"%@ rows in table" = "%@ строк в таблице";
 
 /* text showing how many rows matched filter */
 "%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
@@ -51,7 +51,7 @@
 "%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 row affected";
+"%@; 1 row affected" = "%@; 1 строка изменена";
 
 /* text showing one row has been affected by multiple queries */
 "%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
@@ -99,7 +99,7 @@
 "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
 
 /* filtered item count */
-"%lu of %lu" = "%1$lu of %2$lu";
+"%lu of %lu" = "%1$lu из %2$lu";
 
 /* Export folder not writable for some files explanatory text */
 "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again.";
@@ -108,10 +108,10 @@
 "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again.";
 
 /* History item title with nothing selected */
-"(no selection)" = "(no selection)";
+"(no selection)" = "(ничего не выбрано)";
 
 /* value shown for hidden blob and text fields */
-"(not loaded)" = "(not loaded)";
+"(not loaded)" = "(не загружено)";
 
 /* Explanation for MySQL server has gone away error */
 "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)";
@@ -138,7 +138,7 @@
 "[name required]" = "[name required]";
 
 /* [no selection] */
-"[no selection]" = "[no selection]";
+"[no selection]" = "[ничего не выбрано]";
 
 /* Additional export file errors */
 "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
@@ -191,7 +191,7 @@
 
 /* table structure : indexes : delete index : error 1553 : title
  table structure : indexes : delete index : error 1553, no FK found : title */
-"A foreign key needs this index" = "A foreign key needs this index";
+"A foreign key needs this index" = "Внешний ключ нуждается в этом индексе";
 
 /* description of set */
 "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.";
@@ -218,7 +218,7 @@
 "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.";
 
 /* connection failed due to access denied title */
-"Access denied!" = "Access denied!";
+"Access denied!" = "Доступ запрещён!";
 
 /* range of double */
 "Accurate to approx. 15 decimal places" = "Accurate to approx. 15 decimal places";
@@ -233,10 +233,10 @@
 "ACTIVITIES" = "ACTIVITIES";
 
 /* Add trigger button label */
-"Add" = "Add";
+"Add" = "Добавить";
 
 /* menu item to add db */
-"Add Database..." = "Add Database...";
+"Add Database..." = "Создать базу данных...";
 
 /* Add Host */
 "Add Host" = "Add Host";
@@ -245,22 +245,22 @@
 "Add Value or Expression…" = "Add Value or Expression…";
 
 /* adding index task status message */
-"Adding index..." = "Adding index...";
+"Adding index..." = "Добавление индекса...";
 
 /* Advanced options short title */
 "Advanced" = "Advanced";
 
 /* notifications preference pane name */
-"Alerts & Logs" = "Alerts & Logs";
+"Alerts & Logs" = "Оповещения и журналы";
 
 /* notifications preference pane tooltip */
-"Alerts & Logs Preferences" = "Alerts & Logs Preferences";
+"Alerts & Logs Preferences" = "Настройки оповещений и журналов";
 
 /* All databases placeholder */
-"All Databases" = "All Databases";
+"All Databases" = "Все базы данных";
 
 /* All databases (%) placeholder */
-"All Databases (%)" = "All Databases (%)";
+"All Databases (%)" = "Все базы данных (%)";
 
 /* All export files already exist message */
 "All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
@@ -281,7 +281,7 @@
 "An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill the query associated with connection %1$lld.\n\nMySQL said: %2$@";
 
 /* Error shown when unable to show create table syntax */
-"An error occurred while creating table syntax.\n\n: %@" = "An error occurred while creating table syntax.\n\n: %@";
+"An error occurred while creating table syntax.\n\n: %@" = "Произошла ошибка при формировании запроса создания таблицы.\n\n: %@";
 
 /* rename table error - no temporary name found */
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.";
@@ -335,10 +335,10 @@
 "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
 
 /* mysql error occurred message */
-"An error occurred" = "An error occurred";
+"An error occurred" = "Произошла ошибка";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "An error occurred retrieving table information.  MySQL said: %@";
+"An error occurred retrieving table information.  MySQL said: %@" = "Произошла ошибка при получении информации о таблице. MySQL сообщил: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
@@ -353,10 +353,10 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld rows were imported.\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to add the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Произошла ошибка при попытке добавить поле '%1$@' через\n\n%2$@\n\nMySQL сообщил: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to change the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Произошла ошибка при попытке изменить поле '%1$@' через\n\n%2$@\n\nMySQL сообщил: %3$@";
 
 /* error changing table collation informative message */
 "An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table collation to '%1$@'.\n\nMySQL said: %2$@";
@@ -446,25 +446,25 @@
 "An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "An unhandled error occurred when attempting to create the export file.  Please check the details and try again.";
 
 /* ANALYZE one or more tables - result title */
-"Analyze %@" = "Analyze %@";
+"Analyze %@" = "Анализ %@";
 
 /* analyze selected items menu item */
-"Analyze Selected Items" = "Analyze Selected Items";
+"Analyze Selected Items" = "Проанализировать выбранные элементы";
 
 /* analyze table menu item */
-"Analyze Table" = "Analyze Table";
+"Analyze Table" = "Проанализировать таблицу";
 
 /* analyze table failed message */
-"Analyze table failed." = "Analyze table failed.";
+"Analyze table failed." = "Не получилось проанализировать таблицу.";
 
 /* change table type informative message */
 "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.";
 
 /* clear global history list informative message */
-"Are you sure you want to clear the global history list? This action cannot be undone." = "Are you sure you want to clear the global history list? This action cannot be undone.";
+"Are you sure you want to clear the global history list? This action cannot be undone." = "Вы уверены, что хотите очистить всю историю запросов? Это действие необратимо.";
 
 /* clear history list for %@ informative message */
-"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Are you sure you want to clear the history list for %@? This action cannot be undone.";
+"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Вы уверены, что хотите очистить историю запросов для %@? Это действие необратимо.";
 
 /* truncate tables informative message */
 "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.";
@@ -500,7 +500,7 @@
 "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone.";
 
 /* delete selected relation informative message */
-"Are you sure you want to delete the selected relations? This action cannot be undone." = "Are you sure you want to delete the selected relations? This action cannot be undone.";
+"Are you sure you want to delete the selected relations? This action cannot be undone." = "Вы действительно хотите удалить выбранную связь? Это действие необратимо.";
 
 /* delete selected row informative message */
 "Are you sure you want to delete the selected row from this table? This action cannot be undone." = "Are you sure you want to delete the selected row from this table? This action cannot be undone.";
@@ -521,7 +521,7 @@
 "Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Are you sure you want to print the current content view of the table '%1$@'?\n\nIt currently contains %2$@ rows, which may take a significant amount of time to print.";
 
 /* remove all query favorites informative message */
-"Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "Are you sure you want to remove all of your saved query favorites? This action cannot be undone.";
+"Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "Вы уверены, что хотите удалить все ваши избранные запросы? Это действие необратимо.";
 
 /* remove all selected content filters informative message */
 "Are you sure you want to remove all selected content filters? This action cannot be undone." = "Are you sure you want to remove all selected content filters? This action cannot be undone.";
@@ -533,25 +533,25 @@
 "auto_increment: %@" = "auto_increment: %@";
 
 /* Encoding autodetect menu item */
-"Autodetect" = "Autodetect";
+"Autodetect" = "Автоопределение";
 
 /* background label for color table (Prefs > Editor) */
-"Background" = "Background";
+"Background" = "Фон";
 
 /* backtick quote label for color table (Prefs > Editor) */
-"Backtick Quote" = "Backtick Quote";
+"Backtick Quote" = "Обратные кавычки";
 
 /* bash error */
-"BASH Error" = "BASH Error";
+"BASH Error" = "Ошибка BASH";
 
 /* toolbar item label for switching to the Table Content tab */
 "Browse & Edit Table Content" = "Browse & Edit Table Content";
 
 /* build label */
-"build" = "build";
+"build" = "сборка";
 
 /* build label */
-"Build" = "Build";
+"Build" = "Сборка";
 
 /* bundle editor menu item label */
 "Bundle Editor" = "Bundle Editor";
@@ -583,28 +583,28 @@
  Open Files : Bundle : Already-Installed : Cancel button
  Preferences : Network : Custom SSH client : warning dialog : cancel button
  shutdown server : confirmation dialog : cancel button */
-"Cancel" = "Cancel";
+"Cancel" = "Отменить";
 
 /* sql import : charset error alert : cancel button */
-"Cancel Import" = "Cancel Import";
+"Cancel Import" = "Отменить импорт";
 
 /* cancelling task status message */
-"Cancelling..." = "Cancelling...";
+"Cancelling..." = "Отмена...";
 
 /* empty query informative message */
-"Cannot save an empty query." = "Cannot save an empty query.";
+"Cannot save an empty query." = "Невозможно сохранить пустой запрос.";
 
 /* caret label for color table (Prefs > Editor) */
-"Caret" = "Caret";
+"Caret" = "Курсор";
 
 /* change button */
-"Change" = "Change";
+"Change" = "Изменить";
 
 /* change focus to table list menu item */
 "Change Focus to Table List" = "Change Focus to Table List";
 
 /* change table type message */
-"Change table type" = "Change table type";
+"Change table type" = "Изменить тип таблицы";
 
 /* unsaved changes informative message */
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue";
@@ -613,7 +613,7 @@
 "character set client: %@" = "character set client: %@";
 
 /* CHECK one or more tables - result title */
-"Check %@" = "Check %@";
+"Check %@" = "Проверка %@";
 
 /* check of all selected items successfully passed message */
 "Check of all selected items successfully passed." = "Check of all selected items successfully passed.";
@@ -625,7 +625,7 @@
 "Check Selected Items" = "Check Selected Items";
 
 /* check table menu item */
-"Check Table" = "Check Table";
+"Check Table" = "Проверить таблицу";
 
 /* check table failed message */
 "Check table failed." = "Check table failed.";
@@ -640,55 +640,55 @@
 "Checking field data for editing..." = "Checking field data for editing...";
 
 /* checksum %@ message */
-"Checksum %@" = "Checksum %@";
+"Checksum %@" = "Контрольная сумма %@";
 
 /* checksum selected items menu item */
 "Checksum Selected Items" = "Checksum Selected Items";
 
 /* checksum table menu item */
-"Checksum Table" = "Checksum Table";
+"Checksum Table" = "Контрольная сумма таблицы";
 
 /* Checksums of %@ message */
-"Checksums of %@" = "Checksums of %@";
+"Checksums of %@" = "Контрольные суммы для %@";
 
 /* menu item for choose db */
-"Choose Database..." = "Choose Database...";
+"Choose Database..." = "Выберите базу данных...";
 
 /* cancelling export cleaning up message */
-"Cleaning up..." = "Cleaning up...";
+"Cleaning up..." = "Очистка...";
 
 /* clear button */
-"Clear" = "Clear";
+"Clear" = "Очистить";
 
 /* toolbar item for clear console */
-"Clear Console" = "Clear Console";
+"Clear Console" = "Очистить консоль";
 
 /* clear global history menu item title */
-"Clear Global History" = "Clear Global History";
+"Clear Global History" = "Стереть всю историю";
 
 /* clear history for %@ menu title */
-"Clear History for %@" = "Clear History for %@";
+"Clear History for %@" = "Стереть историю для %@";
 
 /* clear history message */
-"Clear History?" = "Clear History?";
+"Clear History?" = "Стереть историю?";
 
 /* tooltip for toolbar item for clear console */
 "Clear the console which shows all MySQL commands performed by Sequel Ace" = "Clear the console which shows all MySQL commands performed by Sequel Ace";
 
 /* clear the document-based history list tooltip message */
-"Clear the document-based history list" = "Clear the document-based history list";
+"Clear the document-based history list" = "Очистить историю запросов, связанных с документом";
 
 /* clear the global history list tooltip message */
-"Clear the global history list" = "Clear the global history list";
+"Clear the global history list" = "Очистить всю историю запросов";
 
 /* Close menu item */
-"Close" = "Close";
+"Close" = "Закрыть";
 
 /* close tab context menu item */
-"Close Tab" = "Close Tab";
+"Close Tab" = "Закрыть вкладку";
 
 /* Close Window menu item */
-"Close Window" = "Close Window";
+"Close Window" = "Закрыть окно";
 
 /* collation label (Navigator) */
 "Collation" = "Collation";
@@ -697,7 +697,7 @@
 "collation connection: %@" = "collation connection: %@";
 
 /* comment label */
-"Comment" = "Comment";
+"Comment" = "Комментарий";
 
 /* Title of action menu item to comment line */
 "Comment Line" = "Comment Line";
@@ -706,25 +706,25 @@
 "Comment Selection" = "Comment Selection";
 
 /* connect button */
-"Connect" = "Connect";
+"Connect" = "Подключиться";
 
 /* Connect via socket button */
 "Connect via socket" = "Connect via socket";
 
 /* connection established message */
-"Connected" = "Connected";
+"Connected" = "Подключено";
 
 /* description for connected notification */
-"Connected to %@" = "Connected to %@";
+"Connected to %@" = "Подключено к %@";
 
 /* message of panel when connection to db failed */
 "Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connected to host, but unable to connect to database %1$@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %2$@";
 
 /* Generic connecting very short status message */
-"Connecting..." = "Connecting...";
+"Connecting..." = "Подключение...";
 
 /* window title string indicating that sp is connecting */
-"Connecting…" = "Connecting…";
+"Connecting…" = "Подключение…";
 
 /* error while reading connection data file */
 "Connection data file couldn't be read." = "Connection data file couldn't be read.";
@@ -742,50 +742,50 @@
 "Connection succeeded" = "Connection succeeded";
 
 /* Console */
-"Console" = "Console";
+"Console" = "Консоль";
 
 /* Console : Save as : Initial filename */
-"ConsoleLog" = "ConsoleLog";
+"ConsoleLog" = "Журнал консоли";
 
 /* toolbar item label for switching to the Table Content tab */
-"Content" = "Content";
+"Content" = "Содержимое";
 
 /* content filter clause is empty tooltip. */
 "Content Filter clause is empty." = "Content Filter clause is empty.";
 
 /* continue button
  Continue button title */
-"Continue" = "Continue";
+"Continue" = "Продолжить";
 
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
 
 /* Copy as RTF */
-"Copy as RTF" = "Copy as RTF";
+"Copy as RTF" = "Скопировать как RTF";
 
 /* copy create func syntax menu item
  Table List : Context Menu : copy CREATE FUNCTION syntax */
-"Copy Create Function Syntax" = "Copy Create Function Syntax";
+"Copy Create Function Syntax" = "Скопировать запрос создания функции";
 
 /* copy create proc syntax menu item
  Table List : Context Menu : Copy CREATE PROCEDURE syntax
  Table List : Gear Menu : Copy CREATE PROCEDURE syntax */
-"Copy Create Procedure Syntax" = "Copy Create Procedure Syntax";
+"Copy Create Procedure Syntax" = "Скопировать запрос создания процедуры";
 
 /* copy create syntaxes menu item
  Table List : Context Menu : Copy CREATE syntax (multiple selection)
  Table List : Gear Menu : Copy CREATE syntax (multiple selection) */
-"Copy Create Syntaxes" = "Copy Create Syntaxes";
+"Copy Create Syntaxes" = "Скопировать запросы создания";
 
 /* copy create table syntax menu item
  Table List : Context Menu : Copy CREATE syntax (single table)
  Table List : Gear Menu : Copy CREATE syntax (single table) */
-"Copy Create Table Syntax" = "Copy Create Table Syntax";
+"Copy Create Table Syntax" = "Скопировать запрос создания таблицы";
 
 /* copy create view syntax menu item
  Table List : Context Menu : Copy CREATE view statement
  Table List : Gear Menu : Copy CREATE view statement */
-"Copy Create View Syntax" = "Copy Create View Syntax";
+"Copy Create View Syntax" = "Скопировать запрос создания представления";
 
 /* copy server variable name menu item */
 "Copy Variable Name" = "Copy Variable Name";
@@ -803,10 +803,10 @@
 "Could not export the %@ '%@' because of a permissions error.\n" = "Could not export the %1$@ '%2$@' because of a permissions error.\n";
 
 /* Error when we can't parse/split file as CSV */
-"Could not parse file as CSV" = "Could not parse file as CSV";
+"Could not parse file as CSV" = "Не удалось разобрать CSV файл";
 
 /* message when database selection failed */
-"Could not select database" = "Could not select database";
+"Could not select database" = "Не удалось выбрать базу данных";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
 "Couldn't alter database.\nMySQL said: %@" = "Couldn't alter database.\nMySQL said: %@";
@@ -830,7 +830,7 @@
 "Couldn't delete '%@'.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nMySQL said: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Не удалось удалить '%1$@'.\n\nВыбор параметра «Принудительное удаление» может решить эту проблему, но при этом привести базу данных в рассогласованное состояние.\n\nMySQL вернул: %2$@";
 
 /* message of panel when field cannot be deleted */
 "Couldn't delete field %@.\nMySQL said: %@" = "Couldn't delete field %1$@.\nMySQL said: %2$@";
@@ -860,7 +860,7 @@
 "Couldn't read the file content of" = "Couldn't read the file content of";
 
 /* text shown if an error occurred while sorting the result table */
-"Couldn't sort column." = "Couldn't sort column.";
+"Couldn't sort column." = "Не удалось отсортировать столбец.";
 
 /* message of panel when sorting of table failed */
 "Couldn't sort table. MySQL said: %@" = "Couldn't sort table. MySQL said: %@";
@@ -882,22 +882,22 @@
 
 /* created: %@
  Table Info Section : time+date table was created at */
-"created: %@" = "created: %@";
+"created: %@" = "создана: %@";
 
 /* description of polygon */
 "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
 
 /* Creating table task string */
-"Creating %@..." = "Creating %@...";
+"Creating %@..." = "Создание %@...";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current line' item */
-"Current Line" = "Current Line";
+"Current Line" = "Текущая строка";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current query' item */
-"Current Query" = "Current Query";
+"Current Query" = "Текущий запрос";
 
 /* header for current selection in filtered list */
-"CURRENT SELECTION" = "CURRENT SELECTION";
+"CURRENT SELECTION" = "ТЕКУЩИЙ ВЫБОР";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current word' item */
 "Current Word" = "Current Word";
@@ -923,7 +923,7 @@
  export source
  Table Structure : Collation dropdown : 'item is the same as the collation of database' marker
  Table Structure : Encoding dropdown : 'item is database default' marker */
-"Database" = "Database";
+"Database" = "База данных";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
@@ -936,50 +936,50 @@
 "Database Rename Unsupported" = "Database Rename Unsupported";
 
 /* export filename date token */
-"Date" = "Date";
+"Date" = "Дата";
 
 /* export filename date token */
-"Day" = "Day";
+"Day" = "День";
 
 /* Add Table Sheet : Collation : Default (unknown)
  Collation Dropdown : Default (unknown)
  default label
  Table Structure : Collation dropdown : 'item is the same as the default collation of the row's charset' marker */
-"Default" = "Default";
+"Default" = "По умолчанию";
 
 /* Add Table : Collation : Default ($1 = collation name)
  Charset Dropdown : Default item ($1 = charset name)
  Collation Dropdown : Default ($1 = collation name)
  Collation Dropdown : Default collation for given charset ($1 = collation name)
  New Table Sheet : Table Engine Dropdown : Default */
-"Default (%@)" = "Default (%@)";
+"Default (%@)" = "По умолчанию (%@)";
 
 /* default bundles update */
 "Default Bundles Update" = "Default Bundles Update";
 
 /* import : csv field mapping : field default value */
-"Default: %@" = "Default: %@";
+"Default: %@" = "По умолчанию: %@";
 
 /* Query snippet default value placeholder */
-"default_value" = "default_value";
+"default_value" = "значение_по_умолчанию";
 
 /* definer label (Navigator) */
-"Definer" = "Definer";
+"Definer" = "Создатель";
 
 /* definer: %@ */
-"definer: %@" = "definer: %@";
+"definer: %@" = "создатель: %@";
 
 /* description of enum */
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member).";
 
 /* delete button */
-"Delete" = "Delete";
+"Delete" = "Удалить";
 
 /* delete table/view message */
 "Delete %@ '%@'?" = "Delete %1$@ '%2$@'?";
 
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
-"Delete Both" = "Delete Both";
+"Delete Both" = "Удалить оба";
 
 /* delete database message */
 "Delete database '%@'?" = "Delete database '%@'?";
@@ -988,10 +988,10 @@
 "Delete favorite '%@'?" = "Delete favorite '%@'?";
 
 /* delete field message */
-"Delete field '%@'?" = "Delete field '%@'?";
+"Delete field '%@'?" = "Удалить поле '%@'?";
 
 /* delete func menu title */
-"Delete Function" = "Delete Function";
+"Delete Function" = "Удалить функцию";
 
 /* delete functions menu title */
 "Delete Functions" = "Delete Functions";
@@ -1003,7 +1003,7 @@
 "Delete index '%@'?" = "Delete index '%@'?";
 
 /* delete items menu title */
-"Delete Items" = "Delete Items";
+"Delete Items" = "Удалить элементы";
 
 /* delete proc menu title */
 "Delete Procedure" = "Delete Procedure";
@@ -1012,49 +1012,49 @@
 "Delete Procedures" = "Delete Procedures";
 
 /* delete relation menu item */
-"Delete Relation" = "Delete Relation";
+"Delete Relation" = "Удалить связь";
 
 /* delete relation message */
-"Delete relation" = "Delete relation";
+"Delete relation" = "Удаление связи";
 
 /* delete relations menu item */
-"Delete Relations" = "Delete Relations";
+"Delete Relations" = "Удалить связь";
 
 /* delete row menu item singular */
-"Delete Row" = "Delete Row";
+"Delete Row" = "Удалить строку";
 
 /* delete rows menu item plural */
-"Delete Rows" = "Delete Rows";
+"Delete Rows" = "Удалить строки";
 
 /* delete rows message */
-"Delete rows?" = "Delete rows?";
+"Delete rows?" = "Удалить строки?";
 
 /* delete tables/views message */
 "Delete selected %@?" = "Delete selected %@?";
 
 /* delete selected row message */
-"Delete selected row?" = "Delete selected row?";
+"Delete selected row?" = "Удалить выбранную строку?";
 
 /* delete table menu title */
-"Delete Table..." = "Delete Table...";
+"Delete Table..." = "Удалить таблицу...";
 
 /* delete tables menu title */
-"Delete Tables" = "Delete Tables";
+"Delete Tables" = "Удалить таблицы";
 
 /* delete trigger menu item */
-"Delete Trigger" = "Delete Trigger";
+"Delete Trigger" = "Удалить триггер";
 
 /* delete trigger message */
-"Delete trigger" = "Delete trigger";
+"Delete trigger" = "Удаление триггера";
 
 /* delete triggers menu item */
-"Delete Triggers" = "Delete Triggers";
+"Delete Triggers" = "Удалить триггеры";
 
 /* delete view menu title */
-"Delete View" = "Delete View";
+"Delete View" = "Удалить представление";
 
 /* delete views menu title */
-"Delete Views" = "Delete Views";
+"Delete Views" = "Удалить представления";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
 "Disabled Cipher Suites" = "Disabled Cipher Suites";
@@ -1063,10 +1063,10 @@
 "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.";
 
 /* discard changes button */
-"Discard changes" = "Discard changes";
+"Discard changes" = "Откатить изменения";
 
 /* description for disconnected notification */
-"Disconnected from %@" = "Disconnected from %@";
+"Disconnected from %@" = "Отключено от %@";
 
 /* do update operator tooltip */
 "Do UPDATE where field contents match" = "Do UPDATE where field contents match";
@@ -1087,7 +1087,7 @@
 "Dump of table" = "Dump of table";
 
 /* text showing that app is writing dump */
-"Dumping..." = "Dumping...";
+"Dumping..." = "Запись дампа...";
 
 /* duplicate object message */
 "Duplicate %@ '%@' to:" = "Duplicate %1$@ '%2$@' to:";
@@ -1105,7 +1105,7 @@
 "Duplicate Table..." = "Duplicate Table...";
 
 /* duplicate user message */
-"Duplicate User" = "Duplicate User";
+"Duplicate User" = "Дублировать пользователя";
 
 /* duplicate view menu title */
 "Duplicate View..." = "Duplicate View...";
@@ -1114,10 +1114,10 @@
 "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
 
 /* edit filter */
-"Edit Filters…" = "Edit Filters…";
+"Edit Filters…" = "Редактировать фильтры…";
 
 /* Edit row button */
-"Edit row" = "Edit row";
+"Edit row" = "Изменить строку";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Edit Table Structure" = "Edit Table Structure";
@@ -1129,22 +1129,22 @@
 "Edit user-defined Filters…" = "Edit user-defined Filters…";
 
 /* empty query message */
-"Empty query" = "Empty query";
+"Empty query" = "Пустой запрос";
 
 /* MySQL search language code - eg in http://search.mysql.com/search?q=select&site=refman-50&lr=lang_en */
 "en" = "en";
 
 /* encoding label (Navigator) */
-"Encoding" = "Encoding";
+"Encoding" = "Кодировка";
 
 /* Table Info Section : $1 = table charset */
-"encoding: %1$@" = "encoding: %1$@";
+"encoding: %1$@" = "кодировка: %1$@";
 
 /* Table Info Section : $1 = table charset, $2 = table collation */
-"encoding: %1$@ (%2$@)" = "encoding: %1$@ (%2$@)";
+"encoding: %1$@ (%2$@)" = "кодировка: %1$@ (%2$@)";
 
 /* Table Info Section : Table Engine */
-"engine: %@" = "engine: %@";
+"engine: %@" = "движок: %@";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "Enter connection details below, or choose a favorite";
@@ -1154,11 +1154,11 @@
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
-"Entire Content" = "Entire Content";
+"Entire Content" = "Всё содержимое";
 
 /* Bundle Editor : Copy-Command-Error : error dialog title
  error */
-"Error" = "Error";
+"Error" = "Ошибка";
 
 /* error adding field message */
 "Error adding field" = "Error adding field";
@@ -1194,7 +1194,7 @@
 "Error creating trigger" = "Error creating trigger";
 
 /* error for message */
-"Error for" = "Error for";
+"Error for" = "Ошибка для";
 
 /* error for bash command ($1), $2=message */
 "Error for “%1$@”:\n%2$@" = "Error for “%1$@”:\n%2$@";
@@ -1203,7 +1203,7 @@
 "Error moving field" = "Error moving field";
 
 /* error occurred */
-"error occurred" = "error occurred";
+"error occurred" = "произошла ошибка";
 
 /* error reading import file */
 "Error reading import file." = "Error reading import file.";
@@ -1293,13 +1293,13 @@
 "Error while saving the Bundle." = "Error while saving the Bundle.";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
-"Error while saving %@." = "Error while saving %@.";
+"Error while saving %@." = "Ошибка при сохранении %@.";
 
 /* Errors title */
-"Errors" = "Errors";
+"Errors" = "Ошибки";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
-"Example:" = "Example:";
+"Example:" = "Пример:";
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclude BLOB";
@@ -1326,19 +1326,19 @@
 "Exporting SQL" = "Exporting SQL";
 
 /* extra label (Navigator) */
-"Extra" = "Extra";
+"Extra" = "Доп.";
 
 /* table structure : indexes : delete index : no columns error : title */
 "Failed to remove index '%@'" = "Failed to remove index '%@'";
 
 /* fatal error */
-"Fatal Error" = "Fatal Error";
+"Fatal Error" = "Критическая ошибка";
 
 /* export filename favorite name token */
-"Favorite" = "Favorite";
+"Favorite" = "Избранное";
 
 /* favorites label */
-"Favorites" = "Favorites";
+"Favorites" = "Избранное";
 
 /* favorites export error message */
 "Favorites export error" = "Favorites export error";
@@ -1359,10 +1359,10 @@
 "fetching table data…" = "fetching table data…";
 
 /* popup menuitem for field (showing only if disabled) */
-"field" = "field";
+"field" = "поле";
 
 /* Field */
-"Field" = "Field";
+"Field" = "Поле";
 
 /* Query result editing error - could not match row being edited uniquely */
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
@@ -1387,7 +1387,7 @@
 "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
 
 /* filter label */
-"Filter" = "Filter";
+"Filter" = "Отфильтровать";
 
 /* filter tables menu item */
 "Filter Tables" = "Filter Tables";
@@ -1399,28 +1399,28 @@
 "Filtering failed. Please try again." = "Filtering failed. Please try again.";
 
 /* Filtering table task description */
-"Filtering table..." = "Filtering table...";
+"Filtering table..." = "Фильтрация таблицы...";
 
 /* description for finished exporting notification */
-"Finished exporting to %@" = "Finished exporting to %@";
+"Finished exporting to %@" = "Экспорт в %@ завершён";
 
 /* description for finished importing notification */
-"Finished importing %@" = "Finished importing %@";
+"Finished importing %@" = "Импорт %@ завершён";
 
 /* FLUSH one or more tables - result title */
-"Flush %@" = "Flush %@";
+"Flush %@" = "Очистка %@";
 
 /* flush selected items menu item */
-"Flush Selected Items" = "Flush Selected Items";
+"Flush Selected Items" = "Очистить выбранные элементы";
 
 /* flush table menu item */
-"Flush Table" = "Flush Table";
+"Flush Table" = "Очистить таблицу";
 
 /* flush table failed message */
-"Flush table failed." = "Flush table failed.";
+"Flush table failed." = "Сбой очистки таблицы.";
 
 /* flush view menu item */
-"Flush View" = "Flush View";
+"Flush View" = "Очистить представление";
 
 /* title of panel when successfully flushed privs */
 "Flushed Privileges" = "Flushed Privileges";
@@ -1435,21 +1435,21 @@
 "FULLTEXT" = "FULLTEXT";
 
 /* function */
-"function" = "function";
+"function" = "функция";
 
 /* header for function info pane */
 "FUNCTION INFORMATION" = "FUNCTION INFORMATION";
 
 /* functions */
-"functions" = "functions";
+"functions" = "функции";
 
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
  general preference pane name */
-"General" = "General";
+"General" = "Основные";
 
 /* general preference pane tooltip */
-"General Preferences" = "General Preferences";
+"General Preferences" = "Основные настройки";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
 "General Scope\ncommands will run application-wide" = "General Scope\ncommands will run application-wide";
@@ -1477,20 +1477,20 @@
 "Help topics for %@" = "Help topics for %@";
 
 /* hide console */
-"Hide Console" = "Hide Console";
+"Hide Console" = "Скрыть консоль";
 
 /* hide navigator */
-"Hide Navigator" = "Hide Navigator";
+"Hide Navigator" = "Скрыть Навигатор";
 
 /* hide tab bar */
-"Hide Tab Bar" = "Hide Tab Bar";
+"Hide Tab Bar" = "Скрыть панель вкладок";
 
 /* Hide Toolbar menu item */
-"Hide Toolbar" = "Hide Toolbar";
+"Hide Toolbar" = "Скрыть панель инструментов";
 
 /* export filename host token
  export header host label */
-"Host" = "Host";
+"Host" = "Хост";
 
 /* Localized help page for query favourites - do not localize if no translated webpage is available */
 "http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
@@ -1502,10 +1502,10 @@
 "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
 
 /* ignore button */
-"Ignore" = "Ignore";
+"Ignore" = "Пропустить";
 
 /* ignore errors button */
-"Ignore All Errors" = "Ignore All Errors";
+"Ignore All Errors" = "Игнорировать все ошибки";
 
 /* ignore all fields menu item */
 "Ignore all Fields" = "Ignore all Fields";
@@ -1514,13 +1514,13 @@
 "Ignore field" = "Ignore field";
 
 /* ignore field label */
-"Ignore Field" = "Ignore Field";
+"Ignore Field" = "Игнорировать поле";
 
 /* import button */
-"Import" = "Import";
+"Import" = "Импорт";
 
 /* import all fields menu item */
-"Import all Fields" = "Import all Fields";
+"Import all Fields" = "Импорт всех полей";
 
 /* sql import : charset error alert : continue button */
 "Import Anyway" = "Import Anyway";
@@ -1565,14 +1565,14 @@
 "Incompatible encoding in SQL file" = "Incompatible encoding in SQL file";
 
 /* header for blank info pane */
-"INFORMATION" = "INFORMATION";
+"INFORMATION" = "ИНФОРМАЦИЯ";
 
 /* New Table Sheet : Table Collation Dropdown : Default inherited from database
  New Table Sheet : Table Encoding Dropdown : Default inherited from database */
 "Inherit from database (%@)" = "Inherit from database (%@)";
 
 /* initializing export label */
-"Initializing..." = "Initializing...";
+"Initializing..." = "Инициализация...";
 
 /* Bundle Editor : Scope dropdown : 'input field' item
  input field menu item label */
@@ -1588,10 +1588,10 @@
 "Input Field Scope\ncommands will run on each text input field" = "Input Field Scope\ncommands will run on each text input field";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
-"Insert as Snippet" = "Insert as Snippet";
+"Insert as Snippet" = "Вставить как сниппет";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as text' item */
-"Insert as Text" = "Insert as Text";
+"Insert as Text" = "Вставить как текст";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item : tooltip */
 "Installed Bundles" = "Installed Bundles";
@@ -1627,13 +1627,13 @@
 "Is Deterministic" = "Is Deterministic";
 
 /* is nullable label (Navigator) */
-"Is Nullable" = "Is Nullable";
+"Is Nullable" = "NULL разрешён";
 
 /* is updatable: %@ */
 "is updatable: %@" = "is updatable: %@";
 
 /* items */
-"items" = "items";
+"items" = "элементы";
 
 /* javascript exception */
 "JavaScript Exception" = "JavaScript Exception";
@@ -1642,37 +1642,37 @@
 "JavaScript Parsing Error" = "JavaScript Parsing Error";
 
 /* key label (Navigator) */
-"Key" = "Key";
+"Key" = "Ключ";
 
 /* keyword label for color table (Prefs > Editor) */
-"Keyword" = "Keyword";
+"Keyword" = "Ключевое слово";
 
 /* kill button */
-"Kill" = "Kill";
+"Kill" = "Завершить принудительно";
 
 /* kill connection message */
 "Kill connection?" = "Kill connection?";
 
 /* kill query message */
-"Kill query?" = "Kill query?";
+"Kill query?" = "Принудительно завершить запрос?";
 
 /* Last Error Message */
 "Last Error Message" = "Last Error Message";
 
 /* Last Used entry in favorites menu */
-"Last Used" = "Last Used";
+"Last Used" = "Выполнялся";
 
 /* range for json type */
 "Limited to @@max_allowed_packet" = "Limited to @@max_allowed_packet";
 
 /* Loading table task string */
-"Loading %@..." = "Loading %@...";
+"Loading %@..." = "Загрузка %@...";
 
 /* Loading database task string */
 "Loading database '%@'..." = "Loading database '%@'...";
 
 /* Loading history entry task desc */
-"Loading history entry..." = "Loading history entry...";
+"Loading history entry..." = "Загрузка записи истории...";
 
 /* Loading table page task string */
 "Loading page %lu..." = "Loading page %lu...";
@@ -1734,25 +1734,25 @@
 "Maximum text length is set to %llu. Inserted text was truncated." = "Maximum text length is set to %llu. Inserted text was truncated.";
 
 /* message column title */
-"Message" = "Message";
+"Message" = "Сообщение";
 
 /* mgtemplateengine error */
-"MGTemplateEngine Error" = "MGTemplateEngine Error";
+"MGTemplateEngine Error" = "Ошибка MGTemplateEngine";
 
 /* export filename date token */
-"Month" = "Month";
+"Month" = "Месяц";
 
 /* multiple selection */
-"multiple selection" = "multiple selection";
+"multiple selection" = "множественный выбор";
 
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "MySQL connecting...";
 
 /* mysql error message */
-"MySQL Error" = "MySQL Error";
+"MySQL Error" = "Ошибка MySQL";
 
 /* mysql help */
-"MySQL Help" = "MySQL Help";
+"MySQL Help" = "Справка по MySQL";
 
 /* MySQL Help for Selection */
 "MySQL Help for Selection" = "MySQL Help for Selection";
@@ -1764,25 +1764,25 @@
 "MySQL Help – Categories" = "MySQL Help – Categories";
 
 /* mysql said message */
-"MySQL said:" = "MySQL said:";
+"MySQL said:" = "MySQL вернул:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL said:\n%@";
+"MySQL said:\n%@" = "MySQL вернул:\n%@";
 
 /* message of panel when error while adding row to db */
 "MySQL said:\n\n%@" = "MySQL said:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
-"MyTheme" = "MyTheme";
+"MyTheme" = "МояTема";
 
 /* network preference pane name */
-"Network" = "Network";
+"Network" = "Сеть";
 
 /* network preference pane tooltip */
-"Network Preferences" = "Network Preferences";
+"Network Preferences" = "Настройки сети";
 
 /* file preference pane name */
-"Files" = "Files";
+"Files" = "Файлы";
 
 /* file preference pane tooltip */
 "File Preferences" = "File Preferences";
@@ -1791,28 +1791,28 @@
 "New Bundle" = "New Bundle";
 
 /* new column name placeholder string */
-"New Column Name" = "New Column Name";
+"New Column Name" = "Имя нового столбца";
 
 /* new favorite name */
 "New Favorite" = "New Favorite";
 
 /* Content Filter Manager : Initial name for new filter */
-"New Filter" = "New Filter";
+"New Filter" = "Новый фильтр";
 
 /* new folder placeholder name */
-"New Folder" = "New Folder";
+"New Folder" = "Новая папка";
 
 /* Bundle Editor : Default name for a new bundle in the menu */
-"New Name" = "New Name";
+"New Name" = "Новое имя";
 
 /* new table menu item */
-"New Table" = "New Table";
+"New Table" = "Новая таблица";
 
 /* error that no color theme found */
 "No color theme data found." = "No color theme data found.";
 
 /* No compression export summary - within a sentence */
-"no compression" = "no compression";
+"no compression" = "без сжатия";
 
 /* no connection available message */
 "No connection available" = "No connection available";
@@ -1824,10 +1824,10 @@
 "No content filters found." = "No content filters found.";
 
 /* no data found */
-"No data found." = "No data found.";
+"No data found." = "Данные не найдены.";
 
 /* No errors title */
-"No errors" = "No errors";
+"No errors" = "Без ошибок";
 
 /* No favorites entry in favorites menu */
 "No Favorties" = "No Favorties";
@@ -1842,7 +1842,7 @@
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
 
 /* header for no matches in filtered list */
-"NO MATCHES" = "NO MATCHES";
+"NO MATCHES" = "НЕТ СОВПАДЕНИЙ";
 
 /* no optimized field type found. message */
 "No optimized field type found." = "No optimized field type found.";
@@ -1851,7 +1851,7 @@
 "No query favorites found." = "No query favorites found.";
 
 /* Mysql Help Viewer : Search : No results */
-"No results found." = "No results found.";
+"No results found." = "Ничего не найдено.";
 
 /* Bundle Editor : Fallback Input source dropdown : 'none' item
  Bundle Editor : Scope=? : ? dropdown: 'None' item
@@ -1865,16 +1865,16 @@
  Bundle Editor : Scope=General : Output dropdown : 'none' item
  Bundle Editor : Scope=General : Trigger dropdown : 'none' item
  compression: none */
-"None" = "None";
+"None" = "Нет";
 
 /* not available label */
-"Not available" = "Not available";
+"Not available" = "Недоступно";
 
 /* Argument count (ContentFilterManager) */
 "Number of arguments: %lu" = "Number of arguments: %lu";
 
 /* numeric label for color table (Prefs > Editor) */
-"Numeric" = "Numeric";
+"Numeric" = "Числа";
 
 /* Bundle Editor : Copy-Command-Error : OK button
  Bundle Editor : Save-and-Close-Error : OK button
@@ -1886,7 +1886,7 @@
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
-"OK" = "OK";
+"OK" = "ОК";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
 "One additional row was removed!" = "One additional row was removed!";
@@ -1908,7 +1908,7 @@
 "Open Function in New Window" = "Open Function in New Window";
 
 /* open connection in new tab context menu item */
-"Open in New Tab" = "Open in New Tab";
+"Open in New Tab" = "Открыть в новой вкладке";
 
 /* menu item open in new window */
 "Open in New Window" = "Open in New Window";
@@ -1940,13 +1940,13 @@
 "Open %@ in New Window" = "Open %@ in New Window";
 
 /* OPTIMIZE one or more tables - result title */
-"Optimize %@" = "Optimize %@";
+"Optimize %@" = "Оптимизировать %@";
 
 /* optimize selected items menu item */
 "Optimize Selected Items" = "Optimize Selected Items";
 
 /* optimize table menu item */
-"Optimize Table" = "Optimize Table";
+"Optimize Table" = "Оптимизировать таблицу";
 
 /* optimize table failed message */
 "Optimize table failed." = "Optimize table failed.";
@@ -1955,7 +1955,7 @@
 "Optimized type for field '%@'" = "Optimized type for field '%@'";
 
 /* optional placeholder string */
-"optional" = "optional";
+"optional" = "необязательно";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
@@ -1973,46 +1973,46 @@
 "Please enter the password for ‘%@’:" = "Please enter the password for ‘%@’:";
 
 /* print button */
-"Print" = "Print";
+"Print" = "Напечатать";
 
 /* print page menu item title */
-"Print Page…" = "Print Page…";
+"Print Page…" = "Напечатать страницу…";
 
 /* privileges label (Navigator) */
-"Privileges" = "Privileges";
+"Privileges" = "Права";
 
 /* procedure */
-"procedure" = "procedure";
+"procedure" = "процедура";
 
 /* header for procedure info pane */
 "PROCEDURE INFORMATION" = "PROCEDURE INFORMATION";
 
 /* procedures */
-"procedures" = "procedures";
+"procedures" = "процедуры";
 
 /* proceed button */
-"Proceed" = "Proceed";
+"Proceed" = "Продолжить";
 
 /* header for procs & funcs list */
-"PROCS & FUNCS" = "PROCS & FUNCS";
+"PROCS & FUNCS" = "ПРОЦЕДУРЫ И ФУНКЦИИ";
 
 /* toolbar item label for switching to the Run Query tab */
-"Query" = "Query";
+"Query" = "Запрос";
 
 /* query background label for color table (Prefs > Editor) */
-"Query Background" = "Query Background";
+"Query Background" = "Фон запроса";
 
 /* Query cancelled error */
-"Query cancelled." = "Query cancelled.";
+"Query cancelled." = "Запрос отменён.";
 
 /* Query cancel by resetting connection error */
 "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset.";
 
 /* query editor preference pane name */
-"Query Editor" = "Query Editor";
+"Query Editor" = "Редактор запросов";
 
 /* query editor preference pane tooltip */
-"Query Editor Preferences" = "Query Editor Preferences";
+"Query Editor Preferences" = "Настройки редактора запроса";
 
 /* query logging currently disabled label
  query logging disabled label */
@@ -2022,7 +2022,7 @@
 "Query Result" = "Query Result";
 
 /* export source */
-"Query results" = "Query results";
+"Query results" = "Результаты запроса";
 
 /* Query Status */
 "Query Status" = "Query Status";
@@ -2031,10 +2031,10 @@
 "Querying row count failed" = "Querying row count failed";
 
 /* Quick connect item label */
-"Quick Connect" = "Quick Connect";
+"Quick Connect" = "Быстрое подключение";
 
 /* quote label for color table (Prefs > Editor) */
-"Quote" = "Quote";
+"Quote" = "Кавычки";
 
 /* databsse rename unsupported informative message */
 "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
@@ -2061,7 +2061,7 @@
 "Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)";
 
 /* text showing that app is reading dump */
-"Reading..." = "Reading...";
+"Reading..." = "Чтение...";
 
 /* menu item to refresh databases */
 "Refresh Databases" = "Refresh Databases";
@@ -2070,16 +2070,16 @@
 "Refresh List" = "Refresh List";
 
 /* toolbar item label for switching to the Table Relations tab */
-"Relations" = "Relations";
+"Relations" = "Связи";
 
 /* Relations tab subtitle showing table name */
-"Relations for table: %@" = "Relations for table: %@";
+"Relations for table: %@" = "Связи таблицы: %@";
 
 /* reload bundles menu item label */
 "Reload Bundles" = "Reload Bundles";
 
 /* Reloading data task description */
-"Reloading data..." = "Reloading data...";
+"Reloading data..." = "Перезагрузка данных...";
 
 /* Reloading table task string */
 "Reloading..." = "Reloading...";
@@ -2089,10 +2089,10 @@
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
-"Remove" = "Remove";
+"Remove" = "Удалить";
 
 /* remove all button */
-"Remove All" = "Remove All";
+"Remove All" = "Удалить все";
 
 /* remove all query favorites message */
 "Remove all query favorites?" = "Remove all query favorites?";
@@ -2113,34 +2113,34 @@
 "Removing index..." = "Removing index...";
 
 /* rename database message */
-"Rename database '%@' to:" = "Rename database '%@' to:";
+"Rename database '%@' to:" = "Переименовать базу данных '%@' в:";
 
 /* rename func menu title */
-"Rename Function..." = "Rename Function...";
+"Rename Function..." = "Переименовать функцию...";
 
 /* rename proc menu title */
-"Rename Procedure..." = "Rename Procedure...";
+"Rename Procedure..." = "Переименовать процедуру...";
 
 /* rename table menu title */
-"Rename Table..." = "Rename Table...";
+"Rename Table..." = "Переименовать таблицу...";
 
 /* rename view menu title */
-"Rename View..." = "Rename View...";
+"Rename View..." = "Переименовать представление...";
 
 /* REPAIR one or more tables - result title */
-"Repair %@" = "Repair %@";
+"Repair %@" = "Исправление %@";
 
 /* repair selected items menu item */
 "Repair Selected Items" = "Repair Selected Items";
 
 /* repair table menu item */
-"Repair Table" = "Repair Table";
+"Repair Table" = "Исправить таблицу";
 
 /* repair table failed message */
 "Repair table failed." = "Repair table failed.";
 
 /* Replace button */
-"Replace" = "Replace";
+"Replace" = "Заменить";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace entire content' item */
 "Replace Entire Content" = "Replace Entire Content";
@@ -2152,7 +2152,7 @@
 "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
 
 /* description of multilinestring */
-"Represents a collection of LineStrings." = "Represents a collection of LineStrings.";
+"Represents a collection of LineStrings." = "Представляет собой коллекцию LineStrings.";
 
 /* description of geometrycollection */
 "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.";
@@ -2170,7 +2170,7 @@
 "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line.";
 
 /* required placeholder string */
-"required" = "required";
+"required" = "требуется";
 
 /* description of smallint */
 "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range.";
@@ -2191,64 +2191,64 @@
 "Delete Selected Row" = "Delete Selected Row";
 
 /* delete selected rows button */
-"Delete Selected Rows" = "Delete Selected Rows";
+"Delete Selected Rows" = "Удалить выбранные строки";
 
 /* delete all rows in table button */
 "Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
 /* Restoring session task description */
-"Restoring session..." = "Restoring session...";
+"Restoring session..." = "Восстановление сессии...";
 
 /* return type label (Navigator) */
-"Return Type" = "Return Type";
+"Return Type" = "Возвращаемый тип";
 
 /* return type: %@ */
-"return type: %@" = "return type: %@";
+"return type: %@" = "взвращаемый тип: %@";
 
 /* singular word for row */
-"row" = "row";
+"row" = "строка";
 
 /* plural word for rows */
-"rows" = "rows";
+"rows" = "строки";
 
 /* text showing how many rows are in the limited filter match */
 "Rows %@ - %@ from filtered matches" = "Rows %1$@ - %2$@ from filtered matches";
 
 /* text showing how many rows are in the limited result */
-"Rows %@ - %@ of %@%@ from table" = "Rows %1$@ - %2$@ of %3$@%4$@ from table";
+"Rows %@ - %@ of %@%@ from table" = "Строки %1$@ - %2$@ из %3$@%4$@ из таблицы";
 
 /* Table Info Section : number of rows (exact value) */
-"rows: %@" = "rows: %@";
+"rows: %@" = "строк: %@";
 
 /* Table Info Section : number of rows (estimated value) */
-"rows: ~%@" = "rows: ~%@";
+"rows: ~%@" = "строк: ~%@";
 
 /* run all button */
-"Run All" = "Run All";
+"Run All" = "Выполнить все";
 
 /* Run All menu item title */
-"Run All Queries" = "Run All Queries";
+"Run All Queries" = "Выполнить все запросы";
 
 /* Title of button to run current query in custom query view */
-"Run Current" = "Run Current";
+"Run Current" = "Выполнить текущий";
 
 /* Title of action menu item to run current query in custom query view */
-"Run Current Query" = "Run Current Query";
+"Run Current Query" = "Выполнить текущий запрос";
 
 /* toolbar item label for switching to the Run Query tab */
 "Run Custom Query" = "Run Custom Query";
 
 /* Title of button to run query just before text caret in custom query view */
-"Run Previous" = "Run Previous";
+"Run Previous" = "Выполнить предыдущий";
 
 /* Title of action menu item to run query just before text caret in custom query view */
-"Run Previous Query" = "Run Previous Query";
+"Run Previous Query" = "Выполнить предыдущий запрос";
 
 /* Title of action menu item to run selected text in custom query view */
-"Run Selected Text" = "Run Selected Text";
+"Run Selected Text" = "Выполнить выбранный текст";
 
 /* Title of button to run selected text in custom query view */
-"Run Selection" = "Run Selection";
+"Run Selection" = "Выполнить выделенное";
 
 /* Running multiple queries string */
 "Running query %i of %lu..." = "Running query %1$i of %2$lu...";
@@ -2257,16 +2257,16 @@
 "Running query %ld of %lu..." = "Running query %1$ld of %2$lu...";
 
 /* Running single query string */
-"Running query..." = "Running query...";
+"Running query..." = "Выполнение запроса...";
 
 /* Save trigger button label */
-"Save" = "Save";
+"Save" = "Сохранить";
 
 /* Save All to Favorites */
-"Save All to Favorites" = "Save All to Favorites";
+"Save All to Favorites" = "Сохранить все в Избранное";
 
 /* save as button title */
-"Save As..." = "Save As...";
+"Save As..." = "Сохранить как...";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as dat file' item */
 "save BLOB as dat file" = "save BLOB as dat file";
@@ -2275,22 +2275,22 @@
 "save BLOB as image file" = "save BLOB as image file";
 
 /* Save Current Query to Favorites */
-"Save Current Query to Favorites" = "Save Current Query to Favorites";
+"Save Current Query to Favorites" = "Сохранить текущий запрос в Избранное";
 
 /* save page as menu item title */
-"Save Page As…" = "Save Page As…";
+"Save Page As…" = "Сохранить страницу как…";
 
 /* Save Queries… */
-"Save Queries…" = "Save Queries…";
+"Save Queries…" = "Сохранить запросы…";
 
 /* Save Query… */
-"Save Query…" = "Save Query…";
+"Save Query…" = "Сохранить запрос…";
 
 /* Save Selection to Favorites */
-"Save Selection to Favorites" = "Save Selection to Favorites";
+"Save Selection to Favorites" = "Сохранить выделенное в Избранное";
 
 /* save view as button title */
-"Save View As..." = "Save View As...";
+"Save View As..." = "Сохранить представление как...";
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
@@ -2305,10 +2305,10 @@
 "Select Active Query" = "Select Active Query";
 
 /* toolbar item for selecting a db */
-"Select Database" = "Select Database";
+"Select Database" = "Выберите базу данных";
 
 /* selected items */
-"selected items" = "selected items";
+"selected items" = "выбранные элементы";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "Selected Rows (CSV)";
@@ -2320,10 +2320,10 @@
 "Selected Rows (TSV)" = "Selected Rows (TSV)";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
-"Selected Text" = "Selected Text";
+"Selected Text" = "Выбранный текст";
 
 /* selection label for color table (Prefs > Editor) */
-"Selection" = "Selection";
+"Selection" = "Выделенное";
 
 /* table structure : indexes : delete index : no columns error : description */
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
@@ -2339,7 +2339,7 @@
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
-"Server" = "Server";
+"Server" = "Сервер";
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
@@ -2349,12 +2349,12 @@
 "Server Processes on %@" = "Server Processes on %@";
 
 /* Initial filename for 'Save session' file */
-"Session" = "Session";
+"Session" = "Сессия";
 
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as html' item
  Bundle Editor : Scope=General : Output dropdown : 'show as html' item */
-"Show as HTML" = "Show as HTML";
+"Show as HTML" = "Показать как HTML";
 
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html tooltip' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as html tooltip' item
@@ -2367,46 +2367,46 @@
 "Show as Text Tooltip" = "Show as Text Tooltip";
 
 /* show console */
-"Show Console" = "Show Console";
+"Show Console" = "Открыть консоль";
 
 /* show create func syntax menu item */
-"Show Create Function Syntax..." = "Show Create Function Syntax...";
+"Show Create Function Syntax..." = "Показать запрос создания функции...";
 
 /* show create proc syntax menu item */
-"Show Create Procedure Syntax..." = "Show Create Procedure Syntax...";
+"Show Create Procedure Syntax..." = "Показать запрос создания процедуры...";
 
 /* show create syntaxes menu item */
-"Show Create Syntaxes..." = "Show Create Syntaxes...";
+"Show Create Syntaxes..." = "Показать запросы создания...";
 
 /* show create table syntax menu item */
-"Show Create Table Syntax..." = "Show Create Table Syntax...";
+"Show Create Table Syntax..." = "Показать запрос создания таблицы...";
 
 /* show create view syntax menu item */
-"Show Create View Syntax..." = "Show Create View Syntax...";
+"Show Create View Syntax..." = "Показать запрос создания представления...";
 
 /* Show detail button */
-"Show Detail" = "Show Detail";
+"Show Detail" = "Показать сведения";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
 "Show MySQL help for %@" = "Show MySQL help for %@";
 
 /* show navigator */
-"Show Navigator" = "Show Navigator";
+"Show Navigator" = "Показать Навигатор";
 
 /* show tab bar */
-"Show Tab Bar" = "Show Tab Bar";
+"Show Tab Bar" = "Показывать панель вкладок";
 
 /* tooltip for toolbar item for show console */
 "Show the console which shows all MySQL commands performed by Sequel Ace" = "Show the console which shows all MySQL commands performed by Sequel Ace";
 
 /* Show Toolbar menu item */
-"Show Toolbar" = "Show Toolbar";
+"Show Toolbar" = "Показать панель инструментов";
 
 /* filtered item count */
 "Showing %lu of %lu processes" = "Showing %1$lu of %2$lu processes";
 
 /* shutdown server : confirmation dialog : shutdown button */
-"Shutdown" = "Shutdown";
+"Shutdown" = "Выключить";
 
 /* shutdown server : error dialog : title */
 "Shutdown failed!" = "Shutdown failed!";
@@ -2415,16 +2415,16 @@
 "Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
 
 /* Table Info Section : table size on disk */
-"size: %@" = "size: %@";
+"size: %@" = "размер: %@";
 
 /* skip existing button */
-"Skip existing" = "Skip existing";
+"Skip existing" = "Пропустить существующий";
 
 /* skip problems button */
-"Skip problems" = "Skip problems";
+"Skip problems" = "Проигнорировать проблемы";
 
 /* beta build label */
-"Beta Build" = "Beta Build";
+"Beta Build" = "Предварительная версия";
 
 /* socket connection failed title */
 "Socket connection failed!" = "Socket connection failed!";
@@ -2439,7 +2439,7 @@
 "Some of the target export folders no longer exist.  Please select a new export location and try again." = "Some of the target export folders no longer exist.  Please select a new export location and try again.";
 
 /* Sorting table task description */
-"Sorting table..." = "Sorting table...";
+"Sorting table..." = "Сортировка таблицы...";
 
 /* spatial index menu item title */
 "SPATIAL" = "SPATIAL";
@@ -2448,7 +2448,7 @@
 "SQL Data Access" = "SQL Data Access";
 
 /* SSH connected titlebar marker */
-"SSH Connected" = "SSH Connected";
+"SSH Connected" = "SSH подключён";
 
 /* SSH connecting very short status message */
 "SSH connecting..." = "SSH connecting...";
@@ -2484,19 +2484,19 @@
 "Standard memory" = "Standard memory";
 
 /* started */
-"started" = "started";
+"started" = "запущено";
 
 /* status file for sequelace url scheme command couldn't be written error message */
 "Status file for sequelace url scheme command couldn't be written!" = "Status file for sequelace url scheme command couldn't be written!";
 
 /* stop button */
-"Stop" = "Stop";
+"Stop" = "Стоп";
 
 /* Stop queries string */
 "Stop queries" = "Stop queries";
 
 /* Stop query string */
-"Stop query" = "Stop query";
+"Stop query" = "Остановить запрос";
 
 /* description of timestamp */
 "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.";
@@ -2511,7 +2511,7 @@
 "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
 
 /* toolbar item label for switching to the Table Structure tab */
-"Structure" = "Structure";
+"Structure" = "Структура";
 
 /* successfully analyzed all selected items message */
 "Successfully analyzed all selected items." = "Successfully analyzed all selected items.";
@@ -2550,7 +2550,7 @@
 "Switch to the Table Info tab" = "Switch to the Table Info tab";
 
 /* tooltip for toolbar item for switching to the Table Relations tab */
-"Switch to the Table Relations tab" = "Switch to the Table Relations tab";
+"Switch to the Table Relations tab" = "Переключиться на вкладку связей таблицы";
 
 /* tooltip for toolbar item for switching to the Table Structure tab */
 "Switch to the Table Structure tab" = "Switch to the Table Structure tab";
@@ -2562,16 +2562,16 @@
 "Switch to the User Manager tab" = "Switch to the User Manager tab";
 
 /* description for table syntax copied notification */
-"Syntax for %@ table copied" = "Syntax for %@ table copied";
+"Syntax for %@ table copied" = "Запрос создания для таблицы %@ скопирован";
 
 /* table */
-"table" = "table";
+"table" = "таблица";
 
 /* csv export table heading
  table
  Table Structure : Collation dropdown : 'item is the same as the collation of table' marker
  Table Structure : Encoding dropdown : 'item is table default' marker */
-"Table" = "Table";
+"Table" = "Таблица";
 
 /* export label showing that the app is fetching data for a specific table */
 "Table %lu of %lu (%@): Fetching data..." = "Table %1$lu of %2$lu (%3$@): Fetching data...";
@@ -2584,16 +2584,16 @@
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'table changed' item */
-"Table changed" = "Table changed";
+"Table changed" = "Таблица изменена";
 
 /* table checksum message */
-"Table checksum" = "Table checksum";
+"Table checksum" = "Контрольная сумма таблицы";
 
 /* table checksum: %@ */
 "Table checksum: %@" = "Table checksum: %@";
 
 /* table content print heading */
-"Table Content" = "Table Content";
+"Table Content" = "Содержимое таблицы";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "Table Content (CSV)";
@@ -2605,13 +2605,13 @@
 "Table Content (TSV)" = "Table Content (TSV)";
 
 /* toolbar item for navigation history */
-"Table History" = "Table History";
+"Table History" = "История таблиц";
 
 /* toolbar item label for switching to the Table Info tab */
-"Table Info" = "Table Info";
+"Table Info" = "Сводка";
 
 /* header for table info pane */
-"TABLE INFORMATION" = "TABLE INFORMATION";
+"TABLE INFORMATION" = "О ТАБЛИЦЕ";
 
 /* table information print heading */
 "Table Information" = "Table Information";
@@ -2620,34 +2620,34 @@
 "Table must have a name." = "Table must have a name.";
 
 /* general preference pane tooltip */
-"Table Preferences" = "Table Preferences";
+"Table Preferences" = "Настройки таблиц";
 
 /* toolbar item label for switching to the Table Relations tab */
-"Table Relations" = "Table Relations";
+"Table Relations" = "Связи таблицы";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table row changed' item */
 "Table Row changed" = "Table Row changed";
 
 /* table structure print heading */
-"Table Structure" = "Table Structure";
+"Table Structure" = "Структура таблицы";
 
 /* toolbar item label for switching to the Table Triggers tab */
-"Table Triggers" = "Table Triggers";
+"Table Triggers" = "Триггеры таблицы";
 
 /* Add Relation sheet title, showing table name */
-"Table: %@" = "Table: %@";
+"Table: %@" = "Таблица: %@";
 
 /* tables preference pane name */
-"Tables" = "Tables";
+"Tables" = "Таблицы";
 
 /* tables */
-"tables" = "tables";
+"tables" = "таблицы";
 
 /* header for table list */
-"TABLES" = "TABLES";
+"TABLES" = "ТАБЛИЦЫ";
 
 /* header for table & views list */
-"TABLES & VIEWS" = "TABLES & VIEWS";
+"TABLES & VIEWS" = "ТАБЛИЦЫ и ПРЕДСТАВЛЕНИЯ";
 
 /* Connection test very short status message */
 "Testing connection..." = "Testing connection...";
@@ -2656,10 +2656,10 @@
 "Testing MySQL..." = "Testing MySQL...";
 
 /* SSH testing very short status message */
-"Testing SSH..." = "Testing SSH...";
+"Testing SSH..." = "Проверка SSH...";
 
 /* text label for color table (Prefs > Editor) */
-"Text" = "Text";
+"Text" = "Текст";
 
 /* Text is too long. Maximum text length is set to %llu. */
 "Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
@@ -2806,7 +2806,7 @@
 "The target export folder no longer exists.  Please select a new export location and try again." = "The target export folder no longer exists.  Please select a new export location and try again.";
 
 /* theme name label */
-"Theme Name:" = "Theme Name:";
+"Theme Name:" = "Название темы:";
 
 /* themes installation error */
 "Themes Installation Error" = "Themes Installation Error";
@@ -2827,22 +2827,22 @@
 "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@";
 
 /* description of serial */
-"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
+"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Это псевдоним для BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
 
 /* description of dec
  description of fixed
  description of numeric */
-"This is an alias for DECIMAL." = "This is an alias for DECIMAL.";
+"This is an alias for DECIMAL." = "Это псевдоним для DECIMAL.";
 
 /* description of double real */
-"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured.";
+"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "Это псевдоним для DOUBLE, пока не задан REAL_AS_FLOAT.";
 
 /* description of double precision */
-"This is an alias for DOUBLE." = "This is an alias for DOUBLE.";
+"This is an alias for DOUBLE." = "Это псевдоним для DOUBLE.";
 
 /* description of bool
  description of boolean */
-"This is an alias for TINYINT(1)." = "This is an alias for TINYINT(1).";
+"This is an alias for TINYINT(1)." = "Это псевдоним для TINYINT(1).";
 
 /* Table Structure : Collation dropdown : database marker tooltip */
 "This is the default collation of database %@." = "This is the default collation of database %@.";
@@ -2866,7 +2866,7 @@
 "This is the default encoding of this server." = "This is the default encoding of this server.";
 
 /* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
-"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "This table currently does not support relations. Only tables that use the InnoDB storage engine support them.";
+"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "В настоящее время эта таблица не поддерживает связи. Их поддерживают только таблицы, использующие движок хранилища InnoDB.";
 
 /* user has no hosts informative message */
 "This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "This user doesn't have any hosts associated with it. It will be deleted unless one is added";
@@ -2878,31 +2878,31 @@
 "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!";
 
 /* export filename time token */
-"Time" = "Time";
+"Time" = "Время";
 
 /* toolbar item label for switching to the Table Triggers tab */
-"Triggers" = "Triggers";
+"Triggers" = "Триггеры";
 
 /* triggers for table label */
-"Triggers for table: %@" = "Triggers for table: %@";
+"Triggers for table: %@" = "Триггеры для таблицы: %@";
 
 /* truncate button */
-"Truncate" = "Truncate";
+"Truncate" = "Очистить";
 
 /* truncate tables message */
-"Truncate selected tables?" = "Truncate selected tables?";
+"Truncate selected tables?" = "Очистить выбранные таблицы?";
 
 /* truncate table menu title */
-"Truncate Table..." = "Truncate Table...";
+"Truncate Table..." = "Очистить таблицу...";
 
 /* truncate table message */
-"Truncate table '%@'?" = "Truncate table '%@'?";
+"Truncate table '%@'?" = "Очистить таблицу '%@'?";
 
 /* truncate tables menu item */
-"Truncate Tables" = "Truncate Tables";
+"Truncate Tables" = "Очистить таблицу";
 
 /* type label (Navigator) */
-"Type" = "Type";
+"Type" = "Тип";
 
 /* type declaration header */
 "Type Declaration:" = "Type Declaration:";
@@ -2995,10 +2995,10 @@
 "Unknown file format" = "Unknown file format";
 
 /* unsaved changes message */
-"Unsaved changes" = "Unsaved changes";
+"Unsaved changes" = "Несохранённые изменения";
 
 /* unsaved theme message */
-"Unsaved Theme" = "Unsaved Theme";
+"Unsaved Theme" = "Несохранённая тема";
 
 /* Preferences : Network : Custom SSH client : warning dialog title */
 "Unsupported configuration!" = "Unsupported configuration!";
@@ -3007,7 +3007,7 @@
 "Unsupported version for export settings!" = "Unsupported version for export settings!";
 
 /* Name for an untitled connection */
-"Untitled" = "Untitled";
+"Untitled" = "Без названия";
 
 /* Title of a new Sequel Ace Document */
 "Untitled %ld" = "Untitled %ld";
@@ -3025,16 +3025,16 @@
 "Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";
 
 /* range for tinyblob type */
-"Up to 255 bytes" = "Up to 255 bytes";
+"Up to 255 bytes" = "До 255 байт";
 
 /* range for tinytext type */
 "Up to 255 characters" = "Up to 255 characters";
 
 /* Open Files : Bundle : Already-Installed : Update button */
-"Update" = "Update";
+"Update" = "Обновить";
 
 /* updated: %@ */
-"updated: %@" = "updated: %@";
+"updated: %@" = "обновлено: %@";
 
 /* message of panel when error while updating field to db after enabling it */
 "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed.";
@@ -3055,7 +3055,7 @@
 "URL scheme command %@ unsupported" = "URL scheme command %@ unsupported";
 
 /* Use 127.0.0.1 button */
-"Use 127.0.0.1" = "Use 127.0.0.1";
+"Use 127.0.0.1" = "Использовать 127.0.0.1";
 
 /* use standard connection button */
 "Use Standard Connection" = "Use Standard Connection";
@@ -3067,22 +3067,22 @@
 "User-defined value" = "User-defined value";
 
 /* toolbar item label for switching to the User Manager tab */
-"Users" = "Users";
+"Users" = "Пользователи";
 
 /* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
 "Value will be imported as MySQL NULL" = "Value will be imported as MySQL NULL";
 
 /* variable label for color table (Prefs > Editor) */
-"Variable" = "Variable";
+"Variable" = "Переменная";
 
 /* version */
-"version" = "version";
+"version" = "версия";
 
 /* export header version label */
-"Version" = "Version";
+"Version" = "Версия";
 
 /* view */
-"view" = "view";
+"view" = "представление";
 
 /* Release notes button title */
 "View full release notes" = "View full release notes";
@@ -3097,19 +3097,19 @@
 "View Structure" = "View Structure";
 
 /* views */
-"views" = "views";
+"views" = "представления";
 
 /* warning */
-"Warning" = "Warning";
+"Warning" = "Предупреждение";
 
 /* Short important release note for why password prompts may occur */
 "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again.";
 
 /* Important release notes informational text, single change */
-"We've made a few changes but we thought you should know about one particularly important one:" = "We've made a few changes but we thought you should know about one particularly important one:";
+"We've made a few changes but we thought you should know about one particularly important one:" = "Мы внеси некоторые изменения и думаем, что вы должны узнать о наиболее важном:";
 
 /* Important release notes informational text, multiple changes */
-"We've made a few changes but we thought you should know about some particularly important ones:" = "We've made a few changes but we thought you should know about some particularly important ones:";
+"We've made a few changes but we thought you should know about some particularly important ones:" = "Мы внеси некоторые изменения и думаем, что вы должны узнать о наиболее важных:";
 
 /* WHERE clause not valid */
 "WHERE clause not valid" = "WHERE clause not valid";
@@ -3121,13 +3121,13 @@
 "WHERE query" = "WHERE query";
 
 /* Generic working description */
-"Working..." = "Working...";
+"Working..." = "Обработка...";
 
 /* export label showing app is writing data */
-"Writing data..." = "Writing data...";
+"Writing data..." = "Запись данных...";
 
 /* text showing that app is writing text file */
-"Writing..." = "Writing...";
+"Writing..." = "Запись...";
 
 /* wrong data format or password */
 "Wrong data format or password." = "Wrong data format or password.";
@@ -3139,7 +3139,7 @@
 "Wrong SPF content type!" = "Wrong SPF content type!";
 
 /* export filename date token */
-"Year" = "Year";
+"Year" = "Год";
 
 /* message of panel when trying to copy multiple rows */
 "You can only copy single rows." = "You can only copy single rows.";
@@ -3211,7 +3211,7 @@
 "Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
 
 /* The answer, yes */
-"Yes" = "Yes";
+"Yes" = "Да";
 
 /* Shown to remind users of their stale bookmarks */
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "A reminder of your stale secure bookmarks:<br /><br />%@<br />";
@@ -3247,7 +3247,7 @@
 "Invalid JSON" = "Invalid JSON";
 
 /* Applying syntax highlighting task description */
-"Applying syntax highlighting..." = "Applying syntax highlighting...";
+"Applying syntax highlighting..." = "Применение подсветки синтаксиса...";
 
 /* Error message when a bash task fails to start */
 "Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
@@ -3262,7 +3262,7 @@
 "A new version is available" = "A new version is available";
 
 /* new version is available download button title */
-"Download" = "Download";
+"Download" = "Загрузить";
 
 /* new version is available alert informativeText */
 "Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
@@ -3277,10 +3277,10 @@
 "Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
-"About %.1f seconds left" = "About %.1f seconds left";
+"About %.1f seconds left" = "Осталось приблизительно секунд: %.1f";
 
 /* downloading new version failure alert title */
-"Download Failed" = "Download Failed";
+"Download Failed" = "Ошибка загрузки";
 
 /* Tool tip for the Show alert when update is available preference on the Notifications pane */
 "Only available for GitHub downloads" = "Only available for GitHub downloads";
@@ -3289,7 +3289,7 @@
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
 
 /* downloading new version bytes of bytes done */
-"%@ of %@" = "%@ of %@";
+"%@ of %@" = "%@ из %@";
 
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
