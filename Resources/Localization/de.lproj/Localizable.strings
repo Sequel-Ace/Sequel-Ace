@@ -1493,9 +1493,6 @@ Befehle werden anwendungsweit ausgeführt";
  export header host label */
 "Host" = "Host";
 
-/* Localized help page for query favourites - do not localize if no translated webpage is available */
-"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
-
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 Gleitkommawert mit doppelter Genauigkeit. M ist die maximale Anzahl von Ziffern, mit D Dezimalen. Hinweis: Viele Dezimalzahlen können nur durch Gleitkommawerte angenähert werden. DECIMAL benutzen, wenn genaue Ergebnisse benötigt werden.";
 
@@ -2894,13 +2891,13 @@ Befehle werden anwendungsweit ausgeführt";
 "Truncate selected tables?" = "Ausgewählte Tabellen abschneiden?";
 
 /* truncate table menu title */
-"Truncate Table..." = "Tabelle wird eingekürzt …";
+"Truncate Table..." = "Tabelle leeren...";
 
 /* truncate table message */
-"Truncate table '%@'?" = "Tabelle wird eingekürzt …";
+"Truncate table '%@'?" = "Tabelle '%@' leeren?";
 
 /* truncate tables menu item */
-"Truncate Tables" = "Abgeschnittene Tabellen";
+"Truncate Tables" = "Tabellen leeren";
 
 /* type label (Navigator) */
 "Type" = "Typ";

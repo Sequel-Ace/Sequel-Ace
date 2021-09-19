@@ -1492,9 +1492,6 @@
  export header host label */
 "Host" = "ホスト";
 
-/* Localized help page for query favourites - do not localize if no translated webpage is available */
-"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
-
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 倍精度浮動小数点値。M は最大桁数で、D は小数点以降である可能性があります。 注意: 多くの小数は浮動小数点値でのみ近似できます。正確な結果が必要な場合はDECIMALを参照してください。";
 

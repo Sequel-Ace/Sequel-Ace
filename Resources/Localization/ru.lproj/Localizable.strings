@@ -14,7 +14,7 @@
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ selected";
+"%@ %@ selected" = "Выбрано %1$@ %2$@";
 
 /* History item filtered by values label */
 "%@ (Filtered by %@)" = "%1$@ (отфильтровано по %2$@)";
@@ -45,7 +45,7 @@
 "%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
+"%@; %ld rows affected" = "%1$@; %2$ld строк затронуто";
 
 /* text showing how many rows have been affected by multiple queries */
 "%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
@@ -63,7 +63,7 @@
 "%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL сообщил: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favorite";
@@ -72,10 +72,10 @@
 "%lu favorites" = "%lu favorites";
 
 /* favorite group singular label (%d == 1) */
-"%lu group" = "%lu group";
+"%lu group" = "%lu группа";
 
 /* favorite groups plural label (%d != 1) */
-"%lu groups" = "%lu groups";
+"%lu groups" = "%lu группы";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
 "%ld additional rows were removed!" = "%ld additional rows were removed!";
@@ -132,10 +132,10 @@
 "[ERROR in row %ld] %@\n" = "[ERROR in row %1$ld] %2$@\n";
 
 /* [multiple selection] */
-"[multiple selection]" = "[multiple selection]";
+"[multiple selection]" = "[множественный выбор]";
 
 /* displayed when new content filter has empty Name field (ContentFilterManager) */
-"[name required]" = "[name required]";
+"[name required]" = "[требуется имя]";
 
 /* [no selection] */
 "[no selection]" = "[ничего не выбрано]";
@@ -144,7 +144,7 @@
 "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
 
 /* \n\npress shift for binary search tooltip message */
-"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nPress ⇧ for binary search (case-sensitive).";
+"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nНажмите ⇧ для бинарного поиска (с учётом регистра).";
 
 /* description of bit */
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.";
@@ -275,10 +275,10 @@
 "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "При попытке принудительного разрыва соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill the query associated with connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "При попытке принудительно завершить запрос, связанный с соединением %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "Произошла ошибка при формировании запроса создания таблицы.\n\n: %@";
@@ -287,31 +287,31 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "An error occurred while renaming '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "При переименовании '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "An error occurred while renaming. '%@' is of an unknown type.";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается удалить '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't recreate '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается пересоздать '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't retrieve the syntax for '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается получить запрос создания '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "An error occurred while retrieving status data.\n\nMySQL said: %@";
+"An error occurred while retrieving status data.\n\nMySQL said: %@" = "При получении данных о состоянии произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "An error occurred while retrieving the create syntax for '%1$@'.\nMySQL said: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "При получении запроса создания '%1$@' произошла ошибка.\nMySQL сообщил: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "An error occurred while trying to add the index.\n\nMySQL said: %@";
+"An error occurred while trying to add the index.\n\nMySQL said: %@" = "При попытке добавить индекс произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* error adding password to keychain informative message */
 "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
@@ -320,10 +320,10 @@
 "An error occurred while trying to copy the database '%@' to '%@'." = "An error occurred while trying to copy the database '%1$@' to '%2$@'.";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "An error occurred while trying to delete the index.\n\nMySQL said: %@";
+"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "При попытке удалить индекс произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "При попытке определить количество строк для “%1$@” произошла ошибка.\nMySQL сообщил: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "An error occurred while trying to rename the database '%1$@' to '%2$@'.";
@@ -338,7 +338,7 @@
 "An error occurred" = "Произошла ошибка";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "Произошла ошибка при получении информации о таблице. MySQL сообщил: %@";
+"An error occurred retrieving table information.  MySQL said: %@" = "При получении информации о таблице произошла ошибка. MySQL сообщил: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
@@ -353,55 +353,55 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld rows were imported.\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Произошла ошибка при попытке добавить поле '%1$@' через\n\n%2$@\n\nMySQL сообщил: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "При попытке добавить поле '%1$@' через\n\n%2$@ произошла ошибка.\n\nMySQL сообщил: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Произошла ошибка при попытке изменить поле '%1$@' через\n\n%2$@\n\nMySQL сообщил: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "При попытке изменить поле '%1$@' через\n\n%2$@ произошла ошибка.\n\nMySQL сообщил: %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table collation to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "При попытке изменить сортировку таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table encoding to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "При попытке изменить кодировку таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table type to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "При попытке изменить тип таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table's comment to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "При попытке изменить комментарий таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "An error occurred while analyzing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "При анализе %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
 /* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "An error occurred while fetching the optimized field type.\n\nMySQL said:%@";
+"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "При получении оптимизированного типа поля произошла ошибка.\n\nMySQL сообщил:%@";
 
 /* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "An error occurred while flushing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while flushing the %@.\n\nMySQL said:%@" = "При очистке %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "An error occurred while importing SQL";
 
 /* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "An error occurred while optimzing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "При оптимизации %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
 /* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "An error occurred while performing the checksum on %1$@.\n\nMySQL said:%2$@";
+"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "При вычислении контрольной суммы %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
 /* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "An error occurred while repairing the %1$@.\n\nMySQL said:%2$@";
+"An error occurred while repairing the %@.\n\nMySQL said:%@" = "Произошла ошибка при исправлении %1$@.\n\nMySQL сообщил:%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "An error occurred while retrieving information.\nMySQL said: %@";
+"An error occurred while retrieving information.\nMySQL said: %@" = "При получении информации произошла ошибка.\nMySQL сообщил: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "An error occurred while retrieving the information for table '%1$@'. Please try again.\n\nMySQL said: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "При получении информации по таблице '%1$@' произошла ошибка. Пожалуйста, попробуйте ещё раз.\n\nMySQL сообщил: %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "An error occurred while retrieving the trigger information for table '%1$@'. Please try again.\n\nMySQL said: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "При получении информации триггера для таблицы '%1$@' произошла ошибка. Пожалуйста, попробуйте ещё раз.\n\nMySQL сообщил: %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new column '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "При попытке добавить новый столбец '%1$@' произошла ошибка.\n\n%2$@.\n\nMySQL сообщил: %3$@";
 
 /* error adding new table informative message */
 "An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
@@ -425,16 +425,16 @@
 "An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "An error occurred while trying to import a table via: \n%1$@\n\n\nMySQL said: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "An error occurred while trying to move the field.\n\nMySQL said: %@";
+"An error occurred while trying to move the field.\n\nMySQL said: %@" = "При попытке передвинуть поле произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to reset AUTO_INCREMENT of table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Произошла ошибка при попытке сбросить AUTO_INCREMENT таблицы '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to truncate the table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "При попытке очистить таблицу '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@";
+"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "При попытке выполнить операцию произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
@@ -512,7 +512,7 @@
 "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.";
 
 /* kill query informative message */
-"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.";
+"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите принудительно завершить текущий запрос в подключении ID %lld?\n\nИмейте в виду, что принудительное завершение этого запроса может привести к повреждению данных. Пожалуйста, проявляйте осторожность.";
 
 /* Bundle Editor : Remove-Bundle: remove dialog message */
 "Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Are you sure you want to move the selected Bundle to the Trash and remove them respectively?";
@@ -572,7 +572,7 @@
 "Bundles Installation Error" = "Bundles Installation Error";
 
 /* bzip2 compression export summary - within a sentence */
-"bzip2 compression" = "bzip2 compression";
+"bzip2 compression" = "bzip2 сжатие";
 
 /* description of geometry */
 "Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model.";
@@ -610,7 +610,7 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue";
 
 /* character set client: %@ */
-"character set client: %@" = "character set client: %@";
+"character set client: %@" = "кодировка: %@";
 
 /* CHECK one or more tables - result title */
 "Check %@" = "Проверка %@";
@@ -619,7 +619,7 @@
 "Check of all selected items successfully passed." = "Check of all selected items successfully passed.";
 
 /* check option: %@ */
-"check option: %@" = "check option: %@";
+"check option: %@" = "проверка изменений: %@";
 
 /* check selected items menu item */
 "Check Selected Items" = "Check Selected Items";
@@ -691,10 +691,10 @@
 "Close Window" = "Закрыть окно";
 
 /* collation label (Navigator) */
-"Collation" = "Collation";
+"Collation" = "Правила сортировки";
 
 /* collation connection: %@ */
-"collation connection: %@" = "collation connection: %@";
+"collation connection: %@" = "сортировка: %@";
 
 /* comment label */
 "Comment" = "Комментарий";
@@ -709,7 +709,7 @@
 "Connect" = "Подключиться";
 
 /* Connect via socket button */
-"Connect via socket" = "Connect via socket";
+"Connect via socket" = "Подключиться через сокет";
 
 /* connection established message */
 "Connected" = "Подключено";
@@ -718,7 +718,7 @@
 "Connected to %@" = "Подключено к %@";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connected to host, but unable to connect to database %1$@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "После соединения с узлом не удалось подключиться к базе данных %1$@.\n\nУбедитесь, что база данных существует и что у вас есть необходимые права.\n\nMySQL сообщил: %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "Подключение...";
@@ -730,16 +730,16 @@
 "Connection data file couldn't be read." = "Connection data file couldn't be read.";
 
 /* message error while reading connection data file and suggesting to save it under a differnet name */
-"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "Connection data file %@ couldn't be read. Please try to save the document under a different name.";
+"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "Файл с данными для подключения %@ не читается. Пожалуйста, попробуйте сохранить документ под другим именем.";
 
 /* connection failed title */
-"Connection failed!" = "Connection failed!";
+"Connection failed!" = "Сбой соединения!";
 
 /* Connection file is encrypted */
-"Connection file is encrypted" = "Connection file is encrypted";
+"Connection file is encrypted" = "Файл подключения зашифрован";
 
 /* Connection success very short status message */
-"Connection succeeded" = "Connection succeeded";
+"Connection succeeded" = "Соединение успешно установлено";
 
 /* Console */
 "Console" = "Консоль";
@@ -809,13 +809,13 @@
 "Could not select database" = "Не удалось выбрать базу данных";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Couldn't alter database.\nMySQL said: %@";
+"Couldn't alter database.\nMySQL said: %@" = "Не удалось изменить базу данных.\nMySQL сообщил: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Couldn't copy default themes to Application Support Theme folder!\nError: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "Couldn't create '%1$@'.\nMySQL said: %2$@";
+"Couldn't create '%@'.\nMySQL said: %@" = "Не удалось создать '%1$@'.\nMySQL сообщил: %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
 "Couldn't create Application Support Bundle folder!\nError: %@" = "Couldn't create Application Support Bundle folder!\nError: %@";
@@ -824,31 +824,31 @@
 "Couldn't create Application Support Theme folder!\nError: %@" = "Couldn't create Application Support Theme folder!\nError: %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "Couldn't create database.\nMySQL said: %@";
+"Couldn't create database.\nMySQL said: %@" = "Не удалось создать базу данных.\nMySQL сообщил: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nMySQL said: %@" = "Не удалось удалить '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Не удалось удалить '%1$@'.\n\nВыбор параметра «Принудительное удаление» может решить эту проблему, но при этом привести базу данных в рассогласованное состояние.\n\nMySQL вернул: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Не удалось удалить '%1$@'.\n\nВыбор параметра «Принудительное удаление» может решить эту проблему, но при этом привести базу данных в рассогласованное состояние.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Couldn't delete field %1$@.\nMySQL said: %2$@";
+"Couldn't delete field %@.\nMySQL said: %@" = "Не удалось удалить поле %1$@.\nMySQL сообщил: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Couldn't delete rows.\n\nMySQL said: %@";
+"Couldn't delete rows.\n\nMySQL said: %@" = "Не удалось удалить строки.\n\nMySQL сообщил: %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Couldn't delete the database.\nMySQL said: %@";
+"Couldn't delete the database.\nMySQL said: %@" = "Не удалось удалить базу данных.\nMySQL сообщил: %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "Couldn't duplicate '%1$@'.\nMySQL said: %2$@";
+"Couldn't duplicate '%@'.\nMySQL said: %@" = "Не удалось дублировать '%1$@'.\nMySQL сообщил: %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "Couldn't flush privileges.\nMySQL said: %@";
+"Couldn't flush privileges.\nMySQL said: %@" = "Не удалось перезагрузить привилегии.\nMySQL сообщил: %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "Couldn't get create syntax.\nMySQL said: %@";
+"Couldn't get create syntax.\nMySQL said: %@" = "Не удалось получить запрос создания.\nMySQL сообщил: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.";
@@ -863,10 +863,10 @@
 "Couldn't sort column." = "Не удалось отсортировать столбец.";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "Couldn't sort table. MySQL said: %@";
+"Couldn't sort table. MySQL said: %@" = "Не удалось отсортировать таблицу. MySQL сообщил: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Couldn't write field.\nMySQL said: %@";
+"Couldn't write field.\nMySQL said: %@" = "Не удалось записать поле.\nMySQL сообщил: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "Create syntax for";
@@ -878,7 +878,7 @@
 "Create syntaxes for selected items" = "Create syntaxes for selected items";
 
 /* Table Info Section : table create options */
-"create_options: %@" = "create_options: %@";
+"create_options: %@" = "опции_создания: %@";
 
 /* created: %@
  Table Info Section : time+date table was created at */
@@ -909,7 +909,7 @@
 "Customize Filename (%@)" = "Customize Filename (%@)";
 
 /* data access: %@ (%@) */
-"data access: %@ (%@)" = "data access: %1$@ (%2$@)";
+"data access: %@ (%@)" = "результат: %1$@ (%2$@)";
 
 /* Bundle Editor : Scope dropdown : 'data table' item
  data table menu item label */
@@ -927,13 +927,13 @@
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
-"Database changed" = "Database changed";
+"Database changed" = "База данных изменена";
 
 /* message of panel when no db name is given */
-"Database must have a name." = "Database must have a name.";
+"Database must have a name." = "База данных должна иметь имя.";
 
 /* databsse rename unsupported message */
-"Database Rename Unsupported" = "Database Rename Unsupported";
+"Database Rename Unsupported" = "Переименование базы данных не поддерживается";
 
 /* export filename date token */
 "Date" = "Дата";
@@ -982,10 +982,10 @@
 "Delete Both" = "Удалить оба";
 
 /* delete database message */
-"Delete database '%@'?" = "Delete database '%@'?";
+"Delete database '%@'?" = "Удалить базу данных '%@'?";
 
 /* delete database message */
-"Delete favorite '%@'?" = "Delete favorite '%@'?";
+"Delete favorite '%@'?" = "Удалить избранное '%@'?";
 
 /* delete field message */
 "Delete field '%@'?" = "Удалить поле '%@'?";
@@ -994,10 +994,10 @@
 "Delete Function" = "Удалить функцию";
 
 /* delete functions menu title */
-"Delete Functions" = "Delete Functions";
+"Delete Functions" = "Удалить функции";
 
 /* delete database message */
-"Delete group '%@'?" = "Delete group '%@'?";
+"Delete group '%@'?" = "Удалить группу '%@'?";
 
 /* delete index message */
 "Delete index '%@'?" = "Delete index '%@'?";
@@ -1006,10 +1006,10 @@
 "Delete Items" = "Удалить элементы";
 
 /* delete proc menu title */
-"Delete Procedure" = "Delete Procedure";
+"Delete Procedure" = "Удалить процедуру";
 
 /* delete procedures menu title */
-"Delete Procedures" = "Delete Procedures";
+"Delete Procedures" = "Удалить процедуры";
 
 /* delete relation menu item */
 "Delete Relation" = "Удалить связь";
@@ -1093,13 +1093,13 @@
 "Duplicate %@ '%@' to:" = "Duplicate %1$@ '%2$@' to:";
 
 /* duplicate func menu title */
-"Duplicate Function..." = "Duplicate Function...";
+"Duplicate Function..." = "Дублировать функцию...";
 
 /* duplicate host message */
 "Duplicate Host" = "Duplicate Host";
 
 /* duplicate proc menu title */
-"Duplicate Procedure..." = "Duplicate Procedure...";
+"Duplicate Procedure..." = "Дублировать процедуру...";
 
 /* duplicate table menu title */
 "Duplicate Table..." = "Duplicate Table...";
@@ -1108,7 +1108,7 @@
 "Duplicate User" = "Дублировать пользователя";
 
 /* duplicate view menu title */
-"Duplicate View..." = "Duplicate View...";
+"Duplicate View..." = "Дублировать представление...";
 
 /* partial copy database support informative message */
 "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
@@ -1123,7 +1123,7 @@
 "Edit Table Structure" = "Edit Table Structure";
 
 /* edit theme list label */
-"Edit Theme List…" = "Edit Theme List…";
+"Edit Theme List…" = "Редактировать список тем…";
 
 /* edit user-defined filter */
 "Edit user-defined Filters…" = "Edit user-defined Filters…";
@@ -1150,7 +1150,7 @@
 "Enter connection details below, or choose a favorite" = "Enter connection details below, or choose a favorite";
 
 /* SSH key password prompt */
-"Enter your password for the SSH key\n\"%@\"" = "Enter your password for the SSH key\n'%@";
+"Enter your password for the SSH key\n\"%@\"" = "Введите ваш пароль для SSH ключа\n'%@";
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
@@ -1272,7 +1272,7 @@
 /* Bundle Editor : Trash-Bundle(s)-Error : error dialog title
  error while moving %@ to trash
  Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version. */
-"Error while moving %@ to Trash." = "Error while moving %@ to Trash.";
+"Error while moving %@ to Trash." = "Ошибка при отправке %@ в корзину.";
 
 /* error while optimizing selected items message */
 "Error while optimizing selected items" = "Error while optimizing selected items";
@@ -1305,13 +1305,13 @@
 "exclude BLOB" = "exclude BLOB";
 
 /* execution privilege label (Navigator) */
-"Execution Privilege" = "Execution Privilege";
+"Execution Privilege" = "Делегированные права";
 
 /* execution privilege: %@ */
-"execution privilege: %@" = "execution privilege: %@";
+"execution privilege: %@" = "права: %@";
 
 /* execution stopped message */
-"Execution stopped!\n" = "Execution stopped!\n";
+"Execution stopped!\n" = "Выполнение остановлено!\n";
 
 /* export selected favorites menu item */
 "Export Selected..." = "Export Selected...";
@@ -1323,7 +1323,7 @@
 "Exporting Dot File" = "Exporting Dot File";
 
 /* text showing that the application is exporting SQL */
-"Exporting SQL" = "Exporting SQL";
+"Exporting SQL" = "Экспорт SQL";
 
 /* extra label (Navigator) */
 "Extra" = "Доп.";
@@ -1347,7 +1347,7 @@
 "Favorites import error" = "Favorites import error";
 
 /* export label showing that the app is fetching data */
-"Fetching data..." = "Fetching data...";
+"Fetching data..." = "Получение данных...";
 
 /* fetching database structure data in progress */
 "fetching database structure data in progress" = "fetching database structure data in progress";
@@ -1438,7 +1438,7 @@
 "function" = "функция";
 
 /* header for function info pane */
-"FUNCTION INFORMATION" = "FUNCTION INFORMATION";
+"FUNCTION INFORMATION" = "О ФУНКЦИИ";
 
 /* functions */
 "functions" = "функции";
@@ -1471,10 +1471,10 @@
 "Notifications are delivered via the Notification Center." = "Notifications are delivered via the Notification Center.";
 
 /* Gzip compression export summary - within a sentence */
-"Gzip compression" = "Gzip compression";
+"Gzip compression" = "Gzip сжатие";
 
 /* MySQL Help Viewer : Results list : Page title */
-"Help topics for %@" = "Help topics for %@";
+"Help topics for %@" = "Справки для %@";
 
 /* hide console */
 "Hide Console" = "Скрыть консоль";
@@ -1491,9 +1491,6 @@
 /* export filename host token
  export header host label */
 "Host" = "Хост";
-
-/* Localized help page for query favourites - do not localize if no translated webpage is available */
-"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
 
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
@@ -1523,13 +1520,13 @@
 "Import all Fields" = "Импорт всех полей";
 
 /* sql import : charset error alert : continue button */
-"Import Anyway" = "Import Anyway";
+"Import Anyway" = "Всё равно импортировать";
 
 /* import cancelled message */
 "Import cancelled!\n" = "Import cancelled!\n";
 
 /* Import Error title */
-"Import Error" = "Import Error";
+"Import Error" = "Ошибка импорта";
 
 /* import field operator tooltip */
 "Import field" = "Import field";
@@ -1550,10 +1547,10 @@
 "Imported %@ of SQL" = "Imported %@ of SQL";
 
 /* text showing that the application is importing CSV */
-"Importing CSV" = "Importing CSV";
+"Importing CSV" = "Импорт CSV";
 
 /* text showing that the application is importing SQL */
-"Importing SQL" = "Importing SQL";
+"Importing SQL" = "Импорт SQL";
 
 /* Bundle Editor : BLOB dropdown : 'include BLOB' item */
 "include BLOB" = "include BLOB";
@@ -1569,7 +1566,7 @@
 
 /* New Table Sheet : Table Collation Dropdown : Default inherited from database
  New Table Sheet : Table Encoding Dropdown : Default inherited from database */
-"Inherit from database (%@)" = "Inherit from database (%@)";
+"Inherit from database (%@)" = "Наследовать из базы данных (%@)";
 
 /* initializing export label */
 "Initializing..." = "Инициализация...";
@@ -1615,7 +1612,7 @@
 "Interpret data as:" = "Interpret data as:";
 
 /* Invalid database very short status message */
-"Invalid database" = "Invalid database";
+"Invalid database" = "Повреждённая база данных";
 
 /* export : import settings : file error title */
 "Invalid file supplied!" = "Invalid file supplied!";
@@ -1624,13 +1621,13 @@
 "Invalid hexadecimal value" = "Invalid hexadecimal value";
 
 /* is deterministic label (Navigator) */
-"Is Deterministic" = "Is Deterministic";
+"Is Deterministic" = "Детерминированный";
 
 /* is nullable label (Navigator) */
 "Is Nullable" = "NULL разрешён";
 
 /* is updatable: %@ */
-"is updatable: %@" = "is updatable: %@";
+"is updatable: %@" = "обновляемо: %@";
 
 /* items */
 "items" = "элементы";
@@ -1651,7 +1648,7 @@
 "Kill" = "Завершить принудительно";
 
 /* kill connection message */
-"Kill connection?" = "Kill connection?";
+"Kill connection?" = "Разорвать соединение?";
 
 /* kill query message */
 "Kill query?" = "Принудительно завершить запрос?";
@@ -1669,7 +1666,7 @@
 "Loading %@..." = "Загрузка %@...";
 
 /* Loading database task string */
-"Loading database '%@'..." = "Loading database '%@'...";
+"Loading database '%@'..." = "Загрузка базы данных '%@'...";
 
 /* Loading history entry task desc */
 "Loading history entry..." = "Загрузка записи истории...";
@@ -1695,16 +1692,16 @@
 
 /* range for text type
  range for varchar type */
-"M: %@ to %@ characters" = "M: %1$@ to %2$@ characters";
+"M: %@ to %@ characters" = "М: от %1$@ до %2$@ символов";
 
 /* range for longtext type */
-"M: %@ to %@ characters (4 GiB)" = "M: %1$@ to %2$@ characters (4 GiB)";
+"M: %@ to %@ characters (4 GiB)" = "М: от %1$@ до %2$@ символов (4 ГиБ)";
 
 /* range for binary type */
 "M: 0 to 255 bytes" = "M: 0 to 255 bytes";
 
 /* range for char type */
-"M: 0 to 255 characters" = "M: 0 to 255 characters";
+"M: 0 to 255 characters" = "М: от 0 до 255 символов";
 
 /* range for bit type */
 "M: 1 (default) to 64" = "M: 1 (default) to 64";
@@ -1722,16 +1719,16 @@
 "Maximum number of arguments is 2!" = "Maximum number of arguments is 2!";
 
 /* Maximum text length is set to %ld. */
-"Maximum text length is set to %ld." = "Maximum text length is set to %ld.";
+"Maximum text length is set to %ld." = "Длина текста ограничена %ld.";
 
 /* Maximum text length is set to %ld. Inserted text was truncated. */
-"Maximum text length is set to %ld. Inserted text was truncated." = "Maximum text length is set to %ld. Inserted text was truncated.";
+"Maximum text length is set to %ld. Inserted text was truncated." = "Длина текста ограничена %ld. Вставленный текст был усечён.";
 
 /* Maximum text length is set to %llu. */
-"Maximum text length is set to %llu." = "Maximum text length is set to %llu.";
+"Maximum text length is set to %llu." = "Длина текста ограничена %llu.";
 
 /* Maximum text length is set to %llu. Inserted text was truncated. */
-"Maximum text length is set to %llu. Inserted text was truncated." = "Maximum text length is set to %llu. Inserted text was truncated.";
+"Maximum text length is set to %llu. Inserted text was truncated." = "Длина текста ограничена %llu. Вставленный текст был усечён.";
 
 /* message column title */
 "Message" = "Сообщение";
@@ -1746,7 +1743,7 @@
 "multiple selection" = "множественный выбор";
 
 /* MySQL connecting very short status message */
-"MySQL connecting..." = "MySQL connecting...";
+"MySQL connecting..." = "Подключение к MySQL...";
 
 /* mysql error message */
 "MySQL Error" = "Ошибка MySQL";
@@ -1755,22 +1752,22 @@
 "MySQL Help" = "Справка по MySQL";
 
 /* MySQL Help for Selection */
-"MySQL Help for Selection" = "MySQL Help for Selection";
+"MySQL Help for Selection" = "MySQL справка по выделенному";
 
 /* MySQL Help for Word */
-"MySQL Help for Word" = "MySQL Help for Word";
+"MySQL Help for Word" = "MySQL справка по слову";
 
 /* mysql help categories */
-"MySQL Help – Categories" = "MySQL Help – Categories";
+"MySQL Help – Categories" = "MySQL справка – Категории";
 
 /* mysql said message */
-"MySQL said:" = "MySQL вернул:";
+"MySQL said:" = "MySQL сообщил:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL вернул:\n%@";
+"MySQL said:\n%@" = "MySQL сообщил:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL said:\n\n%@";
+"MySQL said:\n\n%@" = "MySQL сообщил:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "МояTема";
@@ -1794,7 +1791,7 @@
 "New Column Name" = "Имя нового столбца";
 
 /* new favorite name */
-"New Favorite" = "New Favorite";
+"New Favorite" = "Новое избранное";
 
 /* Content Filter Manager : Initial name for new filter */
 "New Filter" = "Новый фильтр";
@@ -1830,13 +1827,13 @@
 "No errors" = "Без ошибок";
 
 /* No favorites entry in favorites menu */
-"No Favorties" = "No Favorties";
+"No Favorties" = "Нет избранных";
 
 /* All export files creation error title */
 "No files could be created" = "No files could be created";
 
 /* no item found message */
-"No item found" = "No item found";
+"No item found" = "Элементы не найдены";
 
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
@@ -1901,11 +1898,11 @@
 "Only Partially Supported" = "Only Partially Supported";
 
 /* open function in new table title */
-"Open Function in New Tab" = "Open Function in New Tab";
+"Open Function in New Tab" = "Открыть функцию в новой вкладке";
 
 /* Table List : Context Menu : duplicate connection to new window
  Table List : Gear Menu : duplicate connection to new window */
-"Open Function in New Window" = "Open Function in New Window";
+"Open Function in New Window" = "Открыть функцию в новом окне";
 
 /* open connection in new tab context menu item */
 "Open in New Tab" = "Открыть в новой вкладке";
@@ -1914,11 +1911,11 @@
 "Open in New Window" = "Open in New Window";
 
 /* open procedure in new table title */
-"Open Procedure in New Tab" = "Open Procedure in New Tab";
+"Open Procedure in New Tab" = "Открыть процедуру в новой вкладке";
 
 /* Table List : Context Menu : duplicate connection to new window
  Table List : Gear Menu : duplicate connection to new window */
-"Open Procedure in New Window" = "Open Procedure in New Window";
+"Open Procedure in New Window" = "Открыть процедуру в новом окне";
 
 /* open table in new tab title
  open table in new table title */
@@ -1937,7 +1934,7 @@
 "Open View in New Window" = "Open View in New Window";
 
 /* menu item open %@ in new window */
-"Open %@ in New Window" = "Open %@ in New Window";
+"Open %@ in New Window" = "Открыть %@ в новом окне";
 
 /* OPTIMIZE one or more tables - result title */
 "Optimize %@" = "Оптимизировать %@";
@@ -1985,7 +1982,7 @@
 "procedure" = "процедура";
 
 /* header for procedure info pane */
-"PROCEDURE INFORMATION" = "PROCEDURE INFORMATION";
+"PROCEDURE INFORMATION" = "О ПРОЦЕДУРЕ";
 
 /* procedures */
 "procedures" = "процедуры";
@@ -2019,13 +2016,13 @@
 "Query logging is currently disabled" = "Query logging is currently disabled";
 
 /* query result print heading */
-"Query Result" = "Query Result";
+"Query Result" = "Результат запроса";
 
 /* export source */
 "Query results" = "Результаты запроса";
 
 /* Query Status */
-"Query Status" = "Query Status";
+"Query Status" = "Статус запроса";
 
 /* table status : row count query failed : error title */
 "Querying row count failed" = "Querying row count failed";
@@ -2064,10 +2061,10 @@
 "Reading..." = "Чтение...";
 
 /* menu item to refresh databases */
-"Refresh Databases" = "Refresh Databases";
+"Refresh Databases" = "Обновить базы данных";
 
 /* refresh list menu item */
-"Refresh List" = "Refresh List";
+"Refresh List" = "Обновить список";
 
 /* toolbar item label for switching to the Table Relations tab */
 "Relations" = "Связи";
@@ -2082,10 +2079,10 @@
 "Reloading data..." = "Перезагрузка данных...";
 
 /* Reloading table task string */
-"Reloading..." = "Reloading...";
+"Reloading..." = "Перезагрузка...";
 
 /* remote error */
-"Remote Error" = "Remote Error";
+"Remote Error" = "Внешняя ошибка";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
@@ -2185,10 +2182,10 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Сбросить AUTO_INCREMENT после удаления\n(только при условии удаления всех строк из таблицы)?";
 
 /* delete selected row button */
-"Delete Selected Row" = "Delete Selected Row";
+"Delete Selected Row" = "Удалить выбранную строку";
 
 /* delete selected rows button */
 "Delete Selected Rows" = "Удалить выбранные строки";
@@ -2200,10 +2197,10 @@
 "Restoring session..." = "Восстановление сессии...";
 
 /* return type label (Navigator) */
-"Return Type" = "Возвращаемый тип";
+"Return Type" = "Возвращает";
 
 /* return type: %@ */
-"return type: %@" = "взвращаемый тип: %@";
+"return type: %@" = "возвращает тип: %@";
 
 /* singular word for row */
 "row" = "строка";
@@ -2299,10 +2296,10 @@
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
 
 /* Search in MySQL Help */
-"Search in MySQL Help" = "Search in MySQL Help";
+"Search in MySQL Help" = "Поиск по MySQL справке";
 
 /* Select Active Query */
-"Select Active Query" = "Select Active Query";
+"Select Active Query" = "Выделить активный запрос";
 
 /* toolbar item for selecting a db */
 "Select Database" = "Выберите базу данных";
@@ -2343,7 +2340,7 @@
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
-"Server Default (%@)" = "Server Default (%@)";
+"Server Default (%@)" = "Настройки сервера по умолчанию (%@)";
 
 /* server processes window title (var = hostname) */
 "Server Processes on %@" = "Server Processes on %@";
@@ -2388,7 +2385,7 @@
 "Show Detail" = "Показать сведения";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
-"Show MySQL help for %@" = "Show MySQL help for %@";
+"Show MySQL help for %@" = "Показать MySQL справку для %@";
 
 /* show navigator */
 "Show Navigator" = "Показать Навигатор";
@@ -2409,7 +2406,7 @@
 "Shutdown" = "Выключить";
 
 /* shutdown server : error dialog : title */
-"Shutdown failed!" = "Shutdown failed!";
+"Shutdown failed!" = "Сбой выключения!";
 
 /* range of integer types */
 "Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
@@ -2451,16 +2448,16 @@
 "SSH Connected" = "SSH подключён";
 
 /* SSH connecting very short status message */
-"SSH connecting..." = "SSH connecting...";
+"SSH connecting..." = "Подключение SSH...";
 
 /* SSH connecting titlebar marker */
-"SSH Connecting…" = "SSH Connecting…";
+"SSH Connecting…" = "Подключение SSH…";
 
 /* SSH connection failed title */
-"SSH connection failed!" = "SSH connection failed!";
+"SSH connection failed!" = "Сбой SSH соединения!";
 
 /* SSH disconnected titlebar marker */
-"SSH Disconnected" = "SSH Disconnected";
+"SSH Disconnected" = "SSH отключён";
 
 /* SSH key check error */
 "SSH Key not found" = "SSH Key not found";
@@ -2475,7 +2472,7 @@
 "SSL Certificate File not found" = "SSL Certificate File not found";
 
 /* SSL requested but not used title */
-"SSL connection not established" = "SSL connection not established";
+"SSL connection not established" = "SSL соединение не установлено";
 
 /* SSL key file check error */
 "SSL Key File not found" = "SSL Key File not found";
@@ -2650,10 +2647,10 @@
 "TABLES & VIEWS" = "ТАБЛИЦЫ и ПРЕДСТАВЛЕНИЯ";
 
 /* Connection test very short status message */
-"Testing connection..." = "Testing connection...";
+"Testing connection..." = "Проверка соединения...";
 
 /* MySQL connection test very short status message */
-"Testing MySQL..." = "Testing MySQL...";
+"Testing MySQL..." = "Проверка MySQL...";
 
 /* SSH testing very short status message */
 "Testing SSH..." = "Проверка SSH...";
@@ -2662,7 +2659,7 @@
 "Text" = "Текст";
 
 /* Text is too long. Maximum text length is set to %llu. */
-"Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
+"Text is too long. Maximum text length is set to %llu." = "Текст слишком длинный. Длина ограничена %llu.";
 
 /* Release notes dialog title thanking user for upgrade */
 "Thanks for updating Sequel Ace!" = "Thanks for updating Sequel Ace!";
@@ -2741,10 +2738,10 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "The selected file is either not a valid SPF file or severely corrupted.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "The selected relation couldn't be deleted.\n\nMySQL said: %@";
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Выбранная связь не может быть удалена.\n\nMySQL сообщил: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Выбранный триггер не может быть удалён.\n\nMySQL сообщил: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
@@ -2753,10 +2750,10 @@
 "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "The specified relation could not be created.\n\nMySQL said: %@";
+"The specified relation could not be created.\n\nMySQL said: %@" = "Не получается установить связь.\n\nMySQL сообщил: %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "The specified trigger was unable to be created.\n\nMySQL said: %@";
+"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Не получается создать указанный триггер.\n\nMySQL сообщил: %@";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!";
@@ -2789,10 +2786,10 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "The SSH Tunnel was unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Не получается загрузить данные таблицы предположительно из-за настроек фильтра.\n\nMySQL сообщил: %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "The table data couldn't be loaded.\n\nMySQL said: %@";
+"The table data couldn't be loaded.\n\nMySQL said: %@" = "Не получается загрузить данные таблицы.\n\nMySQL сообщил: %@";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "The target export folder is not writable.  Please select a new export location and try again.";
@@ -2824,7 +2821,7 @@
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Этот индекс не может быть удалён, так как он используется существующей связью внешнего ключа.\n\nПожалуйста, удалите эту связь прежде чем пытаться удалить этот индекс.\n\nMySQL сообщил: %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Это псевдоним для BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
@@ -2845,22 +2842,22 @@
 "This is an alias for TINYINT(1)." = "Это псевдоним для TINYINT(1).";
 
 /* Table Structure : Collation dropdown : database marker tooltip */
-"This is the default collation of database %@." = "This is the default collation of database %@.";
+"This is the default collation of database %@." = "Это сортировка по умолчанию для базы данных %@.";
 
 /* Table Structure : Collation dropdown : default marker tooltip */
-"This is the default collation of encoding %@." = "This is the default collation of encoding %@.";
+"This is the default collation of encoding %@." = "Это сортировка по умолчанию для кодировки %@.";
 
 /* Table Structure : Collation dropdown : table marker tooltip */
-"This is the default collation of table %@." = "This is the default collation of table %@.";
+"This is the default collation of table %@." = "Это сортировка по умолчанию для таблицы %@.";
 
 /* Table Structure : Collation dropdown : server marker tooltip */
 "This is the default collation of this server." = "This is the default collation of this server.";
 
 /* Table Structure : Encoding dropdown : database marker tooltip */
-"This is the default encoding of database %@." = "This is the default encoding of database %@.";
+"This is the default encoding of database %@." = "Это кодировка по умолчанию для базы данных %@.";
 
 /* Table Structure : Encoding dropdown : table marker tooltip */
-"This is the default encoding of table %@." = "This is the default encoding of table %@.";
+"This is the default encoding of table %@." = "Это кодировка по умолчанию для таблицы %@.";
 
 /* Table Structure : Encoding dropdown : server marker tooltip */
 "This is the default encoding of this server." = "This is the default encoding of this server.";
@@ -2923,19 +2920,19 @@
 "Unable to check table" = "Unable to check table";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Не удаётся подключиться к узлу %1$@ из-за запрета доступа.\n\nПерепроверьте имя пользователя и пароль и убедитесь, что доступ к текущему ресурсу разрешён.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Не удаётся соединиться с узлом %1$@ из-за отказа в подключении к порту через SSH.\n\nПожалуйста, убедитесь, что у вашего MySQL включено TCP/IP соединение (нет ключа --skip-networking при запуске) и настроено разрешение соединений с того хоста, пропущенного через туннель.\n\nВы также можете проверить правильность порта и наличие необходимых привилегий.\n\nОшибка добавлена в отладочный SSH журнал, где вы можете найти более детальную информацию для анализа.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).\n\nMySQL said: %3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Не удалось подключиться к узлу %1$@ или время ожидания истекло.\n\nУбедитесь в правильности адреса и наличии необходимых привилегий или попробуйте увеличить время ожидания соединения (сейчас %2$ld сек.).\n\nMySQL сообщил: %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Не удается подключиться через сокет или время ожидания запроса истекло.\n\nПерепроверьте путь к сокету и наличии необходимых прав, а также запущен ли сервер.\n\nMySQL сообщил: %@";
 
 /* unable to copy database message */
-"Unable to copy database" = "Unable to copy database";
+"Unable to copy database" = "Не удаётся переименовать базу данных";
 
 /* error deleting index message */
 "Unable to delete index" = "Unable to delete index";
@@ -2956,7 +2953,7 @@
 "Unable to get list of users" = "Unable to get list of users";
 
 /* error killing connection message */
-"Unable to kill connection" = "Unable to kill connection";
+"Unable to kill connection" = "Не удаётся разорвать соединение";
 
 /* error killing query message */
 "Unable to kill query" = "Unable to kill query";
@@ -2974,7 +2971,7 @@
 "Unable to remove host" = "Unable to remove host";
 
 /* unable to rename database message */
-"Unable to rename database" = "Unable to rename database";
+"Unable to rename database" = "Не удаётся переименовать базу данных";
 
 /* unable to repair selected items message */
 "Unable to repair selected items" = "Unable to repair selected items";
@@ -2983,7 +2980,7 @@
 "Unable to repair table" = "Unable to repair table";
 
 /* message of panel when connection to db failed after selecting from popupbutton */
-"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.";
+"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Невозможно выбрать базу данных %@.\nПожалуйста, проверьте наличие необходимых прав на просмотр базы данных и её наличие.";
 
 /* Unable to write row error */
 "Unable to write row" = "Unable to write row";
@@ -3010,7 +3007,7 @@
 "Untitled" = "Без названия";
 
 /* Title of a new Sequel Ace Document */
-"Untitled %ld" = "Untitled %ld";
+"Untitled %ld" = "Безымянный %ld";
 
 /* range for mediumblob type */
 "Up to %@ bytes (16 MiB)" = "Up to %@ bytes (16 MiB)";
@@ -3019,7 +3016,7 @@
 "Up to %@ bytes (4 GiB)" = "Up to %@ bytes (4 GiB)";
 
 /* range for mediumtext type */
-"Up to %@ characters (16 MiB)" = "Up to %@ characters (16 MiB)";
+"Up to %@ characters (16 MiB)" = "До %@ символов (16 МиБ)";
 
 /* range for enum type */
 "Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";
@@ -3028,7 +3025,7 @@
 "Up to 255 bytes" = "До 255 байт";
 
 /* range for tinytext type */
-"Up to 255 characters" = "Up to 255 characters";
+"Up to 255 characters" = "До 255 символов";
 
 /* Open Files : Bundle : Already-Installed : Update button */
 "Update" = "Обновить";
@@ -3052,13 +3049,13 @@
 "URL scheme command was terminated by user" = "URL scheme command was terminated by user";
 
 /* URL scheme command %@ unsupported */
-"URL scheme command %@ unsupported" = "URL scheme command %@ unsupported";
+"URL scheme command %@ unsupported" = "Команда URL схемы %@ не поддерживается";
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Использовать 127.0.0.1";
 
 /* use standard connection button */
-"Use Standard Connection" = "Use Standard Connection";
+"Use Standard Connection" = "Использовать стандартное соединение";
 
 /* user has no hosts message */
 "User has no hosts" = "User has no hosts";
@@ -3070,7 +3067,7 @@
 "Users" = "Пользователи";
 
 /* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
-"Value will be imported as MySQL NULL" = "Value will be imported as MySQL NULL";
+"Value will be imported as MySQL NULL" = "Значение будет импортировано как MySQL NULL";
 
 /* variable label for color table (Prefs > Editor) */
 "Variable" = "Переменная";
@@ -3088,7 +3085,7 @@
 "View full release notes" = "View full release notes";
 
 /* header for view info pane */
-"VIEW INFORMATION" = "VIEW INFORMATION";
+"VIEW INFORMATION" = "О ПРЕДСТАВЛЕНИИ";
 
 /* view html source code menu item title */
 "View Source" = "View Source";
@@ -3160,7 +3157,7 @@
 "‘%@’ Fields Content Filters" = "‘%@’ Fields Content Filters";
 
 /* Export file already exists message */
-"%@ already exists. Do you want to replace it?" = "%@ already exists. Do you want to replace it?";
+"%@ already exists. Do you want to replace it?" = "%@ уже существует. Вы хотите заменить его?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
 "%@ Bundle" = "%@ Bundle";
@@ -3184,22 +3181,22 @@
 "Stale Bookmarks" = "Stale Bookmarks";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "App Sandbox Info";
+"App Sandbox Info" = "Информация о песочнице приложения";
 
 /* error while selecting file title */
-"File Selection Error" = "File Selection Error";
+"File Selection Error" = "Ошибка выбора файла";
 
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "Выбранный файл известных узлов недоступен для записи.\n\n%@\n\nПожалуйста, проверьте и повторите попытку.";
 
 /* known hosts not writable error title */
-"Known Hosts Error" = "Known Hosts Error";
+"Known Hosts Error" = "Ошибка известных узлов";
 
 /* SSH Tunnel Debugging menu and window title */
-"SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
+"SSH Tunnel Debugging Info" = "Отладочная информация SSH туннеля";
 
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?";
@@ -3208,7 +3205,7 @@
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
 
 /* known hosts advance menu item title */
-"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
+"Use known hosts from ssh config (ADVANCED)" = "Использовать известные хосты из SSH настроек (ПРОДВИНУТЫЙ РЕЖИМ)";
 
 /* The answer, yes */
 "Yes" = "Да";
@@ -3220,7 +3217,7 @@
 "Stale Secure Bookmarks" = "Stale Secure Bookmarks";
 
 /* Title for Export Error alert */
-"Export Error" = "Export Error";
+"Export Error" = "Ошибка экспорта";
 
 /* Message for Export Error alert */
 "Error while writing to the export file. Could not open file: %@" = "Error while writing to the export file. Could not open file: %@";
@@ -3238,43 +3235,43 @@
 "Please choose a file or folder to grant Sequel Ace access to." = "Please choose a file or folder to grant Sequel Ace access to.";
 
 /* Title for Network Preference ssh config file selection dialog */
-"Please choose your ssh config files(s)" = "Please choose your ssh config files(s)";
+"Please choose your ssh config files(s)" = "Пожалуйста, выберите файл(ы) SSH конфигурации";
 
 /* Title for Network Preference ssh known hosts file selection dialog */
-"Please choose your known hosts file" = "Please choose your known hosts file";
+"Please choose your known hosts file" = "Пожалуйста, выберите файл известных узлов";
 
 /* Message for field editor JSON segment when JSON is invalid */
-"Invalid JSON" = "Invalid JSON";
+"Invalid JSON" = "Неверный формат JSON";
 
 /* Applying syntax highlighting task description */
 "Applying syntax highlighting..." = "Применение подсветки синтаксиса...";
 
 /* Error message when a bash task fails to start */
-"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Не удалось запустить задачу.\nПричина исключения: %@\n ENV: %lu";
 
 /* Error message title when we failed to create new connection view */
-"New Connection Error" = "New Connection Error";
+"New Connection Error" = "Ошибка нового соединения";
 
 /* New Connection Error informative message */
 "Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
 
 /* new version is available alert title */
-"A new version is available" = "A new version is available";
+"A new version is available" = "Доступна новая версия";
 
 /* new version is available download button title */
 "Download" = "Загрузить";
 
 /* new version is available alert informativeText */
-"Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
+"Version %@ is available. You are currently running %@" = "Доступна версия %@. Сейчас вы используете %@";
 
 /* downloading new version window title */
-"Download Progress" = "Download Progress";
+"Download Progress" = "Прогресс загрузки";
 
 /* downloading new version time remaining placeholder text */
-"Calculating time remaining..." = "Calculating time remaining...";
+"Calculating time remaining..." = "Оценка оставшегося времени...";
 
 /* downloading new version window message */
-"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
+"Downloading Sequel Ace - %@" = "Загрузка Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
 "About %.1f seconds left" = "Осталось приблизительно секунд: %.1f";
@@ -3283,10 +3280,10 @@
 "Download Failed" = "Ошибка загрузки";
 
 /* Tool tip for the Show alert when update is available preference on the Notifications pane */
-"Only available for GitHub downloads" = "Only available for GitHub downloads";
+"Only available for GitHub downloads" = "Загрузить возможно только из GitHub";
 
 /* Tool tip warning for when the user sets auto-complete delay to zero */
-"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
+"WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "ВНИМАНИЕ: Нулевая задержка подсказок ввода может стать причиной странного результата.";
 
 /* downloading new version bytes of bytes done */
 "%@ of %@" = "%@ из %@";
@@ -3295,22 +3292,22 @@
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
 
 /* Menu item title for checking for updates */
-"Check for Updates..." = "Check for Updates...";
+"Check for Updates..." = "Проверить наличие обновлений...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
 
 /* Error alert title when the request to GitHub fails */
-"GitHub Request Failed" = "GitHub Request Failed";
+"GitHub Request Failed" = "Ошибка запроса к GitHub";
 
 /* Info alert title when there are Newer Releases Available */
-"No Newer Release Available" = "No Newer Release Available";
+"No Newer Release Available" = "Нет более новых версий";
 
 /* Info alert message when there are Newer Releases Available */
-"You are currently running the latest release." = "You are currently running the latest release.";
+"You are currently running the latest release." = "Вы используете самую свежую версию.";
 
 /* Alert button, disable the warning when skip-show-database is set to on */
-"Never show this again" = "Never show this again";
+"Never show this again" = "Больше не показывать это";
 
 /* Info alert when editing a generated column */
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";

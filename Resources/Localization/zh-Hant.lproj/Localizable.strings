@@ -1492,9 +1492,6 @@
  export header host label */
 "Host" = "主機";
 
-/* Localized help page for query favourites - do not localize if no translated webpage is available */
-"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
-
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754確定的雙精度浮點值，其中M為最大位數，並可以包含小數點後的D。注意：許多十進制數會因浮點值喪失精度，若需要確切值請參考DECIMAL類型。";
 
