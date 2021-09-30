@@ -2240,7 +2240,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if(sshTunnel == nil) {
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
                                         errorMessage:@"Failed to Initialize SSH Handle"
-                                              detail:@"Could not initiate ssh connection worker."
+                                              detail:@"Could not initiate SSH connection worker."
                                         rawErrorText:@"Could not initiate ssh connection worker."];
         return;
     }
