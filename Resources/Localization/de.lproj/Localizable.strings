@@ -3312,3 +3312,23 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* Info alert when editing a generated column */
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "Das aktuelle Feld \"%@\" ist eine generierte Spalte und kann daher nicht bearbeitet werden.";
+
+/* Pin a view to the top of the list of tables
+ Table List : Context Menu : Pin View
+ Table List : Gear Menu : Pin View */
+"Pin View" = "Pin View";
+
+/* Pin a table to the top of the list of tables
+ Table List : Context Menu : Pin Table
+ Table List : Gear Menu : Pin Table */
+"Pin Table" = "Pin Table";
+
+/* Pin a procudure to the top of the list of tables
+ Table List : Context Menu : Pin Procedure
+ Table List : Gear Menu : Pin Procedure */
+"Pin Procedure" = "Pin Procedure";
+
+/* Pin a function to the top of the list of tables
+ Table List : Context Menu : Pin Function
+ Table List : Gear Menu : Pin Function */
+"Pin Function" = "Pin Function";
