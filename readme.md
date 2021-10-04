@@ -39,7 +39,7 @@ If you encounter any issues, let us know by [creating a new issue](https://githu
 
 ## Moving Saved Connections from Sequel Pro
 
-To move your favourites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
+To move your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
 
 ## Contributing
 
