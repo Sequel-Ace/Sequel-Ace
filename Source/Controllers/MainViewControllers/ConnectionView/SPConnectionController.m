@@ -2143,23 +2143,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 					NSString *errorMessage;
 					if (sshTunnel && [sshTunnel state] == SPMySQLProxyForwardingFailed) {
 						errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@", @"message of panel when SSH port forwarding failed"), [self host], [mySQLConnection lastErrorMessage]];
-						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed") errorMessage:errorMessage detail:[sshTunnel debugMessages] rawErrorText:[mySQLConnection lastErrorMessage]];
+						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed") errorMessage:errorMessage detail:[sshTunnel debugMessages]];
 					}
 					else if ([mySQLConnection lastErrorID] == 1045) { // "Access denied" error
 						errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@", @"message of panel when connection to host failed due to access denied error"), [self host], [mySQLConnection lastErrorMessage]];
-						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Access denied!", @"connection failed due to access denied title") errorMessage:errorMessage detail:nil rawErrorText:[mySQLConnection lastErrorMessage]];
+						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Access denied!", @"connection failed due to access denied title") errorMessage:errorMessage detail:nil];
 					}
 					else if ([self type] == SPSocketConnection && (![self socket] || ![[self socket] length]) && ![mySQLConnection socketPath]) {
 						errorMessage = [NSString stringWithFormat:NSLocalizedString(@"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@", @"message of panel when connection to socket failed because optional socket could not be found"), [mySQLConnection lastErrorMessage]];
-						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket not found!", @"socket not found title") errorMessage:errorMessage detail:nil rawErrorText:[mySQLConnection lastErrorMessage]];
+						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket not found!", @"socket not found title") errorMessage:errorMessage detail:nil];
 					}
 					else if ([self type] == SPSocketConnection) {
 						errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@", @"message of panel when connection to host failed"), [mySQLConnection lastErrorMessage]];
-						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket connection failed!", @"socket connection failed title") errorMessage:errorMessage detail:nil rawErrorText:[mySQLConnection lastErrorMessage]];
+						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket connection failed!", @"socket connection failed title") errorMessage:errorMessage detail:nil];
 					}
 					else {
 						errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@", @"message of panel when connection to host failed"), [self host], (long)[[prefs objectForKey:SPConnectionTimeoutValue] integerValue], [mySQLConnection lastErrorMessage]];
-						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Connection failed!", @"connection failed title") errorMessage:errorMessage detail:nil rawErrorText:[mySQLConnection lastErrorMessage]];
+						[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Connection failed!", @"connection failed title") errorMessage:errorMessage detail:nil];
 					}
 				}
 
@@ -2180,7 +2180,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		if ([self database] && ![[self database] isEqualToString:@""]) {
 			if (![mySQLConnection selectDatabase:[self database]]) {
 				if (!isTestingConnection) {
-					[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Could not select database", @"message when database selection failed") errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@", @"message of panel when connection to db failed"), [self database], [mySQLConnection lastErrorMessage]] detail:nil rawErrorText:[mySQLConnection lastErrorMessage]];
+					[[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Could not select database", @"message when database selection failed") errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@", @"message of panel when connection to db failed"), [self database], [mySQLConnection lastErrorMessage]] detail:nil];
 				}
 
 				// Tidy up
@@ -2240,8 +2240,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if(sshTunnel == nil) {
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
                                         errorMessage:@"Failed to Initialize SSH Handle"
-                                              detail:@"Could not initiate ssh connection worker."
-                                        rawErrorText:@"Could not initiate ssh connection worker."];
+                                              detail:@"Could not initiate SSH connection worker."];
         return;
     }
 
@@ -2344,8 +2343,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
                                         errorMessage:[theTunnel lastError]
-                                              detail:[sshTunnel debugMessages]
-                                        rawErrorText:[theTunnel lastError]];
+                                              detail:[sshTunnel debugMessages]];
     } else if (newState == SPMySQLProxyConnected) {
         SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
 
@@ -2377,7 +2375,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * Ends a connection attempt by stopping the connection animation and
  * displaying a specified error message.
  */
-- (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail rawErrorText:(NSString *)rawErrorText
+- (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail
 {
     if(errorShowing == YES){
         SPLog(@"errorShowing already, returning.");
@@ -2394,7 +2392,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 		// If the SSH tunnel connection failed because the port it was trying to bind to was already in use take note
 		// of it so we can give the user the option of connecting via standard connection and use the existing tunnel.
-		if ([rawErrorText rangeOfString:@"bind"].location != NSNotFound) {
+		if ([theErrorMessage rangeOfString:@"bind"].location != NSNotFound) {
 			isSSHTunnelBindError = YES;
 		}
 	}
@@ -2410,10 +2408,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (theErrorMessage) {
 		errorMessage = [errorMessage stringByAppendingString:@"\n"];
 		errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
-	}
-	if (rawErrorText) {
-		errorMessage = [errorMessage stringByAppendingString:@"\n"];
-		errorMessage = [errorMessage stringByAppendingString:rawErrorText];
 	}
 
 	// Only display the connection error message if there is a window visible
