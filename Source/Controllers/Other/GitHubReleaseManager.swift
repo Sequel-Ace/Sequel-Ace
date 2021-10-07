@@ -178,7 +178,7 @@ import OSLog
         let message: String
         var asset: Asset?
 
-        if prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
+        if isFromMenuCheck == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
             return false
         }
