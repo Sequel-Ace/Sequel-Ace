@@ -205,7 +205,9 @@ import OSLog
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("A new version is available", comment: "A new version is available")
         alert.informativeText = message
-        alert.showsSuppressionButton = true
+        if isFromMenuCheck == false {
+            alert.showsSuppressionButton = true
+        }
         alert.alertStyle = .informational
         alert.addButton(withTitle: "View").tag = GitHubReleaseManager.NSModalResponseView.rawValue
 
