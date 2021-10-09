@@ -139,7 +139,7 @@
 - (IBAction)copyTable:(nullable id)sender;
 - (IBAction)renameTable:(nullable id)sender;
 - (IBAction)truncateTable:(nullable id)sender;
-- (IBAction)pinTable:(nullable id)sender;
+- (IBAction)togglePinTable:(nullable id)sender;
 - (IBAction)openTableInNewTab:(nullable id)sender;
 - (IBAction)openTableInNewWindow:(nullable id)sender;
 - (IBAction)togglePaneCollapse:(nullable id)sender;

@@ -319,10 +319,10 @@
                                                     </connections>
                                                 </menuItem>
                                                 <menuItem isSeparatorItem="YES" id="7922"/>
-                                                <menuItem title="Pin Table" id="Eql-O3-lUu">
+                                                <menuItem title="Toggle Pin Table" id="Eql-O3-lUu">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
-                                                        <action selector="pinTable:" target="68" id="Zxu-GN-ADz"/>
+                                                        <action selector="togglePinTable:" target="68" id="Zxu-GN-ADz"/>
                                                     </connections>
                                                 </menuItem>
                                                 <menuItem title="Open Table in New Tab" id="7923">
@@ -4639,10 +4639,10 @@ Gw
                     </connections>
                 </menuItem>
                 <menuItem isSeparatorItem="YES" id="6922"/>
-                <menuItem title="Pin Table" id="lMY-aA-xnU">
+                <menuItem title="Toggle Pin Table" id="lMY-aA-xnU">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="pinTable:" target="68" id="o2q-IR-D3Y"/>
+                        <action selector="togglePinTable:" target="68" id="o2q-IR-D3Y"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Open Table in New Tab" id="7683">
