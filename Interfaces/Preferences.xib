@@ -2488,7 +2488,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="height" constant="23" id="p5V-R8-dvE"/>
                     </constraints>
-                    <textFieldCell key="cell" title="Double click red items to refresh bookmark" id="oft-dR-p0X">
+                    <textFieldCell key="cell" title="Double-click red items to refresh bookmark" id="oft-dR-p0X">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
