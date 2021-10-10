@@ -343,15 +343,16 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 - (IBAction)revokeBookmark:(id)sender
 {
 	NSIndexSet *indiceToRevoke = [fileView selectedRowIndexes];
+	NSInteger __block revokedBookmarksOffset = 0;
 
 	// iterate through all selected indice
 	[indiceToRevoke enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
 		// retrieve the filename
-		NSString *fileName = [NSString stringWithFormat:@"file://%@", [fileNames safeObjectAtIndex:idx]];
-		
+		NSString *fileName = [NSString stringWithFormat:@"file://%@", [fileNames safeObjectAtIndex:idx - revokedBookmarksOffset]];
         if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
             [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
             SPLog(@"revokeBookmarkWithFilename success. refreshing bookmarks: %@", bookmarks);
+            revokedBookmarksOffset++;
         }
         else{
             SPLog(@"revokeBookmarkWithFilename failed: %@", fileName);
