@@ -46,7 +46,7 @@
 
 @implementation SPFilePreferencePane
 
-@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel;
+@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel, revokeButton;
 
 - (instancetype)init
 {
@@ -589,6 +589,11 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
             }
         }
     }
+}
+
+-(void)tableViewSelectionDidChange:(NSNotification *)notification {
+    NSTableView *table = [notification object];
+    [revokeButton setEnabled:[[table selectedRowIndexes] count] > 0];
 }
 
 @end

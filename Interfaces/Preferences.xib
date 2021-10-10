@@ -73,6 +73,7 @@
             <connections>
                 <outlet property="fileView" destination="eH2-Ed-Xh3" id="4ea-J5-z5n"/>
                 <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="YAa-9u-hpT"/>
+                <outlet property="revokeButton" destination="lHn-Wy-DTi" id="n10-yF-Qzc"/>
                 <outlet property="staleLabel" destination="C8B-BP-39F" id="4xj-uj-EZc"/>
                 <outlet property="view" destination="5dZ-tO-Ldn" id="VI1-LP-ygg"/>
             </connections>
@@ -2474,6 +2475,9 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <buttonCell key="cell" type="push" title="Revoke Selected Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="lHn-Wy-DTi">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
+                        <userDefinedRuntimeAttributes>
+                            <userDefinedRuntimeAttribute type="boolean" keyPath="enabled" value="NO"/>
+                        </userDefinedRuntimeAttributes>
                     </buttonCell>
                     <connections>
                         <action selector="revokeBookmark:" target="bKg-6I-v9A" id="hfz-ao-mRF"/>
