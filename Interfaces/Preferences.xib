@@ -1622,12 +1622,12 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="P6m-dR-d6a" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="3lY-KJ-e21"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="4P6-Go-lyC"/>
                 <constraint firstItem="5Vs-H5-Nca" firstAttribute="leading" secondItem="641" secondAttribute="leading" constant="20" id="4oq-4y-wkk"/>
-                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="9lg-Fd-6u7" secondAttribute="bottom" constant="5" id="5Zj-6C-bW5"/>
+                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="9lg-Fd-6u7" secondAttribute="bottom" constant="15" id="5Zj-6C-bW5"/>
                 <constraint firstItem="5Vs-H5-Nca" firstAttribute="firstBaseline" secondItem="l1q-C8-ytL" secondAttribute="firstBaseline" id="6bc-BQ-FtG"/>
                 <constraint firstItem="652" firstAttribute="top" secondItem="681" secondAttribute="bottom" constant="9" id="88K-qP-zB5"/>
                 <constraint firstItem="jJw-LF-gtW" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="9oi-kf-DQM"/>
                 <constraint firstItem="TG6-Q3-g30" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="A0b-vy-lrC"/>
-                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="jJw-LF-gtW" secondAttribute="top" id="C2G-02-FBf"/>
+                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="jJw-LF-gtW" secondAttribute="top" constant="5" id="C2G-02-FBf"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="9CM-2a-2JU" secondAttribute="centerY" id="D6v-YG-WzF"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="GcY-yy-sZn" secondAttribute="centerY" id="FDQ-ZG-T5Y"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="3Fg-G1-BWj" secondAttribute="bottom" constant="9" id="Hmn-IF-E0D"/>
