@@ -1682,7 +1682,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1083">
                     <rect key="frame" x="488" y="256" width="34" height="14"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="30" id="4mD-hS-s3t"/>
+                        <constraint firstAttribute="width" constant="46" id="4mD-hS-s3t"/>
                     </constraints>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="seconds" id="1084">
                         <font key="font" metaFont="message" size="11"/>
@@ -2050,7 +2050,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1517">
                     <rect key="frame" x="488" y="110" width="34" height="14"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="30" id="Wt0-DH-0yD"/>
+                        <constraint firstAttribute="width" constant="46" id="Wt0-DH-0yD"/>
                     </constraints>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="seconds" id="1527">
                         <font key="font" metaFont="message" size="11"/>
