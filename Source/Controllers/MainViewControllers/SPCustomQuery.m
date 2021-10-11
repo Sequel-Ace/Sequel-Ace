@@ -2129,7 +2129,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             }
         }
 
-        NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@ LIMIT 1",
+        NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
                               [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString],
                               [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryString];
 
