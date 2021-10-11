@@ -731,7 +731,7 @@ Gw
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="120" id="I6V-7f-rdZ"/>
                                     <constraint firstAttribute="height" constant="20" id="d3f-DE-oUX"/>
                                 </constraints>
-                                <buttonCell key="cell" type="push" title="Change" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="V62-2t-uwh">
+                                <buttonCell key="cell" type="push" title="Change…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="V62-2t-uwh">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
