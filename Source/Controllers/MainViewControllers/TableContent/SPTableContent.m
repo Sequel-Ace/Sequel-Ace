@@ -1828,13 +1828,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 
 	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
-	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
+	BOOL queryDoubleCheckWarningEnabled = [prefs boolForKey:SPShowWarningBeforeDeleteQuery];
     BOOL isDeleteSomeRowsRequest = alertReturnCode == NSAlertFirstButtonReturn;
     BOOL isDeleteAllRowsRequest = allowDeletingAllRows && alertReturnCode == NSAlertSecondButtonReturn;
 
     BOOL retCode = (isDeleteSomeRowsRequest || isDeleteAllRowsRequest);
 
-	if (retCode == YES && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
+	if (retCode == YES && queryWarningEnabled == YES && queryDoubleCheckWarningEnabled == YES) {
         NSAlert *doubleCheckAlert = [[NSAlert alloc] init];
         [doubleCheckAlert setMessageText:NSLocalizedString(@"Double Check", @"Double Check")];
         [doubleCheckAlert setInformativeText:NSLocalizedString(@"Double checking as you have 'Show warning before executing a query' set in Preferences", @"Double check delete query")];
@@ -1844,7 +1844,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
         if ([doubleCheckAlert runModal] == NSAlertFirstButtonReturn) {
             if ([[doubleCheckAlert suppressionButton] state] == NSOnState) {
-                [prefs setBool:YES forKey:SPQueryWarningEnabledSuppressed];
+                [prefs setBool:NO forKey:SPShowWarningBeforeDeleteQuery];
             }
             SPLog(@"User clicked Yes, exec queries");
             retCode = YES;
