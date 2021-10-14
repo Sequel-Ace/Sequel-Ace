@@ -341,6 +341,7 @@ extern NSString *SPConsoleEnableInterfaceLogging;
 extern NSString *SPConsoleEnableCustomQueryLogging;
 extern NSString *SPConsoleEnableImportExportLogging;
 extern NSString *SPConsoleEnableErrorLogging;
+extern NSString *SPDefaultColumnBehavior;
 
 // Network Prefpane
 extern NSString *SPConnectionTimeoutValue;
