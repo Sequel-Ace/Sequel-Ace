@@ -140,7 +140,7 @@ NSString *SPFavorites                            = @"favorites";
 
 // Notifications Prefpane
 NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecuteQuery";
-NSString *SPQueryWarningEnabledSuppressed        = @"SPQueryWarningEnabledSuppressed";
+NSString *SPShowWarningBeforeDeleteQuery         = @"ShowWarningBeforeDeleteQuery";
 NSString *SPShowUpdateAvailable                  = @"ShowUpdateAvailable";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPShowWarningSkipShowDatabase          = @"ShowWarningSkipShowDatabase";

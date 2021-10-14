@@ -1828,24 +1828,34 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 
 	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
-	BOOL queryWarningEnabledSuppressed = [prefs boolForKey:SPQueryWarningEnabledSuppressed];
+	BOOL queryDoubleCheckWarningEnabled = [prefs boolForKey:SPShowWarningBeforeDeleteQuery];
     BOOL isDeleteSomeRowsRequest = alertReturnCode == NSAlertFirstButtonReturn;
     BOOL isDeleteAllRowsRequest = allowDeletingAllRows && alertReturnCode == NSAlertSecondButtonReturn;
 
-    BOOL __block retCode = (isDeleteSomeRowsRequest || isDeleteAllRowsRequest);
+    BOOL retCode = (isDeleteSomeRowsRequest || isDeleteAllRowsRequest);
 
-	if (retCode == YES && queryWarningEnabled == YES && queryWarningEnabledSuppressed == NO) {
-        [NSAlert createDefaultAlertWithSuppressionWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Double Check", @"Double Check")] message:@"Double checking as you have 'Show warning before executing a query' set in Preferences" suppressionKey:SPQueryWarningEnabledSuppressed primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed") primaryButtonHandler:^{
-			SPLog(@"User clicked Yes, exec queries");
-			retCode = YES;
-		} cancelButtonHandler:^{
-			SPLog(@"Cancel pressed");
-			self->isEditingRow = NO;
-			self->currentlyEditingRow = -1;
-			// reload
-			[self loadTableValues];
-			retCode = NO;
-		}];
+	if (retCode == YES && queryWarningEnabled == YES && queryDoubleCheckWarningEnabled == YES) {
+        NSAlert *doubleCheckAlert = [[NSAlert alloc] init];
+        [doubleCheckAlert setMessageText:NSLocalizedString(@"Double Check", @"Double Check")];
+        [doubleCheckAlert setInformativeText:NSLocalizedString(@"Double checking as you have 'Show warning before executing a query' set in Preferences", @"Double check delete query")];
+        [doubleCheckAlert addButtonWithTitle:NSLocalizedString(@"Proceed", @"Proceed")];
+        [doubleCheckAlert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel")];
+        [doubleCheckAlert setShowsSuppressionButton: YES];
+
+        if ([doubleCheckAlert runModal] == NSAlertFirstButtonReturn) {
+            if ([[doubleCheckAlert suppressionButton] state] == NSOnState) {
+                [prefs setBool:NO forKey:SPShowWarningBeforeDeleteQuery];
+            }
+            SPLog(@"User clicked Yes, exec queries");
+            retCode = YES;
+        } else {
+            SPLog(@"Cancel pressed");
+            self->isEditingRow = NO;
+            self->currentlyEditingRow = -1;
+            // reload
+            [self loadTableValues];
+            retCode = NO;
+        }
 	}
 
 	if (retCode == NO) {

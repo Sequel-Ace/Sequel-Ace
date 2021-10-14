@@ -617,7 +617,7 @@ extern NSString *SPBundleTaskOutputFilePath;
 extern NSString *SPBundleTaskScriptCommandFilePath;
 extern NSString *SPBundleTaskCopyBlobFileDirectory;
 extern NSString *SPBundleTaskTableMetaDataFilePath;
-extern NSString *SPQueryWarningEnabledSuppressed;
+extern NSString *SPShowWarningBeforeDeleteQuery;
 extern NSString *SPBundleLegacyAppSchema;
 extern NSString *SPBundleAppSchema;
 extern NSString *SPExportFileHandleError;
