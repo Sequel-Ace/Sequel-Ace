@@ -1073,6 +1073,7 @@ Gw
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
+                        <binding destination="117" name="enabled" keyPath="values.EditInSheetForLongText" id="Rxq-3f-Vpo"/>
                         <binding destination="117" name="value" keyPath="values.EditInSheetForLongTextLengthThreshold" id="X5r-l4-CMf"/>
                     </connections>
                 </textField>
