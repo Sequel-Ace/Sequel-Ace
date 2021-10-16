@@ -1080,6 +1080,7 @@ Gw
             </subviews>
             <constraints>
                 <constraint firstItem="554" firstAttribute="top" secondItem="517" secondAttribute="bottom" constant="9" id="2Qu-5h-UB6"/>
+                <constraint firstItem="suA-e3-Xus" firstAttribute="centerY" secondItem="ykf-r8-q6R" secondAttribute="centerY" id="49j-gt-VYq"/>
                 <constraint firstItem="1468" firstAttribute="leading" secondItem="514" secondAttribute="leading" id="5oZ-xu-Ici"/>
                 <constraint firstItem="1470" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="7QM-tH-vMJ"/>
                 <constraint firstItem="520" firstAttribute="centerY" secondItem="517" secondAttribute="centerY" id="A30-fC-QR3"/>
@@ -1113,7 +1114,6 @@ Gw
                 <constraint firstItem="513" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="d79-vW-qhB"/>
                 <constraint firstItem="531" firstAttribute="leading" secondItem="514" secondAttribute="leading" id="dSb-nT-KlY"/>
                 <constraint firstItem="532" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="deG-L2-Slq"/>
-                <constraint firstItem="suA-e3-Xus" firstAttribute="top" secondItem="1470" secondAttribute="bottom" constant="9" id="fpK-Vg-ccN"/>
                 <constraint firstItem="515" firstAttribute="leading" secondItem="519" secondAttribute="trailing" constant="3" id="fqu-hb-Zkb"/>
                 <constraint firstItem="vFL-gu-iZ8" firstAttribute="baseline" secondItem="ykf-r8-q6R" secondAttribute="centerY" constant="2" id="g4a-8F-WeI"/>
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="552" secondAttribute="trailing" id="gEf-Yt-4oK"/>
