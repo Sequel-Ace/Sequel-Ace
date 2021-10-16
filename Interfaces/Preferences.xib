@@ -2002,6 +2002,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
+                        <binding destination="117" name="enabled" keyPath="values.CustomQuerySoftIndent" id="MfW-f7-kwf"/>
                         <binding destination="117" name="value" keyPath="values.CustomQuerySoftIndentWidth" id="2209"/>
                     </connections>
                 </textField>
