@@ -2213,7 +2213,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// Check for {SHIFT}TAB to try to insert query favorite via TAB trigger if SPTextView belongs to SPCustomQuery
 	// and TAB as soft indention
 	if ([theEvent keyCode] == 48 && [self isEditable] && [[self delegate] isKindOfClass:[SPCustomQuery class]]){
-        SPLog(@"TAB TIRGGER HERE");
 		NSRange targetRange = [self getRangeForCurrentWord];
 		NSString *tabTrigger = [[self string] substringWithRange:targetRange];
 
