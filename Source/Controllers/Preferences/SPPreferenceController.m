@@ -173,6 +173,7 @@
 
 	[tablesItem setLabel:[tablesPreferencePane preferencePaneName]];
 	[tablesItem setImage:[tablesPreferencePane preferencePaneIcon]];
+	[tablesItem setToolTip:[tablesPreferencePane preferencePaneToolTip]];
 	[tablesItem setTarget:self];
 	[tablesItem setAction:@selector(displayPreferencePane:)];
 
@@ -181,6 +182,7 @@
 
 	[notificationsItem setLabel:[notificationsPreferencePane preferencePaneName]];
 	[notificationsItem setImage:[notificationsPreferencePane preferencePaneIcon]];
+	[notificationsItem setToolTip:[notificationsPreferencePane preferencePaneToolTip]];
 	[notificationsItem setTarget:self];
 	[notificationsItem setAction:@selector(displayPreferencePane:)];
 
@@ -189,6 +191,7 @@
 	
 	[editorItem setLabel:[editorPreferencePane preferencePaneName]];
 	[editorItem setImage:[editorPreferencePane preferencePaneIcon]];
+	[editorItem setToolTip:[editorPreferencePane preferencePaneToolTip]];
 	[editorItem setTarget:self];
 	[editorItem setAction:@selector(displayPreferencePane:)];
 
@@ -197,6 +200,7 @@
 
 	[networkItem setLabel:[networkPreferencePane preferencePaneName]];
 	[networkItem setImage:[networkPreferencePane preferencePaneIcon]];
+	[networkItem setToolTip:[networkPreferencePane preferencePaneToolTip]];
 	[networkItem setTarget:self];
 	[networkItem setAction:@selector(displayPreferencePane:)];
 	
@@ -206,6 +210,7 @@
 	
 	[fileItem setLabel:[filePreferencePane preferencePaneName]];
 	[fileItem setImage:[filePreferencePane preferencePaneIcon]];
+	[fileItem setToolTip:[filePreferencePane preferencePaneToolTip]];
 	[fileItem setTarget:self];
 	[fileItem setAction:@selector(displayPreferencePane:)];
 
