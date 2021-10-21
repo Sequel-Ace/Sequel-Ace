@@ -354,7 +354,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            NSUInteger startStringLen = [[textView string] length];
             [selectedFaveQueryStr insertString:@"\n" atIndex:0];
             [textView insertAsSnippet:selectedFaveQueryStr atRange:[textView selectedRange]];
         }
@@ -385,7 +384,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            NSUInteger startStringLen = [[textView string] length];
             [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
             [textView insertAsSnippet:selectedHistoryQueryStr atRange:[textView selectedRange]];
         }
