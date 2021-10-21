@@ -2012,7 +2012,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
                           value:self.font
                           range:NSMakeRange(0, snip.length)];
 
-		[self.textStorage appendAttributedString:tmpAttStr];
+        [self.textStorage replaceCharactersInRange:targetRange withAttributedString:tmpAttStr];
 
 		// If autopair is enabled check whether snip begins with ( and ends with ), if so mark ) as pair-linked
 		if (
