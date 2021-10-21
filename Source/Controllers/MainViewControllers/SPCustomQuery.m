@@ -350,15 +350,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if(replaceContent) {
             SPLog(@"replaceContent == YES");
             [textView.textStorage setAttributedString:[[NSAttributedString alloc] initWithString:@""]];
-            [textView insertAsSnippet:selectedFaveQueryStr atRange:NSMakeRange(0, selectedFaveQueryStr.length)];
-            [textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
+            [textView insertAsSnippet:selectedFaveQueryStr atRange:NSMakeRange(0, 0)];
         }
         else{
             SPLog(@"replaceContent == NO");
             NSUInteger startStringLen = [[textView string] length];
             [selectedFaveQueryStr insertString:@"\n" atIndex:0];
-            [textView insertAsSnippet:selectedFaveQueryStr atRange:NSMakeRange(startStringLen, selectedFaveQueryStr.length)];
-            [textView setSelectedRange:NSMakeRange(startStringLen+1, selectedFaveQueryStr.length)];
+            [textView insertAsSnippet:selectedFaveQueryStr atRange:[textView selectedRange]];
         }
     }
 }
@@ -383,15 +381,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if(replaceContent){
             SPLog(@"replaceContent == YES");
             [textView.textStorage setAttributedString:[[NSAttributedString alloc] initWithString:@""]];
-            [textView insertAsSnippet:selectedHistoryQueryStr atRange:NSMakeRange(0, selectedHistoryQueryStr.length)];
-            [textView setSelectedRange:NSMakeRange(0,[[textView string] length])];
+            [textView insertAsSnippet:selectedHistoryQueryStr atRange:NSMakeRange(0, 0)];
         }
         else{
             SPLog(@"replaceContent == NO");
             NSUInteger startStringLen = [[textView string] length];
             [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
-            [textView insertAsSnippet:selectedHistoryQueryStr atRange:NSMakeRange(startStringLen, selectedHistoryQueryStr.length)];
-            [textView setSelectedRange:NSMakeRange(startStringLen+1, selectedHistoryQueryStr.length)];
+            [textView insertAsSnippet:selectedHistoryQueryStr atRange:[textView selectedRange]];
         }
 
     }

@@ -2012,7 +2012,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
                           value:self.font
                           range:NSMakeRange(0, snip.length)];
 
-		[self.textStorage appendAttributedString:tmpAttStr];
+        [self.textStorage replaceCharactersInRange:targetRange withAttributedString:tmpAttStr];
 
 		// If autopair is enabled check whether snip begins with ( and ends with ), if so mark ) as pair-linked
 		if (
@@ -2213,6 +2213,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// Check for {SHIFT}TAB to try to insert query favorite via TAB trigger if SPTextView belongs to SPCustomQuery
 	// and TAB as soft indention
 	if ([theEvent keyCode] == 48 && [self isEditable] && [[self delegate] isKindOfClass:[SPCustomQuery class]]){
+        SPLog(@"TAB TIRGGER HERE");
 		NSRange targetRange = [self getRangeForCurrentWord];
 		NSString *tabTrigger = [[self string] substringWithRange:targetRange];
 
