@@ -1418,7 +1418,7 @@ Gw
                         <constraint firstAttribute="width" constant="109" id="Gjl-91-TCa"/>
                         <constraint firstAttribute="height" constant="18" id="yDD-xr-H6c"/>
                     </constraints>
-                    <buttonCell key="cell" type="roundRect" title="Change" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MhF-tS-nrE">
+                    <buttonCell key="cell" type="roundRect" title="Change…" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MhF-tS-nrE">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="cellTitle"/>
                     </buttonCell>
@@ -1829,7 +1829,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="width" constant="100" id="Z6f-Ex-CfK"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Select" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1058">
+                    <buttonCell key="cell" type="push" title="Select…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1058">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -2338,7 +2338,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <constraint firstAttribute="width" constant="120" id="LCk-ny-bZd"/>
                         <constraint firstAttribute="height" constant="20" id="Xvw-M5-qBT"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Change" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1nt-aH-gM4">
+                    <buttonCell key="cell" type="push" title="Change…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1nt-aH-gM4">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -2405,7 +2405,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="sC9-8y-2jy"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Add Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
+                    <buttonCell key="cell" type="push" title="Add Files…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
