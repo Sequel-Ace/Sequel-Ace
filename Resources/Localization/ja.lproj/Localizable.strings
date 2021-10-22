@@ -2326,7 +2326,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Aceはこのインデックスに属する列を見つけることができませんでした。多分それは既に削除されていますか？";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Aceは、Mac OS Xに含まれるデフォルトのOpenSSHクライアントバージョンでのみサポートされ、テストされます。 異なるクライアントを使用すると、接続の問題、セキュリティリスク、またはまったく機能しない可能性があります。\n\nこのような構成に対するサポートを提供することはできませんのでご注意ください。";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Aceは、macOSに含まれるデフォルトのOpenSSHクライアントバージョンでのみサポートされ、テストされます。 異なるクライアントを使用すると、接続の問題、セキュリティリスク、またはまったく機能しない可能性があります。\n\nこのような構成に対するサポートを提供することはできませんのでご注意ください。";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Sequel Ace URL scheme コマンドはサポートされていません。";

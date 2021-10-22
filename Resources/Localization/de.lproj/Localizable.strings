@@ -2327,7 +2327,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace findet keine Spalten zu diesem Index. Eventuell wurden sie bereits entfernt?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace unterstützt nur die in macOS ausgelieferten OpenSSH Versionen. Andere SSH-Programme können Verbindungsprobleme verursachen, Sicherheitsrisiken darstellen oder fehlerhaft sein.\n\nLeider kann für andere SSH Programme kein Support angeboten werden.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace unterstützt nur die in macOS ausgelieferten OpenSSH Versionen. Andere SSH-Programme können Verbindungsprobleme verursachen, Sicherheitsrisiken darstellen oder fehlerhaft sein.\n\nLeider kann für andere SSH Programme kein Support angeboten werden.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Sequelace URL Schema-Befehl wird nicht unterstützt.";
