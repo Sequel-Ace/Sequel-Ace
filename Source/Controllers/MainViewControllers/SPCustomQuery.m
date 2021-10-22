@@ -354,7 +354,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            [selectedFaveQueryStr insertString:@"\n" atIndex:0];
+            if ([[textView.textStorage string] length] > 0) {
+                [selectedFaveQueryStr insertString:@"\n" atIndex:0];
+            }
             [textView insertAsSnippet:selectedFaveQueryStr atRange:[textView selectedRange]];
         }
     }
@@ -384,7 +386,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
+            if ([[textView.textStorage string] length] > 0) {
+                [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
+            }
             [textView insertAsSnippet:selectedHistoryQueryStr atRange:[textView selectedRange]];
         }
 
