@@ -2218,7 +2218,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="top" secondItem="1519" secondAttribute="bottom" id="753-w2-5rN"/>
                 <constraint firstItem="1040" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="88v-JT-MZi"/>
                 <constraint firstItem="1044" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" constant="-5" id="8Nx-5g-ekY"/>
-                <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="3" id="8X8-bM-jcO"/>
+                <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="10" id="8X8-bM-jcO"/>
                 <constraint firstItem="1518" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" constant="-5" id="CM5-5a-OYN"/>
                 <constraint firstItem="1085" firstAttribute="leading" secondItem="802" secondAttribute="leading" constant="20" id="E3j-XR-Tr3"/>
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="FMR-XC-hJi"/>
