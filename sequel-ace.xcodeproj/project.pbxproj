@@ -2486,7 +2486,6 @@
 					};
 					8D15AC270486D014006FF6A4 = {
 						LastSwiftMigration = 1200;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
