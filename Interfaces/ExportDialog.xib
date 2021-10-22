@@ -810,7 +810,7 @@ Gw
                                         </buttonCell>
                                         <attributedString key="userComments">
                                             <fragment>
-                                                <string key="content">When the default configuration of MySQL server is running on Windows or Mac OS X, or case sensitivity has been disabled, this option should be enabled to allow table relations to work correctly.</string>
+                                                <string key="content">When the default configuration of MySQL server is running on Windows or macOS, or case sensitivity has been disabled, this option should be enabled to allow table relations to work correctly.</string>
                                                 <attributes>
                                                     <color key="NSColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                     <font key="NSFont" metaFont="message" size="11"/>

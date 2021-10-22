@@ -1121,7 +1121,7 @@ Gw
                 <constraint firstItem="535" firstAttribute="top" secondItem="552" secondAttribute="bottom" constant="9" id="id8-2Z-Cwy"/>
                 <constraint firstItem="suA-e3-Xus" firstAttribute="trailing" secondItem="1470" secondAttribute="trailing" id="k0P-6r-dl3"/>
                 <constraint firstItem="518" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="kgA-Tk-nbF"/>
-                <constraint firstAttribute="bottom" secondItem="ykf-r8-q6R" secondAttribute="bottom" constant="36" id="kvy-n2-1l2"/>
+                <constraint firstAttribute="bottom" secondItem="ykf-r8-q6R" secondAttribute="bottom" constant="15" id="kvy-n2-1l2"/>
                 <constraint firstItem="950" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="lri-W5-gQr"/>
                 <constraint firstItem="553" firstAttribute="top" secondItem="950" secondAttribute="bottom" constant="9" id="m1c-cx-CDX"/>
                 <constraint firstItem="1468" firstAttribute="trailing" secondItem="514" secondAttribute="trailing" id="mDY-Ra-RD2"/>
@@ -1418,7 +1418,7 @@ Gw
                         <constraint firstAttribute="width" constant="109" id="Gjl-91-TCa"/>
                         <constraint firstAttribute="height" constant="18" id="yDD-xr-H6c"/>
                     </constraints>
-                    <buttonCell key="cell" type="roundRect" title="Change" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MhF-tS-nrE">
+                    <buttonCell key="cell" type="roundRect" title="Change…" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MhF-tS-nrE">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="cellTitle"/>
                     </buttonCell>
@@ -1829,7 +1829,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="width" constant="100" id="Z6f-Ex-CfK"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Select" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1058">
+                    <buttonCell key="cell" type="push" title="Select…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1058">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -2218,7 +2218,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="top" secondItem="1519" secondAttribute="bottom" id="753-w2-5rN"/>
                 <constraint firstItem="1040" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="88v-JT-MZi"/>
                 <constraint firstItem="1044" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" constant="-5" id="8Nx-5g-ekY"/>
-                <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="3" id="8X8-bM-jcO"/>
+                <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="10" id="8X8-bM-jcO"/>
                 <constraint firstItem="1518" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" constant="-5" id="CM5-5a-OYN"/>
                 <constraint firstItem="1085" firstAttribute="leading" secondItem="802" secondAttribute="leading" constant="20" id="E3j-XR-Tr3"/>
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="FMR-XC-hJi"/>
@@ -2338,7 +2338,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <constraint firstAttribute="width" constant="120" id="LCk-ny-bZd"/>
                         <constraint firstAttribute="height" constant="20" id="Xvw-M5-qBT"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Change" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1nt-aH-gM4">
+                    <buttonCell key="cell" type="push" title="Change…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1nt-aH-gM4">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -2405,7 +2405,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="sC9-8y-2jy"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Add Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
+                    <buttonCell key="cell" type="push" title="Add Files…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
