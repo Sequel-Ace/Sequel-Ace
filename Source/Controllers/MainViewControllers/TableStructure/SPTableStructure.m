@@ -816,8 +816,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Check for pre-defined field type SERIAL
 	if([theRowType isEqualToString:@"SERIAL"]) {
 		specialFieldTypes = YES;
-	}
-
+    }
+    
 	// Check for pre-defined field type BOOL(EAN)
 	else if([theRowType rangeOfRegex:@"(?i)bool(ean)?"].length) {
 		specialFieldTypes = YES;

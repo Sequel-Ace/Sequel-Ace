@@ -149,7 +149,6 @@ NSString *SPConsoleEnableInterfaceLogging        = @"ConsoleEnableInterfaceLoggi
 NSString *SPConsoleEnableCustomQueryLogging      = @"ConsoleEnableCustomQueryLogging";
 NSString *SPConsoleEnableImportExportLogging     = @"ConsoleEnableImportExportLogging";
 NSString *SPConsoleEnableErrorLogging            = @"ConsoleEnableErrorLogging";
-NSString *SPDefaultColumnBehavior                = @"DefaultColumnBehavior";
 
 // Network Prefpane
 NSString *SPConnectionTimeoutValue               = @"ConnectionTimeoutValue";

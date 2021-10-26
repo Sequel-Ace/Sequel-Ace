@@ -5636,13 +5636,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         
         [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
 
-        // Check if DefaultColumnBehavior is set to ON
-        if ( ![self->prefs boolForKey:SPDefaultColumnBehavior] ) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning",@"warning")
-                                         message:NSLocalizedString(@"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.", @"Warning message about the default value")
-                                        callback:^{ [self->prefs setBool:true forKey:SPDefaultColumnBehavior]; }
-             ];
-        }
     });
 }
 
