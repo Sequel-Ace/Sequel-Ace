@@ -442,6 +442,7 @@
 		C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F9270F162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png */; };
 		C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */; };
 		C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */; };
+		D35577F52728C6CF002B3989 /* SPWindowTabAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1145,6 +1146,7 @@
 		C9F9270F162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-info@2x.png"; sourceTree = "<group>"; };
 		C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse.png"; sourceTree = "<group>"; };
 		C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse@2x.png"; sourceTree = "<group>"; };
+		D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowTabAccessory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1687,6 +1689,7 @@
 			children = (
 				29A1B7E30FD1293A000B88E8 /* SPPrintAccessory.h */,
 				29A1B7E40FD1293A000B88E8 /* SPPrintAccessory.m */,
+				D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */,
 				BC01BCCD104024BE006BDEE7 /* SPEncodingPopupAccessory.h */,
 				BC01BCCE104024BE006BDEE7 /* SPEncodingPopupAccessory.m */,
 			);
@@ -2959,6 +2962,7 @@
 				5885CF4A116A63B200A85ACB /* SPFileHandle.m in Sources */,
 				1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */,
 				1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */,
+				D35577F52728C6CF002B3989 /* SPWindowTabAccessory.swift in Sources */,
 				11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */,
 				1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
