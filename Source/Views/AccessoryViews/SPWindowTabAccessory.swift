@@ -30,7 +30,7 @@
 
 import Cocoa
 
-class SPWindowTabAccessory: NSView {
+final class SPWindowTabAccessory: NSView {
     // MARK: Initializers
     required init?(coder: NSCoder) {
         super.init(coder: coder)
@@ -102,6 +102,7 @@ class SPWindowTabAccessory: NSView {
     // MARK: Callbacks
 
     override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
         if superview != nil {
             self.snp.makeConstraints {
                 $0.leading.equalToSuperview().offset(35)
