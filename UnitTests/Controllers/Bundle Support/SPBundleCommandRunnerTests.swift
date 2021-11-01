@@ -28,6 +28,7 @@
 //
 
 import XCTest
+import Sequel_Ace
 
 class SPBundleCommandRunnerTests: XCTestCase {
 
@@ -39,16 +40,19 @@ class SPBundleCommandRunnerTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
+//    func testNoErr() throws {
 //        let action = SPBundleCommandRunner.computeAction(error: nil)
 //        XCTAssert(action == "")
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+//    }
+//    
+//    func testNilPointee() throws {
+//        var err: NSError? = nil
+//        withUnsafeMutablePointer(to: &err) { (ptr) in
+//            let errPtr: NSErrorPointer = AutoreleasingUnsafeMutablePointer(ptr)
+//            let action = SPBundleCommandRunner.computeAction(error: errPtr)
+//            XCTAssert(action == "")
+//        }
+//        
+//    }
 
 }

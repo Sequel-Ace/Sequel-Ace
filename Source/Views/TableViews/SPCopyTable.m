@@ -1558,48 +1558,23 @@ static const NSInteger kBlobAsImageFile = 4;
     }
 
     else if([action isEqualToString:SPBundleOutputActionShowAsHTML]) {
-        BOOL correspondingWindowFound = NO;
-        for(id win in [NSApp windows]) {
-            if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
-                if([[[win delegate] windowUUID] isEqualToString:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
-                    correspondingWindowFound = YES;
-                    [[win delegate] displayHTMLContent:output withOptions:nil];
-                    break;
+        Class htmlWindow = [SPBundleHTMLOutputController class];
+        NSString *cmdUUID = [cmdData objectForKey:SPBundleFileUUIDKey];
+        for (NSWindow *win in [NSApp windows]) {
+            if ([win.delegate isKindOfClass:htmlWindow]) {
+                SPBundleHTMLOutputController *htmlDelegate = (SPBundleHTMLOutputController *)win.delegate;
+                if ([htmlDelegate.windowUUID isEqualToString:cmdUUID]) {
+                    [htmlDelegate displayHTMLContent:output withOptions:nil];
+                    return;
                 }
             }
         }
-        if(!correspondingWindowFound) {
-            SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
-            [bundleController setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
-            [bundleController displayHTMLContent:output withOptions:nil];
-            [SPBundleManager.shared addHTMLOutputController:bundleController];
-        }
+        
+        SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
+        [bundleController setWindowUUID:cmdUUID];
+        [bundleController displayHTMLContent:output withOptions:nil];
+        [SPBundleManager.shared addHTMLOutputController:bundleController];
     }
-
-				else if([action isEqualToString:SPBundleOutputActionShowAsHTML]) {
-					BOOL correspondingWindowFound = NO;
-					for(id win in [NSApp windows]) {
-						if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
-							if([[[win delegate] windowUUID] isEqualToString:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
-								correspondingWindowFound = YES;
-								[[win delegate] displayHTMLContent:output withOptions:nil];
-								break;
-							}
-						}
-					}
-					if(!correspondingWindowFound) {
-						SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
-						[bundleController setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
-						[bundleController displayHTMLContent:output withOptions:nil];
-						[SPBundleManager.shared addHTMLOutputController:bundleController];
-					}
-				}
-			}
-		} else if([err code] != 9) { // Suppress an error message if command was killed
-			NSString *errorMessage  = [err localizedDescription];
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage] callback:nil];
-		}
-	}
 }
 
 #pragma mark -

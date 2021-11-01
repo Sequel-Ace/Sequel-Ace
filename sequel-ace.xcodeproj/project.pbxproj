@@ -355,6 +355,8 @@
 		6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */; };
 		6F0EA900272FA5A100514FF1 /* SPBundleCommandRunnerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8FF272FA5A100514FF1 /* SPBundleCommandRunnerAdditions.swift */; };
 		6F0EA90C272FB13900514FF1 /* SPBundleCommandRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA90B272FB13900514FF1 /* SPBundleCommandRunnerTests.swift */; };
+		6F0EA9162730311800514FF1 /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 6F0EA9152730311800514FF1 /* FMDB */; };
+		6F0EA9182730311800514FF1 /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6F0EA9172730311800514FF1 /* AppCenterAnalytics */; };
 		73F70A961E4E547500636550 /* SPJSONFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F70A951E4E547500636550 /* SPJSONFormatter.m */; };
 		8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFA5224011B700D10172 /* button_addTemplate.pdf */; };
 		8831EFAA2240128700D10172 /* button_removeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFA92240128600D10172 /* button_removeTemplate.pdf */; };
@@ -1162,6 +1164,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				51DCBEF0257134190098E303 /* libz.tbd in Frameworks */,
+				6F0EA9182730311800514FF1 /* AppCenterAnalytics in Frameworks */,
+				6F0EA9162730311800514FF1 /* FMDB in Frameworks */,
 				51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */,
 				502D22151BA62FA5000D4CE7 /* Security.framework in Frameworks */,
 				1717FA43155831600065C036 /* libicucore.dylib in Frameworks */,
@@ -2431,10 +2435,14 @@
 			buildRules = (
 			);
 			dependencies = (
+				6F0EA91D2730312200514FF1 /* PBXTargetDependency */,
+				6F0EA91F2730312200514FF1 /* PBXTargetDependency */,
 				518402D924A3FF4F004693B0 /* PBXTargetDependency */,
 			);
 			name = "Unit Tests";
 			packageProductDependencies = (
+				6F0EA9152730311800514FF1 /* FMDB */,
+				6F0EA9172730311800514FF1 /* AppCenterAnalytics */,
 			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
@@ -3102,6 +3110,14 @@
 			isa = PBXTargetDependency;
 			target = 58CDB3350FCE13C900F8ACA3 /* SequelAceTunnelAssistant */;
 			targetProxy = 58CDB34A0FCE144000F8ACA3 /* PBXContainerItemProxy */;
+		};
+		6F0EA91D2730312200514FF1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 6F0EA91C2730312200514FF1 /* FMDB */;
+		};
+		6F0EA91F2730312200514FF1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 6F0EA91E2730312200514FF1 /* AppCenterAnalytics */;
 		};
 /* End PBXTargetDependency section */
 
@@ -4177,6 +4193,26 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */;
 			productName = FMDB;
+		};
+		6F0EA9152730311800514FF1 /* FMDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */;
+			productName = FMDB;
+		};
+		6F0EA9172730311800514FF1 /* AppCenterAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
+			productName = AppCenterAnalytics;
+		};
+		6F0EA91C2730312200514FF1 /* FMDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */;
+			productName = FMDB;
+		};
+		6F0EA91E2730312200514FF1 /* AppCenterAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
+			productName = AppCenterAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
