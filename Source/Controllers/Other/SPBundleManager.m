@@ -59,19 +59,19 @@ What do we want this to do?
 @synthesize migratedLegacyBundles;
 @synthesize bundleItems, bundleTriggers, bundleCategories, bundleUsedScopes, bundleKeyEquivalents, bundleHTMLOutputController, installedBundleUUIDs;
 
-static SPBundleManager *sharedSPBundleManager = nil;
+static SPBundleManager *sharedManager = nil;
 
-+ (SPBundleManager *)sharedSPBundleManager
++ (SPBundleManager *)shared
 {
 	static dispatch_once_t onceToken;
 
-	if (sharedSPBundleManager == nil) {
+	if (sharedManager == nil) {
 		dispatch_once_on_main_thread(&onceToken, ^{
-			sharedSPBundleManager = [[SPBundleManager alloc] init];
+            sharedManager = [[SPBundleManager alloc] init];
 		});
 	}
 
-	return sharedSPBundleManager;
+	return sharedManager;
 }
 
 - (instancetype)init
@@ -223,27 +223,14 @@ static SPBundleManager *sharedSPBundleManager = nil;
 					else{
 						SPLog(@"File renamed successfully “%@”", migratedPath);
 						
-						[self->migratedLegacyBundles safeAddObject:migratedPath];
+						[migratedLegacyBundles safeAddObject:migratedPath];
 
-						// we need to add the new bundle version
-						NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
-
-						SPLog(@"infoPath %@", infoPath);
-
-						// so load up the plist
-						NSDictionary *cmdData = nil;
-
-						NSError *readError = nil;
-
-						NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSDataReadingUncached error:&readError];
-
-						if(pData && !readError) {
-							cmdData = [NSPropertyListSerialization propertyListWithData:pData
-																				options:NSPropertyListImmutable
-																				 format:NULL
-																				  error:&readError];
-						}
-
+                        // we need to add the new bundle version
+                        NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
+                        NSError *readError = nil;
+                        SPLog(@"infoPath %@", infoPath);
+                        NSDictionary *cmdData = [SPBundleManager.shared loadBundleAt:infoPath error:&readError];
+						
 						if(!cmdData || readError) {
 							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
 							[self doOrDoNotBeep:infoPath];
@@ -295,7 +282,7 @@ static SPBundleManager *sharedSPBundleManager = nil;
 		}];
 	}];
 
-	// I think these shoul dbe the same... but in case
+	// I think these should be the same... but in case
 	if([bundleItems isEqualToDictionary:bundleItemsCopy]){
 		SPLog(@"THE SAME!");
 	}
@@ -434,29 +421,18 @@ static SPBundleManager *sharedSPBundleManager = nil;
 
 					foundInstalledBundles = YES;
 
-					NSString *infoPath = [NSString stringWithFormat:@"%@/%@/%@", bundlePath, bundle, SPBundleFileName];
-					NSDictionary *cmdData = nil;
-					{
-						NSError *readError = nil;
+                    NSError *loadErr;
+                    NSString *infoPath = [NSString stringWithFormat:@"%@/%@/%@", bundlePath, bundle, SPBundleFileName];
+                    NSDictionary *cmdData = [self loadBundleAt:infoPath error:&loadErr];
+                    if (!cmdData || loadErr) {
+                        SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, error.localizedDescription);
+                        [self doOrDoNotBeep:bundle];
 
-						NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&readError];
+                        // remove the dodgy bundle
+                        [self removeBundle:bundle];
+                        continue;
+                    }
 
-						if(pData && !readError) {
-							cmdData = [NSPropertyListSerialization propertyListWithData:pData
-																				options:NSPropertyListImmutable
-																				 format:NULL
-																				  error:&readError];
-						}
-
-						if(!cmdData || readError) {
-							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
-							[self doOrDoNotBeep:bundle];
-
-							// remove the dodgy bundle
-							[self removeBundle:bundle];
-							continue;
-						}
-					}
 
 					if((![cmdData objectForKey:SPBundleFileDisabledKey] || ![[cmdData objectForKey:SPBundleFileDisabledKey] intValue])
 						&& [cmdData objectForKey:SPBundleFileNameKey]
@@ -491,23 +467,11 @@ static SPBundleManager *sharedSPBundleManager = nil;
 									}
 
 									if([installedBundleUUIDs objectForKey:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
-										NSDictionary *cmdDataOld = nil;
-										{
-											NSError *readError = nil;
-
-											NSData *pDataOld = [NSData dataWithContentsOfFile:oldBundlePath options:NSUncachedRead error:&readError];
-
-											if(pDataOld && !readError) {
-												cmdDataOld = [NSPropertyListSerialization propertyListWithData:pDataOld
-																									   options:NSPropertyListImmutable
-																										format:NULL
-																										 error:&readError];
-											}
-
-											if(!cmdDataOld || readError) {
-												SPLog(@"“%@” file couldn't be read. (error=%@)", oldBundlePath, readError.localizedDescription);
-											}
-										}
+                                        loadErr = nil;
+                                        NSDictionary *cmdDataOld = [self loadBundleAt:oldBundlePath error:&loadErr];
+                                        if(!cmdDataOld || loadErr) {
+                                            SPLog(@"“%@” file couldn't be read. (error=%@)", oldBundlePath, loadErr.localizedDescription);
+                                        }
 
 										NSString *oldBundle = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:0], bundle];
 										// Check for modifications
@@ -529,30 +493,19 @@ static SPBundleManager *sharedSPBundleManager = nil;
 												NSBeep();
 												continue;
 											}
-											NSString *duplicatedBundleCommand = [NSString stringWithFormat:@"%@/%@", duplicatedBundle, SPBundleFileName];
-											NSMutableDictionary *dupData = [NSMutableDictionary dictionary];
-											{
-												NSError *readError = nil;
+											
+                                            loadErr = nil;
+                                            NSString *duplicatedBundleCommand = [NSString stringWithFormat:@"%@/%@", duplicatedBundle, SPBundleFileName];
+                                            NSMutableDictionary *dupData = [NSMutableDictionary dictionary];
+                                            NSDictionary *dupBundleData = [self loadBundleAt:duplicatedBundleCommand error:&loadErr];
+                                            if (dupBundleData && !loadErr) {
+                                                [dupData setDictionary:dupBundleData];
+                                            } else {
+                                                SPLog(@"“%@” file couldn't be read. (error=%@)", duplicatedBundleCommand, loadErr.localizedDescription);
+                                                NSBeep();
+                                                continue;
+                                            }
 
-												NSData *dData = [NSData dataWithContentsOfFile:duplicatedBundleCommand options:NSUncachedRead error:&readError];
-
-												if(dData && !readError) {
-													NSDictionary *dDict = [NSPropertyListSerialization propertyListWithData:dData
-																													options:NSPropertyListImmutable
-																													 format:NULL
-																													  error:&readError];
-
-													if(dDict && !readError) {
-														[dupData setDictionary:dDict];
-													}
-												}
-
-												if (![dupData count] || readError) {
-													SPLog(@"“%@” file couldn't be read. (error=%@)", duplicatedBundleCommand, readError.localizedDescription);
-													NSBeep();
-													continue;
-												}
-											}
 											[dupData setObject:[NSString stringWithNewUUID] forKey:SPBundleFileUUIDKey];
 											NSString *orgName = [dupData objectForKey:SPBundleFileNameKey];
 											[dupData setObject:[NSString stringWithFormat:@"%@ (user)", orgName] forKey:SPBundleFileNameKey];
@@ -891,25 +844,13 @@ static SPBundleManager *sharedSPBundleManager = nil;
 			return;
 		}
 
-		NSDictionary *cmdData = nil;
-		{
-			NSError *error = nil;
-
-			NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
-
-			if(pData && !error) {
-				cmdData = [NSPropertyListSerialization propertyListWithData:pData
-																	options:NSPropertyListImmutable
-																	 format:NULL
-																	  error:&error];
-			}
-
-			if(!cmdData || error) {
-				SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, error);
-				NSBeep();
-				return;
-			}
-		}
+        NSError *loadErr = nil;
+        NSDictionary *cmdData = [self loadBundleAt:infoPath error:&loadErr];
+        if(!cmdData || loadErr) {
+            SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, loadErr);
+            NSBeep();
+            return;
+        }
 
 		if([cmdData objectForKey:SPBundleFileCommandKey] && [(NSString *)[cmdData objectForKey:SPBundleFileCommandKey] length]) {
 
@@ -1052,27 +993,14 @@ static SPBundleManager *sharedSPBundleManager = nil;
 
 	NSString *newPath = [NSString stringWithFormat:@"%@/%@", bundlePath, [filePath lastPathComponent]];
 
-	NSDictionary *cmdData = nil;
-	{
-		NSError *error = nil;
-
-		NSString *infoPath = [NSString stringWithFormat:@"%@/%@", filePath, SPBundleFileName];
-		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
-
-		if(pData && !error) {
-			cmdData = [NSPropertyListSerialization propertyListWithData:pData
-																 options:NSPropertyListImmutable
-																  format:NULL
-																   error:&error];
-		}
-
-		if (!cmdData || error) {
-			SPLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, error.localizedDescription);
-			[self doOrDoNotBeep:filePath];
-			return;
-		}
-	}
-
+    NSError *loadErr = nil;
+    NSString *infoPath = [NSString stringWithFormat:@"%@/%@", filePath, SPBundleFileName];
+    NSDictionary *cmdData = [self loadBundleAt:infoPath error:&loadErr];
+    if(!cmdData || loadErr) {
+        SPLog(@"“%@/%@” file couldn't be read. (error=%@)", filePath, SPBundleFileName, loadErr.localizedDescription);
+        [self doOrDoNotBeep:filePath];
+        return;
+    }
 	SPLog(@"cmdData %@", cmdData);
 
 

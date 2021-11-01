@@ -76,7 +76,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)checkForNewVersionFromMenu;
 
 @property (readwrite, strong) NSFileManager *fileManager;
-@property (readwrite, strong) SPBundleManager *sharedSPBundleManager;
 
 @property (nonatomic, strong, readwrite) TabManager *tabManager;
 
@@ -86,7 +85,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
 @synthesize lastBundleBlobFilesDirectory;
 @synthesize fileManager;
-@synthesize sharedSPBundleManager;
 @synthesize mainMenu;
 @synthesize sshProcessIDs;
 #pragma mark -
@@ -251,8 +249,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // init SQLite query history
     SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
 
-    sharedSPBundleManager = SPBundleManager.sharedSPBundleManager;
-
     NSDictionary *spfDict = nil;
     NSArray *args = [[NSProcessInfo processInfo] arguments];
     if (args.count == 5) {
@@ -289,8 +285,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(switchToNextTab:) name:SPWindowSelectNextTabNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveConnectionsToSPF:) name:SPDocumentSaveToSPFNotification object:nil];
 
-    [sharedSPBundleManager reloadBundles:self];
-    [self _copyDefaultThemes];;
+    [SPBundleManager.shared reloadBundles:self];
+    [self _copyDefaultThemes];
 
     // If no documents are open, open one
     if (![self frontDocument]) {
@@ -649,7 +645,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [self openColorThemeFileAtPath:filePath];
         }
         else if ([fileExt isEqualToString:[SPUserBundleFileExtension lowercaseString]] || [fileExt isEqualToString:[SPUserBundleFileExtensionV2 lowercaseString]]) {
-            [sharedSPBundleManager openUserBundleAtPath:filePath];
+            [SPBundleManager.shared openUserBundleAtPath:filePath];
         }
         else {
             NSBeep();
@@ -1698,15 +1694,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (IBAction)reloadBundles:(id)sender{
-    [SPBundleManager.sharedSPBundleManager reloadBundles:sender];
+    [SPBundleManager.shared reloadBundles:sender];
 }
 
 - (IBAction)openBundleEditor:(id)sender{
-    [SPBundleManager.sharedSPBundleManager openBundleEditor:sender];
+    [SPBundleManager.shared openBundleEditor:sender];
 }
 
 - (IBAction)bundleCommandDispatcher:(id)sender{
-    [SPBundleManager.sharedSPBundleManager bundleCommandDispatcher:sender];
+    [SPBundleManager.shared bundleCommandDispatcher:sender];
 }
 
 - (void)rebuildMenus{
@@ -1727,7 +1723,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [menu addItem:anItem];
 
     // Bail out if no Bundle was installed
-    if (!SPBundleManager.sharedSPBundleManager.foundInstalledBundles) return;
+    if (!SPBundleManager.shared.foundInstalledBundles) return;
 
     // Add installed Bundles
     // For each scope add a submenu but not for the last one (should be General always)
@@ -1744,8 +1740,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     BOOL bundleOtherThanGeneralFound = NO;
     for(NSString* scope in scopes) {
 
-        NSArray *scopeBundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:scope];
-        NSArray *scopeBundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:scope];
+        NSArray *scopeBundleCategories = [SPBundleManager.shared bundleCategoriesForScope:scope];
+        NSArray *scopeBundleItems = [SPBundleManager.shared bundleItemsForScope:scope];
 
         if(![scopeBundleItems count]) {
             k++;

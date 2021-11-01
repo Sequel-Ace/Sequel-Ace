@@ -2946,7 +2946,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 					}
 				}
 				if(error == nil){
-					[SPBundleManager.sharedSPBundleManager addHTMLOutputController:bundleController];
+					[SPBundleManager.shared addHTMLOutputController:bundleController];
 				}
 				// set straight away, or wait for them to close the window?
 				//[prefs setBool:YES forKey:SPConnectionShownSocketHelp];

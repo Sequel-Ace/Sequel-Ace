@@ -352,6 +352,7 @@
 		58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF16C0F23D66600518E8E /* SPSQLParser.m */; };
 		58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF57D0F3B4E9700518E8E /* SPTableData.m */; };
 		65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */; };
+		6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */; };
 		73F70A961E4E547500636550 /* SPJSONFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F70A951E4E547500636550 /* SPJSONFormatter.m */; };
 		8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFA5224011B700D10172 /* button_addTemplate.pdf */; };
 		8831EFAA2240128700D10172 /* button_removeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFA92240128600D10172 /* button_removeTemplate.pdf */; };
@@ -1022,6 +1023,8 @@
 		58FEF57D0F3B4E9700518E8E /* SPTableData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableData.m; sourceTree = "<group>"; };
 		65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFilePreferencePane.m; sourceTree = "<group>"; };
 		65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPFilePreferencePane.h; sourceTree = "<group>"; };
+		6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditions.swift; sourceTree = "<group>"; };
+		6F0EA8EE272F372700514FF1 /* developing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = developing.md; sourceTree = "<group>"; };
 		73F70A941E4E547500636550 /* SPJSONFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPJSONFormatter.h; sourceTree = "<group>"; };
 		73F70A951E4E547500636550 /* SPJSONFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPJSONFormatter.m; sourceTree = "<group>"; };
 		8831EFA5224011B700D10172 /* button_addTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_addTemplate.pdf; sourceTree = "<group>"; };
@@ -1478,8 +1481,9 @@
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
 				5806B76311A991EC00813A88 /* SPDocumentController.m */,
 				1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */,
-				1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */,
 				1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */,
+				1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */,
+				6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */,
 				1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */,
 				1A89557825D6DE860060CE72 /* GitHub.swift */,
 				1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */,
@@ -2164,6 +2168,7 @@
 				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
 				1798F17E1550171B004B0AB8 /* LICENSE */,
 				38F37194182F0621008EB031 /* readme.md */,
+				6F0EA8EE272F372700514FF1 /* developing.md */,
 				17E641420EF01E8A001BC333 /* Source */,
 				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
 				17E642050EF020A3001BC333 /* Interfaces */,
@@ -2878,6 +2883,7 @@
 				58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
+				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,
 				1A24B627258A2E9A00541E88 /* SecureBookmarkData.swift in Sources */,
 				179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */,
 				B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */,

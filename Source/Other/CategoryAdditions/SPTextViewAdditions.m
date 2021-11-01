@@ -489,10 +489,9 @@
 }
 
 /**
- * Increase the textView's font size by 1
+ * Set the textView's font size to 11
  */
-- (void)makeTextStandardSize
-{
+- (void)makeTextStandardSize {
 	NSFont *aFont = [self font];
 	BOOL editableStatus = [self isEditable];
 	[self setEditable:YES];
@@ -505,7 +504,7 @@
 
 	NSInteger idx = [sender tag] - 1000000;
 	NSString *infoPath = nil;
-	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [SPBundleManager.shared bundleItemsForScope:SPBundleScopeInputField];
 	if(idx >=0 && idx < (NSInteger)[bundleItems count]) {
 		infoPath = [[bundleItems objectAtIndex:idx] objectForKey:SPBundleInternPathToFileKey];
 	} else {
@@ -519,25 +518,13 @@
 		return;
 	}
 
-	NSDictionary *cmdData = nil;
-	{
-		NSError *error = nil;
-
-		NSData *pData = [NSData dataWithContentsOfFile:infoPath options:NSUncachedRead error:&error];
-
-		if(!error) {
-			cmdData = [NSPropertyListSerialization propertyListWithData:pData
-																 options:NSPropertyListImmutable
-																  format:NULL
-																   error:&error];
-		}
-		
-		if(!cmdData || error) {
-			NSLog(@"“%@” file couldn't be read. (readError=%@)", infoPath, error);
-			NSBeep();
-			return;
-		}
-	}
+    NSError *loadErr;
+    NSDictionary *cmdData = [SPBundleManager.shared loadBundleAt:infoPath error:&loadErr];
+    if(!cmdData || loadErr) {
+        NSLog(@"“%@” file couldn't be read. (error=%@)", infoPath, loadErr.localizedDescription);
+        NSBeep();
+        return;
+    }
 
 	if([cmdData objectForKey:SPBundleFileCommandKey] && [(NSString *)[cmdData objectForKey:SPBundleFileCommandKey] length]) {
 
@@ -733,7 +720,7 @@
 						SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
 						[c setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
 						[c displayHTMLContent:output withOptions:nil];
-						[SPBundleManager.sharedSPBundleManager addHTMLOutputController:c];
+						[SPBundleManager.shared addHTMLOutputController:c];
 					}
 				}
 
@@ -796,10 +783,10 @@
         return menu;
     }
 
-	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
+	[SPBundleManager.shared reloadBundles:self];
 
-	NSArray *bundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
-	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleCategories = [SPBundleManager.shared bundleCategoriesForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [SPBundleManager.shared bundleItemsForScope:SPBundleScopeInputField];
 
 	// Add 'Bundles' sub menu
 	if(bundleItems && [bundleItems count]) {
