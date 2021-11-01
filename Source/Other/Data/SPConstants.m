@@ -370,6 +370,8 @@ NSString *SPFVersionKey = @"version";
 NSString *SPFavoritesDataRootKey                            = @"SPConnectionFavorites";
 
 // Bundle Files and Bundle Editor
+const NSInteger SPBundleRedirectActionLastCode = SPBundleRedirectActionShowAsHTMLTooltip;
+
 NSString *SPBundleScopeQueryEditor                          = @"editor";
 NSString *SPBundleScopeDataTable                            = @"datatable";
 NSString *SPBundleScopeInputField                           = @"inputfield";
