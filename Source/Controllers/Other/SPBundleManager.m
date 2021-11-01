@@ -190,103 +190,90 @@ static SPBundleManager *sharedManager = nil;
 	// if we find any legacy bundles we'll need to change the dict, so take a copy
 	NSMutableDictionary *bundleItemsCopy = [bundleItems mutableCopy];
 
-	[bundleItemsCopy enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSArray *obj, BOOL *stop1) {
-		[obj enumerateObjectsUsingBlock:^(id obj2, NSUInteger idx, BOOL *stop){
+	[bundleItemsCopy enumerateKeysAndObjectsUsingBlock:^(NSString *scope, NSArray *bundles, BOOL *stop1) {
+		[bundles enumerateObjectsUsingBlock:^(id bundle, NSUInteger idx, BOOL *stop){
 
-			NSString *path = obj2[SPBundleInternPathToFileKey];
-
-			if([path containsString:SPUserBundleFileExtension] == YES){
-
-				SPLog(@"key: %@", key);
-				SPLog(@"obj2 = %@",obj2);
-
-				NSString *legacyPath = path.stringByDeletingLastPathComponent;
-
-				NSMutableString *migratedPath = [[NSMutableString alloc] initWithCapacity:path.stringByDeletingLastPathComponent.length];
-				[migratedPath setString:[path.stringByDeletingLastPathComponent dropSuffixWithSuffix:SPUserBundleFileExtension]];
-				[migratedPath appendString:SPUserBundleFileExtensionV2];
-				NSString *bundlePath = migratedPath.lastPathComponent;
-
-				SPLog(@"migratedPath %@", migratedPath);
-				SPLog(@"legacyPath %@", legacyPath);
-				SPLog(@"bundlePath %@", bundlePath);
-
-				NSError *error = nil;
-
-				if (![fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
-					SPLog(@"File DOES NOT YET exist at “%@”", migratedPath);
-
-					if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
-						SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
-						[self doOrDoNotBeep:legacyPath];
-					}
-					else{
-						SPLog(@"File renamed successfully “%@”", migratedPath);
-						
-						[migratedLegacyBundles safeAddObject:migratedPath];
-
-                        // we need to add the new bundle version
-                        NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
-                        NSError *readError = nil;
-                        SPLog(@"infoPath %@", infoPath);
-                        NSDictionary *cmdData = [SPBundleManager.shared loadBundleAt:infoPath error:&readError];
-						
-						if(!cmdData || readError) {
-							SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
-							[self doOrDoNotBeep:infoPath];
-
-							// remove the dodgy bundle
-							[self removeBundle:migratedPath.lastPathComponent];
-
-						}
-						else{
-							NSMutableDictionary *saveDict = [[NSMutableDictionary alloc] initWithCapacity:cmdData.count+1];
-							[saveDict addEntriesFromDictionary:cmdData];
-							[saveDict setObject:[NSNumber numberWithLong:SPBundleCurrentVersion] forKey:SPBundleVersionKey];
-
-							readError = nil;
-
-							[fileManager removeItemAtPath:infoPath error:&readError];
-
-							if(readError) {
-								SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
-								[self doOrDoNotBeep:infoPath];
-							}
-							else{
-								if (@available(macOS 10.13, *)) {
-									readError = nil;
-									[saveDict writeToURL:[NSURL fileURLWithPath:infoPath] error:&readError];
-									if(readError){
-										SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
-									}
-									else{
-										SPLog(@"Successfully migrated: %@", migratedPath);
-										// update the command path in the dict
-										obj2[@"path"] = infoPath;
-
-									}
-								} else {
-									[saveDict writeToFile:infoPath atomically:YES];
-								}
-							}
-						}
-					}
-				}
-				else{
-					SPLog(@"File exists at path: %@", migratedPath);
-				}
-			}
-			else{
+			NSString *path = bundle[SPBundleInternPathToFileKey];
+            if (![path containsString:SPUserBundleFileExtension]) {
                 // Already migrated
-			}
+                return;
+            }
+            
+            SPLog(@"key: %@", scope);
+            SPLog(@"obj2 = %@",bundle);
+
+            NSString *legacyPath = path.stringByDeletingLastPathComponent;
+
+            NSMutableString *migratedPath = [[NSMutableString alloc] initWithCapacity:path.stringByDeletingLastPathComponent.length];
+            [migratedPath setString:[path.stringByDeletingLastPathComponent dropSuffixWithSuffix:SPUserBundleFileExtension]];
+            [migratedPath appendString:SPUserBundleFileExtensionV2];
+            NSString *bundlePath = migratedPath.lastPathComponent;
+
+            SPLog(@"migratedPath %@", migratedPath);
+            SPLog(@"legacyPath %@", legacyPath);
+            SPLog(@"bundlePath %@", bundlePath);
+
+            NSError *error = nil;
+
+            if ([fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
+                SPLog(@"File exists at path: %@", migratedPath);
+                return;
+            }
+            
+            SPLog(@"File DOES NOT YET exist at “%@”", migratedPath);
+
+            if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
+                SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
+                [self doOrDoNotBeep:legacyPath];
+                return;
+            }
+            SPLog(@"File renamed successfully “%@”", migratedPath);
+            
+            [migratedLegacyBundles safeAddObject:migratedPath];
+
+            // we need to add the new bundle version
+            NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
+            NSError *readError = nil;
+            SPLog(@"infoPath %@", infoPath);
+            NSDictionary *cmdData = [SPBundleManager.shared loadBundleAt:infoPath error:&readError];
+            
+            if(!cmdData || readError) {
+                SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+                [self doOrDoNotBeep:infoPath];
+
+                // remove the dodgy bundle
+                [self removeBundle:migratedPath.lastPathComponent];
+                return;
+            }
+            
+            NSMutableDictionary *saveDict = [[NSMutableDictionary alloc] initWithCapacity:cmdData.count+1];
+            [saveDict addEntriesFromDictionary:cmdData];
+            [saveDict setObject:[NSNumber numberWithLong:SPBundleCurrentVersion] forKey:SPBundleVersionKey];
+
+            if(![fileManager removeItemAtPath:infoPath error:&readError]) {
+                SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+                [self doOrDoNotBeep:infoPath];
+                return;
+            }
+            
+            if (@available(macOS 10.13, *)) {
+                if(![saveDict writeToURL:[NSURL fileURLWithPath:infoPath] error:&readError]){
+                    SPLog(@"Could not delete %@. Error: %@", infoPath, readError.localizedDescription);
+                } else {
+                    SPLog(@"Successfully migrated: %@", migratedPath);
+                    // update the command path in the dict
+                    bundle[@"path"] = infoPath;
+                }
+            } else {
+                [saveDict writeToFile:infoPath atomically:YES];
+            }
 		}];
 	}];
 
 	// I think these should be the same... but in case
 	if([bundleItems isEqualToDictionary:bundleItemsCopy]){
 		SPLog(@"THE SAME!");
-	}
-	else{
+	} else {
 		SPLog(@"DIFF!");
 		[bundleItems setDictionary:bundleItemsCopy];
 	}
@@ -345,16 +332,13 @@ static SPBundleManager *sharedManager = nil;
 	[badBundles addObject:bundle];
 }
 
-- (IBAction)openBundleEditor:(id)sender
-{
+- (IBAction)openBundleEditor:(id)sender {
 	if (!bundleEditorController) bundleEditorController = [[SPBundleEditorController alloc] init];
 
 	[bundleEditorController showWindow:[NSApp mainWindow]];
 }
 
-- (IBAction)reloadBundles:(id)sender
-{
-
+- (IBAction)reloadBundles:(id)sender {
 	// Force releasing of any hidden HTML output windows, which will automatically remove them from the array.
 	// Keep the visible windows.
 	for (id c in bundleHTMLOutputController) {
@@ -379,12 +363,12 @@ static SPBundleManager *sharedManager = nil;
 	// Set up the bundle search paths
 	// First process all in Application Support folder installed ones then Default ones
 	NSError *appPathError = nil;
-	NSArray *bundlePaths = [NSArray arrayWithObjects:
+	NSArray *bundlePaths = @[
 		[fileManager applicationSupportDirectoryForSubDirectory:SPBundleSupportFolder createIfNotExists:YES error:&appPathError],
-		[NSString stringWithFormat:@"%@/Default Bundles", NSBundle.mainBundle.sharedSupportPath],
-		nil];
+		[NSString stringWithFormat:@"%@/Default Bundles", NSBundle.mainBundle.sharedSupportPath]
+    ];
 
-	// If ~/Library/Application Path/Sequel Ace/Bundles couldn't be created bail
+	// If ~/Library/Application Path/Sequel Ace/Bundles couldn't be created, then bail
 	if(appPathError != nil) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Bundles Installation Error", @"bundles installation error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create Application Support Bundle folder!\nError: %@", @"Couldn't create Application Support Bundle folder!\nError: %@"), [appPathError localizedDescription]] callback:nil];
 		return;
@@ -716,8 +700,7 @@ static SPBundleManager *sharedManager = nil;
  * Action for any Bundle menu menuItem; show menuItem dialog if user pressed key equivalent
  * which is assigned to more than one bundle command inside the same scope
  */
-- (IBAction)bundleCommandDispatcher:(id)sender
-{
+- (IBAction)bundleCommandDispatcher:(id)sender {
 
 	NSEvent *event = [NSApp currentEvent];
 	BOOL checkForKeyEquivalents = ([event type] == NSEventTypeKeyDown) ? YES : NO;
@@ -729,15 +712,14 @@ static SPBundleManager *sharedManager = nil;
 	NSMutableArray *assignedKeyEquivalents = nil;
 
 	if(checkForKeyEquivalents) {
-
-		// Get the current scope in order to find out which command with a specific key
-		// should run
-		if([firstResponder respondsToSelector:@selector(executeBundleItemForInputField:)])
+        // Get the current scope in order to find out which command with a specific key should run
+        if([firstResponder respondsToSelector:@selector(executeBundleItemForInputField:)]) {
 			scope = SPBundleScopeInputField;
-		else if([firstResponder respondsToSelector:@selector(executeBundleItemForDataTable:)])
+        } else if([firstResponder respondsToSelector:@selector(executeBundleItemForDataTable:)]) {
 			scope = SPBundleScopeDataTable;
-		else
+        } else {
 			scope = SPBundleScopeGeneral;
+        }
 
 		keyEqKey = [[sender representedObject] objectForKey:@"key"];
 
@@ -762,64 +744,36 @@ static SPBundleManager *sharedManager = nil;
 		}
 	}
 
-	if([scope isEqualToString:SPBundleScopeInputField] && [firstResponder respondsToSelector:@selector(executeBundleItemForInputField:)]) {
-		if(checkForKeyEquivalents && [assignedKeyEquivalents count]) {
-			NSInteger idx = 0;
-			if([assignedKeyEquivalents count] > 1)
-				idx = [SPChooseMenuItemDialog withItems:assignedKeyEquivalents atPosition:[NSEvent mouseLocation]];
+    id commandSender = sender;
+    if(checkForKeyEquivalents && [assignedKeyEquivalents count]) {
+        NSInteger idx = 0;
+        if ([assignedKeyEquivalents count] > 1) {
+            idx = [SPChooseMenuItemDialog withItems:assignedKeyEquivalents atPosition:[NSEvent mouseLocation]];
+        }
 
-			if(idx > -1) {
-				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
-				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
-					[aMenuItem setTag:0];
-					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
-					[(SPTextView *)firstResponder executeBundleItemForInputField:aMenuItem];
-				}
-			}
-		} else {
-			[firstResponder executeBundleItemForInputField:sender];
-		}
-	}
-	else if([scope isEqualToString:SPBundleScopeDataTable] && [firstResponder respondsToSelector:@selector(executeBundleItemForDataTable:)]) {
-		if(checkForKeyEquivalents && [assignedKeyEquivalents count]) {
-			NSInteger idx = 0;
-			if([assignedKeyEquivalents count] > 1)
-				idx = [SPChooseMenuItemDialog withItems:assignedKeyEquivalents atPosition:[NSEvent mouseLocation]];
-
-			if(idx > -1) {
-				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
-				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
-					[aMenuItem setTag:0];
-					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
-					[(SPCopyTable *)firstResponder executeBundleItemForDataTable:aMenuItem];
-				}
-			}
-		} else {
-			[firstResponder executeBundleItemForDataTable:sender];
-		}
-	}
-	else if([scope isEqualToString:SPBundleScopeGeneral]) {
-		if(checkForKeyEquivalents && [assignedKeyEquivalents count]) {
-			NSInteger idx = 0;
-			if([assignedKeyEquivalents count] > 1)
-				idx = [SPChooseMenuItemDialog withItems:assignedKeyEquivalents atPosition:[NSEvent mouseLocation]];
-
-			if(idx > -1) {
-				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
-				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
-					[aMenuItem setTag:0];
-					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
-					[self executeBundleItemForApp:aMenuItem];
-				}
-			}
-		} else {
-			[self executeBundleItemForApp:sender];
-		}
-	} else {
-		NSBeep();
+        if (idx == -1) {
+            commandSender = nil;
+        } else {
+            NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
+            if(eq && [eq count]) {
+                NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
+                [aMenuItem setTag:0];
+                [aMenuItem setToolTip:[eq objectForKey:@"path"]];
+                commandSender = aMenuItem;
+            } else {
+                commandSender = nil;
+            }
+        }
+    }
+    
+    if (commandSender == nil) {
+        NSBeep();
+    } else if([scope isEqualToString:SPBundleScopeInputField] && [firstResponder respondsToSelector:@selector(executeBundleItemForInputField:)]) {
+        [firstResponder executeBundleItemForInputField: commandSender];
+	} else if ([scope isEqualToString:SPBundleScopeDataTable] && [firstResponder respondsToSelector:@selector(executeBundleItemForDataTable:)]) {
+        [firstResponder executeBundleItemForDataTable: commandSender];
+	} else if ([scope isEqualToString:SPBundleScopeGeneral]) {
+        [self executeBundleItemForApp: commandSender];
 	}
 }
 
