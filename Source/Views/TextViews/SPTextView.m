@@ -3184,7 +3184,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[[menu itemAtIndex:6] setHidden:YES];
 	}
 
-	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
+	[SPBundleManager.shared reloadBundles:self];
 
 	// Remove 'Bundles' sub menu and separator
 	NSMenuItem *bItem = [menu itemWithTag:10000000];
@@ -3194,8 +3194,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[menu removeItem:bItem];
 	}
 
-	NSArray *bundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
-	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleCategories = [SPBundleManager.shared bundleCategoriesForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [SPBundleManager.shared bundleItemsForScope:SPBundleScopeInputField];
 
 	// Add 'Bundles' sub menu for custom query editor only so far if bundles with scope 'editor' were found
 	if(customQueryInstance && bundleItems && [bundleItems count]) {

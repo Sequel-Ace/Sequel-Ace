@@ -23,7 +23,7 @@
 @property (readwrite, strong) NSMutableDictionary *installedBundleUUIDs;
 @property (readwrite, assign) BOOL foundInstalledBundles;
 
-+ (SPBundleManager *)sharedSPBundleManager;
++ (SPBundleManager *)shared;
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem;
 
 - (IBAction)bundleCommandDispatcher:(id)sender;

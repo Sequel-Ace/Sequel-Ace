@@ -3983,7 +3983,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	[self updateCountText];
 
-	NSArray *triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
+	NSArray *triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 
 	for (NSString *cmdPath in triggeredCommands)
 	{
@@ -4015,7 +4015,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if (!stopTrigger) {
 			id firstResponder = [[NSApp keyWindow] firstResponder];
 			if ([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-				[[SPBundleManager.sharedSPBundleManager onMainThread] executeBundleItemForApp:aMenuItem];
+				[[SPBundleManager.shared onMainThread] executeBundleItemForApp:aMenuItem];
 			}
 			else if ([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
 				if ([[[firstResponder class] description] isEqualToString:@"SPCopyTable"]) {
