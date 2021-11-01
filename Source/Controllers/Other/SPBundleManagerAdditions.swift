@@ -31,10 +31,12 @@ import Foundation
 
 public extension SPBundleManager {
     @objc func loadBundle(at: String) throws -> Dictionary<String, Any> {
-        
-        let data = try Data(contentsOf: URL(fileURLWithPath: at), options: .uncached)
-        let loaded = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
-        guard let pList = loaded as? Dictionary<String, Any> else {
+        let data = try PropertyListSerialization.propertyList(
+            from: try Data(contentsOf: URL(fileURLWithPath: at), options: .uncached),
+            options: [],
+            format: nil
+        )
+        guard let pList = data as? Dictionary<String, Any> else {
             throw NSError(domain: "SPBundleManagerExtensions", code: 0, userInfo: nil)
         }
         return pList
