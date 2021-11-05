@@ -37,6 +37,7 @@
 #import "SPDatabaseDocument.h"
 #import "SPBundleCommandRunner.h"
 #import "SPBundleManager.h"
+#import "SABundleRunner.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -663,7 +664,7 @@
 
     // recompute action and err
     if(err != nil) {
-        action = [SPBundleCommandRunner computeActionWithError: &err];
+        action = [SABundleRunner computeActionFor: &err];
     }
 
     if ([err code] != 9) { // Suppress an error message if command was killed

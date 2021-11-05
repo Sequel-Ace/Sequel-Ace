@@ -30,7 +30,6 @@
 #import "SPAppController.h"
 #import "SPDatabaseDocument.h"
 #import "SPBundleManager.h"
-#import "SPBundleCommandRunner.h"
 
 #import "SPConstants.h"
 

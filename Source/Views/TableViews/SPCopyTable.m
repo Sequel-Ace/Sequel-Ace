@@ -44,6 +44,7 @@
 #import "SPAppController.h"
 #import "SPTablesList.h"
 #import "SPBundleCommandRunner.h"
+#import "SABundleRunner.h"
 #import "SPDatabaseContentViewDelegate.h"
 #import "SPBundleManager.h"
 #import "SPTableData.h"
@@ -1534,7 +1535,7 @@ static const NSInteger kBlobAsImageFile = 4;
 
     // recompute action and err
     if(err != nil) {
-        action = [SPBundleCommandRunner computeActionWithError: &err];
+        action = [SABundleRunner computeActionFor: &err];
     }
 
     if ([err code] != 9) { // Suppress an error message if command was killed

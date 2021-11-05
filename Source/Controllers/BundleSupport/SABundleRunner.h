@@ -1,9 +1,9 @@
 //
-//  SPBundleCommandRunnerTests.swift
-//  Unit Tests
+//  SABundleRunner.h
+//  Sequel Ace
 //
-//  Created by Christopher Jensen-Reimann on 10/31/21.
-//  Copyright © 2021 Christopher Jensen-Reimann.
+//  Created by Christopher Jensen-Reimann on 11/4/21.
+//  Copyright © 2021 Sequel-Ace. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -27,32 +27,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import XCTest
-import Sequel_Ace
+#import <Foundation/Foundation.h>
 
-class SPBundleCommandRunnerTests: XCTestCase {
+NS_ASSUME_NONNULL_BEGIN
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
+/**
+ Declare this class in Obj-C because it's intended for interop with current Obj-C patterns
+ Once we don't have to do this gross in-out error parameter we can move to fully swift.
+ However, test code written in Obj-C can only see classes originally defined in Obj-C :(
+ */
+@interface SABundleRunner : NSObject
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
++ (NSString*) computeActionFor: (NSError **) error;
 
-//    func testNoErr() throws {
-//        let action = SPBundleCommandRunner.computeAction(error: nil)
-//        XCTAssert(action == "")
-//    }
-//    
-//    func testNilPointee() throws {
-//        var err: NSError? = nil
-//        withUnsafeMutablePointer(to: &err) { (ptr) in
-//            let errPtr: NSErrorPointer = AutoreleasingUnsafeMutablePointer(ptr)
-//            let action = SPBundleCommandRunner.computeAction(error: errPtr)
-//            XCTAssert(action == "")
-//        }
-//        
-//    }
+@end
 
-}
+NS_ASSUME_NONNULL_END
