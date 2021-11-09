@@ -100,6 +100,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListContainsViews = NO;
 		selectedTableType = SPTableTypeNone;
 		selectedTableName = nil;
+        pinnedTableNotificationName = nil;
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 
@@ -726,6 +727,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
     NSString *databaseName = [mySQLConnection database];
     NSString *hostName = [mySQLConnection host];
+    NSDictionary *togglePinnedNotification;
 
 	if ([pinnedTables containsObject:selectedTableName]) { // unpin selection
 		[pinnedTables removeObject:selectedTableName];
@@ -741,6 +743,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		[tablesListView reloadData];
 		[self selectItemWithName:selectedTableName]; // choose the un-pinned instance of selectedTable
+        togglePinnedNotification = @{@"action":@"unpin",@"tableName": selectedTableName};
 	}
 	else { // pin selection
 		[pinnedTables addObject:selectedTableName];
@@ -755,7 +758,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		[tablesListView reloadData];
 		[self selectItemWithName:selectedTableName]; // choose the pinned instance of selectedTable
+        togglePinnedNotification = @{@"action":@"pin",@"tableName": selectedTableName};
 	}
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil userInfo:togglePinnedNotification];
+
+
 
 	[[self onMainThread] setSelectionState:@{@"name": selectedTableName, @"type": @(selectedTableType)}];
 	if (isTableListFiltered) {
@@ -2056,9 +2064,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)initPinnedTables {
 
     [pinnedTables removeAllObjects];
-    NSString * hostname = [mySQLConnection host];
-    NSString * databasename = [mySQLConnection database];
-    NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:hostname databaseName:databasename];
+    NSString * hostName = [mySQLConnection host];
+    NSString * databaseName = [mySQLConnection database];
+    NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:hostName databaseName:databaseName];
     if (tablesToPin.count > 0) {
         [tables insertObject:@"PINNED" atIndex:0];
         [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
@@ -2071,8 +2079,60 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     }
 
     [[tablesListView onMainThread] reloadData];
-
+    
+    // remove observer for previous hostname+database on database selection change by user
+    if (pinnedTableNotificationName != nil) {
+        [[NSNotificationCenter defaultCenter]
+            removeObserver:self
+            name:pinnedTableNotificationName
+            object:nil];
+    }
+    
+    // craft notification name such that notification goes only to tabs with same hostname+database
+    pinnedTableNotificationName = [NSString stringWithFormat:@"PinnedTableNotification-Host:%@-Database:%@", hostName, databaseName];
+    
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+        selector:@selector(usePinTableNotification:)
+        name:pinnedTableNotificationName
+        object:nil];
 }
+
+
+- (void)usePinTableNotification:(nonnull NSNotification *) notification; {
+    NSDictionary *notificationData = [notification userInfo];
+    NSString* action = notificationData[@"action"];
+    NSString* tableName = notificationData[@"tableName"];
+    
+    // Similar to togglePinTable: but not managing persistence and not changing selection
+    if ([action isEqualToString:@"unpin"]) {
+        if ([pinnedTables containsObject:tableName]) {
+            [pinnedTables removeObject:tableName];
+            if ([pinnedTables count] == 0) {
+                [tables removeObjectAtIndex:0];
+                [tableTypes removeObjectAtIndex:0];
+            }
+            NSUInteger index = [tables indexOfObject:tableName];
+            [tables removeObjectAtIndex:index];
+            [tableTypes removeObjectAtIndex:index];
+            [tablesListView reloadData];
+        }
+    }
+    else {
+        if (![pinnedTables containsObject:tableName]) {
+            [pinnedTables addObject:tableName];
+            if ([pinnedTables count] == 1) {
+                [tables insertObject:@"PINNED" atIndex:0];
+                [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
+            }
+            SPTableType tableType = (SPTableType) [tableTypes[[tables indexOfObject:tableName]] integerValue];
+            [tables insertObject:tableName atIndex:1];
+            [tableTypes insertObject:@(tableType) atIndex:1];
+            [tablesListView reloadData];
+        }
+    }
+}
+
 
 
 /**

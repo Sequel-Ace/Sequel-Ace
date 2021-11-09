@@ -115,7 +115,7 @@ import OSLog
                     let hostName = rs.string(forColumn: "hostname")!
                     let databaseName = rs.string(forColumn: "databaseName")!
                     let pinnedTableName = rs.string(forColumn: "pinnedTableName")!
-                    addTopinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: pinnedTableName)
+                    addToPinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: pinnedTableName)
                 }
                 rs.close()
             } catch {
@@ -130,7 +130,7 @@ import OSLog
     }
 
     @objc func pinTable(hostName: String, databaseName: String, tableToPin: String) {
-        addTopinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: tableToPin)
+        addToPinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: tableToPin)
         queue.inDatabase { db in
             db.traceExecution = traceExecution
             do {

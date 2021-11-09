@@ -121,6 +121,7 @@
 	NSMutableArray *filteredTableTypes;
 	SPTableType selectedTableType;
 	NSString *selectedTableName;
+    NSString *pinnedTableNotificationName;
 
 	NSUserDefaults *prefs;
 
@@ -188,6 +189,7 @@
 
 // Pinned tables interaction
 - (void)initPinnedTables;
+- (void)usePinTableNotification:(nonnull NSNotification *)notification;
 
 // Task interaction
 - (void)startDocumentTaskForTab:(nullable NSNotification *)aNotification;
