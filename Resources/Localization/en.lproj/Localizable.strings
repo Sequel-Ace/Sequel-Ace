@@ -3331,3 +3331,23 @@
  Table List : Context Menu : Pin Function
  Table List : Gear Menu : Pin Function */
 "Pin Function" = "Pin Function";
+
+/* Unpin a view that is currently pinned at the top of the list of tables
+ Table List : Context Menu : Unpin View
+ Table List : Gear Menu : Unpin View */
+"Unpin View" = "Unpin View";
+
+/* Unpin a table that is currently pinned at the top of the list of tables
+ Table List : Context Menu : Unpin Table
+ Table List : Gear Menu : Unpin Table */
+"Unpin Table" = "Unpin Table";
+
+/* Unpin a procudure that is currently pinned at the top of the list of tables
+ Table List : Context Menu : Unpin Procedure
+ Table List : Gear Menu : Unpin Procedure */
+"Unpin Procedure" = "Unpin Procedure";
+
+/* Unpin a function that is currently pinned at the top of the list of tables
+ Table List : Context Menu : Unpin Function
+ Table List : Gear Menu : Unpin Function */
+"Unpin Function" = "Unpin Function";

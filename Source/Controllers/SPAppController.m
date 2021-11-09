@@ -250,6 +250,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // init SQLite query history
     SQLiteHistoryManager __unused *sqliteHistoryManager = SQLiteHistoryManager.sharedInstance;
+    SQLitePinnedTableManager __unused *sqLitePinnedTableManager = SQLitePinnedTableManager.sharedInstance;
 
     sharedSPBundleManager = SPBundleManager.sharedSPBundleManager;
 

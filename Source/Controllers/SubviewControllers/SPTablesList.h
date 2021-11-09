@@ -187,7 +187,7 @@
 - (void)clearFilter;
 
 // Pinned tables interaction
-- (void)clearPinnedTables;
+- (void)initPinnedTables;
 
 // Task interaction
 - (void)startDocumentTaskForTab:(nullable NSNotification *)aNotification;
