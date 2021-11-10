@@ -31,7 +31,7 @@ brew install --cask sequel-ace
 
 ## Moving Saved Connections from Sequel Pro
 
-To move your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
+To migrate your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
 
 ## Contributing
 
