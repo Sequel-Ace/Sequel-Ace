@@ -1538,7 +1538,7 @@ static const NSInteger kBlobAsImageFile = 4;
         action = [SABundleRunner computeActionFor: &err];
     }
 
-    if ([err code] != 9) { // Suppress an error message if command was killed
+    if (err != nil && [err code] != 9) { // Suppress an error message if command was killed
         NSString *errorMessage  = [err localizedDescription];
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:[NSString stringWithFormat:@"%@ “%@”:\n%@", NSLocalizedString(@"Error for", @"error for message"), [cmdData objectForKey:@"name"], errorMessage] callback:nil];
     }
