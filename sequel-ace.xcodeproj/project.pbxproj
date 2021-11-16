@@ -2173,7 +2173,6 @@
 		380F4EF20FC0B67A00B0BFD7 /* Unit Tests */ = {
 			isa = PBXGroup;
 			children = (
-				6F0EA904272FAE6800514FF1 /* Controllers */,
 				50D3C3591A771C2300B5429C /* Other */,
 				1198F5B41174EDDE00670590 /* Database Actions */,
 				17DC886A126B378A00E9AAEC /* Category Additions */,
@@ -2311,21 +2310,6 @@
 				73F70A951E4E547500636550 /* SPJSONFormatter.m */,
 			);
 			path = Parsing;
-			sourceTree = "<group>";
-		};
-		6F0EA904272FAE6800514FF1 /* Controllers */ = {
-			isa = PBXGroup;
-			children = (
-				6F0EA905272FAE8300514FF1 /* Bundle Support */,
-			);
-			path = Controllers;
-			sourceTree = "<group>";
-		};
-		6F0EA905272FAE8300514FF1 /* Bundle Support */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = "Bundle Support";
 			sourceTree = "<group>";
 		};
 		96D494B8249C07940092F335 /* SSH Helpers */ = {

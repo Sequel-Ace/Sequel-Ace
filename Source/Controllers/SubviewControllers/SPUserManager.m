@@ -38,7 +38,6 @@
 #import "SPDatabaseDocument.h"
 
 #import <SPMySQL/SPMySQL.h>
-#import <QueryKit/QueryKit.h>
 
 #import "sequel-ace-Swift.h"
 
