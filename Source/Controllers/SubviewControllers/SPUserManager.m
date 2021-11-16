@@ -37,7 +37,7 @@
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPMySQL/SPMySQL.h> 
 
 #import "sequel-ace-Swift.h"
 
