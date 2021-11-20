@@ -1,9 +1,9 @@
 //
-//  SPBundleManagerAdditions.swift
+//  SABundleRunner.h
 //  Sequel Ace
 //
-//  Created by Christopher Jensen-Reimann on 10/31/21.
-//  Copyright © 2021 Christopher Jensen-Reimann.
+//  Created by Christopher Jensen-Reimann on 11/4/21.
+//  Copyright © 2021 Sequel-Ace. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -27,19 +27,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import Foundation
+#import <Foundation/Foundation.h>
 
-public extension SPBundleManager {
-    @objc func loadBundle(at: String) throws -> Dictionary<String, Any> {
-        let data = try PropertyListSerialization.propertyList(
-            from: try Data(contentsOf: URL(fileURLWithPath: at), options: .uncached),
-            options: [],
-            format: nil
-        )
-        guard let pList = data as? Dictionary<String, Any> else {
-            throw NSError(domain: "SPBundleManagerExtensions", code: 0, userInfo: nil)
-        }
-        return pList
-    }
-}
+NS_ASSUME_NONNULL_BEGIN
 
+/**
+ Declare this class in Obj-C because it's intended for interop with current Obj-C patterns
+ Once we don't have to do this gross in-out error parameter we can move to fully swift.
+ However, test code written in Obj-C can only see classes originally defined in Obj-C :(
+ */
+@interface SABundleRunner : NSObject
+
++ (NSString*) computeActionFor: (NSError **) error;
+
+@end
+
+NS_ASSUME_NONNULL_END

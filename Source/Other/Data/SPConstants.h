@@ -682,9 +682,10 @@ typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 	SPBundleRedirectActionInsertAsSnippet      = 204,
 	SPBundleRedirectActionShowAsHTML           = 205,
 	SPBundleRedirectActionShowAsTextTooltip    = 207,
-	SPBundleRedirectActionShowAsHTMLTooltip    = 208,
-	SPBundleRedirectActionLastCode             = 208
+	SPBundleRedirectActionShowAsHTMLTooltip    = 208
 };
+
+extern const NSInteger SPBundleRedirectActionLastCode;
 
 extern NSString *SPMigratedQueriesFromPrefs;
 extern NSString *SPTraceSQLiteExecutions;
