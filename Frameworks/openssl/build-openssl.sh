@@ -52,11 +52,12 @@ BUILDARCHS="darwin64-x86_64-cc"
 # so we'll check for both
 # c.f. https://eclecticlight.co/2020/08/13/macos-version-numbering-isnt-so-simple/
 
+IS_12=$(sw_vers -productVersion | grep -o '12.[0-9]*')
 IS_11=$(sw_vers -productVersion | grep -o '11.[0-9]*')
 IS_16=$(sw_vers -productVersion | grep -o '10.16.[0-9]*')
 
 IS_AT_LEAST_BIG_SUR=0
-if  [ -n "$IS_11" ] || [ -n "$IS_16" ]; then
+if  [ -n "$IS_12" ] || [ -n "$IS_11" ] || [ -n "$IS_16" ]; then
     IS_AT_LEAST_BIG_SUR=1
 fi
 
