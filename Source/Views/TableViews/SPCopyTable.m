@@ -106,10 +106,10 @@ static const NSInteger kBlobAsImageFile = 4;
 	if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL || [(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
 
 		if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL){
-			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
+            tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:NO skipGeneratedColumn:YES];
 		}
 		else{
-			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES];
+			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES skipGeneratedColumn:YES];
 		}
 		
 		if (tmp != nil){
@@ -403,11 +403,11 @@ static const NSInteger kBlobAsImageFile = 4;
  */
 - (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected{
 	
-	return [self rowsAsSqlInsertsOnlySelectedRows:onlySelected skipAutoIncrementColumn:NO];
+	return [self rowsAsSqlInsertsOnlySelectedRows:onlySelected skipAutoIncrementColumn:NO skipGeneratedColumn:NO];
 }
 	
 
-- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn{
+- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn skipGeneratedColumn:(BOOL)skipGeneratedColumn{
 
 	if (onlySelected && [self numberOfSelectedRows] == 0) return nil;
 
@@ -434,7 +434,7 @@ static const NSInteger kBlobAsImageFile = 4;
 	
 	for (id enumObj in columns) 
 	{
-		[tbHeader addObject:[[enumObj headerCell] stringValue]];
+        [tbHeader addObject:[[enumObj headerCell] stringValue]];
 	}
 
     NSMutableDictionary *errorDict = [[NSMutableDictionary alloc] init];
@@ -448,49 +448,58 @@ static const NSInteger kBlobAsImageFile = 4;
 		columnMappings[c] = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
 		
 		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"typegrouping"];
+        NSString *g = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"generatedalways"];
 
-		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
-            
-            id obj = [columnDefinitions safeObjectAtIndex:columnMappings[c]];
-                        
-            if ([obj respondsToSelector:@selector(boolForKey:)]) {
-                autoIncrement = [obj boolForKey:@"autoincrement"];
-                // the columnDefinitions array contains dictionaries with different keys when copying from the table view (autoincrement)
-                // or the query view (AUTO_INCREMENT_FLAG)
-                // so we need this extra check
-                if(autoIncrement == NO){
-                    autoIncrement = [obj boolForKey:@"AUTO_INCREMENT_FLAG"];
+        // Generated column
+        if (skipGeneratedColumn == YES && g) {
+            [tbHeader removeObject:[[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"name"]];
+            columnTypes[c] = 5;
+        } else {
+        // AutoInc column
+            if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
+
+                id obj = [columnDefinitions safeObjectAtIndex:columnMappings[c]];
+
+                if ([obj respondsToSelector:@selector(boolForKey:)]) {
+                    autoIncrement = [obj boolForKey:@"autoincrement"];
+                    // the columnDefinitions array contains dictionaries with different keys when copying from the table view (autoincrement)
+                    // or the query view (AUTO_INCREMENT_FLAG)
+                    // so we need this extra check
+                    if(autoIncrement == NO){
+                        autoIncrement = [obj boolForKey:@"AUTO_INCREMENT_FLAG"];
+                    }
+                }
+                else{
+                    SPLog(@"object does not respond to boolForKey. obj class: %@\n Description: %@", [obj class], [obj description]);
+                    SPLog(@"columnDefinitions: %@", columnDefinitions);
                 }
             }
-            else{
-                SPLog(@"object does not respond to boolForKey. obj class: %@\n Description: %@", [obj class], [obj description]);
-                SPLog(@"columnDefinitions: %@", columnDefinitions);
+
+            // Numeric data
+            if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
+                columnTypes[c] = 0;
+
+            // Blob data or long text data
+            else if ([t isEqualToString:@"blobdata"] || [t isEqualToString:@"textdata"])
+                columnTypes[c] = 2;
+
+            // GEOMETRY data
+            else if ([t isEqualToString:@"geometry"])
+                columnTypes[c] = 3;
+
+            // Default to strings
+            else
+                columnTypes[c] = 1;
+
+            if(foundAutoIncColumn == NO && autoIncrement == YES && skipAutoIncrementColumn == YES){
+                SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
+                columnTypes[c] = 4; // new type
+                autoIncrementColumnName = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"name"];
+                foundAutoIncColumn = YES;
+                autoIncrement = NO;
             }
-		}
+        }
 
-		// Numeric data
-		if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
-			columnTypes[c] = 0;
-
-		// Blob data or long text data
-		else if ([t isEqualToString:@"blobdata"] || [t isEqualToString:@"textdata"])
-			columnTypes[c] = 2;
-
-		// GEOMETRY data
-		else if ([t isEqualToString:@"geometry"])
-			columnTypes[c] = 3;
-
-		// Default to strings
-		else
-			columnTypes[c] = 1;
-		
-		if(foundAutoIncColumn == NO && autoIncrement == YES && skipAutoIncrementColumn == YES){
-			SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
-			columnTypes[c] = 4; // new type
-			autoIncrementColumnName = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"name"];
-			foundAutoIncColumn = YES;
-			autoIncrement = NO;
-		}
 	} // end of column loop
 	
 	if(foundAutoIncColumn == YES && skipAutoIncrementColumn == YES){
@@ -603,6 +612,10 @@ static const NSInteger kBlobAsImageFile = 4;
 					case 4:
 						SPLog(@"Not adding auto inc value");
 						break;
+                    // Generated column
+                    case 5:
+                        SPLog(@"Not adding generated column value");
+                        break;
 					// Unhandled cases - abort
 					default:
 						NSBeep();
