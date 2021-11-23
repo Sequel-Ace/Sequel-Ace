@@ -1,0 +1,52 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Alamofire",
+        "repositoryURL": "https://github.com/Alamofire/Alamofire.git",
+        "state": {
+          "branch": null,
+          "revision": "d120af1e8638c7da36c8481fd61a66c0c08dc4fc",
+          "version": "5.4.4"
+        }
+      },
+      {
+        "package": "AppCenter",
+        "repositoryURL": "https://github.com/microsoft/appcenter-sdk-apple",
+        "state": {
+          "branch": null,
+          "revision": "25f64229373de97ff3920941cd52203193e5d8be",
+          "version": "4.3.0"
+        }
+      },
+      {
+        "package": "FMDB",
+        "repositoryURL": "https://github.com/ccgus/fmdb",
+        "state": {
+          "branch": null,
+          "revision": "61e51fde7f7aab6554f30ab061cc588b28a97d04",
+          "version": "2.7.7"
+        }
+      },
+      {
+        "package": "PLCrashReporter",
+        "repositoryURL": "https://github.com/microsoft/PLCrashReporter.git",
+        "state": {
+          "branch": null,
+          "revision": "59513acde6194d93617afcf7b2c81c88638a6af2",
+          "version": "1.10.0"
+        }
+      },
+      {
+        "package": "SnapKit",
+        "repositoryURL": "https://github.com/SnapKit/SnapKit",
+        "state": {
+          "branch": null,
+          "revision": "d458564516e5676af9c70b4f4b2a9178294f1bc6",
+          "version": "5.0.1"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
