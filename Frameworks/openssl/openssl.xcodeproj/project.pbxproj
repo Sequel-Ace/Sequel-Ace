@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		9069D28C0FCE659A0042E34C /* libcrypto.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcrypto.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		9069A28B0FCE659A0042E34C /* libssl.1.1.dylib */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = libssl.1.1.dylib; path = libcrypto.1.1.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		9069D28C0FCE659A0042E34C /* libcrypto.1.1.dylib */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcrypto.1.1.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -21,7 +22,8 @@
 		9069D25C0FCE62420042E34C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9069D28C0FCE659A0042E34C /* libcrypto.a */,
+				9069D28C0FCE659A0042E34C /* libcrypto.1.1.dylib */,
+				9069A28B0FCE659A0042E34C /* libssl.1.1.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -29,9 +31,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		9069D28B0FCE659A0042E34C /* crypto */ = {
+		9A69D28B0FCE659A0042E34C /* libcrypto.1.1 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9069D2980FCE65C10042E34C /* Build configuration list for PBXNativeTarget "crypto" */;
+			buildConfigurationList = 9069D2980FDE65C10042E34C /* Build configuration list for PBXNativeTarget "libcrypto.1.1" */;
 			buildPhases = (
 				9038ACD812DCAC96004FA0D0 /* ShellScript */,
 			);
@@ -39,10 +41,28 @@
 			);
 			dependencies = (
 			);
-			name = crypto;
-			productName = crypto;
-			productReference = 9069D28C0FCE659A0042E34C /* libcrypto.a */;
-			productType = "com.apple.product-type.library.static";
+			name = libcrypto.1.1;
+			productName = libcrypto.1.1;
+			productReference = 9069D28C0FCE659A0042E34C /* libcrypto.1.1.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXNativeTarget section */
+		9069D28B0FCE659A0042E34C /* libssl.1.1 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9069E2980FDE65C10042E34C /* Build configuration list for PBXNativeTarget "libssl.1.1" */;
+			buildPhases = (
+				9038ACD812DCAC96004FA0D0 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libssl.1.1;
+			productName = libssl.1.1;
+			productReference = 9069A28B0FCE659A0042E34C /* libssl.1.1.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
 		};
 /* End PBXNativeTarget section */
 
@@ -50,7 +70,7 @@
 		9069D12F0FCE340B0042E34C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1220;
+				LastUpgradeCheck = 1310;
 			};
 			buildConfigurationList = 9069D1320FCE340B0042E34C /* Build configuration list for PBXProject "openssl" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -64,7 +84,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				9069D28B0FCE659A0042E34C /* crypto */,
+				9A69D28B0FCE659A0042E34C /* libcrypto.1.1 */,
+				9069D28B0FCE659A0042E34C /* libssl.1.1 */,
 			);
 		};
 /* End PBXProject section */
@@ -91,6 +112,7 @@
 			buildSettings = {
 				"ARCHS[sdk=iphoneos*]" = "$(ARCHS_STANDARD)";
 				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD)";
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -111,6 +133,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -121,7 +144,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = "$(PLATFORM_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
@@ -134,6 +157,7 @@
 			buildSettings = {
 				"ARCHS[sdk=iphoneos*]" = "$(ARCHS_STANDARD)";
 				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD)";
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -154,6 +178,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -174,16 +199,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INSTALL_PATH = "@executable_path";
 				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
-				PRODUCT_NAME = crypto;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = libcrypto.1.1;
 				VALID_ARCHS = "arm64 x86_64";
 			};
 			name = Debug;
@@ -192,15 +220,58 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "@executable_path";
 				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
-				PRODUCT_NAME = crypto;
+				PRODUCT_NAME = libcrypto.1.1;
+				VALID_ARCHS = "arm64 x86_64";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		9069E28D0FCE659B0042E34C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "@executable_path";
+				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = libssl.1.1;
+				VALID_ARCHS = "arm64 x86_64";
+			};
+			name = Debug;
+		};
+		9069E28E0FCE659B0042E34C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_INSTALL_NAME_BASE = "$(INSTALL_PATH)";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "@executable_path";
+				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
+				PRODUCT_NAME = libssl.1.1;
 				VALID_ARCHS = "arm64 x86_64";
 				ZERO_LINK = NO;
 			};
@@ -218,11 +289,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9069D2980FCE65C10042E34C /* Build configuration list for PBXNativeTarget "crypto" */ = {
+		9069D2980FDE65C10042E34C /* Build configuration list for PBXNativeTarget "libcrypto.1.1" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9069D28D0FCE659B0042E34C /* Debug */,
 				9069D28E0FCE659B0042E34C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9069E2980FDE65C10042E34C /* Build configuration list for PBXNativeTarget "libssl.1.1" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9069E28D0FCE659B0042E34C /* Debug */,
+				9069E28E0FCE659B0042E34C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

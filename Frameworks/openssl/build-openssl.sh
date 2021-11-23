@@ -11,6 +11,7 @@ unset CFLAGS
 
 # locate src archive file if present
 SRC_ARCHIVE=$(ls openssl*tar.gz 2>/dev/null)
+mkdir -p "$TARGET_BUILD_DIR"
 
 # if there is an openssl directory immediately under the openssl.xcode source
 # folder then build there
@@ -30,12 +31,16 @@ elif [ ! -f "$SRC_ARCHIVE" ]; then
     echo "***** Download openssl src from https://www.openssl.org/source and place in Frameworks/openssl *****"
     exit 1;
 fi
+echo "About to CP"
+echo "$SRCROOT"
+echo "$OPENSSL_SRC"
 
+mkdir -p "$OPENSSL_SRC"/Configurations/
 cp -f "$SRCROOT"/10-main.conf "$OPENSSL_SRC"/Configurations/ || exit 1
 
 echo "***** using $OPENSSL_SRC for openssl source code  *****"
 
-# check whether libcrypto.a already exists - we'll only build if it does not
+# check whether libcrypto.1.1.dylib already exists - we'll only build if it does not
 if [ -f  "$TARGET_BUILD_DIR/libcrypto.1.1.dylib" ]; then
     echo "***** Using previously-built libary $TARGET_BUILD_DIR/libcrypto.1.1.dylib - skipping build *****"
     echo "***** To force a rebuild clean project and clean dependencies *****"
@@ -126,7 +131,3 @@ fi
 echo "***** removing temporary files from $CONFIGURATION_TEMP_DIR *****"
 rm -f "$CONFIGURATION_TEMP_DIR/"*-libcrypto.*
 rm -f "$CONFIGURATION_TEMP_DIR/"*-libssl.*
-
-echo "***** copying libraries to $SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib"
-cp "$TARGET_BUILD_DIR/libcrypto.1.1.dylib" "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib" || exit 1;
-cp "$TARGET_BUILD_DIR/libssl.1.1.dylib" "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib" || exit 1;

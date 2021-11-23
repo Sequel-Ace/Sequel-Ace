@@ -772,7 +772,6 @@
 		1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewController.swift; sourceTree = "<group>"; };
 		1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtension.swift; sourceTree = "<group>"; };
 		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
-		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
 		1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPDateAdditionsTests.m; sourceTree = "<group>"; };
 		1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPFunctionsTests.m; sourceTree = "<group>"; };
@@ -2136,14 +2135,6 @@
 			path = keys;
 			sourceTree = "<group>";
 		};
-		1ACA0B5E25BEBDEE002FA618 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		296DC8A40F90914B002A3258 /* MGTemplateEngine */ = {
 			isa = PBXGroup;
 			children = (
@@ -2182,7 +2173,6 @@
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
-				1ACA0B5E25BEBDEE002FA618 /* Recovered References */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -3370,6 +3360,8 @@
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REEXPORTED_FRAMEWORK_NAMES = "";
+				REEXPORTED_LIBRARY_PATHS = "@executable_path/../Frameworks";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
@@ -3673,6 +3665,8 @@
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace Beta";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REEXPORTED_FRAMEWORK_NAMES = "";
+				REEXPORTED_LIBRARY_PATHS = "@executable_path/../Frameworks";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
@@ -3815,6 +3809,8 @@
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REEXPORTED_FRAMEWORK_NAMES = "";
+				REEXPORTED_LIBRARY_PATHS = "@executable_path/../Frameworks";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
@@ -3864,6 +3860,8 @@
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REEXPORTED_FRAMEWORK_NAMES = "";
+				REEXPORTED_LIBRARY_PATHS = "@executable_path/../Frameworks";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";

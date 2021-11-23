@@ -14,6 +14,34 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9A69D28B0FCE659A0042E34C"
+               BuildableName = "libcrypto.1.1.dylib"
+               BlueprintName = "libcrypto.1.1"
+               ReferencedContainer = "container:../openssl/openssl.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9069D28B0FCE659A0042E34C"
+               BuildableName = "libssl.1.1.dylib"
+               BlueprintName = "libssl.1.1"
+               ReferencedContainer = "container:../openssl/openssl.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "8DC2EF4F0486A6940098B216"
                BuildableName = "SPMySQL.framework"
                BlueprintName = "SPMySQL.framework"
