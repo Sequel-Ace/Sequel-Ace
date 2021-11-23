@@ -123,6 +123,18 @@ else
     cp "$CONFIGURATION_TEMP_DIR"/x86_64-libssl.1.1.dylib "$TARGET_BUILD_DIR/libssl.1.1.dylib"
 fi
 
+echo "***** Fixing DYLIB Paths *****"
+cd "$TARGET_BUILD_DIR"
+install_name_tool -id "libcrypto.1.1.dylib" libcrypto.1.1.dylib
+install_name_tool -id "libssl.1.1.dylib" libssl.1.1.dylib
+
+CRYPTO=$(otool -L libssl.1.1.dylib | grep libcrypto.1.1.dylib | cut -d' ' -f1 | head -1)
+CRYPTO="${CRYPTO#"${CRYPTO%%[![:space:]]*}"}"  
+CRYPTO="${CRYPTO%"${CRYPTO##*[![:space:]]}"}"   
+echo "CRYPTO: $CRYPTO"
+echo "Setting @loader_path/libcrypto.1.1.dylib in libssl.1.1.dylib"
+install_name_tool -change "$CRYPTO" @loader_path/libcrypto.1.1.dylib libssl.1.1.dylib
+
 echo "***** removing temporary files from $CONFIGURATION_TEMP_DIR *****"
 rm -f "$CONFIGURATION_TEMP_DIR/"*-libcrypto.*
 rm -f "$CONFIGURATION_TEMP_DIR/"*-libssl.*
