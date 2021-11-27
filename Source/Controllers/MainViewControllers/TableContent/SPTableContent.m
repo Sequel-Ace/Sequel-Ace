@@ -3350,12 +3350,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) setSortColumnNameToRestore:(NSString *)theSortColumnName isAscending:(BOOL)isAscending
 {
-	
-
 	if (theSortColumnName) {
 		sortColumnToRestore = [[NSString alloc] initWithString:theSortColumnName];
 		sortColumnToRestoreIsAsc = isAscending;
-	}
+    } else {
+        sortColumnToRestore = nil;
+    }
 }
 
 /**
