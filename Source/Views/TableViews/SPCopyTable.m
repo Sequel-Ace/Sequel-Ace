@@ -612,7 +612,7 @@ static const NSInteger kBlobAsImageFile = 4;
 					case 4:
 						SPLog(@"Not adding auto inc value");
 						break;
-                    // Generated column
+                    // Generated column AND skip generated columns=YES
                     case 5:
                         SPLog(@"Not adding generated column value");
                         break;
