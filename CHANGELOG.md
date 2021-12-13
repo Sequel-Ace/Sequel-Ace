@@ -1,3 +1,24 @@
+## [3.4.3]
+
+### Added
+
+
+### Fixed
+- 3c313175,  #979 Properly reset the sorting column
+- 864b9cb1, Show tab color on the first tab after it's expanded  #1216
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+- 58e233e7, Attempt app center fixes for Xcode Cloud 
+- c6695f62,  More bundle execution refactoring
+- 671eb8d6,  Extract duplicate bundle dispatch logic
+- 5c49df6a,  Clean up bundle loading
+
 ## [3.4.2]
 
 ### Added
