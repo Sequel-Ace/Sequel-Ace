@@ -190,14 +190,18 @@ if file_exists "$FASTLANE_ENV_FILE"; then
     sa_log "FASTLANE_ENV_FILE exists: $FASTLANE_ENV_FILE"
     # shellcheck source=/dev/null
     source "$FASTLANE_ENV_FILE"
-else
-    sa_fail "FASTLANE_ENV_FILE does NOT exist: $FASTLANE_ENV_FILE"
 fi	
+
+# It's okay if the value is instead in an env though
+if [[ -n $APPCENTER_ACCESS_TOKEN ]]; then
+    sa_log "APPCENTER_ACCESS_TOKEN exists in ENV! Using this value"
+    MS_APP_CENTER="$APPCENTER_ACCESS_TOKEN"
+fi
 
 if var_exists MS_APP_CENTER; then
     sa_log "MS_APP_CENTER var exists: ******************"
 else
-    sa_fail "MS_APP_CENTER var does NOT exist: $MS_APP_CENTER"
+    sa_fail "MS_APP_CENTER var does NOT exist: $MS_APP_CENTER. Define the var in $FASTLANE_ENV_FILE"
 fi	
 
 if [[ -z "$APP" ]]; then
