@@ -60,10 +60,10 @@ else
 	# $SP_QUERY_RESULT_FILE contains the file path to the query result
 
 	# First line contains the column names - wrap them into &lt;th&gt; tags
-	cat "$SP_QUERY_RESULT_FILE" | head -n 1 |perl -pe 's!\t!&lt;/th&gt;&lt;th&gt;&lt;/th&gt;&lt;th align=right&gt;!g;s!$!&lt;/th&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;!'
+	cat "$SP_QUERY_RESULT_FILE" | head -n 1 |/usr/bin/perl -pe 's!\t!&lt;/th&gt;&lt;th&gt;&lt;/th&gt;&lt;th align=right&gt;!g;s!$!&lt;/th&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;!'
 
 	# Output all row except the first one and wrap them into &lt;tr&gt;&lt;td&gt; tags
-	cat "$SP_QUERY_RESULT_FILE" | sed '1d' | perl -pe 's!\t!&lt;/td&gt;&lt;td&gt;&amp;nbsp;&amp;nbsp;&lt;/td&gt;&lt;td align='right'&gt;!g;s!$!&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;!'
+	cat "$SP_QUERY_RESULT_FILE" | sed '1d' | /usr/bin/perl -pe 's!\t!&lt;/td&gt;&lt;td&gt;&amp;nbsp;&amp;nbsp;&lt;/td&gt;&lt;td align='right'&gt;!g;s!$!&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;!'
 
 fi
 cat &lt;&lt;HTML2
@@ -124,7 +124,7 @@ HTML3
 	export DB="$db"
 	export PID="$SP_PROCESS_ID"
 	export RES="$SP_APP_RESOURCES_DIRECTORY";
-	cat "$SP_QUERY_RESULT_FILE" | sed '1d' | perl "$SP_BUNDLE_PATH/Support/processTableData.pl"
+	cat "$SP_QUERY_RESULT_FILE" | sed '1d' | /usr/bin/perl "$SP_BUNDLE_PATH/Support/processTableData.pl"
 
 	echo "&lt;/table&gt;"
 
