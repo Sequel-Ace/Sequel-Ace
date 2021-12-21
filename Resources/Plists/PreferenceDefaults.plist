@@ -99,6 +99,8 @@
 	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
+	<key>EditInSheetForLongText</key>
+	<true/>
 	<key>EditInSheetForLongTextLengthThreshold</key>
 	<integer>15</integer>
 	<key>CustomQuerySaveHistoryIndividually</key>

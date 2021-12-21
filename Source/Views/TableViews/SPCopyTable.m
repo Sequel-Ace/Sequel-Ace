@@ -1236,16 +1236,11 @@ static const NSInteger kBlobAsImageFile = 4;
 	// Return YES if the multiple line editing button is enabled - triggers sheet editing on all cells.
 	if ([prefs boolForKey:SPEditInSheetEnabled]) return YES;
 
-    NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
 
-    NSUInteger editInSheetForLongTextLengthThreshold = [[preferenceDefaults safeObjectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
+    NSUInteger editInSheetForLongTextLengthThreshold;
 
-    if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold]){
+    if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] != nil){
         editInSheetForLongTextLengthThreshold = [[prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
-    }
-
-    if(!editInSheetForLongTextLengthThreshold || editInSheetForLongTextLengthThreshold % 1 != 0){ // modulus check for integer
-        editInSheetForLongTextLengthThreshold = 15;
     }
 
 	// Retrieve the column definition
@@ -1283,7 +1278,7 @@ static const NSInteger kBlobAsImageFile = 4;
         // TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT
         if ([cellValue isKindOfClass:[NSString class]]) {
             SPLog(@"it's a string");
-            if([cellValue length] > editInSheetForLongTextLengthThreshold){
+            if(editInSheetForLongTextLengthThreshold != nil && [cellValue length] > editInSheetForLongTextLengthThreshold){
                 return YES;
             }
         }
@@ -1296,7 +1291,7 @@ static const NSInteger kBlobAsImageFile = 4;
         SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
     }
 
-	if (![cellValue isNSNull]
+	if (editInSheetForLongTextLengthThreshold != nil && ![cellValue isNSNull]
 		&& [columnType isEqualToString:@"string"]
 		&& [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound
         && [cellValue length] > editInSheetForLongTextLengthThreshold)
@@ -1304,7 +1299,7 @@ static const NSInteger kBlobAsImageFile = 4;
 		return YES;
 	}
 
-    if (![cellValue isNSNull]
+    if (editInSheetForLongTextLengthThreshold != nil && ![cellValue isNSNull]
         && [columnType isEqualToString:@"string"]
         && [cellValue length] > editInSheetForLongTextLengthThreshold)
     {
