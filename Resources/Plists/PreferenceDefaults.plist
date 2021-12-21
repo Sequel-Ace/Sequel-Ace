@@ -99,6 +99,8 @@
 	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
+	<key>EditInSheetForMultiLineText</key>
+	<true/>
 	<key>EditInSheetForLongText</key>
 	<true/>
 	<key>EditInSheetForLongTextLengthThreshold</key>
