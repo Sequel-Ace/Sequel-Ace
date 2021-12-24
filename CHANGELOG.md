@@ -1,3 +1,23 @@
+## [3.4.4]
+
+### Added
+
+
+### Fixed
+- f8ae57d1,  Fixed spreadsheet edit mode not honoring the cutoff length setting and add an option to edit multiline content in popup editor
+- 5a65d157,  Fixed JSON viewer UI bugs and occasional failures to parse
+- 4bd96b9f,  Fix user editing crash
+- 00fa40e9,  Show time in addition to date for table created and updated at dates
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [3.4.3]
 
 ### Added
