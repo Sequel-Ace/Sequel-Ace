@@ -7,6 +7,8 @@
 # SEE: https://docs.microsoft.com/en-us/appcenter/diagnostics/iOS-symbolication#app-center-api
 # AND: https://github.com/microsoft/appcenter-cli#commands
 
+echo "[SA] Starting Upload Symbols Script"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "$SCRIPT_DIR" || return 1
