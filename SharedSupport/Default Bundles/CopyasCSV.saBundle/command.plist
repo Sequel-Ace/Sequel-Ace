@@ -7,7 +7,7 @@
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
-	<string>cat | perl -e '
+	<string>cat | /usr/bin/perl -e '
 
 # read first line to get the column names (header)
 $firstLine = &lt;&gt;;

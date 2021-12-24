@@ -27,49 +27,49 @@
 "%@ Copy" = "%@ — копия";
 
 /* text showing a single row a partially loaded result */
-"%@ row in partial load" = "%@ row in partial load";
+"%@ row in partial load" = "%@ строка с частичной нагрузкой";
 
 /* text showing a single row in the result */
 "%@ row in table" = "%@ строка в таблице";
 
 /* text showing how a single rows matched filter */
-"%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
+"%@ row of %@%@ matches filter" = "%1$@ из %2$@%3$@ отфильтрованных строк";
 
 /* text showing how many rows are in a partially loaded result */
-"%@ rows in partial load" = "%@ rows in partial load";
+"%@ rows in partial load" = "%@ строк с частичной загрузкой";
 
 /* text showing how many rows are in the result */
 "%@ rows in table" = "%@ строк в таблице";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
+"%@ rows of %@%@ match filter" = "%1$@ из %2$@%3$@ отфильтрованных строк";
 
 /* text showing how many rows have been affected by a single query */
 "%@; %ld rows affected" = "%1$@; %2$ld строк затронуто";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; при выполнении %2$ld запросов(а) была затронуто строк: %3$ld, что заняло %4$@";
 
 /* text showing one row has been affected by a single query */
 "%@; 1 row affected" = "%@; 1 строка изменена";
 
 /* text showing one row has been affected by multiple queries */
-"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; при выполнении %2$ld запросов(а) была затронута 1 строка, что заняло %3$@";
 
 /* text showing a query was cancelled */
-"%@; Cancelled after %@" = "%1$@; Cancelled after %2$@";
+"%@; Cancelled after %@" = "%1$@; Отменено после %2$@";
 
 /* text showing multiple queries were cancelled */
-"%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
+"%@; Cancelled in query %ld, after %@" = "%1$@; Отменено на запросе %2$ld, после %3$@";
 
 /* Error display text, showing original MySQL error */
 "%@\n\nMySQL said: %@" = "%1$@\n\nMySQL сообщил: %2$@";
 
 /* favorite singular label (%d == 1) */
-"%lu favorite" = "%lu favorite";
+"%lu favorite" = "%lu избранное";
 
 /* favorites plural label (%d != 1) */
-"%lu favorites" = "%lu favorites";
+"%lu favorites" = "%lu избранные";
 
 /* favorite group singular label (%d == 1) */
 "%lu group" = "%lu группа";
@@ -78,25 +78,25 @@
 "%lu groups" = "%lu группы";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
-"%ld additional rows were removed!" = "%ld additional rows were removed!";
+"%ld additional rows were removed!" = "Дополнительно удалено строк: %ld!";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld of %2$lu record(s)";
+"%ld of %lu record(s)" = "%1$ld из %2$lu записей(и)";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
-"%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";
+"%ld of first %lu record(s)" = "%1$ld из первых %2$lu записей(и)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld строк(и) не удалено.";
 
 /* Export file already exists message */
-"%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
+"%lu files already exist. Do you want to replace them?" = "%lu файлы(ов) уже существуют. Вы хотите заменить их?";
 
 /* Export files creation error title */
-"%lu files could not be created" = "%lu files could not be created";
+"%lu files could not be created" = "%lu файла(ов) не могут быть созданы";
 
 /* Some export files already exist explanatory text */
-"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu файлов с теми же именами уже существует в целевой папке. Их замена перезапишет текущее содержимое.";
 
 /* filtered item count */
 "%lu of %lu" = "%1$lu из %2$lu";
@@ -117,19 +117,19 @@
 "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
-", first row available after %1$@" = ", first row available after %1$@";
+", first row available after %1$@" = ", первые данные начали поступать через %1$@";
 
 /* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
-", taking %1$@" = ", taking %1$@";
+", taking %1$@" = ", затрачено %1$@";
 
 /* warning shown in the console when no rows have been affected after writing to the db */
-"/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
+"/* WARNING: No rows have been affected */\n" = "/* ВНИМАНИЕ: Не было затронуто ни одной строки */\n";
 
 /* error text when multiple custom query failed */
-"[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
+"[ERROR in query %ld] %@\n" = "[ОШИБКА в запросе %1$ld] %2$@\n";
 
 /* error text when reading of csv file gave errors */
-"[ERROR in row %ld] %@\n" = "[ERROR in row %1$ld] %2$@\n";
+"[ERROR in row %ld] %@\n" = "[ОШИБКА в строке %1$ld] %2$@\n";
 
 /* [multiple selection] */
 "[multiple selection]" = "[множественный выбор]";
@@ -141,7 +141,7 @@
 "[no selection]" = "[ничего не выбрано]";
 
 /* Additional export file errors */
-"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
+"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(Кроме того, при создании экспортируемых файлов произошла одна или несколько ошибок: %lu не может быть создан. Эти файлы будут проигнорированы.)";
 
 /* \n\npress shift for binary search tooltip message */
 "\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nНажмите ⇧ для бинарного поиска (с учётом регистра).";
@@ -150,7 +150,7 @@
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
-"A Bundle ‘%@’ is already installed. Do you want to update it?" = "A Bundle ‘%@’ is already installed. Do you want to update it?";
+"A Bundle ‘%@’ is already installed. Do you want to update it?" = "Пакет ‘%@’ уже установлен. Вы хотите обновить его?";
 
 /* description of binary */
 "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M.";
@@ -181,10 +181,10 @@
 "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
 
 /* description of json */
-"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.";
+"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "Тип данных, который проверяет JSON данные при INSERT-е и хранит их в двоичном формате, что одновременно компактнее и способно обеспечить более быстрый доступ по сравнению с текстовым JSON-ном.\nДоступно в MySQL 5.7.8.";
 
 /* Export file already exists explanatory text */
-"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents.";
+"A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Файл с таким именем уже существует в целевой папке. Замена файла перезапишет его содержимое.";
 
 /* description of decimal */
 "A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”).";
@@ -209,10 +209,10 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.";
 
 /* duplicate host informative message */
-"A user with the host '%@' already exists" = "A user with the host '%@' already exists";
+"A user with the host '%@' already exists" = "Пользователь на узле '%@' уже существует";
 
 /* duplicate user informative message */
-"A user with the name '%@' already exists" = "A user with the name '%@' already exists";
+"A user with the name '%@' already exists" = "Пользователь с именем '%@' уже существует";
 
 /* table content : editing : error message description when parsing as hex string failed */
 "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.";
@@ -221,16 +221,16 @@
 "Access denied!" = "Доступ запрещён!";
 
 /* range of double */
-"Accurate to approx. 15 decimal places" = "Accurate to approx. 15 decimal places";
+"Accurate to approx. 15 decimal places" = "С точностью примерно 15 знаков после запятой";
 
 /* range of float */
-"Accurate to approx. 7 decimal places" = "Accurate to approx. 7 decimal places";
+"Accurate to approx. 7 decimal places" = "С точностью примерно 7 знаков после запятой";
 
 /* active connection window is busy. please wait and try again. tooltip */
-"Active connection window is busy. Please wait and try again." = "Active connection window is busy. Please wait and try again.";
+"Active connection window is busy. Please wait and try again." = "Текущее окно подключения занято. Пожалуйста, подождите и повторите попытку.";
 
 /* header for activities pane */
-"ACTIVITIES" = "ACTIVITIES";
+"ACTIVITIES" = "ДЕЙСТВИЯ";
 
 /* Add trigger button label */
 "Add" = "Добавить";
@@ -239,16 +239,16 @@
 "Add Database..." = "Создать базу данных...";
 
 /* Add Host */
-"Add Host" = "Add Host";
+"Add Host" = "Добавить узел";
 
 /* add global value or expression menu item */
-"Add Value or Expression…" = "Add Value or Expression…";
+"Add Value or Expression…" = "Добавить значение или выражение…";
 
 /* adding index task status message */
 "Adding index..." = "Добавление индекса...";
 
 /* Advanced options short title */
-"Advanced" = "Advanced";
+"Advanced" = "Расширенные";
 
 /* notifications preference pane name */
 "Alerts & Logs" = "Оповещения и журналы";
@@ -263,7 +263,7 @@
 "All Databases (%)" = "Все базы данных (%)";
 
 /* All export files already exist message */
-"All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
+"All the export files already exist. Do you want to replace them?" = "Все экспортируемые файлы уже существуют. Вы хотите заменить их?";
 
 /* An error for sequelace URL scheme command occurred. Probably no corresponding connection window found. */
 "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.";
@@ -272,13 +272,13 @@
 "An error has occurred and there doesn't seem to be a connection available." = "An error has occurred and there doesn't seem to be a connection available.";
 
 /* an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane. */
-"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.";
+"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "При выполнении команды к БД произошла ошибка. Если команда к БД была вызвана командой пакета, то возможно она всё ещё выполняется. Вы можете попробовать её прервать, нажав ⌘+. или сделать это через панель Действий.";
 
 /* error killing query informative message */
 "An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "При попытке принудительного разрыва соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "При попытке принудительно завершить запрос, связанный с соединением %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "При попытке прервать запрос соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "Произошла ошибка при формировании запроса создания таблицы.\n\n: %@";
@@ -302,7 +302,7 @@
 "An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается получить запрос создания '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename error - invalid create syntax */
-"An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed.";
+"An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "При переименовании произошла ошибка: не удалось разобрать CREATE запрос для '%@'.";
 
 /* message of panel when retrieving view information failed */
 "An error occurred while retrieving status data.\n\nMySQL said: %@" = "При получении данных о состоянии произошла ошибка.\n\nMySQL сообщил: %@";
@@ -380,7 +380,7 @@
 "An error occurred while flushing the %@.\n\nMySQL said:%@" = "При очистке %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
 /* sql import error message */
-"An error occurred while importing SQL" = "An error occurred while importing SQL";
+"An error occurred while importing SQL" = "При импорте SQL произошла ошибка";
 
 /* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
 "An error occurred while optimzing the %@.\n\nMySQL said:%@" = "При оптимизации %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
@@ -467,34 +467,34 @@
 "Are you sure you want to clear the history list for %@? This action cannot be undone." = "Вы уверены, что хотите очистить историю запросов для %@? Это действие необратимо.";
 
 /* truncate tables informative message */
-"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.";
+"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Вы уверены, что хотите удалить ВСЕ записи в выбранных таблицах? Это действие необратимо.";
 
 /* truncate table informative message */
-"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone.";
+"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "Вы уверены, что хотите удалить ВСЕ записи таблицы '%@'? Это действие необратимо.";
 
 /* delete all rows informative message */
-"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Are you sure you want to delete all the rows from this table? This action cannot be undone.";
+"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Вы уверены, что хотите удалить все строки этой таблицы? Это действие небратимо.";
 
 /* delete table/view informative message */
-"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Are you sure you want to delete the %1$@ '%2$@'? This operation cannot be undone.";
+"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Вы уверены, что хотите удалить %1$@ '%2$@'? Это действие необратимо.";
 
 /* delete database informative message */
-"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "Are you sure you want to delete the database '%@'? This operation cannot be undone.";
+"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "Вы уверены, что хотите удалить базу данных'%@'? Это действие необратимо.";
 
 /* delete database informative message */
-"Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "Are you sure you want to delete the favorite '%@'? This operation cannot be undone.";
+"Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "Вы уверены, что хотите удалить из избранного\"%@'? Это действие необратимо.";
 
 /* delete field informative message */
 "Are you sure you want to delete the field '%@'? This action cannot be undone." = "Are you sure you want to delete the field '%@'? This action cannot be undone.";
 
 /* delete database informative message */
-"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone." = "Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone.";
+"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone." = "Вы уверены, что хотите удалить группу '%@'? Все подгруппы и избранное в этой группе также будут удалены. Это действие необратимо.";
 
 /* delete index informative message */
 "Are you sure you want to delete the index '%@'? This action cannot be undone." = "Are you sure you want to delete the index '%@'? This action cannot be undone.";
 
 /* delete tables/views informative message */
-"Are you sure you want to delete the selected %@? This operation cannot be undone." = "Are you sure you want to delete the selected %@? This operation cannot be undone.";
+"Are you sure you want to delete the selected %@? This operation cannot be undone." = "Вы уверены, что хотите удалить выбранное(ые) %@? Это действие необратимо.";
 
 /* delete rows informative message */
 "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone.";
@@ -509,13 +509,13 @@
 "Are you sure you want to delete the selected triggers? This action cannot be undone." = "Are you sure you want to delete the selected triggers? This action cannot be undone.";
 
 /* kill connection informative message */
-"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.";
+"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите разорвать соединение ID %lld?\n\nИмейте в виду, что разрыв этого соединения может привести к повреждению данных. Пожалуйста, будьте осторожны.";
 
 /* kill query informative message */
-"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите принудительно завершить текущий запрос в подключении ID %lld?\n\nИмейте в виду, что принудительное завершение этого запроса может привести к повреждению данных. Пожалуйста, проявляйте осторожность.";
+"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите прервать текущий запрос подключения ID %lld?\n\nИмейте в виду, что принудительное завершение этого запроса может привести к повреждению данных. Пожалуйста, будьте осторожны.";
 
 /* Bundle Editor : Remove-Bundle: remove dialog message */
-"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Are you sure you want to move the selected Bundle to the Trash and remove them respectively?";
+"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Вы уверены, что хотите удалить выбранный пакет, переместив его в корзину?";
 
 /* continue to print informative message */
 "Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Are you sure you want to print the current content view of the table '%1$@'?\n\nIt currently contains %2$@ rows, which may take a significant amount of time to print.";
@@ -545,7 +545,7 @@
 "BASH Error" = "Ошибка BASH";
 
 /* toolbar item label for switching to the Table Content tab */
-"Browse & Edit Table Content" = "Browse & Edit Table Content";
+"Browse & Edit Table Content" = "Просмотр и правка содержимого таблицы";
 
 /* build label */
 "build" = "сборка";
@@ -554,22 +554,22 @@
 "Build" = "Сборка";
 
 /* bundle editor menu item label */
-"Bundle Editor" = "Bundle Editor";
+"Bundle Editor" = "Редактор пакетов";
 
 /* bundle error */
-"Bundle Error" = "Bundle Error";
+"Bundle Error" = "Ошибка пакета";
 
 /* bundles menu item label */
-"Bundles" = "Bundles";
+"Bundles" = "Пакеты";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item */
-"BUNDLES" = "BUNDLES";
+"BUNDLES" = "ПАКЕТЫ";
 
 /* Bundle Editor : Outline View : Menu Category item : tooltip */
-"Bundles in category %@" = "Bundles in category %@";
+"Bundles in category %@" = "Пакет в категории %@";
 
 /* bundles installation error */
-"Bundles Installation Error" = "Bundles Installation Error";
+"Bundles Installation Error" = "Ошибка установки пакетов";
 
 /* bzip2 compression export summary - within a sentence */
 "bzip2 compression" = "bzip2 сжатие";
@@ -601,7 +601,7 @@
 "Change" = "Изменить";
 
 /* change focus to table list menu item */
-"Change Focus to Table List" = "Change Focus to Table List";
+"Change Focus to Table List" = "Сменить фокус на список таблиц";
 
 /* change table type message */
 "Change table type" = "Изменить тип таблицы";
@@ -622,28 +622,28 @@
 "check option: %@" = "проверка изменений: %@";
 
 /* check selected items menu item */
-"Check Selected Items" = "Check Selected Items";
+"Check Selected Items" = "Проверить выбранные элементы";
 
 /* check table menu item */
 "Check Table" = "Проверить таблицу";
 
 /* check table failed message */
-"Check table failed." = "Check table failed.";
+"Check table failed." = "Не получилось проверить таблицу.";
 
 /* check table successfully passed message */
-"Check table successfully passed." = "Check table successfully passed.";
+"Check table successfully passed." = "Проверка таблицы успешно пройдена.";
 
 /* check view menu item */
-"Check View" = "Check View";
+"Check View" = "Проверить представление";
 
 /* checking field data for editing task description */
-"Checking field data for editing..." = "Checking field data for editing...";
+"Checking field data for editing..." = "Подготовка данных поля к правке...";
 
 /* checksum %@ message */
 "Checksum %@" = "Контрольная сумма %@";
 
 /* checksum selected items menu item */
-"Checksum Selected Items" = "Checksum Selected Items";
+"Checksum Selected Items" = "Контрольная сумма выбранных элементов";
 
 /* checksum table menu item */
 "Checksum Table" = "Контрольная сумма таблицы";
@@ -700,10 +700,10 @@
 "Comment" = "Комментарий";
 
 /* Title of action menu item to comment line */
-"Comment Line" = "Comment Line";
+"Comment Line" = "Закомментировать строку";
 
 /* Title of action menu item to comment selection */
-"Comment Selection" = "Comment Selection";
+"Comment Selection" = "Закомментировать выделенное";
 
 /* connect button */
 "Connect" = "Подключиться";
@@ -758,7 +758,7 @@
 "Continue" = "Продолжить";
 
 /* continue to print message */
-"Continue to print?" = "Continue to print?";
+"Continue to print?" = "Продолжить печать?";
 
 /* Copy as RTF */
 "Copy as RTF" = "Скопировать как RTF";
@@ -788,16 +788,16 @@
 "Copy Create View Syntax" = "Скопировать запрос создания представления";
 
 /* copy server variable name menu item */
-"Copy Variable Name" = "Copy Variable Name";
+"Copy Variable Name" = "Скопировать имя переменной";
 
 /* copy server variable names menu item */
-"Copy Variable Names" = "Copy Variable Names";
+"Copy Variable Names" = "Скопировать имена переменных";
 
 /* copy server variable value menu item */
-"Copy Variable Value" = "Copy Variable Value";
+"Copy Variable Value" = "Скопировать значение переменной";
 
 /* copy server variable values menu item */
-"Copy Variable Values" = "Copy Variable Values";
+"Copy Variable Values" = "Скопировать значения переменных";
 
 /* Procedure/function export permission error */
 "Could not export the %@ '%@' because of a permissions error.\n" = "Could not export the %1$@ '%2$@' because of a permissions error.\n";
@@ -818,7 +818,7 @@
 "Couldn't create '%@'.\nMySQL said: %@" = "Не удалось создать '%1$@'.\nMySQL сообщил: %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
-"Couldn't create Application Support Bundle folder!\nError: %@" = "Couldn't create Application Support Bundle folder!\nError: %@";
+"Couldn't create Application Support Bundle folder!\nError: %@" = "Не удалось создать папку для хранения пакетов!\nОшибка: %@";
 
 /* Couldn't create Application Support Theme folder!\nError: %@ */
 "Couldn't create Application Support Theme folder!\nError: %@" = "Couldn't create Application Support Theme folder!\nError: %@";
@@ -857,7 +857,7 @@
 "Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.";
 
 /* Couldn't read the file content of */
-"Couldn't read the file content of" = "Couldn't read the file content of";
+"Couldn't read the file content of" = "Не удалось прочитать содержимое файла";
 
 /* text shown if an error occurred while sorting the result table */
 "Couldn't sort column." = "Не удалось отсортировать столбец.";
@@ -869,13 +869,13 @@
 "Couldn't write field.\nMySQL said: %@" = "Не удалось записать поле.\nMySQL сообщил: %@";
 
 /* create syntax for table comment */
-"Create syntax for" = "Create syntax for";
+"Create syntax for" = "Запрос создания для";
 
 /* Create syntax label */
-"Create syntax for %@ '%@'" = "Create syntax for %1$@ '%2$@'";
+"Create syntax for %@ '%@'" = "Запрос создания для %1$@ '%2$@ '";
 
 /* Create syntaxes for selected items label */
-"Create syntaxes for selected items" = "Create syntaxes for selected items";
+"Create syntaxes for selected items" = "Запросы создания для выбранных элементов";
 
 /* Table Info Section : table create options */
 "create_options: %@" = "опции_создания: %@";
@@ -900,23 +900,23 @@
 "CURRENT SELECTION" = "ТЕКУЩИЙ ВЫБОР";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current word' item */
-"Current Word" = "Current Word";
+"Current Word" = "Текущее слово";
 
 /* SSH connection : debug header with user-defined ssh binary */
 "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!";
 
 /* customize file name label */
-"Customize Filename (%@)" = "Customize Filename (%@)";
+"Customize Filename (%@)" = "Задать имя файла (%@)";
 
 /* data access: %@ (%@) */
 "data access: %@ (%@)" = "результат: %1$@ (%2$@)";
 
 /* Bundle Editor : Scope dropdown : 'data table' item
  data table menu item label */
-"Data Table" = "Data Table";
+"Data Table" = "Содержимое таблицы";
 
 /* Bundle Editor : Outline View : 'Data Table' item : tooltip */
-"Data Table Scope\ncommands will run on the Content and Query data tables" = "Data Table Scope\ncommands will run on the Content and Query data tables";
+"Data Table Scope\ncommands will run on the Content and Query data tables" = "Область таблиц данных\nкоманды будут нацелены на содержимое таблиц и запросы к ним";
 
 /* export filename database token
  export header database label
@@ -955,7 +955,7 @@
 "Default (%@)" = "По умолчанию (%@)";
 
 /* default bundles update */
-"Default Bundles Update" = "Default Bundles Update";
+"Default Bundles Update" = "Обновление базовых пакетов";
 
 /* import : csv field mapping : field default value */
 "Default: %@" = "По умолчанию: %@";
@@ -976,7 +976,7 @@
 "Delete" = "Удалить";
 
 /* delete table/view message */
-"Delete %@ '%@'?" = "Delete %1$@ '%2$@'?";
+"Delete %@ '%@'?" = "Удалить %1$@ '%2$@'?";
 
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "Удалить оба";
@@ -1000,7 +1000,7 @@
 "Delete group '%@'?" = "Удалить группу '%@'?";
 
 /* delete index message */
-"Delete index '%@'?" = "Delete index '%@'?";
+"Delete index '%@'?" = "Удалить индекс '%@'?";
 
 /* delete items menu title */
 "Delete Items" = "Удалить элементы";
@@ -1030,7 +1030,7 @@
 "Delete rows?" = "Удалить строки?";
 
 /* delete tables/views message */
-"Delete selected %@?" = "Delete selected %@?";
+"Delete selected %@?" = "Удалить выделенное %@?";
 
 /* delete selected row message */
 "Delete selected row?" = "Удалить выбранную строку?";
@@ -1057,10 +1057,10 @@
 "Delete Views" = "Удалить представления";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
-"Disabled Cipher Suites" = "Disabled Cipher Suites";
+"Disabled Cipher Suites" = "Отключенные наборы шифрования";
 
 /* force table deltion button text tooltip */
-"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.";
+"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Временно отключает проверку внешних ключей (FOREIGN_KEY_CHECKS) перед удалением, а затем снова включает её.";
 
 /* discard changes button */
 "Discard changes" = "Откатить изменения";
@@ -1075,34 +1075,34 @@
 "Do you really want to load a SQL file with %@ of data into the Query Editor?" = "Do you really want to load a SQL file with %@ of data into the Query Editor?";
 
 /* message of panel asking for confirmation for inserting large text from dragging action */
-"Do you really want to proceed with %@ of data?" = "Do you really want to proceed with %@ of data?";
+"Do you really want to proceed with %@ of data?" = "Вы действительно хотите продолжить обработку %@ данных?";
 
 /* shutdown server : confirmation dialog : title */
-"Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
+"Do you really want to shutdown the server?" = "Вы действительно хотите выключить сервер?";
 
 /* dtd identifier label (Navigator) */
-"DTD Identifier" = "DTD Identifier";
+"DTD Identifier" = "Идентификатор DTD";
 
 /* sql export dump of table label */
-"Dump of table" = "Dump of table";
+"Dump of table" = "Дамп таблицы";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Запись дампа...";
 
 /* duplicate object message */
-"Duplicate %@ '%@' to:" = "Duplicate %1$@ '%2$@' to:";
+"Duplicate %@ '%@' to:" = "Дублировать %1$@ '%2$@' в:";
 
 /* duplicate func menu title */
 "Duplicate Function..." = "Дублировать функцию...";
 
 /* duplicate host message */
-"Duplicate Host" = "Duplicate Host";
+"Duplicate Host" = "Дублировать узел";
 
 /* duplicate proc menu title */
 "Duplicate Procedure..." = "Дублировать процедуру...";
 
 /* duplicate table menu title */
-"Duplicate Table..." = "Duplicate Table...";
+"Duplicate Table..." = "Дублировать таблицу...";
 
 /* duplicate user message */
 "Duplicate User" = "Дублировать пользователя";
@@ -1120,13 +1120,13 @@
 "Edit row" = "Изменить строку";
 
 /* toolbar item label for switching to the Table Structure tab */
-"Edit Table Structure" = "Edit Table Structure";
+"Edit Table Structure" = "Изменить структуру таблицы";
 
 /* edit theme list label */
 "Edit Theme List…" = "Редактировать список тем…";
 
 /* edit user-defined filter */
-"Edit user-defined Filters…" = "Edit user-defined Filters…";
+"Edit user-defined Filters…" = "Редактирование пользовательских фильтров…";
 
 /* empty query message */
 "Empty query" = "Пустой запрос";
@@ -1161,110 +1161,110 @@
 "Error" = "Ошибка";
 
 /* error adding field message */
-"Error adding field" = "Error adding field";
+"Error adding field" = "Ошибка добавления поля";
 
 /* error adding new column message */
-"Error adding new column" = "Error adding new column";
+"Error adding new column" = "Ошибка при добавлении новой колонки";
 
 /* error adding new table message */
-"Error adding new table" = "Error adding new table";
+"Error adding new table" = "Ошибка при добавлении новой таблицы";
 
 /* error adding password to keychain message */
-"Error adding password to Keychain" = "Error adding password to Keychain";
+"Error adding password to Keychain" = "Ошибка при добавлении пароля в Keychain";
 
 /* error changing field message */
-"Error changing field" = "Error changing field";
+"Error changing field" = "Ошибка изменения поля";
 
 /* error changing table collation message */
-"Error changing table collation" = "Error changing table collation";
+"Error changing table collation" = "Ошибка изменения сортировки таблицы";
 
 /* error changing table comment message */
-"Error changing table comment" = "Error changing table comment";
+"Error changing table comment" = "Ошибка изменения комментария к таблице";
 
 /* error changing table encoding message */
-"Error changing table encoding" = "Error changing table encoding";
+"Error changing table encoding" = "Ошибка изменения кодировки таблицы";
 
 /* error changing table type message */
-"Error changing table type" = "Error changing table type";
+"Error changing table type" = "Ошибка изменения типа таблицы";
 
 /* error creating relation message */
-"Error creating relation" = "Error creating relation";
+"Error creating relation" = "Ошибка при создании связи";
 
 /* error creating trigger message */
-"Error creating trigger" = "Error creating trigger";
+"Error creating trigger" = "Ошибка создания триггера";
 
 /* error for message */
 "Error for" = "Ошибка для";
 
 /* error for bash command ($1), $2=message */
-"Error for “%1$@”:\n%2$@" = "Error for “%1$@”:\n%2$@";
+"Error for “%1$@”:\n%2$@" = "Ошибка для “%1$@”:\n%2$@";
 
 /* error moving field message */
-"Error moving field" = "Error moving field";
+"Error moving field" = "Ошибка перемещения поля";
 
 /* error occurred */
 "error occurred" = "произошла ошибка";
 
 /* error reading import file */
-"Error reading import file." = "Error reading import file.";
+"Error reading import file." = "Ошибка чтения файла импорта.";
 
 /* error finding keychain item to edit message */
-"Error retrieving Keychain item to edit" = "Error retrieving Keychain item to edit";
+"Error retrieving Keychain item to edit" = "Ошибка получения элемента Keychain для редактирования";
 
 /* error retrieving table information message */
-"Error retrieving table information" = "Error retrieving table information";
+"Error retrieving table information" = "Ошибка получения информации о таблице";
 
 /* error retrieving trigger information message */
-"Error retrieving trigger information" = "Error retrieving trigger information";
+"Error retrieving trigger information" = "Ошибка при получении информации о триггере";
 
 /* error truncating table message */
-"Error truncating table" = "Error truncating table";
+"Error truncating table" = "Ошибка очистки таблицы";
 
 /* error updating keychain item message */
-"Error updating Keychain item" = "Error updating Keychain item";
+"Error updating Keychain item" = "Ошибка при обновлении элемента Keychain";
 
 /* error while analyzing selected items message */
-"Error while analyzing selected items" = "Error while analyzing selected items";
+"Error while analyzing selected items" = "Ошибка при анализе выбранных элементов";
 
 /* error while checking selected items message */
-"Error while checking selected items" = "Error while checking selected items";
+"Error while checking selected items" = "Ошибка при проверке выбранных элементов";
 
 /* error while converting color scheme data */
-"Error while converting color scheme data" = "Error while converting color scheme data";
+"Error while converting color scheme data" = "Ошибка при преобразовании данных цветовой схемы";
 
 /* error while converting connection data */
-"Error while converting connection data" = "Error while converting connection data";
+"Error while converting connection data" = "Ошибка при преобразовании данных подключения";
 
 /* Content filters could not be converted to plist upon export - message title (ContentFilterManager) */
-"Error while converting content filter data" = "Error while converting content filter data";
+"Error while converting content filter data" = "Ошибка при преобразовании данных фильтра содержимого";
 
 /* error while converting query favorite data */
-"Error while converting query favorite data" = "Error while converting query favorite data";
+"Error while converting query favorite data" = "Ошибка преобразования данных избранного запроса";
 
 /* error while converting session data */
 "Error while converting session data" = "Error while converting session data";
 
 /* Error while deleting field */
-"Error while deleting field" = "Error while deleting field";
+"Error while deleting field" = "Ошибка при удалении поля";
 
 /* Bundle Editor : Copy-Command-Error : Copying failed error message */
-"Error while duplicating Bundle content." = "Error while duplicating Bundle content.";
+"Error while duplicating Bundle content." = "Ошибка при дублировании содержимого пакета.";
 
 /* error while executing javascript bash command */
-"Error while executing JavaScript BASH command" = "Error while executing JavaScript BASH command";
+"Error while executing JavaScript BASH command" = "Ошибка выполнения JavaScript BASH команды";
 
 /* error while fetching the optimized field type message */
-"Error while fetching the optimized field type" = "Error while fetching the optimized field type";
+"Error while fetching the optimized field type" = "Ошибка поиска оптимизированного типа поля";
 
 /* error while flushing selected items message */
 "Error while flushing selected items" = "Error while flushing selected items";
 
 /* error while importing table message */
-"Error while importing table" = "Error while importing table";
+"Error while importing table" = "Ошибка при импорте таблицы";
 
 /* Open Files : Bundle : Install-Error : error dialog title
  Open Files : Bundle : UUID : Error dialog title */
-"Error while installing Bundle" = "Error while installing Bundle";
+"Error while installing Bundle" = "Ошибка установки пакета";
 
 /* error while installing color theme file */
 "Error while installing color theme file" = "Error while installing color theme file";
@@ -1278,19 +1278,19 @@
 "Error while optimizing selected items" = "Error while optimizing selected items";
 
 /* error while parsing CREATE TABLE syntax */
-"Error while parsing CREATE TABLE syntax" = "Error while parsing CREATE TABLE syntax";
+"Error while parsing CREATE TABLE syntax" = "Ошибка разбора запроса CREATE TABLE";
 
 /* error while reading connection data file */
-"Error while reading connection data file" = "Error while reading connection data file";
+"Error while reading connection data file" = "Ошибка чтения файла с данными для подключения";
 
 /* error while reading data file */
-"Error while reading data file" = "Error while reading data file";
+"Error while reading data file" = "Ошибка при чтении файла данных";
 
 /* error while repairing selected items message */
 "Error while repairing selected items" = "Error while repairing selected items";
 
 /* Bundle Editor : Save-Bundle-Error : error dialog title */
-"Error while saving the Bundle." = "Error while saving the Bundle.";
+"Error while saving the Bundle." = "Ошибка сохранения пакета.";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
 "Error while saving %@." = "Ошибка при сохранении %@.";
@@ -1302,7 +1302,7 @@
 "Example:" = "Пример:";
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
-"exclude BLOB" = "exclude BLOB";
+"exclude BLOB" = "исключая BLOB";
 
 /* execution privilege label (Navigator) */
 "Execution Privilege" = "Делегированные права";
@@ -1314,13 +1314,13 @@
 "Execution stopped!\n" = "Выполнение остановлено!\n";
 
 /* export selected favorites menu item */
-"Export Selected..." = "Export Selected...";
+"Export Selected..." = "Экспортировать выбранное...";
 
 /* text showing that the application is importing a supplied format */
-"Exporting %@" = "Exporting %@";
+"Exporting %@" = "Экспорт %@";
 
 /* text showing that the application is exporting a Dot file */
-"Exporting Dot File" = "Exporting Dot File";
+"Exporting Dot File" = "Экспорт Dot файла";
 
 /* text showing that the application is exporting SQL */
 "Exporting SQL" = "Экспорт SQL";
@@ -1329,7 +1329,7 @@
 "Extra" = "Доп.";
 
 /* table structure : indexes : delete index : no columns error : title */
-"Failed to remove index '%@'" = "Failed to remove index '%@'";
+"Failed to remove index '%@'" = "Не удалось удалить индекс '%@'";
 
 /* fatal error */
 "Fatal Error" = "Критическая ошибка";
@@ -1341,22 +1341,22 @@
 "Favorites" = "Избранное";
 
 /* favorites export error message */
-"Favorites export error" = "Favorites export error";
+"Favorites export error" = "Ошибка экспорта Избранного";
 
 /* favorites import error message */
-"Favorites import error" = "Favorites import error";
+"Favorites import error" = "Ошибка импорта Избранного";
 
 /* export label showing that the app is fetching data */
 "Fetching data..." = "Получение данных...";
 
 /* fetching database structure data in progress */
-"fetching database structure data in progress" = "fetching database structure data in progress";
+"fetching database structure data in progress" = "идёт загрузка структуры базы данных";
 
 /* fetching database structure in progress */
 "fetching database structure in progress" = "fetching database structure in progress";
 
 /* fetching table data for completion in progress message */
-"fetching table data…" = "fetching table data…";
+"fetching table data…" = "получение данных таблицы…";
 
 /* popup menuitem for field (showing only if disabled) */
 "field" = "поле";
@@ -1377,11 +1377,11 @@
 "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
 
 /* error while reading data file */
-"File couldn't be read." = "File couldn't be read.";
-"File couldn't be read: %@\n\nIt will be deleted." = "File couldn't be read: %@\n\nIt will be deleted.";
+"File couldn't be read." = "Файл не читается.";
+"File couldn't be read: %@\n\nIt will be deleted." = "Файл не читается.: %@\n\nОн будет удалён.";
 
 /* File read error title (Import Dialog) */
-"File read error" = "File read error";
+"File read error" = "Ошибка чтения файла";
 
 /* All export files already exist explanatory text */
 "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
@@ -1390,13 +1390,13 @@
 "Filter" = "Отфильтровать";
 
 /* filter tables menu item */
-"Filter Tables" = "Filter Tables";
+"Filter Tables" = "Фильтр таблиц";
 
 /* export source */
-"Filtered table content" = "Filtered table content";
+"Filtered table content" = "Отфильтрованное содержимое таблицы";
 
 /* filtering failed. please try again. tooltip */
-"Filtering failed. Please try again." = "Filtering failed. Please try again.";
+"Filtering failed. Please try again." = "Фильтрация не удалась. Пожалуйста, попробуйте ещё раз.";
 
 /* Filtering table task description */
 "Filtering table..." = "Фильтрация таблицы...";
@@ -1423,13 +1423,13 @@
 "Flush View" = "Очистить представление";
 
 /* title of panel when successfully flushed privs */
-"Flushed Privileges" = "Flushed Privileges";
+"Flushed Privileges" = "Привилегии перезагружены";
 
 /* For BIT fields only “1” or “0” are allowed. */
-"For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
+"For BIT fields only “1” or “0” are allowed." = "Для BIT полей разрешено использовать только \"1\" или \"0\".";
 
 /* force table deletion button text */
-"Force delete (disables integrity checks)" = "Force delete (disables integrity checks)";
+"Force delete (disables integrity checks)" = "Принудительно удалить (отключить проверки целостности)";
 
 /* full text index menu item title */
 "FULLTEXT" = "FULLTEXT";
@@ -1446,26 +1446,26 @@
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
  general preference pane name */
-"General" = "Основные";
+"General" = "Общая";
 
 /* general preference pane tooltip */
 "General Preferences" = "Основные настройки";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
-"General Scope\ncommands will run application-wide" = "General Scope\ncommands will run application-wide";
+"General Scope\ncommands will run application-wide" = "Общая область\nкоманды будут нацелены на всё приложение";
 
 /* generating print document status message */
-"Generating print document..." = "Generating print document...";
+"Generating print document..." = "Создание документа для печати...";
 
 /* export header generation time label */
-"Generation Time" = "Generation Time";
+"Generation Time" = "Время формирования";
 
 /* Content Filter Manager : Filter Entry List: 'Global' Header
  Query Favorites : List : Section Heading : global query favorites */
-"Global" = "Global";
+"Global" = "Общие";
 
 /* Query Favorites : List : Section Heading : global : tooltip */
-"Globally stored favorites" = "Globally stored favorites";
+"Globally stored favorites" = "Общие избранные";
 
 /* Preferences : Notifications : status text : notification setup */
 "Notifications are delivered via the Notification Center." = "Notifications are delivered via the Notification Center.";
@@ -1505,10 +1505,10 @@
 "Ignore All Errors" = "Игнорировать все ошибки";
 
 /* ignore all fields menu item */
-"Ignore all Fields" = "Ignore all Fields";
+"Ignore all Fields" = "Игнорировать все поля";
 
 /* ignore field label */
-"Ignore field" = "Ignore field";
+"Ignore field" = "Игнорировать поле";
 
 /* ignore field label */
 "Ignore Field" = "Игнорировать поле";
@@ -1523,28 +1523,28 @@
 "Import Anyway" = "Всё равно импортировать";
 
 /* import cancelled message */
-"Import cancelled!\n" = "Import cancelled!\n";
+"Import cancelled!\n" = "Импорт отменён!\n";
 
 /* Import Error title */
 "Import Error" = "Ошибка импорта";
 
 /* import field operator tooltip */
-"Import field" = "Import field";
+"Import field" = "Импорт поля";
 
 /* import file does not exist message */
-"Import file does not exist." = "Import file does not exist.";
+"Import file does not exist." = "Импортируемый файл не существует.";
 
 /* Export file format cannot be imported warning */
 "Import of the selected data is currently not supported." = "Import of the selected data is currently not supported.";
 
 /* SQL import progress text */
-"Imported %@ of %@" = "Imported %1$@ of %2$@";
+"Imported %@ of %@" = "Импортировано %1$@ из %2$@";
 
 /* CSV import progress text where total size is unknown */
-"Imported %@ of CSV data" = "Imported %@ of CSV data";
+"Imported %@ of CSV data" = "Импортировано %@ из CSV данных";
 
 /* SQL import progress text where total size is unknown */
-"Imported %@ of SQL" = "Imported %@ of SQL";
+"Imported %@ of SQL" = "Импортировано SQL: %@";
 
 /* text showing that the application is importing CSV */
 "Importing CSV" = "Импорт CSV";
@@ -1553,13 +1553,13 @@
 "Importing SQL" = "Импорт SQL";
 
 /* Bundle Editor : BLOB dropdown : 'include BLOB' item */
-"include BLOB" = "include BLOB";
+"include BLOB" = "включая BLOB";
 
 /* include content table column tooltip */
-"Include content" = "Include content";
+"Include content" = "Включая содержимое";
 
 /* sql import error message */
-"Incompatible encoding in SQL file" = "Incompatible encoding in SQL file";
+"Incompatible encoding in SQL file" = "Несовместимая кодировка в SQL файле";
 
 /* header for blank info pane */
 "INFORMATION" = "ИНФОРМАЦИЯ";
@@ -1573,16 +1573,16 @@
 
 /* Bundle Editor : Scope dropdown : 'input field' item
  input field menu item label */
-"Input Field" = "Input Field";
+"Input Field" = "Поле ввода";
 
 /* input field  doesn't support insertion of snippets. */
 "Input Field doesn't support insertion of snippets." = "Input Field doesn't support insertion of snippets.";
 
 /* input field is not editable. */
-"Input Field is not editable." = "Input Field is not editable.";
+"Input Field is not editable." = "Поле ввода не редактируемо.";
 
 /* Bundle Editor : Outline View : 'Input Field' item : tooltip */
-"Input Field Scope\ncommands will run on each text input field" = "Input Field Scope\ncommands will run on each text input field";
+"Input Field Scope\ncommands will run on each text input field" = "Область поля ввода\nкоманды будут нацелены на каждое поле ввода текста";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
 "Insert as Snippet" = "Вставить как сниппет";
@@ -1591,10 +1591,10 @@
 "Insert as Text" = "Вставить как текст";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item : tooltip */
-"Installed Bundles" = "Installed Bundles";
+"Installed Bundles" = "Установленные пакеты";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
-"Installing Bundle" = "Installing Bundle";
+"Installing Bundle" = "Установка пакета";
 
 /* insufficient details message */
 "Insufficient connection details" = "Insufficient connection details";
@@ -1609,16 +1609,16 @@
 "Insufficient details provided to establish a connection. Please provide at least a host." = "Insufficient details provided to establish a connection. Please provide at least a host.";
 
 /* Interpret data as: */
-"Interpret data as:" = "Interpret data as:";
+"Interpret data as:" = "Данные интерпретированы как:";
 
 /* Invalid database very short status message */
 "Invalid database" = "Повреждённая база данных";
 
 /* export : import settings : file error title */
-"Invalid file supplied!" = "Invalid file supplied!";
+"Invalid file supplied!" = "Недопустимый файл!";
 
 /* table content : editing : error message title when parsing as hex string failed */
-"Invalid hexadecimal value" = "Invalid hexadecimal value";
+"Invalid hexadecimal value" = "Неверное шестнадцатеричное значение";
 
 /* is deterministic label (Navigator) */
 "Is Deterministic" = "Детерминированный";
@@ -1633,10 +1633,10 @@
 "items" = "элементы";
 
 /* javascript exception */
-"JavaScript Exception" = "JavaScript Exception";
+"JavaScript Exception" = "Ошибка JavaScript";
 
 /* javascript parsing error */
-"JavaScript Parsing Error" = "JavaScript Parsing Error";
+"JavaScript Parsing Error" = "Ошибка разбора JavaScript";
 
 /* key label (Navigator) */
 "Key" = "Ключ";
@@ -1645,16 +1645,16 @@
 "Keyword" = "Ключевое слово";
 
 /* kill button */
-"Kill" = "Завершить принудительно";
+"Kill" = "Прервать";
 
 /* kill connection message */
 "Kill connection?" = "Разорвать соединение?";
 
 /* kill query message */
-"Kill query?" = "Принудительно завершить запрос?";
+"Kill query?" = "Прервать запрос?";
 
 /* Last Error Message */
-"Last Error Message" = "Last Error Message";
+"Last Error Message" = "Сообщение об ошибке";
 
 /* Last Used entry in favorites menu */
 "Last Used" = "Выполнялся";
@@ -1672,23 +1672,23 @@
 "Loading history entry..." = "Загрузка записи истории...";
 
 /* Loading table page task string */
-"Loading page %lu..." = "Loading page %lu...";
+"Loading page %lu..." = "Загрузка страницы %lu...";
 
 /* Loading referece task string */
-"Loading reference..." = "Loading reference...";
+"Loading reference..." = "Загрузка связи...";
 
 /* Loading table data string */
-"Loading table data..." = "Loading table data...";
+"Loading table data..." = "Загрузка данных таблицы...";
 
 /* Low memory export summary */
-"Low memory" = "Low memory";
+"Low memory" = "Экономия памяти";
 
 /* range of decimal */
-"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (precision): Up to 65 digits\nD (scale): 0 to 30 digits";
+"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (точность): до 65 цифр\nD (шкала): от 0 до 30 цифр";
 
 /* range for blob type
  range for varbinary type */
-"M: %@ to %@ bytes" = "M: %1$@ to %2$@ bytes";
+"M: %@ to %@ bytes" = "М: от %1$@ до %2$@ байт";
 
 /* range for text type
  range for varchar type */
@@ -1698,13 +1698,13 @@
 "M: %@ to %@ characters (4 GiB)" = "М: от %1$@ до %2$@ символов (4 ГиБ)";
 
 /* range for binary type */
-"M: 0 to 255 bytes" = "M: 0 to 255 bytes";
+"M: 0 to 255 bytes" = "М: от 0 до 255 байт";
 
 /* range for char type */
 "M: 0 to 255 characters" = "М: от 0 до 255 символов";
 
 /* range for bit type */
-"M: 1 (default) to 64" = "M: 1 (default) to 64";
+"M: 1 (default) to 64" = "М: от 1 (по умолчанию) до 64";
 
 /* connection view : ssl : key file picker : wrong format error description */
 "Make sure the file contains a RSA private key and is using PEM encoding." = "Make sure the file contains a RSA private key and is using PEM encoding.";
@@ -1716,7 +1716,7 @@
 "Match Field" = "Match Field";
 
 /* Shown when user inserts too many arguments (ContentFilterManager) */
-"Maximum number of arguments is 2!" = "Maximum number of arguments is 2!";
+"Maximum number of arguments is 2!" = "Максимальное количество аргументов: 2!";
 
 /* Maximum text length is set to %ld. */
 "Maximum text length is set to %ld." = "Длина текста ограничена %ld.";
@@ -1782,10 +1782,10 @@
 "Files" = "Файлы";
 
 /* file preference pane tooltip */
-"File Preferences" = "File Preferences";
+"File Preferences" = "Настройки файлов";
 
 /* Bundle Editor : Default name for new bundle in the list on the left */
-"New Bundle" = "New Bundle";
+"New Bundle" = "Новый пакет";
 
 /* new column name placeholder string */
 "New Column Name" = "Имя нового столбца";
@@ -1806,19 +1806,19 @@
 "New Table" = "Новая таблица";
 
 /* error that no color theme found */
-"No color theme data found." = "No color theme data found.";
+"No color theme data found." = "Данные цветовой темы не найдены.";
 
 /* No compression export summary - within a sentence */
 "no compression" = "без сжатия";
 
 /* no connection available message */
-"No connection available" = "No connection available";
+"No connection available" = "Нет доступного подключения";
 
 /* no connection data found */
-"No connection data found." = "No connection data found.";
+"No connection data found." = "Данные для подключения не найдены.";
 
 /* No content filters were found in file to import (ContentFilterManager) */
-"No content filters found." = "No content filters found.";
+"No content filters found." = "Фильтры контента не найдены.";
 
 /* no data found */
 "No data found." = "Данные не найдены.";
@@ -1830,7 +1830,7 @@
 "No Favorties" = "Нет избранных";
 
 /* All export files creation error title */
-"No files could be created" = "No files could be created";
+"No files could be created" = "Файлы не могут быть созданы";
 
 /* no item found message */
 "No item found" = "Элементы не найдены";
@@ -1842,10 +1842,10 @@
 "NO MATCHES" = "НЕТ СОВПАДЕНИЙ";
 
 /* no optimized field type found. message */
-"No optimized field type found." = "No optimized field type found.";
+"No optimized field type found." = "Не найден оптимизированный тип поля.";
 
 /* error that no query favorites found */
-"No query favorites found." = "No query favorites found.";
+"No query favorites found." = "Не найдено избранных запросов.";
 
 /* Mysql Help Viewer : Search : No results */
 "No results found." = "Ничего не найдено.";
@@ -1868,7 +1868,7 @@
 "Not available" = "Недоступно";
 
 /* Argument count (ContentFilterManager) */
-"Number of arguments: %lu" = "Number of arguments: %lu";
+"Number of arguments: %lu" = "Количество аргументов: %lu";
 
 /* numeric label for color table (Prefs > Editor) */
 "Numeric" = "Числа";
@@ -1889,13 +1889,13 @@
 "One additional row was removed!" = "One additional row was removed!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : Only n-1 of n selected rows were deleted. */
-"One row was not removed." = "One row was not removed.";
+"One row was not removed." = "Одна строка не удалилась.";
 
 /* Only one dragged item allowed. */
-"Only one dragged item allowed." = "Only one dragged item allowed.";
+"Only one dragged item allowed." = "Допускается только один перетаскиваемый элемент.";
 
 /* partial copy database support message */
-"Only Partially Supported" = "Only Partially Supported";
+"Only Partially Supported" = "Только частичная поддержка";
 
 /* open function in new table title */
 "Open Function in New Tab" = "Открыть функцию в новой вкладке";
@@ -1908,7 +1908,7 @@
 "Open in New Tab" = "Открыть в новой вкладке";
 
 /* menu item open in new window */
-"Open in New Window" = "Open in New Window";
+"Open in New Window" = "Открыть в новом окне";
 
 /* open procedure in new table title */
 "Open Procedure in New Tab" = "Открыть процедуру в новой вкладке";
@@ -1919,19 +1919,19 @@
 
 /* open table in new tab title
  open table in new table title */
-"Open Table in New Tab" = "Open Table in New Tab";
+"Open Table in New Tab" = "Открыть таблицу в новой вкладке";
 
 /* Table List : Context Menu : Duplicate connection to new window
  Table List : Gear Menu : Duplicate connection to new window */
-"Open Table in New Window" = "Open Table in New Window";
+"Open Table in New Window" = "Открыть таблицу в новом окне";
 
 /* open view in new tab title
  open view in new table title */
-"Open View in New Tab" = "Open View in New Tab";
+"Open View in New Tab" = "Открыть представление в новой вкладке";
 
 /* Tables List : Context Menu : Duplicate connection to new window
  Tables List : Gear Menu : Duplicate connection to new window */
-"Open View in New Window" = "Open View in New Window";
+"Open View in New Window" = "Открыть представление в новом окне";
 
 /* menu item open %@ in new window */
 "Open %@ in New Window" = "Открыть %@ в новом окне";
@@ -1940,16 +1940,16 @@
 "Optimize %@" = "Оптимизировать %@";
 
 /* optimize selected items menu item */
-"Optimize Selected Items" = "Optimize Selected Items";
+"Optimize Selected Items" = "Оптимизировать выбранные элементы";
 
 /* optimize table menu item */
 "Optimize Table" = "Оптимизировать таблицу";
 
 /* optimize table failed message */
-"Optimize table failed." = "Optimize table failed.";
+"Optimize table failed." = "Не удалось оптимизировать таблицу.";
 
 /* Optimized type for field %@ */
-"Optimized type for field '%@'" = "Optimized type for field '%@'";
+"Optimized type for field '%@'" = "Оптимизированный тип поля '%@'";
 
 /* optional placeholder string */
 "optional" = "необязательно";
@@ -1958,10 +1958,10 @@
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
 
 /* Permission Denied */
-"Permission Denied" = "Permission Denied";
+"Permission Denied" = "Доступ запрещён";
 
 /* please choose a favorite connection view label */
-"Please choose a favorite" = "Please choose a favorite";
+"Please choose a favorite" = "Пожалуйста, выберите избранное";
 
 /* message of panel when ssh details are incomplete */
 "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
@@ -2025,7 +2025,7 @@
 "Query Status" = "Статус запроса";
 
 /* table status : row count query failed : error title */
-"Querying row count failed" = "Querying row count failed";
+"Querying row count failed" = "Не удалось запросить количество строк";
 
 /* Quick connect item label */
 "Quick Connect" = "Быстрое подключение";
@@ -2037,16 +2037,16 @@
 "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
 
 /* range for serial type */
-"Range: %@ to %@" = "Range: %1$@ to %2$@";
+"Range: %@ to %@" = "Диапазон: от %1$@ до %2$@";
 
 /* range for time type */
 "Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)" = "Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)";
 
 /* range for year type */
-"Range: 0000, 1901 to 2155" = "Range: 0000, 1901 to 2155";
+"Range: 0000, 1901 to 2155" = "Диапазон: 0000, 1901–2155";
 
 /* range for set type */
-"Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage" = "Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage";
+"Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage" = "Диапазон: от 1 до 64 участников\n1, 2, 3, 4 или 8 байт хранения";
 
 /* range for datetime type */
 "Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)";
@@ -2073,7 +2073,7 @@
 "Relations for table: %@" = "Связи таблицы: %@";
 
 /* reload bundles menu item label */
-"Reload Bundles" = "Reload Bundles";
+"Reload Bundles" = "Перезагрузить пакеты";
 
 /* Reloading data task description */
 "Reloading data..." = "Перезагрузка данных...";
@@ -2092,10 +2092,10 @@
 "Remove All" = "Удалить все";
 
 /* remove all query favorites message */
-"Remove all query favorites?" = "Remove all query favorites?";
+"Remove all query favorites?" = "Удалить все избранные запросы?";
 
 /* Bundle Editor : Remove-Bundle: remove dialog title */
-"Remove selected Bundle?" = "Remove selected Bundle?";
+"Remove selected Bundle?" = "Удалить выбранный пакет?";
 
 /* remove selected content filters message */
 "Remove selected content filters?" = "Remove selected content filters?";
@@ -2104,10 +2104,10 @@
 "Remove selected query favorites?" = "Remove selected query favorites?";
 
 /* removing field task status message */
-"Removing field..." = "Removing field...";
+"Removing field..." = "Удаление поля...";
 
 /* removing index task status message */
-"Removing index..." = "Removing index...";
+"Removing index..." = "Удаление индекса...";
 
 /* rename database message */
 "Rename database '%@' to:" = "Переименовать базу данных '%@' в:";
@@ -2128,22 +2128,22 @@
 "Repair %@" = "Исправление %@";
 
 /* repair selected items menu item */
-"Repair Selected Items" = "Repair Selected Items";
+"Repair Selected Items" = "Исправить выбранные элементы";
 
 /* repair table menu item */
 "Repair Table" = "Исправить таблицу";
 
 /* repair table failed message */
-"Repair table failed." = "Repair table failed.";
+"Repair table failed." = "Не удалось исправить таблицу.";
 
 /* Replace button */
 "Replace" = "Заменить";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace entire content' item */
-"Replace Entire Content" = "Replace Entire Content";
+"Replace Entire Content" = "Заменить всё содержимое";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'replace selection' item */
-"Replace Selection" = "Replace Selection";
+"Replace Selection" = "Заменить выделенное";
 
 /* description of year */
 "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
@@ -2191,7 +2191,7 @@
 "Delete Selected Rows" = "Удалить выбранные строки";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
+"Delete ALL ROWS IN TABLE" = "Удалить ALL ROWS IN TABLE";
 
 /* Restoring session task description */
 "Restoring session..." = "Восстановление сессии...";
@@ -2233,7 +2233,7 @@
 "Run Current Query" = "Выполнить текущий запрос";
 
 /* toolbar item label for switching to the Run Query tab */
-"Run Custom Query" = "Run Custom Query";
+"Run Custom Query" = "Выполнить пользовательский запрос";
 
 /* Title of button to run query just before text caret in custom query view */
 "Run Previous" = "Выполнить предыдущий";
@@ -2248,7 +2248,7 @@
 "Run Selection" = "Выполнить выделенное";
 
 /* Running multiple queries string */
-"Running query %i of %lu..." = "Running query %1$i of %2$lu...";
+"Running query %i of %lu..." = "Выполняется запрос %1$i из %2$lu...";
 
 /* Running multiple queries string */
 "Running query %ld of %lu..." = "Running query %1$ld of %2$lu...";
@@ -2266,10 +2266,10 @@
 "Save As..." = "Сохранить как...";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as dat file' item */
-"save BLOB as dat file" = "save BLOB as dat file";
+"save BLOB as dat file" = "сохранить BLOB как dat файл";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as image file' item */
-"save BLOB as image file" = "save BLOB as image file";
+"save BLOB as image file" = "сохранить BLOB как файл изображения";
 
 /* Save Current Query to Favorites */
 "Save Current Query to Favorites" = "Сохранить текущий запрос в Избранное";
@@ -2290,10 +2290,10 @@
 "Save View As..." = "Сохранить представление как...";
 
 /* schema path header for completion tooltip */
-"Schema path:" = "Schema path:";
+"Schema path:" = "Путь схемы:";
 
 /* Search in MySQL Documentation */
-"Search in MySQL Documentation" = "Search in MySQL Documentation";
+"Search in MySQL Documentation" = "Искать в документации MySQL";
 
 /* Search in MySQL Help */
 "Search in MySQL Help" = "Поиск по MySQL справке";
@@ -2308,13 +2308,13 @@
 "selected items" = "выбранные элементы";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
-"Selected Rows (CSV)" = "Selected Rows (CSV)";
+"Selected Rows (CSV)" = "Выбранные строки (CSV)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as SQL' item */
-"Selected Rows (SQL)" = "Selected Rows (SQL)";
+"Selected Rows (SQL)" = "Выбранные строки (SQL)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as tab-separated' item */
-"Selected Rows (TSV)" = "Selected Rows (TSV)";
+"Selected Rows (TSV)" = "Выбранные строки (TSV)";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
 "Selected Text" = "Выбранный текст";
@@ -2329,10 +2329,10 @@
 "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
 
 /* sequelace URL scheme command not supported. */
-"sequelace URL scheme command not supported." = "sequelace URL scheme command not supported.";
+"sequelace URL scheme command not supported." = "Команда Sequel Ace URL схемы не поддерживается.";
 
 /* sequelace url Scheme Error */
-"sequelace URL Scheme Error" = "sequelace URL Scheme Error";
+"sequelace URL Scheme Error" = "Ошибка URL схемы Sequel Ace";
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
@@ -2343,7 +2343,7 @@
 "Server Default (%@)" = "Настройки сервера по умолчанию (%@)";
 
 /* server processes window title (var = hostname) */
-"Server Processes on %@" = "Server Processes on %@";
+"Server Processes on %@" = "Процессы сервера %@";
 
 /* Initial filename for 'Save session' file */
 "Session" = "Сессия";
@@ -2356,12 +2356,12 @@
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html tooltip' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as html tooltip' item
  Bundle Editor : Scope=General : Output dropdown : 'show as html tooltip' item */
-"Show as HTML Tooltip" = "Show as HTML Tooltip";
+"Show as HTML Tooltip" = "Показывать как HTML-подсказку";
 
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as text tooltip' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as text tooltip' item
  Bundle Editor : Scope=General : Output dropdown : 'show as text tooltip' item */
-"Show as Text Tooltip" = "Show as Text Tooltip";
+"Show as Text Tooltip" = "Показывать как текстовую подсказку";
 
 /* show console */
 "Show Console" = "Открыть консоль";
@@ -2409,7 +2409,7 @@
 "Shutdown failed!" = "Сбой выключения!";
 
 /* range of integer types */
-"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "Со знаком: %1$@ в %2$@\nБез знака: %3$@ в %4$@";
 
 /* Table Info Section : table size on disk */
 "size: %@" = "размер: %@";
@@ -2424,10 +2424,10 @@
 "Beta Build" = "Предварительная версия";
 
 /* socket connection failed title */
-"Socket connection failed!" = "Socket connection failed!";
+"Socket connection failed!" = "Ошибка соединения через сокет!";
 
 /* socket not found title */
-"Socket not found!" = "Socket not found!";
+"Socket not found!" = "Сокет не найден!";
 
 /* Some export folders not writable explanatory text */
 "Some of the target export folders are not writable.  Please select a new export location and try again." = "Some of the target export folders are not writable.  Please select a new export location and try again.";
@@ -2460,25 +2460,25 @@
 "SSH Disconnected" = "SSH отключён";
 
 /* SSH key check error */
-"SSH Key not found" = "SSH Key not found";
+"SSH Key not found" = "SSH ключ не найден";
 
 /* title when ssh tunnel port forwarding failed */
-"SSH port forwarding failed" = "SSH port forwarding failed";
+"SSH port forwarding failed" = "Ошибка перенаправления SSH порта";
 
 /* SSL certificate authority file check error */
-"SSL Certificate Authority File not found" = "SSL Certificate Authority File not found";
+"SSL Certificate Authority File not found" = "Файл центра сертификации SSL не найден";
 
 /* SSL certificate file check error */
-"SSL Certificate File not found" = "SSL Certificate File not found";
+"SSL Certificate File not found" = "Файл сертификата SSL не найден";
 
 /* SSL requested but not used title */
 "SSL connection not established" = "SSL соединение не установлено";
 
 /* SSL key file check error */
-"SSL Key File not found" = "SSL Key File not found";
+"SSL Key File not found" = "Файл SSL ключа не найден";
 
 /* Standard memory export summary */
-"Standard memory" = "Standard memory";
+"Standard memory" = "Стандартное использование памяти";
 
 /* started */
 "started" = "запущено";
@@ -2490,7 +2490,7 @@
 "Stop" = "Стоп";
 
 /* Stop queries string */
-"Stop queries" = "Stop queries";
+"Stop queries" = "Остановить запросы";
 
 /* Stop query string */
 "Stop query" = "Остановить запрос";
@@ -2511,52 +2511,52 @@
 "Structure" = "Структура";
 
 /* successfully analyzed all selected items message */
-"Successfully analyzed all selected items." = "Successfully analyzed all selected items.";
+"Successfully analyzed all selected items." = "Все выбранные элементы успешно проанализированы.";
 
 /* analyze table successfully passed message */
-"Successfully analyzed table." = "Successfully analyzed table.";
+"Successfully analyzed table." = "Таблица успешно проанализирована.";
 
 /* successfully flushed all selected items message */
-"Successfully flushed all selected items." = "Successfully flushed all selected items.";
+"Successfully flushed all selected items." = "Все выбранные элементы успешно очищены.";
 
 /* message of panel when successfully flushed privs */
 "Successfully flushed privileges." = "Successfully flushed privileges.";
 
 /* flush table successfully passed message */
-"Successfully flushed table." = "Successfully flushed table.";
+"Successfully flushed table." = "Таблица успешно очищена.";
 
 /* successfully optimized all selected items message */
-"Successfully optimized all selected items." = "Successfully optimized all selected items.";
+"Successfully optimized all selected items." = "Выбранные выбранные элементы успешно оптимизированы.";
 
 /* optimize table successfully passed message */
-"Successfully optimized table." = "Successfully optimized table.";
+"Successfully optimized table." = "Таблица успешно оптимизирована.";
 
 /* successfully repaired all selected items message */
-"Successfully repaired all selected items." = "Successfully repaired all selected items.";
+"Successfully repaired all selected items." = "Все выбранные элементы успешно исправлены.";
 
 /* repair table successfully passed message */
-"Successfully repaired table." = "Successfully repaired table.";
+"Successfully repaired table." = "Таблица исправлена.";
 
 /* tooltip for toolbar item for switching to the Run Query tab */
-"Switch to the Run Query tab" = "Switch to the Run Query tab";
+"Switch to the Run Query tab" = "Переключиться на вкладку пользовательских запросов";
 
 /* tooltip for toolbar item for switching to the Table Content tab */
-"Switch to the Table Content tab" = "Switch to the Table Content tab";
+"Switch to the Table Content tab" = "Переключиться на вкладку содержимого таблицы";
 
 /* tooltip for toolbar item for switching to the Table Info tab */
-"Switch to the Table Info tab" = "Switch to the Table Info tab";
+"Switch to the Table Info tab" = "Переключиться на вкладку сводки таблицы";
 
 /* tooltip for toolbar item for switching to the Table Relations tab */
 "Switch to the Table Relations tab" = "Переключиться на вкладку связей таблицы";
 
 /* tooltip for toolbar item for switching to the Table Structure tab */
-"Switch to the Table Structure tab" = "Switch to the Table Structure tab";
+"Switch to the Table Structure tab" = "Переключиться на вкладку структуры таблицы";
 
 /* tooltip for toolbar item for switching to the Table Triggers tab */
-"Switch to the Table Triggers tab" = "Switch to the Table Triggers tab";
+"Switch to the Table Triggers tab" = "Переключиться на вкладку триггеров таблицы";
 
 /* tooltip for toolbar item for switching to the User Manager tab */
-"Switch to the User Manager tab" = "Switch to the User Manager tab";
+"Switch to the User Manager tab" = "Переключиться на вкладку управления пользователями";
 
 /* description for table syntax copied notification */
 "Syntax for %@ table copied" = "Запрос создания для таблицы %@ скопирован";
@@ -2571,13 +2571,13 @@
 "Table" = "Таблица";
 
 /* export label showing that the app is fetching data for a specific table */
-"Table %lu of %lu (%@): Fetching data..." = "Table %1$lu of %2$lu (%3$@): Fetching data...";
+"Table %lu of %lu (%@): Fetching data..." = "Таблица %1$lu из %2$lu (%3$@): Получение данных...";
 
 /* export label showing app is fetching relations data for a specific table */
 "Table %lu of %lu (%@): Fetching relations data..." = "Table %1$lu of %2$lu (%3$@): Fetching relations data...";
 
 /* export label showing app if writing data for a specific table */
-"Table %lu of %lu (%@): Writing data..." = "Table %1$lu of %2$lu (%3$@): Writing data...";
+"Table %lu of %lu (%@): Writing data..." = "Таблица %1$lu из %2$lu (%3$@): Запись данных...";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'table changed' item */
@@ -2587,19 +2587,19 @@
 "Table checksum" = "Контрольная сумма таблицы";
 
 /* table checksum: %@ */
-"Table checksum: %@" = "Table checksum: %@";
+"Table checksum: %@" = "Контрольная сумма таблицы: %@";
 
 /* table content print heading */
 "Table Content" = "Содержимое таблицы";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
-"Table Content (CSV)" = "Table Content (CSV)";
+"Table Content (CSV)" = "Содержимое таблицы (CSV)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as SQL' item */
-"Table Content (SQL)" = "Table Content (SQL)";
+"Table Content (SQL)" = "Содержимое таблицы (SQL)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as tab-separated' item */
-"Table Content (TSV)" = "Table Content (TSV)";
+"Table Content (TSV)" = "Содержимое таблицы (TSV)";
 
 /* toolbar item for navigation history */
 "Table History" = "История таблиц";
@@ -2611,10 +2611,10 @@
 "TABLE INFORMATION" = "О ТАБЛИЦЕ";
 
 /* table information print heading */
-"Table Information" = "Table Information";
+"Table Information" = "Информация о таблице";
 
 /* message of panel when no name is given for table */
-"Table must have a name." = "Table must have a name.";
+"Table must have a name." = "У таблицы должно быть имя.";
 
 /* general preference pane tooltip */
 "Table Preferences" = "Настройки таблиц";
@@ -2623,7 +2623,7 @@
 "Table Relations" = "Связи таблицы";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table row changed' item */
-"Table Row changed" = "Table Row changed";
+"Table Row changed" = "Изменена строка таблицы";
 
 /* table structure print heading */
 "Table Structure" = "Структура таблицы";
@@ -2662,20 +2662,20 @@
 "Text is too long. Maximum text length is set to %llu." = "Текст слишком длинный. Длина ограничена %llu.";
 
 /* Release notes dialog title thanking user for upgrade */
-"Thanks for updating Sequel Ace!" = "Thanks for updating Sequel Ace!";
+"Thanks for updating Sequel Ace!" = "Спасибо за обновление Sequel Ace!";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@’ already exists." = "The Bundle ‘%@’ already exists.";
+"The Bundle ‘%@’ already exists." = "Пакет ‘%@’ уже существует.";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
-"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.";
+"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "У пакета ‘%@’ нет UUID, который необходим для идентификации установленных пакетов.";
 
-"‘%@’ Bundle contains legacy components" = "‘%@’ Bundle contains legacy components";
+"‘%@’ Bundle contains legacy components" = "‘%@’ пакет содержит устаревшие компоненты";
 
-"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In these files:\n\n%@\n\nDo you still want to install the bundle?";
+"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "В этих файлах:\n\n%@\n\nВы всё ещё хотите установить пакет?";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file %@ contains ‘%@’ data." = "The chosen file “%1$@” contains ‘%2$@’ data.";
+"The chosen file %@ contains ‘%@’ data." = "Выбранный файл “%1$@” содержит данные ‘%2$@’.";
 
 /* the color theme ‘%@’ already exists. */
 "The color theme ‘%@’ already exists." = "The color theme ‘%@’ already exists.";
@@ -2705,7 +2705,7 @@
 "The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "The Custom Query Run and Run All button positions and their shortcuts have been swapped.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
-"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”.";
+"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Следующие базовые наборы обновились:\n%@\nВаши изменения были сохранены как “(user)”.";
 
 /* favorites export error informative message */
 "The following error occurred during the export process:\n\n%@" = "The following error occurred during the export process:\n\n%@";
@@ -2717,10 +2717,10 @@
 "The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "The foreign key relationship '%1$@' has a dependency on index '%2$@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.";
 
 /* table list change alert message */
-"The list of tables has changed" = "The list of tables has changed";
+"The list of tables has changed" = "Список таблиц изменился";
 
 /* message when trying to rename a table/view/proc/etc to an already used name */
-"The name '%@' is already used." = "The name '%@' is already used.";
+"The name '%@' is already used." = "Имя '%@' уже используется.";
 
 /* table list change alert informative message */
 "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?";
@@ -2796,7 +2796,7 @@
 
 /* Export folder not chosen by user explanatory text */
 "No directory selected.  Please select a new export location and try again." = "No directory selected.  Please select a new export location and try again.";
-"No directory selected." = "No directory selected.";
+"No directory selected." = "Каталог не выбран.";
 "Please select a new export location and try again." = "Please select a new export location and try again.";
 
 /* Export folder missing explanatory text */
@@ -2806,7 +2806,7 @@
 "Theme Name:" = "Название темы:";
 
 /* themes installation error */
-"Themes Installation Error" = "Themes Installation Error";
+"Themes Installation Error" = "Ошибка установки тем";
 
 /* message of panel when table content cannot be copied */
 "There have been errors while copying table content. Please check the new table." = "There have been errors while copying table content. Please check the new table.";
@@ -2815,7 +2815,7 @@
 "Cannot duplicate a table with triggers to a different database." = "Cannot duplicate a table with triggers to a different database.";
 
 /* text shown when query was successfull */
-"There were no errors." = "There were no errors.";
+"There were no errors." = "Без ошибок.";
 
 /* delete field and foreign key informative message */
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
@@ -2851,7 +2851,7 @@
 "This is the default collation of table %@." = "Это сортировка по умолчанию для таблицы %@.";
 
 /* Table Structure : Collation dropdown : server marker tooltip */
-"This is the default collation of this server." = "This is the default collation of this server.";
+"This is the default collation of this server." = "Это базовая сортировка для этого сервера.";
 
 /* Table Structure : Encoding dropdown : database marker tooltip */
 "This is the default encoding of database %@." = "Это кодировка по умолчанию для базы данных %@.";
@@ -2860,7 +2860,7 @@
 "This is the default encoding of table %@." = "Это кодировка по умолчанию для таблицы %@.";
 
 /* Table Structure : Encoding dropdown : server marker tooltip */
-"This is the default encoding of this server." = "This is the default encoding of this server.";
+"This is the default encoding of this server." = "Это базовая кодировка для этого сервера.";
 
 /* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
 "This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "В настоящее время эта таблица не поддерживает связи. Их поддерживают только таблицы, использующие движок хранилища InnoDB.";
@@ -2902,22 +2902,22 @@
 "Type" = "Тип";
 
 /* type declaration header */
-"Type Declaration:" = "Type Declaration:";
+"Type Declaration:" = "Объявление типа:";
 
 /* add index error message */
-"Unable to add index" = "Unable to add index";
+"Unable to add index" = "Не удаётся добавить индекс";
 
 /* unable to analyze selected items message */
 "Unable to analyze selected items" = "Unable to analyze selected items";
 
 /* unable to analyze table message */
-"Unable to analyze table" = "Unable to analyze table";
+"Unable to analyze table" = "Не удаётся проанализировать таблицу";
 
 /* unable to check selected items message */
-"Unable to check selected items" = "Unable to check selected items";
+"Unable to check selected items" = "Не удается проверить выбранные элементы";
 
 /* unable to check table message */
-"Unable to check table" = "Unable to check table";
+"Unable to check table" = "Не удается проверить таблицу";
 
 /* message of panel when connection to host failed due to access denied error */
 "Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Не удаётся подключиться к узлу %1$@ из-за запрета доступа.\n\nПерепроверьте имя пользователя и пароль и убедитесь, что доступ к текущему ресурсу разрешён.\n\nMySQL сообщил: %2$@";
@@ -2935,40 +2935,40 @@
 "Unable to copy database" = "Не удаётся переименовать базу данных";
 
 /* error deleting index message */
-"Unable to delete index" = "Unable to delete index";
+"Unable to delete index" = "Не удаётся удалить индекс";
 
 /* error deleting relation message */
-"Unable to delete relation" = "Unable to delete relation";
+"Unable to delete relation" = "Не удаётся удалить связь";
 
 /* error deleting trigger message */
-"Unable to delete trigger" = "Unable to delete trigger";
+"Unable to delete trigger" = "Не удаётся удалить триггер";
 
 /* unable to flush selected items message */
-"Unable to flush selected items" = "Unable to flush selected items";
+"Unable to flush selected items" = "Невозможно очистить выбранные элементы";
 
 /* unable to flush table message */
-"Unable to flush table" = "Unable to flush table";
+"Unable to flush table" = "Не удаётся очистить таблицу";
 
 /* unable to get list of users message */
-"Unable to get list of users" = "Unable to get list of users";
+"Unable to get list of users" = "Не удаётся получить список пользователей";
 
 /* error killing connection message */
 "Unable to kill connection" = "Не удаётся разорвать соединение";
 
 /* error killing query message */
-"Unable to kill query" = "Unable to kill query";
+"Unable to kill query" = "Не удалось прервать запрос";
 
 /* unable to optimze selected items message */
 "Unable to optimze selected items" = "Unable to optimze selected items";
 
 /* unable to optimze table message */
-"Unable to optimze table" = "Unable to optimze table";
+"Unable to optimze table" = "Не удалось оптимизировать таблицу";
 
 /* unable to perform the checksum */
-"Unable to perform the checksum" = "Unable to perform the checksum";
+"Unable to perform the checksum" = "Не удалось вычислить контрольную сумму";
 
 /* error removing host message */
-"Unable to remove host" = "Unable to remove host";
+"Unable to remove host" = "Не удаётся удалить узел";
 
 /* unable to rename database message */
 "Unable to rename database" = "Не удаётся переименовать базу данных";
@@ -2977,19 +2977,19 @@
 "Unable to repair selected items" = "Unable to repair selected items";
 
 /* unable to repair table message */
-"Unable to repair table" = "Unable to repair table";
+"Unable to repair table" = "Не удаётся исправить таблицу";
 
 /* message of panel when connection to db failed after selecting from popupbutton */
 "Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Невозможно выбрать базу данных %@.\nПожалуйста, проверьте наличие необходимых прав на просмотр базы данных и её наличие.";
 
 /* Unable to write row error */
-"Unable to write row" = "Unable to write row";
+"Unable to write row" = "Не удается записать строку";
 
 /* Table Content : Remove Row : Result : n Error title */
 "Unexpected number of rows removed!" = "Unexpected number of rows removed!";
 
 /* warning */
-"Unknown file format" = "Unknown file format";
+"Unknown file format" = "Неизвестный формат файла";
 
 /* unsaved changes message */
 "Unsaved changes" = "Несохранённые изменения";
@@ -2998,10 +2998,10 @@
 "Unsaved Theme" = "Несохранённая тема";
 
 /* Preferences : Network : Custom SSH client : warning dialog title */
-"Unsupported configuration!" = "Unsupported configuration!";
+"Unsupported configuration!" = "Неподдерживаемая конфигурация!";
 
 /* export : import settings : file version error title */
-"Unsupported version for export settings!" = "Unsupported version for export settings!";
+"Unsupported version for export settings!" = "Неподдерживаемая для экспорта настроек версия!";
 
 /* Name for an untitled connection */
 "Untitled" = "Без названия";
@@ -3010,10 +3010,10 @@
 "Untitled %ld" = "Безымянный %ld";
 
 /* range for mediumblob type */
-"Up to %@ bytes (16 MiB)" = "Up to %@ bytes (16 MiB)";
+"Up to %@ bytes (16 MiB)" = "До %@ байт (16 МиБ)";
 
 /* range for longblob type */
-"Up to %@ bytes (4 GiB)" = "Up to %@ bytes (4 GiB)";
+"Up to %@ bytes (4 GiB)" = "До %@ байт (4 ГиБ)";
 
 /* range for mediumtext type */
 "Up to %@ characters (16 MiB)" = "До %@ символов (16 МиБ)";
@@ -3040,7 +3040,7 @@
 "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.";
 
 /* updating field task description */
-"Updating field data..." = "Updating field data...";
+"Updating field data..." = "Обновление данных поля...";
 
 /* URL scheme command couldn't authenticated */
 "URL scheme command couldn't authenticated" = "URL scheme command couldn't authenticated";
@@ -3058,10 +3058,10 @@
 "Use Standard Connection" = "Использовать стандартное соединение";
 
 /* user has no hosts message */
-"User has no hosts" = "User has no hosts";
+"User has no hosts" = "Для пользователя не указан узел";
 
 /* user-defined value */
-"User-defined value" = "User-defined value";
+"User-defined value" = "Пользовательское значение";
 
 /* toolbar item label for switching to the User Manager tab */
 "Users" = "Пользователи";
@@ -3082,16 +3082,16 @@
 "view" = "представление";
 
 /* Release notes button title */
-"View full release notes" = "View full release notes";
+"View full release notes" = "Просмотреть все примечания к версии";
 
 /* header for view info pane */
 "VIEW INFORMATION" = "О ПРЕДСТАВЛЕНИИ";
 
 /* view html source code menu item title */
-"View Source" = "View Source";
+"View Source" = "Исходный код";
 
 /* view structure print heading */
-"View Structure" = "View Structure";
+"View Structure" = "Структура представления";
 
 /* views */
 "views" = "представления";
@@ -3109,13 +3109,13 @@
 "We've made a few changes but we thought you should know about some particularly important ones:" = "Мы внеси некоторые изменения и думаем, что вы должны узнать о наиболее важных:";
 
 /* WHERE clause not valid */
-"WHERE clause not valid" = "WHERE clause not valid";
+"WHERE clause not valid" = "Недопустимое условие WHERE";
 
 /* Title of filter preview area when the query WHERE is negated */
-"WHERE NOT query" = "WHERE NOT query";
+"WHERE NOT query" = "WHERE NOT запрос";
 
 /* Title of filter preview area when the query WHERE is normal */
-"WHERE query" = "WHERE query";
+"WHERE query" = "WHERE запрос";
 
 /* Generic working description */
 "Working..." = "Обработка...";
@@ -3127,19 +3127,19 @@
 "Writing..." = "Запись...";
 
 /* wrong data format or password */
-"Wrong data format or password." = "Wrong data format or password.";
+"Wrong data format or password." = "Неверный формат данных или пароль.";
 
 /* wrong data format */
-"Wrong data format." = "Wrong data format.";
+"Wrong data format." = "Неверный формат данных.";
 
 /* export : import settings : spf content type error title */
-"Wrong SPF content type!" = "Wrong SPF content type!";
+"Wrong SPF content type!" = "Неправильный SPF тип содержимого!";
 
 /* export filename date token */
 "Year" = "Год";
 
 /* message of panel when trying to copy multiple rows */
-"You can only copy single rows." = "You can only copy single rows.";
+"You can only copy single rows." = "Вы можете скопировать только одну строку.";
 
 /* message of panel when trying to edit tables without index and with hidden blob/text fields */
 "You can't hide blob and text fields when working with tables without index." = "You can't hide blob and text fields when working with tables without index.";
@@ -3160,25 +3160,25 @@
 "%@ already exists. Do you want to replace it?" = "%@ уже существует. Вы хотите заменить его?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
-"%@ Bundle" = "%@ Bundle";
+"%@ Bundle" = "Пакет %@";
 
 /* Export file creation error title */
-"%@ could not be created" = "%@ could not be created";
+"%@ could not be created" = "%@ не может быть создан";
 
 /* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
 "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
-"%@ is not a valid client certificate file." = "%@ is not a valid client certificate file.";
+"%@ is not a valid client certificate file." = "%@ не является допустимым файлом сертификата клиента.";
 
 /* connection view : ssl : key file picker : wrong format error title */
 "%@ is not a valid private key file." = "%@ is not a valid private key file.";
 
 /* text shown when there are App Sandbox Issues */
-"App Sandbox Issue" = "App Sandbox Issue";
+"App Sandbox Issue" = "Проблема в Sandbox приложения";
 
 /* Stale Bookmarks error title */
-"Stale Bookmarks" = "Stale Bookmarks";
+"Stale Bookmarks" = "Старые закладки";
 
 /* App Sandbox info link text */
 "App Sandbox Info" = "Информация о песочнице приложения";
@@ -3214,7 +3214,7 @@
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "A reminder of your stale secure bookmarks:<br /><br />%@<br />";
 
 /* Title for Stale Secure Bookmarks help window */
-"Stale Secure Bookmarks" = "Stale Secure Bookmarks";
+"Stale Secure Bookmarks" = "Старые безопасные закладки";
 
 /* Title for Export Error alert */
 "Export Error" = "Ошибка экспорта";
@@ -3226,7 +3226,7 @@
 "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
 
 /* Title for User window error */
-"User Data Error" = "User Data Error";
+"User Data Error" = "Ошибка данных пользователя";
 
 /* Title for Stale Bookmark file selection dialog */
 "Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";

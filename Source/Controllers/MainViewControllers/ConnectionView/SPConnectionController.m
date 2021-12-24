@@ -62,7 +62,7 @@
 
 // Constants
 static NSString *SPRemoveNode              = @"RemoveNode";
-static NSString *SPExportFavoritesFilename = @"SequelProFavorites.plist";
+static NSString *SPExportFavoritesFilename = @"SequelAceFavorites.plist";
 static NSString *SPLocalhostAddress        = @"127.0.0.1";
 
 static NSString *SPDatabaseImage           = @"database-small";

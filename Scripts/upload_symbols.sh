@@ -16,12 +16,12 @@ me=$(basename "$0")
 export SCRIPT_DIR
 
 # Common functions
-function sa_log () { 
-    echo "[SA] $1"; 
+function sa_log () {
+    echo "[SA] $1";
 }
 
-function sa_fail () { 
-    sa_log "$1"; 
+function sa_fail () {
+    sa_log "$1";
     exit 0; #TODO: change to error
 }
 
@@ -76,9 +76,13 @@ function set_path() {
         "$HOME/bin"
         # Homebrew (and various other distributions and local installations)
         /usr/local/{,s}bin
+        /opt/homebrew/{,s}bin
+        /Users/local/Homebrew
+        "$HOME/Homebrew"
         # System
         /{,s}bin
         /usr/{,s}bin
+        /usr/local/lib/node_modules
         "$HOME/.npm-packages/bin"
     );
 
@@ -182,7 +186,7 @@ if dir_exists "$FASTLANE_DIR"; then
     sa_log "FASTLANE_DIR exists: $FASTLANE_DIR"
 else
     sa_fail "FASTLANE_DIR does NOT exist: $FASTLANE_DIR"
-fi	
+fi
 
 # source the env file, which should export a var containing the token
 # var is: MS_APP_CENTER
@@ -190,15 +194,19 @@ if file_exists "$FASTLANE_ENV_FILE"; then
     sa_log "FASTLANE_ENV_FILE exists: $FASTLANE_ENV_FILE"
     # shellcheck source=/dev/null
     source "$FASTLANE_ENV_FILE"
-else
-    sa_fail "FASTLANE_ENV_FILE does NOT exist: $FASTLANE_ENV_FILE"
-fi	
+fi
+
+# It's okay if the value is instead in an env though
+if [[ -n $APPCENTER_ACCESS_TOKEN ]]; then
+    sa_log "APPCENTER_ACCESS_TOKEN exists in ENV! Using this value"
+    MS_APP_CENTER="$APPCENTER_ACCESS_TOKEN"
+fi
 
 if var_exists MS_APP_CENTER; then
     sa_log "MS_APP_CENTER var exists: ******************"
 else
-    sa_fail "MS_APP_CENTER var does NOT exist: $MS_APP_CENTER"
-fi	
+    sa_fail "MS_APP_CENTER var does NOT exist: $MS_APP_CENTER. Define the var in $FASTLANE_ENV_FILE"
+fi
 
 if [[ -z "$APP" ]]; then
     sa_usage
@@ -255,8 +263,8 @@ if file_exists "${dSYM_ARCHIVE_NAME}"; then
     rm -f "${dSYM_ARCHIVE_NAME}"
 fi
 
-for dSYM in "${dSYMArray[@]}"; 
-do 
+for dSYM in "${dSYMArray[@]}";
+do
    if ! dir_exists "${dSYM}"; then
         sa_log "path ${dSYM} does not exist, just skip?"
     else
@@ -277,7 +285,7 @@ else
 	    sa_log "Run: brew install jq"
 	    sa_fail "Or build from source: https://github.com/stedolan/jq"
     fi
-    
+
     # per: https://docs.microsoft.com/en-us/appcenter/diagnostics/iOS-symbolication#app-center-api
 
     #construct filename
@@ -296,7 +304,7 @@ else
 
     sa_log "response = ${response}"
 
-    # check for errors 
+    # check for errors
     error_msg=$(echo "$response" | jq -r '.message')
 
     if [[ "$error_msg" != "null" ]]; then
@@ -316,7 +324,7 @@ else
     sa_log "symbol_upload_id = ${symbol_upload_id}"
     sa_log "upload_url = ${upload_url}"
 
-    # Using the upload_url property returned from the first step, make a PUT request with the header: "x-ms-blob-type: BlockBlob" and supply the location of your file on disk. 
+    # Using the upload_url property returned from the first step, make a PUT request with the header: "x-ms-blob-type: BlockBlob" and supply the location of your file on disk.
     # This call uploads the file to our backend storage accounts
     # -----------
     #   HOWEVER
@@ -334,8 +342,8 @@ else
     curl -X PUT "${upload_url}" -H 'Content-Length: 0' -H 'x-ms-blob-type: BlockBlob' --upload-file "${DSYM_PATH}"
 
     # this works, but nothing is committed
-    # Make a PATCH request to the symbol_uploads API using the symbol_upload_id property returned from the first step. 
-    # In the body of the request, specify whether you want to set the status of the upload to committed (successfully completed) the upload process, 
+    # Make a PATCH request to the symbol_uploads API using the symbol_upload_id property returned from the first step.
+    # In the body of the request, specify whether you want to set the status of the upload to committed (successfully completed) the upload process,
     # or aborted (unsuccessfully completed).
 
     #construct url

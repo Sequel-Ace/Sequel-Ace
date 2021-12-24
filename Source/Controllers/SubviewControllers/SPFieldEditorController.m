@@ -87,23 +87,32 @@ typedef enum {
 		// Allow the user to enter cmd+return to close the edit sheet in addition to fn+return
 		[editSheetOkButton setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 
-		if([editTextView respondsToSelector:@selector(setUsesFindBar:)])
+        if([editTextView respondsToSelector:@selector(setUsesFindBar:)]) {
 			// 10.7+
 			// Stealing the main window from the actual main window will cause
 			// a UI bug with the tab bar and the find panel was really the only
 			// thing that had an issue with not working with sheets.
 			// The find bar works fine without hackery.
 			[editTextView setUsesFindBar:YES];
-		else {
+        } else {
 			// Permit the field edit sheet to become main if necessary; this allows fields within the sheet to
 			// support full interactivity, for example use of the NSFindPanel inside NSTextViews.
 			[editSheet setIsSheetWhichCanBecomeMain:YES];
 		}
+
+        if([jsonTextView respondsToSelector:@selector(setUsesFindBar:)]) {
+            // 10.7+
+            // Stealing the main window from the actual main window will cause
+            // a UI bug with the tab bar and the find panel was really the only
+            // thing that had an issue with not working with sheets.
+            // The find bar works fine without hackery.
+            [jsonTextView setUsesFindBar:YES];
+        }
 		
 		[editTextView setAutomaticDashSubstitutionEnabled:NO];
 		[editTextView setAutomaticQuoteSubstitutionEnabled:NO];
 
-		allowUndo = NO;
+		allowUndo = YES;
 		selectionChanged = NO;
 
 		tmpDirPath = NSTemporaryDirectory();
@@ -534,7 +543,7 @@ typedef enum {
 			if([[jsonTextView string] isEqualToString:@""]) {
                 if([sheetEditData isKindOfClass:[NSData class]] || [sheetEditData isKindOfClass:[NSString class]]) {
                     if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
-                        NSError *error;
+                        NSError *error = nil;
                         NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
                         id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
 
@@ -552,7 +561,7 @@ typedef enum {
                                     [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
                                 }
                                 else{
-                                    NSString *prettyPrintedJson = [NSString stringWithUTF8String:[prettyJsonData bytes]];
+                                    NSString *prettyPrintedJson = [[NSString alloc] initWithData:prettyJsonData encoding:NSUTF8StringEncoding];
                                     if(prettyPrintedJson != nil){
                                         SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
                                         [jsonTextView setString:prettyPrintedJson];

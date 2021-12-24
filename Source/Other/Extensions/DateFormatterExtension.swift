@@ -29,6 +29,13 @@ extension DateFormatter {
 		formatter.timeStyle = .medium
 		return formatter
 	}()
+
+    @objc public static var shortStyleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
 	
 	@objc public static var shortStyleNoTimeFormatter: DateFormatter = {
 		let formatter = DateFormatter()

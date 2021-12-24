@@ -1,3 +1,44 @@
+## [3.4.4]
+
+### Added
+
+
+### Fixed
+- f8ae57d1,  Fixed spreadsheet edit mode not honoring the cutoff length setting and add an option to edit multiline content in popup editor
+- 5a65d157,  Fixed JSON viewer UI bugs and occasional failures to parse
+- 4bd96b9f,  Fix user editing crash
+- 00fa40e9,  Show time in addition to date for table created and updated at dates
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [3.4.3]
+
+### Added
+
+
+### Fixed
+- 3c313175,  #979 Properly reset the sorting column
+- 864b9cb1, Show tab color on the first tab after it's expanded  #1216
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+- 58e233e7, Attempt app center fixes for Xcode Cloud 
+- c6695f62,  More bundle execution refactoring
+- 671eb8d6,  Extract duplicate bundle dispatch logic
+- 5c49df6a,  Clean up bundle loading
+
 ## [3.4.2]
 
 ### Added
