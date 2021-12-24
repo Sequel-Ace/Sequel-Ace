@@ -77,11 +77,12 @@ function set_path() {
         # Homebrew (and various other distributions and local installations)
         /usr/local/{,s}bin
         /opt/homebrew/{,s}bin
-        /Users/local/Homebrew/
+        /Users/local/Homebrew
         "$HOME/Homebrew"
         # System
         /{,s}bin
         /usr/{,s}bin
+        /usr/local/lib/node_modules
         "$HOME/.npm-packages/bin"
     );
 
