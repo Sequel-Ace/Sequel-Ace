@@ -196,6 +196,7 @@ NSString *SPConsoleShowTimestamps                = @"ConsoleShowTimestamps";
 NSString *SPConsoleShowConnections               = @"ConsoleShowConnections";
 NSString *SPConsoleShowDatabases                 = @"ConsoleShowDatabases";
 NSString *SPEditInSheetEnabled                   = @"EditInSheetEnabled";
+NSString *SPEditInSheetForMultiLineText          = @"EditInSheetForMultiLineText";
 NSString *SPEditInSheetForLongText               = @"EditInSheetForLongText";
 NSString *SPEditInSheetForLongTextLengthThreshold = @"EditInSheetForLongTextLengthThreshold";
 NSString *SPTableInformationPanelCollapsed       = @"TableInformationPanelCollapsed";

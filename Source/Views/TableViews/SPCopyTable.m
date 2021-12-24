@@ -1234,18 +1234,21 @@ static const NSInteger kBlobAsImageFile = 4;
 - (BOOL)shouldUseFieldEditorForRow:(NSUInteger)rowIndex column:(NSUInteger)colIndex checkWithLock:(pthread_mutex_t *)dataLock
 {
 	// Return YES if the multiple line editing button is enabled - triggers sheet editing on all cells.
-	if ([prefs boolForKey:SPEditInSheetEnabled]) return YES;
-
-    NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
-
-    NSUInteger editInSheetForLongTextLengthThreshold = [[preferenceDefaults safeObjectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
-
-    if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold]){
-        editInSheetForLongTextLengthThreshold = [[prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
+    if ([prefs boolForKey:SPEditInSheetEnabled]) {
+        return YES;
     }
 
-    if(!editInSheetForLongTextLengthThreshold || editInSheetForLongTextLengthThreshold % 1 != 0){ // modulus check for integer
-        editInSheetForLongTextLengthThreshold = 15;
+
+    NSUInteger editInSheetForLongTextLengthThreshold = 0;
+    BOOL editLongerTextInSheet = NO;
+    BOOL editMultiLineInSheet = NO;
+
+    if([prefs boolForKey:SPEditInSheetForLongText] && [prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] != nil){
+        editLongerTextInSheet = YES;
+        editInSheetForLongTextLengthThreshold = [[prefs objectForKey:SPEditInSheetForLongTextLengthThreshold] integerValue];
+    }
+    if([prefs boolForKey:SPEditInSheetForMultiLineText]){
+        editMultiLineInSheet = YES;
     }
 
 	// Retrieve the column definition
@@ -1276,40 +1279,30 @@ static const NSInteger kBlobAsImageFile = 4;
 		cellValue = [tableStorage cellDataAtRow:rowIndex column:colIndex];
 	}
 
-    if([columnType isEqualToString:@"textdata"]){
-
-        SPLog(@"got a textdata column");
-
-        // TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT
-        if ([cellValue isKindOfClass:[NSString class]]) {
-            SPLog(@"it's a string");
-            if([cellValue length] > editInSheetForLongTextLengthThreshold){
-                return YES;
-            }
-        }
-    }
-
+    //Unpack data to string encoding
 	if ([cellValue isKindOfClass:[NSData class]]) {
 		cellValue = [[NSString alloc] initWithData:cellValue encoding:[mySQLConnection stringEncoding]];
 	}
-    if (![cellValue isNSNull]) {
-        SPLog(@"cellValue len = %lu", (unsigned long)[cellValue length]);
+
+
+
+    //Check for null
+	if ([cellValue isNSNull])
+	{
+        //Null should always be inline
+        return NO;
     }
 
-	if (![cellValue isNSNull]
-		&& [columnType isEqualToString:@"string"]
-		&& [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound
-        && [cellValue length] > editInSheetForLongTextLengthThreshold)
-	{
-		return YES;
-	}
-
-    if (![cellValue isNSNull]
-        && [columnType isEqualToString:@"string"]
-        && [cellValue length] > editInSheetForLongTextLengthThreshold)
-    {
+    //Check string lengths
+    if (editLongerTextInSheet && [cellValue length] > editInSheetForLongTextLengthThreshold) {
         return YES;
     }
+
+    //Check for new lines
+    if (editMultiLineInSheet && [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound) {
+        return YES;
+    }
+
 
 	// Otherwise, use standard editing
 	return NO;
