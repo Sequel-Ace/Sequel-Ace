@@ -7,6 +7,8 @@
 # SEE: https://docs.microsoft.com/en-us/appcenter/diagnostics/iOS-symbolication#app-center-api
 # AND: https://github.com/microsoft/appcenter-cli#commands
 
+echo "[SA] Starting Upload Symbols Script"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "$SCRIPT_DIR" || return 1
@@ -77,8 +79,13 @@ function set_path() {
         # Homebrew (and various other distributions and local installations)
         /usr/local/{,s}bin
         /opt/homebrew/{,s}bin
-        /Users/local/Homebrew
         "$HOME/Homebrew"
+        # XCode Cloud Paths
+        /Users/local/bin
+        /Users/local/Homebrew
+        /Users/local/Homebrew/bin
+        "/Users/local/.npm-packages/bin"
+        /Library/Apple/usr/{,s}bin
         # System
         /{,s}bin
         /usr/{,s}bin
