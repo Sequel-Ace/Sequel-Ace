@@ -66,6 +66,10 @@ static const NSInteger kBlobInclude     = 2;
 static const NSInteger kBlobAsFile      = 3;
 static const NSInteger kBlobAsImageFile = 4;
 
+NSString *kColType    = @"TYPE";
+NSString *kColMapping = @"MAPPING";
+NSString *kHeader     = @"HEADER";
+
 @implementation SPCopyTable
 
 /**
@@ -107,10 +111,10 @@ static const NSInteger kBlobAsImageFile = 4;
 	if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL || [(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
 
 		if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL){
-			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES];
+            tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:NO skipGeneratedColumn:YES];
 		}
 		else{
-			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES];
+			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES skipGeneratedColumn:YES];
 		}
 		
 		if (tmp != nil){
@@ -404,18 +408,18 @@ static const NSInteger kBlobAsImageFile = 4;
  */
 - (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected{
 	
-	return [self rowsAsSqlInsertsOnlySelectedRows:onlySelected skipAutoIncrementColumn:NO];
+	return [self rowsAsSqlInsertsOnlySelectedRows:onlySelected skipAutoIncrementColumn:NO skipGeneratedColumn:NO];
 }
-	
 
-- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn{
+
+- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn skipGeneratedColumn:(BOOL)skipGeneratedColumn{
 
 	if (onlySelected && [self numberOfSelectedRows] == 0) return nil;
 
 	NSIndexSet *selectedRows = (onlySelected) ? [self selectedRowIndexes] : [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [tableStorage count])];
 
-	NSArray *columns      = [self tableColumns];
-	NSUInteger numColumns = [columns count];
+	NSArray *columns       = [self tableColumns];
+	NSUInteger numColumns  = [columns count];
 	NSMutableString *value = [NSMutableString stringWithCapacity:10];
 
 	id cellData = nil;
@@ -427,33 +431,33 @@ static const NSInteger kBlobAsImageFile = 4;
 	BOOL foundAutoIncColumn = NO; 	// there can only be one AUTO_INCREMENT col, well MyISAM can have more, but only one column is set to AUTO_INCREMENT
 									// see: https://dev.mysql.com/doc/refman/8.0/en/example-auto-increment.html#example-auto-increment-myisam-notes
 	NSString *autoIncrementColumnName = nil;
+    BOOL generatedColumnAndSkip = NO;
 
 	NSMutableString *result = [NSMutableString stringWithCapacity:2000];
 
-	// Create an array of table column names
-	NSMutableArray *tbHeader = [NSMutableArray arrayWithCapacity:numColumns];
-	
-	for (id enumObj in columns) 
-	{
-		[tbHeader addObject:[[enumObj headerCell] stringValue]];
-	}
+	// Create an array of dictionary included : column header / column type / column mapping
+    NSMutableArray *tbColumns = [[NSMutableArray alloc] initWithCapacity:numColumns];
+    NSMutableDictionary *data;
 
     NSMutableDictionary *errorDict = [[NSMutableDictionary alloc] init];
 
-	// Create arrays of table column mappings and types for fast iteration
-	NSUInteger *columnMappings = calloc(numColumns, sizeof(NSUInteger));
-	NSUInteger *columnTypes = calloc(numColumns, sizeof(NSUInteger));
-	
+	// Current column mappings
+    NSUInteger columnMapping;
+
+    // --- FIRST PART --- Check columns to include
+
 	for (c = 0; c < numColumns; c++) 
 	{
-		columnMappings[c] = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
-		
-		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"typegrouping"];
+        data = nil;
+        columnMapping = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
+		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMapping] objectForKey:@"typegrouping"];
 
-		if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
-            
-            id obj = [columnDefinitions safeObjectAtIndex:columnMappings[c]];
-                        
+        // Search for generated column and skip=YES
+        generatedColumnAndSkip = (skipGeneratedColumn == YES && [[columnDefinitions safeObjectAtIndex:columnMapping] objectForKey:@"generatedalways"]);
+
+        // Search for AutoInc column
+        if(foundAutoIncColumn == NO && skipAutoIncrementColumn == YES){
+            id obj = [columnDefinitions safeObjectAtIndex:columnMapping];
             if ([obj respondsToSelector:@selector(boolForKey:)]) {
                 autoIncrement = [obj boolForKey:@"autoincrement"];
                 // the columnDefinitions array contains dictionaries with different keys when copying from the table view (autoincrement)
@@ -462,77 +466,72 @@ static const NSInteger kBlobAsImageFile = 4;
                 if(autoIncrement == NO){
                     autoIncrement = [obj boolForKey:@"AUTO_INCREMENT_FLAG"];
                 }
+                // autoincrement found...
+                if(autoIncrement == YES){
+                    SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
+                    foundAutoIncColumn = YES;
+                    autoIncrementColumnName = [[columnDefinitions safeObjectAtIndex:columnMapping] objectForKey:@"name"];
+                    //what if autoIncrementColumnName is nil?
+                    if(autoIncrementColumnName == nil){
+                        [errorDict safeSetObject:@"autoIncrementColumnName is nil even though we found an auto_increment column" forKey:@"autoIncrementColumnNameNil"];
+                        SPLog(@"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions");
+                        [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Cannot find auto_increment column name", @"Cannot find auto_increment column name")]
+                                                     message:NSLocalizedString(@"Raise GitHub issue with developers: autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions", @"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions")
+                                                    callback:nil];
+                        NSBeep();
+                        return nil;
+                    }
+                    else{
+                        SPLog(@"autoIncrementColumnName: %@", autoIncrementColumnName);
+                    }
+                }
             }
             else{
                 SPLog(@"object does not respond to boolForKey. obj class: %@\n Description: %@", [obj class], [obj description]);
                 SPLog(@"columnDefinitions: %@", columnDefinitions);
             }
-		}
+        }
 
-		// Numeric data
-		if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
-			columnTypes[c] = 0;
+        // Define type and header for other cases only
+        // Case : Autoincrement
+        if (autoIncrement) {
+            autoIncrement = NO;
+        // Case : Generated Column AND skip=YES
+        } else if (generatedColumnAndSkip) {
+            generatedColumnAndSkip = NO;
+        // Case : others (Included generated column AND skip=NO)
+        } else {
+            data              = [[NSMutableDictionary alloc] init];
+            data[kColMapping] = @(columnMapping);
+            data[kColType]    = @(1);                 // By default, set to String
+            data[kHeader]     = [[[columns safeObjectAtIndex:c] headerCell] stringValue];
+            // Numeric data
+            if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
+                data[kColType] = @(0);
+            // Blob data or long text data
+            else if ([t isEqualToString:@"blobdata"] || [t isEqualToString:@"textdata"])
+                data[kColType] = @(2);
+            // GEOMETRY data
+            else if ([t isEqualToString:@"geometry"])
+                data[kColType] = @(3);
+        }
+        if (data)
+            [tbColumns addObject:data];
+        else
+            [tbColumns addObject:[NSNull null]];
 
-		// Blob data or long text data
-		else if ([t isEqualToString:@"blobdata"] || [t isEqualToString:@"textdata"])
-			columnTypes[c] = 2;
-
-		// GEOMETRY data
-		else if ([t isEqualToString:@"geometry"])
-			columnTypes[c] = 3;
-
-		// Default to strings
-		else
-			columnTypes[c] = 1;
-		
-		if(foundAutoIncColumn == NO && autoIncrement == YES && skipAutoIncrementColumn == YES){
-			SPLog(@"we have an autoincrement column: %hhd", autoIncrement );
-			columnTypes[c] = 4; // new type
-			autoIncrementColumnName = [[columnDefinitions safeObjectAtIndex:columnMappings[c]] objectForKey:@"name"];
-			foundAutoIncColumn = YES;
-			autoIncrement = NO;
-		}
 	} // end of column loop
-	
-	if(foundAutoIncColumn == YES && skipAutoIncrementColumn == YES){
-		//what if autoIncrementColumnName is nil?
-		if(autoIncrementColumnName == nil){
-            [errorDict safeSetObject:@"autoIncrementColumnName is nil even though we found an auto_increment column" forKey:@"autoIncrementColumnNameNil"];
-			SPLog(@"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions");
-			
-			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Cannot find auto_increment column name", @"Cannot find auto_increment column name")]
-										 message:NSLocalizedString(@"Raise GitHub issue with developers: autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions", @"autoIncrementColumnName is nil even though we found an auto_increment column. Check keys in columnDefinitions")
-										callback:nil];
-			
-			SPLog(@"free mem");
-			NSBeep();
-			free(columnMappings);
-			free(columnTypes);
-			return nil;
-		}
-		else{
-            NSUInteger tbHeaderCount = tbHeader.count;
-			SPLog(@"autoIncrementColumnName: %@", autoIncrementColumnName);
-			[tbHeader removeObject:autoIncrementColumnName];
-			SPLog(@"tbHeader: %@", tbHeader);
-            if(tbHeaderCount == tbHeader.count){
-                SPLog(@"autoIncrementColumn NOT removed: %@", autoIncrementColumnName);
-                [errorDict safeSetObject:@"autoIncrementColumn NOT removed" forKey:@"tbHeaderCount"];
-                [errorDict safeSetObject:autoIncrementColumnName forKey:@"autoIncrementColumnName"];
-                [errorDict safeSetObject:@(tableInstance->tableDataInstance.tableHasAutoIncrementField) forKey:@"tableHasAutoIncrementField"];
-                [errorDict safeSetObject:columnDefinitions forKey:@"columnDefinitions"];
-            }
-		}
-	}
 
     if(errorDict.count > 0){
         SPLog(@"autoIncrement error");
         [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
     }
 
+    // --- SECOND PART --- Build the SQL with the previous selected columns
+
 	// Begin the SQL string
 	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n",
-		[(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString], [tbHeader componentsJoinedAndBacktickQuoted]];
+     [(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString], [self componentsJoinedAndBacktickQuoted:tbColumns]];
 
 	NSUInteger rowIndex = [selectedRows firstIndex];
 	Class spTableContentClass = [SPTableContent class];
@@ -547,79 +546,69 @@ static const NSInteger kBlobAsImageFile = 4;
 		
 		for (c = 0; c < numColumns; c++)
 		{
-			cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, rowIndex, columnMappings[c]);
+            data = tbColumns[c];
+            if (![data isKindOfClass:[NSNull class]]) {
+                NSUInteger colType    = [[data objectForKey:kColType] unsignedIntValue];
+                NSUInteger colMapping = [[data objectForKey:kColMapping] unsignedIntValue];
+                cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, rowIndex, colMapping);
+                // If the data is not loaded, attempt to fetch the value
+                if ([cellData isSPNotLoaded] && [[self delegate] isKindOfClass:spTableContentClass]) {
+                    NSString *whereArgument = [tableInstance argumentForRow:rowIndex];
+                    // Abort if no table name given, not table content, or if there are no indices on this table
+                    if (!selectedTable || ![[self delegate] isKindOfClass:spTableContentClass] || ![whereArgument length]) {
+                        NSBeep();
+                        return nil;
+                    }
+                    // Use the argumentForRow to retrieve the missing information
+                    // TODO - this could be preloaded for all selected rows rather than cell-by-cell
+                    cellData = [mySQLConnection getFirstFieldFromQuery:
+                                [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
+                                    [[data safeObjectForKey:kHeader] backtickQuotedString],
+                                    [selectedTable backtickQuotedString],
+                                    whereArgument]];
+                }
 
-			// If the data is not loaded, attempt to fetch the value
-			if ([cellData isSPNotLoaded] && [[self delegate] isKindOfClass:spTableContentClass]) {
+                // Check for NULL value
+                if ([cellData isNSNull]) {
+                    [rowValues addObject:@"NULL"];
+                    continue;
 
-				NSString *whereArgument = [tableInstance argumentForRow:rowIndex];
-				// Abort if no table name given, not table content, or if there are no indices on this table
-				if (!selectedTable || ![[self delegate] isKindOfClass:spTableContentClass] || ![whereArgument length]) {
-					NSBeep();
-					free(columnMappings);
-					free(columnTypes);
-					return nil;
-				}
+                } else if (cellData) {
 
-				// Use the argumentForRow to retrieve the missing information
-				// TODO - this could be preloaded for all selected rows rather than cell-by-cell
-				cellData = [mySQLConnection getFirstFieldFromQuery:
-							[NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
-								[[tbHeader safeObjectAtIndex:columnMappings[c]] backtickQuotedString],
-								[selectedTable backtickQuotedString],
-								whereArgument]];
-			}
+                    // Check column type and insert the data accordingly
+                    switch (colType) {
 
-			// Check for NULL value
-			if ([cellData isNSNull]) {
-				[rowValues addObject:@"NULL"];
-				continue;
+                        // Convert numeric types to unquoted strings
+                        case 0:
+                            [rowValues safeAddObject:[cellData description]];
+                            break;
 
-			} 
-			else if (cellData) {
+                        // Quote string, text and blob types appropriately
+                        case 1:
+                        case 2:
+                            if ([cellData isKindOfClass:nsDataClass]) {
+                                [rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:cellData]];
+                            } else {
+                                [rowValues safeAddObject:[mySQLConnection escapeAndQuoteString:[cellData description]]];
+                            }
+                            break;
 
-				// Check column type and insert the data accordingly
-				switch (columnTypes[c]) {
+                        // GEOMETRY
+                        case 3:
+                            [rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:[cellData data]]];
+                            break;
 
-					// Convert numeric types to unquoted strings
-					case 0:
-						[rowValues safeAddObject:[cellData description]];
-						break;
+                        default:
+                            NSBeep();
+                            return nil;
+                    }
 
-					// Quote string, text and blob types appropriately
-					case 1:
-					case 2:
-						if ([cellData isKindOfClass:nsDataClass]) {
-							[rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:cellData]];
-						} else {
-							[rowValues safeAddObject:[mySQLConnection escapeAndQuoteString:[cellData description]]];
-						}
-						break;
-
-					// GEOMETRY
-					case 3:
-						[rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:[cellData data]]];
-						break;
-					// auto_inc
-					case 4:
-						SPLog(@"Not adding auto inc value");
-						break;
-					// Unhandled cases - abort
-					default:
-						NSBeep();
-						free(columnMappings);
-						free(columnTypes);
-						return nil;
-				}
-
-			// If nil is encountered, abort
-			} 
-			else {
-				NSBeep();
-				free(columnMappings);
-				free(columnTypes);
-				return nil;
-			}
+                // If nil is encountered, abort
+                } else {
+                    NSBeep();
+                    return nil;
+                }
+            }
 		}
 
 		// Add to the string in comma-separated form, and increment the string length
@@ -627,20 +616,18 @@ static const NSInteger kBlobAsImageFile = 4;
 
 		// Close this VALUES group and set up the next one if appropriate
 		if (rowCounter != penultimateRowIndex) {
-
 			// Add a new INSERT starter command every ~250k of data.
 			if ([value length] > 250000) {
 				[result appendFormat:@"%@);\n\nINSERT INTO %@ (%@)\nVALUES\n",
 						value,
 						[(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString],
-						[tbHeader componentsJoinedAndBacktickQuoted]];
+                        [self componentsJoinedAndBacktickQuoted:tbColumns]];
 				[value setString:@""];
 			} 
 			else {
 				[value appendString:@"),\n"];
 			}
-
-		} 
+		}
 		else {
 			[value appendString:@"),\n"];
 			[result appendString:value];
@@ -657,10 +644,23 @@ static const NSInteger kBlobAsImageFile = 4;
 
 	[result appendString:@";\n"];
 
-	free(columnMappings);
-	free(columnTypes);
-
 	return result;
+}
+
+- (NSString *)componentsJoinedAndBacktickQuoted:(NSArray *)array
+{
+    NSMutableString *result = [NSMutableString string];
+    [result setString:@""];
+
+    for (NSDictionary *dic in array) {
+        if (![dic isKindOfClass:[NSNull class]]) {
+            NSString *header = [dic safeObjectForKey:kHeader];
+            if ([result length])
+                [result appendString: @", "];
+            [result appendString:[header backtickQuotedString]];
+        }
+    }
+    return result;
 }
 
 /**
