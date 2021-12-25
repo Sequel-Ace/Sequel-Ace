@@ -2041,16 +2041,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		else {
 			[mySQLConnection setUseSocket:NO];
 
-			if ([self type] == SPSSHTunnelConnection) {
-				[mySQLConnection setHost:@"127.0.0.1"];
+            if([[self host] length]) {
+                [mySQLConnection setHost:[self host]];
+            } else {
+                [mySQLConnection setHost:SPLocalhostAddress];
+            }
 
+            if ([[self port] length]) {
+                [mySQLConnection setPort:[[self port] integerValue]];
+            }
+
+			if ([self type] == SPSSHTunnelConnection) {
 				[mySQLConnection setPort:[sshTunnel localPort]];
 				[mySQLConnection setProxy:sshTunnel];
-			}
-			else {
-				[mySQLConnection setHost:[self host]];
-
-				if ([[self port] length]) [mySQLConnection setPort:[[self port] integerValue]];
 			}
 		}
 
