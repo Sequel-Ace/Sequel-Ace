@@ -170,5 +170,6 @@ typedef struct {
 - (BOOL)isSnippetMode;
 
 - (void)doSyntaxHighlightingWithForce:(BOOL)forced;
+- (void)appendString:(NSString *)string;
 
 @end

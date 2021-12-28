@@ -1424,6 +1424,16 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		return YES;
 }
 
+- (void)appendString:(NSString *)string
+{
+    [self.textStorage appendAttributedString: [[NSAttributedString alloc] initWithString: string attributes: @{ NSFontAttributeName: self.font }]];
+}
+
+- (void)insertString:(NSString *)string atIndex:(NSUInteger)loc
+{
+    [self.textStorage insertAttributedString: [[NSAttributedString alloc] initWithString: string attributes: @{ NSFontAttributeName: self.font }] atIndex: loc];
+}
+
 #pragma mark -
 #pragma mark snippet handler
 
@@ -2563,13 +2573,15 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// Replicate the indentation on the previous line if one was found.
 		if (indentString) {
             SPLog(@"got indentString: [%@]", indentString);
+            NSString *adjustedIndent;
 			if (lineCursorLocation < [indentString length]) {
                 SPLog(@"lineCursorLocation < [indentString length]: [%lu] < [%lu]", (unsigned long)lineCursorLocation,(unsigned long)[indentString length] );
-                [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]] atIndex:[self selectedRange].location];
+                adjustedIndent = [indentString substringWithRange:NSMakeRange(0, lineCursorLocation)];
 			} else {
                 SPLog(@"lineCursorLocation >= [indentString length]: [%lu] >= [%lu]", (unsigned long)lineCursorLocation,(unsigned long)[indentString length] );
-                [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:indentString] atIndex:[self selectedRange].location];
+                adjustedIndent = indentString;
 			}
+			[self insertString: adjustedIndent atIndex: self.selectedRange.location];
 		}
 
 		// Return to avoid the original implementation, preventing double linebreaks
@@ -3461,7 +3473,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// Check if user pressed  ⌘ while dragging for inserting only the file path
 		if([sender draggingSourceOperationMask] == 4)
 		{
-			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:filepath]];
+			[self appendString: filepath];
 			return YES;
 		}
 
@@ -3519,7 +3531,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			[dragString appendString:[[aPath componentsSeparatedByString:SPUniqueSchemaDelimiter] componentsJoinedByPeriodAndBacktickQuoted]];
 		}
 		[self breakUndoCoalescing];
-		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:dragString]];
+        [self appendString: dragString];
 		return YES;
 	}
 
