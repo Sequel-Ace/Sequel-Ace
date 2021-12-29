@@ -418,7 +418,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [textView breakUndoCoalescing];
             NSString *historyString = [[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:currentHistoryOffsetIndex];
             NSRange rangeOfInsertedString = NSMakeRange([textView selectedRange].location, [historyString length]);
-            [textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:historyString]];
+            [textView appendString:historyString];
             [textView setSelectedRange:rangeOfInsertedString];
         } else {
             currentHistoryOffsetIndex--;
@@ -435,7 +435,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [textView breakUndoCoalescing];
             NSString *historyString = [[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:currentHistoryOffsetIndex];
             NSRange rangeOfInsertedString = NSMakeRange([textView selectedRange].location, [historyString length]);
-            [textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:historyString]];
+            [textView appendString:historyString];
             [textView setSelectedRange:rangeOfInsertedString];
         } else {
             currentHistoryOffsetIndex++;
