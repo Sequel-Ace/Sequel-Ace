@@ -401,6 +401,8 @@ static unsigned short getRandomPort(void);
         if(user_defaults_get_bool(SPSSHConfigContainsUserKnownHostsFile) == NO){
             NSString *customKnownHostsFilePath = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHUsualKnownHostsFile];
 
+            NSString *alertMessage = nil;
+
             // if not set, could be empty or @0
             if(IsEmpty(customKnownHostsFilePath) == NO && customKnownHostsFilePath.isNumeric == NO){
                 SPLog(@"customKnownHostsFilePath set to: %@", customKnownHostsFilePath);
@@ -408,47 +410,17 @@ static unsigned short getRandomPort(void);
 
                     SPLog(@"ERROR: customKnownHostsFilePath NOT writable");
 
-                    NSView __block *helpView;
-
-                    SPMainQSync(^{
-                        // call windowDidLoad to alloc the panes
-                        [[((SPAppController *)[NSApp delegate]) preferenceController] window];
-                        helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
-                    });
-
                     BOOL validFile = IsLocalFilePath(customKnownHostsFilePath);
 
-                    NSString *alertMessage = nil;
-
                     if(validFile == YES){
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
                     }
                     else{
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is invalid.\n\nPlease check and try again.", @"known hosts is invalid message")];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.", @"known hosts is invalid message")];
                     }
 
-                    [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Known Hosts Error", @"Known Hosts Error") message:alertMessage accessoryView:helpView callback:^{
-                        NSDictionary *userInfo = @{
-                            NSLocalizedDescriptionKey: @"known_hosts file is not writable or invalid",
-                            @"file": customKnownHostsFilePath,
-                            @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__]
-                        };
-                        SPLog(@"userInfo: %@", userInfo);
-
-                    }];
-
-                    [self disconnect];
-
-                    SPMainLoopAsync(^{
-                        SPConnectionController *conn = [SPAppDelegate frontDocument].connectionController;
-                        [conn->progressIndicator stopAnimation:nil];
-                        conn->progressIndicatorText.hidden = YES;
-                        conn->progressIndicator.hidden = YES;
-                        [conn->progressIndicatorText displayIfNeeded];
-                        [conn->progressIndicator displayIfNeeded];
-                    });
-
-                    return;
+                } else if ([customKnownHostsFilePath containsString:@"\""]) {
+                    alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.", @"known hosts contains quote message"), customKnownHostsFilePath];
                 }
             }
             else{
@@ -462,7 +434,19 @@ static unsigned short getRandomPort(void);
                 }
             }
 
-            TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@", customKnownHostsFilePath]);
+            if(alertMessage != nil) {
+                connectionState = SPMySQLProxyIdle;
+                taskExitedUnexpectedly = YES;
+                [self setLastError:alertMessage];
+
+                if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
+                // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+
+                return;
+            }
+
+            TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=\"%@\"", [self prepareFilePathForSshCommand:customKnownHostsFilePath]]);
         }
         else{
             SPLog(@"the ssh config files should point to a known hosts file");
@@ -478,7 +462,7 @@ static unsigned short getRandomPort(void);
 			sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
 		}
 		
-		TA(@"-F", sshConfigFile);
+		TA(@"-F", [self prepareFilePathForSshCommand:sshConfigFile]);
 
 		if(![SPFileHandle fileHandleForReadingAtPath:sshConfigFile]) {
 			SPLog(@"Cannot read sshConfigFile: %@",sshConfigFile);
@@ -486,7 +470,7 @@ static unsigned short getRandomPort(void);
 
 		// Specify an identity file if available
 		if (identityFilePath) {
-			TA(@"-i", identityFilePath);
+			TA(@"-i", [self prepareFilePathForSshCommand:identityFilePath]);
 		}
 
 		// If keepalive is set in the preferences, use the same value for the SSH tunnel
@@ -933,6 +917,15 @@ static unsigned short getRandomPort(void);
 
 	[[answerAvailableLock onMainThread] unlock];
 }
+
+/*
+ * Escape spaces and special characters in path
+ */
+- (NSString *)prepareFilePathForSshCommand:(NSString *)thePath
+{
+    return [thePath stringByRemovingPercentEncoding];
+}
+
 
 #pragma mark -
 
