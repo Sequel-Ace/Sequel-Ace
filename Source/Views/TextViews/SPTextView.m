@@ -1426,12 +1426,20 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 - (void)appendString:(NSString *)string
 {
-    [self.textStorage appendAttributedString: [[NSAttributedString alloc] initWithString: string attributes: @{ NSFontAttributeName: self.font }]];
+	[self insertString:string intoRange:NSMakeRange(self.textStorage.length, 0)];
 }
 
 - (void)insertString:(NSString *)string atIndex:(NSUInteger)loc
 {
-    [self.textStorage insertAttributedString: [[NSAttributedString alloc] initWithString: string attributes: @{ NSFontAttributeName: self.font }] atIndex: loc];
+	[self insertString:string intoRange:NSMakeRange(loc, 0)];
+}
+
+- (void)insertString:(NSString *)string intoRange:(NSRange)range
+{
+	[self shouldChangeTextInRange:range replacementString:string];
+	NSAttributedString *attrStr = [[NSAttributedString alloc] initWithString:string attributes: @{ NSFontAttributeName: self.font }];
+	[self.textStorage replaceCharactersInRange:range withAttributedString:attrStr];
+	[self didChangeText];
 }
 
 #pragma mark -
@@ -2013,16 +2021,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// Registering for undo
 		[self breakUndoCoalescing];
 
-        NSMutableAttributedString *tmpAttStr = [[NSMutableAttributedString alloc] initWithString:snip];
-
-        // if we are inserting a query,
-        // add the font
-
-        [tmpAttStr addAttribute:NSFontAttributeName
-                          value:self.font
-                          range:NSMakeRange(0, snip.length)];
-
-        [self.textStorage replaceCharactersInRange:targetRange withAttributedString:tmpAttStr];
+		[self insertString:snip intoRange:targetRange];
 
 		// If autopair is enabled check whether snip begins with ( and ends with ), if so mark ) as pair-linked
 		if (
@@ -3612,7 +3611,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 
 		if (content) {
-			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+			[self appendString: content];
             SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
@@ -3620,7 +3619,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 		if (content) {
-			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+			[self appendString: content];
             SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
@@ -3745,4 +3744,3 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse)
 }
 
 @end
-
