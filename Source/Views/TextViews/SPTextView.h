@@ -171,5 +171,7 @@ typedef struct {
 
 - (void)doSyntaxHighlightingWithForce:(BOOL)forced;
 - (void)appendString:(NSString *)string;
+- (void)insertString:(NSString *)string atIndex:(NSUInteger)loc;
+- (void)insertString:(NSString *)string intoRange:(NSRange)range;
 
 @end

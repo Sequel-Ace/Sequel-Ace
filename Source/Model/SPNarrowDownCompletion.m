@@ -953,9 +953,9 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 		theCharRange.length += [toInsert length] - currentAutocompleteLength;
 		theParseRange.length += [toInsert length];
 
-		[theView breakUndoCoalescing];
-		[theView.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[toInsert lowercaseString]] atIndex:currentSelectionPosition];
-
+		// manipulate storage directly here so what we don't pollute the UndoManager
+		NSAttributedString *attrStr = [[NSAttributedString alloc] initWithString:[toInsert lowercaseString] attributes: @{ NSFontAttributeName: theView.font} ];
+		[theView.textStorage insertAttributedString:attrStr atIndex:currentSelectionPosition];
 		autocompletePlaceholderWasInserted = YES;
 
 		// Restore the text selection location, and clearly mark the autosuggested text
@@ -975,8 +975,6 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 {
 	if (!autocompletePlaceholderWasInserted) return;
 
-	[theView breakUndoCoalescing];
-
 	if (useFastMethod) {
 		if(backtickMode) {
 			NSRange r = NSMakeRange(theCharRange.location+1,theCharRange.length);
@@ -985,7 +983,8 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 		else {
 			[theView setSelectedRange:theCharRange];
 		}
-		[theView insertText:originalFilterString replacementRange:theCharRange];
+		// manipulate storage directly here so what we don't pollute the UndoManager
+		[[theView textStorage] replaceCharactersInRange:theCharRange withString:originalFilterString];
 	} else {
 		NSRange attributeResultRange = NSMakeRange(0, 0);
 		NSUInteger scanPosition = 0;
@@ -999,7 +998,6 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 			// Perform a search for the attribute, capturing the range of the [non]match
 			if ([[theView textStorage] attribute:SPAutoCompletePlaceholderName atIndex:scanPosition longestEffectiveRange:&attributeResultRange inRange:NSMakeRange(scanPosition, currentLength-scanPosition)]) {
 				// A match was found - attributeResultRange contains the range of the attributed string
-				[theView shouldChangeTextInRange:attributeResultRange replacementString:@""];
 				[[theView textStorage] deleteCharactersInRange:attributeResultRange];
 			}
 			else {
@@ -1010,7 +1008,6 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 				// A match was found - retrieve the location
 				NSUInteger matchStart = NSMaxRange(attributeResultRange);
 				if ([[theView textStorage] attribute:SPAutoCompletePlaceholderName atIndex:matchStart longestEffectiveRange:&attributeResultRange inRange:NSMakeRange(matchStart, currentLength - matchStart)]) {
-					[theView shouldChangeTextInRange:attributeResultRange replacementString:@""];
 					[[theView textStorage] deleteCharactersInRange:attributeResultRange];
 				}
 			}
@@ -1024,6 +1021,9 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 - (void)insert_text:(NSString *)aString
 {
+	// Now that the placeholder text is cleared out first we need to adjust range we will replace.
+	theCharRange = NSMakeRange(theCharRange.location, self->originalFilterString.length);
+
 	// Ensure that theCharRange is valid
 	if(NSMaxRange(theCharRange) > [[theView string] length]) {
 		theCharRange = NSIntersectionRange(NSMakeRange(0,[[theView string] length]), theCharRange);
@@ -1058,7 +1058,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	}
 
 	[theView breakUndoCoalescing];
-	[theView insertText:aString replacementRange:theCharRange];
+	[theView insertString:aString intoRange:theCharRange];
 
 	// If completion string contains backticks move caret out of the backticks
 	if(backtickMode && !triggerMode) {
@@ -1079,7 +1079,11 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 	NSDictionary *selectedItem = [filtered objectAtIndex:[theTableView selectedRow]];
 
-	if([selectedItem objectForKey:@"noCompletion"]) {
+    // remove the inserted suggested text before we add the result and modify the UndoManager.
+	if (autocompletePlaceholderWasInserted)
+		[self removeAutocompletionPlaceholderUsingFastMethod:YES];
+
+    if([selectedItem objectForKey:@"noCompletion"]) {
 		closeMe = YES;
 		return;
 	}
