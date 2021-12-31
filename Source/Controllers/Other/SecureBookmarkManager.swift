@@ -232,28 +232,34 @@ import OSLog
     @objc func addBookmarkFor(url: URL, options: UInt, isForStaleBookmark: Bool, isForKnownHostsFile: Bool) -> Bool {
         let bookmarkCreationOptions: URL.BookmarkCreationOptions = URL.BookmarkCreationOptions(rawValue: options)
 
+        let possibleMatchingStrings = [
+            url.absoluteString,
+            url.absoluteString.removingPercentEncoding!
+        ]
+
         Log.debug("isForStaleBookmark: \(isForStaleBookmark)")
         Log.debug("isForKnownHostsFile: \(isForKnownHostsFile)")
 
 
         for (index, bookmarkDict) in bookmarks.enumerated() {
-            if bookmarkDict[url.absoluteString] != nil {
-                if isForStaleBookmark == false {
-                    Log.debug("Existing bookmark for: \(url.absoluteString)")
-                    if isForKnownHostsFile == true {
-                        knownHostsBookmarks.appendIfNotContains(url.absoluteString)
-                        Log.debug("Updating UserDefaults for SPKnownHostsBookmarks")
-                        prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+            for posibility in possibleMatchingStrings {
+                if bookmarkDict[posibility] != nil {
+                    if isForStaleBookmark == false {
+                        Log.debug("Existing bookmark for: \(url.absoluteString)")
+                        if isForKnownHostsFile == true {
+                            knownHostsBookmarks.appendIfNotContains(url.absoluteString)
+                            Log.debug("Updating UserDefaults for SPKnownHostsBookmarks")
+                            prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+                        }
+                        return true
                     }
-                    return true
-                }
-                else{
-                    // JCS - Not sure we'll ever get here
-                    Log.debug("Removing existing STALE bookmark for: \(url.absoluteString)")
-                    if bookmarks[safe: index] != nil{
-                        bookmarks.remove(at: index)
+                    else{
+                        // JCS - Not sure we'll ever get here
+                        Log.debug("Removing existing STALE bookmark for: \(url.absoluteString)")
+                        if bookmarks[safe: index] != nil{
+                            bookmarks.remove(at: index)
+                        }
                     }
-                    break
                 }
             }
         }
@@ -357,9 +363,33 @@ import OSLog
 
         var found = false
 
+        let sanitizedFilename = filename.removingPercentEncoding?.dropPrefix("file://")
+
+
+        //Handle known hosts first
+        let initialKnownHostsBookmarksCount = knownHostsBookmarks.count
+        knownHostsBookmarks.removeAll(where: { $0.removingPercentEncoding?.dropPrefix("file://") == sanitizedFilename })
+        if(initialKnownHostsBookmarksCount != knownHostsBookmarks.count){
+            Log.debug("Removed knownHosts bookmark for: \(filename)")
+            prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
+            found = true
+        }
+
+        //Then handle stale bookmarks
+        // if it was in stalebookmarks, remove
+        let initialStaleBookmarksCount = staleBookmarks.count
+        staleBookmarks.removeAll(where: { $0.removingPercentEncoding?.dropPrefix("file://") == sanitizedFilename })
+        if(initialStaleBookmarksCount != staleBookmarks.count){
+            Log.debug("Removed stale bookmark for: \(filename)")
+            prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+            found = true
+        }
+
+
+        //Then handle standard bookmarks
         for (index, bookmarkDict) in bookmarks.enumerated() {
             for (key, urlData) in bookmarkDict {
-                if key == filename {
+                if key.removingPercentEncoding?.dropPrefix("file://") == sanitizedFilename {
 
                     found = true
 
@@ -388,21 +418,7 @@ import OSLog
                         prefs.set(bookmarks, forKey: SASecureBookmarks)
                         Log.debug("Successfully revoked bookmark for: \(filename)")
 
-                        // if it was in stalebookmarks, remove
-                        if(staleBookmarks.contains(key)){
-                            Log.debug("Removing stale bookmark for: \(key)")
-                            staleBookmarks.removeAll(where: { $0 == key })
-                            prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
-                        }
-
-                        // if it was in knownHostsBookmarks, remove
-                        if(knownHostsBookmarks.contains(urlForBookmark.absoluteString)){
-                            Log.debug("Removing knownHosts bookmark for: \(key)")
-                            knownHostsBookmarks.removeAll(where: { $0 == urlForBookmark.absoluteString })
-                            prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
-                        }
-
-                        return true
+                        break
                     } catch {
                         Log.error("Error resolving bookmark: key = \(key). Error: \(error.localizedDescription)")
                         Log.error("Failed to revoke bookmark for: \(filename)")
@@ -414,31 +430,17 @@ import OSLog
             }
         }
 
-        if found == false{
-            Log.info("No bookmark found for: \(filename)")
-
-            // it's not in bookmarks, but is in staleBookmarks, just remove it
-            if(staleBookmarks.contains(filename)){
-                Log.debug("Removing stale bookmark for: \(filename)")
-                staleBookmarks.removeAll(where: { $0 == filename })
-                prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
-                // post notificay for SPFilePreferencePane
-                NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
-                return true
-            }
-
-            if knownHostsBookmarks.contains(filename){
-                Log.debug("Removing knownHosts bookmark for: \(filename)")
-                knownHostsBookmarks.removeAll(where: { $0 == filename })
-                prefs.set(knownHostsBookmarks, forKey: SPKnownHostsBookmarks)
-            }
+        if(found) {
+            NotificationCenter.default.post(name: Notification.Name(NSNotification.Name.SPBookmarksChanged.rawValue), object: self)
+        } else {
+            // if you try to revoke a stale bookmark ... you get to here
+            // and can never remove it...
+            Log.debug("found: \(found)")
+            Log.error("Failed to revoke bookmark for: \(filename)")
         }
 
-        // if you try to revoke a stale bookmark ... you get to here
-        // and can never remove it...
-        Log.debug("found: \(found)")
-        Log.error("Failed to revoke bookmark for: \(filename)")
-        return false
+
+        return found
     }
 
     @objc func addStaleBookmark(filename: String){

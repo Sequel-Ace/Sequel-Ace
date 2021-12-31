@@ -579,9 +579,9 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     if([cell isKindOfClass:[NSCell class]] == YES){
         // default to controlTextColor
         [cell setTextColor:[NSColor controlTextColor]];
+        NSString *title = ((NSCell*)cell).title;
 
         if(weHaveStaleBookmarks == YES){
-            NSString *title = ((NSCell*)cell).title;
 
             for(NSString* staleFile in staleBookmarks){
                 if([[staleFile dropPrefixWithPrefix:@"file://"] isEqualToString:title] == YES){
@@ -589,6 +589,7 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                 }
             }
         }
+        [((NSCell*)cell) setTitle:[title stringByRemovingPercentEncoding]];
     }
 }
 
