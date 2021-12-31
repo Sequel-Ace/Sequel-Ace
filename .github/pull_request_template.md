@@ -25,6 +25,7 @@ Please use one of these hashtags for your PR title:
   - [ ] 10.14.x (Mojave)
   - [ ] 10.15.x (Catalina)
   - [ ] 11.x (Big Sur)
+  - [ ] 12.x (Monterey)
 - Localizations:
   - [ ] English
   - [ ] Spanish

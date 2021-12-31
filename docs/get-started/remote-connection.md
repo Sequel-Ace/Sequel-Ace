@@ -52,7 +52,7 @@ _If the SSH host is behind a firewall, it must be configured to allow SSH connec
 
 #### Choosing a SSH Host
 
-The SSH host can basically be any computer that can access the MySQL server. You could for example use your desktop computer at work to connect to your company's MySQL server from home. A hosting provider might tell you to connect to their MySQL server via a specific SSH host. You need a username and a password for the computer you want to use as the SSH host, and it must support remote access via SSH. Almost all Unix/Linux systems and Mac OS X have built-in SSH support. On Mac OS, SSH ist called _Remote Login_ and can be enabled in the _Sharing_ preferences. If you want to use a Microsoft Windows computer as a SSH host, you must install a SSH server first (this might be difficult).
+The SSH host can basically be any computer that can access the MySQL server. You could for example use your desktop computer at work to connect to your company's MySQL server from home. A hosting provider might tell you to connect to their MySQL server via a specific SSH host. You need a username and a password for the computer you want to use as the SSH host, and it must support remote access via SSH. Almost all Unix/Linux systems and macOS have built-in SSH support. On Mac OS, SSH ist called _Remote Login_ and can be enabled in the _Sharing_ preferences. If you want to use a Microsoft Windows computer as a SSH host, you must install a SSH server first (this might be difficult).
 
 
 #### Creating an SSH Connection from Terminal.app

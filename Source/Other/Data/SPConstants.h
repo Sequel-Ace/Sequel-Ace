@@ -388,6 +388,7 @@ extern NSString *SPConsoleShowDatabases;
 extern NSString *SPConsoleShowSelectsAndShows;
 extern NSString *SPConsoleShowHelps;
 extern NSString *SPEditInSheetEnabled;
+extern NSString *SPEditInSheetForMultiLineText;
 extern NSString *SPEditInSheetForLongText;
 extern NSString *SPEditInSheetForLongTextLengthThreshold;
 extern NSString *SPTableInformationPanelCollapsed;
@@ -617,7 +618,7 @@ extern NSString *SPBundleTaskOutputFilePath;
 extern NSString *SPBundleTaskScriptCommandFilePath;
 extern NSString *SPBundleTaskCopyBlobFileDirectory;
 extern NSString *SPBundleTaskTableMetaDataFilePath;
-extern NSString *SPQueryWarningEnabledSuppressed;
+extern NSString *SPShowWarningBeforeDeleteQuery;
 extern NSString *SPBundleLegacyAppSchema;
 extern NSString *SPBundleAppSchema;
 extern NSString *SPExportFileHandleError;
@@ -682,9 +683,10 @@ typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 	SPBundleRedirectActionInsertAsSnippet      = 204,
 	SPBundleRedirectActionShowAsHTML           = 205,
 	SPBundleRedirectActionShowAsTextTooltip    = 207,
-	SPBundleRedirectActionShowAsHTMLTooltip    = 208,
-	SPBundleRedirectActionLastCode             = 208
+	SPBundleRedirectActionShowAsHTMLTooltip    = 208
 };
+
+extern const NSInteger SPBundleRedirectActionLastCode;
 
 extern NSString *SPMigratedQueriesFromPrefs;
 extern NSString *SPTraceSQLiteExecutions;

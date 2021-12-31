@@ -872,9 +872,10 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}
 	
 	{
-		NSArray *matches = (__bridge NSArray *)((void *)0xdeadbeef);
+        NSArray *matches = [NSArray new];
+        NSArray *original = matches;
 		XCTAssertFalse([@"" nonConsecutivelySearchString:@"R" matchingRanges:&matches], @"Inequality with empty left side");
-		XCTAssertTrue((matches == (void *)0xdeadbeef), @"out variable not touched by mismatch");
+		XCTAssertTrue(matches == original, @"out variable not touched by mismatch");
 	}
 	
 	XCTAssertFalse([@"L" nonConsecutivelySearchString:@"" matchingRanges:NULL], @"Inequality with empty right side");

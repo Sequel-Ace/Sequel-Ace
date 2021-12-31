@@ -3,3 +3,4 @@
 
 source 'https://rubygems.org'
 gem 'fastlane', '~> 2.168'
+gem 'rake', '~> 13'

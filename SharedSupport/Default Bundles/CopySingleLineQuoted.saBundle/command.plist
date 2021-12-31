@@ -9,7 +9,7 @@
 	<key>command</key>
 	<string># read STDIN which contains the string data coming from the Query Editor
 # and pipe it to the following perl script
-cat | perl -ne '
+cat | /usr/bin/perl -ne '
 
 # delete final line ending
 chomp;

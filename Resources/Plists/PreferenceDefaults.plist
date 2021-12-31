@@ -99,6 +99,10 @@
 	<true/>
 	<key>CustomQueryMaxHistoryItems</key>
 	<integer>20</integer>
+	<key>EditInSheetForMultiLineText</key>
+	<true/>
+	<key>EditInSheetForLongText</key>
+	<true/>
 	<key>EditInSheetForLongTextLengthThreshold</key>
 	<integer>15</integer>
 	<key>CustomQuerySaveHistoryIndividually</key>
@@ -214,6 +218,8 @@
 	<key>ShowUpdateAvailable</key>
 	<true/>
 	<key>NSApplicationCrashOnExceptions</key>
+	<true/>
+	<key>ShowWarningBeforeDeleteQuery</key>
 	<true/>
 </dict>
 </plist>

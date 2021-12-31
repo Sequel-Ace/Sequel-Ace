@@ -2326,7 +2326,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace solo soporta y se prueba con versiones predeterminadas de clientes OpenSSH incluidas en Mac OS X. El uso de diferentes clientes puede causar problemas de conexión, riesgos de seguridad o no funcionar en absoluto.\n\nPor favor tenga en cuenta, que no podemos proporcionar soporte para estas configuraciones.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Comando de esquema URL de sequelace no soportado.";

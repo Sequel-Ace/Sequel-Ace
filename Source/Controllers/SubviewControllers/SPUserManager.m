@@ -37,8 +37,7 @@
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
 
-#import <SPMySQL/SPMySQL.h>
-#import <QueryKit/QueryKit.h>
+#import <SPMySQL/SPMySQL.h> 
 
 #import "sequel-ace-Swift.h"
 
@@ -459,18 +458,18 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 					key = [privColumnToGrantMap objectForKey:key];
 				}
 				
-				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:key];
-			} 
+				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:[key lowercaseString]];
+			}
 			else if ([key isEqualToString:@"Db"] || [key isEqualToString:@"DB"]) {
                 // some servers (which? - error above should tell us) return 'DB' for this key which
                 // causes crash: the entity Privileges is not key value coding-compliant for the key DB
                 // so we'll just override it here.
                 key = @"Db";
 				NSString *db = [[rowDict objectForKey:key] stringByReplacingOccurrencesOfString:@"\\_" withString:@"_"];
-                [dbPriv setValue:db forKey:key];
-            } 
+                [dbPriv setValue:db forKey:[key lowercaseString]];
+            }
 			else if (![key isEqualToString:@"Host"] && ![key isEqualToString:@"User"]) {
-				[dbPriv setValue:[rowDict objectForKey:key] forKey:key];
+				[dbPriv setValue:[rowDict objectForKey:key] forKey:[key lowercaseString]];
 			}
 		}
 		[privs addObject:dbPriv];

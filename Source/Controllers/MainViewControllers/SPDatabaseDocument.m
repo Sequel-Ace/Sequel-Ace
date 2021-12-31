@@ -5477,7 +5477,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSArray __block *triggeredCommands = nil;
 
     dispatch_sync(dispatch_get_main_queue(), ^{
-        triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionDatabaseChanged];
+        triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionDatabaseChanged];
     });
 
 
@@ -5511,7 +5511,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if(!stopTrigger) {
             id firstResponder = [[NSApp keyWindow] firstResponder];
             if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-                [SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
+                [SPBundleManager.shared executeBundleItemForApp:aMenuItem];
             }
             else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
                 if ([[[firstResponder class] description] isEqualToString:@"SPCopyTable"]) {
@@ -6077,7 +6077,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSArray __block *triggeredCommands = nil;
 
         dispatch_sync(dispatch_get_main_queue(), ^{
-            triggeredCommands = [SPBundleManager.sharedSPBundleManager bundleCommandsForTrigger:SPBundleTriggerActionTableChanged];
+            triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionTableChanged];
         });
 
         for(NSString* cmdPath in triggeredCommands)
@@ -6105,7 +6105,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             if(!stopTrigger) {
                 id firstResponder = [[NSApp keyWindow] firstResponder];
                 if([[data objectAtIndex:1] isEqualToString:SPBundleScopeGeneral]) {
-                    [SPBundleManager.sharedSPBundleManager executeBundleItemForApp:aMenuItem];
+                    [SPBundleManager.shared executeBundleItemForApp:aMenuItem];
                 }
                 else if([[data objectAtIndex:1] isEqualToString:SPBundleScopeDataTable]) {
                     if([[[firstResponder class] description] isEqualToString:@"SPCopyTable"])

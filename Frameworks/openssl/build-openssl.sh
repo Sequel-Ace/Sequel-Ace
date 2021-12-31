@@ -52,11 +52,12 @@ BUILDARCHS="darwin64-x86_64-cc"
 # so we'll check for both
 # c.f. https://eclecticlight.co/2020/08/13/macos-version-numbering-isnt-so-simple/
 
+IS_12=$(sw_vers -productVersion | grep -o '12.[0-9]*')
 IS_11=$(sw_vers -productVersion | grep -o '11.[0-9]*')
 IS_16=$(sw_vers -productVersion | grep -o '10.16.[0-9]*')
 
 IS_AT_LEAST_BIG_SUR=0
-if  [ -n "$IS_11" ] || [ -n "$IS_16" ]; then
+if  [ -n "$IS_12" ] || [ -n "$IS_11" ] || [ -n "$IS_16" ]; then
     IS_AT_LEAST_BIG_SUR=1
 fi
 
@@ -121,6 +122,18 @@ else
     cp "$CONFIGURATION_TEMP_DIR"/x86_64-libcrypto.1.1.dylib "$TARGET_BUILD_DIR/libcrypto.1.1.dylib"
     cp "$CONFIGURATION_TEMP_DIR"/x86_64-libssl.1.1.dylib "$TARGET_BUILD_DIR/libssl.1.1.dylib"
 fi
+
+echo "***** Fixing DYLIB Paths *****"
+cd "$TARGET_BUILD_DIR"
+install_name_tool -id "libcrypto.1.1.dylib" libcrypto.1.1.dylib
+install_name_tool -id "libssl.1.1.dylib" libssl.1.1.dylib
+
+CRYPTO=$(otool -L libssl.1.1.dylib | grep libcrypto.1.1.dylib | cut -d' ' -f1 | head -1)
+CRYPTO="${CRYPTO#"${CRYPTO%%[![:space:]]*}"}"  
+CRYPTO="${CRYPTO%"${CRYPTO##*[![:space:]]}"}"   
+echo "CRYPTO: $CRYPTO"
+echo "Setting @loader_path/libcrypto.1.1.dylib in libssl.1.1.dylib"
+install_name_tool -change "$CRYPTO" @loader_path/libcrypto.1.1.dylib libssl.1.1.dylib
 
 echo "***** removing temporary files from $CONFIGURATION_TEMP_DIR *****"
 rm -f "$CONFIGURATION_TEMP_DIR/"*-libcrypto.*

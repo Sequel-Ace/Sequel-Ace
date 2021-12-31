@@ -48,6 +48,7 @@
 }
 
 @property (weak) IBOutlet NSTextField *staleLabel;
+@property (weak) IBOutlet NSButtonCell *revokeButton;
 
 - (IBAction)revokeBookmark:(id)sender;
 - (IBAction)addBookmark:(id)sender;

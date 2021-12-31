@@ -29,17 +29,9 @@ To install an unofficial community maintained [Homebrew](https://brew.sh) [Cask]
 brew install --cask sequel-ace
 ```
 
-## Building Locally
-
-To run Sequel Ace locally from XCode, please:
-- download `.zip` archive of this repo/clone locally
-- open `sequel-ace.xcworkspace` and run `Sequel Ace Local Testing` schema
-
-If you encounter any issues, let us know by [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose).
-
 ## Moving Saved Connections from Sequel Pro
 
-To move your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
+To migrate your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
 
 ## Contributing
 
@@ -53,7 +45,7 @@ If you would like to help with translations, please sign up for Crowdin and join
 
 ### Development
 
-If you would like to help with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or [issues](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose) with relevant labels such as [Help Wanted](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22), [Bug](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3ABug), [Feature Request](https://github.com/Sequel-Ace/Sequel-Ace/labels/Feature%20Request), and [PR Welcome](https://github.com/Sequel-Ace/Sequel-Ace/labels/PR%20Welcome). These lists contain the issues where we would most like your help. There are both challenging and straightforward tasks there, so new contributors should be able to get started.
+If you would like to help with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or [issues](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose) with relevant labels such as [Help Wanted](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22), [Bug](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3ABug), [Feature Request](https://github.com/Sequel-Ace/Sequel-Ace/labels/Feature%20Request), and [PR Welcome](https://github.com/Sequel-Ace/Sequel-Ace/labels/PR%20Welcome). These lists contain the issues where we would most like your help. There are both challenging and straightforward tasks there, so new contributors should be able to get started. For more technical information see [the developer guide](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/developing.md)
 
 ## Branches
 
@@ -66,12 +58,14 @@ If you would like to help with code and development, please see either our [proj
 
 ## Compatibility
 
-- **macOS:** >= 10.12
+- **macOS:** >= 10.12 \*
 - **Processor:** Intel & Apple Silicon
 - **MySQL:** >= 5.6
 - **MariaDB:** >= 10.0
 
 _Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11. However support is limited, and we encourage upgrading to the latest macOS and Sequel Ace._
+
+\* To run Sequel Ace on Mac OS X 10.12-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
 
 ## License
 

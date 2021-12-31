@@ -251,7 +251,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 
 	[c displayHTMLContent:[NSString stringWithFormat:@"<pre>%@</pre>", [sourceCode HTMLEscapeString]] withOptions:nil];
 
-	[SPBundleManager.sharedSPBundleManager addHTMLOutputController:c];
+	[SPBundleManager.shared addHTMLOutputController:c];
 }
 
 - (void)saveDocument
@@ -298,7 +298,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	windowUUID = @"";
 	docUUID = @"";
 
-	[SPBundleManager.sharedSPBundleManager removeHTMLOutputController:self];
+	[SPBundleManager.shared removeHTMLOutputController:self];
 }
 
 #pragma mark -
@@ -331,7 +331,7 @@ static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 	if(request != nil) {
 		SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
 		[c displayURLString:[[request URL] absoluteString] withOptions:nil];
-		[SPBundleManager.sharedSPBundleManager addHTMLOutputController:c];
+		[SPBundleManager.shared addHTMLOutputController:c];
 		return [c webView];
 	}
 	return nil;

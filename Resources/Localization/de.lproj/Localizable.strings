@@ -1387,7 +1387,7 @@
 "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Dateien mit denselben Namen im Zielordner vorhanden; Ersetzen überschreibt die bestehenden Inhalte.";
 
 /* filter label */
-"Filter" = "Filter";
+"Filter" = "Filtern";
 
 /* filter tables menu item */
 "Filter Tables" = "Tabellen filtern";
@@ -1515,7 +1515,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Ignore Field" = "Feld übergehen";
 
 /* import button */
-"Import" = "Import";
+"Import" = "Importieren";
 
 /* import all fields menu item */
 "Import all Fields" = "Alle Felder importieren";
@@ -1884,7 +1884,7 @@ Befehle werden anwendungsweit ausgeführt";
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
-"OK" = "OK";
+"OK" = "Okay";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
 "One additional row was removed!" = "Eine zusätzliche Zeile wurde entfernt!";
@@ -2327,7 +2327,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace findet keine Spalten zu diesem Index. Eventuell wurden sie bereits entfernt?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace unterstützt nur die in macOS ausgelieferten OpenSSH Versionen. Andere SSH-Programme können Verbindungsprobleme verursachen, Sicherheitsrisiken darstellen oder fehlerhaft sein.\n\nLeider kann für andere SSH Programme kein Support angeboten werden.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Sequelace URL Schema-Befehl wird nicht unterstützt.";

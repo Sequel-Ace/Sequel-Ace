@@ -1,3 +1,69 @@
+## [3.4.4]
+
+### Added
+
+
+### Fixed
+- f8ae57d1,  Fixed spreadsheet edit mode not honoring the cutoff length setting and add an option to edit multiline content in popup editor
+- 5a65d157,  Fixed JSON viewer UI bugs and occasional failures to parse
+- 4bd96b9f,  Fix user editing crash
+- 00fa40e9,  Show time in addition to date for table created and updated at dates
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [3.4.3]
+
+### Added
+
+
+### Fixed
+- 3c313175,  #979 Properly reset the sorting column
+- 864b9cb1, Show tab color on the first tab after it's expanded  #1216
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+- 58e233e7, Attempt app center fixes for Xcode Cloud 
+- c6695f62,  More bundle execution refactoring
+- 671eb8d6,  Extract duplicate bundle dispatch logic
+- 5c49df6a,  Clean up bundle loading
+
+## [3.4.2]
+
+### Added
+- 4b298830, #fixed Shortcut to show/hide toolbar.  Shortcut to duplicate connection in new tab.
+
+### Fixed
+- c7594584, Add new line only when adding to existing queries 
+- 5ba8e135, Make Preferences elements consistent #2 
+- 904f9240, Reload query history after new entries are added 
+- 72f4d43d, Favorite and placeholder display bug in query editor fixed 
+- 88fb0a7d, Make Preferences elements consistent 
+- f9fa6430, Fix crash when adding a row locally 
+- 0f03c3a6, Allow Updating in Joined Instances 
+- c44118ff, Remove redundant rawErrorText parameter 
+- 4b298830,  Shortcut to show/hide toolbar. #added Shortcut to duplicate connection in new tab.
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [3.4.1]
 
 ### Added

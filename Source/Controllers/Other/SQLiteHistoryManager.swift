@@ -320,6 +320,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
         }
         getDBsize()
         queue.close()
+        reloadQueryHistory()
     }
 
     /// Deletes all query history from the db
