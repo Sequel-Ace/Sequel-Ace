@@ -1059,13 +1059,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableMenuItem3 setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open View in New Tab", @"open view in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open View in New Window", @"Tables List : Gear Menu : Duplicate connection to new window")];
+        NSString * pinViewLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin View" : @"Pin View", @"pin view menu item title");
 		[pinTableMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Unpin View", @"pin view menu item title")];
-        }
-        else {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Pin View", @"pin view menu item title")];
-        }
+        [pinTableMenuItem setTitle:pinViewLocalizedString];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create View Syntax...", @"show create view syntax menu item")];
 		[copyCreateSyntaxMenuItem setHidden:NO];
@@ -1083,12 +1079,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open View in New Tab", @"open view in new tab title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open View in New Window", @"Tables List : Context Menu : Duplicate connection to new window")];
 		[pinTableContextMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Unpin View", @"pin view menu item title")];
-        }
-        else {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Pin View", @"pin view menu item title")];
-        }
+        [pinTableContextMenuItem setTitle:pinViewLocalizedString];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create View Syntax...", @"show create view syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1123,13 +1114,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowMenuItem setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Table in New Tab", @"open table in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Table in New Window", @"Table List : Gear Menu : Duplicate connection to new window")];
+        NSString * pinTableLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Table" : @"Pin Table", @"pin table menu item title");
 		[pinTableMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Unpin Table", @"pin view menu item title")];
-        }
-        else {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Pin Table", @"pin view menu item title")];
-        }
+        [pinTableMenuItem setTitle:pinTableLocalizedString];
 		[separatorTableMenuItem3 setHidden:NO];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Table Syntax...", @"show create table syntax menu item")];
@@ -1149,12 +1136,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Table in New Tab", @"open table in new tab title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Table in New Window", @"Table List : Context Menu : Duplicate connection to new window")];
         [pinTableContextMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Unpin Table", @"pin view menu item title")];
-        }
-        else {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Pin Table", @"pin view menu item title")];
-        }
+        [pinTableContextMenuItem setTitle:pinTableLocalizedString];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Table Syntax...", @"show create table syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1182,13 +1164,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowMenuItem setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Tab", @"open procedure in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Window", @"Table List : Gear Menu : duplicate connection to new window")];
+        NSString * pinProcedureLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Procedure" : @"Pin Procedure", @"pin procedure menu item title");
         [pinTableMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Unpin Procedure", @"pin view menu item title")];
-        }
-        else {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Pin Procedure", @"pin view menu item title")];
-        }
+        [pinTableMenuItem setTitle:pinProcedureLocalizedString];
 		[separatorTableMenuItem3 setHidden:NO];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Procedure Syntax...", @"show create proc syntax menu item")];
@@ -1204,12 +1182,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewTabContextMenuItem setHidden:NO];
 		[openTableInNewWindowContextMenuItem setHidden:NO];
         [pinTableContextMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Unpin Procedure", @"pin view menu item title")];
-        }
-        else {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Pin Procedure", @"pin view menu item title")];
-        }
+        [pinTableContextMenuItem setTitle:pinProcedureLocalizedString];
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Tab", @"open procedure in new table title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Window", @"Table List : Context Menu : duplicate connection to new window")];
@@ -1241,13 +1214,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableMenuItem3 setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Function in New Tab", @"open function in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Function in New Window", @"Table List : Gear Menu : duplicate connection to new window")];
+        NSString * pinFunctionLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Function" : @"Pin Function", @"pin function menu item title");
         [pinTableMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Unpin Function", @"pin view menu item title")];
-        }
-        else {
-            [pinTableMenuItem setTitle:NSLocalizedString(@"Pin Function", @"pin view menu item title")];
-        }
+        [pinTableMenuItem setTitle:pinFunctionLocalizedString];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Function Syntax...", @"show create func syntax menu item")];
 		[copyCreateSyntaxMenuItem setHidden:NO];
@@ -1265,12 +1234,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Function in New Tab", @"open function in new table title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Function in New Window", @"Table List : Context Menu : duplicate connection to new window")];
         [pinTableContextMenuItem setHidden:NO];
-        if (isCurrentSelectionPinned) {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Unpin Function", @"pin view menu item title")];
-        }
-        else {
-            [pinTableContextMenuItem setTitle:NSLocalizedString(@"Pin Function", @"pin view menu item title")];
-        }
+        [pinTableContextMenuItem setTitle:pinFunctionLocalizedString];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Function Syntax...", @"show create func syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -2115,7 +2079,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
             NSUInteger index = [tables indexOfObject:tableName];
             [tables removeObjectAtIndex:index];
             [tableTypes removeObjectAtIndex:index];
-            [tablesListView reloadData];
+            [tablesListView reloadData]; //  TODO : Maintain proper selection data
         }
     }
     else {
