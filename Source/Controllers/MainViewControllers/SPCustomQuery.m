@@ -418,7 +418,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [textView breakUndoCoalescing];
             NSString *historyString = [[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:currentHistoryOffsetIndex];
             NSRange rangeOfInsertedString = NSMakeRange([textView selectedRange].location, [historyString length]);
-            [textView appendString:historyString];
+            [textView insertString:historyString intoRange:textView.selectedRange];
             [textView setSelectedRange:rangeOfInsertedString];
         } else {
             currentHistoryOffsetIndex--;
@@ -435,7 +435,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [textView breakUndoCoalescing];
             NSString *historyString = [[[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] objectAtIndex:currentHistoryOffsetIndex];
             NSRange rangeOfInsertedString = NSMakeRange([textView selectedRange].location, [historyString length]);
-            [textView appendString:historyString];
+            [textView insertString:historyString intoRange:textView.selectedRange];
             [textView setSelectedRange:rangeOfInsertedString];
         } else {
             currentHistoryOffsetIndex++;
@@ -1350,7 +1350,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     }
     
     // Replace current query/selection by (un)commented string
-    [textView insertText:[[NSAttributedString alloc] initWithString:n] replacementRange:workingRange];
+    [textView insertString:n intoRange:workingRange];
     [textView setSelectedRange:NSMakeRange(workingRange.location, n.length)];
 }
 
@@ -1411,7 +1411,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Replace current line by (un)commented string
         // The caret will be placed at the beginning of the next line if present to
         // allow a fast (un)commenting of lines
-        [textView insertText:[[NSAttributedString alloc] initWithString:n] replacementRange:lineRange];
+        [textView insertString:n intoRange:lineRange];
         [textView setSelectedRange:NSMakeRange(MAX(0, oldRange.location + offsetForPointer),0)];
     }
 }
