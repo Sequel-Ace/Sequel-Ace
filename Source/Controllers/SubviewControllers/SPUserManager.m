@@ -1251,7 +1251,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
         //And if all else fails tell the user nope
         if ([connection queryErrored]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"mysql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"Resource Limits are not supported for your version of MySQL (%@)", @"mysql error occurred informative message"), [connection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"mysql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"Resource Limits are not supported for your version of MySQL. MySQL said: %@", @"mysql resource limits unsupported message"), [connection lastErrorMessage]] callback:nil];
         }
     }
 	
