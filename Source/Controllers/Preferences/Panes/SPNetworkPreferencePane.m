@@ -311,7 +311,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 continue;
             }
             NSString *itemTitle = [key substringFromIndex:len];
-            [button safeAddItemWithTitle:itemTitle];
+            [button safeAddItemWithTitle:[itemTitle stringByRemovingPercentEncoding]];
             count++;
         }
 	}];
@@ -342,7 +342,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 [prefs setObject:[[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""] forKey:SPSSHConfigFile];
             }
 
-            [button selectItemWithTitle:currentConfig];
+            [button selectItemWithTitle:[currentConfig stringByRemovingPercentEncoding]];
         }
     }
     // knownHostsChooser button tagged with @1 in IB
@@ -359,7 +359,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 currentConfig = @"Sequel Ace default";
             }
 
-            [button selectItemWithTitle:currentConfig];
+            [button selectItemWithTitle:[currentConfig stringByRemovingPercentEncoding]];
 
             if([currentConfig isEqualToString:NSLocalizedString(@"Use known hosts from ssh config (ADVANCED)", @"Use known hosts from ssh config (ADVANCED)")]){
                 BOOL ret = [self checkSSHConfigFileForUserKnownHostsFile:[prefs stringForKey:SPSSHConfigFile]];

@@ -2036,8 +2036,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[mySQLConnection setUseSocket:YES];
 			[mySQLConnection setSocketPath:[self socket]];
 
-			// Otherwise, initialise to host, using tunnel if appropriate
+
 		}
+        // Initiate SSH tunnel to host if appropriate.
+        else if ([self type] == SPSSHTunnelConnection) {
+            [mySQLConnection setUseSocket:NO];
+
+            [mySQLConnection setHost:SPLocalhostAddress];
+            [mySQLConnection setPort:[sshTunnel localPort]];
+            [mySQLConnection setProxy:sshTunnel];
+        }
+        // Otherwise, connect directly to the host
 		else {
 			[mySQLConnection setUseSocket:NO];
 
@@ -2051,10 +2060,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 [mySQLConnection setPort:[[self port] integerValue]];
             }
 
-			if ([self type] == SPSSHTunnelConnection) {
-				[mySQLConnection setPort:[sshTunnel localPort]];
-				[mySQLConnection setProxy:sshTunnel];
-			}
+
 		}
 
 		if ([self password] == nil) {
