@@ -2282,7 +2282,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
-    [userManagerInstance beginSheetModalForWindow:[self.parentWindowController window] completionHandler:^(){ }];
+    [userManagerInstance beginSheetModalForWindow:[self.parentWindowController window] completionHandler:^(){
+        //Release the UserManager instance after completion
+        self->userManagerInstance = nil;
+    }];
 }
 
 /**
