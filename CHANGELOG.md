@@ -1,3 +1,23 @@
+## [3.4.5]
+
+### Added
+
+
+### Fixed
+- 8b89abd0,  Fix ssh connections broken by latest beta
+- 3ea8b8c4,  Undo/Redo in Query Editor
+- dbfc1369,  Add Find Next/Previous Menu Items with Shortcuts
+
+### Changed
+- 285a4f69,  Handle special characters in bookmark file names and paths
+- 06794a4c,  - Remove GeneratedColumn from 'Copy as SQL Insert' #1282
+
+### Removed
+
+
+### Infra
+
+
 ## [3.4.4]
 
 ### Added
