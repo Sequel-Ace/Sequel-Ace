@@ -123,7 +123,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 {
 	prefs = [NSUserDefaults standardUserDefaults];
 	[self setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
-//    SPLog(@"FONT BYTES -  %@", [NSString rawByteStringWithData:[prefs dataForKey:SPCustomQueryEditorFont]]);
 
 	// Set self as delegate for the textView's textStorage to enable syntax highlighting,
 	[[self textStorage] setDelegate:self];
