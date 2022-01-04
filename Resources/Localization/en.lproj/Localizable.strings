@@ -3330,16 +3330,16 @@
 /* Menu option to pin a function to the top of the list of tables */
 "Pin Function" = "Pin Function";
 
-/* Menu option to unpin a view which is cuurently pinned at the top of the list of tables */
+/* Menu option to unpin a view which is currently pinned at the top of the list of tables */
 "Unpin View" = "Unpin View";
 
-/* Menu option to unpin a table which is cuurently pinned at the top of the list of tables */
+/* Menu option to unpin a table which is currently pinned at the top of the list of tables */
 "Unpin Table" = "Unpin Table";
 
-/* Menu option to unpin a procedure which is cuurently pinned at the top of the list of tables */
+/* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
 "Unpin Procedure" = "Unpin Procedure";
 
-/* Menu option to unpin a function which is cuurently pinned at the top of the list of tables */
+/* Menu option to unpin a function which is currently pinned at the top of the list of tables */
 "Unpin Function" = "Unpin Function";
 
 /* header for pinned table list */
