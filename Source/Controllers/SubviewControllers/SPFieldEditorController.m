@@ -295,7 +295,7 @@ typedef enum {
 		NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont systemFontSize]];
 		// Based on user preferences, either use:
 		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
-		// 2. The font used for the tablew view (GlobalResultTableFont, per the "MySQL Content Font" preference option);
+		// 2. The font used for the table view (SPGlobalFontSettings, per the "MySQL Content Font" preference option);
 		if ([prefs objectForKey:SPFieldEditorSheetFont]) {
 			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
 		} else if ([prefs objectForKey:SPGlobalFontSettings]) {

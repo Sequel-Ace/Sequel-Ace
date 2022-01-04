@@ -134,14 +134,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Register application defaults
     [prefs registerDefaults:preferenceDefaults];
 
-    if ([prefs objectForKey:@"GlobalResultTableFont"]) {
-        NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"GlobalResultTableFont"]];
-        if (tableFont) {
-            [NSUserDefaults saveFont:tableFont];
-        }
-        [prefs removeObjectForKey:@"GlobalResultTableFont"];
-    }
-
     // Upgrade prefs before any other parts of the app pick up on the values
     SPApplyRevisionChanges();
 }
