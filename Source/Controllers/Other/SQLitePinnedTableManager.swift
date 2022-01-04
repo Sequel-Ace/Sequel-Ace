@@ -12,7 +12,7 @@ import OSLog
 
     @objc static let sharedInstance = SQLitePinnedTableManager()
     @objc private var queue: FMDatabaseQueue
-    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "queryDatabase")
+    private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "pinnedTablesDatabase")
     private let prefs: UserDefaults = UserDefaults.standard
     private var traceExecution: Bool
     private var newSchemaVersion: Int32 = 0

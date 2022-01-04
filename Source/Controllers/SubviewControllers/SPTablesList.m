@@ -350,6 +350,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		if (selectedTableName) selectedTableName = nil;
 		selectedTableType = SPTableTypeNone;
 	}
+    
+    [self refreshPinnedTables];
 
 	// Determine whether or not to preserve the existing filter, and whether to
 	// show or hide the list filter based on the number of tables
@@ -382,7 +384,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// User press refresh button ergo force update
 		[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES, @"cancelQuerying" : @YES}];
     
-    [self refreshPinnedTables];
     [self subscribeToTablePinningNotifications];
 
 }
@@ -2030,6 +2031,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
         [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
         [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
         for (NSString *tableToPin in tablesToPin) {
+            if ([tables indexOfObject:tableToPin] == NSNotFound) {
+                continue;
+            }
             [pinnedTables addObject:tableToPin];
             SPTableType tableType = (SPTableType) [tableTypes[[tables indexOfObject:tableToPin]] integerValue];
             [tables insertObject:tableToPin atIndex:1];
@@ -2037,6 +2041,19 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
         }
     }
 }
+
+- (void)unpinDeletedTableIfPinned: (NSString*) tableName {
+
+    NSString *databaseName = [mySQLConnection database];
+    NSString *hostName = [mySQLConnection host];
+
+    if ([pinnedTables containsObject:tableName] && ![tables containsObject:tableName]) {
+        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:tableName];
+    }
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
+}
+
 
 - (void)subscribeToTablePinningNotifications {
     
@@ -2330,27 +2347,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				currentIndex = (choice == NSAlertFirstButtonReturn) ? [indexes indexLessThanIndex:currentIndex] : NSNotFound;
 			}
 		}
+        // Remove the table from pinned tables list if its pinned
+        [self unpinDeletedTableIfPinned:objectIdentifier];
 	}
 	
 	if (force) {
 		[mySQLConnection queryString:@"SET FOREIGN_KEY_CHECKS = 1"];
 	}
 
-	// Remove the isolated 'current selection' item for filtered lists if appropriate
-	if (isTableListFiltered && 
-		[filteredTables count] > 1 && 
-		[[filteredTableTypes objectAtIndex:[filteredTableTypes count] - 1] integerValue] == SPTableTypeNone && 
-		[[filteredTables objectAtIndex:[filteredTables count] - 1] isEqualToString:NSLocalizedString(@"CURRENT SELECTION",@"header for current selection in filtered list")])
-	{
-		[filteredTables removeLastObject];
-		[filteredTableTypes removeLastObject];
-	}
-
-	// TODO : Remove the pinned item if appropriate
-
-	[tablesListView reloadData];
-
-	[self deselectAllTables];
+    [self updateTables:self]; // do full refresh
 
 	[tableDocumentInstance updateWindowTitle:self];
 
@@ -2467,6 +2472,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 			// Table creation was successful - insert the new item into the tables list and select it.
 			NSInteger addItemAtIndex = NSNotFound;
+            
+            [self removePinnedTablesSection];
 
 			for (NSUInteger i = 0; i < [tables count]; i++)
 			{
@@ -2492,6 +2499,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tables insertObject:tableName atIndex:addItemAtIndex];
 				[tableTypes insertObject:[NSNumber numberWithInteger:SPTableTypeTable] atIndex:addItemAtIndex];
 			}
+            
+            [self initPinnedTables];
 
 			// Set the selected table name and type, and then update the filter list and the
 			// selection.
