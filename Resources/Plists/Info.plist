@@ -330,6 +330,8 @@
 	</array>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
+	<key>ATSApplicationFontsPath</key>
+	<string>Fonts</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

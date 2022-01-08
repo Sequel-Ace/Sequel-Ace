@@ -31,6 +31,10 @@ extension String {
         }
     }
 
+    static func rawByteString(_ data: Data) -> String {
+        return data.map { String(format: "%02x", $0) }.joined().uppercased()
+    }
+
 
     func dropPrefix(_ prefix: String) -> String {
 		guard self.hasPrefix(prefix) else {
@@ -197,6 +201,10 @@ extension String {
 }
 
 @objc extension NSString {
+    static func rawByteString(data: NSData) -> NSString {
+        return String.rawByteString(data as Data) as NSString
+    }
+
 	public func dropPrefix(prefix: NSString) -> NSString {
 		return (self as String).dropPrefix(prefix as String) as NSString
 	}
