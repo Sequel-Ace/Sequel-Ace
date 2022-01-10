@@ -375,6 +375,7 @@
 		8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFC6224016E000D10172 /* button_edit_modeTemplate.pdf */; };
 		8831EFCD2240175400D10172 /* button_actionTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFCB2240175300D10172 /* button_actionTemplate.pdf */; };
 		8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */; };
+		8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		964908C8249A77D00052FC4A /* ssh_config in Resources */ = {isa = PBXBuildFile; fileRef = 964908C4249A77CF0052FC4A /* ssh_config */; };
 		9651262224926F1200E65B53 /* QueryKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; };
@@ -447,6 +448,7 @@
 		C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */; };
 		C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */; };
 		D35577F52728C6CF002B3989 /* SPWindowTabAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */; };
+		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1063,6 +1065,7 @@
 		8831EFC6224016E000D10172 /* button_edit_modeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_edit_modeTemplate.pdf; sourceTree = "<group>"; };
 		8831EFCB2240175300D10172 /* button_actionTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_actionTemplate.pdf; sourceTree = "<group>"; };
 		8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_paginationTemplate.pdf; sourceTree = "<group>"; };
+		8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelper.swift; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; usesTabs = 0; };
@@ -1614,6 +1617,7 @@
 				17E641550EF01EF6001BC333 /* SPTableStructure.m */,
 				17D38F6E1279E23A00672B13 /* SPTableFieldValidation.h */,
 				17D38F6F1279E23A00672B13 /* SPTableFieldValidation.m */,
+				8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */,
 			);
 			name = "Table Structure";
 			path = TableStructure;
@@ -2822,6 +2826,7 @@
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
+				FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
 				1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */,
 				51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */,
@@ -3076,6 +3081,7 @@
 				9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */,
 				9BE76F2B943AFDBA6EDC52BE /* SPHelpViewerController.m in Sources */,
 				9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */,
+				8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
