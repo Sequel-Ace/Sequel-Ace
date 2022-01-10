@@ -115,6 +115,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (void)_removeFieldAndForeignKey:(NSNumber *)removeForeignKey;
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
 - (BOOL)filterFieldsWithString:(NSString *)filterString;
+- (BOOL)sort:(NSMutableArray *)data withDescriptor:(NSSortDescriptor *)descriptor;
 
 #pragma mark - SPTableStructureDelegate
 
@@ -143,6 +144,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		isCurrentExtraAutoIncrement = NO;
 		autoIncrementIndex = nil;
 		filteredTableFields = nil;
+		fieldsSortHelper = nil;
 
 		fieldValidation = [[SPTableFieldValidation alloc] init];
 		
@@ -154,6 +156,20 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)awakeFromNib
 {
+	NSComparisonResult (^numCompare)(NSString *, NSString *) = ^NSComparisonResult(NSString *lhs, NSString *rhs) {
+		return [@([lhs integerValue]) compare: @([rhs integerValue])];
+	};
+	fieldsSortHelper = [[TableSortHelper alloc] initWithTableView:tableSourceView andDescriptors:@[
+		[NSSortDescriptor sortDescriptorWithKey: @"datacolumnindex" ascending: YES comparator: numCompare], // default order
+		[NSSortDescriptor sortDescriptorWithKey: @"name" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"type" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"length" ascending: YES comparator: numCompare],
+		[NSSortDescriptor sortDescriptorWithKey: @"Key" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"default" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"Extra" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"comment" ascending: YES selector: @selector(compare:)]
+	]];
+
 	// Set the structure and index view's vertical gridlines if required
 	[tableSourceView setGridStyleMask:[prefs boolForKey:SPDisplayTableViewVerticalGridlines] ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	[indexesTableView setGridStyleMask:[prefs boolForKey:SPDisplayTableViewVerticalGridlines] ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
@@ -1650,6 +1666,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[addFieldButton setEnabled:editingEnabled];
 	[addIndexButton setEnabled:editingEnabled && ![[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"]];
 
+	// sort then filter fields before reloading table view
+	[tableFields sortUsingDescriptors: [tableSourceView sortDescriptors]];
+	[self sort: tableFields withDescriptor: [fieldsSortHelper currentSortDescriptor]];
 	[self filterFieldsWithString:filterSearchField.stringValue];
 
 	// Reload the views
@@ -2180,6 +2199,23 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[aCell setEnabled:YES];
 		}
 	}
+}
+
+- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn
+{
+	if ([self sort:[self activeFieldsSource] withDescriptor:[fieldsSortHelper sortDescriptorForClickOn:tableView column:tableColumn]]) {
+		[tableView reloadData];
+	}
+}
+
+- (BOOL)sort:(NSMutableArray *)arr withDescriptor:(NSSortDescriptor *)descriptor
+{
+	if (descriptor)
+	{
+		[arr sortUsingDescriptors:@[descriptor]];
+		return YES;
+	}
+	return NO;
 }
 
 #pragma mark -
