@@ -87,6 +87,7 @@
 	IBOutlet SPTableView* indexesTableView;
 	IBOutlet NSSplitView *tablesIndexesSplitView;
 	IBOutlet NSButton *indexesShowButton;
+    IBOutlet NSSearchField *filterSearchField;
 
 	IBOutlet id viewColumnsMenu;
 	IBOutlet NSPopUpButtonCell *encodingPopupCell;
@@ -96,7 +97,7 @@
 	SPTableFieldValidation *fieldValidation;
 
 	NSString *selectedTable;
-	NSMutableArray *tableFields;
+	NSMutableArray *tableFields, *filteredTableFields;
 	NSMutableDictionary *oldRow, *enumFields;
 	NSDictionary *defaultValues;
 	NSInteger currentlyEditingRow;
@@ -137,6 +138,7 @@
 - (NSArray *)fieldNames;
 - (NSDictionary *)enumFields;
 - (NSDictionary *)tableSourceForPrinting;
+- (NSMutableArray *)activeFieldsSource;
 
 // Task interaction
 - (void)startDocumentTaskForTab:(NSNotification *)aNotification;
@@ -152,5 +154,6 @@
 - (void)loadTable:(NSString *)aTable;
 - (IBAction)reloadTable:(id)sender;
 - (void)setTableDetails:(NSDictionary *)tableDetails;
+- (IBAction)filterChanged:(NSSearchField *)sender;
 
 @end
