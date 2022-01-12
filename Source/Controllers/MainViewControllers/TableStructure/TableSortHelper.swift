@@ -30,7 +30,7 @@ import AppKit
 /// Helper class to maintain the sort state changes of a Table View.
 /// - Important: Sorting with `NSSortDescriptors` uses `Key-Value Coding` so the data
 ///   field names must match the `descriptor.key` as well as the `column.identifier`.
-@objc class TableSortHelper: NSObject {
+@objc final class TableSortHelper: NSObject {
     let descriptors: [NSSortDescriptor]
     let tableView: NSTableView
     private(set) var currentColumn: NSTableColumn?
@@ -38,9 +38,10 @@ import AppKit
 
     enum SortOrder { case ascending, descending, `default` }
 
-    @objc init(tableView: NSTableView, andDescriptors descriptors: [NSSortDescriptor]) {
+    @objc init(tableView: NSTableView, descriptors: [NSSortDescriptor]) {
         self.descriptors = descriptors
         self.tableView = tableView
+        super.init()
     }
     
     /// Updates sort indicators on column  and prepares sort descriptor.
@@ -66,21 +67,21 @@ import AppKit
 
     /// - Important: if handling a `click` event, call  `sortDescriptorsForClick:tableView:newColumn:` instead!
     @objc func currentSortDescriptor() -> NSSortDescriptor? {
-        if let column = currentColumn {
-            guard let desc = descriptors.first(where: { $0.key == column.identifier.rawValue }) else {
-                return nil
-            }
-
-            // if descriptor order matches return as is
-            if currentOrder == .ascending && desc.ascending || currentOrder == .descending && !desc.ascending {
-                return desc
-            }
-            else {
-                // sort descriptor order doesn't match so we need to reverse it.
-                return desc.reversedSortDescriptor as? NSSortDescriptor
-            }
+        guard let column = currentColumn else {
+            return descriptors.first
         }
-        return descriptors.first
+
+        guard let desc = descriptors.first(where: { $0.key == column.identifier.rawValue }) else {
+            return nil
+        }
+
+        // if descriptor order matches return as is
+        if currentOrder == .ascending && desc.ascending || currentOrder == .descending && !desc.ascending {
+            return desc
+        }
+
+        // sort descriptor order doesn't match so we need to reverse it.
+        return desc.reversedSortDescriptor as? NSSortDescriptor
     }
 
     private func updateColumnState(_ column: NSTableColumn, _ order: SortOrder) {
@@ -101,17 +102,17 @@ import AppKit
  extension TableSortHelper.SortOrder {
     var next: TableSortHelper.SortOrder {
         switch self {
-        case .ascending : return .descending
-        case .descending: return .default
-        case .default   : return .ascending
+            case .ascending : return .descending
+            case .descending: return .default
+            case .default   : return .ascending
         }
     }
 
     var indicatorImage: NSImage? {
         switch self {
-        case .ascending : return NSImage(named: "NSAscendingSortIndicator")
-        case .descending: return NSImage(named: "NSDescendingSortIndicator")
-        case .default   : return nil
+            case .ascending : return NSImage(named: "NSAscendingSortIndicator")
+            case .descending: return NSImage(named: "NSDescendingSortIndicator")
+            case .default   : return nil
         }
     }
 }

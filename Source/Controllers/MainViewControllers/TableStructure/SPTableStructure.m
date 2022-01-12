@@ -159,7 +159,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSComparisonResult (^numCompare)(NSString *, NSString *) = ^NSComparisonResult(NSString *lhs, NSString *rhs) {
 		return [@([lhs integerValue]) compare: @([rhs integerValue])];
 	};
-	fieldsSortHelper = [[TableSortHelper alloc] initWithTableView:tableSourceView andDescriptors:@[
+	fieldsSortHelper = [[TableSortHelper alloc] initWithTableView:tableSourceView descriptors:@[
 		[NSSortDescriptor sortDescriptorWithKey: @"datacolumnindex" ascending: YES comparator: numCompare], // default order
 		[NSSortDescriptor sortDescriptorWithKey: @"name" ascending: YES selector: @selector(compare:)],
 		[NSSortDescriptor sortDescriptorWithKey: @"type" ascending: YES selector: @selector(compare:)],

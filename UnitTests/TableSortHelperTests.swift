@@ -188,7 +188,7 @@ private class TableSortHelperTests: XCTestCase {
     }
 
     private static func buildTestHelper(with table: NSTableView) -> TableSortHelper {
-        TableSortHelper(tableView: table, andDescriptors: [
+        TableSortHelper(tableView: table, descriptors: [
             // default order at index 0:
             NSSortDescriptor(key: "col1", ascending: true) { (a, b) -> ComparisonResult in
                 guard let a = a as? String, let b = b as? String else { fatalError() }
