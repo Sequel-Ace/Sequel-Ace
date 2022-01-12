@@ -2772,8 +2772,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (IBAction)filterChanged:(NSSearchField *)sender
 {
-	if (sender == filterSearchField && [self filterFieldsWithString:sender.stringValue])
+	if (sender == filterSearchField && [self filterFieldsWithString:sender.stringValue]) {
 		[tableSourceView reloadData];
+	}
 }
 
 - (BOOL)filterFieldsWithString:(NSString *)filterString
