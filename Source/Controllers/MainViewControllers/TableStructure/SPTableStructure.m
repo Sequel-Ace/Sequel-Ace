@@ -107,8 +107,7 @@ struct _cmpMap {
  */
 static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntries);
 
-@interface SPTableStructure ()
-{
+@interface SPTableStructure () {
 	TableSortHelper *fieldsSortHelper;
 }
 
@@ -1207,8 +1206,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	return [NSDictionary dictionaryWithObjectsAndKeys:tempResult, @"structure", tempResult2, @"indexes", nil];
 }
 
-- (NSMutableArray *)activeFieldsSource
-{
+- (NSMutableArray *)activeFieldsSource {
 	return filteredTableFields == nil ? tableFields : filteredTableFields;
 }
 
@@ -2201,17 +2199,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 }
 
-- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn
-{
+- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn {
 	if ([self sort:[self activeFieldsSource] withDescriptor:[fieldsSortHelper sortDescriptorForClickOn:tableView column:tableColumn]]) {
 		[tableView reloadData];
 	}
 }
 
-- (BOOL)sort:(NSMutableArray *)arr withDescriptor:(NSSortDescriptor *)descriptor
-{
-	if (descriptor)
-	{
+- (BOOL)sort:(NSMutableArray *)arr withDescriptor:(NSSortDescriptor *)descriptor {
+	if (descriptor) {
 		[arr sortUsingDescriptors:@[descriptor]];
 		return YES;
 	}
@@ -2770,20 +2765,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	return nil;
 }
 
-- (IBAction)filterChanged:(NSSearchField *)sender
-{
+- (IBAction)filterChanged:(NSSearchField *)sender {
 	if (sender == filterSearchField && [self filterFieldsWithString:sender.stringValue]) {
 		[tableSourceView reloadData];
 	}
 }
 
-- (BOOL)filterFieldsWithString:(NSString *)filterString
-{
-	if (selectedTable)
-	{
+- (BOOL)filterFieldsWithString:(NSString *)filterString {
+	if (selectedTable) {
 		NSString *search = [filterString.lowercaseString stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceCharacterSet]];
-		if (search.length == 0 && filteredTableFields != nil)
-		{
+		if (search.length == 0 && filteredTableFields != nil) {
 			// clear the filter and reload
 			filteredTableFields = nil;
 			return YES;
@@ -2791,21 +2782,17 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 		// start new filter
 		NSUInteger fieldCount = tableFields.count;
-		if (search.length > 0 && fieldCount > 0)
-		{
+		if (search.length > 0 && fieldCount > 0) {
 			NSMutableArray *filteredFields = [[NSMutableArray alloc] initWithCapacity: fieldCount];
-			for (NSDictionary *entry in tableFields)
-			{
+			for (NSDictionary *entry in tableFields) {
 				NSString *value = entry[@"name"];
-				if ([value.lowercaseString contains: search])
-				{
+				if ([value.lowercaseString contains: search]) {
 					[filteredFields addObject: entry];
 					NSLog(@"%@", entry);
 				}
 			}
 
-			if (filteredFields.count < fieldCount)
-			{
+			if (filteredFields.count < fieldCount) {
 				filteredTableFields = filteredFields;
 				return YES;
 			}
