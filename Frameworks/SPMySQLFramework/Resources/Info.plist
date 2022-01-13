@@ -13,7 +13,7 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.4.5</string>
+	<string>3.4.6</string>
 	<key>CFBundleSignature</key>
 	<string>SPDT</string>
 	<key>CFBundleSupportedPlatforms</key>
