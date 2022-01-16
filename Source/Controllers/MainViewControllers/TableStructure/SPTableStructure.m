@@ -158,16 +158,23 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSComparisonResult (^numCompare)(NSString *, NSString *) = ^NSComparisonResult(NSString *lhs, NSString *rhs) {
 		return [@([lhs integerValue]) compare: @([rhs integerValue])];
 	};
+    
 	fieldsSortHelper = [[TableSortHelper alloc] initWithTableView:tableSourceView descriptors:@[
 		[NSSortDescriptor sortDescriptorWithKey: @"datacolumnindex" ascending: YES comparator: numCompare], // default order
 		[NSSortDescriptor sortDescriptorWithKey: @"name" ascending: YES selector: @selector(compare:)],
 		[NSSortDescriptor sortDescriptorWithKey: @"type" ascending: YES selector: @selector(compare:)],
 		[NSSortDescriptor sortDescriptorWithKey: @"length" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"unsigned" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"zerofill" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"binary" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"null" ascending: YES comparator: numCompare],
 		[NSSortDescriptor sortDescriptorWithKey: @"Key" ascending: YES selector: @selector(compare:)],
 		[NSSortDescriptor sortDescriptorWithKey: @"default" ascending: YES selector: @selector(compare:)],
 		[NSSortDescriptor sortDescriptorWithKey: @"Extra" ascending: YES selector: @selector(compare:)],
-		[NSSortDescriptor sortDescriptorWithKey: @"comment" ascending: YES selector: @selector(compare:)]
-	]];
+		[NSSortDescriptor sortDescriptorWithKey: @"comment" ascending: YES selector: @selector(compare:)],
+        [NSSortDescriptor sortDescriptorWithKey: @"encodingName" ascending: YES selector: @selector(compare:)],
+        [NSSortDescriptor sortDescriptorWithKey: @"collationName" ascending: YES selector: @selector(compare:)]
+    ] aliases:@{ @"collation": @"collationName", @"encoding": @"encodingName" }];
 
 	// Set the structure and index view's vertical gridlines if required
 	[tableSourceView setGridStyleMask:[prefs boolForKey:SPDisplayTableViewVerticalGridlines] ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];

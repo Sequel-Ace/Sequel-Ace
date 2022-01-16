@@ -203,7 +203,7 @@ private class TableSortHelperTests: XCTestCase {
                 return a == b ? .orderedSame : (a < b) ? .orderedAscending : .orderedDescending
             },
             // Do Descriptor for col4 is intentional.
-        ])
+        ], aliases: [String : String]())
     }
 
 }
