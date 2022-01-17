@@ -32,15 +32,17 @@ import AppKit
 ///   field names must match the `descriptor.key` as well as the `column.identifier`.
 @objc final class TableSortHelper: NSObject {
     let descriptors: [NSSortDescriptor]
+    let aliases: [String: String]
     let tableView: NSTableView
     private(set) var currentColumn: NSTableColumn?
     private(set) var currentOrder: SortOrder = .default
 
     enum SortOrder { case ascending, descending, `default` }
 
-    @objc init(tableView: NSTableView, descriptors: [NSSortDescriptor]) {
+    @objc init(tableView: NSTableView, descriptors: [NSSortDescriptor], aliases: [String: String]) {
         self.descriptors = descriptors
         self.tableView = tableView
+        self.aliases = aliases
         super.init()
     }
     
@@ -71,7 +73,8 @@ import AppKit
             return descriptors.first
         }
 
-        guard let desc = descriptors.first(where: { $0.key == column.identifier.rawValue }) else {
+            let alias = self.aliases[column.identifier.rawValue]
+        guard let desc = descriptors.first(where: { $0.key == column.identifier.rawValue || (alias != nil && $0.key == alias) }) else {
             return nil
         }
 
@@ -95,7 +98,8 @@ import AppKit
     }
 
     private func canSort(_ column: NSTableColumn) -> Bool {
-        column === currentColumn || descriptors.contains(where: { $0.key == column.identifier.rawValue })
+        let alias = self.aliases[column.identifier.rawValue]
+        return column === currentColumn || descriptors.contains(where: { $0.key == column.identifier.rawValue || (alias != nil && $0.key == alias) })
     }
 }
 
