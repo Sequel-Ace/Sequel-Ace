@@ -891,6 +891,47 @@ set_input:
 }
 
 /**
+ * Allow clicking the table columns to toggle all tables for that type of export
+ */
+- (void)tableView:(NSTableView *)tableView mouseDownInHeaderOfTableColumn:(NSTableColumn *)tableColumn {
+
+    if(exportType == SPDotExport) {
+        return;
+    }
+
+    int dataIndex = 0;
+    if ([exportSQLIncludeStructureCheck state] && [tableColumn.identifier isEqualToString: SPTableViewStructureColumnID]) {
+        //Toggle Structure
+        dataIndex = 1;
+    } else if ([exportSQLIncludeDropSyntaxCheck state] && [tableColumn.identifier isEqualToString: SPTableViewDropColumnID]) {
+        //Toggle drop table
+        dataIndex = 3;
+    } else if ([tableColumn.identifier isEqualToString: SPTableViewContentColumnID]) {
+        //Toggle drop content
+        dataIndex = 2;
+    } else {
+        return;
+    }
+
+
+    BOOL newVal = NO;
+    for (NSMutableArray *table in tables)
+    {
+        if([table safeObjectAtIndex:dataIndex] == [NSNumber numberWithBool:newVal]) {
+            newVal = !newVal;
+            break;
+        }
+    }
+
+    for (NSMutableArray *table in tables)
+    {
+        [table safeReplaceObjectAtIndex:dataIndex withObject:[NSNumber numberWithBool:newVal]];
+    }
+
+    [exportTableList reloadData];
+}
+
+/**
  * Toggles the export button when choosing to include or exclude table contents in an SQL export.
  */
 - (IBAction)toggleSQLIncludeContent:(NSButton *)sender
