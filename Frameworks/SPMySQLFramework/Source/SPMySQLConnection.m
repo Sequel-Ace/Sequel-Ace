@@ -594,8 +594,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	serverVersionNumber = mysql_get_server_version(mySQLConnection);
 
 	// Update SSL state
-	connectedWithSSL = NO;
-	if (useSSL) connectedWithSSL = (mysql_get_ssl_cipher(mySQLConnection))?YES:NO;
+	connectedWithSSL = (mysql_get_ssl_cipher(mySQLConnection))?YES:NO;
 	if (useSSL && !connectedWithSSL) {
 		if ([delegate respondsToSelector:@selector(connectionFellBackToNonSSL:)]) {
 			[delegate connectionFellBackToNonSSL:self];
@@ -755,7 +754,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			}
 			return NULL;
 		}
-	}
+    } else {
+        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_PREFERRED;
+        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
+    }
 
 	MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
 
