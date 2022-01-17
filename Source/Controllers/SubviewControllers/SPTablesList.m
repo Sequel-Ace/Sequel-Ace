@@ -1644,19 +1644,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	@try {
 		// first: update the database
 		[self _renameTableOfType:selectedTableType from:selectedTableName to:newTableName];
+        
+        // second : unpin selectedTableName and pin newTableName
+        [self handlePinnedTableRenameFrom:selectedTableName To:newTableName];
 
-		// second: update the table list
-		if (isTableListFiltered) {
-			NSInteger unfilteredIndex = [tables indexOfObject:[filteredTables objectAtIndex:rowIndex]];
-			[tables replaceObjectAtIndex:unfilteredIndex withObject:newTableName];
-		}
-		[filteredTables replaceObjectAtIndex:rowIndex withObject:newTableName];
-		selectedTableName = [[NSString alloc] initWithString:newTableName];
-
-		// if the 'table' is a view or a table, ensure data is reloaded
-		if (selectedTableType == SPTableTypeTable || selectedTableType == SPTableTypeView) {
-			[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
-		}
+		// third: do full refresh
+        [self updateTables:self];
+        
 	}
 	@catch (NSException * myException) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[myException reason] callback:nil];
@@ -2030,7 +2024,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     if (tablesToPin.count > 0) {
         [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
         [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
-        for (NSString *tableToPin in tablesToPin) {
+        NSSortDescriptor* sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO selector:@selector(localizedCompare:)];
+        NSArray* sortedPinnedTables = [tablesToPin sortedArrayUsingDescriptors:@[sortDescriptor]];
+        // sorted in descending alphabetical order because of how the data is subsequently added to tables array
+        for (NSString *tableToPin in sortedPinnedTables) {
             if ([tables indexOfObject:tableToPin] == NSNotFound) {
                 continue;
             }
@@ -2042,16 +2039,31 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     }
 }
 
+- (void)handlePinnedTableRenameFrom: (NSString*) originalTableName To: (NSString*) newTableName {
+
+    NSString *databaseName = [mySQLConnection database];
+    NSString *hostName = [mySQLConnection host];
+
+    if ([pinnedTables containsObject:originalTableName]) {
+        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:originalTableName];
+        if (![pinnedTables containsObject:newTableName]) {
+            [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:newTableName];
+        }
+        [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
+    }
+    
+}
+
 - (void)unpinDeletedTableIfPinned: (NSString*) tableName {
 
     NSString *databaseName = [mySQLConnection database];
     NSString *hostName = [mySQLConnection host];
 
-    if ([pinnedTables containsObject:tableName] && ![tables containsObject:tableName]) {
+    if ([pinnedTables containsObject:tableName]) {
         [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:tableName];
+        [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
     }
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
 }
 
 
@@ -2280,7 +2292,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	while (currentIndex != NSNotFound) {
 		NSString *objectIdentifier = @"";
-		NSString *databaseObject = [[filteredTables objectAtIndex:currentIndex] backtickQuotedString];
+        NSString *databaseObjectName = [filteredTables objectAtIndex:currentIndex];
+		NSString *databaseObject = [databaseObjectName backtickQuotedString];
 		NSInteger objectType = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
 		
 		if (objectType == SPTableTypeView) {
@@ -2348,7 +2361,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			}
 		}
         // Remove the table from pinned tables list if its pinned
-        [self unpinDeletedTableIfPinned:objectIdentifier];
+        [self unpinDeletedTableIfPinned:databaseObjectName];
 	}
 	
 	if (force) {
