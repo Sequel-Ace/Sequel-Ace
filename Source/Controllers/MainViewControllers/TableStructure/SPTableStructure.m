@@ -107,10 +107,14 @@ struct _cmpMap {
  */
 static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntries);
 
-@interface SPTableStructure ()
+@interface SPTableStructure () {
+	TableSortHelper *fieldsSortHelper;
+}
 
 - (void)_removeFieldAndForeignKey:(NSNumber *)removeForeignKey;
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
+- (BOOL)filterFieldsWithString:(NSString *)filterString;
+- (BOOL)sort:(NSMutableArray *)data withDescriptor:(NSSortDescriptor *)descriptor;
 
 #pragma mark - SPTableStructureDelegate
 
@@ -138,6 +142,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		currentlyEditingRow = -1;
 		isCurrentExtraAutoIncrement = NO;
 		autoIncrementIndex = nil;
+		filteredTableFields = nil;
+		fieldsSortHelper = nil;
 
 		fieldValidation = [[SPTableFieldValidation alloc] init];
 		
@@ -149,6 +155,27 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)awakeFromNib
 {
+	NSComparisonResult (^numCompare)(NSString *, NSString *) = ^NSComparisonResult(NSString *lhs, NSString *rhs) {
+		return [@([lhs integerValue]) compare: @([rhs integerValue])];
+	};
+    
+	fieldsSortHelper = [[TableSortHelper alloc] initWithTableView:tableSourceView descriptors:@[
+		[NSSortDescriptor sortDescriptorWithKey: @"datacolumnindex" ascending: YES comparator: numCompare], // default order
+		[NSSortDescriptor sortDescriptorWithKey: @"name" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"type" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"length" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"unsigned" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"zerofill" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"binary" ascending: YES comparator: numCompare],
+        [NSSortDescriptor sortDescriptorWithKey: @"null" ascending: YES comparator: numCompare],
+		[NSSortDescriptor sortDescriptorWithKey: @"Key" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"default" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"Extra" ascending: YES selector: @selector(compare:)],
+		[NSSortDescriptor sortDescriptorWithKey: @"comment" ascending: YES selector: @selector(compare:)],
+        [NSSortDescriptor sortDescriptorWithKey: @"encodingName" ascending: YES selector: @selector(compare:)],
+        [NSSortDescriptor sortDescriptorWithKey: @"collationName" ascending: YES selector: @selector(compare:)]
+    ] aliases:@{ @"collation": @"collationName", @"encoding": @"encodingName" }];
+
 	// Set the structure and index view's vertical gridlines if required
 	[tableSourceView setGridStyleMask:[prefs boolForKey:SPDisplayTableViewVerticalGridlines] ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	[indexesTableView setGridStyleMask:[prefs boolForKey:SPDisplayTableViewVerticalGridlines] ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
@@ -277,7 +304,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	BOOL allowNull = [[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"] ? NO : [prefs boolForKey:SPNewFieldsAllowNulls];
 	
-	[tableFields insertObject:[NSMutableDictionary
+	[[self activeFieldsSource] insertObject:[NSMutableDictionary
 							   dictionaryWithObjects:[NSArray arrayWithObjects:@"", @"INT", @"", @"0", @"0", @"0", allowNull ? @"1" : @"0", @"", [prefs stringForKey:SPNullValue], @"None", @"", nil]
 							   forKeys:@[@"name", @"type", @"length", @"unsigned", @"zerofill", @"binary", @"null", @"Key", @"default", @"Extra", @"comment"]]
 					  atIndex:insertIndex];
@@ -298,7 +325,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (IBAction)showOptimizedFieldType:(id)sender
 {
 	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)", 
-		[[[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString],
+		[[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString],
 		[selectedTable backtickQuotedString]]];
 
 	// Check for errors
@@ -320,7 +347,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (!type || [type isNSNull] || ![type length]) {
 		type = NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
 	}
-	[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), [[tableFields objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"]] message:type callback:nil];
+	[NSAlert createWarningAlertWithTitle:
+		[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"),
+			[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"]] message:type callback:nil];
 
 }
 
@@ -381,11 +410,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if ( ![self saveRowOnDeselect] ) return;
 
 	//add copy of selected row and go in edit mode
-	tempRow = [NSMutableDictionary dictionaryWithDictionary:[tableFields objectAtIndex:rowToCopy]];
+	tempRow = [NSMutableDictionary dictionaryWithDictionary:[[self activeFieldsSource] objectAtIndex:rowToCopy]];
 	[tempRow setObject:[[tempRow objectForKey:@"name"] stringByAppendingString:@"Copy"] forKey:@"name"];
 	[tempRow setObject:@"" forKey:@"Key"];
 	[tempRow setObject:@"None" forKey:@"Extra"];
-	[tableFields addObject:tempRow];
+	[[self activeFieldsSource] addObject:tempRow];
 	[tableSourceView reloadData];
 	[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:[tableSourceView numberOfRows]-1] byExtendingSelection:NO];
 	isEditingRow = YES;
@@ -406,7 +435,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSInteger anIndex = [tableSourceView selectedRow];
 
-	if ((anIndex == -1) || (anIndex > (NSInteger)([tableFields count] - 1))) return;
+	if ((anIndex == -1) || (anIndex > (NSInteger)([[self activeFieldsSource] count] - 1))) return;
 
 	// Check if the user tries to delete the last defined field in table
 	// Note that because of better menu item validation, this check will now never evaluate to true.
@@ -414,7 +443,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while deleting field", @"Error while deleting field") message:NSLocalizedString(@"You cannot delete the last field in a table. Delete the table instead.", @"You cannot delete the last field in a table. Delete the table instead.") callback:nil];
 	}
 
-	NSString *field = [[tableFields objectAtIndex:anIndex] objectForKey:@"name"];
+	NSString *field = [[[self activeFieldsSource] objectAtIndex:anIndex] objectForKey:@"name"];
 
 	BOOL hasForeignKey = NO;
 	NSString *referencedTable = @"";
@@ -506,10 +535,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	
 	if (isEditingNewRow) {
 		isEditingNewRow = NO;
-		[tableFields safeRemoveObjectAtIndex:currentlyEditingRow];
+		[[self activeFieldsSource] safeRemoveObjectAtIndex:currentlyEditingRow];
 	} 
 	else {
-		[tableFields safeReplaceObjectAtIndex:currentlyEditingRow withObject:[NSMutableDictionary dictionaryWithDictionary:oldRow]];
+		[[self activeFieldsSource] safeReplaceObjectAtIndex:currentlyEditingRow withObject:[NSMutableDictionary dictionaryWithDictionary:oldRow]];
 	}
 	
 	isEditingRow = NO;
@@ -670,7 +699,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[[tableSourceView window] endEditingFor:nil];
 	}
 
-	NSDictionary *theRow = [tableFields safeObjectAtIndex:currentlyEditingRow];
+	NSDictionary *theRow = [[self activeFieldsSource] safeObjectAtIndex:currentlyEditingRow];
 
 	if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
 		// If the field isn't set to be unsigned and we're making it the primary key then make it unsigned
@@ -700,13 +729,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 			}
 		}
 		else {
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 			}
 
 			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] backtickQuotedString]];
@@ -714,7 +743,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	// Add AFTER ... only if the user added a new field
 	else if (isEditingNewRow) {
-		[queryString appendFormat:@"\n AFTER %@", [[[tableFields safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
 	}
 
 	isCurrentExtraAutoIncrement = NO;
@@ -748,6 +777,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			isEditingNewRow = NO;
 			currentlyEditingRow = -1;
 			[tableFields removeAllObjects];
+			filteredTableFields = nil;
 			[tableSourceView reloadData];
 			[indexesTableView reloadData];
 			[addFieldButton setEnabled:NO];
@@ -1183,6 +1213,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	return [NSDictionary dictionaryWithObjectsAndKeys:tempResult, @"structure", tempResult2, @"indexes", nil];
 }
 
+- (NSMutableArray *)activeFieldsSource {
+	return filteredTableFields == nil ? tableFields : filteredTableFields;
+}
+
 #pragma mark -
 #pragma mark Task interaction
 
@@ -1250,7 +1284,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// Remove the foreign key before the field if required
 			if ([removeForeignKey boolValue]) {
 				NSString *relationName = @"";
-				NSString *field = [[self->tableFields safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"];
+				NSString *field = [[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"];
 
 				// Get the foreign key name
 				for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
@@ -1277,14 +1311,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Remove field
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[self->tableFields safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
+																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
 				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
-																	  [[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
+																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
 																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 
 				[[self onMainThread] showErrorSheetWith:errorDictionary];
@@ -1590,6 +1624,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Reset the table store and display
 	[tableSourceView deselectAll:self];
 	[tableFields removeAllObjects];
+	filteredTableFields = nil;
 	[enumFields removeAllObjects];
 	[indexesTableView deselectAll:self];
 	[addFieldButton setEnabled:NO];
@@ -1636,6 +1671,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[addFieldButton setEnabled:editingEnabled];
 	[addIndexButton setEnabled:editingEnabled && ![[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"]];
 
+	// sort then filter fields before reloading table view
+	[tableFields sortUsingDescriptors: [tableSourceView sortDescriptors]];
+	[self sort: tableFields withDescriptor: [fieldsSortHelper currentSortDescriptor]];
+	[self filterFieldsWithString:filterSearchField.stringValue];
+
 	// Reload the views
 	[indexesTableView reloadData];
 	[tableSourceView reloadData];
@@ -1647,15 +1687,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
 {
-	return [tableFields count];
+	return [[self activeFieldsSource] count];
 }
 
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	// Return a placeholder if the table is reloading
-	if ((NSUInteger)rowIndex >= [tableFields count]) return @"...";
+	if ((NSUInteger)rowIndex >= [[self activeFieldsSource] count]) return @"...";
 
-	NSDictionary *rowData = [tableFields safeObjectAtIndex:rowIndex];
+	NSDictionary *rowData = [[self activeFieldsSource] safeObjectAtIndex:rowIndex];
 
 	if ([[tableColumn identifier] isEqualToString:@"collation"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
@@ -1739,7 +1779,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Make sure that the operation is for the right table view
 	if (aTableView != tableSourceView) return;
 
-    NSMutableDictionary *currentRow = [tableFields safeObjectAtIndex:rowIndex];
+    NSMutableDictionary *currentRow = [[self activeFieldsSource] safeObjectAtIndex:rowIndex];
 
 	if (!isEditingRow) {
 		[oldRow setDictionary:currentRow];
@@ -1807,7 +1847,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 						} else {
 							self->autoIncrementIndex = nil;
 							if([self->tableSourceView selectedRow] > -1 && [self->extraFieldSuggestions count])
-								[[self->tableFields objectAtIndex:[self->tableSourceView selectedRow]] setObject:[self->extraFieldSuggestions objectAtIndex:0] forKey:@"Extra"];
+								[[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] setObject:[self->extraFieldSuggestions objectAtIndex:0] forKey:@"Extra"];
 							[self->tableSourceView reloadData];
 							self->isCurrentExtraAutoIncrement = NO;
 						}
@@ -1937,7 +1977,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Extract the original row position from the pasteboard and retrieve the details
 	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
-	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[tableFields objectAtIndex:originalRowIndex]];
+	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
@@ -1952,7 +1992,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[queryString appendString:@"FIRST"];
 	}
 	else {
-		[queryString appendFormat:@"AFTER %@", [[[tableFields objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"AFTER %@", [[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] backtickQuotedString]];
 	}
 
 	// Run the query; report any errors, or reload the table on success
@@ -2059,7 +2099,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[tableSourceView editColumn:([tableSourceView numberOfColumns] - 1) row:row - 1 withEvent:nil select:YES];
 			}
 			else {
-				[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:([tableFields count] - 1)] byExtendingSelection:NO];
+				[tableSourceView selectRowIndexes:[NSIndexSet indexSetWithIndex:([[self activeFieldsSource] count] - 1)] byExtendingSelection:NO];
 				[tableSourceView editColumn:([tableSourceView numberOfColumns] - 1) row:([tableSourceView numberOfRows] - 1) withEvent:nil select:YES];
 			}
 		}
@@ -2112,7 +2152,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	else {
 		// Validate cell against current field type
 		NSString *rowType;
-		NSDictionary *row = [tableFields safeObjectAtIndex:rowIndex];
+		NSDictionary *row = [[self activeFieldsSource] safeObjectAtIndex:rowIndex];
 
 		if ((rowType = [row objectForKey:@"type"])) {
 			rowType = [[rowType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
@@ -2164,6 +2204,20 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[aCell setEnabled:YES];
 		}
 	}
+}
+
+- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn {
+	if ([self sort:[self activeFieldsSource] withDescriptor:[fieldsSortHelper sortDescriptorForClickOn:tableView column:tableColumn]]) {
+		[tableView reloadData];
+	}
+}
+
+- (BOOL)sort:(NSMutableArray *)arr withDescriptor:(NSSortDescriptor *)descriptor {
+	if (descriptor) {
+		[arr sortUsingDescriptors:@[descriptor]];
+		return YES;
+	}
+	return NO;
 }
 
 #pragma mark -
@@ -2348,7 +2402,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	NSDictionary *rowData = [tableFields safeObjectAtIndex:[tableSourceView selectedRow]];
+	NSDictionary *rowData = [[self activeFieldsSource] safeObjectAtIndex:[tableSourceView selectedRow]];
 
 	if([[menu menuId] isEqualToString:@"encodingPopupMenu"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
@@ -2716,6 +2770,43 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	
 	return nil;
+}
+
+- (IBAction)filterChanged:(NSSearchField *)sender {
+	if (sender == filterSearchField && [self filterFieldsWithString:sender.stringValue]) {
+		[tableSourceView reloadData];
+	}
+}
+
+- (BOOL)filterFieldsWithString:(NSString *)filterString {
+	if (selectedTable) {
+		NSString *search = [filterString.lowercaseString stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceCharacterSet]];
+		if (search.length == 0 && filteredTableFields != nil) {
+			// clear the filter and reload
+			filteredTableFields = nil;
+			return YES;
+		}
+
+		// start new filter
+		NSUInteger fieldCount = tableFields.count;
+		if (search.length > 0 && fieldCount > 0) {
+			NSMutableArray *filteredFields = [[NSMutableArray alloc] initWithCapacity: fieldCount];
+			for (NSDictionary *entry in tableFields) {
+				NSString *value = entry[@"name"];
+				if ([value.lowercaseString contains: search]) {
+					[filteredFields addObject: entry];
+					NSLog(@"%@", entry);
+				}
+			}
+
+			if (filteredFields.count < fieldCount) {
+				filteredTableFields = filteredFields;
+				return YES;
+			}
+		}
+	}
+
+	return NO;
 }
 
 @end

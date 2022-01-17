@@ -1299,7 +1299,7 @@ NSString *kHeader     = @"HEADER";
     }
 
     //Check for new lines
-    if (editMultiLineInSheet && [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound) {
+    if (editMultiLineInSheet && [cellValue isKindOfClass:[NSString class]] && [cellValue rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch].location != NSNotFound) {
         return YES;
     }
 
