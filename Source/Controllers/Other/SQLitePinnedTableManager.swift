@@ -52,7 +52,8 @@ import OSLog
                         + "    id                   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                         + "    hostName             TEXT NOT NULL,"
                         + "    databaseName         TEXT NOT NULL,"
-                        + "    pinnedTableName      TEXT NOT NULL)"
+                        + "    pinnedTableName      TEXT NOT NULL,"
+                        + "    CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))"
 
                 do {
                     try db.executeUpdate(createTableSQL, values: nil)
@@ -130,6 +131,10 @@ import OSLog
     }
 
     @objc func pinTable(hostName: String, databaseName: String, tableToPin: String) {
+        
+        if (pinnedTablesDatabaseDictionary[hostName]?[databaseName] != nil && pinnedTablesDatabaseDictionary[hostName]![databaseName]!.contains(tableToPin)) {
+            return // tableToPin already pinned
+        }
         addToPinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: tableToPin)
         queue.inDatabase { db in
             db.traceExecution = traceExecution
