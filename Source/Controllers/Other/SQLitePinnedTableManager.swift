@@ -150,8 +150,8 @@ import OSLog
     
 
     @objc func unpinTable(hostName: String, databaseName: String, tableToUnpin: String) {
-        if var pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToUnpin) {
-            pinnedTables.removeAll(where: { $0 == tableToUnpin })
+        if let pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToUnpin) {
+            pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.removeAll(where: { $0 == tableToUnpin })
             queue.inDatabase { db in
                 db.traceExecution = traceExecution
                 do {
@@ -170,12 +170,10 @@ import OSLog
         if pinnedTablesDatabaseDictionary[hostName] == nil {
             pinnedTablesDatabaseDictionary[hostName] = [:];
         }
-        var pinnedTablesForHost = pinnedTablesDatabaseDictionary[hostName];
-        if pinnedTablesForHost?[databaseName] == nil {
-            pinnedTablesForHost?[databaseName] = []
+        if pinnedTablesDatabaseDictionary[hostName]?[databaseName] == nil {
+            pinnedTablesDatabaseDictionary[hostName]?[databaseName] = []
         }
-        var pinnedTablesForHostAndDatabase = pinnedTablesForHost?[databaseName];
-        pinnedTablesForHostAndDatabase?.append(tableToPin)
+        pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.append(tableToPin)
     }
     
     
