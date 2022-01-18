@@ -128,10 +128,15 @@ import OSLog
                     availableRelease = releases.first
 
                     guard
-                        let currentReleaseTmp = currentRelease,
-                        let availableReleaseTmp = availableRelease
+                        let currentReleaseTmp = currentRelease
                     else {
                         Log.debug("No current release available")
+                        return
+                    }
+
+                    guard
+                        let availableReleaseTmp = availableRelease
+                    else {
                         Log.debug("No newer release available")
                         return
                     }
@@ -151,12 +156,12 @@ import OSLog
                         }
                     }
                 } catch {
-                    Log.error("Error: \(error.localizedDescription)")
+                    Log.error("Error GitHub Exception: \(error.localizedDescription)")
                     NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
                 }
 
             case let .failure(error):
-                Log.error("Error: \(error.localizedDescription)")
+                Log.error("Error GitHub Failure: \(error.localizedDescription)")
                 NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
                 if (manager?.isReachable == false) {
                     Log.error("manager?.isReachable == false")
@@ -173,7 +178,7 @@ import OSLog
         let message: String
         var asset: Asset?
 
-        if prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
+        if isFromMenuCheck == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
             return false
         }
@@ -200,7 +205,9 @@ import OSLog
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("A new version is available", comment: "A new version is available")
         alert.informativeText = message
-        alert.showsSuppressionButton = true
+        if isFromMenuCheck == false {
+            alert.showsSuppressionButton = true
+        }
         alert.alertStyle = .informational
         alert.addButton(withTitle: "View").tag = GitHubReleaseManager.NSModalResponseView.rawValue
 

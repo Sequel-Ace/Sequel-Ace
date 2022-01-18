@@ -286,9 +286,14 @@ static unsigned short getRandomPort(void);
     
     SPLog(@"connection state = %i", connectionState);
 
-    if (connectionState != SPMySQLProxyIdle || task){
-        SPLog(@"connection state != SPMySQLProxyIdle || task, returning");
+    if (connectionState != SPMySQLProxyIdle){
+        SPLog(@"launch task ssh connection state != SPMySQLProxyIdle, returning");
         return;
+    }
+
+    if (task){
+        SPLog(@"launch task already has task, aborting previous");
+        [self abortTask];
     }
 
 	@autoreleasepool {
@@ -396,6 +401,8 @@ static unsigned short getRandomPort(void);
         if(user_defaults_get_bool(SPSSHConfigContainsUserKnownHostsFile) == NO){
             NSString *customKnownHostsFilePath = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHUsualKnownHostsFile];
 
+            NSString *alertMessage = nil;
+
             // if not set, could be empty or @0
             if(IsEmpty(customKnownHostsFilePath) == NO && customKnownHostsFilePath.isNumeric == NO){
                 SPLog(@"customKnownHostsFilePath set to: %@", customKnownHostsFilePath);
@@ -403,47 +410,17 @@ static unsigned short getRandomPort(void);
 
                     SPLog(@"ERROR: customKnownHostsFilePath NOT writable");
 
-                    NSView __block *helpView;
-
-                    SPMainQSync(^{
-                        // call windowDidLoad to alloc the panes
-                        [[((SPAppController *)[NSApp delegate]) preferenceController] window];
-                        helpView = [[[SPAppDelegate preferenceController] generalPreferencePane] modifyAndReturnBookmarkHelpView];
-                    });
-
                     BOOL validFile = IsLocalFilePath(customKnownHostsFilePath);
 
-                    NSString *alertMessage = nil;
-
                     if(validFile == YES){
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
                     }
                     else{
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is invalid.\n\nPlease check and try again.", @"known hosts is invalid message")];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.", @"known hosts is invalid message")];
                     }
 
-                    [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Known Hosts Error", @"Known Hosts Error") message:alertMessage accessoryView:helpView callback:^{
-                        NSDictionary *userInfo = @{
-                            NSLocalizedDescriptionKey: @"known_hosts file is not writable or invalid",
-                            @"file": customKnownHostsFilePath,
-                            @"func": [NSString stringWithFormat:@"%s", __PRETTY_FUNCTION__]
-                        };
-                        SPLog(@"userInfo: %@", userInfo);
-
-                    }];
-
-                    [self disconnect];
-
-                    SPMainLoopAsync(^{
-                        SPConnectionController *conn = [SPAppDelegate frontDocument].connectionController;
-                        [conn->progressIndicator stopAnimation:nil];
-                        conn->progressIndicatorText.hidden = YES;
-                        conn->progressIndicator.hidden = YES;
-                        [conn->progressIndicatorText displayIfNeeded];
-                        [conn->progressIndicator displayIfNeeded];
-                    });
-
-                    return;
+                } else if ([customKnownHostsFilePath containsString:@"\""]) {
+                    alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.", @"known hosts contains quote message"), customKnownHostsFilePath];
                 }
             }
             else{
@@ -457,7 +434,19 @@ static unsigned short getRandomPort(void);
                 }
             }
 
-            TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=%@", customKnownHostsFilePath]);
+            if(alertMessage != nil) {
+                connectionState = SPMySQLProxyIdle;
+                taskExitedUnexpectedly = YES;
+                [self setLastError:alertMessage];
+
+                if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
+                // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+
+                return;
+            }
+
+            TA(@"-o", [NSString stringWithFormat:@"UserKnownHostsFile=\"%@\"", [self prepareFilePathForSshCommand:customKnownHostsFilePath]]);
         }
         else{
             SPLog(@"the ssh config files should point to a known hosts file");
@@ -473,7 +462,7 @@ static unsigned short getRandomPort(void);
 			sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
 		}
 		
-		TA(@"-F", sshConfigFile);
+		TA(@"-F", [self prepareFilePathForSshCommand:sshConfigFile]);
 
 		if(![SPFileHandle fileHandleForReadingAtPath:sshConfigFile]) {
 			SPLog(@"Cannot read sshConfigFile: %@",sshConfigFile);
@@ -481,7 +470,7 @@ static unsigned short getRandomPort(void);
 
 		// Specify an identity file if available
 		if (identityFilePath) {
-			TA(@"-i", identityFilePath);
+			TA(@"-i", [self prepareFilePathForSshCommand:identityFilePath]);
 		}
 
 		// If keepalive is set in the preferences, use the same value for the SSH tunnel
@@ -647,16 +636,32 @@ static unsigned short getRandomPort(void);
     }
 
 	// If there's a delegate set, clear it to prevent unexpected state change messaging
-	if (delegate) {
-		delegate = nil;
-		stateChangeSelector = NULL;
-	}
+//	if (delegate) {
+//		delegate = nil;
+//		stateChangeSelector = NULL;
+//	}
 
 	// Before terminating the tunnel, check that it's actually running. This is to accommodate tunnels which
 	// suddenly disappear as a result of network disconnections. 
-    if ([task isRunning]){
-        SPLog(@"disconnect ssh task isRunning, calling terminate");
-        [task SPterminate];
+    if (task) {
+        SPLog(@"disconnect found task, aborting");
+        [self abortTask];
+    }
+}
+
+/*
+ * Abort the currently running task and null it out
+ */
+-(void)abortTask
+{
+    SPLog(@"Aborting task");
+    if (task){
+        if ([task isRunning]){
+            SPLog(@"Task is running - calling terminate");
+            [task SPterminate];
+        }
+        SPLog(@"Nilling out task");
+        task = nil;
     }
 }
 
@@ -697,20 +702,20 @@ static unsigned short getRandomPort(void);
 			
 			if ([message rangeOfString:@"bind: Address already in use"].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
-				[task SPterminate];
+                [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?", @"SSH tunnel unable to bind to local port message")];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 
 			if ([message rangeOfString:@"closed by remote host." ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
-				[task SPterminate];
+                [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.", @"SSH tunnel was closed by remote host message")];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"Permission denied (" ].location != NSNotFound || [message rangeOfString:@"No more authentication methods to try" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
-				[task SPterminate];
+                [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.", @"SSH tunnel authentication failed message")];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
@@ -720,7 +725,7 @@ static unsigned short getRandomPort(void);
 			}
 			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
-				[task SPterminate];
+                [self abortTask];
 				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
@@ -913,6 +918,15 @@ static unsigned short getRandomPort(void);
 	[[answerAvailableLock onMainThread] unlock];
 }
 
+/*
+ * Escape spaces and special characters in path
+ */
+- (NSString *)prepareFilePathForSshCommand:(NSString *)thePath
+{
+    return [thePath stringByRemovingPercentEncoding];
+}
+
+
 #pragma mark -
 
 - (void)dealloc
@@ -953,3 +967,4 @@ unsigned short getRandomPort() {
 	}
 	return port;
 }
+

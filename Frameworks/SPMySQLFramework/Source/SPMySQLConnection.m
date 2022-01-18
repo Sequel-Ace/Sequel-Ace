@@ -594,8 +594,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	serverVersionNumber = mysql_get_server_version(mySQLConnection);
 
 	// Update SSL state
-	connectedWithSSL = NO;
-	if (useSSL) connectedWithSSL = (mysql_get_ssl_cipher(mySQLConnection))?YES:NO;
+	connectedWithSSL = (mysql_get_ssl_cipher(mySQLConnection))?YES:NO;
 	if (useSSL && !connectedWithSSL) {
 		if ([delegate respondsToSelector:@selector(connectionFellBackToNonSSL:)]) {
 			[delegate connectionFellBackToNonSSL:self];
@@ -755,7 +754,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			}
 			return NULL;
 		}
-	}
+    } else {
+        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_PREFERRED;
+        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
+    }
 
 	MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
 
@@ -1188,6 +1190,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self queryString:@"SET wait_timeout=600"];
 		}
 	}
+
+
+    // Check the information_schema_stats_expiry timeout - if it's not zero, set it to 0
+    // Otherwise, stats page will lag behind reality
+    // https://github.com/Sequel-Ace/Sequel-Ace/issues/1206
+    if ([variables objectForKey:@"information_schema_stats_expiry"]) {
+        if ([[variables objectForKey:@"information_schema_stats_expiry"] integerValue] != 0) {
+            [self queryString:@"SET information_schema_stats_expiry=0"];
+        }
+    }
 }
 
 /**

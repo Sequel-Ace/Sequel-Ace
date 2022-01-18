@@ -404,12 +404,13 @@ static CGFloat slow_in_out (CGFloat t)
 			self->gotHeight = YES;
 			
 		}];
-		
 		[self->wkWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
 			SPLog(@"width2: %@", width2);
 			if (error) SPLog(@"error: %@", error.localizedDescription);
-			
-			width = [width2 integerValue];
+
+            // Add 1 because sometimes document.body.offsetWidth value is not sufficient or the frame of WKWebView does not match the body. I don't know exactly where the truth is.
+            // 1 seems to be enougth in my case.
+			width = [width2 integerValue] + 1;
 			self->gotWidth = YES;
 		}];
 		

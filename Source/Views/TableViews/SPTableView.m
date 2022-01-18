@@ -317,7 +317,7 @@ pass_keyDown_to_super:
 - (void)_doubleClickAction
 {
 	if ([super clickedRow] == -1 && [super clickedColumn] == -1 && emptyDoubleClickAction) {
-		[[self delegate] performSelector:emptyDoubleClickAction];
+        [NSApp sendAction:emptyDoubleClickAction to:[self delegate] from:nil];
 	}
 }
 

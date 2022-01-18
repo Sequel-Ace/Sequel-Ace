@@ -464,7 +464,7 @@
 "Are you sure you want to clear the global history list? This action cannot be undone." = "Soll das globale Protokoll wirklich unwiderruflich geleert werden?";
 
 /* clear history list for %@ informative message */
-"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Are you sure you want to clear the history list for %@? This action cannot be undone.";
+"Are you sure you want to clear the history list for %@? This action cannot be undone." = "Sind Sie sicher, dass Sie die Verlaufsliste für %@ löschen wollen? Diese Aktion kann nicht rückgängig gemacht werden.";
 
 /* truncate tables informative message */
 "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Sollen wirklich ALLE Datensätze der gewählten Tabellen unwiderruflich gelöscht werden?";
@@ -1387,7 +1387,7 @@
 "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Dateien mit denselben Namen im Zielordner vorhanden; Ersetzen überschreibt die bestehenden Inhalte.";
 
 /* filter label */
-"Filter" = "Filter";
+"Filter" = "Filtern";
 
 /* filter tables menu item */
 "Filter Tables" = "Tabellen filtern";
@@ -1446,7 +1446,7 @@
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
  general preference pane name */
-"General" = "General";
+"General" = "Allgemein";
 
 /* general preference pane tooltip */
 "General Preferences" = "Allgemeine Präferenzen";
@@ -1493,9 +1493,6 @@ Befehle werden anwendungsweit ausgeführt";
  export header host label */
 "Host" = "Host";
 
-/* Localized help page for query favourites - do not localize if no translated webpage is available */
-"http://www.sequelpro.com/docs/Working_with_Query_Favorites" = "http://www.sequelpro.com/docs/Working_with_Query_Favorites";
-
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 Gleitkommawert mit doppelter Genauigkeit. M ist die maximale Anzahl von Ziffern, mit D Dezimalen. Hinweis: Viele Dezimalzahlen können nur durch Gleitkommawerte angenähert werden. DECIMAL benutzen, wenn genaue Ergebnisse benötigt werden.";
 
@@ -1518,7 +1515,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Ignore Field" = "Feld übergehen";
 
 /* import button */
-"Import" = "Import";
+"Import" = "Importieren";
 
 /* import all fields menu item */
 "Import all Fields" = "Alle Felder importieren";
@@ -1887,7 +1884,7 @@ Befehle werden anwendungsweit ausgeführt";
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
-"OK" = "OK";
+"OK" = "Okay";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
 "One additional row was removed!" = "Eine zusätzliche Zeile wurde entfernt!";
@@ -2010,7 +2007,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Query abgebrochen. Um die Query abzubrechen, mussten die Verbindung, Verbindungs-Variable und Transaktionen zurückgesetzt werden.";
 
 /* query editor preference pane name */
-"Query Editor" = "Query Editor";
+"Query Editor" = "Query-Editor";
 
 /* query editor preference pane tooltip */
 "Query Editor Preferences" = "Query Editor Einstellungen";
@@ -2026,7 +2023,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Query results" = "Query Ergebnisse";
 
 /* Query Status */
-"Query Status" = "Query Status";
+"Query Status" = "Query-Status";
 
 /* table status : row count query failed : error title */
 "Querying row count failed" = "Abfrage der Zeilenzahl schlug fehl";
@@ -2086,7 +2083,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Reloading..." = "Erneut laden …";
 
 /* remote error */
-"Remote Error" = "Remote Error";
+"Remote Error" = "Remote-Fehler";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
@@ -2186,16 +2183,16 @@ Befehle werden anwendungsweit ausgeführt";
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Erfordert 8 Bytes Speicherplatz. M ist die fakultative Darstellungsbreite ohne Einfluss auf den möglichen Wertebereich. Hinweis: Arithmetische Operationen könnten bei großen Zahlen fehlschlagen.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Nach dem Löschen AUTO_INCREMENT zurücksetzen\n(nur für Löschen ALLER ZEILEN IN DER TABELLE)?";
 
 /* delete selected row button */
-"Delete Selected Row" = "Delete Selected Row";
+"Delete Selected Row" = "Ausgewählte Zeile löschen";
 
 /* delete selected rows button */
-"Delete Selected Rows" = "Delete Selected Rows";
+"Delete Selected Rows" = "Ausgewählte Zeilen löschen";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
+"Delete ALL ROWS IN TABLE" = "Lösche ALLE ZEILEN IN DER TABELLE";
 
 /* Restoring session task description */
 "Restoring session..." = "Sitzung wiederherstellen …";
@@ -2330,7 +2327,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace findet keine Spalten zu diesem Index. Eventuell wurden sie bereits entfernt?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace unterstützt nur die in macOS ausgelieferten OpenSSH Versionen. Andere SSH-Programme können Verbindungsprobleme verursachen, Sicherheitsrisiken darstellen oder fehlerhaft sein.\n\nLeider kann für andere SSH Programme kein Support angeboten werden.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Sequelace URL Schema-Befehl wird nicht unterstützt.";
@@ -2491,7 +2488,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Status file for sequelace url scheme command couldn't be written!" = "Statusdatei für Sequelace URL Schema Befehl konnte nicht geschrieben werden!";
 
 /* stop button */
-"Stop" = "Stop";
+"Stop" = "Anhalten";
 
 /* Stop queries string */
 "Stop queries" = "Abfragen beenden";
@@ -2894,13 +2891,13 @@ Befehle werden anwendungsweit ausgeführt";
 "Truncate selected tables?" = "Ausgewählte Tabellen abschneiden?";
 
 /* truncate table menu title */
-"Truncate Table..." = "Tabelle wird eingekürzt …";
+"Truncate Table..." = "Tabelle leeren...";
 
 /* truncate table message */
-"Truncate table '%@'?" = "Tabelle wird eingekürzt …";
+"Truncate table '%@'?" = "Tabelle '%@' leeren?";
 
 /* truncate tables menu item */
-"Truncate Tables" = "Abgeschnittene Tabellen";
+"Truncate Tables" = "Tabellen leeren";
 
 /* type label (Navigator) */
 "Type" = "Typ";
@@ -3200,7 +3197,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Known Hosts Error" = "Fehler bei bekannten Hosts";
 
 /* SSH Tunnel Debugging menu and window title */
-"SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
+"SSH Tunnel Debugging Info" = "SSH-Tunnel-Debugging-Informationen";
 
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "Einige „sichere Lesezeichen“ sind veraltet:\n\n%@\n\nSoll der Zugriff jetzt erneut angefordert werden?";
@@ -3314,4 +3311,4 @@ Befehle werden anwendungsweit ausgeführt";
 "Never show this again" = "Nicht erneut anzeigen";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "Das aktuelle Feld \"%@\" ist eine generierte Spalte und kann daher nicht bearbeitet werden.";

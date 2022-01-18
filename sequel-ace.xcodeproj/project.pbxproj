@@ -352,6 +352,8 @@
 		58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF16C0F23D66600518E8E /* SPSQLParser.m */; };
 		58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF57D0F3B4E9700518E8E /* SPTableData.m */; };
 		65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */; };
+		6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */; };
+		6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA9232734ABE200514FF1 /* SABundleRunner.m */; };
 		73F70A961E4E547500636550 /* SPJSONFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F70A951E4E547500636550 /* SPJSONFormatter.m */; };
 		8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFA5224011B700D10172 /* button_addTemplate.pdf */; };
 		8831EFAA2240128700D10172 /* button_removeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFA92240128600D10172 /* button_removeTemplate.pdf */; };
@@ -373,6 +375,8 @@
 		8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFC6224016E000D10172 /* button_edit_modeTemplate.pdf */; };
 		8831EFCD2240175400D10172 /* button_actionTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFCB2240175300D10172 /* button_actionTemplate.pdf */; };
 		8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */; };
+		8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
+		8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		964908C8249A77D00052FC4A /* ssh_config in Resources */ = {isa = PBXBuildFile; fileRef = 964908C4249A77CF0052FC4A /* ssh_config */; };
 		9651262224926F1200E65B53 /* QueryKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; };
@@ -385,6 +389,8 @@
 		96B0A1512493DF3E007BB270 /* ShortcutRecorder.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; };
 		96B0A1522493DF3E007BB270 /* ShortcutRecorder.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		96B0A16124941670007BB270 /* SequelAceTunnelAssistant in Copy SequelAceTunnelAssistant and sign */ = {isa = PBXBuildFile; fileRef = 58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		96CA8F9C2783A9010061C2D1 /* Menlo.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */; };
+		96CA8FA12783AA650061C2D1 /* Menlo.ttc in Copy Fonts */ = {isa = PBXBuildFile; fileRef = 96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */; };
 		9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */; };
 		9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE768F3989033CEDDC2027E /* SPFillView.m */; };
 		9BE76F2886901784E4FD2321 /* SPFilterTableController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE76A3D5C9830E2F7738770 /* SPFilterTableController.m */; };
@@ -442,6 +448,8 @@
 		C9F92710162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F9270F162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png */; };
 		C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */; };
 		C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */; };
+		D35577F52728C6CF002B3989 /* SPWindowTabAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */; };
+		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -549,6 +557,17 @@
 				96B0A16124941670007BB270 /* SequelAceTunnelAssistant in Copy SequelAceTunnelAssistant and sign */,
 			);
 			name = "Copy SequelAceTunnelAssistant and sign";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96CA8FA02783AA560061C2D1 /* Copy Fonts */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Fonts;
+			dstSubfolderSpec = 7;
+			files = (
+				96CA8FA12783AA650061C2D1 /* Menlo.ttc in Copy Fonts */,
+			);
+			name = "Copy Fonts";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -769,7 +788,6 @@
 		1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewController.swift; sourceTree = "<group>"; };
 		1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtension.swift; sourceTree = "<group>"; };
 		1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
-		1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupButtonExtensions.swift; sourceTree = "<group>"; };
 		1AD785E325B749760007E153 /* OSLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
 		1ADEA5A224BF1C4800D2140B /* SPDateAdditionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPDateAdditionsTests.m; sourceTree = "<group>"; };
 		1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPFunctionsTests.m; sourceTree = "<group>"; };
@@ -857,6 +875,7 @@
 		50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseActionTest.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
 		511B309F25ABBC6500D010E3 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		511E8F6926EF72FD001FC731 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5132930925F586A900D803AD /* NotificationToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationToken.swift; sourceTree = "<group>"; };
 		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
@@ -871,6 +890,7 @@
 		517E457C257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-ES"; path = "es-ES.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51905622267DFF1700212442 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
+		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51BA34A525BD9F30007CA20B /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Frameworks/OCMock.framework; sourceTree = "<group>"; };
@@ -1020,6 +1040,10 @@
 		58FEF57D0F3B4E9700518E8E /* SPTableData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableData.m; sourceTree = "<group>"; };
 		65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFilePreferencePane.m; sourceTree = "<group>"; };
 		65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPFilePreferencePane.h; sourceTree = "<group>"; };
+		6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditions.swift; sourceTree = "<group>"; };
+		6F0EA8EE272F372700514FF1 /* developing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = developing.md; sourceTree = "<group>"; };
+		6F0EA9222734ABE200514FF1 /* SABundleRunner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SABundleRunner.h; sourceTree = "<group>"; };
+		6F0EA9232734ABE200514FF1 /* SABundleRunner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SABundleRunner.m; sourceTree = "<group>"; };
 		73F70A941E4E547500636550 /* SPJSONFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPJSONFormatter.h; sourceTree = "<group>"; };
 		73F70A951E4E547500636550 /* SPJSONFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPJSONFormatter.m; sourceTree = "<group>"; };
 		8831EFA5224011B700D10172 /* button_addTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_addTemplate.pdf; sourceTree = "<group>"; };
@@ -1042,6 +1066,8 @@
 		8831EFC6224016E000D10172 /* button_edit_modeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_edit_modeTemplate.pdf; sourceTree = "<group>"; };
 		8831EFCB2240175300D10172 /* button_actionTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_actionTemplate.pdf; sourceTree = "<group>"; };
 		8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_paginationTemplate.pdf; sourceTree = "<group>"; };
+		8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelperTests.swift; sourceTree = "<group>"; };
+		8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelper.swift; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; usesTabs = 0; };
@@ -1053,6 +1079,7 @@
 		9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = xibLocalizationPostprocessor.entitlements; sourceTree = "<group>"; };
 		96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ShortcutRecorder.framework; path = Frameworks/ShortcutRecorder.framework; sourceTree = "<group>"; };
 		96B0A1532493F43B007BB270 /* TunnelAssistant-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "TunnelAssistant-Info.plist"; path = "Plists/TunnelAssistant-Info.plist"; sourceTree = "<group>"; };
+		96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */ = {isa = PBXFileReference; lastKnownFileType = file; name = Menlo.ttc; path = Fonts/Menlo.ttc; sourceTree = "<group>"; };
 		9BE760B3C4586EA3B1A48600 /* SPHelpViewerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPHelpViewerController.m; sourceTree = "<group>"; };
 		9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPHelpViewerClient.h; sourceTree = "<group>"; };
 		9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPHelpViewerClient.m; sourceTree = "<group>"; };
@@ -1144,6 +1171,7 @@
 		C9F9270F162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-info@2x.png"; sourceTree = "<group>"; };
 		C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse.png"; sourceTree = "<group>"; };
 		C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse@2x.png"; sourceTree = "<group>"; };
+		D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowTabAccessory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1314,6 +1342,8 @@
 				BC68BFC6128D4EAE004907D9 /* SPBundleEditorController.m */,
 				176E14CF15570FE300FAF326 /* SPBundleCommandRunner.h */,
 				176E14D015570FE300FAF326 /* SPBundleCommandRunner.m */,
+				6F0EA9222734ABE200514FF1 /* SABundleRunner.h */,
+				6F0EA9232734ABE200514FF1 /* SABundleRunner.m */,
 				BC77C5E2129AA69E009AD832 /* SPBundleHTMLOutputController.h */,
 				BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */,
 			);
@@ -1475,8 +1505,9 @@
 				5806B76211A991EC00813A88 /* SPDocumentController.h */,
 				5806B76311A991EC00813A88 /* SPDocumentController.m */,
 				1A9EB9AD25651F5000FE60FF /* SQLiteHistoryManager.swift */,
-				1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */,
 				1A9F344B257B0DDB0062EC87 /* SPBundleManager.h */,
+				1A9F343E257B0DBE0062EC87 /* SPBundleManager.m */,
+				6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */,
 				1A89556525D6BEED0060CE72 /* GitHubReleaseManager.swift */,
 				1A89557825D6DE860060CE72 /* GitHub.swift */,
 				1AB28D7F25DBD3B500E62BF5 /* ProgressViewController.swift */,
@@ -1588,6 +1619,7 @@
 				17E641550EF01EF6001BC333 /* SPTableStructure.m */,
 				17D38F6E1279E23A00672B13 /* SPTableFieldValidation.h */,
 				17D38F6F1279E23A00672B13 /* SPTableFieldValidation.m */,
+				8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */,
 			);
 			name = "Table Structure";
 			path = TableStructure;
@@ -1686,6 +1718,7 @@
 			children = (
 				29A1B7E30FD1293A000B88E8 /* SPPrintAccessory.h */,
 				29A1B7E40FD1293A000B88E8 /* SPPrintAccessory.m */,
+				D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */,
 				BC01BCCD104024BE006BDEE7 /* SPEncodingPopupAccessory.h */,
 				BC01BCCE104024BE006BDEE7 /* SPEncodingPopupAccessory.m */,
 			);
@@ -1768,6 +1801,7 @@
 				517E44F5257A906100ED333B /* Localization */,
 				1740F8370FC306C900CF3699 /* Plists */,
 				17E6418B0EF01FF7001BC333 /* Images */,
+				96CA8F922783A3E40061C2D1 /* Fonts */,
 				1740F8360FC306AE00CF3699 /* Scripting */,
 				58D1006813A57FAE0092E019 /* Localization Strings Files */,
 				1740F8350FC3069700CF3699 /* Templates */,
@@ -2123,14 +2157,6 @@
 			path = keys;
 			sourceTree = "<group>";
 		};
-		1ACA0B5E25BEBDEE002FA618 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				1AD45F2E25BE897A0042506F /* PopupButtonExtensions.swift */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		296DC8A40F90914B002A3258 /* MGTemplateEngine */ = {
 			isa = PBXGroup;
 			children = (
@@ -2160,6 +2186,7 @@
 				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
 				1798F17E1550171B004B0AB8 /* LICENSE */,
 				38F37194182F0621008EB031 /* readme.md */,
+				6F0EA8EE272F372700514FF1 /* developing.md */,
 				17E641420EF01E8A001BC333 /* Source */,
 				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
 				17E642050EF020A3001BC333 /* Interfaces */,
@@ -2168,7 +2195,6 @@
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
-				1ACA0B5E25BEBDEE002FA618 /* Recovered References */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -2224,6 +2250,7 @@
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
+				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2327,6 +2354,14 @@
 			path = Parsing;
 			sourceTree = "<group>";
 		};
+		96CA8F922783A3E40061C2D1 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */,
+			);
+			name = Fonts;
+			sourceTree = "<group>";
+		};
 		96D494B8249C07940092F335 /* SSH Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -2403,6 +2438,8 @@
 				518402D924A3FF4F004693B0 /* PBXTargetDependency */,
 			);
 			name = "Unit Tests";
+			packageProductDependencies = (
+			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -2450,6 +2487,7 @@
 				96B0A162249416B1007BB270 /* Copy SequelAceTunnelAssistant and sign */,
 				4DECC4940EC2B447008D359E /* Copy Frameworks */,
 				9691789224A562330012ED42 /* Copy Default Themes and Default Bundles */,
+				96CA8FA02783AA560061C2D1 /* Copy Fonts */,
 				1A62C63425BE08F400DF903B /* ShellScript */,
 			);
 			buildRules = (
@@ -2485,7 +2523,6 @@
 					};
 					8D15AC270486D014006FF6A4 = {
 						LastSwiftMigration = 1200;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -2506,6 +2543,8 @@
 				pt,
 				ja,
 				vi,
+				ru,
+				tr,
 			);
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
 			packageReferences = (
@@ -2706,6 +2745,7 @@
 				51CD0BE4258D06D8009E2484 /* HelpViewer.xib in Resources */,
 				517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
+				96CA8F9C2783A9010061C2D1 /* Menlo.ttc in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
 				582E944A168374C1003459FD /* field-small-square.png in Resources */,
 				582E944C16837986003459FD /* hideconsole.png in Resources */,
@@ -2748,7 +2788,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    \"${PROJECT_DIR}/Scripts/upload_symbols.sh\" \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"Initializing upload symbols for \\\"${CONFIGURATION}\\\" build\"\n    \"${PROJECT_DIR}/Scripts/upload_symbols.sh\" \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
 		};
 		517E44F4257A8FB700ED333B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2789,6 +2829,7 @@
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
+				FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
 				1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */,
 				51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */,
@@ -2819,6 +2860,7 @@
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
+				8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2874,6 +2916,7 @@
 				58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
+				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,
 				1A24B627258A2E9A00541E88 /* SecureBookmarkData.swift in Sources */,
 				179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */,
 				B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */,
@@ -2882,6 +2925,7 @@
 				B57747DC0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m in Sources */,
 				B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */,
 				B52460D80F8EF92300171639 /* SPTextViewAdditions.m in Sources */,
+				6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */,
 				296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */,
 				1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */,
 				296DC8B70F909194002A3258 /* RegexKitLite.m in Sources */,
@@ -2958,6 +3002,7 @@
 				5885CF4A116A63B200A85ACB /* SPFileHandle.m in Sources */,
 				1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */,
 				1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */,
+				D35577F52728C6CF002B3989 /* SPWindowTabAccessory.swift in Sources */,
 				11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */,
 				1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */,
 				5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */,
@@ -3040,6 +3085,7 @@
 				9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */,
 				9BE76F2B943AFDBA6EDC52BE /* SPHelpViewerController.m in Sources */,
 				9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */,
+				8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3083,6 +3129,8 @@
 				51C04C9D261E4DB6001F5554 /* pt */,
 				516A76C52653B4E800DC6501 /* ja */,
 				51905622267DFF1700212442 /* vi */,
+				511E8F6926EF72FD001FC731 /* ru */,
+				5199783E27760147008DEB7B /* tr */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -3265,7 +3313,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3039;
+				CURRENT_PROJECT_VERSION = 20026;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -3302,6 +3350,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 3.4.2;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
@@ -3565,7 +3614,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3039;
+				CURRENT_PROJECT_VERSION = 20026;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -3603,6 +3652,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 3.4.2;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				STRIP_INSTALLED_PRODUCT = NO;
@@ -3880,7 +3930,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3039;
+				CURRENT_PROJECT_VERSION = 20026;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -3923,6 +3973,7 @@
 				LEX_INSERT_LINE_DIRECTIVES = YES;
 				LEX_SUPPRESS_DEFAULT_RULE = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 3.4.2;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
@@ -3962,7 +4013,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3039;
+				CURRENT_PROJECT_VERSION = 20026;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -3999,6 +4050,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 3.4.2;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;

@@ -70,6 +70,16 @@ void SPApplyRevisionChanges(void)
 		return;
 	}
 
+    if (recordedVersionNumber < 20026) {
+        //Reset any users that have query editor font set to Monaco to the new default font (menlo) as this has better performance in the query editor
+        NSString *monocoFontBytes =  @"040B73747265616D747970656481E803840140848484064E53466F6E741E8484084E534F626A65637400858401691884055B3234635D060000000E000000FFFE4D006F006E00610063006F0000008401660A8401630098019800980086";
+        NSData *prefFontValue = [prefs objectForKey:SPCustomQueryEditorFont];
+        if(prefFontValue && [[NSString rawByteStringWithData:prefFontValue] isEqualToString:monocoFontBytes]) {
+            [prefs removeObjectForKey:SPCustomQueryEditorFont];
+            SPLog(@"Reset query editor font setting to default");
+        }
+    }
+
 	
 	// This is how you add release notes and run specific migration steps
 	if (recordedVersionNumber < 2061) {
@@ -77,7 +87,7 @@ void SPApplyRevisionChanges(void)
 	}
 
     // Release note for 'Default' column behavior
-    if (recordedVersionNumber > 3043) {
+    if (recordedVersionNumber > 20025) {
         [importantUpdateNotes addObject:NSLocalizedString(@"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.", @"Warning message about the default value")];
     }
 

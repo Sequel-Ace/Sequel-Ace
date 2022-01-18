@@ -238,6 +238,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 	// Retrieve the table status information via the table data cache
 	NSDictionary *statusFields = [tableDataInstance statusValues];
+  NSFont *font = [tableCreateSyntaxTextView font];
 
     SPLog(@"tableTypePopUpButton numberOfItems: %li", (long)tableTypePopUpButton.numberOfItems);
     SPLog(@"tableEncodingPopUpButton numberOfItems: %li", (long)tableEncodingPopUpButton.numberOfItems);
@@ -269,6 +270,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				[tableCreateSyntaxTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:createViewSyntax]];
 				[tableCreateSyntaxTextView didChangeText];
 				[tableCreateSyntaxTextView setEditable:NO];
+        [tableCreateSyntaxTextView setFont: font];
 			}
 		} 
 		else {
@@ -422,6 +424,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	
 	if ([tableDataInstance tableCreateSyntax]) {
 		[tableCreateSyntaxTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[[tableDataInstance tableCreateSyntax] stringByAppendingString:@";"]]];
+    [tableCreateSyntaxTextView setFont: font];
 	}
 	
 	[tableCreateSyntaxTextView didChangeText];

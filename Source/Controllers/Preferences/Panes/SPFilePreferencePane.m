@@ -41,13 +41,12 @@
 @property (readwrite, strong) NSMutableIndexSet *selectedRows;
 @property (readwrite, assign) BOOL weHaveStaleBookmarks;
 @property (readwrite, assign) BOOL userClickedCancel;
-@property (readwrite, assign) BOOL userClickedAddFilesAfterCancel;
 
 @end
 
 @implementation SPFilePreferencePane
 
-@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel, userClickedAddFilesAfterCancel;
+@synthesize bookmarks, staleBookmarks, staleLabel, weHaveStaleBookmarks, selectedRows, userClickedCancel, revokeButton;
 
 - (instancetype)init
 {
@@ -60,7 +59,6 @@
         selectedRows = [NSMutableIndexSet indexSet];
         weHaveStaleBookmarks = NO;
         userClickedCancel = NO;
-        userClickedAddFilesAfterCancel = NO;
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
     }
@@ -82,13 +80,13 @@
 
     // what if the user clicks cancel, then double clicks just one file?
     // or different files?
-    if ((userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) || userClickedAddFilesAfterCancel == YES) {
+    if (userClickedCancel == YES && (fileView.clickedColumn >= 0 && fileView.clickedRow >= 0)) {
         SPLog(@"userClickedCancel == YES, set selected rows to [fileView selectedRowIndexes]");
         [selectedRows removeAllIndexes];
         [selectedRows addIndexes:[fileView selectedRowIndexes]];
     }
 
-    if((weHaveStaleBookmarks == YES && userClickedCancel == NO) || ((fileView.clickedColumn >= 0 && fileView.clickedRow >= 0) && userClickedCancel == YES ) || (weHaveStaleBookmarks == YES && userClickedAddFilesAfterCancel == YES)){
+    if((weHaveStaleBookmarks == YES && userClickedCancel == NO) || ((fileView.clickedColumn >= 0 && fileView.clickedRow >= 0) && userClickedCancel == YES )){
 
         SPLog(@"IN, setting panel options");
 
@@ -343,15 +341,16 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 - (IBAction)revokeBookmark:(id)sender
 {
 	NSIndexSet *indiceToRevoke = [fileView selectedRowIndexes];
+	NSInteger __block revokedBookmarksOffset = 0;
 
 	// iterate through all selected indice
 	[indiceToRevoke enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
 		// retrieve the filename
-		NSString *fileName = [NSString stringWithFormat:@"file://%@", [fileNames safeObjectAtIndex:idx]];
-		
+		NSString *fileName = [NSString stringWithFormat:@"file://%@", [fileNames safeObjectAtIndex:idx - revokedBookmarksOffset]];
         if([SecureBookmarkManager.sharedInstance revokeBookmarkWithFilename:fileName] == YES){
             [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
             SPLog(@"revokeBookmarkWithFilename success. refreshing bookmarks: %@", bookmarks);
+            revokedBookmarksOffset++;
         }
         else{
             SPLog(@"revokeBookmarkWithFilename failed: %@", fileName);
@@ -364,13 +363,6 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
 
 - (IBAction)addBookmark:(id)sender
 {
-
-    if(weHaveStaleBookmarks == YES && userClickedCancel == YES){
-        SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
-        userClickedAddFilesAfterCancel = YES;
-        [self doubleClick:nil];
-        return;
-    }
 
     PanelOptions *options = [[PanelOptions alloc] init];
 
@@ -587,9 +579,9 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     if([cell isKindOfClass:[NSCell class]] == YES){
         // default to controlTextColor
         [cell setTextColor:[NSColor controlTextColor]];
+        NSString *title = ((NSCell*)cell).title;
 
         if(weHaveStaleBookmarks == YES){
-            NSString *title = ((NSCell*)cell).title;
 
             for(NSString* staleFile in staleBookmarks){
                 if([[staleFile dropPrefixWithPrefix:@"file://"] isEqualToString:title] == YES){
@@ -597,7 +589,13 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
                 }
             }
         }
+        [((NSCell*)cell) setTitle:[title stringByRemovingPercentEncoding]];
     }
+}
+
+-(void)tableViewSelectionDidChange:(NSNotification *)notification {
+    NSTableView *table = [notification object];
+    [revokeButton setEnabled:[[table selectedRowIndexes] count] > 0];
 }
 
 @end

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="18122" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19529" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="18122"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19529"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -73,6 +73,7 @@
             <connections>
                 <outlet property="fileView" destination="eH2-Ed-Xh3" id="4ea-J5-z5n"/>
                 <outlet property="hiddenFileView" destination="GEn-6y-U3F" id="YAa-9u-hpT"/>
+                <outlet property="revokeButton" destination="lHn-Wy-DTi" id="n10-yF-Qzc"/>
                 <outlet property="staleLabel" destination="C8B-BP-39F" id="4xj-uj-EZc"/>
                 <outlet property="view" destination="5dZ-tO-Ldn" id="VI1-LP-ygg"/>
             </connections>
@@ -171,8 +172,8 @@ Gw
                             <outlet property="nextKeyView" destination="1718" id="1733"/>
                         </connections>
                     </button>
-                    <textField verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1721">
-                        <rect key="frame" x="17" y="90" width="192" height="14"/>
+                    <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1721">
+                        <rect key="frame" x="18" y="90" width="191" height="14"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Name:" id="1726">
                             <font key="font" metaFont="message" size="11"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -575,7 +576,7 @@ Gw
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="1Oz-rT-AdX"/>
                     </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="center" title="20" drawsBackground="YES" usesSingleLineMode="YES" id="788">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" title="20" drawsBackground="YES" usesSingleLineMode="YES" id="788">
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" allowsFloats="NO" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="3" id="792">
                             <nil key="negativeInfinitySymbol"/>
                             <nil key="positiveInfinitySymbol"/>
@@ -730,7 +731,7 @@ Gw
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="120" id="I6V-7f-rdZ"/>
                                     <constraint firstAttribute="height" constant="20" id="d3f-DE-oUX"/>
                                 </constraints>
-                                <buttonCell key="cell" type="push" title="Change" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="V62-2t-uwh">
+                                <buttonCell key="cell" type="push" title="Change…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="V62-2t-uwh">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
@@ -815,17 +816,17 @@ Gw
             <point key="canvasLocation" x="-52" y="1050"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="512" userLabel="Tables">
-            <rect key="frame" x="0.0" y="-2" width="540" height="355"/>
+            <rect key="frame" x="0.0" y="0.0" width="540" height="359"/>
             <userGuides>
                 <userLayoutGuide location="195" affinity="minX"/>
             </userGuides>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="950">
-                    <rect key="frame" x="178" y="183" width="342" height="24"/>
+                    <rect key="frame" x="178" y="187" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="jKC-sK-N4K"/>
                     </constraints>
-                    <buttonCell key="cell" type="check" title="New fields should allow nulls" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="951">
+                    <buttonCell key="cell" type="check" title="New fields should allow NULL values" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="951">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -834,25 +835,25 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="554">
-                    <rect key="frame" x="180" y="131" width="340" height="5"/>
+                    <rect key="frame" x="180" y="135" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="9Oq-Ng-kvf"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="553">
-                    <rect key="frame" x="180" y="172" width="340" height="5"/>
+                    <rect key="frame" x="180" y="176" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="C6E-tR-dLf"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="552">
-                    <rect key="frame" x="180" y="244" width="340" height="5"/>
+                    <rect key="frame" x="180" y="248" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="XQn-Hf-WgQ"/>
                     </constraints>
                 </box>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="535">
-                    <rect key="frame" x="178" y="214" width="342" height="24"/>
+                    <rect key="frame" x="178" y="218" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="250" id="S6J-1c-jeX"/>
                         <constraint firstAttribute="height" constant="22" id="poT-TR-Yy5"/>
@@ -866,7 +867,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="532">
-                    <rect key="frame" x="180" y="102" width="340" height="22"/>
+                    <rect key="frame" x="180" y="106" width="340" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="br0-Qy-rrh"/>
                     </constraints>
@@ -880,7 +881,7 @@ Gw
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="531">
-                    <rect key="frame" x="18" y="103" width="154" height="20"/>
+                    <rect key="frame" x="18" y="107" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="qhE-Ia-yxO"/>
                     </constraints>
@@ -891,7 +892,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="520">
-                    <rect key="frame" x="295" y="143" width="175" height="22"/>
+                    <rect key="frame" x="295" y="147" width="175" height="22"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="75" id="0em-nN-sPX"/>
                         <constraint firstAttribute="height" constant="22" id="c07-Tp-IM8"/>
@@ -914,7 +915,7 @@ Gw
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="519">
-                    <rect key="frame" x="468" y="142" width="17" height="24"/>
+                    <rect key="frame" x="468" y="146" width="17" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="4O1-HE-XH8"/>
                         <constraint firstAttribute="width" constant="11" id="BgY-gn-Agc"/>
@@ -927,7 +928,7 @@ Gw
                     </connections>
                 </stepper>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="518">
-                    <rect key="frame" x="178" y="286" width="342" height="24"/>
+                    <rect key="frame" x="178" y="290" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="dJC-h5-h8k"/>
                     </constraints>
@@ -940,7 +941,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="517">
-                    <rect key="frame" x="178" y="142" width="112" height="24"/>
+                    <rect key="frame" x="178" y="146" width="112" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="E5b-gA-NPS"/>
                         <constraint firstAttribute="width" constant="110" id="FbY-Rf-3Kz"/>
@@ -954,7 +955,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="516">
-                    <rect key="frame" x="178" y="317" width="342" height="24"/>
+                    <rect key="frame" x="178" y="321" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="ekR-ID-Ft2"/>
                     </constraints>
@@ -967,7 +968,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="515">
-                    <rect key="frame" x="483" y="146" width="39" height="16"/>
+                    <rect key="frame" x="483" y="150" width="39" height="16"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="35" id="0fh-Y8-SkD"/>
                     </constraints>
@@ -981,19 +982,19 @@ Gw
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="514">
-                    <rect key="frame" x="18" y="319" width="154" height="20"/>
+                    <rect key="frame" x="18" y="323" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="atp-2o-EmZ"/>
                         <constraint firstAttribute="width" constant="150" id="uia-kW-GYj"/>
                     </constraints>
-                    <textFieldCell key="cell" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Reload Table After:" id="528">
+                    <textFieldCell key="cell" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Reload table after:" id="528">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="513">
-                    <rect key="frame" x="178" y="255" width="342" height="24"/>
+                    <rect key="frame" x="178" y="259" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="3B8-bR-NuH"/>
                     </constraints>
@@ -1006,13 +1007,13 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1467">
-                    <rect key="frame" x="180" y="90" width="340" height="5"/>
+                    <rect key="frame" x="180" y="94" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="cvo-x6-AXc"/>
                     </constraints>
                 </box>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1468">
-                    <rect key="frame" x="18" y="62" width="154" height="20"/>
+                    <rect key="frame" x="18" y="66" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="FXJ-gj-57u"/>
                     </constraints>
@@ -1023,7 +1024,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1470">
-                    <rect key="frame" x="177" y="57" width="347" height="27"/>
+                    <rect key="frame" x="177" y="61" width="347" height="27"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="8Hk-DM-XZ6"/>
                     </constraints>
@@ -1043,7 +1044,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ykf-r8-q6R">
-                    <rect key="frame" x="178" y="35" width="200" height="18"/>
+                    <rect key="frame" x="178" y="39" width="200" height="18"/>
                     <buttonCell key="cell" type="check" title="Intelligently switch at length:" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="xxI-Ka-WSh">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -1053,7 +1054,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vFL-gu-iZ8">
-                    <rect key="frame" x="18" y="39" width="154" height="16"/>
+                    <rect key="frame" x="18" y="43" width="154" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="right" title="Edit inline or popup:" id="59O-pr-57t">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1061,7 +1062,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="suA-e3-Xus">
-                    <rect key="frame" x="386" y="30" width="134" height="22"/>
+                    <rect key="frame" x="386" y="37" width="134" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="zNt-Ga-qF7"/>
                     </constraints>
@@ -1072,12 +1073,26 @@ Gw
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
+                        <binding destination="117" name="enabled" keyPath="values.EditInSheetForLongText" id="Rxq-3f-Vpo"/>
                         <binding destination="117" name="value" keyPath="values.EditInSheetForLongTextLengthThreshold" id="X5r-l4-CMf"/>
                     </connections>
                 </textField>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Fnh-E7-zuv">
+                    <rect key="frame" x="178" y="14" width="342" height="18"/>
+                    <buttonCell key="cell" type="check" title="Always use popup for multi-line content" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="9qv-rY-7Hz">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.EditInSheetForMultiLineText" id="mbU-Zr-d1A"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
+                <constraint firstAttribute="trailing" secondItem="Fnh-E7-zuv" secondAttribute="trailing" constant="20" id="1FZ-17-F1T"/>
                 <constraint firstItem="554" firstAttribute="top" secondItem="517" secondAttribute="bottom" constant="9" id="2Qu-5h-UB6"/>
+                <constraint firstItem="suA-e3-Xus" firstAttribute="centerY" secondItem="ykf-r8-q6R" secondAttribute="centerY" id="49j-gt-VYq"/>
+                <constraint firstAttribute="bottom" secondItem="Fnh-E7-zuv" secondAttribute="bottom" constant="15" id="4Kl-86-osg"/>
                 <constraint firstItem="1468" firstAttribute="leading" secondItem="514" secondAttribute="leading" id="5oZ-xu-Ici"/>
                 <constraint firstItem="1470" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="7QM-tH-vMJ"/>
                 <constraint firstItem="520" firstAttribute="centerY" secondItem="517" secondAttribute="centerY" id="A30-fC-QR3"/>
@@ -1089,6 +1104,7 @@ Gw
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="516" secondAttribute="trailing" id="FBz-f3-0c4"/>
                 <constraint firstItem="1467" firstAttribute="leading" secondItem="552" secondAttribute="leading" id="FQi-kJ-Hsh"/>
                 <constraint firstItem="1470" firstAttribute="top" secondItem="1467" secondAttribute="bottom" constant="9" id="FUP-RI-Zoa"/>
+                <constraint firstItem="Fnh-E7-zuv" firstAttribute="top" secondItem="ykf-r8-q6R" secondAttribute="bottom" constant="9" id="Heg-3b-S7W"/>
                 <constraint firstItem="552" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="I4s-wN-vPG"/>
                 <constraint firstAttribute="trailing" secondItem="535" secondAttribute="trailing" constant="20" id="KNZ-Ux-lhm"/>
                 <constraint firstItem="554" firstAttribute="leading" secondItem="552" secondAttribute="leading" id="LHp-OK-WrB"/>
@@ -1111,7 +1127,6 @@ Gw
                 <constraint firstItem="513" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="d79-vW-qhB"/>
                 <constraint firstItem="531" firstAttribute="leading" secondItem="514" secondAttribute="leading" id="dSb-nT-KlY"/>
                 <constraint firstItem="532" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="deG-L2-Slq"/>
-                <constraint firstItem="suA-e3-Xus" firstAttribute="top" secondItem="1470" secondAttribute="bottom" constant="9" id="fpK-Vg-ccN"/>
                 <constraint firstItem="515" firstAttribute="leading" secondItem="519" secondAttribute="trailing" constant="3" id="fqu-hb-Zkb"/>
                 <constraint firstItem="vFL-gu-iZ8" firstAttribute="baseline" secondItem="ykf-r8-q6R" secondAttribute="centerY" constant="2" id="g4a-8F-WeI"/>
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="552" secondAttribute="trailing" id="gEf-Yt-4oK"/>
@@ -1119,7 +1134,6 @@ Gw
                 <constraint firstItem="535" firstAttribute="top" secondItem="552" secondAttribute="bottom" constant="9" id="id8-2Z-Cwy"/>
                 <constraint firstItem="suA-e3-Xus" firstAttribute="trailing" secondItem="1470" secondAttribute="trailing" id="k0P-6r-dl3"/>
                 <constraint firstItem="518" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="kgA-Tk-nbF"/>
-                <constraint firstAttribute="bottom" secondItem="ykf-r8-q6R" secondAttribute="bottom" constant="36" id="kvy-n2-1l2"/>
                 <constraint firstItem="950" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="lri-W5-gQr"/>
                 <constraint firstItem="553" firstAttribute="top" secondItem="950" secondAttribute="bottom" constant="9" id="m1c-cx-CDX"/>
                 <constraint firstItem="1468" firstAttribute="trailing" secondItem="514" secondAttribute="trailing" id="mDY-Ra-RD2"/>
@@ -1129,6 +1143,7 @@ Gw
                 <constraint firstItem="532" firstAttribute="top" secondItem="554" secondAttribute="bottom" constant="9" id="pGf-OD-zLB"/>
                 <constraint firstItem="553" firstAttribute="leading" secondItem="552" secondAttribute="leading" id="qSC-wN-gPI"/>
                 <constraint firstItem="ykf-r8-q6R" firstAttribute="leading" secondItem="vFL-gu-iZ8" secondAttribute="trailing" constant="10" id="qq6-PH-PF4"/>
+                <constraint firstItem="Fnh-E7-zuv" firstAttribute="leading" secondItem="vFL-gu-iZ8" secondAttribute="trailing" constant="10" id="s6s-zt-pIh"/>
                 <constraint firstItem="1470" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="ssS-7N-zcY"/>
                 <constraint firstItem="554" firstAttribute="trailing" secondItem="552" secondAttribute="trailing" id="t7A-JD-g8C"/>
                 <constraint firstItem="suA-e3-Xus" firstAttribute="leading" secondItem="ykf-r8-q6R" secondAttribute="trailing" constant="8" symbolic="YES" id="ujC-Bf-p6l"/>
@@ -1137,16 +1152,16 @@ Gw
                 <constraint firstItem="516" firstAttribute="leading" secondItem="514" secondAttribute="trailing" constant="10" id="wd5-tH-69R"/>
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="513" secondAttribute="trailing" id="zPM-7o-ZJu"/>
             </constraints>
-            <point key="canvasLocation" x="-52" y="605.5"/>
+            <point key="canvasLocation" x="-52" y="615.5"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="56" userLabel="Notifications">
-            <rect key="frame" x="0.0" y="0.0" width="500" height="315"/>
+            <rect key="frame" x="0.0" y="0.0" width="500" height="344"/>
             <userGuides>
                 <userLayoutGuide location="365" affinity="minX"/>
             </userGuides>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1154">
-                    <rect key="frame" x="48" y="16" width="432" height="24"/>
+                    <rect key="frame" x="48" y="14" width="432" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="RiX-eM-1xw"/>
                     </constraints>
@@ -1160,7 +1175,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1152">
-                    <rect key="frame" x="48" y="78" width="432" height="24"/>
+                    <rect key="frame" x="48" y="76" width="432" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="lty-eG-CJ7"/>
                     </constraints>
@@ -1174,7 +1189,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1150">
-                    <rect key="frame" x="48" y="47" width="432" height="24"/>
+                    <rect key="frame" x="48" y="45" width="432" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="CuD-yl-11v"/>
                     </constraints>
@@ -1188,7 +1203,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1148">
-                    <rect key="frame" x="48" y="109" width="432" height="24"/>
+                    <rect key="frame" x="48" y="107" width="432" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="wAZ-J7-Kn8"/>
                     </constraints>
@@ -1202,7 +1217,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1143">
-                    <rect key="frame" x="18" y="137" width="462" height="24"/>
+                    <rect key="frame" x="18" y="135" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Exg-tK-o1C"/>
                     </constraints>
@@ -1215,7 +1230,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="345">
-                    <rect key="frame" x="18" y="277" width="462" height="24"/>
+                    <rect key="frame" x="18" y="306" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Lnx-83-Yt5"/>
                     </constraints>
@@ -1228,7 +1243,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="7O5-LC-aVK">
-                    <rect key="frame" x="18" y="246" width="462" height="24"/>
+                    <rect key="frame" x="18" y="275" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="6fj-Ot-Cxl"/>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="6gV-bD-sZv"/>
@@ -1242,13 +1257,13 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1156">
-                    <rect key="frame" x="20" y="170" width="460" height="5"/>
+                    <rect key="frame" x="20" y="168" width="460" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="74B-wM-eJc"/>
                     </constraints>
                 </box>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nmG-Wb-i0O">
-                    <rect key="frame" x="18" y="215" width="462" height="24"/>
+                    <rect key="frame" x="18" y="213" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="sLt-fe-2TR"/>
                     </constraints>
@@ -1261,7 +1276,7 @@ Gw
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wue-rM-fp8">
-                    <rect key="frame" x="18" y="184" width="462" height="24"/>
+                    <rect key="frame" x="18" y="182" width="462" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="mXS-o1-Dcv"/>
                     </constraints>
@@ -1273,8 +1288,24 @@ Gw
                         <binding destination="117" name="value" keyPath="values.ShowWarningSkipShowDatabase" id="0Sk-fz-fz5"/>
                     </connections>
                 </button>
+                <button translatesAutoresizingMaskIntoConstraints="NO" id="qGE-Xx-6rd">
+                    <rect key="frame" x="18" y="244" width="462" height="24"/>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="QKM-ze-6EJ"/>
+                        <constraint firstAttribute="height" constant="22" id="qIL-wv-okd"/>
+                    </constraints>
+                    <buttonCell key="cell" type="check" title="Show double check warning when deleting rows" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="sps-wq-L9i">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.ShowWarningBeforeDeleteQuery" id="pPL-GF-FrJ"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
+                <constraint firstItem="qGE-Xx-6rd" firstAttribute="leading" secondItem="7O5-LC-aVK" secondAttribute="leading" id="3BZ-zy-sWn"/>
+                <constraint firstItem="qGE-Xx-6rd" firstAttribute="trailing" secondItem="7O5-LC-aVK" secondAttribute="trailing" id="3Zp-aZ-kHF"/>
                 <constraint firstItem="7O5-LC-aVK" firstAttribute="top" secondItem="345" secondAttribute="bottom" constant="9" id="4hk-QI-vYg"/>
                 <constraint firstItem="1154" firstAttribute="top" secondItem="1150" secondAttribute="bottom" constant="9" id="5xt-fT-Nra"/>
                 <constraint firstItem="7O5-LC-aVK" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="6LL-xO-Ipe"/>
@@ -1287,6 +1318,7 @@ Gw
                 <constraint firstItem="1150" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="Lsc-pn-thj"/>
                 <constraint firstItem="1143" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="MfT-bw-sdu"/>
                 <constraint firstItem="1152" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="N41-h7-ADA"/>
+                <constraint firstItem="nmG-Wb-i0O" firstAttribute="top" secondItem="qGE-Xx-6rd" secondAttribute="bottom" constant="9" id="NrY-fB-IP0"/>
                 <constraint firstItem="wue-rM-fp8" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="PW6-pm-PGb"/>
                 <constraint firstItem="1143" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="Slw-5B-F9E"/>
                 <constraint firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" constant="20" id="WYZ-zS-Rpv"/>
@@ -1299,7 +1331,7 @@ Gw
                 <constraint firstItem="1152" firstAttribute="top" secondItem="1148" secondAttribute="bottom" constant="9" id="pKc-k0-Baa"/>
                 <constraint firstItem="wue-rM-fp8" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="qwL-ww-iaC"/>
                 <constraint firstItem="345" firstAttribute="leading" secondItem="1156" secondAttribute="leading" id="r5i-Dc-ygG"/>
-                <constraint firstItem="nmG-Wb-i0O" firstAttribute="top" secondItem="7O5-LC-aVK" secondAttribute="bottom" constant="9" id="rZY-VQ-JlH"/>
+                <constraint firstItem="qGE-Xx-6rd" firstAttribute="top" secondItem="7O5-LC-aVK" secondAttribute="bottom" constant="9" id="rZY-VQ-JlH"/>
                 <constraint firstItem="1148" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="tEh-zH-OaF"/>
                 <constraint firstItem="345" firstAttribute="trailing" secondItem="1156" secondAttribute="trailing" id="tnb-WX-b20"/>
                 <constraint firstItem="1154" firstAttribute="leading" secondItem="1148" secondAttribute="leading" id="ujG-Zl-wft"/>
@@ -1307,25 +1339,25 @@ Gw
                 <constraint firstItem="1148" firstAttribute="top" secondItem="1143" secondAttribute="bottom" constant="6" id="wbi-xL-mtz"/>
                 <constraint firstItem="wue-rM-fp8" firstAttribute="top" secondItem="nmG-Wb-i0O" secondAttribute="bottom" constant="9" id="x4k-LN-e54"/>
             </constraints>
-            <point key="canvasLocation" x="751" y="153"/>
+            <point key="canvasLocation" x="751" y="166.5"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="641" userLabel="Network">
-            <rect key="frame" x="0.0" y="0.0" width="540" height="400"/>
+            <rect key="frame" x="0.0" y="-10" width="540" height="410"/>
             <subviews>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="681">
-                    <rect key="frame" x="180" y="352" width="340" height="5"/>
+                    <rect key="frame" x="180" y="362" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="FAC-Fz-417"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="HWX-AV-xGx">
-                    <rect key="frame" x="180" y="311" width="340" height="5"/>
+                    <rect key="frame" x="180" y="321" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="ymN-vI-0Q4"/>
                     </constraints>
                 </box>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="676">
-                    <rect key="frame" x="460" y="364" width="62" height="20"/>
+                    <rect key="frame" x="460" y="374" width="62" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="58" id="f3A-8C-BEH"/>
                         <constraint firstAttribute="height" constant="20" id="n7Z-Qs-SGV"/>
@@ -1337,7 +1369,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField toolTip="Enter how long to attempt to connect or send queries for; set a value of 0 to disable the timeout" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="674">
-                    <rect key="frame" x="180" y="363" width="279" height="22"/>
+                    <rect key="frame" x="180" y="373" width="279" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="xam-24-4m5"/>
                     </constraints>
@@ -1357,7 +1389,7 @@ Gw
                     </connections>
                 </textField>
                 <button toolTip="Enable to send a MySQL ping to ensure the connection is kept alive if it has not been used for a while" translatesAutoresizingMaskIntoConstraints="NO" id="652">
-                    <rect key="frame" x="178" y="322" width="342" height="24"/>
+                    <rect key="frame" x="178" y="332" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="hcU-16-gmv"/>
                     </constraints>
@@ -1370,7 +1402,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="642">
-                    <rect key="frame" x="18" y="364" width="154" height="20"/>
+                    <rect key="frame" x="18" y="374" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="Of5-7z-bpZ"/>
                         <constraint firstAttribute="height" constant="20" id="wde-4k-ftL"/>
@@ -1382,7 +1414,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9CM-2a-2JU">
-                    <rect key="frame" x="18" y="285" width="154" height="20"/>
+                    <rect key="frame" x="18" y="295" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="9Wx-yi-soy"/>
                         <constraint firstAttribute="width" constant="150" id="tTC-vV-0K5"/>
@@ -1394,7 +1426,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Rsg-4x-YV2">
-                    <rect key="frame" x="411" y="285" width="109" height="19"/>
+                    <rect key="frame" x="411" y="295" width="109" height="19"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="109" id="Gjl-91-TCa"/>
                         <constraint firstAttribute="height" constant="18" id="yDD-xr-H6c"/>
@@ -1408,7 +1440,7 @@ Gw
                     </connections>
                 </button>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="GcY-yy-sZn">
-                    <rect key="frame" x="178" y="284" width="232" height="22"/>
+                    <rect key="frame" x="178" y="294" width="232" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="qwT-fc-Nfx"/>
                     </constraints>
@@ -1426,7 +1458,7 @@ Gw
                     </connections>
                 </textField>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9lg-Fd-6u7">
-                    <rect key="frame" x="180" y="40" width="340" height="160"/>
+                    <rect key="frame" x="180" y="50" width="340" height="160"/>
                     <clipView key="contentView" id="M9x-3Q-tiD">
                         <rect key="frame" x="1" y="1" width="338" height="158"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1483,7 +1515,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Rn3-Bt-QGE">
-                    <rect key="frame" x="18" y="256" width="154" height="20"/>
+                    <rect key="frame" x="18" y="266" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="9A7-cl-zj5"/>
                         <constraint firstAttribute="width" constant="150" id="fWd-KS-Oqo"/>
@@ -1495,13 +1527,13 @@ Gw
                     </textFieldCell>
                 </textField>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="3Fg-G1-BWj">
-                    <rect key="frame" x="180" y="207" width="340" height="5"/>
+                    <rect key="frame" x="180" y="217" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="Woc-dz-xx3"/>
                     </constraints>
                 </box>
                 <button toolTip="Reset the cipher list to the default configuration" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jJw-LF-gtW">
-                    <rect key="frame" x="180" y="11" width="32" height="25"/>
+                    <rect key="frame" x="180" y="16" width="32" height="25"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="32" id="eZr-IW-gWT"/>
                         <constraint firstAttribute="height" constant="23" id="pv7-dA-TIJ"/>
@@ -1520,7 +1552,7 @@ Gw
                     </connections>
                 </button>
                 <popUpButton verticalHuggingPriority="750" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="P6m-dR-d6a">
-                    <rect key="frame" x="177" y="251" width="347" height="27"/>
+                    <rect key="frame" x="177" y="261" width="347" height="27"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="jKo-lu-g39"/>
                     </constraints>
@@ -1546,7 +1578,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4Aw-q4-73u">
-                    <rect key="frame" x="18" y="180" width="154" height="20"/>
+                    <rect key="frame" x="18" y="190" width="154" height="20"/>
                     <string key="toolTip">The cipher suites are used for SSL/TLS-secured connections and specify which algorithms Sequel Ace will use to encrypt a connection, as well as their preference.
 Warning: If Sequel Ace and the server do not have at least one cipher suite in common, you will no longer be able to connect!</string>
                     <constraints>
@@ -1560,7 +1592,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5Vs-H5-Nca">
-                    <rect key="frame" x="18" y="220" width="154" height="21"/>
+                    <rect key="frame" x="18" y="230" width="154" height="21"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" alignment="right" title="Known Hosts:" id="dyI-8y-FNW">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1568,7 +1600,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" tag="2" translatesAutoresizingMaskIntoConstraints="NO" id="l1q-C8-ytL">
-                    <rect key="frame" x="177" y="216" width="347" height="27"/>
+                    <rect key="frame" x="177" y="226" width="347" height="27"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="tk9-kk-iZA"/>
                     </constraints>
@@ -1604,12 +1636,12 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="P6m-dR-d6a" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="3lY-KJ-e21"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="4P6-Go-lyC"/>
                 <constraint firstItem="5Vs-H5-Nca" firstAttribute="leading" secondItem="641" secondAttribute="leading" constant="20" id="4oq-4y-wkk"/>
-                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="9lg-Fd-6u7" secondAttribute="bottom" constant="5" id="5Zj-6C-bW5"/>
+                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="9lg-Fd-6u7" secondAttribute="bottom" constant="15" id="5Zj-6C-bW5"/>
                 <constraint firstItem="5Vs-H5-Nca" firstAttribute="firstBaseline" secondItem="l1q-C8-ytL" secondAttribute="firstBaseline" id="6bc-BQ-FtG"/>
                 <constraint firstItem="652" firstAttribute="top" secondItem="681" secondAttribute="bottom" constant="9" id="88K-qP-zB5"/>
                 <constraint firstItem="jJw-LF-gtW" firstAttribute="leading" secondItem="674" secondAttribute="leading" id="9oi-kf-DQM"/>
                 <constraint firstItem="TG6-Q3-g30" firstAttribute="trailing" secondItem="681" secondAttribute="trailing" id="A0b-vy-lrC"/>
-                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="jJw-LF-gtW" secondAttribute="top" id="C2G-02-FBf"/>
+                <constraint firstItem="TG6-Q3-g30" firstAttribute="top" secondItem="jJw-LF-gtW" secondAttribute="top" constant="5" id="C2G-02-FBf"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="9CM-2a-2JU" secondAttribute="centerY" id="D6v-YG-WzF"/>
                 <constraint firstItem="Rsg-4x-YV2" firstAttribute="centerY" secondItem="GcY-yy-sZn" secondAttribute="centerY" id="FDQ-ZG-T5Y"/>
                 <constraint firstItem="9lg-Fd-6u7" firstAttribute="top" secondItem="3Fg-G1-BWj" secondAttribute="bottom" constant="9" id="Hmn-IF-E0D"/>
@@ -1662,11 +1694,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </constraints>
                 </box>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1083">
-                    <rect key="frame" x="488" y="256" width="34" height="14"/>
+                    <rect key="frame" x="472" y="256" width="50" height="14"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="30" id="4mD-hS-s3t"/>
+                        <constraint firstAttribute="width" constant="46" id="4mD-hS-s3t"/>
                     </constraints>
-                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="secs" id="1084">
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="seconds" id="1084">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1676,7 +1708,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1046">
-                    <rect key="frame" x="474" y="251" width="15" height="22"/>
+                    <rect key="frame" x="458" y="251" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="EEE-Hl-ffx"/>
                         <constraint firstAttribute="width" constant="11" id="teM-Rz-MWp"/>
@@ -1691,7 +1723,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1045">
-                    <rect key="frame" x="299" y="252" width="59" height="22"/>
+                    <rect key="frame" x="279" y="247" width="59" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="J1h-3t-Frd"/>
                         <constraint firstAttribute="width" constant="55" id="wmw-DW-vkB"/>
@@ -1706,7 +1738,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1044">
-                    <rect key="frame" x="361" y="252" width="114" height="22"/>
+                    <rect key="frame" x="341" y="252" width="118" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="7Gy-54-e6x"/>
                     </constraints>
@@ -1728,7 +1760,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1128">
-                    <rect key="frame" x="259" y="220" width="261" height="24"/>
+                    <rect key="frame" x="259" y="224" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="o8a-4g-ciG"/>
                     </constraints>
@@ -1869,13 +1901,13 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </popUpButtonCell>
                 </popUpButton>
                 <scrollView horizontalLineScroll="22" horizontalPageScroll="10" verticalLineScroll="22" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1682">
-                    <rect key="frame" x="20" y="42" width="231" height="389"/>
+                    <rect key="frame" x="20" y="49" width="231" height="382"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oEY-Qs-g9y">
-                        <rect key="frame" x="1" y="1" width="229" height="387"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <rect key="frame" x="1" y="1" width="229" height="380"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" id="1685">
-                                <rect key="frame" x="0.0" y="0.0" width="229" height="387"/>
+                                <rect key="frame" x="0.0" y="0.0" width="229" height="380"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1956,11 +1988,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="2185">
-                    <rect key="frame" x="259" y="377" width="93" height="24"/>
+                    <rect key="frame" x="259" y="377" width="97" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="OaX-My-oPP"/>
                     </constraints>
-                    <buttonCell key="cell" type="check" title="Soft indent" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="2186">
+                    <buttonCell key="cell" type="check" title="Soft indent:" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="2186">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -1969,7 +2001,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2188">
-                    <rect key="frame" x="357" y="378" width="151" height="22"/>
+                    <rect key="frame" x="361" y="378" width="147" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="VGh-Jf-FAt"/>
                     </constraints>
@@ -1983,6 +2015,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
+                        <binding destination="117" name="enabled" keyPath="values.CustomQuerySoftIndent" id="MfW-f7-kwf"/>
                         <binding destination="117" name="value" keyPath="values.CustomQuerySoftIndentWidth" id="2209"/>
                     </connections>
                 </textField>
@@ -2001,7 +2034,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="xIN-qP-ogl">
-                    <rect key="frame" x="259" y="189" width="261" height="24"/>
+                    <rect key="frame" x="259" y="193" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="NJU-0g-hK3"/>
                     </constraints>
@@ -2014,7 +2047,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="UnY-1b-NTN">
-                    <rect key="frame" x="259" y="158" width="261" height="24"/>
+                    <rect key="frame" x="259" y="162" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="LQ3-Eq-hy0"/>
                     </constraints>
@@ -2030,11 +2063,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1517">
-                    <rect key="frame" x="488" y="110" width="34" height="14"/>
+                    <rect key="frame" x="472" y="109" width="50" height="14"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="30" id="Wt0-DH-0yD"/>
+                        <constraint firstAttribute="width" constant="46" id="Wt0-DH-0yD"/>
                     </constraints>
-                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="secs" id="1527">
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" enabled="NO" sendsActionOnEndEditing="YES" title="seconds" id="1527">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2044,7 +2077,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1518">
-                    <rect key="frame" x="474" y="105" width="15" height="22"/>
+                    <rect key="frame" x="458" y="104" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="UHj-Wq-xiC"/>
                         <constraint firstAttribute="width" constant="11" id="nHg-43-jBJ"/>
@@ -2059,7 +2092,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </stepper>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1519">
-                    <rect key="frame" x="299" y="106" width="59" height="22"/>
+                    <rect key="frame" x="279" y="100" width="59" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="6rD-Fb-Wtt"/>
                         <constraint firstAttribute="width" constant="55" id="sCD-jX-6bG"/>
@@ -2074,7 +2107,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1520">
-                    <rect key="frame" x="361" y="106" width="114" height="22"/>
+                    <rect key="frame" x="341" y="105" width="118" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="UbU-HI-GT2"/>
                     </constraints>
@@ -2096,7 +2129,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1521">
-                    <rect key="frame" x="259" y="127" width="261" height="24"/>
+                    <rect key="frame" x="259" y="131" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="JL1-kC-qdF"/>
                     </constraints>
@@ -2109,11 +2142,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="q6h-n2-3a8">
-                    <rect key="frame" x="259" y="74" width="261" height="24"/>
+                    <rect key="frame" x="259" y="77" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Hbi-dI-piB"/>
                     </constraints>
-                    <buttonCell key="cell" type="check" title="Complete with Backticks" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="vGo-VU-lIt">
+                    <buttonCell key="cell" type="check" title="Complete with backticks" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="vGo-VU-lIt">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -2122,7 +2155,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1542">
-                    <rect key="frame" x="259" y="43" width="261" height="24"/>
+                    <rect key="frame" x="259" y="46" width="261" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="Vdm-3z-iY0"/>
                     </constraints>
@@ -2135,18 +2168,18 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1499">
-                    <rect key="frame" x="259" y="15" width="101" height="20"/>
+                    <rect key="frame" x="259" y="18" width="97" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="OHa-nn-g2y"/>
                     </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Tab Stop Width:" id="1500">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Tab stop width:" id="1500">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1505">
-                    <rect key="frame" x="363" y="14" width="145" height="22"/>
+                    <rect key="frame" x="359" y="17" width="149" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="VkS-BX-Qdr"/>
                     </constraints>
@@ -2165,7 +2198,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1497">
-                    <rect key="frame" x="507" y="13" width="15" height="22"/>
+                    <rect key="frame" x="507" y="16" width="15" height="22"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="11" id="kU9-CG-jyc"/>
                         <constraint firstAttribute="height" constant="16" id="ua9-l2-nxz"/>
@@ -2181,7 +2214,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             </subviews>
             <constraints>
                 <constraint firstItem="1040" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="07h-Be-Qb7"/>
-                <constraint firstItem="1517" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" id="0uR-Wu-RhC"/>
+                <constraint firstItem="1517" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" constant="-5" id="0uR-Wu-RhC"/>
                 <constraint firstItem="1682" firstAttribute="leading" secondItem="1085" secondAttribute="leading" id="0zs-YT-pk7"/>
                 <constraint firstItem="1042" firstAttribute="top" secondItem="1040" secondAttribute="bottom" constant="9" id="1um-mL-Szt"/>
                 <constraint firstItem="1520" firstAttribute="leading" secondItem="1519" secondAttribute="trailing" constant="5" id="30q-zf-qRY"/>
@@ -2189,17 +2222,17 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="1497" firstAttribute="leading" secondItem="1505" secondAttribute="trailing" constant="1" id="32R-Ww-Wta"/>
                 <constraint firstItem="1497" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="3aN-VN-IMz"/>
                 <constraint firstItem="1519" firstAttribute="leading" secondItem="1045" secondAttribute="leading" id="3x9-GR-xQ1"/>
-                <constraint firstItem="1520" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" id="4vP-JR-hye"/>
+                <constraint firstItem="1520" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" constant="-5" id="4vP-JR-hye"/>
                 <constraint firstItem="2185" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="51B-Rx-1DL"/>
                 <constraint firstItem="1517" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="58G-Zl-88J"/>
                 <constraint firstItem="1041" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="6Gc-GN-jaM"/>
                 <constraint firstItem="1499" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="6Gd-YR-UwY"/>
                 <constraint firstItem="1128" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="6Rt-Dl-nEH"/>
-                <constraint firstItem="q6h-n2-3a8" firstAttribute="top" secondItem="1519" secondAttribute="bottom" constant="9" id="753-w2-5rN"/>
+                <constraint firstItem="q6h-n2-3a8" firstAttribute="top" secondItem="1519" secondAttribute="bottom" id="753-w2-5rN"/>
                 <constraint firstItem="1040" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="88v-JT-MZi"/>
-                <constraint firstItem="1044" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" id="8Nx-5g-ekY"/>
-                <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="3" id="8X8-bM-jcO"/>
-                <constraint firstItem="1518" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" id="CM5-5a-OYN"/>
+                <constraint firstItem="1044" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" constant="-5" id="8Nx-5g-ekY"/>
+                <constraint firstItem="1669" firstAttribute="top" secondItem="1682" secondAttribute="bottom" constant="10" id="8X8-bM-jcO"/>
+                <constraint firstItem="1518" firstAttribute="centerY" secondItem="1519" secondAttribute="centerY" constant="-5" id="CM5-5a-OYN"/>
                 <constraint firstItem="1085" firstAttribute="leading" secondItem="802" secondAttribute="leading" constant="20" id="E3j-XR-Tr3"/>
                 <constraint firstItem="q6h-n2-3a8" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="FMR-XC-hJi"/>
                 <constraint firstItem="1521" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="Ff1-Nj-8e8"/>
@@ -2210,7 +2243,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="1740" firstAttribute="centerY" secondItem="1669" secondAttribute="centerY" id="Mxl-Bt-Lmm"/>
                 <constraint firstItem="xIN-qP-ogl" firstAttribute="top" secondItem="1128" secondAttribute="bottom" constant="9" id="N4F-tp-Ye3"/>
                 <constraint firstItem="1037" firstAttribute="top" secondItem="802" secondAttribute="top" constant="15" id="NUM-ia-xR0"/>
-                <constraint firstItem="1519" firstAttribute="top" secondItem="1521" secondAttribute="bottom" id="OBh-aS-TeB"/>
+                <constraint firstItem="1519" firstAttribute="top" secondItem="1521" secondAttribute="bottom" constant="10" id="OBh-aS-TeB"/>
                 <constraint firstItem="1036" firstAttribute="centerY" secondItem="1034" secondAttribute="centerY" id="OcA-Yd-0DW"/>
                 <constraint firstItem="2196" firstAttribute="leading" secondItem="2188" secondAttribute="trailing" constant="1" id="Qx4-WP-Nw8"/>
                 <constraint firstItem="1037" firstAttribute="leading" secondItem="1034" secondAttribute="trailing" constant="10" id="RK9-T0-IMB"/>
@@ -2218,7 +2251,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="2188" firstAttribute="centerY" secondItem="2185" secondAttribute="centerY" id="Rpe-nI-N5h"/>
                 <constraint firstItem="1518" firstAttribute="leading" secondItem="1520" secondAttribute="trailing" constant="1" id="S1I-B9-WbE"/>
                 <constraint firstItem="1682" firstAttribute="top" secondItem="1085" secondAttribute="bottom" constant="9" id="Tak-ON-k22"/>
-                <constraint firstItem="1045" firstAttribute="leading" secondItem="1682" secondAttribute="trailing" constant="50" id="TiG-wn-eVq"/>
+                <constraint firstItem="1045" firstAttribute="leading" secondItem="1682" secondAttribute="trailing" constant="30" id="TiG-wn-eVq"/>
                 <constraint firstItem="1128" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="U1K-di-gV4"/>
                 <constraint firstItem="1740" firstAttribute="trailing" secondItem="1682" secondAttribute="trailing" id="V1T-vE-bku"/>
                 <constraint firstItem="UnY-1b-NTN" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="V8I-rs-sZ6"/>
@@ -2245,11 +2278,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="1521" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="mdL-tz-Eyr"/>
                 <constraint firstItem="1505" firstAttribute="centerY" secondItem="1499" secondAttribute="centerY" id="mi6-lk-Hoo"/>
                 <constraint firstItem="2188" firstAttribute="leading" secondItem="2185" secondAttribute="trailing" constant="5" id="mm3-tG-9b9"/>
-                <constraint firstItem="1083" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" id="oSA-hL-2he"/>
-                <constraint firstItem="1046" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" id="ohG-5j-dFT"/>
+                <constraint firstItem="1083" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" constant="-5" id="oSA-hL-2he"/>
+                <constraint firstItem="1046" firstAttribute="centerY" secondItem="1045" secondAttribute="centerY" constant="-5" id="ohG-5j-dFT"/>
                 <constraint firstItem="1682" firstAttribute="width" secondItem="802" secondAttribute="width" multiplier="3/7" id="oyD-c7-AK6"/>
                 <constraint firstItem="UnY-1b-NTN" firstAttribute="top" secondItem="xIN-qP-ogl" secondAttribute="bottom" constant="9" id="qSa-Cf-Vj8"/>
-                <constraint firstItem="1045" firstAttribute="top" secondItem="1041" secondAttribute="bottom" id="rGS-R2-10k"/>
+                <constraint firstItem="1045" firstAttribute="top" secondItem="1041" secondAttribute="bottom" constant="5" id="rGS-R2-10k"/>
                 <constraint firstItem="1740" firstAttribute="leading" secondItem="1738" secondAttribute="trailing" constant="5" id="rkP-ab-hmB"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="1036" secondAttribute="trailing" constant="10" id="sKG-JP-bV9"/>
                 <constraint firstItem="1497" firstAttribute="centerY" secondItem="1499" secondAttribute="centerY" id="sig-Tk-KWs"/>
@@ -2262,7 +2295,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="1085" firstAttribute="top" secondItem="1037" secondAttribute="bottom" constant="9" id="xpC-3e-DUy"/>
                 <constraint firstItem="2185" firstAttribute="top" secondItem="1039" secondAttribute="bottom" constant="9" id="xyX-Pw-PqC"/>
                 <constraint firstItem="1041" firstAttribute="top" secondItem="1042" secondAttribute="bottom" constant="9" id="y6U-1y-Z26"/>
-                <constraint firstItem="1128" firstAttribute="top" secondItem="1045" secondAttribute="bottom" constant="9" id="yPB-4e-MCn"/>
+                <constraint firstItem="1128" firstAttribute="top" secondItem="1045" secondAttribute="bottom" id="yPB-4e-MCn"/>
                 <constraint firstAttribute="trailing" secondItem="1085" secondAttribute="trailing" constant="20" id="ydA-be-JIe"/>
                 <constraint firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" constant="20" id="yoh-2E-iOA"/>
             </constraints>
@@ -2381,11 +2414,11 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             </userGuides>
             <subviews>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YVZ-mE-SYx">
-                    <rect key="frame" x="437" y="8" width="90" height="34"/>
+                    <rect key="frame" x="427" y="8" width="100" height="34"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="sC9-8y-2jy"/>
                     </constraints>
-                    <buttonCell key="cell" type="push" title="Add Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
+                    <buttonCell key="cell" type="push" title="Add Files…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KyI-4e-Nx9">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -2398,7 +2431,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="1Ju-aK-9xO"/>
                     </constraints>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Accessible files" id="kpg-Xc-INC">
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Accessible Files" id="kpg-Xc-INC">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2467,24 +2500,27 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </scroller>
                 </scrollView>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jKz-jR-d80">
-                    <rect key="frame" x="271" y="8" width="166" height="34"/>
+                    <rect key="frame" x="261" y="8" width="166" height="34"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="fOZ-7m-1BD"/>
                     </constraints>
                     <buttonCell key="cell" type="push" title="Revoke Selected Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="lHn-Wy-DTi">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
+                        <userDefinedRuntimeAttributes>
+                            <userDefinedRuntimeAttribute type="boolean" keyPath="enabled" value="NO"/>
+                        </userDefinedRuntimeAttributes>
                     </buttonCell>
                     <connections>
                         <action selector="revokeBookmark:" target="bKg-6I-v9A" id="hfz-ao-mRF"/>
                     </connections>
                 </button>
                 <textField hidden="YES" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="C8B-BP-39F">
-                    <rect key="frame" x="18" y="14" width="254" height="23"/>
+                    <rect key="frame" x="18" y="14" width="244" height="23"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="23" id="p5V-R8-dvE"/>
                     </constraints>
-                    <textFieldCell key="cell" title="Double click red items to refresh bookmark" id="oft-dR-p0X">
+                    <textFieldCell key="cell" title="Double-click red items to refresh bookmark" id="oft-dR-p0X">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

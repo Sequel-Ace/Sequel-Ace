@@ -1424,6 +1424,24 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		return YES;
 }
 
+- (void)appendString:(NSString *)string
+{
+	[self insertString:string intoRange:NSMakeRange(self.textStorage.length, 0)];
+}
+
+- (void)insertString:(NSString *)string atIndex:(NSUInteger)loc
+{
+	[self insertString:string intoRange:NSMakeRange(loc, 0)];
+}
+
+- (void)insertString:(NSString *)string intoRange:(NSRange)range
+{
+	[self shouldChangeTextInRange:range replacementString:string];
+	NSAttributedString *attrStr = [[NSAttributedString alloc] initWithString:string attributes: @{ NSFontAttributeName: self.font }];
+	[self.textStorage replaceCharactersInRange:range withAttributedString:attrStr];
+	[self didChangeText];
+}
+
 #pragma mark -
 #pragma mark snippet handler
 
@@ -2003,16 +2021,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// Registering for undo
 		[self breakUndoCoalescing];
 
-        NSMutableAttributedString *tmpAttStr = [[NSMutableAttributedString alloc] initWithString:snip];
-
-        // if we are inserting a query,
-        // add the font
-
-        [tmpAttStr addAttribute:NSFontAttributeName
-                          value:self.font
-                          range:NSMakeRange(0, snip.length)];
-
-		[self.textStorage appendAttributedString:tmpAttStr];
+		[self insertString:snip intoRange:targetRange];
 
 		// If autopair is enabled check whether snip begins with ( and ends with ), if so mark ) as pair-linked
 		if (
@@ -2563,13 +2572,15 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// Replicate the indentation on the previous line if one was found.
 		if (indentString) {
             SPLog(@"got indentString: [%@]", indentString);
+            NSString *adjustedIndent;
 			if (lineCursorLocation < [indentString length]) {
                 SPLog(@"lineCursorLocation < [indentString length]: [%lu] < [%lu]", (unsigned long)lineCursorLocation,(unsigned long)[indentString length] );
-                [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:[indentString substringWithRange:NSMakeRange(0, lineCursorLocation)]] atIndex:[self selectedRange].location];
+                adjustedIndent = [indentString substringWithRange:NSMakeRange(0, lineCursorLocation)];
 			} else {
                 SPLog(@"lineCursorLocation >= [indentString length]: [%lu] >= [%lu]", (unsigned long)lineCursorLocation,(unsigned long)[indentString length] );
-                [self.textStorage insertAttributedString:[[NSAttributedString alloc] initWithString:indentString] atIndex:[self selectedRange].location];
+                adjustedIndent = indentString;
 			}
+			[self insertString: adjustedIndent atIndex: self.selectedRange.location];
 		}
 
 		// Return to avoid the original implementation, preventing double linebreaks
@@ -3184,7 +3195,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[[menu itemAtIndex:6] setHidden:YES];
 	}
 
-	[SPBundleManager.sharedSPBundleManager reloadBundles:self];
+	[SPBundleManager.shared reloadBundles:self];
 
 	// Remove 'Bundles' sub menu and separator
 	NSMenuItem *bItem = [menu itemWithTag:10000000];
@@ -3194,8 +3205,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[menu removeItem:bItem];
 	}
 
-	NSArray *bundleCategories = [SPBundleManager.sharedSPBundleManager bundleCategoriesForScope:SPBundleScopeInputField];
-	NSArray *bundleItems = [SPBundleManager.sharedSPBundleManager bundleItemsForScope:SPBundleScopeInputField];
+	NSArray *bundleCategories = [SPBundleManager.shared bundleCategoriesForScope:SPBundleScopeInputField];
+	NSArray *bundleItems = [SPBundleManager.shared bundleItemsForScope:SPBundleScopeInputField];
 
 	// Add 'Bundles' sub menu for custom query editor only so far if bundles with scope 'editor' were found
 	if(customQueryInstance && bundleItems && [bundleItems count]) {
@@ -3461,7 +3472,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// Check if user pressed  ⌘ while dragging for inserting only the file path
 		if([sender draggingSourceOperationMask] == 4)
 		{
-			[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:filepath]];
+			[self appendString: filepath];
 			return YES;
 		}
 
@@ -3519,7 +3530,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			[dragString appendString:[[aPath componentsSeparatedByString:SPUniqueSchemaDelimiter] componentsJoinedByPeriodAndBacktickQuoted]];
 		}
 		[self breakUndoCoalescing];
-		[self.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:dragString]];
+        [self appendString: dragString];
 		return YES;
 	}
 
@@ -3600,7 +3611,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 
 		if (content) {
-			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+			[self appendString: content];
             SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
@@ -3608,7 +3619,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// If UNIX "file" failed try cocoa's encoding detection
 		content = [NSString stringWithContentsOfFile:aPath encoding:enc error:&err];
 		if (content) {
-			[self insertText:content replacementRange:NSMakeRange(self.textStorage.string.length, 0)];
+			[self appendString: content];
             SPLog(@"content, calling doSyntaxHighlightingWithForce");
 			[self doSyntaxHighlightingWithForce:YES];
 			return;
@@ -3733,4 +3744,3 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse)
 }
 
 @end
-

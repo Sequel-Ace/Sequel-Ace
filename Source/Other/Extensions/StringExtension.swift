@@ -31,6 +31,10 @@ extension String {
         }
     }
 
+    static func rawByteString(_ data: Data) -> String {
+        return data.map { String(format: "%02x", $0) }.joined().uppercased()
+    }
+
 
     func dropPrefix(_ prefix: String) -> String {
 		guard self.hasPrefix(prefix) else {
@@ -39,7 +43,9 @@ extension String {
 		return String(self.dropFirst(prefix.count))
 	}
 
-	func dropSuffix(_ suffix: String) -> String {
+    /// Return a copy of this string that does not end with the specified suffix
+    /// - Parameter suffix: the suffix to trim from the end of the string
+    func dropSuffix(_ suffix: String) -> String {
 		guard self.hasSuffix(suffix) else {
 			return self
 		}
@@ -195,6 +201,10 @@ extension String {
 }
 
 @objc extension NSString {
+    static func rawByteString(data: NSData) -> NSString {
+        return String.rawByteString(data as Data) as NSString
+    }
+
 	public func dropPrefix(prefix: NSString) -> NSString {
 		return (self as String).dropPrefix(prefix as String) as NSString
 	}
@@ -204,6 +214,9 @@ extension String {
         return (self as String).count;
     }
 
+    /// Return a string that does not end with the specfied suffix.
+    ///  The a copy of the string is returned if the suffix needs to be removed
+    ///  - Parameter suffix - the suffix that should not terminate the returned string
 	public func dropSuffix(suffix: NSString) -> NSString {
 		return (self as String).dropSuffix(suffix as String) as NSString
 	}

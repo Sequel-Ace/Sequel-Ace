@@ -140,7 +140,7 @@ NSString *SPFavorites                            = @"favorites";
 
 // Notifications Prefpane
 NSString *SPQueryWarningEnabled                  = @"ShowWarningBeforeExecuteQuery";
-NSString *SPQueryWarningEnabledSuppressed        = @"SPQueryWarningEnabledSuppressed";
+NSString *SPShowWarningBeforeDeleteQuery         = @"ShowWarningBeforeDeleteQuery";
 NSString *SPShowUpdateAvailable                  = @"ShowUpdateAvailable";
 NSString *SPShowNoAffectedRowsError              = @"ShowNoAffectedRowsError";
 NSString *SPShowWarningSkipShowDatabase          = @"ShowWarningSkipShowDatabase";
@@ -196,6 +196,7 @@ NSString *SPConsoleShowTimestamps                = @"ConsoleShowTimestamps";
 NSString *SPConsoleShowConnections               = @"ConsoleShowConnections";
 NSString *SPConsoleShowDatabases                 = @"ConsoleShowDatabases";
 NSString *SPEditInSheetEnabled                   = @"EditInSheetEnabled";
+NSString *SPEditInSheetForMultiLineText          = @"EditInSheetForMultiLineText";
 NSString *SPEditInSheetForLongText               = @"EditInSheetForLongText";
 NSString *SPEditInSheetForLongTextLengthThreshold = @"EditInSheetForLongTextLengthThreshold";
 NSString *SPTableInformationPanelCollapsed       = @"TableInformationPanelCollapsed";
@@ -370,6 +371,8 @@ NSString *SPFVersionKey = @"version";
 NSString *SPFavoritesDataRootKey                            = @"SPConnectionFavorites";
 
 // Bundle Files and Bundle Editor
+const NSInteger SPBundleRedirectActionLastCode = SPBundleRedirectActionShowAsHTMLTooltip;
+
 NSString *SPBundleScopeQueryEditor                          = @"editor";
 NSString *SPBundleScopeDataTable                            = @"datatable";
 NSString *SPBundleScopeInputField                           = @"inputfield";

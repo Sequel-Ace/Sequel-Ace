@@ -37,8 +37,7 @@
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
 
-#import <SPMySQL/SPMySQL.h>
-#import <QueryKit/QueryKit.h>
+#import <SPMySQL/SPMySQL.h> 
 
 #import "sequel-ace-Swift.h"
 
@@ -459,18 +458,18 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 					key = [privColumnToGrantMap objectForKey:key];
 				}
 				
-				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:key];
-			} 
+				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:[key lowercaseString]];
+			}
 			else if ([key isEqualToString:@"Db"] || [key isEqualToString:@"DB"]) {
                 // some servers (which? - error above should tell us) return 'DB' for this key which
                 // causes crash: the entity Privileges is not key value coding-compliant for the key DB
                 // so we'll just override it here.
                 key = @"Db";
 				NSString *db = [[rowDict objectForKey:key] stringByReplacingOccurrencesOfString:@"\\_" withString:@"_"];
-                [dbPriv setValue:db forKey:key];
-            } 
+                [dbPriv setValue:db forKey:[key lowercaseString]];
+            }
 			else if (![key isEqualToString:@"Host"] && ![key isEqualToString:@"User"]) {
-				[dbPriv setValue:[rowDict objectForKey:key] forKey:key];
+				[dbPriv setValue:[rowDict objectForKey:key] forKey:[key lowercaseString]];
 			}
 		}
 		[privs addObject:dbPriv];
@@ -817,37 +816,37 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	}
     
 	[[self managedObjectContext] reset];
-	
+
     [grantedSchemaPrivs removeAllObjects];
 	[grantedTableView reloadData];
-	
-	[self _initializeAvailablePrivs];	
-    
+
+	[self _initializeAvailablePrivs];
+
 	[outlineView reloadData];
 	[treeController rearrangeObjects];
-    
+
     // Get all the stores on the current MOC and remove them.
     NSArray *stores = [[[self managedObjectContext] persistentStoreCoordinator] persistentStores];
-    
+
 	for (NSPersistentStore* store in stores)
     {
         [[[self managedObjectContext] persistentStoreCoordinator] removePersistentStore:store error:nil];
     }
-	
+
     // Add a new store
     [[[self managedObjectContext] persistentStoreCoordinator] addPersistentStoreWithType:NSInMemoryStoreType configuration:nil URL:nil options:nil error:nil];
-    
+
     // Reinitialize the tree with values from the database.
     [self _initializeUsers];
 
 	// After the reset, ensure all original password and user values are up-to-date.
 	NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"SPUser" inManagedObjectContext:[self managedObjectContext]];
 	NSFetchRequest *request = [[NSFetchRequest alloc] init];
-	
+
 	[request setEntity:entityDescription];
-	
+
 	NSArray *userArray = [[self managedObjectContext] executeFetchRequest:request error:nil];
-	
+
 	for (SPUserMO *user in userArray)
 	{
 		if (![user parent]) {
@@ -1227,7 +1226,17 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (BOOL)updateResourcesForUser:(SPUserMO *)user
 {
     if ([user valueForKey:@"parent"] != nil) {
-		if([connection isNotMariadb103]){
+        //Try modern way
+        NSMutableString *alterStmt = [NSMutableString stringWithFormat:@"ALTER USER %@@%@ WITH MAX_QUERIES_PER_HOUR %@ MAX_UPDATES_PER_HOUR %@ MAX_CONNECTIONS_PER_HOUR %@",
+                                      [[[user valueForKey:@"parent"] valueForKey:@"user"] tickQuotedString],
+                                      [[user valueForKey:@"host"] tickQuotedString],
+                                      [user valueForKey:@"max_questions"],
+                                      [user valueForKey:@"max_updates"],
+                                      [user valueForKey:@"max_connections"]];
+        [connection queryString:alterStmt];
+
+        //Fallback on legacy way
+        if ([connection queryErrored]) {
 			NSString *updateResourcesStatement = [NSString stringWithFormat:
 												  @"UPDATE mysql.user SET max_questions = %@, max_updates = %@, max_connections = %@ WHERE User = %@ AND Host = %@",
 												  [user valueForKey:@"max_questions"],
@@ -1237,8 +1246,13 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 												  [[user valueForKey:@"host"] tickQuotedString]];
 			
 			[connection queryString:updateResourcesStatement];
-			return [self _checkAndDisplayMySqlError];
 		}
+
+
+        //And if all else fails tell the user nope
+        if ([connection queryErrored]) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"mysql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@", @"mysql resource limits unsupported message"), [connection lastErrorMessage]] callback:nil];
+        }
     }
 	
 	return YES;

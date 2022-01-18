@@ -126,7 +126,7 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
  * @param  A bool to skip AUTO_INCREMENT column
  * @result SQL to insert the rows
 */
-- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn;
+- (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected skipAutoIncrementColumn:(BOOL)skipAutoIncrementColumn skipGeneratedColumn:(BOOL)skipGeneratedColumn;
 
 /*!
  * Generate a string in form of INSERT INTO <table> VALUES () of
