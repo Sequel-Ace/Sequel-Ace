@@ -2447,6 +2447,10 @@
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL Data Access";
 
+
+/* Connection Secured via SSL information text */
+"Connection Secured via SSL" = "Connection Secured via SSL";
+
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH Connected";
 

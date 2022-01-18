@@ -83,7 +83,7 @@ final class SPWindowTabAccessory: NSView {
             image = systemImage
         }
         let imageView = NSImageView(image: image)
-        imageView.toolTip = NSLocalizedString("SSH Connected", comment: "Tooltip information text")
+        imageView.toolTip = NSLocalizedString("Connection Secured via SSL", comment: "Connection Secured via SSL information text")
         imageView.isHidden = true
         return imageView
     }()
