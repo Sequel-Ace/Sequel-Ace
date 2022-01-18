@@ -318,6 +318,12 @@
                                                     </connections>
                                                 </menuItem>
                                                 <menuItem isSeparatorItem="YES" id="7922"/>
+                                                <menuItem title="Toggle Pin Table" id="Eql-O3-lUu">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                    <connections>
+                                                        <action selector="togglePinTable:" target="68" id="Zxu-GN-ADz"/>
+                                                    </connections>
+                                                </menuItem>
                                                 <menuItem title="Open Table in New Tab" id="7923">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
@@ -4431,6 +4437,8 @@ Gw
                 <outlet property="openTableInNewTabMenuItem" destination="7923" id="7948"/>
                 <outlet property="openTableInNewWindowContextMenuItem" destination="KYo-IU-iIw" id="iiG-2r-r4b"/>
                 <outlet property="openTableInNewWindowMenuItem" destination="Ts3-iA-OpO" id="quL-BY-YQJ"/>
+                <outlet property="pinTableContextMenuItem" destination="lMY-aA-xnU" id="n6M-Fz-NF4"/>
+                <outlet property="pinTableMenuItem" destination="Eql-O3-lUu" id="cWz-Qi-Hun"/>
                 <outlet property="removeTableContextMenuItem" destination="6182" id="6203"/>
                 <outlet property="removeTableMenuItem" destination="7921" id="7947"/>
                 <outlet property="renameTableContextMenuItem" destination="6186" id="6200"/>
@@ -4643,6 +4651,12 @@ Gw
                     </connections>
                 </menuItem>
                 <menuItem isSeparatorItem="YES" id="6922"/>
+                <menuItem title="Toggle Pin Table" id="lMY-aA-xnU">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="togglePinTable:" target="68" id="o2q-IR-D3Y"/>
+                    </connections>
+                </menuItem>
                 <menuItem title="Open Table in New Tab" id="7683">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>

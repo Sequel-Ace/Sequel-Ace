@@ -90,6 +90,7 @@
 	IBOutlet NSMenuItem *renameTableMenuItem;
 	IBOutlet NSMenuItem *openTableInNewTabMenuItem;
 	IBOutlet NSMenuItem *openTableInNewWindowMenuItem;
+	IBOutlet NSMenuItem *pinTableMenuItem;
 	IBOutlet NSMenuItem *separatorTableMenuItem;
 	IBOutlet NSMenuItem *showCreateSyntaxMenuItem;
 	IBOutlet NSMenuItem *copyCreateSyntaxMenuItem;
@@ -105,6 +106,7 @@
 	IBOutlet NSMenuItem *renameTableContextMenuItem;
 	IBOutlet NSMenuItem *openTableInNewTabContextMenuItem;
 	IBOutlet NSMenuItem *openTableInNewWindowContextMenuItem;
+	IBOutlet NSMenuItem *pinTableContextMenuItem;
 	IBOutlet NSMenuItem *separatorTableContextMenuItem;
 	IBOutlet NSMenuItem *showCreateSyntaxContextMenuItem;
 	IBOutlet NSMenuItem *copyCreateSyntaxContextMenuItem;
@@ -113,11 +115,13 @@
 
 	NSMutableArray *tables;
 	NSMutableArray *filteredTables;
+    NSMutableArray *pinnedTables;
 	NSMutableArray *tableTypes;
 	NSMutableDictionary *tableComments;
 	NSMutableArray *filteredTableTypes;
 	SPTableType selectedTableType;
 	NSString *selectedTableName;
+    NSString *pinnedTableNotificationName;
 
 	NSUserDefaults *prefs;
 
@@ -136,6 +140,7 @@
 - (IBAction)copyTable:(nullable id)sender;
 - (IBAction)renameTable:(nullable id)sender;
 - (IBAction)truncateTable:(nullable id)sender;
+- (IBAction)togglePinTable:(nullable id)sender;
 - (IBAction)openTableInNewTab:(nullable id)sender;
 - (IBAction)openTableInNewWindow:(nullable id)sender;
 - (IBAction)togglePaneCollapse:(nullable id)sender;
@@ -181,6 +186,10 @@
 - (void)showFilter;
 - (void)hideFilter;
 - (void)clearFilter;
+
+// Pinned tables interaction
+- (void)refreshPinnedTables;
+- (void)processPinTableNotification:(nonnull NSNotification *)notification;
 
 // Task interaction
 - (void)startDocumentTaskForTab:(nullable NSNotification *)aNotification;

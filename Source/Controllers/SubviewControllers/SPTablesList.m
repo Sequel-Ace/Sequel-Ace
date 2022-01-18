@@ -74,12 +74,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type;
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type;
 
+@property (readwrite, strong) SQLitePinnedTableManager *_SQLitePinnedTableManager ;
+
 @end
 
 @implementation SPTablesList
 
 #pragma mark -
 #pragma mark Initialisation
+
+@synthesize _SQLitePinnedTableManager;
 
 - (instancetype)init
 {
@@ -89,18 +93,21 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		filteredTables = tables;
 		tableTypes = [[NSMutableArray alloc] init];
 		tableComments = [[NSMutableDictionary alloc] init];
+		pinnedTables = [[NSMutableArray alloc] init];
 		filteredTableTypes = tableTypes;
 		isTableListFiltered = NO;
 		tableListIsSelectable = YES;
 		tableListContainsViews = NO;
 		selectedTableType = SPTableTypeNone;
 		selectedTableName = nil;
+        pinnedTableNotificationName = nil;
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 
 		[tables addObject:NSLocalizedString(@"TABLES", @"header for table list")];
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
+		_SQLitePinnedTableManager = SQLitePinnedTableManager.sharedInstance;
 	}
 	
 	return self;
@@ -343,6 +350,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		if (selectedTableName) selectedTableName = nil;
 		selectedTableType = SPTableTypeNone;
 	}
+    
+    [self refreshPinnedTables];
 
 	// Determine whether or not to preserve the existing filter, and whether to
 	// show or hide the list filter based on the number of tables
@@ -374,6 +383,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	else
 		// User press refresh button ergo force update
 		[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES, @"cancelQuerying" : @YES}];
+    
+    [self subscribeToTablePinningNotifications];
+
 }
 
 /**
@@ -710,6 +722,25 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	} cancelButtonHandler:nil];
 }
 
+- (IBAction)togglePinTable:(nullable id)sender {
+	if (!selectedTableName) {
+		return;
+	}
+
+    NSString *databaseName = [mySQLConnection database];
+    NSString *hostName = [mySQLConnection host];
+
+	if ([pinnedTables containsObject:selectedTableName]) { // unpin selection
+        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:selectedTableName];
+	}
+	else { // pin selection
+        [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:selectedTableName];
+	}
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
+    // actual pin toggle will happen when notification is received and processed
+}
+
 /**
  * Open the table in a new tab.
  */
@@ -888,6 +919,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[renameTableContextMenuItem setHidden:YES];
 		[openTableInNewTabContextMenuItem setHidden:YES];
 		[openTableInNewWindowContextMenuItem setHidden:YES];
+		[pinTableContextMenuItem setHidden:YES];
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[duplicateTableContextMenuItem setHidden:YES];
 		[separatorTableContextMenuItem setHidden:YES];
@@ -901,6 +933,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[renameTableMenuItem setHidden:YES];
 		[openTableInNewTabMenuItem setHidden:YES];
 		[openTableInNewWindowMenuItem setHidden:YES];
+		[pinTableMenuItem setHidden:YES];
 		[separatorTableMenuItem3 setHidden:NO];
 		[duplicateTableMenuItem setHidden:YES];
 		[separatorTableMenuItem setHidden:YES];
@@ -965,6 +998,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// according to the table types
 	NSMenu *tableSubMenu = [[[NSApp mainMenu] itemWithTag:SPMainMenuTable] submenu];
 
+    BOOL isCurrentSelectionPinned = [pinnedTables containsObject: selectedTableName];
+
 	// Enable/disable the various menu items depending on the selected item. Also update their titles.
 	// Note, that this should ideally be moved to menu item validation as opposed to using fixed item positions.
 	if (selectedTableType == SPTableTypeView)
@@ -994,6 +1029,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableMenuItem3 setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open View in New Tab", @"open view in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open View in New Window", @"Tables List : Gear Menu : Duplicate connection to new window")];
+        NSString * pinViewLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin View" : @"Pin View", @"pin view menu item title");
+		[pinTableMenuItem setHidden:NO];
+        [pinTableMenuItem setTitle:pinViewLocalizedString];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create View Syntax...", @"show create view syntax menu item")];
 		[copyCreateSyntaxMenuItem setHidden:NO];
@@ -1010,6 +1048,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open View in New Tab", @"open view in new tab title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open View in New Window", @"Tables List : Context Menu : Duplicate connection to new window")];
+		[pinTableContextMenuItem setHidden:NO];
+        [pinTableContextMenuItem setTitle:pinViewLocalizedString];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create View Syntax...", @"show create view syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1044,6 +1084,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowMenuItem setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Table in New Tab", @"open table in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Table in New Window", @"Table List : Gear Menu : Duplicate connection to new window")];
+        NSString * pinTableLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Table" : @"Pin Table", @"pin table menu item title");
+		[pinTableMenuItem setHidden:NO];
+        [pinTableMenuItem setTitle:pinTableLocalizedString];
 		[separatorTableMenuItem3 setHidden:NO];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Table Syntax...", @"show create table syntax menu item")];
@@ -1062,6 +1105,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Table in New Tab", @"open table in new tab title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Table in New Window", @"Table List : Context Menu : Duplicate connection to new window")];
+        [pinTableContextMenuItem setHidden:NO];
+        [pinTableContextMenuItem setTitle:pinTableLocalizedString];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Table Syntax...", @"show create table syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1089,6 +1134,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowMenuItem setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Tab", @"open procedure in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Window", @"Table List : Gear Menu : duplicate connection to new window")];
+        NSString * pinProcedureLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Procedure" : @"Pin Procedure", @"pin procedure menu item title");
+        [pinTableMenuItem setHidden:NO];
+        [pinTableMenuItem setTitle:pinProcedureLocalizedString];
 		[separatorTableMenuItem3 setHidden:NO];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Procedure Syntax...", @"show create proc syntax menu item")];
@@ -1103,6 +1151,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Procedure", @"delete proc menu title")];
 		[openTableInNewTabContextMenuItem setHidden:NO];
 		[openTableInNewWindowContextMenuItem setHidden:NO];
+        [pinTableContextMenuItem setHidden:NO];
+        [pinTableContextMenuItem setTitle:pinProcedureLocalizedString];
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Tab", @"open procedure in new table title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Window", @"Table List : Context Menu : duplicate connection to new window")];
@@ -1134,6 +1184,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableMenuItem3 setHidden:NO];
 		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Function in New Tab", @"open function in new table title")];
 		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Function in New Window", @"Table List : Gear Menu : duplicate connection to new window")];
+        NSString * pinFunctionLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Function" : @"Pin Function", @"pin function menu item title");
+        [pinTableMenuItem setHidden:NO];
+        [pinTableMenuItem setTitle:pinFunctionLocalizedString];
 		[showCreateSyntaxMenuItem setHidden:NO];
 		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Function Syntax...", @"show create func syntax menu item")];
 		[copyCreateSyntaxMenuItem setHidden:NO];
@@ -1150,6 +1203,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Function in New Tab", @"open function in new table title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Function in New Window", @"Table List : Context Menu : duplicate connection to new window")];
+        [pinTableContextMenuItem setHidden:NO];
+        [pinTableContextMenuItem setTitle:pinFunctionLocalizedString];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Function Syntax...", @"show create func syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1589,19 +1644,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	@try {
 		// first: update the database
 		[self _renameTableOfType:selectedTableType from:selectedTableName to:newTableName];
+        
+        // second : unpin selectedTableName and pin newTableName
+        [self handlePinnedTableRenameFrom:selectedTableName To:newTableName];
 
-		// second: update the table list
-		if (isTableListFiltered) {
-			NSInteger unfilteredIndex = [tables indexOfObject:[filteredTables objectAtIndex:rowIndex]];
-			[tables replaceObjectAtIndex:unfilteredIndex withObject:newTableName];
-		}
-		[filteredTables replaceObjectAtIndex:rowIndex withObject:newTableName];
-		selectedTableName = [[NSString alloc] initWithString:newTableName];
-
-		// if the 'table' is a view or a table, ensure data is reloaded
-		if (selectedTableType == SPTableTypeTable || selectedTableType == SPTableTypeView) {
-			[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
-		}
+		// third: do full refresh
+        [self updateTables:self];
+        
 	}
 	@catch (NSException * myException) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[myException reason] callback:nil];
@@ -1938,6 +1987,122 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 /**
+ * Refresh the current pinned tables and reload the UI
+ */
+- (void)refreshPinnedTables {
+
+    [self removePinnedTablesSection];
+    [self initPinnedTables];
+    [[tablesListView onMainThread] reloadData];
+    
+}
+
+/**
+ * Remove all currently pinned tables,
+ * Doesn't reload the UI
+ */
+- (void)removePinnedTablesSection {
+    [pinnedTables removeAllObjects];
+    NSString * pinnedHeader = NSLocalizedString(@"PINNED", @"header for pinned tables");
+    while ([tables count] > 0) {
+        if ([[tableTypes objectAtIndex:0] isEqual:@(SPTableTypeNone)] && [[tables objectAtIndex:0] isNotEqualTo:pinnedHeader]) {
+            break;
+        }
+        [tables removeObjectAtIndex:0];
+        [tableTypes removeObjectAtIndex:0];
+    }
+}
+
+/**
+ * Initialises pinned table from database, no tables can be already pinned when this method is invoked
+ * Doesn't reload the UI
+ */
+- (void)initPinnedTables {
+    NSString * hostName = [mySQLConnection host];
+    NSString * databaseName = [mySQLConnection database];
+    NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:hostName databaseName:databaseName];
+    if (tablesToPin.count > 0) {
+        [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
+        [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
+        NSSortDescriptor* sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO selector:@selector(localizedCompare:)];
+        NSArray* sortedPinnedTables = [tablesToPin sortedArrayUsingDescriptors:@[sortDescriptor]];
+        // sorted in descending alphabetical order because of how the data is subsequently added to tables array
+        for (NSString *tableToPin in sortedPinnedTables) {
+            if ([tables indexOfObject:tableToPin] == NSNotFound) {
+                continue;
+            }
+            [pinnedTables addObject:tableToPin];
+            SPTableType tableType = (SPTableType) [tableTypes[[tables indexOfObject:tableToPin]] integerValue];
+            [tables insertObject:tableToPin atIndex:1];
+            [tableTypes insertObject:@(tableType) atIndex:1];
+        }
+    }
+}
+
+- (void)handlePinnedTableRenameFrom: (NSString*) originalTableName To: (NSString*) newTableName {
+
+    NSString *databaseName = [mySQLConnection database];
+    NSString *hostName = [mySQLConnection host];
+
+    if ([pinnedTables containsObject:originalTableName]) {
+        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:originalTableName];
+        if (![pinnedTables containsObject:newTableName]) {
+            [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:newTableName];
+        }
+        [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
+    }
+    
+}
+
+- (void)unpinDeletedTableIfPinned: (NSString*) tableName {
+
+    NSString *databaseName = [mySQLConnection database];
+    NSString *hostName = [mySQLConnection host];
+
+    if ([pinnedTables containsObject:tableName]) {
+        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:tableName];
+        [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
+    }
+    
+}
+
+
+- (void)subscribeToTablePinningNotifications {
+    
+    NSString * hostName = [mySQLConnection host];
+    NSString * databaseName = [mySQLConnection database];
+    
+    // remove observer for previous hostname+database on database selection change by user
+    if (pinnedTableNotificationName != nil) {
+        [[NSNotificationCenter defaultCenter]
+            removeObserver:self
+            name:pinnedTableNotificationName
+            object:nil];
+    }
+    
+    // craft notification name such that notification goes only to tabs with same hostname+database
+    pinnedTableNotificationName = [NSString stringWithFormat:@"PinnedTableNotification-Host:%@-Database:%@", hostName, databaseName];
+    
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+        selector:@selector(processPinTableNotification:)
+        name:pinnedTableNotificationName
+        object:nil];
+}
+
+- (void)processPinTableNotification:(nonnull NSNotification *) notification; {
+    [self refreshPinnedTables];
+    if (selectedTableName!=nil) {
+        [self selectItemWithName:selectedTableName]; // so that correct table stays selected with insertion/removal of pinned tables
+        [[self onMainThread] setSelectionState:@{@"name": selectedTableName, @"type": @(selectedTableType)}]; // to refresh items in context menus
+    }
+    if (isTableListFiltered) {
+        [self updateFilter:self];
+    }
+}
+
+
+/**
  * Set focus to table list filter search field, or the table list if the filter
  * field is not visible.
  */
@@ -1979,9 +2144,27 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSInteger lastTableType = NSNotFound, tableType;
 		NSRange substringRange;
 		NSString *filterString = [listFilterField stringValue];
+		BOOL isPinnedTablesSection = 0;
+        NSString * pinnedHeader = NSLocalizedString(@"PINNED", @"header for pinned tables");
 		for (i = 0; i < [tables count]; i++) {
 			tableType = [[tableTypes objectAtIndex:i] integerValue];
-			if (tableType == SPTableTypeNone) continue;
+			if (tableType == SPTableTypeNone) {
+				if ([tables[i] isEqualTo:pinnedHeader]) { // pinned tables start
+					isPinnedTablesSection = 1;
+					[filteredTables addObject:pinnedHeader];
+					[filteredTableTypes addObject:@(SPTableTypeNone)];
+				}
+				else { // pinned tables end
+					isPinnedTablesSection = 0;
+				}
+				continue;
+			}
+
+			if (isPinnedTablesSection) {
+				[filteredTables addObject:[tables objectAtIndex:i]];
+				[filteredTableTypes addObject:[tableTypes objectAtIndex:i]];
+				continue;
+			}
 
 			// First check the table name against the string as a regex, falling back to direct string match
 			if (![[tables objectAtIndex:i] isMatchedByRegex:filterString]) {
@@ -2109,7 +2292,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	while (currentIndex != NSNotFound) {
 		NSString *objectIdentifier = @"";
-		NSString *databaseObject = [[filteredTables objectAtIndex:currentIndex] backtickQuotedString];
+        NSString *databaseObjectName = [filteredTables objectAtIndex:currentIndex];
+		NSString *databaseObject = [databaseObjectName backtickQuotedString];
 		NSInteger objectType = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
 		
 		if (objectType == SPTableTypeView) {
@@ -2176,25 +2360,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				currentIndex = (choice == NSAlertFirstButtonReturn) ? [indexes indexLessThanIndex:currentIndex] : NSNotFound;
 			}
 		}
+        // Remove the table from pinned tables list if its pinned
+        [self unpinDeletedTableIfPinned:databaseObjectName];
 	}
 	
 	if (force) {
 		[mySQLConnection queryString:@"SET FOREIGN_KEY_CHECKS = 1"];
 	}
 
-	// Remove the isolated 'current selection' item for filtered lists if appropriate
-	if (isTableListFiltered && 
-		[filteredTables count] > 1 && 
-		[[filteredTableTypes objectAtIndex:[filteredTableTypes count] - 1] integerValue] == SPTableTypeNone && 
-		[[filteredTables objectAtIndex:[filteredTables count] - 1] isEqualToString:NSLocalizedString(@"CURRENT SELECTION",@"header for current selection in filtered list")])
-	{
-		[filteredTables removeLastObject];
-		[filteredTableTypes removeLastObject];
-	}
-
-	[tablesListView reloadData];
-
-	[self deselectAllTables];
+    [self updateTables:self]; // do full refresh
 
 	[tableDocumentInstance updateWindowTitle:self];
 
@@ -2311,6 +2485,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 			// Table creation was successful - insert the new item into the tables list and select it.
 			NSInteger addItemAtIndex = NSNotFound;
+            
+            [self removePinnedTablesSection];
 
 			for (NSUInteger i = 0; i < [tables count]; i++)
 			{
@@ -2336,6 +2512,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tables insertObject:tableName atIndex:addItemAtIndex];
 				[tableTypes insertObject:[NSNumber numberWithInteger:SPTableTypeTable] atIndex:addItemAtIndex];
 			}
+            
+            [self initPinnedTables];
 
 			// Set the selected table name and type, and then update the filter list and the
 			// selection.
