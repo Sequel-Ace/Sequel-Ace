@@ -132,8 +132,8 @@ import OSLog
 
     @objc func pinTable(hostName: String, databaseName: String, tableToPin: String) {
         
-        if (pinnedTablesDatabaseDictionary[hostName]?[databaseName] != nil && pinnedTablesDatabaseDictionary[hostName]![databaseName]!.contains(tableToPin)) {
-            return // tableToPin already pinned
+        if let pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToPin) {
+            return
         }
         addToPinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: tableToPin)
         queue.inDatabase { db in
@@ -150,25 +150,19 @@ import OSLog
     
 
     @objc func unpinTable(hostName: String, databaseName: String, tableToUnpin: String) {
-        if pinnedTablesDatabaseDictionary[hostName]?[databaseName] == nil {
-            return
-        }
-        if !pinnedTablesDatabaseDictionary[hostName]![databaseName]!.contains(tableToUnpin) {
-            return
-        }
-        let index = pinnedTablesDatabaseDictionary[hostName]![databaseName]!.firstIndex(of: tableToUnpin)!
-        pinnedTablesDatabaseDictionary[hostName]![databaseName]!.remove(at: index)
-
-        queue.inDatabase { db in
-            db.traceExecution = traceExecution
-            do {
-                try db.executeUpdate("DELETE FROM PinnedTables where hostName=? and databaseName=? and pinnedTableName=?",
-                        values: [hostName, databaseName, tableToUnpin])
-            } catch {
-                logDBError(error)
+        if var pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToUnpin) {
+            pinnedTables.removeAll(where: { $0 == tableToUnpin })
+            queue.inDatabase { db in
+                db.traceExecution = traceExecution
+                do {
+                    try db.executeUpdate("DELETE FROM PinnedTables where hostName=? and databaseName=? and pinnedTableName=?",
+                            values: [hostName, databaseName, tableToUnpin])
+                } catch {
+                    logDBError(error)
+                }
             }
+            queue.close()
         }
-        queue.close()
     }
     
     
@@ -176,10 +170,12 @@ import OSLog
         if pinnedTablesDatabaseDictionary[hostName] == nil {
             pinnedTablesDatabaseDictionary[hostName] = [:];
         }
-        if pinnedTablesDatabaseDictionary[hostName]?[databaseName] == nil {
-            pinnedTablesDatabaseDictionary[hostName]?[databaseName] = []
+        var pinnedTablesForHost = pinnedTablesDatabaseDictionary[hostName];
+        if pinnedTablesForHost?[databaseName] == nil {
+            pinnedTablesForHost?[databaseName] = []
         }
-        pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.append(tableToPin)
+        var pinnedTablesForHostAndDatabase = pinnedTablesForHost?[databaseName];
+        pinnedTablesForHostAndDatabase?.append(tableToPin)
     }
     
     
