@@ -86,7 +86,10 @@ void SPApplyRevisionChanges(void)
 		[importantUpdateNotes addObject:NSLocalizedString(@"There is a new option in Preferences->Alerts & Logs: \"Show warning before executing a query\". When enabled, you will be prompted to confirm that you want to execute an SQL query or edit a row.", @"Short important release note for new option in Preferences->Alerts & Logs")];
 	}
 
-
+    // Release note for 'Default' column behavior
+    if (recordedVersionNumber > 20025) {
+        [importantUpdateNotes addObject:NSLocalizedString(@"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.", @"Warning message about the default value")];
+    }
 
 	// Display any important release notes, if any.  Call this after a slight delay to prevent double help
 	// menus - see http://www.cocoabuilder.com/archive/cocoa/6200-two-help-menus-why.html .

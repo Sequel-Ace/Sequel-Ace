@@ -5638,6 +5638,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self->spHistoryControllerInstance updateHistoryEntries];
         
         [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
+
     });
 }
 

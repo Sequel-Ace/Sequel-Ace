@@ -846,8 +846,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Check for pre-defined field type SERIAL
 	if([theRowType isEqualToString:@"SERIAL"]) {
 		specialFieldTypes = YES;
-	}
-
+    }
+    
 	// Check for pre-defined field type BOOL(EAN)
 	else if([theRowType rangeOfRegex:@"(?i)bool(ean)?"].length) {
 		specialFieldTypes = YES;
@@ -929,6 +929,23 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		if (![theRowExtra isEqualToString:@"AUTO_INCREMENT"] && ![theRowGeneratedAlways length]) {
 			NSArray *matches;
 			NSString *defaultValue = [theRow objectForKey:@"default"];
+            // Check if defaultValue is an expression - Must be surrunded by ( and )
+            BOOL defaultValueIsExpression = NO;
+            BOOL defaultValueIsString = NO;
+            if ([defaultValue length]) {
+                NSString *trimmedWhiteSpace = [defaultValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                unichar firstChar = [trimmedWhiteSpace characterAtIndex:0];
+                unichar lastChar = [trimmedWhiteSpace characterAtIndex:[trimmedWhiteSpace length] - 1];
+                // Check if defaultValue is an expression
+                if ((firstChar == '(') && (lastChar = ')')) {
+                    defaultValueIsExpression = YES;
+                }
+                // Check if defaultValue is a string in quotes (single or double)
+                else if ( ((firstChar == '"') && (lastChar = '"')) || ((firstChar == '\'') && (lastChar = '\'')) ) {
+                    defaultValueIsString = YES;
+                }
+            }
+
 			// If a NULL value has been specified, and NULL is allowed, specify DEFAULT NULL
 			if ([defaultValue isEqualToString:[prefs objectForKey:SPNullValue]])
 			{
@@ -953,6 +970,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			else if ([defaultValue length] && [theRowType isEqualToString:@"BIT"]) {
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
+            // *CHAR and *TEXT must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is.
+            else if ([defaultValue length] && ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"])) {
+                // If default value is not an expresion or a string, add quotes.
+                if (!defaultValueIsExpression && !defaultValueIsString)
+                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+                else
+                    [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
+            }
 			// Suppress appending DEFAULT clause for any numerics, date, time fields if default is empty to avoid error messages;
 			// also don't specify a default for TEXT/BLOB, JSON or geometry fields to avoid strict mode errors
 			else if (![defaultValue length] && ([fieldValidation isFieldTypeNumeric:theRowType] || [fieldValidation isFieldTypeDate:theRowType] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"BLOB"] || [theRowType isEqualToString:@"JSON"] || [fieldValidation isFieldTypeGeometry:theRowType])) {
@@ -962,10 +987,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			else if (([defaultValue length]==0) && [theRowType isEqualToString:@"ENUM"]) {
 				[queryString appendFormat:@" "];
 			}
-			// Otherwise, use the provided default
-			else {
-				[queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
-			}
+            // Otherwise, use the provided default (Can be an expression, int value....)
+            else  {
+                [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
+//                [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+            }
 		}
 
         // Generated field - set keywords GENERATED ALWAYS AS
