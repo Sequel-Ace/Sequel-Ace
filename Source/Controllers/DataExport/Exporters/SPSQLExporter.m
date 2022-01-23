@@ -697,6 +697,9 @@
         [metaString setString:@""];
 
         // Add the name of View
+        [self writeString:[NSString stringWithFormat:@"# %@ %@\n# ------------------------------------------------------------\n\n", NSLocalizedString(@"Dump of view", @"sql export dump of view label"), viewName]];
+
+        // Add the View create statement
         [metaString appendFormat:@"%@;\n\n", [viewSyntaxes objectForKey:viewName]];
 
         [self writeUTF8String:metaString];
