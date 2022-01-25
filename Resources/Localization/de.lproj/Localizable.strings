@@ -436,6 +436,9 @@
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Bei der Ausführung trat ein Fehler auf.\n\nMySQL Ergebnis: %@";
 
+/* mysql resource limits unsupported message */
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Beim Anlegen von %lu der Export-Dateien trat ein unklarer Fehler auf. Nach Prüfen der Umstände erneut versuchen.";
 
@@ -2445,6 +2448,10 @@ Befehle werden anwendungsweit ausgeführt";
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL Datenzugriff";
 
+
+/* Connection Secured via SSL information text */
+"Connection Secured via SSL" = "Connection Secured via SSL";
+
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH verbunden";
 
@@ -2921,16 +2928,16 @@ Befehle werden anwendungsweit ausgeführt";
 "Unable to check table" = "Tabelle kann nicht überprüft werden";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Es konnte keine Verbindung mit dem Host %1 hergestellt werden, da der Zugriff verweigert wurde. . @";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Verbindung zum Host %1$@ konnte nicht hergestellt werden, da der Zugriff verweigert wurde.\n\nÜberprüfen Sie Ihren Benutzernamen und Ihr Passwort und stellen Sie sicher, dass der Zugriff von Ihrem aktuellen Standort aus erlaubt ist.\n\nMySQL sagte: %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Es konnte keine Verbindung mit dem Host %1 hergestellt werden, da die Portverbindung über SSH verweigert wurde. . Wenn Sie die Fehlerdetails überprüfen möchten, wird das SSH-Debugprotokoll angezeigt, das möglicherweise weitere Details enthält. @";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Verbindung zum Host %1$@ konnte nicht hergestellt werden, da die Port-Verbindung über SSH abgelehnt wurde.\n\nBitte stellen Sie sicher, dass Ihr MySQL-Host so eingerichtet ist, dass er TCP/IP-Verbindungen erlaubt (kein --skip-networking) und so konfiguriert ist, dass Verbindungen von dem Host über den Sie tunneln.\n\nSie können auch überprüfen, ob der Port korrekt ist und dass Sie die nötigen Berechtigungen haben.\n\nWenn Sie die Fehlerdetails überprüfen, wird das SSH-Debug-Log angezeigt, das weitere Details enthalten kann.\n\nMySQL sagte: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Es konnte keine Verbindung mit dem Host %1- hergestellt werden, oder die Anforderung simonerte Zeitfürs.-n-NSeien Sie sicher, dass die Adresse korrekt ist und dass Sie über die erforderlichen Berechtigungen verfügen, oder versuchen Sie, das Verbindungstimeout zu erhöhen (derzeit %2$ld Sekunden). @";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Keine Verbindung zu Host %1$@oder Zeitüberschreitung möglich.\n\nVergewissern Sie sich, dass die Adresse korrekt ist und dass Sie die nötigen Berechtigungen haben, oder versuchen Sie die Zeitüberschreitung der Verbindung zu erhöhen (derzeit %2$ld Sekunden).\n\nMySQL sagte: %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Es konnte keine Verbindung über den Socket hergestellt werden, oder die Anforderung wurde ein Timeout ausgeführt. . @";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Keine Verbindung über den Socket oder Zeitüberschreitung möglich.\n\nÜberprüfen Sie, ob der Socket-Pfad korrekt ist und ob Sie die erforderlichen Berechtigungen haben und ob der Server läuft.\n\nMySQL sagte: %@";
 
 /* unable to copy database message */
 "Unable to copy database" = "Datenbank kann nicht kopiert werden";
@@ -3191,10 +3198,13 @@ Befehle werden anwendungsweit ausgeführt";
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Die gewählte Datei ist ungültig.\n\nBitte erneut versuchen.\n\nKlasse: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "Die gewählte Datei für bekannte Hosts ist schreibgeschützt.\n\n%@\n\nBitte prüfen und erneut versuchen.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
-/* known hosts not writable error title */
-"Known Hosts Error" = "Fehler bei bekannten Hosts";
+/* known hosts is invalid message */
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+
+/* known hosts contains quote message */
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSH-Tunnel-Debugging-Informationen";
@@ -3312,3 +3322,33 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* Info alert when editing a generated column */
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "Das aktuelle Feld \"%@\" ist eine generierte Spalte und kann daher nicht bearbeitet werden.";
+
+/* Release note / info modal about change in latest release about column behavior */
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+
+/* Menu option to pin a view to the top of the list of tables */
+"Pin View" = "Pin View";
+
+/* Menu option to pin a table to the top of the list of tables */
+"Pin Table" = "Pin Table";
+
+/* Menu option to pin a procedure to the top of the list of tables */
+"Pin Procedure" = "Pin Procedure";
+
+/* Menu option to pin a function to the top of the list of tables */
+"Pin Function" = "Pin Function";
+
+/* Menu option to unpin a view which is currently pinned at the top of the list of tables */
+"Unpin View" = "Unpin View";
+
+/* Menu option to unpin a table which is currently pinned at the top of the list of tables */
+"Unpin Table" = "Unpin Table";
+
+/* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
+"Unpin Procedure" = "Unpin Procedure";
+
+/* Menu option to unpin a function which is currently pinned at the top of the list of tables */
+"Unpin Function" = "Unpin Function";
+
+/* header for pinned table list */
+"PINNED" = "PINNED";
