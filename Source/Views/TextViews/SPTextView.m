@@ -143,6 +143,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	isProcessingMirroredSnippets = NO;
 	completionWasRefreshed = NO;
     completionFuzzyMode = NO; // not for the value from prefs
+    self.usesFontPanel = NO;
 
     // keep track of tasks we start and stop, otherwise we get an assert error
     taskCount = 0;
