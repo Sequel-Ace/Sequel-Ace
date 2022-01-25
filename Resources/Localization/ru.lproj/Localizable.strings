@@ -436,6 +436,9 @@
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "При попытке выполнить операцию произошла ошибка.\n\nMySQL сообщил: %@";
 
+/* mysql resource limits unsupported message */
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
 
@@ -854,7 +857,7 @@
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.";
 
 /* message of panel when loading of row failed */
-"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.";
+"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "Не удалось загрузить строку. Перезагрузите таблицу, чтобы убедиться, что она существует и используйте первичный ключ в вашей таблицы.";
 
 /* Couldn't read the file content of */
 "Couldn't read the file content of" = "Не удалось прочитать содержимое файла";
@@ -1371,10 +1374,10 @@
 "Field is not editable. Field has no or multiple table or database origin(s)." = "Field is not editable. Field has no or multiple table or database origin(s).";
 
 /* Custom Query result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously.";
+"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Поле не редактируемо. Не найена соответствующая запись.\nПерезагрузите данные, проверить кодировку или попробуйте добавить первичный ключ к одному или нескольким полям в вашем SELECT запросе для таблицы '%@' для однозначного определения записей.";
 
 /* Table Content result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Поле не редактируемо. Не найена соответствующая запись.\nПерезагрузите таблицу, проверьте кодировку или попробуйте добавить первичный ключ к одному или нескольким полям в разделе Структура для '%@' для однозначного определения записей.";
 
 /* error while reading data file */
 "File couldn't be read." = "Файл не читается.";
@@ -2444,6 +2447,10 @@
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL Data Access";
 
+
+/* Connection Secured via SSL information text */
+"Connection Secured via SSL" = "Connection Secured via SSL";
+
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH подключён";
 
@@ -2496,10 +2503,10 @@
 "Stop query" = "Остановить запрос";
 
 /* description of timestamp */
-"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.";
+"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Хранит дату и время в виде секунд, прошедших с начала UNIX эпохи (01.01.1970 00:00). Отображаемые/сохраненные значения зависят от настройки часового пояса (@@time_zone) для соедин ения.\nОтображается совпадает с DATETIME. Недопустимые значения, а также «второй ноль» конвертируются в 0000-00-00 00:00:00.0. Доли секунды были добавлены в MySQL 5.6.4 и их точность может настраиваться в диапазоне от 0 (секунды) до 6 (микросекунды). Также могут применяться некоторые дополнительные правила.";
 
 /* description of datetime */
-"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
+"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Хранит дату и время. Представление ГГГГ-ММ-ДД ЧЧ:ММ:СС[.|*], может содержать дроби секунды. Это значение не зависит от настройки часового пояса. Неверные значения преобразовываются в 0000-0000:00:00.0. В MySQL 5.6.4 были добавлены дробные секунды с точностью до микросекунд (6).";
 
 /* description of date */
 "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00.";
@@ -2726,7 +2733,7 @@
 "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?";
 
 /* message of panel when no rows have been affected after writing to the db */
-"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)";
+"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "Строка не была записана в базу данных MySQL. Возможно, вы ничего не изменили.\nПерезагрузите таблицу, чтобы убедиться, что она существует и используйте первичный ключ в вашей таблицы.\n(Эту ошибку можно отключить в настройках)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
@@ -3190,10 +3197,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "Выбранный файл известных узлов недоступен для записи.\n\n%@\n\nПожалуйста, проверьте и повторите попытку.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
-/* known hosts not writable error title */
-"Known Hosts Error" = "Ошибка известных узлов";
+/* known hosts is invalid message */
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+
+/* known hosts contains quote message */
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Отладочная информация SSH туннеля";
@@ -3311,3 +3321,33 @@
 
 /* Info alert when editing a generated column */
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+
+/* Release note / info modal about change in latest release about column behavior */
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+
+/* Menu option to pin a view to the top of the list of tables */
+"Pin View" = "Pin View";
+
+/* Menu option to pin a table to the top of the list of tables */
+"Pin Table" = "Pin Table";
+
+/* Menu option to pin a procedure to the top of the list of tables */
+"Pin Procedure" = "Pin Procedure";
+
+/* Menu option to pin a function to the top of the list of tables */
+"Pin Function" = "Pin Function";
+
+/* Menu option to unpin a view which is currently pinned at the top of the list of tables */
+"Unpin View" = "Unpin View";
+
+/* Menu option to unpin a table which is currently pinned at the top of the list of tables */
+"Unpin Table" = "Unpin Table";
+
+/* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
+"Unpin Procedure" = "Unpin Procedure";
+
+/* Menu option to unpin a function which is currently pinned at the top of the list of tables */
+"Unpin Function" = "Unpin Function";
+
+/* header for pinned table list */
+"PINNED" = "PINNED";
