@@ -341,10 +341,10 @@
 "An error occurred retrieving table information.  MySQL said: %@" = "テーブル情報の取得中にエラーが発生しました。MySQLは次のとおりです: %@";
 
 /* SQL encoding read error */
-"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
+"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "選択したエンコーディング（%1$@）でファイルを読み取ることができなかったため、ファイルの読み取り中にエラーが発生しました。\n\n%2$ldクエリのみが実行されました。";
 
 /* CSV encoding read error */
-"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "An error occurred when reading the file, as it could not be read using the encoding you selected (%1$@).\n\nOnly %2$ld rows were imported.";
+"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "選択したエンコーディング（%1$@）を使用してファイルを読み取ることができなかったため、ファイルの読み取り中にエラーが発生しました。\n\n%2$ld行のみがインポートされました。";
 
 /* SQL read error, including detail from system */
 "An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "ファイルの読み込み中にエラーが発生しました。\n\n %1$ld クエリのみが実行されました。\n\n(%2$@)";
@@ -353,10 +353,10 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "ファイルの読み込み中にエラーが発生しました。\n\n %1$ld 行のみインポートされました。\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to add the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "フィールド '%1$@'を\n\n%2$@ \n\nMySQL経由で追加しようとしたときにエラーが発生しました：%3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to change the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "フィールド '%1$@'を\n\n%2$@ \n\nMySQL経由で変更しようとしたときにエラーが発生しました：%3$@";
 
 /* error changing table collation informative message */
 "An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "テーブルの照合順序を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
@@ -436,6 +436,9 @@
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "操作の実行中にエラーが発生しました。\n\nMySQL : %@ ";
 
+/* mysql resource limits unsupported message */
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "エクスポートファイルの %lu を作成しようとしたときに処理されないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
 
@@ -458,7 +461,7 @@
 "Analyze table failed." = "テーブルの解析に失敗しました。";
 
 /* change table type informative message */
-"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.";
+"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "このテーブルのタイプを%@に変更してもよろしいですか？\n\nテーブルのタイプを変更すると、データの一部またはすべてが失われる可能性があることに注意してください。このアクションは元に戻せません。";
 
 /* clear global history list informative message */
 "Are you sure you want to clear the global history list? This action cannot be undone." = "グローバル履歴リストをクリアしてもよろしいですか？この操作は元に戻せません。";
@@ -830,7 +833,7 @@
 "Couldn't delete '%@'.\n\nMySQL said: %@" = "'%1$@'を削除できませんでした。\n\nMySQL: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "'%1$@'を削除できませんでした。\n\n '強制削除'オプションを選択すると、この問題を防ぐことができますが、データベースに一貫性のない状態が残る可能性があります。\n\nMySQLによると：%2$@";
 
 /* message of panel when field cannot be deleted */
 "Couldn't delete field %@.\nMySQL said: %@" = "'%1$@'を削除できませんでした。\nMySQL: %2$@";
@@ -885,7 +888,7 @@
 "created: %@" = "作成済み: %@";
 
 /* description of polygon */
-"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
+"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "外側の境界として1つのLinearRing（つまり、閉じた単純なLineString）と、「穴」として機能する0個以上の内側のLinearRingを組み合わせてサーフェスを作成します。";
 
 /* Creating table task string */
 "Creating %@..." = "%@ を作成しています...";
@@ -1057,7 +1060,7 @@
 "Delete Views" = "ビューを削除";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
-"Disabled Cipher Suites" = "Disabled Cipher Suites";
+"Disabled Cipher Suites" = "無効化された暗号スイート";
 
 /* force table deltion button text tooltip */
 "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "削除前に外部キーチェック(FOREIGN_KEY_CHECKS)を無効にし、後で再び有効にします。";
@@ -1374,7 +1377,8 @@
 "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "フィールドは編集できません。一致するレコードが見つかりませんでした。\nデータの再読み込み, エンコードの確認 または、テーブル'%@' '\nの SELECT ステートメントにプライマリキーフィールド\n以上のフィールド\nを追加して、フィールドの原点を明確に識別しようとします。";
 
 /* Table Content result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "フィールドは編集できません。一致するレコードが見つかりません。\nテーブルをリロードするか、エンコーディングを確認するか、追加してみてください\n
+主キーフィールドまたは複数のフィールド\n'%@'のビュー宣言で、\nフィールドの起源を明確に識別します。";
 
 /* error while reading data file */
 "File couldn't be read." = "ファイルを読み込めませんでした。";
@@ -1660,7 +1664,7 @@
 "Last Used" = "最後の使用";
 
 /* range for json type */
-"Limited to @@max_allowed_packet" = "Limited to @@max_allowed_packet";
+"Limited to @@max_allowed_packet" = "@@max_allowed_packetに限定";
 
 /* Loading table task string */
 "Loading %@..." = "%@ を読み込み中...";
@@ -2326,7 +2330,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Aceはこのインデックスに属する列を見つけることができませんでした。多分それは既に削除されていますか？";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Aceは、macOSに含まれているデフォルトのOpenSSHクライアントバージョンのみをサポートし、テストされています。異なるクライアントを使用すると、接続の問題やセキュリティリスクが発生したり、まったく機能しなくなったりする可能性があります。\n\nこのような構成のサポートは提供できないことに注意してください。";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Sequel Ace URL scheme コマンドはサポートされていません。";
@@ -2443,6 +2447,10 @@
 
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL データアクセス";
+
+
+/* Connection Secured via SSL information text */
+"Connection Secured via SSL" = "Connection Secured via SSL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH 接続済み";
@@ -2714,7 +2722,7 @@
 "The following error occurred during the import process:\n\n%@" = "インポート中に次のエラーが発生しました:\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
-"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "The foreign key relationship '%1$@' has a dependency on index '%2$@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.";
+"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "外部キー関係 '%1$@'は、インデックス '%2$@'に依存しています。インデックスを削除する前に、この関係を削除する必要があります。\n\n関係とインデックスを引き続き削除してもよろしいですか？このアクションは元に戻せません。";
 
 /* table list change alert message */
 "The list of tables has changed" = "テーブルのリストが変更されました";
@@ -2726,10 +2734,10 @@
 "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "エクスポート ダイアログが開かれてから、このデータベースのテーブル数が変更されました。 %lu テーブルが追加されました。おそらく外部アプリケーションによって追加されます。\n\n続行しますか？";
 
 /* message of panel when no rows have been affected after writing to the db */
-"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)";
+"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "行はMySQLデータベースに書き込まれませんでした。おそらく何も変更していません。\nテーブルをリロードして、行が存在することを確認し、テーブルの主キーを使用してください。\n（このエラーは設定でオフにできます。）";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "選択したエクスポート設定はバージョン%1$ldで保存されましたが、インポートできるのは次のバージョンの設定のみです：%2$@。\n\n下位互換性のある方法で設定を保存するか、SequelAceのバージョンを更新します。";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "選択されたファイルには「%1$@」タイプのデータが含まれていますが、「%2$@」タイプが必要です。別のファイルを選択してください。";
@@ -2783,7 +2791,7 @@
 "The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "SSHトンネルはローカルポートにバインドできませんでした。 このエラーは、既に同じサーバーにSSH接続があり、SSH設定で「LocalForward」設定を使用している場合に発生する可能性があります。\n\n既存のトンネルを使用するために、localhost への標準接続に戻りますか?";
 
 /* SSH tunnel failed or timed out message */
-"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "The SSH Tunnel was unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).";
+"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSHトンネルがホスト%1$@に接続できなかったか、リクエストがタイムアウトしました。\n\nアドレスが正しく、必要な権限があることを確認するか、接続タイムアウト（現在は%2$ld）を増やしてみてください秒）。";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
 "The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "おそらく使用されたフィルタ句のためテーブルデータを読み込むことができませんでした。 \n\nMySQL は %@ と言いました。";
@@ -2920,16 +2928,16 @@
 "Unable to check table" = "テーブルを確認できません";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "アクセスが拒否されたため、ホスト%1$@に接続できません。\n\nユーザー名とパスワードを再確認し、現在の場所からのアクセスが許可されていることを確認してください。\n\nMySQLによると：%2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "SSH経由のポート接続が拒否されたため、ホスト%1$@に接続できません。\n\nMySQLホストがTCP / IP接続を許可するように設定され（no --skip-networking）、トンネリングを介してトンネリングしているホストからの接続を許可するように構成されていることを確認してください。\n\nポートが正しいことと、必要な権限があることを確認することもできます。\n\nエラーの詳細を確認すると、SSHデバッグログが表示され、詳細が提供される場合があります。\n\nMySQL said: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).\n\nMySQL said: %3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "ホスト%1$@に接続できないか、リクエストがタイムアウトしました。\n\nアドレスが正しく、必要な権限があることを確認するか、接続タイムアウト（現在は%2$ld秒）を増やしてみてください。\n\nMySQLによると：%3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "ソケット経由で接続できないか、リクエストがタイムアウトしました。\n\nソケットパスが正しいこと、必要な権限があること、サーバーが実行されていることを再確認してください。\n\nMySQLによると：%@";
 
 /* unable to copy database message */
 "Unable to copy database" = "データベースをコピーできません";
@@ -3034,10 +3042,10 @@
 "updated: %@" = "更新: %@";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "フィールドコンテンツの更新に失敗しました。フィールドの原点を明確に識別できませんでした（%1$ldが一致します）。テーブル `%2$@`のこのフィールドの編集中に変更された可能性が非常に高いです。";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "フィールドコンテンツの更新に失敗しました。フィールドの原点を明確に識別できませんでした（%1$ldが一致します）。このフィールドの編集中に、テーブル `%2$@`が他のユーザーによって変更された可能性があります。";
 
 /* updating field task description */
 "Updating field data..." = "フィールドデータを更新しています...";
@@ -3112,7 +3120,7 @@
 "WHERE clause not valid" = "WHERE句が無効です";
 
 /* Title of filter preview area when the query WHERE is negated */
-"WHERE NOT query" = "WHERE NOT query";
+"WHERE NOT query" = "WHERE NOTクェリー";
 
 /* Title of filter preview area when the query WHERE is normal */
 "WHERE query" = "WHEREクエリ";
@@ -3148,7 +3156,7 @@
 "You cannot delete the last field in a table. Delete the table instead." = "テーブルの最後のフィールドを削除することはできません。代わりにテーブルを削除してください。";
 
 /* SSL connection requested but not established error detail */
-"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.";
+"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "SSLを使用して接続を確立するように要求しましたが、MySQLはSSLなしで接続しました。\n\nこれは、サーバーがSSL接続をサポートしていないか、SSLが無効になっていることが原因である可能性があります。または、SSL接続を確立するために十分な詳細が提供されていません。\n\nこの接続は暗号化されていません。";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
 "‘%@’ based favorites" = "%@をベースにしたお気に入り";
@@ -3190,10 +3198,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選択したファイルは有効なファイルではありません。\n\nもう一度やり直してください。\n\nクラス: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "選択された既知のホストファイルは書き込み可能ではありません。\n\n%@\n\n確認してもう一度お試しください。";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
-/* known hosts not writable error title */
-"Known Hosts Error" = "既知のホストエラー";
+/* known hosts is invalid message */
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+
+/* known hosts contains quote message */
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSHトンネルのデバッグ情報";
@@ -3311,3 +3322,33 @@
 
 /* Info alert when editing a generated column */
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "現在のフィールド \"%@\" は生成された列であるため、編集できません。";
+
+/* Release note / info modal about change in latest release about column behavior */
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+
+/* Menu option to pin a view to the top of the list of tables */
+"Pin View" = "Pin View";
+
+/* Menu option to pin a table to the top of the list of tables */
+"Pin Table" = "Pin Table";
+
+/* Menu option to pin a procedure to the top of the list of tables */
+"Pin Procedure" = "Pin Procedure";
+
+/* Menu option to pin a function to the top of the list of tables */
+"Pin Function" = "Pin Function";
+
+/* Menu option to unpin a view which is currently pinned at the top of the list of tables */
+"Unpin View" = "Unpin View";
+
+/* Menu option to unpin a table which is currently pinned at the top of the list of tables */
+"Unpin Table" = "Unpin Table";
+
+/* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
+"Unpin Procedure" = "Unpin Procedure";
+
+/* Menu option to unpin a function which is currently pinned at the top of the list of tables */
+"Unpin Function" = "Unpin Function";
+
+/* header for pinned table list */
+"PINNED" = "PINNED";
