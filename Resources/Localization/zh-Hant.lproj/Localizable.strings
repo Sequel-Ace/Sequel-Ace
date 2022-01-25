@@ -436,6 +436,9 @@
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "嘗試完成操作時發生錯誤。\n\nMySQL提示：%@";
 
+/* mysql resource limits unsupported message */
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "嘗試創建%lu個導出文件時發生了未處理的錯誤。請檢查詳細信息並重試。";
 
@@ -2182,16 +2185,16 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "需要8字節存儲空間。M是可選的顯示寬度，不影響表示值的範圍。注意，對較大的數的代數運算可能發生錯誤。";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "是否在刪除操作後重設 AUTO_INCREMENT \n(僅在 Delete ALL ROWS IN TABLE 之後)?";
 
 /* delete selected row button */
-"Delete Selected Row" = "Delete Selected Row";
+"Delete Selected Row" = "是否刪除所選中的條目？";
 
 /* delete selected rows button */
-"Delete Selected Rows" = "Delete Selected Rows";
+"Delete Selected Rows" = "是否刪除所選中的條目？";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
+"Delete ALL ROWS IN TABLE" = "刪除表中所有的條目";
 
 /* Restoring session task description */
 "Restoring session..." = "正在恢復會話...";
@@ -2443,6 +2446,10 @@
 
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL數據訪問";
+
+
+/* Connection Secured via SSL information text */
+"Connection Secured via SSL" = "Connection Secured via SSL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH已連接";
@@ -3181,7 +3188,7 @@
 "Stale Bookmarks" = "舊版書簽";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "App Sandbox Info";
+"App Sandbox Info" = "應用程序沙箱咨詢";
 
 /* error while selecting file title */
 "File Selection Error" = "檔案選取錯誤";
@@ -3190,10 +3197,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選取的檔案是無效檔案。\n\n請重試。\n\nClass: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "選定的 known hosts 檔案無法寫入。\n\n%@\n\n請檢查並重試。";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
-/* known hosts not writable error title */
-"Known Hosts Error" = "Known Hosts 錯誤";
+/* known hosts is invalid message */
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+
+/* known hosts contains quote message */
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSH Tunnel 除錯資訊";
@@ -3280,7 +3290,7 @@
 "Download Failed" = "下載失敗";
 
 /* Tool tip for the Show alert when update is available preference on the Notifications pane */
-"Only available for GitHub downloads" = "Only available for GitHub downloads";
+"Only available for GitHub downloads" = "僅用於 GitHub 下載";
 
 /* Tool tip warning for when the user sets auto-complete delay to zero */
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "警告：將自動完成的延遲設定為 0.0 可能會導致奇怪的輸出。";
@@ -3289,10 +3299,10 @@
 "%@ of %@" = "%@ / %@";
 
 /* Time zone set failed informative message */
-"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
+"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone 將被設置為系統預設值.";
 
 /* Menu item title for checking for updates */
-"Check for Updates..." = "Check for Updates...";
+"Check for Updates..." = "檢查更新...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "伺服器已將 skip-show-database 設定為 ON。除非你擁有 SHOW DATABASES 權限，否則無法列出資料庫。\n\n視你的權限，你仍然可以透過 SQL 查詢直接存取資料庫。";
@@ -3307,7 +3317,37 @@
 "You are currently running the latest release." = "目前的版本已經是最新版。";
 
 /* Alert button, disable the warning when skip-show-database is set to on */
-"Never show this again" = "Never show this again";
+"Never show this again" = "不再顯示此訊息";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "當前字段 \"%@\" 是自動生成的列，因此不能被編輯";
+
+/* Release note / info modal about change in latest release about column behavior */
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+
+/* Menu option to pin a view to the top of the list of tables */
+"Pin View" = "Pin View";
+
+/* Menu option to pin a table to the top of the list of tables */
+"Pin Table" = "Pin Table";
+
+/* Menu option to pin a procedure to the top of the list of tables */
+"Pin Procedure" = "Pin Procedure";
+
+/* Menu option to pin a function to the top of the list of tables */
+"Pin Function" = "Pin Function";
+
+/* Menu option to unpin a view which is currently pinned at the top of the list of tables */
+"Unpin View" = "Unpin View";
+
+/* Menu option to unpin a table which is currently pinned at the top of the list of tables */
+"Unpin Table" = "Unpin Table";
+
+/* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
+"Unpin Procedure" = "Unpin Procedure";
+
+/* Menu option to unpin a function which is currently pinned at the top of the list of tables */
+"Unpin Function" = "Unpin Function";
+
+/* header for pinned table list */
+"PINNED" = "PINNED";

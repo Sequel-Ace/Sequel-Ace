@@ -436,6 +436,9 @@
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Ocorreu um erro ao tentar executar a operação.\n\nMensagem do MySQL: %@";
 
+/* mysql resource limits unsupported message */
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Ocorreu um erro não tratado ao tentar criar %lu dos arquivos de exportação. Por favor, verifique os detalhes e tente novamente.";
 
@@ -2444,6 +2447,10 @@
 /* sql data access label (Navigator) */
 "SQL Data Access" = "Acesso aos dados SQL";
 
+
+/* Connection Secured via SSL information text */
+"Connection Secured via SSL" = "Connection Secured via SSL";
+
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH conectado";
 
@@ -3190,10 +3197,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "O arquivo selecionado não é um arquivo válido.\n\nTente novamente.\n\nClasse: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease check and try again." = "O arquivo de servidores conhecido selecionado não é gravável.\n\n%@\n\nPor favor, verifique e tente novamente.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
-/* known hosts not writable error title */
-"Known Hosts Error" = "Erro no arquivo de servidores conhecidos";
+/* known hosts is invalid message */
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+
+/* known hosts contains quote message */
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Informações de depuração do túnel SSH";
@@ -3311,3 +3321,33 @@
 
 /* Info alert when editing a generated column */
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+
+/* Release note / info modal about change in latest release about column behavior */
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+
+/* Menu option to pin a view to the top of the list of tables */
+"Pin View" = "Pin View";
+
+/* Menu option to pin a table to the top of the list of tables */
+"Pin Table" = "Pin Table";
+
+/* Menu option to pin a procedure to the top of the list of tables */
+"Pin Procedure" = "Pin Procedure";
+
+/* Menu option to pin a function to the top of the list of tables */
+"Pin Function" = "Pin Function";
+
+/* Menu option to unpin a view which is currently pinned at the top of the list of tables */
+"Unpin View" = "Unpin View";
+
+/* Menu option to unpin a table which is currently pinned at the top of the list of tables */
+"Unpin Table" = "Unpin Table";
+
+/* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
+"Unpin Procedure" = "Unpin Procedure";
+
+/* Menu option to unpin a function which is currently pinned at the top of the list of tables */
+"Unpin Function" = "Unpin Function";
+
+/* header for pinned table list */
+"PINNED" = "PINNED";
