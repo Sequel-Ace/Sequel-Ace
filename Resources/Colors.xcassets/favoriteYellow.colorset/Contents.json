@@ -11,42 +11,6 @@
         }
       },
       "idiom" : "mac"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "light"
-        }
-      ],
-      "color" : {
-        "color-space" : "srgb",
-        "components" : {
-          "alpha" : "1.000",
-          "blue" : "0.385",
-          "green" : "0.689",
-          "red" : "0.734"
-        }
-      },
-      "idiom" : "mac"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "color" : {
-        "color-space" : "srgb",
-        "components" : {
-          "alpha" : "1.000",
-          "blue" : "0.314",
-          "green" : "0.459",
-          "red" : "0.529"
-        }
-      },
-      "idiom" : "mac"
     }
   ],
   "info" : {
