@@ -295,9 +295,6 @@
 
             NSUInteger lastProgressValue = 0;
 
-            // Add the name of table
-            [self writeString:[NSString stringWithFormat:@"# %@ %@\n# ------------------------------------------------------------\n\n", NSLocalizedString(@"Dump of table", @"sql export dump of table label"), tableName]];
-
             id createTableSyntax = nil;
             SPTableType tableType = SPTableTypeTable;
             // Determine whether this table is a table or a view via the CREATE TABLE command, and keep the create table syntax
@@ -310,7 +307,12 @@
                     NSDictionary *tableDetails = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 
                     if ([tableDetails objectForKey:@"Create View"]) {
-                        [viewSyntaxes setValue:[[[tableDetails objectForKey:@"Create View"] copy] createViewSyntaxPrettifier] forKey:tableName];
+                        [viewSyntaxes
+                            setValue: [NSString stringWithFormat:@"%@%@",
+                                            (sqlOutputIncludeDropSyntax ? [NSString stringWithFormat:@"DROP TABLE IF EXISTS %@; DROP VIEW IF EXISTS %@;\n\n", [tableName backtickQuotedString], [tableName backtickQuotedString]] : @""),
+                                            [[[tableDetails objectForKey:@"Create View"] copy] createViewSyntaxPrettifier]]
+                            forKey: tableName
+                        ];
                         createTableSyntax = [self _createViewPlaceholderSyntaxForView:tableName];
                         tableType = SPTableTypeView;
                     }
@@ -329,13 +331,20 @@
                 }
             }
 
+
+
+            if(tableType == SPTableTypeTable) {
+                // Add the name of table
+                [self writeString:[NSString stringWithFormat:@"# %@ %@\n# ------------------------------------------------------------\n\n", NSLocalizedString(@"Dump of table", @"sql export dump of table label"), tableName]];
+            }
+
             // Add a 'DROP TABLE' command if required
-            if (sqlOutputIncludeDropSyntax) {
+            if (sqlOutputIncludeDropSyntax && tableType == SPTableTypeTable) {
                 [self writeString:[NSString stringWithFormat:@"DROP %@ IF EXISTS %@;\n\n", ((tableType == SPTableTypeTable) ? @"TABLE" : @"VIEW"), [tableName backtickQuotedString]]];
             }
 
             // Add the create syntax for the table if specified in the export dialog
-            if (sqlOutputIncludeStructure && createTableSyntax) {
+            if (sqlOutputIncludeStructure && createTableSyntax && tableType == SPTableTypeTable) {
 
                 if ([createTableSyntax isKindOfClass:[NSData class]]) {
 #warning This doesn't make sense. If the NSData really contains a string it would be in utf8, utf8mb4 or a mysql pre-4.1 legacy charset, but not in the export output charset. This whole if() is likely a side effect of the BINARY flag confusion (#2700)
@@ -685,12 +694,13 @@
             return;
         }
 
-        [metaString setString:@"\n\n"];
+        [metaString setString:@""];
 
-        // Add the name of table
-        [metaString appendFormat:@"# Replace placeholder table for %@ with correct view syntax\n# ------------------------------------------------------------\n\n", viewName];
-        [metaString appendFormat:@"DROP TABLE %@;\n\n", [viewName backtickQuotedString]];
-        [metaString appendFormat:@"%@;\n", [viewSyntaxes objectForKey:viewName]];
+        // Add the name of View
+        [self writeString:[NSString stringWithFormat:@"# %@ %@\n# ------------------------------------------------------------\n\n", NSLocalizedString(@"Dump of view", @"sql export dump of view label"), viewName]];
+
+        // Add the View create statement
+        [metaString appendFormat:@"%@;\n\n", [viewSyntaxes objectForKey:viewName]];
 
         [self writeUTF8String:metaString];
     }
