@@ -194,7 +194,7 @@
 "A foreign key needs this index" = "Внешний ключ нуждается в этом индексе";
 
 /* description of set */
-"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.";
+"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "Тип SET может содержать до 64 значений (строк), которые могут задаваться как одно или несколько значений поля, разделённые запятыми. Задания значений, их порядок автоматически нормализуется, а дубликаты удаляются. Присвоение значений чисел поддерживается при использовании той же семантики, что и для типов BIT.";
 
 /* SSH key not found message */
 "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.";
@@ -2037,7 +2037,7 @@
 "Quote" = "Кавычки";
 
 /* databsse rename unsupported informative message */
-"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
+"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Переименование базы данных '%@' в настоящее время не поддерживается, поскольку она содержит объекты, отличные от таблиц (например, представления, процедуры, функции и т.д.).\n\nЕсли вы хотите переименовать базу данных, пожалуйста, используйте функцию 'Дублировать базу данных', затем переместите нетабличные объекты вручную, а потом удалите старую базу данных.";
 
 /* range for serial type */
 "Range: %@ to %@" = "Диапазон: от %1$@ до %2$@";
@@ -2512,7 +2512,7 @@
 "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00.";
 
 /* description of time */
-"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
+"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Хранит время, продолжительность или интервал времени. Представление ЧЧ:ММ:СС[.|*] может содержать дроби секунды. Это значение не зависит от настройки часового пояса. Неверные значения преобразовываются в 00:00:00. В MySQL 5.6.4 были добавлены дробные секунды с точностью до микросекунд (6).";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Structure" = "Структура";
@@ -2703,7 +2703,7 @@
 "The CSV file you selected could not be found or read." = "The CSV file you selected could not be found or read.";
 
 /* Error when CSV appears to have too many columns to import, probably due to line ending mismatch */
-"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog.";
+"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "CSV содержит более 512 колонок, что превышает максимальное разрешённое число (это влияет на производительность Sequel Ace).\n\nОбычно это происходит из-за ошибок чтения CSV; пожалуйста, перепроверьте содержимое CSV, а также символы окончания и экранирования строк, указываемые внизу окна выбора CSV.";
 
 /* unsaved theme informative message */
 "The current color theme is unsaved. Do you want to proceed without saving it?" = "The current color theme is unsaved. Do you want to proceed without saving it?";
@@ -2763,7 +2763,7 @@
 "The specified trigger was unable to be created.\n\nMySQL said: %@" = "Не получается создать указанный триггер.\n\nMySQL сообщил: %@";
 
 /* sql import : charset error alert : detail message */
-"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!";
+"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQL-файл использует кодировку utf8mb4, но ваша версия MySQL поддерживает только ограниченный набор подмножеств utf8.\n\nВы можете продолжить импорт, но любые не-BMP символы в SQL файле (например, некоторые типографические и научные специальные символы, древние логотипы CJK, смайлики) будут безвозвратно потеряны!";
 
 /* SQL file open error */
 "The SQL file you selected could not be found or read." = "The SQL file you selected could not be found or read.";
@@ -2787,7 +2787,7 @@
 "The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.";
 
 /* SSH tunnel unable to bind to local port message */
-"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?";
+"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "Не удалось пробросить туннель SSH через локальный порт. Эта ошибка может произойти, если у вас уже есть SSH соединение с тем же сервером и вы используете параметр 'LocalForward' в вашей конфигурации SSH.\n\nВы хотите вернуться к стандартному соединению с локальным хостом, чтобы использовать существующий туннель?";
 
 /* SSH tunnel failed or timed out message */
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "The SSH Tunnel was unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).";
@@ -3155,7 +3155,7 @@
 "You cannot delete the last field in a table. Delete the table instead." = "You cannot delete the last field in a table. Delete the table instead.";
 
 /* SSL connection requested but not established error detail */
-"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.";
+"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Вы инициализировали установку соединения с помощью SSL, но MySQL подключился без SSL.\n\nЭто может быть потому, что сервер не поддерживает SSL-соединения, или на нём SSL отключено, или задано недостаточно параметров для установки SSL-соединения.\n\nЭто соединение не зашифровано.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
 "‘%@’ based favorites" = "‘%@’ based favorites";
@@ -3323,7 +3323,7 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "Использование колонки \"default\" изменилось с момента выхода последней версии Sequel ACE:\n\n- Если нет значения по умолчанию, то оставьте его пустым.\n- Для строкового значения одинарный кавычки ('…') или двоные кавычки для пустой строки или переноса строки (\"…\")\n- Для ввода выражения используйте скобки (…). Для колонок TIMESTAMP и DATETIME можно указать функцию CURRENT_TIMESTAMP без скобок.";
 
 /* Menu option to pin a view to the top of the list of tables */
 "Pin View" = "Pin View";
