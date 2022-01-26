@@ -136,7 +136,7 @@
 		}
 		
 		if ([[[[self delegate] class] description] isEqualToString:@"SPContentFilterManager"]) {
-			if ([[[(NSObject*)[self delegate] valueForKeyPath:@"contentFilters"] safeObjectAtIndex:row]  safeObjectForKey:@"ableFileURL"])
+			if ([[[(NSObject*)[self delegate] valueForKeyPath:@"contentFilters"] safeObjectAtIndex:row]  safeObjectForKey:@"headerOfFileURL"])
 				return nil;
 		}
 		
