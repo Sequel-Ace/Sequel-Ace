@@ -38,6 +38,7 @@ final class SPWindowTabAccessory: NSView {
     
     init() {
         super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+
         addSubviews(tabAccessoryColorView, tabAccessoryViewImage, tabText)
         
         tabAccessoryColorView.snp.makeConstraints {
@@ -61,6 +62,7 @@ final class SPWindowTabAccessory: NSView {
     
     private lazy var tabAccessoryColorView: NSView = {
         let colorView = NSView()
+
         colorView.wantsLayer = true
         return colorView
     }()
@@ -91,7 +93,14 @@ final class SPWindowTabAccessory: NSView {
     // MARK: Setters
     
     func update(color: NSColor?, isSSL: Bool) {
-        tabAccessoryColorView.layer?.backgroundColor = color?.cgColor
+        var tabColor = color
+        if #available(macOS 10.13, *) {
+            if(tabColor != nil && tabColor?.colorNameComponent.starts(with: "favorite") == true) {
+                tabColor = NSColor(named: tabColor!.colorNameComponent + "-tab") ?? tabColor
+            }
+        }
+
+        tabAccessoryColorView.layer?.backgroundColor = tabColor?.cgColor
         tabAccessoryViewImage.isHidden = !isSSL
     }
 
