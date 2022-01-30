@@ -69,8 +69,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)contextWillSave:(NSNotification *)notice;
 - (void)_selectFirstChildOfParentNode;
 
-@property (nonatomic, assign) BOOL doneRecordError;
-
 @end
 
 @implementation SPUserManager
@@ -87,7 +85,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 @synthesize treeSortDescriptors;
 @synthesize serverSupport;
 @synthesize isInitializing = isInitializing;
-@synthesize doneRecordError;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -105,20 +102,19 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// key is:   The name of the actual column in the mysql.users / mysql.db table
 		// value is: The "Privilege" value from "SHOW PRIVILEGES" with " " replaced by "_" and "_priv" appended
 		privColumnToGrantMap = @{
-			@"Grant_priv":               @"Grant_option_priv",
-			@"Show_db_priv":             @"Show_databases_priv",
-			@"Create_tmp_table_priv":    @"Create_temporary_tables_priv",
-			@"Repl_slave_priv":          @"Replication_slave_priv",
-			@"Repl_client_priv":         @"Replication_client_priv",
-			@"Truncate_versioning_priv": @"Delete_versioning_rows_priv", // MariaDB only, 10.3.4 only
-			@"Delete_history_priv":      @"Delete_versioning_rows_priv", // MariaDB only, since 10.3.5
+			@"grant_priv":               @"grant_option_priv",
+			@"show_db_priv":             @"show_databases_priv",
+			@"create_tmp_table_priv":    @"create_temporary_tables_priv",
+			@"repl_slave_priv":          @"replication_slave_priv",
+			@"repl_client_priv":         @"replication_client_priv",
+			@"truncate_versioning_priv": @"delete_versioning_rows_priv", // MariaDB only, 10.3.4 only
+			@"delete_history_priv":      @"delete_versioning_rows_priv", // MariaDB only, since 10.3.5
 		};
 	
         schemas = [[NSMutableArray alloc] init];
         availablePrivs = [[NSMutableArray alloc] init];
         grantedSchemaPrivs = [[NSMutableArray alloc] init];
         isSaving = NO;
-        doneRecordError = NO;
 
         // listen for new/dropped/renamed databases, to refresh the list
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -225,13 +221,13 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 			while ((privRow = [result getRowAsArray]))
 			{
-				NSMutableString *privKey = [NSMutableString stringWithString:[privRow objectAtIndex:0]];
+				NSMutableString *privKey = [NSMutableString stringWithString:[[privRow objectAtIndex:0] lowercaseString]];
 
 				if (![privKey hasSuffix:@"_priv"]) continue;
 
 				if ([privColumnToGrantMap objectForKey:privKey]) privKey = [privColumnToGrantMap objectForKey:privKey];
 
-				[[self privsSupportedByServer] setValue:@YES forKey:[privKey lowercaseString]];
+				[[self privsSupportedByServer] setValue:@YES forKey:privKey];
 			}
 		}
 	}
@@ -355,10 +351,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	
 	for (NSString *prop in props)
 	{
-		if ([prop hasSuffix:@"_priv"] && [[[self privsSupportedByServer] objectForKey:prop] boolValue]) {
+		if ([prop hasSuffix:@"_priv"] && [[[self privsSupportedByServer] objectForKey:[prop lowercaseString]] boolValue]) {
 			NSString *displayName = [[prop stringByReplacingOccurrencesOfString:@"_priv" withString:@""] replaceUnderscoreWithSpace];
 			
-			[availablePrivs addObject:[NSDictionary dictionaryWithObjectsAndKeys:displayName, @"displayName", prop, @"name", nil]];				
+			[availablePrivs addObject:[NSDictionary dictionaryWithObjectsAndKeys:displayName, @"displayName", [prop lowercaseString], @"name", nil]];
 		}
 	}
 	
@@ -393,6 +389,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		if ([key hasSuffix:@"_priv"])
 		{
 			BOOL value = [[item objectForKey:key] boolValue];
+            key = [key lowercaseString];
 
 			// Special case keys
 			if ([privColumnToGrantMap objectForKey:key])
@@ -402,15 +399,15 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			
 			[child setValue:[NSNumber numberWithBool:value] forKey:key];
 		} 
-		else if ([key hasPrefix:@"max"]) // Resource Management restrictions
+		else if ([[key lowercaseString] hasPrefix:@"max"]) // Resource Management restrictions
 		{
 			NSNumber *value = [NSNumber numberWithInteger:[[item objectForKey:key] integerValue]];
-			[child setValue:value forKey:key];
+			[child setValue:value forKey:[key lowercaseString]];
 		}
-		else if (![key isInArray:@[@"User",@"Password",@"plugin",@"authentication_string"]])
+		else if (![[key lowercaseString] isInArray:@[@"user",@"password",@"plugin",@"authentication_string"]])
 		{
 			NSString *value = [item objectForKey:key];
-			[child setValue:value forKey:key];
+			[child setValue:value forKey:[key lowercaseString]];
 		}
 		NS_HANDLER
 		NS_ENDHANDLER
@@ -440,11 +437,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		SPPrivilegesMO *dbPriv = [NSEntityDescription insertNewObjectForEntityForName:@"Privileges" inManagedObjectContext:[self managedObjectContext]];
 
-        // some error checks
-        if (rowDict[@"DB"] && doneRecordError == NO){
-            doneRecordError = YES;
-            SPLog(@"rowDict[DB] = %@", rowDict[@"DB"]);
-        }
 
 		for (__strong NSString *key in rowDict)
 		{
@@ -452,23 +444,20 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			if ([key hasSuffix:@"_priv"]) {
 				
 				BOOL boolValue = [[rowDict objectForKey:key] boolValue];
+                key = [key lowercaseString];
 				
 				// Special case keys
 				if ([privColumnToGrantMap objectForKey:key]) {
 					key = [privColumnToGrantMap objectForKey:key];
 				}
 				
-				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:[key lowercaseString]];
+				[dbPriv setValue:[NSNumber numberWithBool:boolValue] forKey:key];
 			}
-			else if ([key isEqualToString:@"Db"] || [key isEqualToString:@"DB"]) {
-                // some servers (which? - error above should tell us) return 'DB' for this key which
-                // causes crash: the entity Privileges is not key value coding-compliant for the key DB
-                // so we'll just override it here.
-                key = @"Db";
+			else if ([[key lowercaseString] isEqualToString:@"db"]) {
 				NSString *db = [[rowDict objectForKey:key] stringByReplacingOccurrencesOfString:@"\\_" withString:@"_"];
                 [dbPriv setValue:db forKey:[key lowercaseString]];
             }
-			else if (![key isEqualToString:@"Host"] && ![key isEqualToString:@"User"]) {
+			else if (![[key lowercaseString] isEqualToString:@"host"] && ![[key lowercaseString] isEqualToString:@"user"]) {
 				[dbPriv setValue:[rowDict objectForKey:key] forKey:[key lowercaseString]];
 			}
 		}
@@ -1535,7 +1524,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 						if ([[property name] hasSuffix:@"_priv"] && [[priv valueForKey:[property name]] boolValue])
 						{
 							NSString *displayName = [[[property name] stringByReplacingOccurrencesOfString:@"_priv" withString:@""] replaceUnderscoreWithSpace];
-							NSDictionary *newDict = [NSDictionary dictionaryWithObjectsAndKeys:displayName, @"displayName", [property name], @"name", nil];
+							NSDictionary *newDict = [NSDictionary dictionaryWithObjectsAndKeys:displayName, @"displayName", [[property name] lowercaseString], @"name", nil];
 							[grantedController addObject:newDict];
 
 							// Remove items from available so they can't be added twice.
