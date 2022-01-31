@@ -2267,7 +2267,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				} 
 				else {
 					NSString *str;
-					if (hide) {
+					if ([self cellValueIsDisplayedAsUuidForColumn:columnIndex]) {
+						str = [self _convertHexToUuid:[o dataToHexString]];
+					}
+					else if (hide) {
 						str = @"&lt;BLOB&gt;";
 					}
 					else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
@@ -3790,6 +3793,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		if ([value isKindOfClass:[NSData class]]) {
 
+			if ([self cellValueIsDisplayedAsUuidForColumn:columnIndex] && [(NSData *)value length] == 16) {
+				return [self _convertHexToUuid:[(NSData *)value dataToHexString]];
+			}
+
 			if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
 				if ([(NSData *)value length] > 255) {
 					return [NSString stringWithFormat:@"0x%@…", [[(NSData *)value subdataWithRange:NSMakeRange(0, 255)] dataToHexString]];
@@ -3856,6 +3863,18 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			if ([object isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
 				object = [NSNull null];
 			}
+			else if ([self cellValueIsDisplayedAsUuidForColumn:columnIndex]) {
+				// This is a binary object being edited as a uuid string.
+				// Convert the string back to binary.
+				// Error checking is done in -control:textShouldEndEditing:
+				NSString *hex = [self _convertUuidToHex:(NSString *)object];
+				NSData *data = [NSData dataWithHexString: hex];
+				if (!data) {
+					NSBeep();
+					return;
+				}
+				object = data;
+			}
 			else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
 				// This is a binary object being edited as a hex string.
 				// Convert the string back to binary.
@@ -3896,6 +3915,27 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	return NO;
 }
 
+-(BOOL)cellValueIsDisplayedAsUuidForColumn:(NSUInteger)columnIndex {
+    NSString *binAsUuidValue = [[prefs stringForKey: SPBinAsUuid] trimWhitespaces];
+    if (![binAsUuidValue length]) {
+        return NO;
+    }
+
+    NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[tableContentView delegate] dataColumnDefinitions] objectAtIndex:columnIndex];
+    NSString *typeGrouping = columnDefinition[@"typegrouping"];
+    if (![typeGrouping isEqual:@"binary"]) {
+        return NO;
+    }
+
+    NSArray<NSString *> *columns = [[binAsUuidValue lowercaseString] componentsSeparatedByString: @","];
+    NSString *name = columnDefinition[@"name"];
+    if ([columns containsObject: [name lowercaseString]]) {
+        return YES;
+    }
+
+    return NO;
+}
+
 #pragma mark - SPTableContentDataSource_Private_API
 
 - (id)_contentValueForTableColumn:(NSUInteger)columnIndex row:(NSUInteger)rowIndex asPreview:(BOOL)asPreview
@@ -3905,6 +3945,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	return SPDataStorageObjectAtRowAndColumn(tableValues, rowIndex, columnIndex);
+}
+
+- (NSString *)_convertHexToUuid:(NSString *)hex {
+	NSMutableString *uuid = [[NSMutableString alloc] initWithString: hex];
+	[uuid insertString:@"-" atIndex:8];
+	[uuid insertString:@"-" atIndex:13];
+	[uuid insertString:@"-" atIndex:18];
+	[uuid insertString:@"-" atIndex:23];
+	return uuid;
+}
+
+- (NSString *)_convertUuidToHex:(NSString *)hex {
+	return  [hex stringByReplacingOccurrencesOfString:@"-" withString:@""];
 }
 
 #pragma mark - SPTableContentFilter
@@ -4182,7 +4235,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				cellValue = [NSString stringWithString:[prefs objectForKey:SPNullValue]];
 			}
 
-			if ([self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]]) {
+			NSInteger idx = [[tableColumn identifier] integerValue];
+			if ([self cellValueIsDisplayedAsUuidForColumn:idx]) {
+				NSInteger maxLenght = 32 + 2; // hex length + 2 for "0x" prefix
+				[fieldEditor setTextMaxLength:maxLenght];
+				isFieldEditable = NO;
+			}
+			else if ([self cellValueIsDisplayedAsHexForColumn:idx]) {
 				[fieldEditor setTextMaxLength:[[self tableView:tableContentView objectValueForTableColumn:tableColumn row:rowIndex] length]];
 				isFieldEditable = NO;
 			}
@@ -4458,22 +4517,33 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// We do this here because the textfield will still be selected with the pending changes if we bail out here
 	if(control == tableContentView) {
 		NSInteger columnIndex = [tableContentView editedColumn];
-		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
-			// special case: the "NULL" string
-			NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
-			if ([[editor string] isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
-				return YES;
-			}
-			// This is a binary object being edited as a hex string.
-			// Convert the string back to binary, checking for errors.
-			NSData *data = [NSData dataWithHexString:[editor string]];
-			if (!data) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed") message:NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed") callback:nil];
-				return NO;
-			}
+		if ([self cellValueIsDisplayedAsUuidForColumn:columnIndex]) {
+			NSString *str = [[editor string] stringByReplacingOccurrencesOfString: @"-" withString: @""];
+			return [self _isValidHexAtIndex:columnIndex string:str];
+		}
+		else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
+			return [self _isValidHexAtIndex:columnIndex string:[editor string]];
 		}
 	}
 	return YES;
+}
+
+- (BOOL)_isValidHexAtIndex:(NSInteger)columnIndex string:(NSString *)string {
+    // special case: the "NULL" string
+    NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
+    if ([string isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
+        return YES;
+    }
+    // This is a binary object being edited as a hex string.
+    // Convert the string back to binary, checking for errors.
+    if (![NSData dataWithHexString: string]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed")
+                                     message:NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed")
+                                    callback:nil];
+        return NO;
+    }
+
+    return YES;
 }
 
 /**
