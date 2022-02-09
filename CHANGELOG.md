@@ -1,3 +1,27 @@
+## [3.5.0]
+
+### Added
+- 49ed5429, Support for pinning tables at top of tables list 
+- 18af48c0,  Clicking S[tructure] C[ontent] or D[rop] in export window will toggle the value for all tables
+- 7293fc50,   Filter and Sorting to Structure "fields" Table View.
+
+### Fixed
+- 7e16cee2, Disable dark mode variants of colors for tab bar 
+- d46f0712, Disable TouchBar font panel API 
+
+### Changed
+- 8afb7e51,  Improved tab coloring appearance in Dark and Light modes
+- 81ec264f,  Stop exporting a placeholder table for views in database exports
+- da43e08c,  Accurately show SSL connection status always
+- a37b653c,  Allow sorting every column on the Structure "fields" table view
+- b002cae1,  Change default query editor font to Menlo to improve query editor performance
+
+### Removed
+
+
+### Infra
+
+
 ## [3.4.5]
 
 ### Added
