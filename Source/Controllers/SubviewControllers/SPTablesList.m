@@ -782,6 +782,38 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 /**
+ * Open the table in a new tab.
+ */
+- (IBAction)openTableInNewTab:(id)sender withRowIndex:(NSUInteger) rowIndex{
+    if ([filteredTables count] > rowIndex){
+        NSString *table = [filteredTables objectAtIndex:rowIndex];
+        if (table !=nil){
+            // Get the current state
+            NSDictionary *allStateDetails = @{
+                @"connection" : @YES,
+                @"history"    : @YES,
+                @"session"    : @YES,
+                @"query"      : @YES,
+                @"password"   : @YES
+            };
+            NSMutableDictionary *documentState = [NSMutableDictionary dictionaryWithDictionary:[tableDocumentInstance stateIncludingDetails:allStateDetails]];
+            
+            // Ensure it's set to autoconnect, and reset the table
+            [documentState setObject:@YES forKey:@"auto_connect"];
+            
+            NSMutableDictionary *sessionState = [NSMutableDictionary dictionaryWithDictionary:[documentState objectForKey:@"session"]];
+            
+            [sessionState setObject:table forKey:@"table"];
+            
+            [documentState setObject:[NSDictionary dictionaryWithDictionary:sessionState] forKey:@"session"];
+            
+            [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentDuplicateTabNotification object:nil userInfo:documentState];
+            
+        }
+    }
+}
+
+/**
  * Toggle whether the splitview is collapsed.
  */
 - (IBAction)togglePaneCollapse:(id)sender
@@ -1874,13 +1906,17 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			default:
 				[aCell setIndentationLevel:0];
 		}
-
-	} 
+	}
 	else {
 		[aCell setNote:@""];
 		[aCell setImage:nil];
 		[aCell setIndentationLevel:0];
 	}
+}
+
+- (NSString *)tableView:(NSTableView *)tableView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row mouseLocation:(NSPoint)mouseLocation
+{
+    return NSLocalizedString(@"Press Command + Option and click it will open this table in new tab", @"Press Command + Option and click it will open this table in new tab");
 }
 
 /**

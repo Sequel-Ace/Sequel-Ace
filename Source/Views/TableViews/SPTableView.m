@@ -32,6 +32,7 @@
 #import "SPQueryFavoriteManager.h"
 #import "SPDatabaseDocument.h"
 #import "SPFieldMapperController.h"
+#import "SPTablesList.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -292,6 +293,28 @@ pass_keyDown_to_super:
 	else {
 		[super rightMouseDown:event];
 	}
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+    if (event.modifierFlags & NSEventModifierFlagOption && event.modifierFlags & NSEventModifierFlagCommand){
+        if ([[[[self delegate] class] description] isEqualToString:@"SPTablesList"]) {
+            if ([[self delegate] respondsToSelector:@selector(openTableInNewTab:withRowIndex:)]) {
+                if ([[self delegate] respondsToSelector:@selector(tableView:shouldSelectRow:)]) {
+                    if ([[self delegate] tableView:self shouldSelectRow:[self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]]]) {
+                        [(SPTablesList*)[self delegate] openTableInNewTab:self withRowIndex:[self rowAtPoint:[self convertPoint:[event locationInWindow] fromView:nil]]];
+                        // The tab bar will be empty if there is no mousedown event, I have no idea to fix it, so I add the below code to cheat the system to active the window...
+                        // If anyone knowns how to fix it, please do it.
+                        // Thanks.
+                        [super rightMouseDown:event];
+                    }
+                }
+            }
+        }
+    }
+    else{
+        [super mouseDown:event];
+    }
 }
 
 - (void)setFont:(NSFont *)font;

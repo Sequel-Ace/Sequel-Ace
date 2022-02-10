@@ -143,6 +143,7 @@
 - (IBAction)togglePinTable:(nullable id)sender;
 - (IBAction)openTableInNewTab:(nullable id)sender;
 - (IBAction)openTableInNewWindow:(nullable id)sender;
+- (IBAction)openTableInNewTab:(nullable id)sender withRowIndex:(NSUInteger) rowIndex;
 - (IBAction)togglePaneCollapse:(nullable id)sender;
 - (IBAction)updateFilter:(nullable id)sender;
 
