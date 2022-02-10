@@ -3354,3 +3354,6 @@
 
 /* header for pinned table list */
 "PINNED" = "PINNED";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "Copy Table Name";
