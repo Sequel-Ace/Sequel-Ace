@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19455" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19455"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -546,7 +546,7 @@ DQ
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5593">
                                                                                             <rect key="frame" x="108" y="9" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <buttonCell key="cell" type="check" title="Connect using SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5594">
+                                                                                            <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5594">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
@@ -931,7 +931,7 @@ DQ
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5720">
                                                                                             <rect key="frame" x="108" y="10" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES"/>
-                                                                                            <buttonCell key="cell" type="check" title="Connect using SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5721">
+                                                                                            <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5721">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
@@ -1446,7 +1446,7 @@ DQ
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FtV-HG-DIU">
                                                                                             <rect key="frame" x="108" y="10" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <buttonCell key="cell" type="check" title="Connect using SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="w3N-9r-DzN">
+                                                                                            <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="w3N-9r-DzN">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
@@ -1789,7 +1789,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" HUD="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="439" y="291" width="580" height="320"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1692"/>
             <value key="minSize" type="size" width="100" height="100"/>
             <view key="contentView" id="5432">
                 <rect key="frame" x="0.0" y="0.0" width="580" height="320"/>
