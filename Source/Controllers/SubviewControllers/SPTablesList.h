@@ -107,6 +107,7 @@
 	IBOutlet NSMenuItem *openTableInNewTabContextMenuItem;
 	IBOutlet NSMenuItem *openTableInNewWindowContextMenuItem;
 	IBOutlet NSMenuItem *pinTableContextMenuItem;
+    IBOutlet NSMenuItem *copyTableNameContextMenuItem;
 	IBOutlet NSMenuItem *separatorTableContextMenuItem;
 	IBOutlet NSMenuItem *showCreateSyntaxContextMenuItem;
 	IBOutlet NSMenuItem *copyCreateSyntaxContextMenuItem;

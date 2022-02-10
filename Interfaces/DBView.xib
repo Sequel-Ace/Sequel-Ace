@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19529" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
+        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19529"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -286,12 +287,18 @@
                                 <popUpButton fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7859">
                                     <rect key="frame" x="25" y="0.0" width="35" height="25"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES"/>
-                                    <popUpButtonCell key="cell" type="bevel" bezelStyle="regularSquare" imagePosition="only" alignment="center" alternateImage="NSActionTemplate" lineBreakMode="truncatingTail" state="on" inset="2" pullsDown="YES" selectedItem="7862" id="7860">
+                                    <popUpButtonCell key="cell" type="bevel" bezelStyle="regularSquare" imagePosition="only" alignment="center" alternateImage="NSActionTemplate" lineBreakMode="truncatingTail" state="on" inset="2" pullsDown="YES" id="7860">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="menu"/>
                                         <menu key="menu" title="OtherViews" id="7861">
                                             <items>
                                                 <menuItem state="on" image="NSActionTemplate" hidden="YES" id="7862"/>
+                                                <menuItem title="Copy Table Name" id="OCI-j0-m3N">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                    <connections>
+                                                        <action selector="copyTableName:" target="68" id="cB7-xz-sw8"/>
+                                                    </connections>
+                                                </menuItem>
                                                 <menuItem title="Rename Table..." toolTip="Rename the selected item" id="7917">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
@@ -1786,15 +1793,15 @@ Gw
                                                                         <rect key="frame" x="109" y="0.0" width="554" height="73"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" id="fhZ-nZ-AwI">
-                                                                            <rect key="frame" x="1" y="1" width="552" height="71"/>
+                                                                            <rect key="frame" x="1" y="1" width="537" height="71"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                             <subviews>
                                                                                 <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" findStyle="panel" continuousSpellChecking="YES" smartInsertDelete="YES" id="8236">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="552" height="71"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="537" height="71"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                                    <size key="minSize" width="552" height="71"/>
+                                                                                    <size key="minSize" width="537" height="71"/>
                                                                                     <size key="maxSize" width="1097" height="10000000"/>
                                                                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                     <connections>
@@ -1832,15 +1839,15 @@ Gw
                                                                         <rect key="frame" x="109" y="0.0" width="554" height="200"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" drawsBackground="NO" id="nV8-ly-BSi">
-                                                                            <rect key="frame" x="1" y="1" width="552" height="198"/>
+                                                                            <rect key="frame" x="1" y="1" width="537" height="198"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                             <subviews>
                                                                                 <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" id="8242" customClass="SPTextView">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="552" height="198"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="537" height="198"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                                    <size key="minSize" width="552" height="198"/>
+                                                                                    <size key="minSize" width="537" height="198"/>
                                                                                     <size key="maxSize" width="1097" height="10000000"/>
                                                                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                     <connections>
@@ -2529,7 +2536,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="509" width="384" height="133"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="384" height="133"/>
             <value key="maxSize" type="size" width="600" height="133"/>
             <view key="contentView" id="557">
@@ -2638,7 +2645,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="157" y="342" width="384" height="119"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="384" height="119"/>
             <value key="maxSize" type="size" width="600" height="119"/>
             <view key="contentView" id="8277">
@@ -2725,7 +2732,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="461" width="379" height="154"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="379" height="154"/>
             <value key="maxSize" type="size" width="379" height="154"/>
             <view key="contentView" id="6938">
@@ -2830,7 +2837,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="481" width="314" height="112"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="292" height="112"/>
             <value key="maxSize" type="size" width="650" height="112"/>
             <view key="contentView" id="6991">
@@ -2897,7 +2904,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="433" width="425" height="162"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="425" height="162"/>
             <value key="maxSize" type="size" width="600" height="162"/>
             <view key="contentView" id="5323">
@@ -3015,7 +3022,7 @@ Gw
             <windowStyleMask key="styleMask" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="356" y="461" width="260" height="192"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="260" height="127"/>
             <value key="maxSize" type="size" width="260" height="192"/>
             <view key="contentView" id="500">
@@ -3126,7 +3133,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="351" y="522" width="306" height="122"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="213" height="107"/>
             <view key="contentView" id="410">
                 <rect key="frame" x="0.0" y="0.0" width="306" height="122"/>
@@ -3194,7 +3201,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="131" y="407" width="303" height="95"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="255" height="95"/>
             <view key="contentView" id="6833">
                 <rect key="frame" x="0.0" y="0.0" width="303" height="95"/>
@@ -3270,7 +3277,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="141" width="379" height="404"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <view key="contentView" id="5597">
                 <rect key="frame" x="0.0" y="0.0" width="379" height="404"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -3526,7 +3533,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="162" width="360" height="348"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="360" height="348"/>
             <view key="contentView" id="6766">
                 <rect key="frame" x="0.0" y="0.0" width="360" height="348"/>
@@ -3679,7 +3686,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="101" y="476" width="379" height="139"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="213" height="50"/>
             <view key="contentView" id="6126">
                 <rect key="frame" x="0.0" y="0.0" width="379" height="139"/>
@@ -3734,7 +3741,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="221" y="567" width="381" height="247"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="213" height="107"/>
             <view key="contentView" id="713">
                 <rect key="frame" x="0.0" y="0.0" width="381" height="247"/>
@@ -3758,15 +3765,15 @@ DQ
                         <rect key="frame" x="-1" y="35" width="383" height="206"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="w4Z-p1-GZA">
-                            <rect key="frame" x="1" y="1" width="381" height="204"/>
+                            <rect key="frame" x="1" y="1" width="366" height="204"/>
                             <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" verticallyResizable="YES" id="8219">
-                                    <rect key="frame" x="0.0" y="0.0" width="381" height="204"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="366" height="204"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    <size key="minSize" width="381" height="204"/>
+                                    <size key="minSize" width="366" height="204"/>
                                     <size key="maxSize" width="753" height="10000000"/>
                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <connections>
@@ -3792,7 +3799,7 @@ DQ
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="386" y="508" width="411" height="341"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="350" height="200"/>
             <view key="contentView" id="6558">
                 <rect key="frame" x="0.0" y="0.0" width="411" height="341"/>
@@ -3902,7 +3909,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="467" y="379" width="405" height="267"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="213" height="107"/>
             <view key="contentView" id="960">
                 <rect key="frame" x="0.0" y="0.0" width="405" height="267"/>
@@ -3940,15 +3947,15 @@ Gw
                         <rect key="frame" x="20" y="45" width="365" height="177"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" drawsBackground="NO" id="aEl-zD-ga2">
-                            <rect key="frame" x="1" y="1" width="363" height="175"/>
+                            <rect key="frame" x="1" y="1" width="348" height="175"/>
                             <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" id="8202">
-                                    <rect key="frame" x="0.0" y="0.0" width="363" height="175"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="348" height="175"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    <size key="minSize" width="363" height="175"/>
+                                    <size key="minSize" width="348" height="175"/>
                                     <size key="maxSize" width="717" height="10000000"/>
                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                 </textView>
@@ -3983,7 +3990,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="488" width="260" height="127"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <value key="minSize" type="size" width="260" height="127"/>
             <value key="maxSize" type="size" width="600" height="127"/>
             <view key="contentView" id="6406">
@@ -4055,7 +4062,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" utility="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="360" width="338" height="150"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <view key="contentView" id="6493">
                 <rect key="frame" x="0.0" y="0.0" width="338" height="150"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -4424,6 +4431,7 @@ Gw
                 <outlet property="copyTableButton" destination="515" id="5705"/>
                 <outlet property="copyTableContentSwitch" destination="514" id="520"/>
                 <outlet property="copyTableMessageField" destination="512" id="5427"/>
+                <outlet property="copyTableNameContextMenuItem" destination="APe-9r-88R" id="Srp-r9-8dc"/>
                 <outlet property="copyTableNameField" destination="zPq-c4-GfK" id="i9F-Er-ve6"/>
                 <outlet property="copyTableSheet" destination="501" id="521"/>
                 <outlet property="copyTableToNewDatabaseMessageField" destination="7VL-7D-xfr" id="MHU-zz-GNx"/>
@@ -4625,6 +4633,12 @@ Gw
         <customObject id="AxW-sg-bzq" customClass="SPHelpViewerClient"/>
         <menu id="6180" userLabel="Table List Menu">
             <items>
+                <menuItem title="Copy Table Name" id="APe-9r-88R">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="copyTableName:" target="68" id="nvs-Ce-JHP"/>
+                    </connections>
+                </menuItem>
                 <menuItem title="Rename Table..." toolTip="Rename the selected item" id="6186">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
@@ -4913,7 +4927,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES" utility="YES" nonactivatingPanel="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="132" width="410" height="165"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2056" height="1291"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
             <view key="contentView" id="h2r-1x-8ZD">
                 <rect key="frame" x="0.0" y="0.0" width="410" height="165"/>
                 <autoresizingMask key="autoresizingMask"/>

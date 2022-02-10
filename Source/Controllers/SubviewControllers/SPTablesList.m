@@ -741,6 +741,24 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     // actual pin toggle will happen when notification is received and processed
 }
 
+
+- (IBAction)copyTableName:(nullable id)sender {
+    if (!selectedTableName) {
+        return;
+    }
+
+    NSString *databaseName = [mySQLConnection database];
+
+    NSString *copiedSyntax =[NSString stringWithFormat:@"%@.%@", databaseName, selectedTableName];
+    if ([copiedSyntax length] > 0) {
+        // Copy to the clipboard
+        NSPasteboard *pb = [NSPasteboard generalPasteboard];
+
+        [pb declareTypes:@[NSStringPboardType] owner:self];
+        [pb setString:copiedSyntax forType:NSStringPboardType];
+
+    }
+}
 /**
  * Open the table in a new tab.
  */
@@ -920,6 +938,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewTabContextMenuItem setHidden:YES];
 		[openTableInNewWindowContextMenuItem setHidden:YES];
 		[pinTableContextMenuItem setHidden:YES];
+        [copyTableNameContextMenuItem setHidden:YES];
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[duplicateTableContextMenuItem setHidden:YES];
 		[separatorTableContextMenuItem setHidden:YES];
@@ -1050,6 +1069,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open View in New Window", @"Tables List : Context Menu : Duplicate connection to new window")];
 		[pinTableContextMenuItem setHidden:NO];
         [pinTableContextMenuItem setTitle:pinViewLocalizedString];
+        [copyTableNameContextMenuItem setHidden:NO];
+        [copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Table Name",@"Table List : Context Menu : copy Table's name")];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create View Syntax...", @"show create view syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1107,6 +1128,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Table in New Window", @"Table List : Context Menu : Duplicate connection to new window")];
         [pinTableContextMenuItem setHidden:NO];
         [pinTableContextMenuItem setTitle:pinTableLocalizedString];
+        [copyTableNameContextMenuItem setHidden:NO];
+        [copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Table Name",@"Table List : Context Menu : copy Table's name")];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Table Syntax...", @"show create table syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
@@ -1153,6 +1176,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowContextMenuItem setHidden:NO];
         [pinTableContextMenuItem setHidden:NO];
         [pinTableContextMenuItem setTitle:pinProcedureLocalizedString];
+        [copyTableNameContextMenuItem setHidden:NO];
+        [copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Table Name",@"Table List : Context Menu : copy Table's name")];
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Tab", @"open procedure in new table title")];
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Procedure in New Window", @"Table List : Context Menu : duplicate connection to new window")];
@@ -1205,6 +1230,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Function in New Window", @"Table List : Context Menu : duplicate connection to new window")];
         [pinTableContextMenuItem setHidden:NO];
         [pinTableContextMenuItem setTitle:pinFunctionLocalizedString];
+        [copyTableNameContextMenuItem setHidden:NO];
+        [copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Table Name",@"Table List : Context Menu : copy Table's name")];
 		[showCreateSyntaxContextMenuItem setHidden:NO];
 		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Function Syntax...", @"show create func syntax menu item")];
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
