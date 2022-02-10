@@ -293,10 +293,10 @@
                                         <menu key="menu" title="OtherViews" id="7861">
                                             <items>
                                                 <menuItem state="on" image="NSActionTemplate" hidden="YES" id="7862"/>
-                                                <menuItem title="Toggle Copy Table Name" id="OCI-j0-m3N">
+                                                <menuItem title="Copy Table Name" id="OCI-j0-m3N">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
-                                                        <action selector="toggleCopyTableName:" target="68" id="Gko-KI-q3d"/>
+                                                        <action selector="copyTableName:" target="68" id="cB7-xz-sw8"/>
                                                     </connections>
                                                 </menuItem>
                                                 <menuItem title="Rename Table..." toolTip="Rename the selected item" id="7917">
@@ -4633,10 +4633,10 @@ Gw
         <customObject id="AxW-sg-bzq" customClass="SPHelpViewerClient"/>
         <menu id="6180" userLabel="Table List Menu">
             <items>
-                <menuItem title="Toggle Copy Table Name" id="APe-9r-88R">
+                <menuItem title="Copy Table Name" id="APe-9r-88R">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="toggleCopyTableName:" target="68" id="gVd-Wi-9it"/>
+                        <action selector="copyTableName:" target="68" id="nvs-Ce-JHP"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Rename Table..." toolTip="Rename the selected item" id="6186">

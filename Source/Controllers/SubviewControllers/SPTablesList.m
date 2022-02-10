@@ -742,7 +742,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 
-- (IBAction)toggleCopyTableName:(nullable id)sender {
+- (IBAction)copyTableName:(nullable id)sender {
     if (!selectedTableName) {
         return;
     }
