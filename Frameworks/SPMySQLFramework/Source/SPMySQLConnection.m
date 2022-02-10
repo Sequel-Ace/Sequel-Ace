@@ -759,7 +759,14 @@ asm(".desc ___crashreporter_info__, 0x10");
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
     }
 
-	MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+    MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+
+    //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL
+    if(!useSSL && theConnection != connectionStatus) {
+        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
+        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
+        connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+    }
 
 	// If the connection failed, return NULL
 	if (theConnection != connectionStatus) {
