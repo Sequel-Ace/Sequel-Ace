@@ -102,10 +102,10 @@
 "%lu of %lu" = "%1$lu из %2$lu";
 
 /* Export folder not writable for some files explanatory text */
-"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again.";
+"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "Не получается создать %lu файлов экспорта, потому что их целевая папка недоступна для записи; пожалуйста, выберите новое место для экспорта и повторите попытку.";
 
 /* Export folder missing for some files explanatory text */
-"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again.";
+"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "Не получается создать %lu файлов экспорта, потому что их целевая папка больше не существует; пожалуйста, выберите новое место для экспорта и повторите попытку.";
 
 /* History item title with nothing selected */
 "(no selection)" = "(ничего не выбрано)";
@@ -114,7 +114,7 @@
 "(not loaded)" = "(не загружено)";
 
 /* Explanation for MySQL server has gone away error */
-"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)";
+"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(Обычно это указывает на то, что соединение было закрыто сервером из-за неактивности, но может быть и по другим причинам. Соединение было восстановлено; пожалуйста, повторите попытку, если запрос безопасен для перезапуска.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
 ", first row available after %1$@" = ", первые данные начали поступать через %1$@";
@@ -147,22 +147,22 @@
 "\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nНажмите ⇧ для бинарного поиска (с учётом регистра).";
 
 /* description of bit */
-"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.";
+"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "Битовый тип поля. M задает количество битов. Если добавляются более короткие значения, то они будут выровнены по наименее значиму биту. Смотрите тип SET, если вы хотите явно называть каждый бит.";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
 "A Bundle ‘%@’ is already installed. Do you want to update it?" = "Пакет ‘%@’ уже установлен. Вы хотите обновить его?";
 
 /* description of binary */
-"A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M.";
+"A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "Байт-массив с фиксированной длиной. Более короткие значения всегда заполняются справа значением 0x00 до достижениями ими длины M.";
 
 /* description of varbinary */
-"A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row." = "A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row.";
+"A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row." = "Массив байтов с переменной длиной. Фактическое количество байт ограничено значениями последующих полей в строке таблицы.";
 
 /* description of blob
  description of longblob
  description of mediumblob
  description of tinyblob */
-"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length." = "A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length.";
+"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length." = "Массив байтов с переменной длиной. В отличие от VARBINARY этот тип не учитывается при подсчёте максимальной длины строки таблицы.";
 
 /* description of tinytext */
 "A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
@@ -197,16 +197,16 @@
 "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "Тип SET может содержать до 64 значений (строк), которые могут задаваться как одно или несколько значений поля, разделённые запятыми. Задания значений, их порядок автоматически нормализуется, а дубликаты удаляются. Присвоение значений чисел поддерживается при использовании той же семантики, что и для типов BIT.";
 
 /* SSH key not found message */
-"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.";
+"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "Расположение ключа SSH было указано, но файл не был найден в указанном месте. Пожалуйста, выберите ключ повторно и повторите попытку.";
 
 /* SSL CA certificate file not found message */
 "A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again.";
 
 /* SSL certificate file not found message */
-"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again.";
+"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "Местоположение сертификата SSL было указано, но в указанном месте файла не найдено. Пожалуйста, выберите сертификат и повторите попытку.";
 
 /* SSL key file not found message */
-"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.";
+"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "Местоположение ключа для сертификата SSL было указано, но в указанном месте файла не найдено. Пожалуйста, выберите сертификат и повторите попытку.";
 
 /* duplicate host informative message */
 "A user with the host '%@' already exists" = "Пользователь на узле '%@' уже существует";
@@ -284,7 +284,7 @@
 "An error occurred while creating table syntax.\n\n: %@" = "Произошла ошибка при формировании запроса создания таблицы.\n\n: %@";
 
 /* rename table error - no temporary name found */
-"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.";
+"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "Произошла ошибка при переименовании '%@'. Временное название не найдено. Пожалуйста, попробуйте сперва использовать другое название.";
 
 /* rename table error informative message */
 "An error occurred while renaming '%@'.\n\nMySQL said: %@" = "При переименовании '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
@@ -1088,6 +1088,9 @@
 
 /* sql export dump of table label */
 "Dump of table" = "Дамп таблицы";
+
+/* sql export dump of view label */
+"Dump of view" = "Dump of view";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Запись дампа...";
@@ -3351,3 +3354,6 @@
 
 /* header for pinned table list */
 "PINNED" = "PINNED";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "Copy Table Name";

@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "操作の実行中にエラーが発生しました。\n\nMySQL : %@ ";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "お使いのバージョンのMySQLではリソース制限はサポートされていません。指定したリソース制限は破棄され保存されていません。MySQLは次のとおりです: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "エクスポートファイルの %lu を作成しようとしたときに処理されないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
@@ -1088,6 +1088,9 @@
 
 /* sql export dump of table label */
 "Dump of table" = "テーブルのダンプ";
+
+/* sql export dump of view label */
+"Dump of view" = "Dump of view";
 
 /* text showing that app is writing dump */
 "Dumping..." = "ダンプ中...";
@@ -2450,7 +2453,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "SSL経由で接続が保護されました";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH 接続済み";
@@ -3198,13 +3201,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選択したファイルは有効なファイルではありません。\n\nもう一度やり直してください。\n\nクラス: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "選択された既知のホストファイルは書き込み可能ではありません。\n\n%@\n\nSequel Aceの環境設定でファイルを再度選択して、もう一度やり直してください。";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "選択された既知のホストファイルは無効です。\n\nSequel Aceの環境設定でファイルを再度選択し、もう一度やり直してください。";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "選択された既知のホストファイルのファイルパスに、サポートされていない引用符 (\") が含まれています。\n\n%@\n\nSequel Aceの環境設定で別のファイルを選択するか、ファイル名あるいはパス名を変更して引用符を取り除いてください。";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSHトンネルのデバッグ情報";
@@ -3324,31 +3327,34 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "現在のフィールド \"%@\" は生成された列であるため、編集できません。";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "列のデフォルト値の用法がSequel Aceの最終バージョンから変更されています:\n\n- デフォルト値なし : 無指定のままとする。\n- 文字列値 : 空文字列の使用や文字列の折り返しをする場合、引用符 '' か二重引用符 \"\" を使う。\n- 式 : 括弧 () を使う。ただし、括弧なしでCURRENT_TIMESTAMPを指定可能なTIMESTAMP列とDATETIME列を除く。";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "ビューをピンで固定";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "テーブルをピンで固定";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "プロシージャをピンで固定";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "関数をピンで固定";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "ビューのピン固定を解除";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "テーブルのピン固定を解除";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "プロシージャのピン固定を解除";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "関数のピン固定を解除";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "ピンで固定";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "Copy Table Name";

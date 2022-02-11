@@ -218,7 +218,7 @@
 "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.";
 
 /* connection failed due to access denied title */
-"Access denied!" = "Access denied!";
+"Access denied!" = "Erişim reddedildi!";
 
 /* range of double */
 "Accurate to approx. 15 decimal places" = "Accurate to approx. 15 decimal places";
@@ -230,16 +230,16 @@
 "Active connection window is busy. Please wait and try again." = "Active connection window is busy. Please wait and try again.";
 
 /* header for activities pane */
-"ACTIVITIES" = "ACTIVITIES";
+"ACTIVITIES" = "HAREKETLER";
 
 /* Add trigger button label */
-"Add" = "Add";
+"Add" = "Ekle";
 
 /* menu item to add db */
-"Add Database..." = "Add Database...";
+"Add Database..." = "Veritabanı Ekle...";
 
 /* Add Host */
-"Add Host" = "Add Host";
+"Add Host" = "Host Ekle";
 
 /* add global value or expression menu item */
 "Add Value or Expression…" = "Add Value or Expression…";
@@ -248,19 +248,19 @@
 "Adding index..." = "Adding index...";
 
 /* Advanced options short title */
-"Advanced" = "Advanced";
+"Advanced" = "Gelişmiş";
 
 /* notifications preference pane name */
-"Alerts & Logs" = "Alerts & Logs";
+"Alerts & Logs" = "Uyarılar & Günlükler";
 
 /* notifications preference pane tooltip */
-"Alerts & Logs Preferences" = "Alerts & Logs Preferences";
+"Alerts & Logs Preferences" = "Uyarı & Günlük Seçenekleri";
 
 /* All databases placeholder */
-"All Databases" = "All Databases";
+"All Databases" = "Tüm Veritabanları";
 
 /* All databases (%) placeholder */
-"All Databases (%)" = "All Databases (%)";
+"All Databases (%)" = "Tüm Veritabanları (%)";
 
 /* All export files already exist message */
 "All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
@@ -335,7 +335,7 @@
 "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
 
 /* mysql error occurred message */
-"An error occurred" = "An error occurred";
+"An error occurred" = "Bir hata oluştu";
 
 /* MySQL table info retrieval error message */
 "An error occurred retrieving table information.  MySQL said: %@" = "An error occurred retrieving table information.  MySQL said: %@";
@@ -536,10 +536,10 @@
 "auto_increment: %@" = "auto_increment: %@";
 
 /* Encoding autodetect menu item */
-"Autodetect" = "Autodetect";
+"Autodetect" = "Otomatik Algıla";
 
 /* background label for color table (Prefs > Editor) */
-"Background" = "Background";
+"Background" = "Arka Plan";
 
 /* backtick quote label for color table (Prefs > Editor) */
 "Backtick Quote" = "Backtick Quote";
@@ -551,22 +551,22 @@
 "Browse & Edit Table Content" = "Browse & Edit Table Content";
 
 /* build label */
-"build" = "build";
+"build" = "yapım";
 
 /* build label */
-"Build" = "Build";
+"Build" = "Yapım";
 
 /* bundle editor menu item label */
-"Bundle Editor" = "Bundle Editor";
+"Bundle Editor" = "Paket Editörü";
 
 /* bundle error */
-"Bundle Error" = "Bundle Error";
+"Bundle Error" = "Paket Hatası";
 
 /* bundles menu item label */
-"Bundles" = "Bundles";
+"Bundles" = "Paketler";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item */
-"BUNDLES" = "BUNDLES";
+"BUNDLES" = "PAKETLER";
 
 /* Bundle Editor : Outline View : Menu Category item : tooltip */
 "Bundles in category %@" = "Bundles in category %@";
@@ -586,13 +586,13 @@
  Open Files : Bundle : Already-Installed : Cancel button
  Preferences : Network : Custom SSH client : warning dialog : cancel button
  shutdown server : confirmation dialog : cancel button */
-"Cancel" = "Cancel";
+"Cancel" = "İptal";
 
 /* sql import : charset error alert : cancel button */
-"Cancel Import" = "Cancel Import";
+"Cancel Import" = "İçe Aktarmayı İptal Et";
 
 /* cancelling task status message */
-"Cancelling..." = "Cancelling...";
+"Cancelling..." = "İptal ediliyor...";
 
 /* empty query informative message */
 "Cannot save an empty query." = "Cannot save an empty query.";
@@ -601,7 +601,7 @@
 "Caret" = "Caret";
 
 /* change button */
-"Change" = "Change";
+"Change" = "Değiştir";
 
 /* change focus to table list menu item */
 "Change Focus to Table List" = "Change Focus to Table List";
@@ -664,7 +664,7 @@
 "Clear" = "Clear";
 
 /* toolbar item for clear console */
-"Clear Console" = "Clear Console";
+"Clear Console" = "Konsolu Temizle";
 
 /* clear global history menu item title */
 "Clear Global History" = "Clear Global History";
@@ -685,13 +685,13 @@
 "Clear the global history list" = "Clear the global history list";
 
 /* Close menu item */
-"Close" = "Close";
+"Close" = "Kapat";
 
 /* close tab context menu item */
-"Close Tab" = "Close Tab";
+"Close Tab" = "Sekmeyi Kapat";
 
 /* Close Window menu item */
-"Close Window" = "Close Window";
+"Close Window" = "Pencereyi Kapat";
 
 /* collation label (Navigator) */
 "Collation" = "Collation";
@@ -700,22 +700,22 @@
 "collation connection: %@" = "collation connection: %@";
 
 /* comment label */
-"Comment" = "Comment";
+"Comment" = "Yorum";
 
 /* Title of action menu item to comment line */
-"Comment Line" = "Comment Line";
+"Comment Line" = "Yorum Satırı";
 
 /* Title of action menu item to comment selection */
 "Comment Selection" = "Comment Selection";
 
 /* connect button */
-"Connect" = "Connect";
+"Connect" = "Bağlan";
 
 /* Connect via socket button */
 "Connect via socket" = "Connect via socket";
 
 /* connection established message */
-"Connected" = "Connected";
+"Connected" = "Bağlandı";
 
 /* description for connected notification */
 "Connected to %@" = "Connected to %@";
@@ -724,10 +724,10 @@
 "Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connected to host, but unable to connect to database %1$@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %2$@";
 
 /* Generic connecting very short status message */
-"Connecting..." = "Connecting...";
+"Connecting..." = "Bağlanıyor...";
 
 /* window title string indicating that sp is connecting */
-"Connecting…" = "Connecting…";
+"Connecting…" = "Bağlanıyor…";
 
 /* error while reading connection data file */
 "Connection data file couldn't be read." = "Connection data file couldn't be read.";
@@ -745,20 +745,20 @@
 "Connection succeeded" = "Connection succeeded";
 
 /* Console */
-"Console" = "Console";
+"Console" = "Konsol";
 
 /* Console : Save as : Initial filename */
 "ConsoleLog" = "ConsoleLog";
 
 /* toolbar item label for switching to the Table Content tab */
-"Content" = "Content";
+"Content" = "İçerik";
 
 /* content filter clause is empty tooltip. */
 "Content Filter clause is empty." = "Content Filter clause is empty.";
 
 /* continue button
  Continue button title */
-"Continue" = "Continue";
+"Continue" = "Devam et";
 
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
@@ -1088,6 +1088,9 @@
 
 /* sql export dump of table label */
 "Dump of table" = "Dump of table";
+
+/* sql export dump of view label */
+"Dump of view" = "Dump of view";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Dumping...";
@@ -3351,3 +3354,6 @@
 
 /* header for pinned table list */
 "PINNED" = "PINNED";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "Copy Table Name";

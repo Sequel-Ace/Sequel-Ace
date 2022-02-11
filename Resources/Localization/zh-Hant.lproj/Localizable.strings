@@ -1089,6 +1089,9 @@
 /* sql export dump of table label */
 "Dump of table" = "轉儲表";
 
+/* sql export dump of view label */
+"Dump of view" = "Dump of view";
+
 /* text showing that app is writing dump */
 "Dumping..." = "正在轉儲...";
 
@@ -3351,3 +3354,6 @@
 
 /* header for pinned table list */
 "PINNED" = "PINNED";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "Copy Table Name";
