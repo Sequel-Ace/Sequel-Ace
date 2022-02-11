@@ -655,7 +655,7 @@
 "Checksums of %@" = "%@的校驗值";
 
 /* menu item for choose db */
-"Choose Database..." = "選擇數據庫...";
+"Choose Database..." = "選擇資料庫...";
 
 /* cancelling export cleaning up message */
 "Cleaning up..." = "正在清理...";
@@ -964,7 +964,7 @@
 "Default: %@" = "默認值：%@";
 
 /* Query snippet default value placeholder */
-"default_value" = "缺省值";
+"default_value" = "預設值";
 
 /* definer label (Navigator) */
 "Definer" = "定義符";
@@ -2346,7 +2346,7 @@
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
-"Server Default (%@)" = "服務器缺省值（%@）";
+"Server Default (%@)" = "服務器預設值（%@）";
 
 /* server processes window title (var = hostname) */
 "Server Processes on %@" = "%@上的服務器進程";

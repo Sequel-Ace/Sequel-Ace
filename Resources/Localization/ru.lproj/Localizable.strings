@@ -278,7 +278,7 @@
 "An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "При попытке принудительного разрыва соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "При попытке прервать запрос соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "При попытке принудительно завершить запрос, связанный с соединением %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "Произошла ошибка при формировании запроса создания таблицы.\n\n: %@";
@@ -515,7 +515,7 @@
 "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите разорвать соединение ID %lld?\n\nИмейте в виду, что разрыв этого соединения может привести к повреждению данных. Пожалуйста, будьте осторожны.";
 
 /* kill query informative message */
-"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите прервать текущий запрос подключения ID %lld?\n\nИмейте в виду, что принудительное завершение этого запроса может привести к повреждению данных. Пожалуйста, будьте осторожны.";
+"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Вы уверены, что хотите принудительно завершить текущий запрос в подключении ID %lld?\n\nИмейте в виду, что принудительное завершение этого запроса может привести к повреждению данных. Пожалуйста, проявляйте осторожность.";
 
 /* Bundle Editor : Remove-Bundle: remove dialog message */
 "Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Вы уверены, что хотите удалить выбранный пакет, переместив его в корзину?";
@@ -1452,7 +1452,7 @@
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
  general preference pane name */
-"General" = "Общая";
+"General" = "Основные";
 
 /* general preference pane tooltip */
 "General Preferences" = "Основные настройки";
@@ -1651,13 +1651,13 @@
 "Keyword" = "Ключевое слово";
 
 /* kill button */
-"Kill" = "Прервать";
+"Kill" = "Завершить принудительно";
 
 /* kill connection message */
 "Kill connection?" = "Разорвать соединение?";
 
 /* kill query message */
-"Kill query?" = "Прервать запрос?";
+"Kill query?" = "Принудительно завершить запрос?";
 
 /* Last Error Message */
 "Last Error Message" = "Сообщение об ошибке";

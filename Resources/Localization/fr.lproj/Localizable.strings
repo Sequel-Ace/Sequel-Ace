@@ -1,20 +1,20 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Check the Console for possible errors inside the primary key(s) of this table!";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " Vérifiez la console pour d'éventuelles erreurs dans la ou les clés primaires de cette table !";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Please check the Console and inform the Sequel Ace team!";
+" Please check the Console and inform the Sequel Ace team!" = " Veuillez vérifier la console et informer l'équipe Sequel Ace !";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
-" Reload the table to be sure that the contents have not changed in the meantime." = " Reload the table to be sure that the contents have not changed in the meantime.";
+" Reload the table to be sure that the contents have not changed in the meantime." = " Rechargez le tableau pour vous assurer que le contenu n'a pas changé entre-temps.";
 
 /* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
-" You should also add a primary key to this table!" = " You should also add a primary key to this table!";
+" You should also add a primary key to this table!" = " Vous devez également ajouter une clé primaire à cette table !";
 
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ selected";
+"%@ %@ selected" = "%1$@ %2$@ sélectionnées";
 
 /* History item filtered by values label */
 "%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
