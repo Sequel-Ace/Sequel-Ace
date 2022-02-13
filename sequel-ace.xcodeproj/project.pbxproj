@@ -838,7 +838,7 @@
 		44011DFD0DC2836DB08A0619 /* SQLitePinnedTableManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SQLitePinnedTableManager.swift; sourceTree = "<group>"; };
 		4D90B798101E0CDF00D116A1 /* SPUserManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserManager.h; sourceTree = "<group>"; };
 		4D90B799101E0CDF00D116A1 /* SPUserManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserManager.m; sourceTree = "<group>"; };
-		4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; name = SPUserManager.xcdatamodel; path = Models/SPUserManager.xcdatamodel; sourceTree = SOURCE_ROOT; };
+		4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; path = SPUserManager.xcdatamodel; sourceTree = "<group>"; };
 		4D90B79C101E0CF200D116A1 /* SPUserMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserMO.h; sourceTree = "<group>"; };
 		4D90B79D101E0CF200D116A1 /* SPUserMO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserMO.m; sourceTree = "<group>"; };
 		500C1F901BFB5F9F0095DC7F /* SPPrivilegesMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPrivilegesMO.h; sourceTree = "<group>"; };
@@ -1401,11 +1401,11 @@
 		173E70A1107FF495008733C9 /* Core Data */ = {
 			isa = PBXGroup;
 			children = (
-				4D90B79C101E0CF200D116A1 /* SPUserMO.h */,
-				4D90B79D101E0CF200D116A1 /* SPUserMO.m */,
 				500C1F901BFB5F9F0095DC7F /* SPPrivilegesMO.h */,
 				500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */,
 				4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */,
+				4D90B79C101E0CF200D116A1 /* SPUserMO.h */,
+				4D90B79D101E0CF200D116A1 /* SPUserMO.m */,
 			);
 			name = "Core Data";
 			path = CoreData;
@@ -1840,18 +1840,18 @@
 		17E6415D0EF01EF9001BC333 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
-				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
-				17D3C66F128AD8160047709F /* SPSingleton.h */,
-				17D3C670128AD8160047709F /* SPSingleton.m */,
+				173E70A1107FF495008733C9 /* Core Data */,
+				BC0ED3D812A9196C00088461 /* SPChooseMenuItemDialog.h */,
+				BC0ED3D912A9196C00088461 /* SPChooseMenuItemDialog.m */,
 				172A650F0F7BED7A001E861A /* SPConsoleMessage.h */,
 				172A65100F7BED7A001E861A /* SPConsoleMessage.m */,
 				17C058860FC9FC390077E9CF /* SPNarrowDownCompletion.h */,
 				17C058870FC9FC390077E9CF /* SPNarrowDownCompletion.m */,
-				BC0ED3D812A9196C00088461 /* SPChooseMenuItemDialog.h */,
-				BC0ED3D912A9196C00088461 /* SPChooseMenuItemDialog.m */,
+				17D3C66F128AD8160047709F /* SPSingleton.h */,
+				17D3C670128AD8160047709F /* SPSingleton.m */,
+				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
+				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
-				173E70A1107FF495008733C9 /* Core Data */,
 			);
 			path = Model;
 			sourceTree = "<group>";
