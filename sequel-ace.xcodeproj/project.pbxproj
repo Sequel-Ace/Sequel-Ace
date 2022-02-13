@@ -2184,6 +2184,7 @@
 		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
 			isa = PBXGroup;
 			children = (
+				518E02F227B91FBC007973E3 /* Entitlements */,
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
 				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
@@ -2192,11 +2193,8 @@
 				19C28FB0FE9D524F11CA2CBB /* Products */,
 				38F37194182F0621008EB031 /* readme.md */,
 				17E641430EF01E90001BC333 /* Resources */,
-				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
-				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
 				17E641420EF01E8A001BC333 /* Source */,
 				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
-				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -2263,6 +2261,16 @@
 				17DD52C4115074CB007D8950 /* Localizable.strings */,
 			);
 			path = Localization;
+			sourceTree = "<group>";
+		};
+		518E02F227B91FBC007973E3 /* Entitlements */ = {
+			isa = PBXGroup;
+			children = (
+				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
+				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
+				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
+			);
+			path = Entitlements;
 			sourceTree = "<group>";
 		};
 		51F4AFB924B26646006144D5 /* Extensions */ = {
@@ -3367,7 +3375,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3413,7 +3421,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3439,7 +3447,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3465,7 +3473,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3489,7 +3497,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3523,7 +3531,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3557,7 +3565,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3666,7 +3674,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3747,7 +3755,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3779,7 +3787,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3804,7 +3812,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3853,7 +3861,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
