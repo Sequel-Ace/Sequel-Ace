@@ -35,7 +35,7 @@ To migrate your favorites, please check the [migration guide](https://sequel-ace
 
 ## Contributing
 
-Please refer to [this](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Contributing.md) this doc.
+Please refer to [this](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Contributing.md) doc.
 
 ### Translations
 
