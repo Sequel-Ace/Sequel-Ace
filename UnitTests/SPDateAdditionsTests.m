@@ -3,7 +3,7 @@
 //  Unit Tests
 //
 //  Created by James on 15/7/2020.
-//  Copyright © 2020 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 #import <Cocoa/Cocoa.h>
 #include <mach/mach_time.h>

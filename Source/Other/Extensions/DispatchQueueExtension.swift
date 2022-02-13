@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by James on 22/2/2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 import Foundation

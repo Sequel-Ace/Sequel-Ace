@@ -691,7 +691,7 @@
 		17E0937D114AE154007FC1B4 /* SPTableInfoPrintTemplate.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = SPTableInfoPrintTemplate.html; path = Templates/SPTableInfoPrintTemplate.html; sourceTree = "<group>"; };
 		17E5954E14F304000054EE08 /* QueryKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = QueryKit.xcodeproj; path = Frameworks/QueryKit/QueryKit.xcodeproj; sourceTree = "<group>"; };
 		17E641440EF01EB5001BC333 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		17E641450EF01EB5001BC333 /* Sequel-Pro.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sequel-Pro.pch"; sourceTree = "<group>"; };
+		17E641450EF01EB5001BC333 /* Sequel-Ace.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace.pch"; sourceTree = "<group>"; };
 		17E641480EF01EF6001BC333 /* SPCustomQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPCustomQuery.h; sourceTree = "<group>"; };
 		17E641490EF01EF6001BC333 /* SPCustomQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPCustomQuery.m; sourceTree = "<group>"; };
 		17E6414A0EF01EF6001BC333 /* SPAppController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPAppController.h; sourceTree = "<group>"; };
@@ -1044,7 +1044,6 @@
 		65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFilePreferencePane.m; sourceTree = "<group>"; };
 		65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPFilePreferencePane.h; sourceTree = "<group>"; };
 		6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditions.swift; sourceTree = "<group>"; };
-		6F0EA8EE272F372700514FF1 /* developing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = developing.md; sourceTree = "<group>"; };
 		6F0EA9222734ABE200514FF1 /* SABundleRunner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SABundleRunner.h; sourceTree = "<group>"; };
 		6F0EA9232734ABE200514FF1 /* SABundleRunner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SABundleRunner.m; sourceTree = "<group>"; };
 		73F70A941E4E547500636550 /* SPJSONFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPJSONFormatter.h; sourceTree = "<group>"; };
@@ -1788,7 +1787,7 @@
 			children = (
 				17E641440EF01EB5001BC333 /* main.m */,
 				51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */,
-				17E641450EF01EB5001BC333 /* Sequel-Pro.pch */,
+				17E641450EF01EB5001BC333 /* Sequel-Ace.pch */,
 				17E641470EF01EB8001BC333 /* Controllers */,
 				17E6415D0EF01EF9001BC333 /* Model */,
 				17E641670EF01F19001BC333 /* Views */,
@@ -2190,7 +2189,6 @@
 				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
 				1798F17E1550171B004B0AB8 /* LICENSE */,
 				38F37194182F0621008EB031 /* readme.md */,
-				6F0EA8EE272F372700514FF1 /* developing.md */,
 				17E641420EF01E8A001BC333 /* Source */,
 				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
 				17E642050EF020A3001BC333 /* Interfaces */,
@@ -3165,7 +3163,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3201,7 +3198,6 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3237,7 +3233,6 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3325,7 +3320,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -3389,7 +3384,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3506,7 +3500,6 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3540,7 +3533,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3574,7 +3566,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3627,7 +3618,7 @@
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -3692,7 +3683,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3734,7 +3724,6 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3767,7 +3756,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3834,7 +3822,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3883,7 +3870,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3944,7 +3930,7 @@
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
@@ -4025,7 +4011,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;

@@ -71,7 +71,7 @@ Please refer [here](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Co
 
 ## License
 
-Copyright (c) 2020-2021 Moballo, LLC.  All rights reserved.
+Copyright (c) 2020-2022 Moballo, LLC.  All rights reserved.
 Forked from Sequel Pro: Copyright (c) 2002-2019 Sequel Pro & CocoaMySQL Teams. All rights reserved.
 
 Sequel Ace is free and open-source software licensed under [MIT](https://opensource.org/licenses/MIT). See [LICENSE](https://github.com/sequel-ace/sequel-ace/blob/master/LICENSE) for complete details.
