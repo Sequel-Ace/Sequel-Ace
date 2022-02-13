@@ -2184,19 +2184,19 @@
 		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
 			isa = PBXGroup;
 			children = (
-				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
-				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
-				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
-				1798F17E1550171B004B0AB8 /* LICENSE */,
-				38F37194182F0621008EB031 /* readme.md */,
-				17E641420EF01E8A001BC333 /* Source */,
-				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
-				17E642050EF020A3001BC333 /* Interfaces */,
-				17E641430EF01E90001BC333 /* Resources */,
-				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
+				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
+				17E642050EF020A3001BC333 /* Interfaces */,
+				1798F17E1550171B004B0AB8 /* LICENSE */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
+				38F37194182F0621008EB031 /* readme.md */,
+				17E641430EF01E90001BC333 /* Resources */,
+				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
+				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
+				17E641420EF01E8A001BC333 /* Source */,
+				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
+				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
