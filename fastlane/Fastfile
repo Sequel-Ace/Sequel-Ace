@@ -9,7 +9,6 @@ GITHUB_REPO = "Sequel-Ace/Sequel-Ace"
 PROJECT_NAME = "sequel-ace.xcodeproj"
 QK_PROJECT_NAME = "Frameworks/QueryKit/QueryKit.xcodeproj"
 SPMYSQL_PROJECT_NAME = "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj"
-WORKSPACE_NAME = "sequel-ace.xcworkspace"
 TARGET_NAME = "Sequel Ace"
 
 platform :mac do
@@ -198,7 +197,7 @@ platform :mac do
    desc "Builds Sequel Ace strings target, uploads strings to Crowdin, builds them, downloads them and commits to git"
    lane :update_strings do |options|
       build_mac_app(
-         workspace: WORKSPACE_NAME,
+         project: PROJECT_NAME,
          scheme: "Update Strings",
          configuration: "Debug",
          silent: true,

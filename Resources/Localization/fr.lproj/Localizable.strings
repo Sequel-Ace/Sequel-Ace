@@ -17,41 +17,41 @@
 "%@ %@ selected" = "%1$@ %2$@ sélectionnées";
 
 /* History item filtered by values label */
-"%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
+"%@ (Filtered by %@)" = "%1$@ (filtrer par %2$@)";
 
 /* History item with page number label */
 "%@ (Page %lu)" = "%1$@ (Page %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Copy";
+"%@ Copy" = "%@ Copier";
 
 /* text showing a single row a partially loaded result */
 "%@ row in partial load" = "%@ row in partial load";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ row in table";
+"%@ row in table" = "%@ ligne dans la table";
 
 /* text showing how a single rows matched filter */
-"%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
+"%@ row of %@%@ matches filter" = "%1$@ ligne sur %2$@%3$@ correspondant au filtre";
 
 /* text showing how many rows are in a partially loaded result */
 "%@ rows in partial load" = "%@ rows in partial load";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ rows in table";
+"%@ rows in table" = "%@ lignes dans la table";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
+"%@ rows of %@%@ match filter" = "%1$@ lignes sur %2$@%3$@ correspondent au filtre";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
+"%@; %ld rows affected" = "%1$@; %2$ld lignes affectées";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld lignes affectées au total, par %3$ld requêtes prenant %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 row affected";
+"%@; 1 row affected" = "%@; 1 ligne affectée";
 
 /* text showing one row has been affected by multiple queries */
 "%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";

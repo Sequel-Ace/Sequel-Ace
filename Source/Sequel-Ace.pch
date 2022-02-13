@@ -1,9 +1,9 @@
 //
-//  Sequel-Ace-Bridging-Header.h
+//  Sequel-Ace.pch
 //  Sequel Ace
 //
-//  Created by Jakub Kaspar on 05.07.2020.
-//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
+//  Created by Jakub Kaspar on 13.02.2022.
+//  Copyright © 2022 Sequel-Ace. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,14 @@
 //  Use this file to import your target's public headers that you would like to expose to Swift.
 //
 
-#import "SPAppController.h"
-#import "SPDatabaseDocument.h"
-#import "SPBundleManager.h"
+#ifdef __OBJC__
+	#import <Cocoa/Cocoa.h>
 
-#import "SPConstants.h"
+	// Nearly every class uses constants
+	#import "SPConstants.h"
 
-#import "SPFileManagerAdditions.h"
+	#import "SPCompatibility.h"
+
+	// Make all our custom additions available
+	#import "SPCategoryAdditions.h"
+#endif

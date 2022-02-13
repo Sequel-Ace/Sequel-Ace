@@ -1,8 +1,14 @@
 # How to contribute
 
-I'm really glad you're reading this, because we need volunteer developers to help this project be successful long-term.
+We are really glad you're reading this, because we need volunteer developers to help this project be successful long-term.
 
 We make a commitment to review *all* pull requests that are submitted by members of the community. We will provide feedback and recommendations with the effort of incorporating contributions from the community whenever possible.
+
+We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
+
+## Communication
+
+We use Slack for communication - feel free to join our [Slack workspace](https://join.slack.com/t/sequel-ace/shared_invite/zt-g9bg1q6o-gDWyGCzauwPdg8BjmBCqKg).
 
 ## Testing
 

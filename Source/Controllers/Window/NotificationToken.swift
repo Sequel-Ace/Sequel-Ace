@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by Jakub Kašpar on 07.03.2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
