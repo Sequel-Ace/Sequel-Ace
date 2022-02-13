@@ -1,6 +1,5 @@
 #  Developing Sequel Ace
 
-
 ## Building Locally
 
 To run Sequel Ace locally from XCode, please:
