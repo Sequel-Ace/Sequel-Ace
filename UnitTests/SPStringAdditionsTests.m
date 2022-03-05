@@ -415,19 +415,23 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 - (void)testIsUnixTimeStamp{
 
-    NSString *justOver100YAgo = @"-1574579624";
+    long currentTimestamp = (long) [[NSDate date] timeIntervalSince1970];
+    long oneYearTime = 31536000;
+    long aLittleExtra = 1000;
+
+    NSString *justOver100YAgo = [NSString stringWithFormat:@"%ld", (currentTimestamp - (oneYearTime * 100) - aLittleExtra)];
     XCTAssertNil(justOver100YAgo.dateStringFromUnixTimestamp);
 
-    NSString *justUnder100YAgo = @"-1479885224";
+    NSString *justUnder100YAgo = [NSString stringWithFormat:@"%ld", (currentTimestamp - (oneYearTime * 100) + aLittleExtra)];
     XCTAssertNotNil(justUnder100YAgo.dateStringFromUnixTimestamp);
 
-    NSString *justOver100YinTheFut = @"4800012376";
+    NSString *justOver100YinTheFut = [NSString stringWithFormat:@"%ld", (currentTimestamp + (oneYearTime * 100) + aLittleExtra)];
     XCTAssertNil(justOver100YinTheFut.dateStringFromUnixTimestamp);
 
-    NSString *justUnder100YinTheFut = @"4736853976";
+    NSString *justUnder100YinTheFut = [NSString stringWithFormat:@"%ld", (currentTimestamp + (oneYearTime * 100) - aLittleExtra)];
     XCTAssertNotNil(justUnder100YinTheFut.dateStringFromUnixTimestamp);
 
-    NSString *aboutNow = @"1612803456";
+    NSString *aboutNow = [NSString stringWithFormat:@"%ld", (currentTimestamp)];
     XCTAssertNotNil(aboutNow.dateStringFromUnixTimestamp);
 
 }
