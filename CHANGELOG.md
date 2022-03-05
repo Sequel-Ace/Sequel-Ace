@@ -1,3 +1,20 @@
+## [3.5.1]
+
+### Added
+- 3acc82a8,  support to copy table's name with database name in the list of tables
+
+### Fixed
+
+
+### Changed
+- e9ac3d3c,  Attempt non-SSL connections if we fail connecting via SSL and SSL is not required
+
+### Removed
+
+
+### Infra
+- 4dac484c, Infra cleanup, xcworkspace removal, hierarchy simplification 
+
 ## [3.5.0]
 
 ### Added
