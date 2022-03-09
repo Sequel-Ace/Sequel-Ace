@@ -971,12 +971,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
             // *CHAR and *TEXT must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is.
-            else if ([defaultValue length] && ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"])) {
-                // If default value is not an expresion or a string, add quotes.
-                if (!defaultValueIsExpression && !defaultValueIsString)
-                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
-                else
-                    [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"]) {
+                if ([defaultValue length]) {
+                    // If default value is not an expresion or a string, add quotes.
+                    if (!defaultValueIsExpression && !defaultValueIsString)
+                        [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+                    else
+                        [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
+                } else {
+                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:@""]];
+                }
             }
 			// Suppress appending DEFAULT clause for any numerics, date, time fields if default is empty to avoid error messages;
 			// also don't specify a default for TEXT/BLOB, JSON or geometry fields to avoid strict mode errors
