@@ -147,13 +147,13 @@
 "\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nPulse ⇧ para búsqueda binaria (sensible a mayúsculas).";
 
 /* description of bit */
-"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.";
+"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "Un tipo de campo bit. M especifica el número de bits. Si se insertan valores más cortos, se alinearán en el bit menos significativo. Vea el tipo SET si desea nombrar explícitamente cada bit.";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
 "A Bundle ‘%@’ is already installed. Do you want to update it?" = "El paquete ‘%@’ ya está instalado. ¿Desea actualizarlo?";
 
 /* description of binary */
-"A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M.";
+"A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "Un arreglo de bytes con longitud fija. Los valores cortos siempre se añadirán a la derecha con 0x00 hasta que encajen en M.";
 
 /* description of varbinary */
 "A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row." = "A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row.";
@@ -936,13 +936,13 @@
 "Database must have a name." = "La base de datos debe tener un nombre.";
 
 /* databsse rename unsupported message */
-"Database Rename Unsupported" = "Database Rename Unsupported";
+"Database Rename Unsupported" = "Renombrar base de datos no soportado";
 
 /* export filename date token */
-"Date" = "Date";
+"Date" = "Fecha";
 
 /* export filename date token */
-"Day" = "Day";
+"Day" = "Día";
 
 /* Add Table Sheet : Collation : Default (unknown)
  Collation Dropdown : Default (unknown)
@@ -982,7 +982,7 @@
 "Delete %@ '%@'?" = "¿Eliminar %1$@ '%2$@'?";
 
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
-"Delete Both" = "Delete Both";
+"Delete Both" = "Eliminar ambos";
 
 /* delete database message */
 "Delete database '%@'?" = "¿Eliminar la base de datos '%@'?";
@@ -1039,7 +1039,7 @@
 "Delete selected row?" = "¿Eliminar fila seleccionada?";
 
 /* delete table menu title */
-"Delete Table..." = "Delete Table...";
+"Delete Table..." = "Eliminar tabla...";
 
 /* delete tables menu title */
 "Delete Tables" = "Eliminar tablas";
@@ -1081,7 +1081,7 @@
 "Do you really want to proceed with %@ of data?" = "¿Realmente desea continuar con %@ datos?";
 
 /* shutdown server : confirmation dialog : title */
-"Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
+"Do you really want to shutdown the server?" = "¿Realmente desea apagar el servidor?";
 
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "Identificador DTD";
@@ -1090,7 +1090,7 @@
 "Dump of table" = "Volcado de tabla";
 
 /* sql export dump of view label */
-"Dump of view" = "Dump of view";
+"Dump of view" = "Volcado de vista";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Volcando...";
@@ -1147,7 +1147,7 @@
 "encoding: %1$@" = "codificación: %1$@";
 
 /* Table Info Section : $1 = table charset, $2 = table collation */
-"encoding: %1$@ (%2$@)" = "encoding: %1$@ (%2$@)";
+"encoding: %1$@ (%2$@)" = "codificando: %1$@ (%2$@)";
 
 /* Table Info Section : Table Engine */
 "engine: %@" = "motor: %@";
@@ -1156,7 +1156,7 @@
 "Enter connection details below, or choose a favorite" = "Introduzca los detalles de la conexión a continuación, o elija un favorito";
 
 /* SSH key password prompt */
-"Enter your password for the SSH key\n\"%@\"" = "Enter your password for the SSH key\n'%@";
+"Enter your password for the SSH key\n\"%@\"" = "Introduzca su contraseña para la clave SSH\n'%@";
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
@@ -1464,23 +1464,23 @@
 "Generating print document..." = "Generando documento de impresión...";
 
 /* export header generation time label */
-"Generation Time" = "Generation Time";
+"Generation Time" = "Tiempo de generación";
 
 /* Content Filter Manager : Filter Entry List: 'Global' Header
  Query Favorites : List : Section Heading : global query favorites */
 "Global" = "Global";
 
 /* Query Favorites : List : Section Heading : global : tooltip */
-"Globally stored favorites" = "Globally stored favorites";
+"Globally stored favorites" = "Favoritos almacenados globalmente";
 
 /* Preferences : Notifications : status text : notification setup */
-"Notifications are delivered via the Notification Center." = "Notifications are delivered via the Notification Center.";
+"Notifications are delivered via the Notification Center." = "Las notificaciones se entregan a través del Centro de notificaciones.";
 
 /* Gzip compression export summary - within a sentence */
 "Gzip compression" = "Compresión gzip";
 
 /* MySQL Help Viewer : Results list : Page title */
-"Help topics for %@" = "Help topics for %@";
+"Help topics for %@" = "Temas de ayuda para %@";
 
 /* hide console */
 "Hide Console" = "Ocultar consola";
@@ -1526,7 +1526,7 @@
 "Import all Fields" = "Importar todos los campos";
 
 /* sql import : charset error alert : continue button */
-"Import Anyway" = "Import Anyway";
+"Import Anyway" = "Importar de todos modos";
 
 /* import cancelled message */
 "Import cancelled!\n" = "¡Importación cancelada!\n";
@@ -1565,7 +1565,7 @@
 "Include content" = "Incluir contenido";
 
 /* sql import error message */
-"Incompatible encoding in SQL file" = "Incompatible encoding in SQL file";
+"Incompatible encoding in SQL file" = "Codificación incompatible en el archivo SQL";
 
 /* header for blank info pane */
 "INFORMATION" = "INFORMACIÓN";
@@ -1621,10 +1621,10 @@
 "Invalid database" = "Base de datos incorrecta";
 
 /* export : import settings : file error title */
-"Invalid file supplied!" = "Invalid file supplied!";
+"Invalid file supplied!" = "¡Archivo suministrado no válido!";
 
 /* table content : editing : error message title when parsing as hex string failed */
-"Invalid hexadecimal value" = "Invalid hexadecimal value";
+"Invalid hexadecimal value" = "Valor hexadecimal no válido";
 
 /* is deterministic label (Navigator) */
 "Is Deterministic" = "Determinista";
@@ -1666,7 +1666,7 @@
 "Last Used" = "Último usado";
 
 /* range for json type */
-"Limited to @@max_allowed_packet" = "Limited to @@max_allowed_packet";
+"Limited to @@max_allowed_packet" = "Limitado a @@max_allowed_packet";
 
 /* Loading table task string */
 "Loading %@..." = "Cargando %@...";
@@ -1690,27 +1690,27 @@
 "Low memory" = "Poca memoria";
 
 /* range of decimal */
-"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (precision): Up to 65 digits\nD (scale): 0 to 30 digits";
+"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (precisión): Hasta 65 dígitos\nD (escala): 0 a 30 dígitos";
 
 /* range for blob type
  range for varbinary type */
-"M: %@ to %@ bytes" = "M: %1$@ to %2$@ bytes";
+"M: %@ to %@ bytes" = "M: %1$@ a %2$@ bytes";
 
 /* range for text type
  range for varchar type */
-"M: %@ to %@ characters" = "M: %1$@ to %2$@ characters";
+"M: %@ to %@ characters" = "M: %1$@ a %2$@ caracteres";
 
 /* range for longtext type */
-"M: %@ to %@ characters (4 GiB)" = "M: %1$@ to %2$@ characters (4 GiB)";
+"M: %@ to %@ characters (4 GiB)" = "M: %1$@ a %2$@ caracteres (4 GiB)";
 
 /* range for binary type */
-"M: 0 to 255 bytes" = "M: 0 to 255 bytes";
+"M: 0 to 255 bytes" = "M: 0 a 255 bytes";
 
 /* range for char type */
-"M: 0 to 255 characters" = "M: 0 to 255 characters";
+"M: 0 to 255 characters" = "M: 0 a 255 caracteres";
 
 /* range for bit type */
-"M: 1 (default) to 64" = "M: 1 (default) to 64";
+"M: 1 (default) to 64" = "M: 1 (por defecto) a 64";
 
 /* connection view : ssl : key file picker : wrong format error description */
 "Make sure the file contains a RSA private key and is using PEM encoding." = "Make sure the file contains a RSA private key and is using PEM encoding.";
@@ -2155,7 +2155,7 @@
 "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
 
 /* description of multilinestring */
-"Represents a collection of LineStrings." = "Represents a collection of LineStrings.";
+"Represents a collection of LineStrings." = "Representa una colección de LineStrings.";
 
 /* description of geometrycollection */
 "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.";
@@ -2191,19 +2191,19 @@
 "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
 
 /* delete selected row button */
-"Delete Selected Row" = "Delete Selected Row";
+"Delete Selected Row" = "Eliminar fila seleccionada";
 
 /* delete selected rows button */
-"Delete Selected Rows" = "Delete Selected Rows";
+"Delete Selected Rows" = "Eliminar filas seleccionadas";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
+"Delete ALL ROWS IN TABLE" = "Borrar TODAS LAS FILAS EN TABLA";
 
 /* Restoring session task description */
 "Restoring session..." = "Restaurando sesión...";
 
 /* return type label (Navigator) */
-"Return Type" = "Return Type";
+"Return Type" = "Tipo de retorno";
 
 /* return type: %@ */
 "return type: %@" = "devolver tipo: %@";
@@ -2329,7 +2329,7 @@
 "Selection" = "Selección";
 
 /* table structure : indexes : delete index : no columns error : description */
-"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
+"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace no pudo encontrar ninguna columna perteneciente a este índice. ¿Tal vez ya ha sido eliminado?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
 "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
@@ -2342,11 +2342,11 @@
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
-"Server" = "Server";
+"Server" = "Servidor";
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
-"Server Default (%@)" = "Server Default (%@)";
+"Server Default (%@)" = "Servidor predeterminado (%@)";
 
 /* server processes window title (var = hostname) */
 "Server Processes on %@" = "Procesos de servidor en %@";
@@ -2391,7 +2391,7 @@
 "Show Detail" = "Mostrar detalle";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
-"Show MySQL help for %@" = "Show MySQL help for %@";
+"Show MySQL help for %@" = "Mostrar ayuda de MySQL para %@";
 
 /* show navigator */
 "Show Navigator" = "Mostrar navegador";
@@ -2409,13 +2409,13 @@
 "Showing %lu of %lu processes" = "Mostrando %1$lu de %2$lu procesos";
 
 /* shutdown server : confirmation dialog : shutdown button */
-"Shutdown" = "Shutdown";
+"Shutdown" = "Apagar";
 
 /* shutdown server : error dialog : title */
-"Shutdown failed!" = "Shutdown failed!";
+"Shutdown failed!" = "¡Apagado fallido!";
 
 /* range of integer types */
-"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "Firmado: %1$@ a %2$@\nSin firmar: %3$@ a %4$@";
 
 /* Table Info Section : table size on disk */
 "size: %@" = "tamaño: %@";
@@ -2427,7 +2427,7 @@
 "Skip problems" = "Omitir problemas";
 
 /* beta build label */
-"Beta Build" = "Beta Build";
+"Beta Build" = "Complilación beta";
 
 /* socket connection failed title */
 "Socket connection failed!" = "¡La conexión del socket falló!";
@@ -2452,7 +2452,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "Conexión segura a través de SSL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH conectado";
@@ -3104,7 +3104,7 @@
 "View Structure" = "Estructura de vista";
 
 /* views */
-"views" = "views";
+"views" = "vistas";
 
 /* warning */
 "Warning" = "Advertencia";
@@ -3143,10 +3143,10 @@
 "Wrong data format." = "Formato de datos incorrecto.";
 
 /* export : import settings : spf content type error title */
-"Wrong SPF content type!" = "Wrong SPF content type!";
+"Wrong SPF content type!" = "¡Tipo de contenido SPF incorrecto!";
 
 /* export filename date token */
-"Year" = "Year";
+"Year" = "Año";
 
 /* message of panel when trying to copy multiple rows */
 "You can only copy single rows." = "Solo puede copiar filas individuales.";
@@ -3170,7 +3170,7 @@
 "%@ already exists. Do you want to replace it?" = "%@ already exists. Do you want to replace it?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
-"%@ Bundle" = "%@ Bundle";
+"%@ Bundle" = "Paquete de %@";
 
 /* Export file creation error title */
 "%@ could not be created" = "%@ no pudo ser creado";
@@ -3194,7 +3194,7 @@
 "App Sandbox Info" = "App Sandbox Info";
 
 /* error while selecting file title */
-"File Selection Error" = "File Selection Error";
+"File Selection Error" = "Error de selección de archivo";
 
 /* error while selecting file message */
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
@@ -3329,31 +3329,31 @@
 "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Fijar vista";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Fijar tabla";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "Fijar procedimiento";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Fijar función";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Desanclar vista";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Desanclar tabla";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "Desanclar procedimiento";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Desanclar función";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "FIJADO";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "Copiar nombre de tabla";
