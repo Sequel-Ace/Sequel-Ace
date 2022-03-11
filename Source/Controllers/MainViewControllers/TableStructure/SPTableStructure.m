@@ -978,8 +978,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                         [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
                     else
                         [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
-                } else {
-                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:@""]];
                 }
             }
 			// Suppress appending DEFAULT clause for any numerics, date, time fields if default is empty to avoid error messages;
