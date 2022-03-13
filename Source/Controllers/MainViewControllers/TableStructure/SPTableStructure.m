@@ -946,8 +946,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                 }
             }
 
+            if([defaultValue length] == 0) {
+                //DON'T APPEND AN EMPTY DEFAULT VALUE CLAUSE
+            }
+
 			// If a NULL value has been specified, and NULL is allowed, specify DEFAULT NULL
-			if ([defaultValue isEqualToString:[prefs objectForKey:SPNullValue]])
+			else if ([defaultValue isEqualToString:[prefs objectForKey:SPNullValue]])
 			{
 				if ([[theRow objectForKey:@"null"] integerValue] == 1) {
 					[queryString appendString:@"\n DEFAULT NULL"];
@@ -967,22 +971,17 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 			// If the field is of type BIT, permit the use of single qoutes and also don't quote the default value.
 			// For example, use DEFAULT b'1' as opposed to DEFAULT 'b\'1\'' which results in an error.
-			else if ([defaultValue length] && [theRowType isEqualToString:@"BIT"]) {
+			else if ([theRowType isEqualToString:@"BIT"]) {
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
             // *CHAR and *TEXT must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is.
-            else if ([defaultValue length] && ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"])) {
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
                     [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
                 else
                     [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
             }
-			// Suppress appending DEFAULT clause for any numerics, date, time fields if default is empty to avoid error messages;
-			// also don't specify a default for TEXT/BLOB, JSON or geometry fields to avoid strict mode errors
-			else if (![defaultValue length] && ([fieldValidation isFieldTypeNumeric:theRowType] || [fieldValidation isFieldTypeDate:theRowType] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"BLOB"] || [theRowType isEqualToString:@"JSON"] || [fieldValidation isFieldTypeGeometry:theRowType])) {
-				;
-			}
 			//for ENUM field type
 			else if (([defaultValue length]==0) && [theRowType isEqualToString:@"ENUM"]) {
 				[queryString appendFormat:@" "];
