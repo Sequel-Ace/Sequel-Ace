@@ -209,7 +209,7 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.";
 
 /* duplicate host informative message */
-"A user with the host '%@' already exists" = "A user with the host '%@' already exists";
+"A user with the host '%@' already exists" = "'%@' aynı kimliğe sahip bir kullanıcı var";
 
 /* duplicate user informative message */
 "A user with the name '%@' already exists" = "A user with the name '%@' already exists";
@@ -245,7 +245,7 @@
 "Add Value or Expression…" = "Add Value or Expression…";
 
 /* adding index task status message */
-"Adding index..." = "Adding index...";
+"Adding index..." = "Index ekleniyor...";
 
 /* Advanced options short title */
 "Advanced" = "Gelişmiş";
@@ -628,7 +628,7 @@
 "Check Selected Items" = "Check Selected Items";
 
 /* check table menu item */
-"Check Table" = "Check Table";
+"Check Table" = "Tabloyu kontrol et";
 
 /* check table failed message */
 "Check table failed." = "Check table failed.";
@@ -655,13 +655,13 @@
 "Checksums of %@" = "Checksums of %@";
 
 /* menu item for choose db */
-"Choose Database..." = "Choose Database...";
+"Choose Database..." = "Veritabanı Seç...";
 
 /* cancelling export cleaning up message */
-"Cleaning up..." = "Cleaning up...";
+"Cleaning up..." = "Temizleniyor...";
 
 /* clear button */
-"Clear" = "Clear";
+"Clear" = "Temizle";
 
 /* toolbar item for clear console */
 "Clear Console" = "Konsolu Temizle";
@@ -761,7 +761,7 @@
 "Continue" = "Devam et";
 
 /* continue to print message */
-"Continue to print?" = "Continue to print?";
+"Continue to print?" = "Yazdırmaya devam et?";
 
 /* Copy as RTF */
 "Copy as RTF" = "Copy as RTF";
@@ -939,23 +939,23 @@
 "Database Rename Unsupported" = "Database Rename Unsupported";
 
 /* export filename date token */
-"Date" = "Date";
+"Date" = "Tarih";
 
 /* export filename date token */
-"Day" = "Day";
+"Day" = "Gün";
 
 /* Add Table Sheet : Collation : Default (unknown)
  Collation Dropdown : Default (unknown)
  default label
  Table Structure : Collation dropdown : 'item is the same as the default collation of the row's charset' marker */
-"Default" = "Default";
+"Default" = "Varsayılan";
 
 /* Add Table : Collation : Default ($1 = collation name)
  Charset Dropdown : Default item ($1 = charset name)
  Collation Dropdown : Default ($1 = collation name)
  Collation Dropdown : Default collation for given charset ($1 = collation name)
  New Table Sheet : Table Engine Dropdown : Default */
-"Default (%@)" = "Default (%@)";
+"Default (%@)" = "Varsayılan (%@)";
 
 /* default bundles update */
 "Default Bundles Update" = "Default Bundles Update";
@@ -964,7 +964,7 @@
 "Default: %@" = "Default: %@";
 
 /* Query snippet default value placeholder */
-"default_value" = "default_value";
+"default_value" = "varsayilan_deger";
 
 /* definer label (Navigator) */
 "Definer" = "Definer";
@@ -976,10 +976,10 @@
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member).";
 
 /* delete button */
-"Delete" = "Delete";
+"Delete" = "Sil";
 
 /* delete table/view message */
-"Delete %@ '%@'?" = "Delete %1$@ '%2$@'?";
+"Delete %@ '%@'?" = "%1$@ %2$@ silinsin mi?";
 
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "Delete Both";
@@ -1024,13 +1024,13 @@
 "Delete Relations" = "Delete Relations";
 
 /* delete row menu item singular */
-"Delete Row" = "Delete Row";
+"Delete Row" = "Satırı Sil";
 
 /* delete rows menu item plural */
-"Delete Rows" = "Delete Rows";
+"Delete Rows" = "Satırları Sil";
 
 /* delete rows message */
-"Delete rows?" = "Delete rows?";
+"Delete rows?" = "Satırlar silinsin mi?";
 
 /* delete tables/views message */
 "Delete selected %@?" = "Delete selected %@?";
@@ -1039,13 +1039,13 @@
 "Delete selected row?" = "Delete selected row?";
 
 /* delete table menu title */
-"Delete Table..." = "Delete Table...";
+"Delete Table..." = "Tabloyu Sil...";
 
 /* delete tables menu title */
-"Delete Tables" = "Delete Tables";
+"Delete Tables" = "Tabloları Sil";
 
 /* delete trigger menu item */
-"Delete Trigger" = "Delete Trigger";
+"Delete Trigger" = "Tetikleyici Sil";
 
 /* delete trigger message */
 "Delete trigger" = "Delete trigger";
@@ -1111,7 +1111,7 @@
 "Duplicate Table..." = "Duplicate Table...";
 
 /* duplicate user message */
-"Duplicate User" = "Duplicate User";
+"Duplicate User" = "Yinelenen Kullanıcı";
 
 /* duplicate view menu title */
 "Duplicate View..." = "Duplicate View...";
@@ -1120,10 +1120,10 @@
 "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
 
 /* edit filter */
-"Edit Filters…" = "Edit Filters…";
+"Edit Filters…" = "Filtreleri Düzenle…";
 
 /* Edit row button */
-"Edit row" = "Edit row";
+"Edit row" = "Satırı Düzenle";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Edit Table Structure" = "Edit Table Structure";
@@ -1135,7 +1135,7 @@
 "Edit user-defined Filters…" = "Edit user-defined Filters…";
 
 /* empty query message */
-"Empty query" = "Empty query";
+"Empty query" = "Boş Sorgu";
 
 /* MySQL search language code - eg in http://search.mysql.com/search?q=select&site=refman-50&lr=lang_en */
 "en" = "en";
@@ -1164,7 +1164,7 @@
 
 /* Bundle Editor : Copy-Command-Error : error dialog title
  error */
-"Error" = "Error";
+"Error" = "Hata";
 
 /* error adding field message */
 "Error adding field" = "Error adding field";
@@ -1302,10 +1302,10 @@
 "Error while saving %@." = "Error while saving %@.";
 
 /* Errors title */
-"Errors" = "Errors";
+"Errors" = "Hatalar";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
-"Example:" = "Example:";
+"Example:" = "Örnek:";
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclude BLOB";
@@ -1341,10 +1341,10 @@
 "Fatal Error" = "Fatal Error";
 
 /* export filename favorite name token */
-"Favorite" = "Favorite";
+"Favorite" = "Favori";
 
 /* favorites label */
-"Favorites" = "Favorites";
+"Favorites" = "Favoriler";
 
 /* favorites export error message */
 "Favorites export error" = "Favorites export error";
@@ -1353,7 +1353,7 @@
 "Favorites import error" = "Favorites import error";
 
 /* export label showing that the app is fetching data */
-"Fetching data..." = "Fetching data...";
+"Fetching data..." = "Veri işleniyor...";
 
 /* fetching database structure data in progress */
 "fetching database structure data in progress" = "fetching database structure data in progress";
@@ -1365,10 +1365,10 @@
 "fetching table data…" = "fetching table data…";
 
 /* popup menuitem for field (showing only if disabled) */
-"field" = "field";
+"field" = "alan";
 
 /* Field */
-"Field" = "Field";
+"Field" = "Alan";
 
 /* Query result editing error - could not match row being edited uniquely */
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
@@ -1383,7 +1383,7 @@
 "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
 
 /* error while reading data file */
-"File couldn't be read." = "File couldn't be read.";
+"File couldn't be read." = "Dosya okunamadı.";
 "File couldn't be read: %@\n\nIt will be deleted." = "File couldn't be read: %@\n\nIt will be deleted.";
 
 /* File read error title (Import Dialog) */
@@ -1393,7 +1393,7 @@
 "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
 
 /* filter label */
-"Filter" = "Filter";
+"Filter" = "Filtre";
 
 /* filter tables menu item */
 "Filter Tables" = "Filter Tables";

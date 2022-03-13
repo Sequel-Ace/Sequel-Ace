@@ -1090,7 +1090,7 @@
 "Dump of table" = "テーブルのダンプ";
 
 /* sql export dump of view label */
-"Dump of view" = "Dump of view";
+"Dump of view" = "ダンプ表示";
 
 /* text showing that app is writing dump */
 "Dumping..." = "ダンプ中...";
@@ -3357,4 +3357,4 @@
 "PINNED" = "ピンで固定";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "テーブル名をコピー";

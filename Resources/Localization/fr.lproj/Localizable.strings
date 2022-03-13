@@ -1,5 +1,5 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Vérifiez la console pour d'éventuelles erreurs dans la ou les clés primaires de cette table !";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " Vérifiez la console pour d'éventuelles erreurs dans la ou les clés primaires de cette table!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
 " Please check the Console and inform the Sequel Ace team!" = " Veuillez vérifier la console et informer l'équipe Sequel Ace !";
