@@ -2911,30 +2911,32 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 }
 
 /**
- * Returns a string controlling which fields to retrieve for a query.  Returns * (all fields) if the preferences
- * option dontShowBlob isn't set; otherwise, returns a comma-separated list of all non-blob/text fields.
+ * Returns a string controlling which fields to retrieve for a query.  returns a comma-separated list of fields
  */
 - (NSString *)fieldListForQuery
 {
-	if (([prefs boolForKey:SPLoadBlobsAsNeeded]) && [dataColumns count]) {
+    if(![dataColumns count]) {
+        return @"*";
+    }
 
-		NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
-		BOOL tableHasBlobs = NO;
-		NSString *fieldName;
+    //Specifically list out columns to load invisible column data
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
+    NSString *fieldName;
+    BOOL dontLoadTextAndBlobs = ([prefs boolForKey:SPLoadBlobsAsNeeded]);
 
-		for (NSDictionary* field in dataColumns)
-			if (![tableDataInstance columnIsBlobOrText:fieldName = [field objectForKey:@"name"]] )
-				[fields addObject:[fieldName backtickQuotedString]];
-			else {
-				// For blob/text fields, select a null placeholder so the column count is still correct
-				[fields addObject:@"NULL"];
-				tableHasBlobs = YES;
-			}
+    for (NSDictionary* field in dataColumns) {
+        fieldName = [field objectForKey:@"name"];
 
-		return (tableHasBlobs) ? [fields componentsJoinedByString:@", "] : @"*";
+        if (dontLoadTextAndBlobs && [tableDataInstance columnIsBlobOrText:fieldName]) {
+            // For blob/text fields, select a null placeholder so the column count is still correct
+            [fields addObject:@"NULL"];
+            continue;
+        }
 
-	}
-		return @"*";
+        [fields addObject:[fieldName backtickQuotedString]];
+    }
+
+    return [fields componentsJoinedByString:@", "];
 
 }
 
