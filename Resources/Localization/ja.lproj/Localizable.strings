@@ -236,7 +236,7 @@
 "Add" = "追加";
 
 /* menu item to add db */
-"Add Database..." = "添加資料庫...";
+"Add Database..." = "データベースを追加…";
 
 /* Add Host */
 "Add Host" = "ホストを追加";
@@ -257,10 +257,10 @@
 "Alerts & Logs Preferences" = "アラートとログ設定";
 
 /* All databases placeholder */
-"All Databases" = "所有資料庫";
+"All Databases" = "すべてのデータベース";
 
 /* All databases (%) placeholder */
-"All Databases (%)" = "所有資料庫（%）";
+"All Databases (%)" = "すべてのデータベース (%)";
 
 /* All export files already exist message */
 "All the export files already exist. Do you want to replace them?" = "すべてのエクスポートファイルは既に存在します。置き換えますか？";
