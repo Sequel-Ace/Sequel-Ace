@@ -1,63 +1,63 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Check the Console for possible errors inside the primary key(s) of this table!";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " Controlla la Console per possibili errori relativi alla o alle chiavi primarie di questa tabella!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Please check the Console and inform the Sequel Ace team!";
+" Please check the Console and inform the Sequel Ace team!" = " Per favore controllare la Console e informare it team di Sequel Ace!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
-" Reload the table to be sure that the contents have not changed in the meantime." = " Reload the table to be sure that the contents have not changed in the meantime.";
+" Reload the table to be sure that the contents have not changed in the meantime." = " Ricarica la tabella per essere sicuri che i contenuti non siano cambiati nel frattempo.";
 
 /* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
-" You should also add a primary key to this table!" = " You should also add a primary key to this table!";
+" You should also add a primary key to this table!" = " Dovresti anche aggiungere una chiave primaria a questa tabella!";
 
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ selected";
+"%@ %@ selected" = "%1$@ %2$@ selezionati";
 
 /* History item filtered by values label */
-"%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
+"%@ (Filtered by %@)" = "%1$@ (Filtrato da %2$@)";
 
 /* History item with page number label */
-"%@ (Page %lu)" = "%1$@ (Page %2$lu)";
+"%@ (Page %lu)" = "%1$@ (Pagina %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Copy";
+"%@ Copy" = "%@ Copia";
 
 /* text showing a single row a partially loaded result */
-"%@ row in partial load" = "%@ row in partial load";
+"%@ row in partial load" = "%@ riga in caricamento";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ row in table";
+"%@ row in table" = "%@ riga nella tabella";
 
 /* text showing how a single rows matched filter */
-"%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
+"%@ row of %@%@ matches filter" = "%1$@ riga di %2$@%3$@ corrisponde al filtro";
 
 /* text showing how many rows are in a partially loaded result */
-"%@ rows in partial load" = "%@ rows in partial load";
+"%@ rows in partial load" = "%@ righe in caricamento";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ rows in table";
+"%@ rows in table" = "%@ righe nella tabella";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
+"%@ rows of %@%@ match filter" = "%1$@ righe di %2$@%3$@ filtro corrispondenza";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
+"%@; %ld rows affected" = "%1$@; %2$ld righe interessate";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld righe colpite in totale, da %3$ld query che interessano %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 row affected";
+"%@; 1 row affected" = "%@; righe interessate";
 
 /* text showing one row has been affected by multiple queries */
-"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 righe colpite in totale, da %2$ld query che interessano %3$@";
 
 /* text showing a query was cancelled */
-"%@; Cancelled after %@" = "%1$@; Cancelled after %2$@";
+"%@; Cancelled after %@" = "%1$@; Annullato dopo %2$@";
 
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
@@ -135,16 +135,16 @@
 "[multiple selection]" = "[multiple selection]";
 
 /* displayed when new content filter has empty Name field (ContentFilterManager) */
-"[name required]" = "[name required]";
+"[name required]" = "Nome richiesto";
 
 /* [no selection] */
-"[no selection]" = "[no selection]";
+"[no selection]" = "nessuna selezione";
 
 /* Additional export file errors */
-"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
+"\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(Inoltre, si sono verificati uno o più errori durante il tentativo di creare i file di esportazione: %lu non può essere creato. Questi file verranno ignorati.)";
 
 /* \n\npress shift for binary search tooltip message */
-"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nPress ⇧ for binary search (case-sensitive).";
+"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nPremi ⇧ per la ricerca binaria (maiuscole e minuscole).";
 
 /* description of bit */
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.";
