@@ -1,3 +1,21 @@
+## [3.5.2]
+
+### Added
+
+
+### Fixed
+- c25b64a7, Possible fix for crash on tables with invisible columns 
+- 03c9e6f1, Only append a default value if its specified 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [3.5.1]
 
 ### Added
