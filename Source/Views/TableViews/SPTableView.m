@@ -32,7 +32,7 @@
 #import "SPQueryFavoriteManager.h"
 #import "SPDatabaseDocument.h"
 #import "SPFieldMapperController.h"
-
+#import "NSFont+Typograhics.h"
 #import "sequel-ace-Swift.h"
 
 @protocol SPTableViewDelegate <NSObject>
@@ -337,6 +337,18 @@ pass_keyDown_to_super:
 - (void)_enableDoubleClickAction:(NSNotification *)notification
 {
 	[super setDoubleAction:@selector(_doubleClickAction)];
+}
+
+
+/**
+ * Make added Tablecolumns using a font with monospaced decimal digits for the sake of readabilty
+ */
+
+-(void)addTableColumn:(NSTableColumn *)tableColumn
+{
+    [super addTableColumn:tableColumn];
+    NSCell * tableCell = tableColumn.dataCell;
+    tableCell.font = tableCell.font.sp_monospacedNumbersFont;
 }
 
 @end
