@@ -52,6 +52,9 @@
 #import "SPBundleManager.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
+#import "SPTreeNode.h"
+#import "SPConnectionController.h"
+#import "SPFavoritesOutlineView.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -983,6 +986,36 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
         [result writeToFile:resultFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
         return;
+    }
+    
+    if ([command isEqualToString:@"LaunchFavorite"]) {
+        NSString *targetBookmarkName = nil;
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        for (NSURLQueryItem *queryItem in components.queryItems) {
+            if ([queryItem.name isEqualToString:@"name"]) {
+                targetBookmarkName = queryItem.value;
+                break;
+            }
+        }
+        
+        if (targetBookmarkName && [targetBookmarkName length]) {
+            SPTreeNode *targetFavoriteNode = nil;
+            SPTreeNode *favoritesTree = [SPFavoritesController sharedFavoritesController].favoritesTree;
+            for (SPTreeNode *favoriteNode in [favoritesTree allChildLeafs]) {
+                if ([favoriteNode.dictionaryRepresentation[SPFavoriteNameKey] isEqualToString:targetBookmarkName]) {
+                    targetFavoriteNode = favoriteNode;
+                    break;
+                }
+            }
+            
+            if (targetFavoriteNode) {
+                SPWindowController *windowController = [self.tabManager newWindowForWindow];
+                SPFavoritesOutlineView *favoritesOutlineView = windowController.databaseDocument.connectionController.favoritesOutlineView;
+                [favoritesOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:[favoritesOutlineView rowForItem:targetFavoriteNode]] byExtendingSelection:NO];
+                [windowController.databaseDocument.connectionController initiateConnection:windowController.databaseDocument.connectionController];
+                return;
+            }
+        }
     }
 
     if([command isEqualToString:@"SyntaxHighlighting"]) {
