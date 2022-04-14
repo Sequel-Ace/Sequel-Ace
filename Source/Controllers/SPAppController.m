@@ -1016,6 +1016,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 return;
             }
         }
+        
+        NSBeep();
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"LaunchFavorite URL Scheme Error", @"LaunchFavorite URL Scheme Error") message: [NSString stringWithFormat:@"%@ %@ “%@”", NSLocalizedString(@"The variable in the ?name= query parameter could not be matched with any of your favorites.", @"The variable in the ?name= query parameter could not be matched with any of your favorites."), NSLocalizedString(@"Variable: ", @"Variable: "), targetBookmarkName] callback:nil];
+        
+        return;
     }
 
     if([command isEqualToString:@"SyntaxHighlighting"]) {
