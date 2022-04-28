@@ -52,6 +52,9 @@
 #import "SPBundleManager.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
+#import "SPTreeNode.h"
+#import "SPConnectionController.h"
+#import "SPFavoritesOutlineView.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -982,6 +985,41 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message") callback:nil];
         }
         [result writeToFile:resultFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        return;
+    }
+    
+    if ([command isEqualToString:@"LaunchFavorite"]) {
+        NSString *targetBookmarkName = nil;
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        for (NSURLQueryItem *queryItem in components.queryItems) {
+            if ([queryItem.name isEqualToString:@"name"]) {
+                targetBookmarkName = queryItem.value;
+                break;
+            }
+        }
+        
+        if (targetBookmarkName && [targetBookmarkName length]) {
+            SPTreeNode *targetFavoriteNode = nil;
+            SPTreeNode *favoritesTree = [SPFavoritesController sharedFavoritesController].favoritesTree;
+            for (SPTreeNode *favoriteNode in [favoritesTree allChildLeafs]) {
+                if ([favoriteNode.dictionaryRepresentation[SPFavoriteNameKey] isEqualToString:targetBookmarkName]) {
+                    targetFavoriteNode = favoriteNode;
+                    break;
+                }
+            }
+            
+            if (targetFavoriteNode) {
+                SPWindowController *windowController = [self.tabManager newWindowForWindow];
+                SPFavoritesOutlineView *favoritesOutlineView = windowController.databaseDocument.connectionController.favoritesOutlineView;
+                [favoritesOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:[favoritesOutlineView rowForItem:targetFavoriteNode]] byExtendingSelection:NO];
+                [windowController.databaseDocument.connectionController initiateConnection:windowController.databaseDocument.connectionController];
+                return;
+            }
+        }
+        
+        NSBeep();
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"LaunchFavorite URL Scheme Error", @"LaunchFavorite URL Scheme Error") message: [NSString stringWithFormat:@"%@ %@: “%@”", NSLocalizedString(@"The variable in the ?name= query parameter could not be matched with any of your favorites.", @"The variable in the ?name= query parameter could not be matched with any of your favorites."), NSLocalizedString(@"Variable", @"Variable"), targetBookmarkName] callback:nil];
+        
         return;
     }
 
