@@ -18,7 +18,7 @@ _The following is based on [this medium article](https://medium.com/@harrybailey
 
 2. Quit both `Sequel Pro` and `Sequel Ace`
 
-3. Copy Settings via `cp ~/Library/Preferences/com.sequelpro.SequelPro.plist ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Preferences/com.sequel-ace.sequel-ace.plist1`
+3. Copy Settings via `cp ~/Library/Preferences/com.sequelpro.SequelPro.plist ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Preferences/com.sequel-ace.sequel-ace.plist`
 
 4. Copy Favorites via `cp ~/Library/Application\ Support/Sequel\ Pro/Data/Favorites.plist ~/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application\ Support/Sequel\ Ace/Data/Favorites.plist`
 
