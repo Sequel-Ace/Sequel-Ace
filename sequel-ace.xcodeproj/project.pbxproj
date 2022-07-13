@@ -891,7 +891,6 @@
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
 		517E44FB257A94C400ED333B /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
-		517E457C257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-ES"; path = "es-ES.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51905622267DFF1700212442 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
 		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -904,7 +903,6 @@
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		51C04C99261E4CFB001F5554 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-PT"; path = "pt-PT.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
@@ -2543,14 +2541,12 @@
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
-				"es-ES",
 				es,
 				Base,
 				"zh-Hans",
 				"zh-Hant",
 				de,
 				"pt-BR",
-				"pt-PT",
 				pt,
 				ja,
 				vi,
@@ -3134,13 +3130,11 @@
 			isa = PBXVariantGroup;
 			children = (
 				965125F524926B6300E65B53 /* en */,
-				517E457C257A971900ED333B /* es-ES */,
 				511B309F25ABBC6500D010E3 /* es */,
 				51BB3DFC25AEF020005AAE44 /* zh-Hans */,
 				51BB3E0425AEF0D7005AAE44 /* zh-Hant */,
 				519F2829261A5A1800370B14 /* de */,
 				51C04C98261E4CF5001F5554 /* pt-BR */,
-				51C04C99261E4CFB001F5554 /* pt-PT */,
 				51C04C9D261E4DB6001F5554 /* pt */,
 				516A76C52653B4E800DC6501 /* ja */,
 				51905622267DFF1700212442 /* vi */,
