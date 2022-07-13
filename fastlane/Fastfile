@@ -36,7 +36,6 @@ platform :mac do
       )
       sh "git push -u origin prepare_release"
       
-      update_strings
       increment_build_version
       changelog = generate_changelog_locally
 
@@ -65,7 +64,6 @@ platform :mac do
       sh "git push -u origin prepare_release"
 
       increment_app_version
-      update_strings
       increment_build_version
       
       changelog = generate_changelog_locally
@@ -101,7 +99,6 @@ platform :mac do
       sh "git push -u origin prepare_release"
 
       increment_app_patch_version
-      update_strings
       increment_build_version
       
       changelog = generate_changelog_locally
@@ -136,7 +133,6 @@ platform :mac do
       )
       sh "git push -u origin prepare_release"
       
-      update_strings
       increment_build_version
       
       changelog = generate_changelog_locally
@@ -192,24 +188,6 @@ platform :mac do
    lane :generate_changelog_locally do |options|
       version = get_version_number(xcodeproj: PROJECT_NAME, target: TARGET_NAME)
       sh "../Scripts/generate-changelog.sh #{version}"
-   end
-
-   desc "Builds Sequel Ace strings target, uploads strings to Crowdin, builds them, downloads them and commits to git"
-   lane :update_strings do |options|
-      build_mac_app(
-         project: PROJECT_NAME,
-         scheme: "Update Strings",
-         configuration: "Debug",
-         silent: true,
-         skip_package_pkg: true,
-         skip_archive: true
-      )
-
-      # Commit strings updates
-      repo_clean = `git status --porcelain`.empty?
-      if !repo_clean
-         sh "git add -A && git commit -m 'Update strings'"
-      end
    end
 
    desc "Increase build number"

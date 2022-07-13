@@ -63,14 +63,6 @@ Creates new branch changelog, generates changelog, creates a PR.
 
 Generates changelog only.
 
-### mac update_strings
-
-```sh
-[bundle exec] fastlane mac update_strings
-```
-
-Builds Sequel Ace strings target, uploads strings to Crowdin, builds them, downloads them and commits to git
-
 ### mac increment_build_version
 
 ```sh
