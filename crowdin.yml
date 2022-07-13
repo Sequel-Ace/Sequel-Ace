@@ -1,0 +1,3 @@
+files:
+  - source: /Resources/Localization/en.lproj/Localizable.strings
+    translation: /Resources/Localization/%two_letters_code%.lproj/%original_file_name%
