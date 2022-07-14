@@ -3329,34 +3329,34 @@
 "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "Использование колонки \"default\" изменилось с момента выхода последней версии Sequel ACE:\n\n- Если нет значения по умолчанию, то оставьте его пустым.\n- Для строкового значения одинарный кавычки ('…') или двоные кавычки для пустой строки или переноса строки (\"…\")\n- Для ввода выражения используйте скобки (…). Для колонок TIMESTAMP и DATETIME можно указать функцию CURRENT_TIMESTAMP без скобок.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Закрепить представление";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Закрепить таблицу";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "Закрепить процедуру";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Закрепить функцию";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Открепить представление";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Открепить таблицу";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "Открепить процедуру";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Открепить функцию";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "ЗАКРЕПЛЁННЫЕ";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "Скопировать имя таблицы";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
 "LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
