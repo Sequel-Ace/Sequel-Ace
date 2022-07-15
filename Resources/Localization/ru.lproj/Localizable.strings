@@ -1970,7 +1970,7 @@
 "Please choose a favorite" = "Пожалуйста, выберите избранное";
 
 /* message of panel when ssh details are incomplete */
-"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
+"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Пожалуйста, введите имя хоста для SSH туннеля или отключите SSH туннель.";
 
 /* Please enter the password */
 "Please enter the password for ‘%@’:" = "Пожалуйста, введите пароль для «%@»:";
@@ -2805,7 +2805,7 @@
 "The target export folder is not writable.  Please select a new export location and try again." = "The target export folder is not writable.  Please select a new export location and try again.";
 
 /* Export folder not chosen by user explanatory text */
-"No directory selected.  Please select a new export location and try again." = "No directory selected.  Please select a new export location and try again.";
+"No directory selected.  Please select a new export location and try again." = "Каталог не выбран. Пожалуйста, выберите новое место для экспорта и повторите попытку.";
 "No directory selected." = "Каталог не выбран.";
 "Please select a new export location and try again." = "Пожалуйста, выберите новое место для экспорта и повторите попытку.";
 
@@ -3152,7 +3152,7 @@
 "You can only copy single rows." = "Вы можете скопировать только одну строку.";
 
 /* message of panel when trying to edit tables without index and with hidden blob/text fields */
-"You can't hide blob and text fields when working with tables without index." = "You can't hide blob and text fields when working with tables without index.";
+"You can't hide blob and text fields when working with tables without index." = "Вы не можете скрыть блоки и текстовые поля при работе с таблицами без индекса.";
 
 /* You cannot delete the last field in a table. Delete the table instead. */
 "You cannot delete the last field in a table. Delete the table instead." = "Вы не можете удалить последнее поле в таблице. Вместо этого удалите саму таблицу.";
@@ -3197,7 +3197,7 @@
 "File Selection Error" = "Ошибка выбора файла";
 
 /* error while selecting file message */
-"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
+"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Выбранный файл не является допустимым.\n\nПожалуйста, попробуйте ещё раз.\n\nКласс: %@";
 
 /* known hosts not writable error message */
 "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
