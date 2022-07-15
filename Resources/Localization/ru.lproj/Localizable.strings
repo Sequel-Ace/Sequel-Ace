@@ -1603,7 +1603,7 @@
 "Installing Bundle" = "Установка пакета";
 
 /* insufficient details message */
-"Insufficient connection details" = "Insufficient connection details";
+"Insufficient connection details" = "Недостаточно данных для подключения";
 
 /* insufficient details informative message */
 "Insufficient details provided to establish a connection. Please enter at least the hostname." = "Insufficient details provided to establish a connection. Please enter at least the hostname.";
