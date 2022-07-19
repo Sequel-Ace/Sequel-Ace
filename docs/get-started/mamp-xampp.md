@@ -31,7 +31,7 @@ You can also connect via a TCP/IP connection.
 
 Enter 127.0.0.1 for the Host. Enter root for the username and for the password. The default MySQL port used by MAMP is 8889.
 
-**Important**: Under Server & Services -> MySQL, check `Allow network access to MySQL` and select `only from this Mac`.
+**Important**: Regardless of the connection method, a preference needs changing in the MAMP Pro settings. Under Server & Services -> MySQL, check `Allow network access to MySQL` and select `only from this Mac`.
 
 #### XAMPP
 
