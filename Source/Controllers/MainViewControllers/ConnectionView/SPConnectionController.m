@@ -2042,7 +2042,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         else if ([self type] == SPSSHTunnelConnection) {
             [mySQLConnection setUseSocket:NO];
 
-            [mySQLConnection setHost:SPLocalhostAddress];
+            if([[self host] length]) {
+                [mySQLConnection setHost:[self host]];
+            } else {
+                [mySQLConnection setHost:SPLocalhostAddress];
+            }
             [mySQLConnection setPort:[sshTunnel localPort]];
             [mySQLConnection setProxy:sshTunnel];
         }
