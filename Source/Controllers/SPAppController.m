@@ -805,12 +805,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                         [[newWindowTabController window] deminiaturize:self];
                     }
 
-
                     [newWindowTabController.databaseDocument setIsSavedInBundle:isBundleFile];
                     if (![newWindowTabController.databaseDocument setStateFromConnectionFile:fileName]) {
                         break;
                     }
-
                 } else {
                     SPLog(@"Bundle file “%@” does not exists", fileName);
                     NSBeep();
