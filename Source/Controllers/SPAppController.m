@@ -1231,9 +1231,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSDictionary*)shellEnvironmentForDocument:(NSString*)docUUID {
     NSMutableDictionary *env = [NSMutableDictionary dictionary];
-    SPDatabaseDocument *doc;
     if (docUUID == nil) {
-        doc = [self frontDocument];
+        [self frontDocument];
     } else {
         SPWindowController *windowController = [self.tabManager windowControllerWithDocumentWithProcessID:docUUID];
         if (windowController) {

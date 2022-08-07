@@ -62,7 +62,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 - (void) setDataStorage:(SPMySQLStreamingResultStore *)newDataStorage updatingExisting:(BOOL)updateExistingStore
 {
 	BOOL *oldUnloadedColumns;
-	NSPointerArray *oldEditedRows;
 	SPMySQLStreamingResultStore *oldDataStorage;
 	
 	@synchronized(self) {
@@ -87,7 +86,6 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 
 		oldUnloadedColumns = unloadedColumns;
-		oldEditedRows = editedRows;
 		dataStorage = newDataStorage;
 		numberOfColumns = newNumberOfColumns;
 		unloadedColumns = newUnloadedColumns;
