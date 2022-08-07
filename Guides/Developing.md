@@ -10,7 +10,7 @@ To run Sequel Ace locally from XCode, please:
     - select a Team that you can create signing certificates for
 - open the `sequel-ace` project and, under `Signing & Capabilities` change the Team and Bundle Identifier for the `Sequel Ace` and `SequelAceTunnelAssistant` targets
 - open the `Source/Frameworks/SPMySQLFramework` project 
-- run `Sequel Ace Local Testing` schema
+- run `Sequel Ace Debug` schema
 
 If you encounter any issues, let us know by [creating a new issue](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose).
 

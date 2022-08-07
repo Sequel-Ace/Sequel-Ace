@@ -99,7 +99,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (instancetype)init
 {
     if ((self = [super init])) {
-        _sessionURL = nil;
         aboutController = nil;
         lastBundleBlobFilesDirectory = nil;
         _spfSessionDocData = [[NSMutableDictionary alloc] init];
@@ -390,10 +389,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // info.plist will contain the opened structure (windows and tabs for each window). Each connection
     // is linked to a saved spf file either in 'Contents' for unTitled ones or already saved spf files.
 
-    if ([contextInfo isEqual:@"saveAsSession"] && [self sessionURL]) {
-        fileName = [[self sessionURL] path];
-    }
-
     if(!fileName || ![fileName length]) {
         return;
     }
@@ -499,8 +494,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         return;
     }
-
-    [self setSessionURL:fileName];
 
     // Register spfs bundle in Recent Files
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
@@ -783,7 +776,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         // Set global session properties
         [self setSpfSessionDocData:spfsDocData];
-        [self setSessionURL:filePath];
 
         // Loop through each defined window in reversed order to reconstruct the last active window
         for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
@@ -1239,9 +1231,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSDictionary*)shellEnvironmentForDocument:(NSString*)docUUID {
     NSMutableDictionary *env = [NSMutableDictionary dictionary];
-    SPDatabaseDocument *doc;
     if (docUUID == nil) {
-        doc = [self frontDocument];
+        [self frontDocument];
     } else {
         SPWindowController *windowController = [self.tabManager windowControllerWithDocumentWithProcessID:docUUID];
         if (windowController) {
@@ -1389,22 +1380,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (SPDatabaseDocument *)frontDocument {
     return [[self.tabManager activeWindowController] databaseDocument];
-}
-
-/**
- * Retrieve the session URL. Return nil if no session is opened
- */
-- (NSURL *)sessionURL {
-    return _sessionURL;
-}
-
-/**
- * Set the global session URL used for Save (As) Session.
- */
-- (void)setSessionURL:(NSString *)urlString {
-
-    if(urlString)
-        _sessionURL = [NSURL fileURLWithPath:urlString];
 }
 
 - (NSDictionary *)spfSessionDocData

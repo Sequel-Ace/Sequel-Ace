@@ -83,7 +83,7 @@
 
     NSUInteger xmlRowCount = 0;
     double lastProgressValue = 0;
-    NSUInteger i, totalRows, currentRowIndex, currentPoolDataLength;
+    NSUInteger i, totalRows, currentRowIndex;
 
     // Check to see if we have at least a table name or data array
     if ((![self xmlTableName] && ![self xmlDataArray]) ||
@@ -187,8 +187,6 @@
         currentRowIndex = 0;
 
         if ([self xmlDataArray]) currentRowIndex++;
-
-        currentPoolDataLength = 0;
 
         // Inform the delegate that we are about to start writing the data to disk
         [delegate performSelectorOnMainThread:@selector(xmlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -296,9 +294,6 @@
             }
 
             [xmlString appendString:@"\t</row>\n\n"];
-
-            // Record the total length for use with pool flushing
-            currentPoolDataLength += [xmlString length];
 
             // Write the row to the filehandle
             [self writeString:xmlString];

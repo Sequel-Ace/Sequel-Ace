@@ -56,14 +56,15 @@ If you would like to help with code and development, please see either our [proj
 
 ## Compatibility
 
-- **macOS:** >= 10.12 \*
+- **macOS:** >= 10.13 \*
 - **Processor:** Intel & Apple Silicon
 - **MySQL:** >= 5.6
 - **MariaDB:** >= 10.0
 
-_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11. However support is limited, and we encourage upgrading to the latest macOS and Sequel Ace._
+_Note: An [older version of Sequel Ace (version 3.5.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F3.5.2-20033) is available to download for macOS versions 10.12._
+_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11._
 
-\* To run Sequel Ace on Mac OS X 10.12-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
+\* To run Sequel Ace on Mac OS X 10.13-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
 
 ## Code of Conduct
 

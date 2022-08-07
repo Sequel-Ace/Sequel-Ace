@@ -2743,14 +2743,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         contextInfo = sender == nil ? @"saveSPFfileAndClose" : @"saveSPFfile";
     }
     // Save Session or Save Session As...
-    else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession || [sender tag] == SPMainMenuFileSaveSessionAs)
-    {
-        // Save As Session
-        if ([sender tag] == SPMainMenuFileSaveSession && [SPAppDelegate sessionURL]) {
-            [self saveConnectionPanelDidEnd:panel returnCode:1 contextInfo:@"saveAsSession"];
-            return;
-        }
-
+    else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession || [sender tag] == SPMainMenuFileSaveSessionAs) {
         // Load accessory nib each time.
         // Note that the top-level objects aren't released automatically, but are released when the panel ends.
         if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
@@ -2792,7 +2785,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [panel setAccessoryView:saveConnectionAccessory];
 
         // Set file name
-        filename = ([SPAppDelegate sessionURL]) ? [[[SPAppDelegate sessionURL] absoluteString] lastPathComponent] : [NSString stringWithFormat:NSLocalizedString(@"Session",@"Initial filename for 'Save session' file")];
+        filename = [NSString stringWithFormat:NSLocalizedString(@"Session",@"Initial filename for 'Save session' file")];
 
         contextInfo = @"saveSession";
     }
@@ -2829,7 +2822,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     [panel orderOut:nil]; // by default OS X hides the panel only after the current method is done
 
-    if (returnCode == NSFileHandlingPanelOKButton) {
+    if (returnCode == NSModalResponseOK) {
 
         NSString *fileName = [[panel URL] path];
         NSError *error = nil;
@@ -4213,7 +4206,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             encryptpw = [[SPAppDelegate spfSessionDocData] objectForKey:@"e_string"];
         } else {
             [inputTextWindowHeader setStringValue:NSLocalizedString(@"Connection file is encrypted", @"Connection file is encrypted")];
-            [inputTextWindowMessage setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Please enter the password for ‘%@’:", @"Please enter the password"), ([self isSaveInBundle]) ? [[[SPAppDelegate sessionURL] absoluteString] lastPathComponent] : [path lastPathComponent]]];
+            [inputTextWindowMessage setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Please enter the password for ‘%@’:", @"Please enter the password"), [path lastPathComponent]]];
             [inputTextWindowSecureTextField setStringValue:@""];
             [inputTextWindowSecureTextField selectText:nil];
 

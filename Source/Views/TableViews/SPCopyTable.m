@@ -1368,7 +1368,6 @@ NSString *kHeader     = @"HEADER";
     }
 
     NSString *inputAction = @"";
-    NSString *inputFallBackAction = @"";
     NSError *err = nil;
     NSString *uuid = [NSString stringWithNewUUID];
     NSString *bundleInputFilePath = [NSString stringWithFormat:@"%@_%@", [SPBundleTaskInputFilePath stringByExpandingTildeInPath], uuid];
@@ -1378,8 +1377,6 @@ NSString *kHeader     = @"HEADER";
 
     if([cmdData objectForKey:SPBundleFileInputSourceKey])
         inputAction = [[cmdData objectForKey:SPBundleFileInputSourceKey] lowercaseString];
-    if([cmdData objectForKey:SPBundleFileInputSourceFallBackKey])
-        inputFallBackAction = [[cmdData objectForKey:SPBundleFileInputSourceFallBackKey] lowercaseString];
 
     NSMutableDictionary *env = [NSMutableDictionary dictionary];
     [env setObject:[infoPath stringByDeletingLastPathComponent] forKey:SPBundleShellVariableBundlePath];

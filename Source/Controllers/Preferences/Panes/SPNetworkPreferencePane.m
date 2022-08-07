@@ -159,7 +159,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 			   context:NULL];
 
 	[_currentFilePanel beginSheetModalForWindow:[[NSApplication sharedApplication] keyWindow] completionHandler:^(NSInteger result) {
-		if(result == NSFileHandlingPanelOKButton) [self->sshClientPath setStringValue:[[self->_currentFilePanel URL] path]];
+		if(result == NSModalResponseOK) [self->sshClientPath setStringValue:[[self->_currentFilePanel URL] path]];
 		
 		[self->prefs removeObserver:self forKeyPath:SPHiddenKeyFileVisibilityKey];
 		

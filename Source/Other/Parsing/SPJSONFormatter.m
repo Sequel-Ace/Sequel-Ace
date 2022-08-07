@@ -82,7 +82,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 		
 		//save ourselves the overhead of creating an NSString if we already know what it will contain
 		NSString *curTokenString;
-		id freeMe = nil;
 		switch (curToken.tok) {
 			case JSON_TOK_CURLY_BRACE_OPEN:
 				curTokenString = @"{";
@@ -121,7 +120,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
 					curTokenString = newTokenString;
 				}
-				freeMe = curTokenString;
 		}
 		
 		[formatted appendString:curTokenString];
@@ -164,7 +162,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 		
 		//save ourselves the overhead of creating an NSString from input if we already know what it will contain
 		NSString *curTokenString;
-		id freeMe = nil;
 		switch (curToken.tok) {
 			case JSON_TOK_CURLY_BRACE_OPEN:
 				curTokenString = @"{";
@@ -203,7 +200,6 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
 					curTokenString = newTokenString;
 				}
-				freeMe = curTokenString;
 		}
 		
 		[unformatted appendString:curTokenString];
