@@ -47,7 +47,6 @@
 
 	id encodingPopUp;
 
-	NSURL *_sessionURL;
 	NSMutableDictionary *_spfSessionDocData;
 
 	NSMutableArray *runningActivitiesArray;
@@ -85,10 +84,8 @@
 // Getters
 - (SPPreferenceController *)preferenceController;
 - (SPDatabaseDocument *)frontDocument;
-- (NSURL *)sessionURL;
 - (NSDictionary *)spfSessionDocData;
 
-- (void)setSessionURL:(NSString *)urlString;
 - (void)setSpfSessionDocData:(NSDictionary *)data;
 
 // Others

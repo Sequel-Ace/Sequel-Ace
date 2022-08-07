@@ -87,8 +87,7 @@ extension SPWindowController: NSWindowDelegate {
             return false
         }
 
-        if let appDelegate = NSApp.delegate as? SPAppController, appDelegate.sessionURL() != nil {
-            appDelegate.setSessionURL(nil)
+        if let appDelegate = NSApp.delegate as? SPAppController{
             appDelegate.setSpfSessionDocData(nil)
         }
         return true
