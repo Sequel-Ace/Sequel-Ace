@@ -3299,7 +3299,7 @@
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
 
 /* downloading new version bytes of bytes done */
-"%@ of %@" = "%@ of %@";
+"%@ of %@" = "%@ kayıt içerisinden %@";
 
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";

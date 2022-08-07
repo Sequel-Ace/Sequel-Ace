@@ -60,28 +60,28 @@
 "%@; Cancelled after %@" = "%1$@; Annullato dopo %2$@";
 
 /* text showing multiple queries were cancelled */
-"%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
+"%@; Cancelled in query %ld, after %@" = "%1$@; Cancellato nella query %2$ld, dopo %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL dice: %2$@";
 
 /* favorite singular label (%d == 1) */
-"%lu favorite" = "%lu favorite";
+"%lu favorite" = "%lu preferito";
 
 /* favorites plural label (%d != 1) */
-"%lu favorites" = "%lu favorites";
+"%lu favorites" = "%lu preferiti";
 
 /* favorite group singular label (%d == 1) */
-"%lu group" = "%lu group";
+"%lu group" = "%lu gruppo";
 
 /* favorite groups plural label (%d != 1) */
-"%lu groups" = "%lu groups";
+"%lu groups" = "%lu gruppi";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
-"%ld additional rows were removed!" = "%ld additional rows were removed!";
+"%ld additional rows were removed!" = "%ld colonne addizionali sono state rimosse!";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld of %2$lu record(s)";
+"%ld of %lu record(s)" = "%1$ld di %2$lu risultato/i";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
 "%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";

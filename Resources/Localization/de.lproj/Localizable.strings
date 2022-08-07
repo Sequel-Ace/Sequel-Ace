@@ -1569,7 +1569,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Incompatible encoding in SQL file" = "Inkompatibler Zeichensatz der SQL Datei";
 
 /* header for blank info pane */
-"INFORMATION" = "INFORMATION";
+"INFORMATION" = "INFORMATIONEN";
 
 /* New Table Sheet : Table Collation Dropdown : Default inherited from database
  New Table Sheet : Table Encoding Dropdown : Default inherited from database */

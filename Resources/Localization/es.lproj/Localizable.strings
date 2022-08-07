@@ -2685,7 +2685,7 @@
 "In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In these files:\n\n%@\n\nDo you still want to install the bundle?";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file %@ contains ‘%@’ data." = "The chosen file “%1$@” contains ‘%2$@’ data.";
+"The chosen file %@ contains ‘%@’ data." = "El archivo elegido “%1$@” contiene ‘%2$@’ datos.";
 
 /* the color theme ‘%@’ already exists. */
 "The color theme ‘%@’ already exists." = "El tema de color ‘%@’ ya existe.";
