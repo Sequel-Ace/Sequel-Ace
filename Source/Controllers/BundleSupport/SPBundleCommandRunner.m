@@ -75,7 +75,6 @@
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 
 	BOOL userTerminated = NO;
-	BOOL redirectForScript = NO;
 	BOOL isDir = NO;
 
 	NSMutableArray *scriptHeaderArguments = [NSMutableArray array];
@@ -111,7 +110,6 @@
 			NSError *writeError = nil;
 			[script writeToFile:scriptFilePath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
 			if(writeError == nil) {
-				redirectForScript = YES;
 				[scriptHeaderArguments addObject:scriptFilePath];
 			} else {
 				NSBeep();
@@ -123,7 +121,6 @@
 		NSError *writeError = nil;
 		[command writeToFile:scriptFilePath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
 		if(writeError == nil) {
-			redirectForScript = YES;
 			[scriptHeaderArguments addObject:scriptFilePath];
 		} else {
 			NSBeep();

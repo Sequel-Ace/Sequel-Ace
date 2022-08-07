@@ -206,7 +206,6 @@
      *
      */
 
-    BOOL sqlModeIsValid = NO;
     //fetch old sql mode to restore it later
     {
         SPMySQLResult *result = [connection queryString:@"SHOW VARIABLES LIKE 'sql_mode'"];
@@ -221,14 +220,10 @@
     if([@"" isEqualToString:oldSqlMode]) {
         // the current sql_mode is already the one we want (empty string), no need to change+revert it
         oldSqlMode = nil;
-        sqlModeIsValid = YES;
     }
     else {
         [connection queryString:@"SET SQL_MODE=''"]; //mysqldump uses a conditional comment for 40100 here, but we want to see the error, since it can't simply be ignored (also ANSI mode is supported before 4.1)
-        if (![connection queryErrored]) {
-            sqlModeIsValid = YES;
-        }
-        else {
+        if ([connection queryErrored]) {
             [errors appendFormat:@"%@ (%@)\n", NSLocalizedString(@"The server's SQL_MODE could not be changed to one suitable for export. The export may be missing important details or may not be importable at all!", @"sql export : 'set @@sql_mode' query failed message"), [connection lastErrorMessage]];
             [metaString appendFormat:@"# SET SQL_MODE Error: %@\n\n\n", [connection lastErrorMessage]];
             //if we couldn't change it, we don't need to restore it either
@@ -238,7 +233,7 @@
     // * There is no point in writing out that the file should use a specific SQL mode when we don't even know which one was active during export.
     // * Triggers, procs/funcs have their own SQL_MODE which is still set/reset below, though.
     //
-    // But an unknown SQL_MODE (!sqlModeIsValid) could perhaps still affect how MySQL returns the "SHOW CREATE…"
+    // But an unknown SQL_MODE could perhaps still affect how MySQL returns the "SHOW CREATE…"
     // data for those objects (like it does for "SHOW CREATE TABLE") possibly rendering them invalid (need to check that),
     // so it may be better to flat out refuse to export schema object DDL if we don't have a valid sql_mode.
 

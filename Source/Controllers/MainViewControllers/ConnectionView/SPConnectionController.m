@@ -399,8 +399,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)chooseKeyLocation:(NSButton *)sender
 {
-	NSString *directoryPath = nil;
-	NSString *filePath = nil;
 	NSView *accessoryView = nil;
 
 	// If the button was toggled off, ensure editing is ended
@@ -419,8 +417,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			return;
 		}
 
-		filePath = nil;
-		directoryPath = @"~/.ssh";
 		accessoryView = sshKeyLocationHelp;
 	}
 	// SSL key file location:

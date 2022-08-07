@@ -686,9 +686,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) clearTableValues
 {
-	SPDataStorage *tableValuesTransition;
-
-	tableValuesTransition = tableValues;
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	tableValues = [[SPDataStorage alloc] init];
@@ -3797,11 +3794,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					return [NSString stringWithFormat:@"0x%@…", [[(NSData *)value subdataWithRange:NSMakeRange(0, 255)] dataToHexString]];
 				}
 				return [NSString stringWithFormat:@"0x%@", [(NSData *)value dataToHexString]];
-			}
-
-			pthread_mutex_t *fieldEditorCheckLock = NULL;
-			if (isWorking) {
-				fieldEditorCheckLock = &tableValuesLock;
 			}
 
 			// Unless we're editing, always retrieve the short string representation, truncating the value where necessary
