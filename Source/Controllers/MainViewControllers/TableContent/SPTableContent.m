@@ -4242,8 +4242,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Disable row selection while the document is working.
  */
-- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)rowIndex
-{
+- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)rowIndex {
+    if (fieldEditor) {
+        return NO;
+    }
 	return tableView == tableContentView ? tableRowsSelectable : YES;
 }
 
