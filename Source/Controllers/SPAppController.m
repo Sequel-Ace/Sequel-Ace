@@ -783,7 +783,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             // Loop through all defined tabs / windows
             for (NSDictionary *tab in [window objectForKey:@"tabs"]) {
 
+                // Add new the tab
                 SPWindowController *newWindowTabController = [self.tabManager newWindowForTab];
+                [newWindowTabController.window setFrameFromString:[window objectForKey:@"frame"]];
+
                 NSString *fileName = nil;
                 BOOL isBundleFile = NO;
 
@@ -791,32 +794,24 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 // otherwise construct the releative path for the passed spfs file
                 if ([[tab objectForKey:@"isAbsolutePath"] boolValue]) {
                     fileName = [tab objectForKey:@"path"];
-                }
-                else {
+                } else {
                     fileName = [NSString stringWithFormat:@"%@/Contents/%@", filePath, [tab objectForKey:@"path"]];
                     isBundleFile = YES;
                 }
 
                 // Security check if file really exists
                 if ([fileManager fileExistsAtPath:fileName]) {
-
-                    // Add new the tab
-                    if(newWindowTabController) {
-
-                        if ([[newWindowTabController window] isMiniaturized]) {
-                            [[newWindowTabController window] deminiaturize:self];
-                        }
-
-                        [newWindowTabController.window setFrameFromString:[window objectForKey:@"frame"]];
-
-                        [newWindowTabController.databaseDocument setIsSavedInBundle:isBundleFile];
-                        if (![newWindowTabController.databaseDocument setStateFromConnectionFile:fileName]) {
-                            break;
-                        }
+                    if ([[newWindowTabController window] isMiniaturized]) {
+                        [[newWindowTabController window] deminiaturize:self];
                     }
 
-                }
-                else {
+
+                    [newWindowTabController.databaseDocument setIsSavedInBundle:isBundleFile];
+                    if (![newWindowTabController.databaseDocument setStateFromConnectionFile:fileName]) {
+                        break;
+                    }
+
+                } else {
                     SPLog(@"Bundle file “%@” does not exists", fileName);
                     NSBeep();
                 }
@@ -827,8 +822,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
 }
 
-- (void)openColorThemeFileAtPath:(NSString *)filePath
-{
+- (void)openColorThemeFileAtPath:(NSString *)filePath {
     NSString *themePath = [fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
 
     if (!themePath) return;
@@ -1380,11 +1374,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     return _spfSessionDocData;
 }
 
-- (void)setSpfSessionDocData:(NSDictionary *)data
-{
-    [_spfSessionDocData removeAllObjects];
-    if(data)
-        [_spfSessionDocData addEntriesFromDictionary:data];
+- (void)setSpfSessionDocData:(NSDictionary *)data {
+    if (data) {
+        _spfSessionDocData = [data mutableCopy];
+    } else {
+        _spfSessionDocData = [NSMutableDictionary new];
+    }
 }
 
 #pragma mark -
