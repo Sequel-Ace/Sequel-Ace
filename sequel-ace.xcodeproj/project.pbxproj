@@ -6,20 +6,6 @@
 	objectVersion = 54;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		517E44E6257A8FAA00ED333B /* Update Strings */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 517E44E7257A8FAA00ED333B /* Build configuration list for PBXAggregateTarget "Update Strings" */;
-			buildPhases = (
-				517E44F4257A8FB700ED333B /* ShellScript */,
-			);
-			dependencies = (
-			);
-			name = "Update Strings";
-			productName = "Update Strings";
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
@@ -2527,9 +2513,6 @@
 				LastUpgradeCheck = 1210;
 				ORGANIZATIONNAME = "Sequel-Ace";
 				TargetAttributes = {
-					517E44E6257A8FAA00ED333B = {
-						CreatedOnToolsVersion = 12.2;
-					};
 					8D15AC270486D014006FF6A4 = {
 						LastSwiftMigration = 1200;
 					};
@@ -2580,7 +2563,6 @@
 				380F4ED80FC0B50500B0BFD7 /* Unit Tests */,
 				58CDB3350FCE13C900F8ACA3 /* SequelAceTunnelAssistant */,
 				58B9096011C3A42B000826E5 /* xibLocalizationPostprocessor */,
-				517E44E6257A8FAA00ED333B /* Update Strings */,
 			);
 		};
 /* End PBXProject section */
@@ -2799,23 +2781,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"Initializing upload symbols for \\\"${CONFIGURATION}\\\" build\"\n    \"${PROJECT_DIR}/Scripts/upload_symbols.sh\" \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
-		};
-		517E44F4257A8FB700ED333B /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "cd $SCRIPTS_DIR\n./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3256,42 +3221,6 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Distribution;
-		};
-		517E44E8257A8FAA00ED333B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		517E44E9257A8FAA00ED333B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		517E44EA257A8FAA00ED333B /* Distribution */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Distribution;
-		};
-		517E44EB257A8FAA00ED333B /* Beta */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Beta;
 		};
 		588593F00F7AEB6900ED0E67 /* Distribution */ = {
 			isa = XCBuildConfiguration;
@@ -4069,17 +3998,6 @@
 				380F4EDC0FC0B50600B0BFD7 /* Release */,
 				380F4EDD0FC0B50600B0BFD7 /* Distribution */,
 				96BC47C92500A84F003C8105 /* Beta */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		517E44E7257A8FAA00ED333B /* Build configuration list for PBXAggregateTarget "Update Strings" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				517E44E8257A8FAA00ED333B /* Debug */,
-				517E44E9257A8FAA00ED333B /* Release */,
-				517E44EA257A8FAA00ED333B /* Distribution */,
-				517E44EB257A8FAA00ED333B /* Beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
