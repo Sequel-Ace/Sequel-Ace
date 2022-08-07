@@ -446,6 +446,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
     // Loop through all windows / tabs
+    // TODO: Handle window vs. tab - for now we store all windows into one as tabs
     for (SPWindowController *windowController in [self.tabManager windowControllers] ) {
 
         // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
@@ -776,6 +777,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [self setSpfSessionDocData:spfsDocData];
 
         // Loop through each defined window in reversed order to reconstruct the last active window
+        // TODO: Handle window vs. tab - for now we store all windows into one as tabs
         for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
 
             // Loop through all defined tabs / windows
