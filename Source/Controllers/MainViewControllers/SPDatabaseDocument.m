@@ -2657,7 +2657,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [panel setCanSelectHiddenExtension:YES];
 
     // Save Query...
-    if (sender != nil && ([sender tag] == SPMainMenuFileSaveQuery || [sender tag] == SPMainMenuFileSaveQueryAs)) {
+    if (sender != nil && [sender tag] == SPMainMenuFileSaveQuery) {
 
         // If Save was invoked, check whether the file was previously opened, and if so save without the panel
         if ([sender tag] == SPMainMenuFileSaveQuery && [[[self sqlFileURL] path] length]) {
@@ -2688,8 +2688,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         [encodingPopUp setEnabled:YES];
     }
-    // Save As… or Save
-    else if (sender == nil || [sender tag] == SPMainMenuFileSaveConnection || [sender tag] == SPMainMenuFileSaveConnectionAs) {
+    // Save Connection
+    else if (sender == nil || [sender tag] == SPMainMenuFileSaveConnection) {
 
         // If Save was invoked check for fileURL and Untitled docs and save the spf file without save panel
         // otherwise ask for file name
@@ -2698,91 +2698,41 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        // Load accessory nib each time.
-        // Note that the top-level objects aren't released automatically, but are released when the panel ends.
-        if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
-            NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
-            return;
-        }
-
         // Save current session (open connection windows as SPF file)
         [panel setAllowedFileTypes:@[SPFileExtensionDefault]];
 
-        //Restore accessory view settings if possible
-        if ([spfDocData objectForKey:@"save_password"]) {
-            [saveConnectionSavePassword setState:[[spfDocData objectForKey:@"save_password"] boolValue]];
-        }
-        if ([spfDocData objectForKey:@"auto_connect"]) {
-            [saveConnectionAutoConnect setState:[[spfDocData objectForKey:@"auto_connect"] boolValue]];
-        }
-        if ([spfDocData objectForKey:@"encrypted"]) {
-            [saveConnectionEncrypt setState:[[spfDocData objectForKey:@"encrypted"] boolValue]];
-        }
-        if ([spfDocData objectForKey:@"include_session"]) {
-            [saveConnectionIncludeData setState:[[spfDocData objectForKey:@"include_session"] boolValue]];
-        }
-        if ([[spfDocData objectForKey:@"save_editor_content"] boolValue]) {
-            [saveConnectionIncludeQuery setState:[[spfDocData objectForKey:@"save_editor_content"] boolValue]];
-        }
-        else {
-            [saveConnectionIncludeQuery setState:NSOnState];
-        }
+        [self prepareSaveAccessoryViewWithPanel:panel];
 
-        [saveConnectionIncludeQuery setEnabled:([[[[customQueryInstance valueForKeyPath:@"textView"] textStorage] string] length])];
+        [self.saveConnectionIncludeQuery setEnabled:([[[[customQueryInstance valueForKeyPath:@"textView"] textStorage] string] length])];
 
         // Update accessory button states
         [self validateSaveConnectionAccessory:nil];
 
         // TODO note: it seems that one has problems with a NSSecureTextField inside an accessory view - ask HansJB
-        [[saveConnectionEncryptString cell] setControlView:saveConnectionAccessory];
-        [panel setAccessoryView:saveConnectionAccessory];
+        [[self.saveConnectionEncryptString cell] setControlView:self.saveConnectionAccessory];
+        [panel setAccessoryView:self.saveConnectionAccessory];
 
         // Set file name
         filename = ([[[self fileURL] path] length]) ? [self displayName] : [NSString stringWithFormat:@"%@", [self name]];
 
         contextInfo = sender == nil ? @"saveSPFfileAndClose" : @"saveSPFfile";
     }
-    // Save Session or Save Session As...
-    else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession || [sender tag] == SPMainMenuFileSaveSessionAs) {
-        // Load accessory nib each time.
-        // Note that the top-level objects aren't released automatically, but are released when the panel ends.
-        if (![NSBundle.mainBundle loadNibNamed:@"SaveSPFAccessory" owner:self topLevelObjects:nil]) {
-            NSLog(@"SaveSPFAccessory accessory dialog could not be loaded.");
-            return;
-        }
+    // Save Session
+    else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession) {
 
+        // Save current session (open connection windows as SPFS file)
         [panel setAllowedFileTypes:@[SPBundleFileExtension]];
 
-        NSDictionary *spfSessionData = [SPAppDelegate spfSessionDocData];
-
-        // Restore accessory view settings if possible
-        if ([spfSessionData objectForKey:@"save_password"]) {
-            [saveConnectionSavePassword setState:[[spfSessionData objectForKey:@"save_password"] boolValue]];
-        }
-        if ([spfSessionData objectForKey:@"auto_connect"]) {
-            [saveConnectionAutoConnect setState:[[spfSessionData objectForKey:@"auto_connect"] boolValue]];
-        }
-        if ([spfSessionData objectForKey:@"encrypted"]) {
-            [saveConnectionEncrypt setState:[[spfSessionData objectForKey:@"encrypted"] boolValue]];
-        }
-        if ([spfSessionData objectForKey:@"include_session"]) {
-            [saveConnectionIncludeData setState:[[spfSessionData objectForKey:@"include_session"] boolValue]];
-        }
-        if ([[spfSessionData objectForKey:@"save_editor_content"] boolValue]) {
-            [saveConnectionIncludeQuery setState:[[spfSessionData objectForKey:@"save_editor_content"] boolValue]];
-        }
-        else {
-            [saveConnectionIncludeQuery setState:YES];
-        }
+        [self prepareSaveAccessoryViewWithPanel:panel];
 
         // Update accessory button states
         [self validateSaveConnectionAccessory:nil];
-        [saveConnectionIncludeQuery setEnabled:YES];
+        [self.saveConnectionIncludeQuery setEnabled:YES];
 
         // TODO note: it seems that one has problems with a NSSecureTextField
         // inside an accessory view - ask HansJB
-        [[saveConnectionEncryptString cell] setControlView:saveConnectionAccessory];
-        [panel setAccessoryView:saveConnectionAccessory];
+        [[self.saveConnectionEncryptString cell] setControlView:self.saveConnectionAccessory];
+        [panel setAccessoryView:self.saveConnectionAccessory];
 
         // Set file name
         filename = [NSString stringWithFormat:NSLocalizedString(@"Session",@"Initial filename for 'Save session' file")];
@@ -2796,7 +2746,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [panel setNameFieldStringValue:filename];
 
     [panel beginSheetModalForWindow:[self.parentWindowController window] completionHandler:^(NSInteger returnCode) {
-        [self saveConnectionPanelDidEnd:panel returnCode:returnCode contextInfo:(__bridge void *)(contextInfo)];
+        [self saveConnectionPanelDidEnd:panel returnCode:returnCode contextInfo:contextInfo];
     }];
 }
 /**
@@ -2805,20 +2755,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (IBAction)validateSaveConnectionAccessory:(id)sender
 {
     // [saveConnectionAutoConnect setEnabled:([saveConnectionSavePassword state] == NSOnState)];
-    [saveConnectionSavePasswordAlert setHidden:([saveConnectionSavePassword state] == NSOffState)];
+    [self.saveConnectionSavePasswordAlert setHidden:([self.saveConnectionSavePassword state] == NSOffState)];
 
     // If user checks the Encrypt check box set focus to password field
-    if (sender == saveConnectionEncrypt && [saveConnectionEncrypt state] == NSOnState) [saveConnectionEncryptString selectText:sender];
+    if (sender == self.saveConnectionEncrypt && [self.saveConnectionEncrypt state] == NSOnState) [self.saveConnectionEncryptString selectText:sender];
 
     // Unfocus saveConnectionEncryptString
-    if (sender == saveConnectionEncrypt && [saveConnectionEncrypt state] == NSOffState) {
+    if (sender == self.saveConnectionEncrypt && [self.saveConnectionEncrypt state] == NSOffState) {
         // [saveConnectionEncryptString setStringValue:[saveConnectionEncryptString stringValue]];
         // TODO how can one make it better ?
-        [[saveConnectionEncryptString window] makeFirstResponder:[[saveConnectionEncryptString window] initialFirstResponder]];
+        [[self.saveConnectionEncryptString window] makeFirstResponder:[[self.saveConnectionEncryptString window] initialFirstResponder]];
     }
 }
 
-- (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
+- (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo
 {
     [panel orderOut:nil]; // by default OS X hides the panel only after the current method is done
 
@@ -2828,7 +2778,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSError *error = nil;
 
         // Save file as SQL file by using the chosen encoding
-        if (contextInfo == @"saveSQLfile") {
+        if ([contextInfo isEqualToString:@"saveSQLfile"]) {
 
             [prefs setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
             [prefs setObject:[fileName lastPathComponent] forKey:@"lastSqlFileName"];
@@ -2846,26 +2796,26 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
 
         // Save connection and session as SPF file
-        } else if(contextInfo == @"saveSPFfile" || contextInfo == @"saveSPFfileAndClose") {
+        } else if([contextInfo isEqualToString:@"saveSPFfile"] || [contextInfo isEqualToString:@"saveSPFfileAndClose"]) {
             // Save changes of saveConnectionEncryptString
-            [[saveConnectionEncryptString window] makeFirstResponder:[[saveConnectionEncryptString window] initialFirstResponder]];
+            [[self.saveConnectionEncryptString window] makeFirstResponder:[[self.saveConnectionEncryptString window] initialFirstResponder]];
 
             [self saveDocumentWithFilePath:fileName inBackground:NO onlyPreferences:NO contextInfo:nil];
 
-            if (contextInfo == @"saveSPFfileAndClose") {
+            if ([contextInfo isEqualToString:@"saveSPFfileAndClose"]) {
                 [self closeAndDisconnect];
             }
 
         // Save all open windows including all tabs as session
-        } else if (contextInfo == @"saveSession" || contextInfo == @"saveAsSession") {
+        } else if ([contextInfo isEqualToString:@"saveSession"] || [contextInfo isEqualToString:@"saveAsSession"]) {
             NSDictionary *userInfo = @{
-                @"contextInfo": (__bridge NSString *)contextInfo,
-                @"encrypted": [NSNumber numberWithBool:[saveConnectionEncrypt state] == NSOnState],
-                @"saveConnectionEncryptString": [saveConnectionEncryptString stringValue],
-                @"auto_connect": [NSNumber numberWithBool:[saveConnectionAutoConnect state] == NSOnState],
-                @"save_password": [NSNumber numberWithBool:[saveConnectionSavePassword state] == NSOnState],
-                @"include_session": [NSNumber numberWithBool:[saveConnectionIncludeData state] == NSOnState],
-                @"save_editor_content": [NSNumber numberWithBool:[saveConnectionIncludeQuery state] == NSOnState]
+                @"contextInfo": contextInfo,
+                @"encrypted": [NSNumber numberWithBool:[self.saveConnectionEncrypt state] == NSOnState],
+                @"saveConnectionEncryptString": [self.saveConnectionEncryptString stringValue],
+                @"auto_connect": [NSNumber numberWithBool:[self.saveConnectionAutoConnect state] == NSOnState],
+                @"save_password": [NSNumber numberWithBool:[self.saveConnectionSavePassword state] == NSOnState],
+                @"include_session": [NSNumber numberWithBool:[self.saveConnectionIncludeData state] == NSOnState],
+                @"save_editor_content": [NSNumber numberWithBool:[self.saveConnectionIncludeQuery state] == NSOnState]
             };
             [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentSaveToSPFNotification object:fileName userInfo:userInfo];
         }
@@ -2883,16 +2833,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Store save panel settings or take them from spfDocData
     if (!saveInBackground && contextInfo == nil) {
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionEncrypt state]==NSOnState) ? YES : NO ] forKey:@"encrypted"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionEncrypt state]==NSOnState) ? YES : NO ] forKey:@"encrypted"];
         if([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
-            [spfDocData_temp setObject:[saveConnectionEncryptString stringValue] forKey:@"e_string"];
+            [spfDocData_temp setObject:[self.saveConnectionEncryptString stringValue] forKey:@"e_string"];
         }
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionAutoConnect state]==NSOnState) ? YES : NO ] forKey:@"auto_connect"];
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionSavePassword state]==NSOnState) ? YES : NO ] forKey:@"save_password"];
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionIncludeData state]==NSOnState) ? YES : NO ] forKey:@"include_session"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionAutoConnect state]==NSOnState) ? YES : NO ] forKey:@"auto_connect"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionSavePassword state]==NSOnState) ? YES : NO ] forKey:@"save_password"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionIncludeData state]==NSOnState) ? YES : NO ] forKey:@"include_session"];
         [spfDocData_temp setObject:@NO forKey:@"save_editor_content"];
         if([[[[customQueryInstance valueForKeyPath:@"textView"] textStorage] string] length]) {
-            [spfDocData_temp setObject:[NSNumber numberWithBool:([saveConnectionIncludeQuery state] == NSOnState) ? YES : NO] forKey:@"save_editor_content"];
+            [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionIncludeQuery state] == NSOnState) ? YES : NO] forKey:@"save_editor_content"];
         }
     }
     else {
@@ -5050,8 +5000,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     else if (object == databaseRenameNameField) {
         [renameDatabaseButton setEnabled:([[databaseRenameNameField stringValue] length] > 0 && ![allDatabases containsObject: [databaseRenameNameField stringValue]])];
     }
-    else if (object == saveConnectionEncryptString) {
-        [saveConnectionEncryptString setStringValue:[saveConnectionEncryptString stringValue]];
+    else if (object == self.saveConnectionEncryptString) {
+        [self.saveConnectionEncryptString setStringValue:[self.saveConnectionEncryptString stringValue]];
     }
 }
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19455" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21219" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19455"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21219"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -130,33 +130,16 @@
                                     <action selector="saveConnectionSheet:" target="-1" id="964"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Save Connection As…" tag="1005" alternate="YES" keyEquivalent="S" toolTip="Save active connection as SPF file" id="965">
-                                <connections>
-                                    <action selector="saveConnectionSheet:" target="-1" id="1120"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Save Session" tag="1020" keyEquivalent="s" toolTip="Save all opened connection windows and tabs respectively" id="1116">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" option="YES" command="YES"/>
                                 <connections>
                                     <action selector="saveConnectionSheet:" target="-1" id="1121"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Save Session As…" tag="1021" alternate="YES" keyEquivalent="S" toolTip="Save all opened connection windows and tabs respectively as SPFS file" id="1118">
-                                <modifierMask key="keyEquivalentModifierMask" control="YES" option="YES" command="YES"/>
-                                <connections>
-                                    <action selector="saveConnectionSheet:" target="-1" id="1122"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Save Query" tag="1006" keyEquivalent="s" toolTip="Save Custom Query editor content as SQL file" id="944">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
                                 <connections>
                                     <action selector="saveConnectionSheet:" target="-1" id="949"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Save Query As…" tag="1008" alternate="YES" keyEquivalent="S" toolTip="Save Custom Query editor content as SQL file" id="1234">
-                                <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
-                                <connections>
-                                    <action selector="saveConnectionSheet:" target="-1" id="1235"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="79">
