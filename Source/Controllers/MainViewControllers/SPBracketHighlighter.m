@@ -45,16 +45,12 @@
 @implementation SPBracketHighlighter
 
 -(instancetype)initWithTextView:(NSTextView *)textView {
-	self.textView = textView;
-	self.pos1 = NSNotFound;
-	self.pos2 = NSNotFound;
-	if (@available(macOS 10.12, *)) {
-		self.highlightColor = [NSColor systemTealColor];
-	} else {
-		self.highlightColor = [NSColor systemYellowColor];
-	}
-	self.enabled = YES;
-	return self;
+    self.textView = textView;
+    self.pos1 = NSNotFound;
+    self.pos2 = NSNotFound;
+    self.highlightColor = [NSColor systemTealColor];
+    self.enabled = YES;
+    return self;
 }
 
 -(void)bracketHighlight:(NSInteger)position inRange:(NSRange)range {
