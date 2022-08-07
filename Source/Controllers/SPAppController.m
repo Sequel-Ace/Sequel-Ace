@@ -422,21 +422,17 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // retrieve save panel data for passing them to each doc
     NSMutableDictionary *spfDocData_temp = [NSMutableDictionary dictionary];
-    if ([contextInfo isEqualTo:@"saveAsSession"]) {
-        [spfDocData_temp addEntriesFromDictionary:[self spfSessionDocData]];
-    } else {
-        [spfDocData_temp setObject:encrypted forKey:@"encrypted"];
-        if ([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
-            [spfDocData_temp setObject:saveConnectionEncryptString forKey:@"e_string"];
-        }
-        [spfDocData_temp setObject:auto_connect forKey:@"auto_connect"];
-        [spfDocData_temp setObject:save_password forKey:@"save_password"];
-        [spfDocData_temp setObject:include_session forKey:@"include_session"];
-        [spfDocData_temp setObject:save_editor_content forKey:@"save_editor_content"];
-
-        // Save the session's accessory view settings
-        [self setSpfSessionDocData:spfDocData_temp];
+    [spfDocData_temp setObject:encrypted forKey:@"encrypted"];
+    if ([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
+        [spfDocData_temp setObject:saveConnectionEncryptString forKey:@"e_string"];
     }
+    [spfDocData_temp setObject:auto_connect forKey:@"auto_connect"];
+    [spfDocData_temp setObject:save_password forKey:@"save_password"];
+    [spfDocData_temp setObject:include_session forKey:@"include_session"];
+    [spfDocData_temp setObject:save_editor_content forKey:@"save_editor_content"];
+
+    // Save the session's accessory view settings
+    [self setSpfSessionDocData:spfDocData_temp];
 
     [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"encrypted"] boolValue]] forKey:@"encrypted"];
     [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"auto_connect"] boolValue]] forKey:@"auto_connect"];
@@ -446,11 +442,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [info setObject:@1 forKey:SPFVersionKey];
     [info setObject:@"connection bundle" forKey:SPFFormatKey];
 
-    // Loop through all windows
-    for (SPWindowController *windowController in [self.tabManager windowControllers]) {
+    NSMutableArray *tabs = [NSMutableArray array];
+    NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
-        // First window is always the currently key window
-        NSMutableDictionary *win = [NSMutableDictionary dictionary];
+    // Loop through all windows / tabs
+    for (SPWindowController *windowController in [self.tabManager windowControllers] ) {
 
         // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
         if (![windowController.databaseDocument mySQLVersion]) continue;
@@ -472,9 +468,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [tabData setObject:@YES forKey:@"isAbsolutePath"];
             [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
         }
+        [tabs addObject:tabData];
         [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
-        [windows addObject:win];
     }
+    [win setObject:tabs forKey:@"tabs"];
+    [windows addObject:win];
     [info setObject:windows forKey:@"windows"];
 
     error = nil;
@@ -764,7 +762,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return;
     }
 
-    if([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
+    if ([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
 
         // Retrieve Save Panel accessory view data for remembering them globally
         NSMutableDictionary *spfsDocData = [NSMutableDictionary dictionary];
@@ -779,22 +777,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         // Loop through each defined window in reversed order to reconstruct the last active window
         for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
-            // Create a new window controller, and set up a new connection view within it.
 
-            SPWindowController *newWindowController = [self.tabManager newWindowForWindow];
-            NSWindow *newWindow = [newWindowController window];
+            // Loop through all defined tabs / windows
+            for (NSDictionary *tab in [window objectForKey:@"tabs"]) {
 
-            // Set the window controller as the window's delegate
-            [newWindow setDelegate:newWindowController];
-
-            usleep(1000);
-
-            // Show the window
-            [newWindowController showWindow:self];
-
-            // Loop through all defined tabs for each window
-            for (NSDictionary *tab in [window objectForKey:@"tabs"])
-            {
+                SPWindowController *newWindowTabController = [self.tabManager newWindowForTab];
                 NSString *fileName = nil;
                 BOOL isBundleFile = NO;
 
@@ -812,12 +799,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 if ([fileManager fileExistsAtPath:fileName]) {
 
                     // Add new the tab
-                    if(newWindowController) {
+                    if(newWindowTabController) {
 
-                        if ([[newWindowController window] isMiniaturized]) [[newWindowController window] deminiaturize:self];
+                        if ([[newWindowTabController window] isMiniaturized]) {
+                            [[newWindowTabController window] deminiaturize:self];
+                        }
 
-                        [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
-                        if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
+                        [newWindowTabController.window setFrameFromString:[window objectForKey:@"frame"]];
+
+                        [newWindowTabController.databaseDocument setIsSavedInBundle:isBundleFile];
+                        if (![newWindowTabController.databaseDocument setStateFromConnectionFile:fileName]) {
                             break;
                         }
                     }

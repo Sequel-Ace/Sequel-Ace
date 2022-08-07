@@ -2807,7 +2807,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             }
 
         // Save all open windows including all tabs as session
-        } else if ([contextInfo isEqualToString:@"saveSession"] || [contextInfo isEqualToString:@"saveAsSession"]) {
+        } else if ([contextInfo isEqualToString:@"saveSession"]) {
             NSDictionary *userInfo = @{
                 @"contextInfo": contextInfo,
                 @"encrypted": [NSNumber numberWithBool:[self.saveConnectionEncrypt state] == NSOnState],
