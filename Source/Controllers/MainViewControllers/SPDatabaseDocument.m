@@ -2712,8 +2712,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[self.saveConnectionEncryptString cell] setControlView:self.saveConnectionAccessory];
         [panel setAccessoryView:self.saveConnectionAccessory];
 
-        // Set file name
-        filename = ([[[self fileURL] path] length]) ? [self displayName] : [NSString stringWithFormat:@"%@", [self name]];
+        // Set file name to the name of the connection
+        filename = [self name];
 
         contextInfo = sender == nil ? @"saveSPFfileAndClose" : @"saveSPFfile";
     }
@@ -2735,7 +2735,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [panel setAccessoryView:self.saveConnectionAccessory];
 
         // Set file name
-        filename = [NSString stringWithFormat:NSLocalizedString(@"Session",@"Initial filename for 'Save session' file")];
+        filename = [NSString stringWithFormat:NSLocalizedString(@"Session", @"Initial filename for 'Save session' file")];
 
         contextInfo = @"saveSession";
     }
