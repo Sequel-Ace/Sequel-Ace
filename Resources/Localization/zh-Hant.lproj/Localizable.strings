@@ -3356,7 +3356,7 @@
 "PINNED" = "PINNED";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "複製資料表名稱";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
 "LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
