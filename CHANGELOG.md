@@ -1,3 +1,22 @@
+## [3.5.3]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+- ebeb253c, Update MAMP Documentation regarding settings to connect 
+
+### Removed
+
+
+### Infra
+- ed74fc85, Fix preferences path, keychain path, formatting  
+- b10de447, [CLEANUP] Migration HowTo 
+- c5ecac7e, chore: Included githubactions in the dependabot config 
+
 ## [3.5.2]
 
 ### Added
