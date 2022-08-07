@@ -2822,7 +2822,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     [panel orderOut:nil]; // by default OS X hides the panel only after the current method is done
 
-    if (returnCode == NSFileHandlingPanelOKButton) {
+    if (returnCode == NSModalResponseOK) {
 
         NSString *fileName = [[panel URL] path];
         NSError *error = nil;
