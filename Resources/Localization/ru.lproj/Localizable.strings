@@ -1390,7 +1390,7 @@
 "File read error" = "Ошибка чтения файла";
 
 /* All export files already exist explanatory text */
-"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"Files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "Файлов с теми же именами уже существует в целевой папке. Их замена перезапишет текущее содержимое.";
 
 /* filter label */
 "Filter" = "Отфильтровать";
