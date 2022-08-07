@@ -1,21 +1,3 @@
-## [4.0.0]
-
-### Added
-
-
-### Fixed
-
-
-### Changed
-
-
-### Removed
-
-- **Breaking change**: Dropped support of macOS 10.12 [#1508](https://github.com/Sequel-Ace/Sequel-Ace/pull/1508)
-
-
-### Infra
-
 ## [3.5.2]
 
 ### Added
