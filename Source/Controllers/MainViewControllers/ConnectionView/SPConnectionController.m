@@ -103,8 +103,6 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 
 - (void)_startEditingConnection;
 
-- (void)_documentWillClose:(NSNotification *)notification;
-
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
 
 #pragma mark - SPConnectionControllerDelegate

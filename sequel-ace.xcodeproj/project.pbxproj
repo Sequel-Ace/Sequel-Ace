@@ -1398,22 +1398,22 @@
 		173E70A6107FF61D008733C9 /* Main View Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				17D38FC2127B0C9500672B13 /* Connection View */,
 				1AF5A25D250AC401009885DF /* SPBracketHighlighter.h */,
 				1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */,
 				1AF5A260250AC401009885DF /* SPBrackets.h */,
 				1AF5A25F250AC401009885DF /* SPBrackets.m */,
 				17E641480EF01EF6001BC333 /* SPCustomQuery.h */,
 				17E641490EF01EF6001BC333 /* SPCustomQuery.m */,
-				177E7A210FCB6A2E00E9E122 /* SPExtendedTableInfo.h */,
-				177E7A220FCB6A2E00E9E122 /* SPExtendedTableInfo.m */,
 				17E641500EF01EF6001BC333 /* SPDatabaseDocument.h */,
 				17E641510EF01EF6001BC333 /* SPDatabaseDocument.m */,
-				17D38FC2127B0C9500672B13 /* Connection View */,
+				514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */,
+				177E7A210FCB6A2E00E9E122 /* SPExtendedTableInfo.h */,
+				177E7A220FCB6A2E00E9E122 /* SPExtendedTableInfo.m */,
 				17386E08151924E9002DC206 /* Table Content */,
+				171156501E8B0F40002E6363 /* Table Relations */,
 				17D38F691279E17D00672B13 /* Table Structure */,
 				17005CB016D6CEA400AF81F4 /* Table Triggers */,
-				171156501E8B0F40002E6363 /* Table Relations */,
-				514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
