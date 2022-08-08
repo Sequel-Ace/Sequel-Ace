@@ -35,6 +35,7 @@
 
 @interface SPDatabaseStructure : NSObject <SPMySQLConnectionDelegate> 
 {
+	SPDatabaseDocument *delegate;
 	SPMySQLConnection *mySQLConnection;
 
 	NSMutableDictionary *structure;
@@ -46,7 +47,6 @@
 	pthread_mutex_t dataLock;
 	pthread_mutex_t connectionCheckLock;
 }
-@property (nonatomic, weak) SPDatabaseDocument *delegate;
 
 // Setup and teardown
 - (instancetype)initWithDelegate:(SPDatabaseDocument *)theDelegate;

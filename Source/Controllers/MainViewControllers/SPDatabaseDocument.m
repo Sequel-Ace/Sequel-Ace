@@ -106,7 +106,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *hideConsoleImage;
 @property (nonatomic, strong) NSImage *showConsoleImage;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
-@property (nonatomic, weak, readwrite) SPWindowController *parentWindowController;
+@property (nonatomic, strong, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
@@ -6565,11 +6565,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return connection;
 }
 
-- (void)cleanup {
+#pragma mark -
+
+- (void)dealloc
+{
     NSAssert([NSThread isMainThread], @"Calling %s from a background thread is not supported!", __func__);
-    
-    [mySQLConnection disconnect];
-    mySQLConnection = nil;
 
     // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
     [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentWillCloseNotification object:self];
@@ -6592,13 +6592,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
     if (queryExecutionTimer) {
         [queryExecutionTimer invalidate];
+
     }
-}
-
-#pragma mark -
-
-- (void)dealloc {
-    [self cleanup];
 
 }
 
