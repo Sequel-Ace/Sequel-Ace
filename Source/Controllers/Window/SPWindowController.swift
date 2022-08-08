@@ -49,6 +49,10 @@ import SnapKit
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
+
+    deinit {
+        print("Deinit called")
+    }
 }
 
 // MARK: - Private API
@@ -93,5 +97,12 @@ extension SPWindowController: NSWindowDelegate {
             appDelegate.setSpfSessionDocData(nil)
         }
         return true
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        if let appController = NSApp.delegate as? SPAppController {
+            appController.windowWillClose(notification)
+        }
+        databaseDocument.cleanup()
     }
 }

@@ -67,10 +67,20 @@
 		tableCreateSyntax = nil;
 		tableHasAutoIncrementField = NO;
 
+        [NSNotificationCenter.defaultCenter addObserver:self
+               selector:@selector(documentWillClose:)
+                   name:SPDocumentWillCloseNotification
+                 object:nil];
+
 		pthread_mutex_init(&dataProcessingLock, NULL);
 	}
 
 	return self;
+}
+
+- (void)documentWillClose:(NSNotification *)notification {
+    [mySQLConnection disconnect];
+    mySQLConnection = nil;
 }
 
 /**
