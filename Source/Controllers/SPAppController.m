@@ -442,38 +442,54 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [info setObject:@1 forKey:SPFVersionKey];
     [info setObject:@"connection bundle" forKey:SPFFormatKey];
 
-    NSMutableArray *tabs = [NSMutableArray array];
-    NSMutableDictionary *win = [NSMutableDictionary dictionary];
+    NSMutableArray *processedWindows = [NSMutableArray new];
 
-    // Loop through all windows / tabs
-    // TODO: Handle window vs. tab - for now we store all windows into one as tabs
-    for (SPWindowController *windowController in [self.tabManager windowControllers] ) {
+    NSSet *allWindows = [self.tabManager windows];
+    for (NSWindow *window in allWindows) {
+        NSMutableArray *tabs = [NSMutableArray array];
+        NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
-        // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-        if (![windowController.databaseDocument mySQLVersion]) continue;
+        NSArray *windowsToProcess = [[window tabbedWindows] count] > 0 ? [window tabbedWindows] : @[window];
+        for (NSWindow *processedWindow in windowsToProcess) {
+            SPWindowController *windowController = processedWindow.windowController;
+            if ([processedWindows containsObject:windowController.uniqueID]) {
+                continue;
+            }
 
-        NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-        if([windowController.databaseDocument isUntitled]) {
-            // new bundle file name for untitled docs
-            NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-            // internal bundle path to store the doc
-            NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-            // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-            [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-            [windowController.databaseDocument setIsSavedInBundle:YES];
-            [tabData setObject:@NO forKey:@"isAbsolutePath"];
-            [tabData setObject:newName forKey:@"path"];
-        } else {
-            // save it to the original location and take the file's spfDocData
-            [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-            [tabData setObject:@YES forKey:@"isAbsolutePath"];
-            [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
+            // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
+            if (![windowController.databaseDocument mySQLVersion]) {
+                continue;
+            }
+
+            NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
+            if([windowController.databaseDocument isUntitled]) {
+                // new bundle file name for untitled docs
+                NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
+                // internal bundle path to store the doc
+                NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
+                // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
+                [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                [windowController.databaseDocument setIsSavedInBundle:YES];
+                [tabData setObject:@NO forKey:@"isAbsolutePath"];
+                [tabData setObject:newName forKey:@"path"];
+            } else {
+                // save it to the original location and take the file's spfDocData
+                [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                [tabData setObject:@YES forKey:@"isAbsolutePath"];
+                [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
+            }
+            [tabs addObject:tabData];
+            [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
+
+            [processedWindows addObject:windowController.uniqueID];
         }
-        [tabs addObject:tabData];
-        [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
+        if ([tabs count] > 0) {
+            [win setObject:tabs forKey:@"tabs"];
+        }
+        if ([[win allValues] count] > 0) {
+            [windows addObject:win];
+        }
     }
-    [win setObject:tabs forKey:@"tabs"];
-    [windows addObject:win];
     [info setObject:windows forKey:@"windows"];
 
     error = nil;
@@ -777,15 +793,20 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [self setSpfSessionDocData:spfsDocData];
 
         // Loop through each defined window in reversed order to reconstruct the last active window
-        // TODO: Handle window vs. tab - for now we store all windows into one as tabs
-        for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
+        for (NSDictionary *windowDictionary in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
+
+            NSWindow *window;
 
             // Loop through all defined tabs / windows
-            for (NSDictionary *tab in [window objectForKey:@"tabs"]) {
+            for (NSDictionary *tab in [windowDictionary objectForKey:@"tabs"]) {
 
-                // Add new the tab
-                SPWindowController *newWindowTabController = [self.tabManager newWindowForTab];
-                [newWindowTabController.window setFrameFromString:[window objectForKey:@"frame"]];
+                // Add new the tab or window
+                SPWindowController *newWindowController = window == nil ? [self.tabManager newWindowForWindow] : [self.tabManager newWindowForTab];
+                window = newWindowController.window;
+
+                usleep(1000);
+
+                [window setFrameFromString:[windowDictionary objectForKey:@"frame"]];
 
                 NSString *fileName = nil;
                 BOOL isBundleFile = NO;
@@ -801,17 +822,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
                 // Security check if file really exists
                 if ([fileManager fileExistsAtPath:fileName]) {
-                    if ([[newWindowTabController window] isMiniaturized]) {
-                        [[newWindowTabController window] deminiaturize:self];
-                    }
-
-                    [newWindowTabController.databaseDocument setIsSavedInBundle:isBundleFile];
-                    if (![newWindowTabController.databaseDocument setStateFromConnectionFile:fileName]) {
+                    [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
+                    if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
                         break;
                     }
                 } else {
                     SPLog(@"Bundle file “%@” does not exists", fileName);
                     NSBeep();
+                }
+                if ([window isMiniaturized]) {
+                    [window deminiaturize:self];
                 }
             }
         }
