@@ -482,7 +482,7 @@
 
 - (void)showMySQLHelp;
 
-#pragma markDealloc helpers
+#pragma mark Dealloc helpers
 
 - (void)cleanup;
 
