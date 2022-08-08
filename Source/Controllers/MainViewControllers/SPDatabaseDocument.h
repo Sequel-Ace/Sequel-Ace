@@ -146,15 +146,6 @@
 	IBOutlet NSTextView *createTableSyntaxTextView;
 	IBOutlet NSWindow *createTableSyntaxWindow;
 	IBOutlet NSWindow *connectionErrorDialog;
-
-	IBOutlet id saveConnectionAccessory;
-	IBOutlet NSButton *saveConnectionIncludeData;
-	IBOutlet NSButton *saveConnectionIncludeQuery;
-	IBOutlet NSButton *saveConnectionSavePassword;
-	IBOutlet id saveConnectionSavePasswordAlert;
-	IBOutlet NSButton *saveConnectionEncrypt;
-	IBOutlet NSButton *saveConnectionAutoConnect;
-	IBOutlet NSSecureTextField *saveConnectionEncryptString;
 	
 	IBOutlet id inputTextWindow;
 	IBOutlet id inputTextWindowHeader;
@@ -246,6 +237,15 @@
 	int64_t instanceId;
 }
 
+@property (nonatomic, strong) IBOutlet NSView *saveConnectionAccessory;
+@property (nonatomic, strong) IBOutlet NSButton *saveConnectionIncludeData;
+@property (nonatomic, strong) IBOutlet NSButton *saveConnectionIncludeQuery;
+@property (nonatomic, strong) IBOutlet NSButton *saveConnectionSavePassword;
+@property (nonatomic, strong) IBOutlet id saveConnectionSavePasswordAlert;
+@property (nonatomic, strong) IBOutlet NSButton *saveConnectionEncrypt;
+@property (nonatomic, strong) IBOutlet NSButton *saveConnectionAutoConnect;
+@property (nonatomic, strong) IBOutlet NSSecureTextField *saveConnectionEncryptString;
+
 @property (nonatomic, strong) NSTableView *dbTablesTableView;
 @property (readwrite, strong) NSURL *sqlFileURL;
 @property (readwrite) NSStringEncoding sqlFileEncoding;
@@ -331,7 +331,7 @@
 
 - (void)refreshCurrentDatabase;
 
-- (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode  contextInfo:(void  *)contextInfo;
+- (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
 - (BOOL)saveDocumentWithFilePath:(NSString *)fileName inBackground:(BOOL)saveInBackground onlyPreferences:(BOOL)saveOnlyPreferences contextInfo:(NSDictionary*)contextInfo;
 - (void)setIsSavedInBundle:(BOOL)savedInBundle;
 - (void)setFileURL:(NSURL *)fileURL;

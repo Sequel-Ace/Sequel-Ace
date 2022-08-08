@@ -422,21 +422,17 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // retrieve save panel data for passing them to each doc
     NSMutableDictionary *spfDocData_temp = [NSMutableDictionary dictionary];
-    if ([contextInfo isEqualTo:@"saveAsSession"]) {
-        [spfDocData_temp addEntriesFromDictionary:[self spfSessionDocData]];
-    } else {
-        [spfDocData_temp setObject:encrypted forKey:@"encrypted"];
-        if ([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
-            [spfDocData_temp setObject:saveConnectionEncryptString forKey:@"e_string"];
-        }
-        [spfDocData_temp setObject:auto_connect forKey:@"auto_connect"];
-        [spfDocData_temp setObject:save_password forKey:@"save_password"];
-        [spfDocData_temp setObject:include_session forKey:@"include_session"];
-        [spfDocData_temp setObject:save_editor_content forKey:@"save_editor_content"];
-
-        // Save the session's accessory view settings
-        [self setSpfSessionDocData:spfDocData_temp];
+    [spfDocData_temp setObject:encrypted forKey:@"encrypted"];
+    if ([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
+        [spfDocData_temp setObject:saveConnectionEncryptString forKey:@"e_string"];
     }
+    [spfDocData_temp setObject:auto_connect forKey:@"auto_connect"];
+    [spfDocData_temp setObject:save_password forKey:@"save_password"];
+    [spfDocData_temp setObject:include_session forKey:@"include_session"];
+    [spfDocData_temp setObject:save_editor_content forKey:@"save_editor_content"];
+
+    // Save the session's accessory view settings
+    [self setSpfSessionDocData:spfDocData_temp];
 
     [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"encrypted"] boolValue]] forKey:@"encrypted"];
     [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"auto_connect"] boolValue]] forKey:@"auto_connect"];
@@ -446,34 +442,53 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [info setObject:@1 forKey:SPFVersionKey];
     [info setObject:@"connection bundle" forKey:SPFFormatKey];
 
-    // Loop through all windows
-    for (SPWindowController *windowController in [self.tabManager windowControllers]) {
+    NSMutableArray *processedWindows = [NSMutableArray new];
 
-        // First window is always the currently key window
+    NSSet *allWindows = [self.tabManager windows];
+    for (NSWindow *window in allWindows) {
+        NSMutableArray *tabs = [NSMutableArray array];
         NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
-        // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-        if (![windowController.databaseDocument mySQLVersion]) continue;
+        NSArray *windowsToProcess = [[window tabbedWindows] count] > 0 ? [window tabbedWindows] : @[window];
+        for (NSWindow *processedWindow in windowsToProcess) {
+            SPWindowController *windowController = processedWindow.windowController;
+            if ([processedWindows containsObject:windowController.uniqueID]) {
+                continue;
+            }
 
-        NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-        if([windowController.databaseDocument isUntitled]) {
-            // new bundle file name for untitled docs
-            NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-            // internal bundle path to store the doc
-            NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-            // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-            [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-            [windowController.databaseDocument setIsSavedInBundle:YES];
-            [tabData setObject:@NO forKey:@"isAbsolutePath"];
-            [tabData setObject:newName forKey:@"path"];
-        } else {
-            // save it to the original location and take the file's spfDocData
-            [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-            [tabData setObject:@YES forKey:@"isAbsolutePath"];
-            [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
+            // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
+            if (![windowController.databaseDocument mySQLVersion]) {
+                continue;
+            }
+
+            NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
+            if([windowController.databaseDocument isUntitled]) {
+                // new bundle file name for untitled docs
+                NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
+                // internal bundle path to store the doc
+                NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
+                // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
+                [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                [windowController.databaseDocument setIsSavedInBundle:YES];
+                [tabData setObject:@NO forKey:@"isAbsolutePath"];
+                [tabData setObject:newName forKey:@"path"];
+            } else {
+                // save it to the original location and take the file's spfDocData
+                [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                [tabData setObject:@YES forKey:@"isAbsolutePath"];
+                [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
+            }
+            [tabs addObject:tabData];
+            [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
+
+            [processedWindows addObject:windowController.uniqueID];
         }
-        [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
-        [windows addObject:win];
+        if ([tabs count] > 0) {
+            [win setObject:tabs forKey:@"tabs"];
+        }
+        if ([[win allValues] count] > 0) {
+            [windows addObject:win];
+        }
     }
     [info setObject:windows forKey:@"windows"];
 
@@ -764,7 +779,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return;
     }
 
-    if([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
+    if ([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
 
         // Retrieve Save Panel accessory view data for remembering them globally
         NSMutableDictionary *spfsDocData = [NSMutableDictionary dictionary];
@@ -778,23 +793,21 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [self setSpfSessionDocData:spfsDocData];
 
         // Loop through each defined window in reversed order to reconstruct the last active window
-        for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
-            // Create a new window controller, and set up a new connection view within it.
+        for (NSDictionary *windowDictionary in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
 
-            SPWindowController *newWindowController = [self.tabManager newWindowForWindow];
-            NSWindow *newWindow = [newWindowController window];
+            NSWindow *window;
 
-            // Set the window controller as the window's delegate
-            [newWindow setDelegate:newWindowController];
+            // Loop through all defined tabs / windows
+            for (NSDictionary *tab in [windowDictionary objectForKey:@"tabs"]) {
 
-            usleep(1000);
+                // Add new the tab or window
+                SPWindowController *newWindowController = window == nil ? [self.tabManager newWindowForWindow] : [self.tabManager newWindowForTab];
+                window = newWindowController.window;
 
-            // Show the window
-            [newWindowController showWindow:self];
+                usleep(1000);
 
-            // Loop through all defined tabs for each window
-            for (NSDictionary *tab in [window objectForKey:@"tabs"])
-            {
+                [window setFrameFromString:[windowDictionary objectForKey:@"frame"]];
+
                 NSString *fileName = nil;
                 BOOL isBundleFile = NO;
 
@@ -802,30 +815,23 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 // otherwise construct the releative path for the passed spfs file
                 if ([[tab objectForKey:@"isAbsolutePath"] boolValue]) {
                     fileName = [tab objectForKey:@"path"];
-                }
-                else {
+                } else {
                     fileName = [NSString stringWithFormat:@"%@/Contents/%@", filePath, [tab objectForKey:@"path"]];
                     isBundleFile = YES;
                 }
 
                 // Security check if file really exists
                 if ([fileManager fileExistsAtPath:fileName]) {
-
-                    // Add new the tab
-                    if(newWindowController) {
-
-                        if ([[newWindowController window] isMiniaturized]) [[newWindowController window] deminiaturize:self];
-
-                        [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
-                        if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
-                            break;
-                        }
+                    [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
+                    if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
+                        break;
                     }
-
-                }
-                else {
+                } else {
                     SPLog(@"Bundle file “%@” does not exists", fileName);
                     NSBeep();
+                }
+                if ([window isMiniaturized]) {
+                    [window deminiaturize:self];
                 }
             }
         }
@@ -834,8 +840,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
 }
 
-- (void)openColorThemeFileAtPath:(NSString *)filePath
-{
+- (void)openColorThemeFileAtPath:(NSString *)filePath {
     NSString *themePath = [fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
 
     if (!themePath) return;
@@ -1387,11 +1392,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     return _spfSessionDocData;
 }
 
-- (void)setSpfSessionDocData:(NSDictionary *)data
-{
-    [_spfSessionDocData removeAllObjects];
-    if(data)
-        [_spfSessionDocData addEntriesFromDictionary:data];
+- (void)setSpfSessionDocData:(NSDictionary *)data {
+    if (data) {
+        _spfSessionDocData = [data mutableCopy];
+    } else {
+        _spfSessionDocData = [NSMutableDictionary new];
+    }
 }
 
 #pragma mark -

@@ -72,6 +72,10 @@ import AppKit
         return managedWindows.compactMap { $0.windowController}
     }
 
+    @objc var windows: Set<NSWindow> {
+        return Set(windowControllers.compactMap { $0.window })
+    }
+
     weak var appController: SPAppController?
 
     // MARK: - Lifecycle
@@ -106,14 +110,14 @@ import AppKit
     @discardableResult
     @objc func newWindowForWindow() -> SPWindowController {
         let windowController = createNewWindowController()
-        createWindow(newWindowController: windowController, inWindow: NSWindow(), ordered: .above)
+        createWindow(newWindowController: windowController, inWindow: SPWindow(), ordered: .above)
         return windowController
     }
 
     @discardableResult
     @objc func replaceTabServiceWithInitialWindow() -> SPWindowController {
         let windowController = createNewWindowController()
-        addManagedWindow(windowController: windowController)
+        createWindow(newWindowController: windowController, inWindow: SPWindow(), ordered: .above)
         windowController.showWindow(self)
         return windowController
     }
@@ -128,7 +132,7 @@ import AppKit
 private extension TabManager {
     func createNewWindowController() -> SPWindowController {
         let windowController = SPWindowController(windowNibName: "MainWindow")
-        windowController.window?.delegate = appController
+        windowController.window?.delegate = windowController
         return windowController
     }
 

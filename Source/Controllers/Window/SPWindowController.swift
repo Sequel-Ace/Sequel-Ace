@@ -35,6 +35,8 @@ import SnapKit
 
     @objc lazy var databaseDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
 
+    @objc let uniqueID: UUID = UUID()
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
