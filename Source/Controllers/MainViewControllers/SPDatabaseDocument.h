@@ -253,7 +253,7 @@
 @property (readwrite, copy) NSString *processID;
 @property (readonly, nonatomic, strong) NSToolbar *mainToolbar;
 
-@property (nonatomic, strong, readonly) SPWindowController *parentWindowController;
+@property (nonatomic, weak, readonly) SPWindowController *parentWindowController;
 @property (readonly, strong) SPServerSupport *serverSupport;
 @property (readonly, strong) SPDatabaseStructure *databaseStructureRetrieval;
 @property (readonly, strong) SPDataImport *tableDumpInstance;
@@ -481,5 +481,9 @@
 #pragma mark Help menu
 
 - (void)showMySQLHelp;
+
+#pragma markDealloc helpers
+
+- (void)cleanup;
 
 @end
