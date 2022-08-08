@@ -2778,7 +2778,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"Initializing upload symbols for \\\"${CONFIGURATION}\\\" build\"\n    \"${PROJECT_DIR}/Scripts/upload_symbols.sh\" \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"Initializing upload symbols for \\\"${CONFIGURATION}\\\" build\"\n    ${PROJECT_DIR}/Scripts/upload_symbols.sh \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
