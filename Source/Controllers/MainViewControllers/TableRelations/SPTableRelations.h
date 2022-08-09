@@ -36,7 +36,7 @@
 
 @interface SPTableRelations : NSObject <NSTableViewDelegate, NSTableViewDataSource>
 {	
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList       *tablesListInstance;
 	IBOutlet SPTableData        *tableDataInstance;
 	IBOutlet SPTableView        *tableList;

@@ -6582,6 +6582,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
     [connectionController setDelegate:nil];
+    [printWebView setFrameLoadDelegate:nil];
 
     if (taskDrawTimer) {
         [taskDrawTimer invalidate];
@@ -6594,7 +6595,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 
 - (void)dealloc {
-    NSLog(@"Dealloc called %s", __FILE__);
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 @end

@@ -30,10 +30,11 @@
 
 @class SPTableView;
 @class SPMySQLConnection;
+@class SPDatabaseDocument;
 
 @interface SPTableTriggers : NSObject 
 {
-	IBOutlet id tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet id tablesListInstance;
 	IBOutlet id tableDataInstance;
 	

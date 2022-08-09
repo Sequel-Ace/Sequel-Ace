@@ -49,7 +49,7 @@
 @interface SPExportController : NSWindowController<NSOpenSavePanelDelegate>
 {	
 	// Controllers
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTableContent *tableContentInstance;
 	IBOutlet SPCustomQuery *customQueryInstance;
 	IBOutlet SPTablesList *tablesListInstance;

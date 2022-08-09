@@ -47,7 +47,7 @@
 
 @interface SPTablesList : NSObject <NSTextFieldDelegate, NSTableViewDelegate>
 {
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTableStructure *tableSourceInstance;
 	IBOutlet SPTableContent *tableContentInstance;
 	IBOutlet SPDatabaseData *databaseDataInstance;
