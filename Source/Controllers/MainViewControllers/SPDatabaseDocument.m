@@ -296,6 +296,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                name:@"NSApplicationWillTerminateNotification"
              object:nil];
 
+    [nc addObserver:self selector:@selector(documentWillClose) name:SPDocumentWillCloseNotification object:nil];
+
     // Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
     selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
 
@@ -6187,15 +6189,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Close the connection - should be performed on the main thread.
  */
-- (void)closeAndDisconnect
-{
-    NSWindow *theParentWindow = [self.parentWindowController window];
+- (void)closeAndDisconnect {
 
     _isConnected = NO;
 
-    [theParentWindow orderOut:self];
-    [theParentWindow setAlphaValue:0.0f];
-    [theParentWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
+    [self.parentWindowControllerWindow orderOut:self];
+    [self.parentWindowControllerWindow setAlphaValue:0.0f];
+    [self.parentWindowControllerWindow performSelector:@selector(close) withObject:nil afterDelay:1.0];
 
     // if tab closed and there is text in the query view, safe to history
     NSString *queryString = [self->customQueryTextView.textStorage string];
@@ -6565,14 +6565,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return connection;
 }
 
-- (void)cleanup {
+- (void)documentWillClose {
     NSAssert([NSThread isMainThread], @"Calling %s from a background thread is not supported!", __func__);
-    
-    [mySQLConnection disconnect];
-    mySQLConnection = nil;
 
-    // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
-    [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentWillCloseNotification object:self];
+    [self closeAndDisconnect];
 
     // Unregister observers
     [self _removePreferenceObservers];
@@ -6598,8 +6594,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 
 - (void)dealloc {
-    [self cleanup];
-
+    NSLog(@"Dealloc called %s", __FILE__);
 }
 
 @end

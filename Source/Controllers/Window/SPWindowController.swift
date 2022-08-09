@@ -100,9 +100,7 @@ extension SPWindowController: NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        if let appController = NSApp.delegate as? SPAppController {
-            appController.windowWillClose(notification)
-        }
-        databaseDocument.cleanup()
+        // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
+        NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
     }
 }
