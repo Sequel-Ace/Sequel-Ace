@@ -2334,9 +2334,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [connectionController initiateConnection:self];
 }
 
-- (void)closeConnection
-{
+- (void)closeConnection {
     SPLog(@"closeConnection");
+    [mySQLConnection setDelegate:nil];
     [mySQLConnection disconnect];
     _isConnected = NO;
 
@@ -6216,7 +6216,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                    object:nil];
     }
 
-    [mySQLConnection setDelegate:nil];
     if (_isConnected) {
         [self closeConnection];
     } else {
@@ -6568,7 +6567,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)documentWillClose {
     NSAssert([NSThread isMainThread], @"Calling %s from a background thread is not supported!", __func__);
 
-    [self closeAndDisconnect];
+    [self closeConnection];
 
     // Unregister observers
     [self _removePreferenceObservers];

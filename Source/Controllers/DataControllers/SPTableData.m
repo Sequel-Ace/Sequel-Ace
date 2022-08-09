@@ -82,6 +82,7 @@
     [self setConnection:nil];
 
     pthread_mutex_destroy(&dataProcessingLock);
+    tableDocumentInstance = nil;
 }
 
 /**
