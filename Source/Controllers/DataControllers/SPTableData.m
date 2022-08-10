@@ -79,8 +79,9 @@
 }
 
 - (void)documentWillClose:(NSNotification *)notification {
-    [mySQLConnection disconnect];
-    mySQLConnection = nil;
+    [self setConnection:nil];
+
+    pthread_mutex_destroy(&dataProcessingLock);
 }
 
 /**
@@ -1505,7 +1506,6 @@
 	[self setConnection:nil];
 
 	pthread_mutex_destroy(&dataProcessingLock);
-
 }
 
 #pragma mark -

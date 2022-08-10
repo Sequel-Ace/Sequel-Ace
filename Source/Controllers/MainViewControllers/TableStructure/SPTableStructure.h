@@ -60,7 +60,7 @@
 {
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPTableData *tableDataInstance;
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTableInfo *tableInfoInstance;
 	IBOutlet SPExtendedTableInfo *extendedTableInfoInstance;
 	IBOutlet SPIndexesController *indexesController;

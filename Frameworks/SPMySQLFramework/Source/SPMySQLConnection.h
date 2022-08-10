@@ -33,7 +33,7 @@
 @interface SPMySQLConnection : NSObject {
 
 	// Delegate
-	NSObject <SPMySQLConnectionDelegate> *delegate;
+    __weak NSObject <SPMySQLConnectionDelegate> *delegate;
 	BOOL delegateSupportsWillQueryString;
 	BOOL delegateSupportsConnectionLost;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented

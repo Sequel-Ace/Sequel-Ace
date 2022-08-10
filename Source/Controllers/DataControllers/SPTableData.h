@@ -33,7 +33,7 @@
 @class SPMySQLConnection;
 
 @interface SPTableData: NSObject {
-	IBOutlet SPDatabaseDocument* tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument* tableDocumentInstance;
 	IBOutlet SPTablesList* tableListInstance;
 
 	NSMutableArray *columns;

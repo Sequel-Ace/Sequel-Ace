@@ -75,6 +75,8 @@
 	[self setTypeDefinition:nil];
 	[self setTypeRange:nil];
 	[self setTypeDescription:nil];
+
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 @end
@@ -2497,6 +2499,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 + (SPFieldTypeHelp *)helpForFieldType:(NSString *)typeName

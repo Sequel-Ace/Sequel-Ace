@@ -33,10 +33,11 @@
 @class SPDatabaseData;
 @class SPTablesList;
 @class SPMySQLConnection;
+@class SPDatabaseDocument;
 
 @interface SPExtendedTableInfo : NSObject
 {
-	IBOutlet id tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPTableData *tableDataInstance;
 	IBOutlet SPDatabaseData *databaseDataInstance;

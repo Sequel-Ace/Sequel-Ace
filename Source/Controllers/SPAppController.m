@@ -1679,20 +1679,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentDuplicateTabNotification object:nil userInfo:frontState];
 }
 
-#pragma mark - NSWindowDelegate
-
-- (void)windowWillClose:(NSNotification *)notification
-{
-    id window = notification.object;
-    if (!window) {
-        return;
-    }
-
-    if (window == aboutController.window) {
-        aboutController.window.delegate = nil;
-    }
-}
-
 #pragma mark -
 
 - (void)dealloc

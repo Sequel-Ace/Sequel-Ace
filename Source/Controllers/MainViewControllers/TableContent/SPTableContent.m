@@ -4612,6 +4612,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[self clearTableLoadTimer];
 	
 	pthread_mutex_destroy(&tableValuesLock);
+    
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 @end

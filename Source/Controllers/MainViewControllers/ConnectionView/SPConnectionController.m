@@ -1975,8 +1975,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	if (sshTunnel) {
 		[sshTunnel setConnectionStateChangeSelector:nil delegate:nil];
 	}
-
-
 }
 
 #pragma mark - SPConnectionHandler

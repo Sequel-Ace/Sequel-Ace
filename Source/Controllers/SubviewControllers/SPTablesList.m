@@ -2941,6 +2941,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 @end
