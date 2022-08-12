@@ -7,6 +7,19 @@ Sequel Ace is a fast, easy-to-use Mac database management application for workin
 
 If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace)!
 
+## Compatibility
+
+- **macOS:** >= 10.13 \*
+- **Processor:** Intel & Apple Silicon
+- **MySQL:** >= 5.7
+- **MariaDB:** >= 10.0
+
+_Note: An [older version of Sequel Ace (version 3.5.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F3.5.2-20033) is available to download for macOS versions 10.12 or for MySQL 5.6 support._
+
+_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11._
+
+\* To run Sequel Ace on Mac OS X 10.13-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
+
 ## Installation
 
 ### Mac AppStore <a href="https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1"><img alt="Download on the Mac AppStore" src="https://sequel-ace.com/images/download_on_mas.png" align="right" height="60"></a>
@@ -53,18 +66,6 @@ If you would like to help with code and development, please see either our [proj
 
 - production/ tags represent submissions to the macOS App Store. These are marked as "Pre-Release" until approved by Apple and officially released by the team. Both release candidates and final releases use production/ tags. Release candidates will have RC or Release Candidate in their title.
 - beta/ tags represent pre-release versions of Sequel Ace intended to test new features and bug fixes. The downloadable app in a beta/ tag has a different name and identifier (Sequel Ace Beta), meaning you can install it side-by-side with the latest App Store release. Beta releases also have increased logging turned on to help us identify critical issues.
-
-## Compatibility
-
-- **macOS:** >= 10.13 \*
-- **Processor:** Intel & Apple Silicon
-- **MySQL:** >= 5.7
-- **MariaDB:** >= 10.0
-
-_Note: An [older version of Sequel Ace (version 3.5.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F3.5.2-20033) is available to download for macOS versions 10.12 or for MySQL 5.6 support._
-_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11._
-
-\* To run Sequel Ace on Mac OS X 10.13-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
 
 ## Code of Conduct
 
