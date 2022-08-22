@@ -1278,7 +1278,7 @@ typedef enum {
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
     if (replacementString == nil || [replacementString characterCount] == 0) {
-        editTextViewWasChanged = YES // backspace
+        editTextViewWasChanged = YES; // Backspace
         return YES;
     }
     
