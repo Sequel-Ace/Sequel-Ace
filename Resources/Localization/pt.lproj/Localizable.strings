@@ -209,10 +209,10 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "Um local do ficheiro de chave SSL foi especificado, mas nenhum ficheiro foi encontrado no local especificado. Por favor, selecione novamente o ficheiro de chave e tente novamente.";
 
 /* duplicate host informative message */
-"A user with the host '%@' already exists" = "Um usuário com o host '%@' já existe";
+"A user with the host '%@' already exists" = "Um utilizador com o host '%@' já existe";
 
 /* duplicate user informative message */
-"A user with the name '%@' already exists" = "Um usuário com o nome '%@' já existe";
+"A user with the name '%@' already exists" = "Um utilizador com o nome '%@' já existe";
 
 /* table content : editing : error message description when parsing as hex string failed */
 "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "Um texto hexadecimal válido pode conter apenas números de 0-9 e letras A-F (a-f). Ele pode opcionalmente começar com \"0x\" e espaços serão ignorados.\nComo alternativa, a sintaxe X'val' também é suportada.";
@@ -419,7 +419,7 @@
 "An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Ocorreu um erro ao tentar excluir o relacionamento '%1$@'.\n\nMensagem do MySQL: %2$@";
 
 /* unable to get list of users informative message */
-"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Ocorreu um erro ao tentar obter a lista de usuários. Por favor, certifique-se de que você tem os privilégios necessários para executar o gerenciamento de usuários, incluindo o acesso à tabela mysql.user";
+"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Ocorreu um erro ao tentar obter a lista de utilizadors. Por favor, certifique-se de que você tem os privilégios necessários para executar o gerenciamento de utilizadors, incluindo o acesso à tabela mysql.user";
 
 /* error importing table informative message */
 "An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Ocorreu um erro ao tentar importar uma tabela via: \n%1$@\n\n\nMensagem do MySQL: %2$@";
@@ -1060,7 +1060,7 @@
 "Delete Views" = "Excluir Views";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
-"Disabled Cipher Suites" = "Desabilitar Cipher Suites";
+"Disabled Cipher Suites" = "Desativar Cipher Suites";
 
 /* force table deltion button text tooltip */
 "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Desabilita verificações de chaves estrangeiras (FOREIGN_KEY_CHECKS) antes da exclusão e reativa-las posteriormente.";
@@ -1111,7 +1111,7 @@
 "Duplicate Table..." = "Duplicar Tabela...";
 
 /* duplicate user message */
-"Duplicate User" = "Duplicar Usuário";
+"Duplicate User" = "Duplicar Utilizador";
 
 /* duplicate view menu title */
 "Duplicate View..." = "Duplicar View...";
@@ -1132,7 +1132,7 @@
 "Edit Theme List…" = "Editar lista de temas…";
 
 /* edit user-defined filter */
-"Edit user-defined Filters…" = "Editar Filtros definidos pelo usuário…";
+"Edit user-defined Filters…" = "Editar Filtros definidos pelo utilizador…";
 
 /* empty query message */
 "Empty query" = "Query vazia";
@@ -1356,13 +1356,13 @@
 "Fetching data..." = "Bsucando dados...";
 
 /* fetching database structure data in progress */
-"fetching database structure data in progress" = "buscando dados de estrutura de banco de dados em andamento";
+"fetching database structure data in progress" = "A obter dados de estrutura de banco de dados";
 
 /* fetching database structure in progress */
-"fetching database structure in progress" = "buscando a estrutura do banco de dados em andamento";
+"fetching database structure in progress" = "A obter a estrutura do banco de dados";
 
 /* fetching table data for completion in progress message */
-"fetching table data…" = "buscando dados de tabela…";
+"fetching table data…" = "A obter dados de tabela…";
 
 /* popup menuitem for field (showing only if disabled) */
 "field" = "campo";
@@ -1461,7 +1461,7 @@
 "General Scope\ncommands will run application-wide" = "Os comandos gerais do escopo\nserão executados em todo o aplicativo";
 
 /* generating print document status message */
-"Generating print document..." = "Gerando documento de impressão...";
+"Generating print document..." = "A gerar documento de impressão...";
 
 /* export header generation time label */
 "Generation Time" = "Tempo de geração";
@@ -1553,10 +1553,10 @@
 "Imported %@ of SQL" = "Importado %@ de SQL";
 
 /* text showing that the application is importing CSV */
-"Importing CSV" = "Importando CSV";
+"Importing CSV" = "A importar CSV";
 
 /* text showing that the application is importing SQL */
-"Importing SQL" = "Importando SQL";
+"Importing SQL" = "A importar SQL";
 
 /* Bundle Editor : BLOB dropdown : 'include BLOB' item */
 "include BLOB" = "incluir BLOB";
@@ -1600,19 +1600,19 @@
 "Installed Bundles" = "Pacotes instalados";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
-"Installing Bundle" = "Instalando o Pacote";
+"Installing Bundle" = "A instalar pacote";
 
 /* insufficient details message */
-"Insufficient connection details" = "Detalhes de conexão insuficientes";
+"Insufficient connection details" = "Detalhes de ligação insuficientes";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Detalhes insuficientes fornecidos para estabelecer uma conexão. Por favor, insira pelo menos o nome do servidor.";
+"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Detalhes insuficientes fornecidos para estabelecer uma ligação. Por favor, insira pelo menos o nome do servidor.";
 
 /* insufficient SSH tunnel details informative message */
-"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Detalhes insuficientes fornecidos para estabelecer uma conexão. Por favor, digite o nome de servidor para o túnel SSH, ou desative o túnel SSH.";
+"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Detalhes insuficientes fornecidos para estabelecer uma ligação. Por favor, introduza o nome de servidor para o túnel SSH, ou desative o túnel SSH.";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please provide at least a host." = "Detalhes insuficientes fornecidos para estabelecer uma conexão. Por favor, forneça pelo menos um servidor.";
+"Insufficient details provided to establish a connection. Please provide at least a host." = "Detalhes insuficientes fornecidos para estabelecer uma ligação. Por favor, forneça pelo menos um servidor.";
 
 /* Interpret data as: */
 "Interpret data as:" = "Interpretar dados como:";
@@ -1630,7 +1630,7 @@
 "Is Deterministic" = "É Determinístico";
 
 /* is nullable label (Navigator) */
-"Is Nullable" = "É nulável";
+"Is Nullable" = "É nulo";
 
 /* is updatable: %@ */
 "is updatable: %@" = "é atualizável: %@";
@@ -1651,13 +1651,13 @@
 "Keyword" = "Palavra-chave";
 
 /* kill button */
-"Kill" = "Matar";
+"Kill" = "Terminar";
 
 /* kill connection message */
-"Kill connection?" = "Matar a conexão?";
+"Kill connection?" = "Terminar ligação?";
 
 /* kill query message */
-"Kill query?" = "Matar query?";
+"Kill query?" = "Terminar query?";
 
 /* Last Error Message */
 "Last Error Message" = "Última mensagem de erro";
@@ -1669,22 +1669,22 @@
 "Limited to @@max_allowed_packet" = "Limitado a @@max_allowed_packet";
 
 /* Loading table task string */
-"Loading %@..." = "Carregando %@...";
+"Loading %@..." = "A carregar %@...";
 
 /* Loading database task string */
-"Loading database '%@'..." = "Carregando banco de dados '%@'...";
+"Loading database '%@'..." = "A carregar banco de dados '%@'...";
 
 /* Loading history entry task desc */
-"Loading history entry..." = "Carregando entrada no histórico...";
+"Loading history entry..." = "A carregar entrada no histórico...";
 
 /* Loading table page task string */
-"Loading page %lu..." = "Carregando página %lu...";
+"Loading page %lu..." = "A carregar página %lu...";
 
 /* Loading referece task string */
-"Loading reference..." = "Carregando referência...";
+"Loading reference..." = "A carregar referência...";
 
 /* Loading table data string */
-"Loading table data..." = "Carregando dados de tabela...";
+"Loading table data..." = "A carregar dados de tabela...";
 
 /* Low memory export summary */
 "Low memory" = "Pouca memória";
@@ -1749,7 +1749,7 @@
 "multiple selection" = "múltipla seleção";
 
 /* MySQL connecting very short status message */
-"MySQL connecting..." = "Conectando ao MySQL...";
+"MySQL connecting..." = "A ligar ao MySQL...";
 
 /* mysql error message */
 "MySQL Error" = "Erro no MySQL";
@@ -2566,7 +2566,7 @@
 "Switch to the Table Triggers tab" = "Alternar para a guia Triggers da Tabela";
 
 /* tooltip for toolbar item for switching to the User Manager tab */
-"Switch to the User Manager tab" = "Mudar para a guia Gerenciador de Usuários";
+"Switch to the User Manager tab" = "Mudar para a guia Gerenciador de Utilizadors";
 
 /* description for table syntax copied notification */
 "Syntax for %@ table copied" = "Sintaxe para a tabela %@ copiada";
@@ -2700,7 +2700,7 @@
 "The connection to the server was lost during the import.  The import is only partially complete." = "A conexão com o servidor foi perdida durante a importação. A importação está apenas parcialmente completa.";
 
 /* Create syntax permission denied detail */
-"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "A sintaxe de criação não pôde ser recuperada devido a um erro de permissão.\n\nPor favor, verifique suas permissões de usuário com um administrador.";
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "A sintaxe de criação não pôde ser recuperada devido a um erro de permissão.\n\nPor favor, verifique suas permissões de utilizador com um administrador.";
 
 /* CSV file open error */
 "The CSV file you selected could not be found or read." = "O ficheiro CSV que você selecionou não pôde ser encontrado ou lido.";
@@ -2715,7 +2715,7 @@
 "The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Executar Query Personalizada e Executar Todas, tiveram as posições dos botões e seus atalhos trocados.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
-"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Os seguintes pacotes padrão foram atualizados:\n%@\nSuas modificações foram armazenadas como \"(usuário)\".";
+"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Os seguintes pacotes padrão foram atualizados:\n%@\nSuas modificações foram armazenadas como \"(utilizador)\".";
 
 /* favorites export error informative message */
 "The following error occurred during the export process:\n\n%@" = "Ocorreu o seguinte erro durante o processo de exportação:\n\n%@";
@@ -2876,10 +2876,10 @@
 "This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "Esta tabela não suporta relacionamentos. Apenas tabelas que usam o mecanismo de armazenamento InnoDB suportam.";
 
 /* user has no hosts informative message */
-"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "Este usuário não tem nenhum servidor associado a ele. Ele será excluído a menos que um seja adicionado";
+"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "Este utilizador não tem nenhum servidor associado a ele. Ele será excluído a menos que um seja adicionado";
 
 /* error removing host informative message */
-"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Este usuário não parece ter nenhum servidor associado e será removido a menos que um servidor seja adicionado.";
+"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Este utilizador não parece ter nenhum servidor associado e será removido a menos que um servidor seja adicionado.";
 
 /* shutdown server : confirmation dialog : message */
 "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "Isto esperará pela conclusão das transações abertas e, em seguida, encerrará o mysql daemon. Depois disso, nem você nem ninguém pode se conectar a esta base de dados!\n\nAcesso completo de gerenciamento ao sistema operacional do servidor é necessário para reiniciar o MySQL!";
@@ -2930,7 +2930,7 @@
 "Unable to check table" = "Não foi possível verificar a tabela";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Não foi possível conectar ao servidor %1$@ porque o acesso foi negado.\n\nVerifique seu nome de usuário e senha e certifique-se de que o acesso da sua localização atual é permitido.\n\nMySQL disse: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Não foi possível conectar ao servidor %1$@ porque o acesso foi negado.\n\nVerifique seu nome de utilizador e senha e certifique-se de que o acesso da sua localização atual é permitido.\n\nMySQL disse: %2$@";
 
 /* message of panel when SSH port forwarding failed */
 "Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Não foi possível conectar ao servidor %1$@ porque a conexão de porta via SSH foi recusada.\n\nPor favor, certifique-se de que o seu host MySQL está configurado para permitir conexões TCP/IP (sem --skip-networking) e está configurado para permitir conexões do host que você está tunelando via.\n\nVocê também pode querer verificar se a porta está correta e se você tem os privilégios necessários.\n\nVerificando o detalhe do erro mostrará o log de depuração SSH que pode fornecer mais detalhes.\n\nMySQL disse: %2$@";
@@ -2960,7 +2960,7 @@
 "Unable to flush table" = "Não é possível liberar a tabela";
 
 /* unable to get list of users message */
-"Unable to get list of users" = "Não foi possível obter a lista de usuários";
+"Unable to get list of users" = "Não foi possível obter a lista de utilizadors";
 
 /* error killing connection message */
 "Unable to kill connection" = "Não é possível matar a conexão";
@@ -3047,7 +3047,7 @@
 "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Falha na atualização do conteúdo do campo. Não foi possível identificar a origem do campo de forma inequívoca (%1$ld encontrados). É bem provável que durante a edição deste campo da tabela `%2$@` tenha sido alterada.";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Falha na atualização do conteúdo do campo. Não foi possível identificar a origem do campo de forma inequívoca (%1$ld encontrados). É bem provável que ao editar este campo a tabela `%2$@` tenha sido alterada por outro usuário.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Falha na atualização do conteúdo do campo. Não foi possível identificar a origem do campo de forma inequívoca (%1$ld encontrados). É bem provável que ao editar este campo a tabela `%2$@` tenha sido alterada por outro utilizador.";
 
 /* updating field task description */
 "Updating field data..." = "Atualizando dados do campo...";
@@ -3056,7 +3056,7 @@
 "URL scheme command couldn't authenticated" = "O comando esquema de URL não pôde ser autenticado";
 
 /* URL scheme command was terminated by user */
-"URL scheme command was terminated by user" = "O comando do esquema de URL foi terminado pelo usuário";
+"URL scheme command was terminated by user" = "O comando do esquema de URL foi terminado pelo utilizador";
 
 /* URL scheme command %@ unsupported */
 "URL scheme command %@ unsupported" = "O comando URL do esquema %@ não é suportado";
@@ -3068,13 +3068,13 @@
 "Use Standard Connection" = "Usar Conexão Padrão";
 
 /* user has no hosts message */
-"User has no hosts" = "Usuário não possui servidores";
+"User has no hosts" = "Utilizador não possui servidores";
 
 /* user-defined value */
-"User-defined value" = "Valor definido pelo usuário";
+"User-defined value" = "Valor definido pelo utilizador";
 
 /* toolbar item label for switching to the User Manager tab */
-"Users" = "Usuários";
+"Users" = "Utilizadors";
 
 /* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
 "Value will be imported as MySQL NULL" = "Valor será importado como MySQL NULL";
@@ -3239,7 +3239,7 @@
 "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset de mysql.user não contém coluna 'Senha' nem coluna 'autenticação_string'.";
 
 /* Title for User window error */
-"User Data Error" = "Erro de Dados do Usuário";
+"User Data Error" = "Erro de Dados do Utilizador";
 
 /* Title for Stale Bookmark file selection dialog */
 "Please re-select the file '%@' in order to restore Sequel Ace's access." = "Por favor, selecione novamente o ficheiro '%@' para restaurar o acesso a Sequel Ace.";
