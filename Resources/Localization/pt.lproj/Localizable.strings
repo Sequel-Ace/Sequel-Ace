@@ -2421,16 +2421,16 @@
 "size: %@" = "tamanho: %@";
 
 /* skip existing button */
-"Skip existing" = "Pular existente";
+"Skip existing" = "Saltar existente";
 
 /* skip problems button */
-"Skip problems" = "Pular problemas";
+"Skip problems" = "Saltar problemas";
 
 /* beta build label */
 "Beta Build" = "Versão Beta";
 
 /* socket connection failed title */
-"Socket connection failed!" = "A conexão do socket falhou!";
+"Socket connection failed!" = "A ligação do socket falhou!";
 
 /* socket not found title */
 "Socket not found!" = "Socket não encontrado!";
@@ -2442,7 +2442,7 @@
 "Some of the target export folders no longer exist.  Please select a new export location and try again." = "Algumas das pastas de exportação de destino não existem mais. Por favor, selecione um novo local de exportação e tente novamente.";
 
 /* Sorting table task description */
-"Sorting table..." = "Ordenando a tabela...";
+"Sorting table..." = "A ordenar a tabela...";
 
 /* spatial index menu item title */
 "SPATIAL" = "SPATIAL";
@@ -2461,13 +2461,13 @@
 "SSH connecting..." = "SSH conectando...";
 
 /* SSH connecting titlebar marker */
-"SSH Connecting…" = "Conectando SSH…";
+"SSH Connecting…" = "A ligar SSH…";
 
 /* SSH connection failed title */
-"SSH connection failed!" = "A conexão SSH falhou!";
+"SSH connection failed!" = "A ligação SSH falhou!";
 
 /* SSH disconnected titlebar marker */
-"SSH Disconnected" = "SSH desconectado";
+"SSH Disconnected" = "SSH desligado";
 
 /* SSH key check error */
 "SSH Key not found" = "Chave SSH não encontrada";
@@ -3131,10 +3131,10 @@
 "Working..." = "Trabalhando...";
 
 /* export label showing app is writing data */
-"Writing data..." = "Gravando dados...";
+"Writing data..." = "A guardar dados...";
 
 /* text showing that app is writing text file */
-"Writing..." = "Escrevendo...";
+"Writing..." = "A Escrever...";
 
 /* wrong data format or password */
 "Wrong data format or password." = "Formato de dados ou senha incorretos.";
@@ -3305,7 +3305,7 @@
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone será definido como SYSTEM.";
 
 /* Menu item title for checking for updates */
-"Check for Updates..." = "Verificar Atualizações...";
+"Check for Updates..." = "A Verificar atualizações...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
 "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "A variável Skip-show-database do servidor de banco de dados está definida para LIGADO. Assim, você não poderá listar os bancos de dados a menos que tenha o privilégio SHOW DATABASES.\n\nNo entanto, os bancos de dados ainda são acessíveis diretamente através de consultas SQL, dependendo de seus privilégios.";
@@ -3329,34 +3329,34 @@
 "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Fixar View";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Fixar Tabela";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "Fixar Procedure";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Fixar Function";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Fixar View";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Fixar tabela";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "Desafixar Procedure";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Desafixar Function";
 
 /* header for pinned table list */
 "PINNED" = "PINNED";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "Copiar nome da tabela";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
 "LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
