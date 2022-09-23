@@ -109,7 +109,7 @@
 		}
 	}
 	
-	[[self window] setMinSize:NSMakeSize(500, 350)];
+	[[self window] setMinSize:NSMakeSize(500, 450)];
 	[[self window] setShowsResizeIndicator:YES];
 	
 	[toolbar setSelectedItemIdentifier:[preferencePane preferencePaneIdentifier]];

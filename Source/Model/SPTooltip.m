@@ -191,9 +191,12 @@ static CGFloat slow_in_out (CGFloat t)
         }
         
         if(errorDict.count > 0){
-            executeOnBackgroundThread(^{
-                [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
-            });
+            NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+            if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+                executeOnBackgroundThread(^{
+                    [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+                });
+            }
         }
 
 		if(text)

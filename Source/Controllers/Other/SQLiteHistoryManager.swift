@@ -377,9 +377,11 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
     func logDBError(_ error: Error) {
         Log.error("Query failed: \(error.localizedDescription)")
 
-        DispatchQueue.background(background: {
-            Analytics.trackEvent("error", withProperties: ["dbError":error.localizedDescription, "sqliteLibVersion" : FMDatabase.sqliteLibVersion()])
-        })
+        if prefs.bool(forKey: SPSaveApplicationUsageAnalytics) {
+            DispatchQueue.background(background: {
+                Analytics.trackEvent("error", withProperties: ["dbError":error.localizedDescription, "sqliteLibVersion" : FMDatabase.sqliteLibVersion()])
+            })
+        }
     }
 
     /// separates multiline query into individual lines.

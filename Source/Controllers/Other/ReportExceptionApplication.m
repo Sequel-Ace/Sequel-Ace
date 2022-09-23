@@ -31,7 +31,10 @@
     });
 
     // forward exception to MSACCrashes
-    [MSACCrashes applicationDidReportException:exception];
+    NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+    if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+        [MSACCrashes applicationDidReportException:exception];
+    }
     [super reportException:exception];
 }
 
