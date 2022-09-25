@@ -772,7 +772,7 @@ Gw
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="f9S-3k-CY3"/>
                     </constraints>
-                    <buttonCell key="cell" type="check" title="Send application usage analytics" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
+                    <buttonCell key="cell" type="check" title="Share anonymized usage analytics with developers" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
