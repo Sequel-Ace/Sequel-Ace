@@ -688,6 +688,7 @@ extern const NSInteger SPBundleRedirectActionLastCode;
 extern NSString *SPMigratedQueriesFromPrefs;
 extern NSString *SPTraceSQLiteExecutions;
 extern NSString *SPCustomQuerySaveHistoryIndividually;
+extern NSString *SPSaveApplicationUsageAnalytics;
 
 // URL scheme
 extern NSString *SPURLSchemeQueryInputPathHeader;

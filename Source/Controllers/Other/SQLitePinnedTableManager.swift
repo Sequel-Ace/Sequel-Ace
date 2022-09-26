@@ -192,9 +192,11 @@ import OSLog
     private func logDBError(_ error: Error) {
         Log.error("Query failed: \(error.localizedDescription)")
 
-        DispatchQueue.background(background: {
-            Analytics.trackEvent("error", withProperties: ["dbError": error.localizedDescription, "sqliteLibVersion": FMDatabase.sqliteLibVersion()])
-        })
+        if prefs.bool(forKey: SPSaveApplicationUsageAnalytics) {
+            DispatchQueue.background(background: {
+                Analytics.trackEvent("error", withProperties: ["dbError": error.localizedDescription, "sqliteLibVersion": FMDatabase.sqliteLibVersion()])
+            })
+        }
     }
 
 

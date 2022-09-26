@@ -523,8 +523,10 @@ NSString *kHeader     = @"HEADER";
 	} // end of column loop
 
     if(errorDict.count > 0){
-        SPLog(@"autoIncrement error");
-        [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+        SPLog(@"autoIncrement error");        
+        if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+            [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+        }
     }
 
     // --- SECOND PART --- Build the SQL with the previous selected columns
