@@ -942,8 +942,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                 if ((firstChar == '(') && (lastChar = ')')) {
                     defaultValueIsExpression = YES;
                 }
-                // Check if defaultValue is a string in quotes (single or double)
-                else if ( ((firstChar == '"') && (lastChar = '"')) || ((firstChar == '\'') && (lastChar = '\'')) ) {
+                // Check if defaultValue is a string in quotes (single or double) . or rowType is timestamps/datetimes
+                else if ( ((firstChar == '"') && (lastChar = '"')) || ((firstChar == '\'') && (lastChar = '\'')) 
+                            || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME"]]  ) {
                     defaultValueIsString = YES;
                 }
             }
