@@ -4,6 +4,23 @@
 
 
 ### Fixed
+- 1b531f4c, Fix closing all connections that are being opened 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.1]
+
+### Added
+
+
+### Fixed
 - 1b531f4c, Fix closing all connections that are being opened
 
 ### Changed
