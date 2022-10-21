@@ -930,7 +930,7 @@ NSString *kHeader     = @"HEADER";
 	maxCellWidth += columnBaseWidth;
 
 	// If the header width is wider than this expanded width, use it instead
-    NSAttributedString *headerString = [columnDefinition tableContentHeaderAttributedString];
+    NSAttributedString *headerString = [columnDefinition tableContentColumnHeaderAttributedString];
     cellWidth = [headerString size].width;
 	if (cellWidth + 10 > maxCellWidth) maxCellWidth = cellWidth + 10;
 

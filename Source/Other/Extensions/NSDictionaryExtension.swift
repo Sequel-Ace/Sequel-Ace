@@ -9,7 +9,7 @@
 import Foundation
 
 @objc extension NSDictionary {
-    var tableContentHeaderAttributedString: NSAttributedString {
+    var tableContentColumnHeaderAttributedString: NSAttributedString {
         guard let columnName: String = value(forKey: "name") as? String else {
             return NSAttributedString(string: "")
         }
