@@ -217,6 +217,7 @@
 		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
+		51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51384AC12903461000FEC501 /* NSDictionaryExtension.swift */; };
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
 		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
@@ -868,6 +869,7 @@
 		5132930925F586A900D803AD /* NotificationToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationToken.swift; sourceTree = "<group>"; };
 		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
+		51384AC12903461000FEC501 /* NSDictionaryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSDictionaryExtension.swift; sourceTree = "<group>"; };
 		514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPDatabaseDocument.swift; sourceTree = "<group>"; };
 		516A76C52653B4E800DC6501 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51731E7B27DFB99A00D81B98 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -2259,22 +2261,23 @@
 		51F4AFB924B26646006144D5 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */,
+				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
+				1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */,
+				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
+				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
+				1A94988D25516057000BC793 /* DateExtension.swift */,
+				1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */,
+				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
+				1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */,
 				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
+				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
+				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
+				1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */,
+				1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */,
 				51C8597B24C8A31400A8C7C4 /* StringExtension.swift */,
 				1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */,
 				51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */,
-				1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */,
-				1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */,
-				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
-				1A94988D25516057000BC793 /* DateExtension.swift */,
-				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
-				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
-				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
-				1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */,
-				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
-				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
-				1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */,
+				51384AC12903461000FEC501 /* NSDictionaryExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3007,6 +3010,7 @@
 				1785EB60127DD5A800F468C8 /* SPNotificationsPreferencePane.m in Sources */,
 				1785EB66127DD5EA00F468C8 /* SPNetworkPreferencePane.m in Sources */,
 				500DA4B71BEFF877000773FE /* SPComboBoxCell.m in Sources */,
+				51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */,
 				1785EB6A127DD79300F468C8 /* SPEditorPreferencePane.m in Sources */,
 				17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */,
 				17D3C22212859E070047709F /* SPFavoriteNode.m in Sources */,
