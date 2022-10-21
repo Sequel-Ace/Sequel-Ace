@@ -261,7 +261,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[NSNotificationCenter defaultCenter] addObserver:self
 	                                         selector:@selector(documentWillClose:)
 	                                             name:SPDocumentWillCloseNotification
-	                                           object:tableDocumentInstance];
+	                                           object:nil];
 }
 
 #pragma mark -
@@ -3658,10 +3658,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 }
 
 //this method is called right before the UI objects are deallocated
-- (void)documentWillClose:(NSNotification *)notification
-{
-	// if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
-	[self clearTableLoadTimer];
+- (void)documentWillClose:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (tableDocumentInstance == document) {
+            // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
+            [self clearTableLoadTimer];
+        }
+    }
 }
 
 #pragma mark -
