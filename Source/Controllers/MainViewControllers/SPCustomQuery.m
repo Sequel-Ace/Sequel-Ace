@@ -1821,7 +1821,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Set field type for validations
         [[dataCell formatter] setFieldType:[columnDefinition objectForKey:@"type"]];
         [theCol setDataCell:dataCell];
-        [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+        [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentHeaderAttributedString]];
         [theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@", [columnDefinition objectForKey:@"name"], [columnDefinition objectForKey:@"type"], ([columnDefinition objectForKey:@"char_length"]) ? [NSString stringWithFormat:@"(%@)", [columnDefinition objectForKey:@"char_length"]] : @""]];
         
         // Set the width of this column to saved value if exists and maps to a real column
