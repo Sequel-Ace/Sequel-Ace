@@ -89,7 +89,7 @@
 		[[NSNotificationCenter defaultCenter] addObserver:self
 		                                         selector:@selector(_destroy:)
 		                                             name:SPDocumentWillCloseNotification
-		                                           object:_delegate];
+		                                           object:nil];
 
 		// Set up the connection, thread management and data locks
 		pthread_mutex_init(&threadManagementLock, NULL);
@@ -510,12 +510,16 @@
 /**
  * Ensure that processing is completed.
  */
-- (void)_destroy:(NSNotification *)notification
-{
-    self.delegate = nil;
-	
-	// Ensure all the retrieval threads have ended
-	[self _cancelAllThreadsAndWait];
+- (void)_destroy:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (self.delegate == document) {
+            self.delegate = nil;
+
+            // Ensure all the retrieval threads have ended
+            [self _cancelAllThreadsAndWait];
+        }
+    }
 }
 
 /**
