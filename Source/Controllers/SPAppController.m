@@ -536,6 +536,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return YES;
     }
 
+    if (action == @selector(visitHelpWebsite:) || action == @selector(visitFAQWebsite:) || action == @selector(viewKeyboardShortcuts:)) {
+        return YES;
+    }
+
     if (self.tabManager.activeWindowController.databaseDocument) {
         return [self.tabManager.activeWindowController.databaseDocument validateMenuItem:menuItem];
     }
