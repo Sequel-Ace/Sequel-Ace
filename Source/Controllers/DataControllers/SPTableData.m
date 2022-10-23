@@ -79,9 +79,14 @@
 }
 
 - (void)documentWillClose:(NSNotification *)notification {
-    [self setConnection:nil];
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (tableDocumentInstance == document) {
+            [self setConnection:nil];
 
-    pthread_mutex_destroy(&dataProcessingLock);
+            pthread_mutex_destroy(&dataProcessingLock);
+        }
+    }
 }
 
 /**

@@ -296,7 +296,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                name:@"NSApplicationWillTerminateNotification"
              object:nil];
 
-    [nc addObserver:self selector:@selector(documentWillClose) name:SPDocumentWillCloseNotification object:nil];
+    [nc addObserver:self selector:@selector(documentWillClose:) name:SPDocumentWillCloseNotification object:nil];
 
     // Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
     selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
@@ -6564,30 +6564,36 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return connection;
 }
 
-- (void)documentWillClose {
-    NSAssert([NSThread isMainThread], @"Calling %s from a background thread is not supported!", __func__);
+- (void)documentWillClose:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (self == document) {
 
-    [self closeConnection];
+            NSAssert([NSThread isMainThread], @"Calling %s from a background thread is not supported!", __func__);
 
-    // Unregister observers
-    [self _removePreferenceObservers];
+            [self closeConnection];
 
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+            // Unregister observers
+            [self _removePreferenceObservers];
 
-    [taskProgressWindow close];
+            [[NSNotificationCenter defaultCenter] removeObserver:self];
+            [NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-    if (processListController) [processListController close];
+            [taskProgressWindow close];
 
-    // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
-    [connectionController setDelegate:nil];
-    [printWebView setFrameLoadDelegate:nil];
+            if (processListController) [processListController close];
 
-    if (taskDrawTimer) {
-        [taskDrawTimer invalidate];
-    }
-    if (queryExecutionTimer) {
-        [queryExecutionTimer invalidate];
+            // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
+            [connectionController setDelegate:nil];
+            [printWebView setFrameLoadDelegate:nil];
+
+            if (taskDrawTimer) {
+                [taskDrawTimer invalidate];
+            }
+            if (queryExecutionTimer) {
+                [queryExecutionTimer invalidate];
+            }
+        }
     }
 }
 

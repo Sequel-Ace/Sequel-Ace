@@ -1,3 +1,45 @@
+## [4.0.1]
+
+### Added
+
+
+### Fixed
+- 1b531f4c, Fix closing all connections that are being opened
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.0]
+
+### Added
+- 968d5361, Make analytics opt-out 
+
+### Fixed
+- c9d037a3,  Fix small typo on Export dialog
+- e37e799e,  Portuguese localization
+- f8f016ca, Fix major memory leak with database document not being released 
+- 24676d51, Fix memory leaks when closing connection 
+- c9e367d5, Fix saving session not saving / restoring tabs 
+- 6381ff81, Fix crash on right click when field editor is active 
+- dd6d02c5, Fix deprecations and warnings 
+- 2dd099f6, Fix saving session more than once 
+
+### Changed
+
+
+### Removed
+- 26092354, Breaking change: Officially drop MySQL 5.6 support 
+- 6183c515, Drop macOS 10.12 
+
+### Infra
+
+
 ## [3.5.3]
 
 ### Added

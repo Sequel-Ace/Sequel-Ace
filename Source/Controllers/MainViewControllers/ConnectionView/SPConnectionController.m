@@ -1962,19 +1962,24 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[favoritesOutlineView display];
 }
 
-- (void)_documentWillClose:(NSNotification *)notification
-{
-	cancellingConnection = YES;
-	dbDocument = nil;
+- (void)_documentWillClose:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (dbDocument == document) {
 
-	if (mySQLConnection) {
-		[mySQLConnection setDelegate:nil];
-		[NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
-	}
-	
-	if (sshTunnel) {
-		[sshTunnel setConnectionStateChangeSelector:nil delegate:nil];
-	}
+            cancellingConnection = YES;
+            dbDocument = nil;
+
+            if (mySQLConnection) {
+                [mySQLConnection setDelegate:nil];
+                [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
+            }
+
+            if (sshTunnel) {
+                [sshTunnel setConnectionStateChangeSelector:nil delegate:nil];
+            }
+        }
+    }
 }
 
 #pragma mark - SPConnectionHandler
@@ -3321,7 +3326,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [nc addObserver:self
            selector:@selector(_documentWillClose:)
                name:SPDocumentWillCloseNotification
-             object:dbDocument];
+             object:nil];
 
     [nc addObserver:self
            selector:@selector(scrollViewFrameChanged:)

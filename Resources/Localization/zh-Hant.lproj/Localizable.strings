@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "嘗試完成操作時發生錯誤。\n\nMySQL提示：%@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "資源上限設定在您的MySQL版本中不支援。任何您設定的資源上限都被捨棄並未被儲存。MySQL 回覆: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "嘗試創建%lu個導出文件時發生了未處理的錯誤。請檢查詳細信息並重試。";
@@ -1090,7 +1090,7 @@
 "Dump of table" = "轉儲表";
 
 /* sql export dump of view label */
-"Dump of view" = "Dump of view";
+"Dump of view" = "視圖的轉儲";
 
 /* text showing that app is writing dump */
 "Dumping..." = "正在轉儲...";
@@ -2332,7 +2332,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace找不到該索引對應的任何欄。請檢查索引是否存在。";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace只有在macOS附帶的預設OpenSSH客戶端版本測試有效並支援。使用其他客戶端可能會導致連接問題、安全問題或根本無法使用。\n\n請注意我們無法為此類配置提供技術支持。";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "不支持Sequal Ace的URL SCHEME指令。";
@@ -2452,7 +2452,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "透過SSL加密安全連線";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH已連接";
@@ -3200,13 +3200,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選取的檔案是無效檔案。\n\n請重試。\n\nClass: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "所選擇的known hosts已知主機列表之檔案無法寫入。\n\n%@\n\n 請重新在Sequel Ace的偏好設定中選擇新的檔案並重試。";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "所選擇的known hosts已知主機列表之檔案無效。\n\n%@\n\n 請重新在Sequel Ace的偏好設定中選擇新的檔案並重試。";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "所選擇的known hosts已知主機列表之檔案的路徑中包含了不支援的引號字元 ('\")。\n\n%@\n\n 請重新在Sequel Ace的偏好設定中選擇新的檔案或是將檔案/路徑更名以去除該引號。";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSH Tunnel 除錯資訊";
@@ -3215,7 +3215,7 @@
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "您有以下舊版書簽：\n\n%@\n\n是否重新請求訪問？";
 
 /* Question to user to see if they would like to request access to missing bookmarks */
-"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?";
+"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "您有以下遺失的安全書簽：\n\n%@\n\n是否現在重新請求存取權？";
 
 /* known hosts advance menu item title */
 "Use known hosts from ssh config (ADVANCED)" = "使用 SSH 設定檔的 known hosts (進階)";
@@ -3326,40 +3326,40 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "當前字段 \"%@\" 是自動生成的列，因此不能被編輯";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "\"default\" 默認值的用法和上個版本的Sequel ACE做了改變：\n\n -無默認值：空白 \n -字串值：在字串前後用單引號 '\" 或是 雙引號 \"\" （包含空字串）\n -表達式： 使用括號 () 。除了 TIMESTAMP 和 DATETIME 欄位可直接指定 CURRENT_TIMESTAMP 函數而不需加引號";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "將視圖置頂";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "將資料表置頂";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "將存儲過程置頂";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "將函數置頂";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "取消視圖置頂";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "取消資料表置頂";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "取消存儲過程置頂";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "取消函數置頂";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "置頂資料表";
 
 /* Menu option to copy a table's name with database name in the list of tables */
 "Copy Table Name" = "複製資料表名稱";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL 方法錯誤";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "查詢中 ?name= 的變數與個人收藏項目中任何項目都不相符";

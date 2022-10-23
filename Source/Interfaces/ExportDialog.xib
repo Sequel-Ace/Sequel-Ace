@@ -804,7 +804,7 @@ Gw
                                     <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1375">
                                         <rect key="frame" x="2" y="217" width="262" height="18"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        <buttonCell key="cell" type="check" title="Use case-insentive links" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" inset="2" id="1376">
+                                        <buttonCell key="cell" type="check" title="Use case-insensitive links" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" inset="2" id="1376">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="message" size="11"/>
                                         </buttonCell>
