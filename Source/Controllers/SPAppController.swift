@@ -165,6 +165,10 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.showFilterTable()
     }
 
+    @IBAction func makeTableListFilterHaveFocus(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.makeTableListFilterHaveFocus(nil)
+    }
+
     @IBAction func copyCreateTableSyntax(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.copyCreateTableSyntax(nil)
     }
