@@ -3917,6 +3917,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSBeep();
 		return;
 	}
+
+    [prefs setBool:YES forKey:SPRuleFilterEditorLastVisibilityChoice];
 	
 	[self setRuleEditorVisible:YES animate:YES];
 	[toggleRuleFilterButton setState:NSOnState];
