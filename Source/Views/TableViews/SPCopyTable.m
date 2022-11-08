@@ -293,7 +293,7 @@ NSString *kHeader     = @"HEADER";
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@","];
-			[result appendFormat:@"\"%@\"", [[[[columns safeObjectAtIndex:i] headerCell] stringValue] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+			[result appendFormat:@"\"%@\"", [[[[[columns safeObjectAtIndex:i] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
 		}
 		[result appendString:@"\n"];
 	}
