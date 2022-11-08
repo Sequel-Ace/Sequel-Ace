@@ -1695,7 +1695,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Set field names as first line
     for (tableColumn in [customQueryView tableColumns])
     {
-        [tempRow addObject:[[tableColumn headerCell] stringValue]];
+        [tempRow addObject:[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSDictionary tableContentColumnHeaderSplittingSpaceCharacter]][0]];
     }
     
     NSMutableArray *currentResult = [NSMutableArray array];
