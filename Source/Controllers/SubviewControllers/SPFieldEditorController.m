@@ -1292,7 +1292,7 @@ typedef enum {
 		// saves a non-space char + base char if that combination
 		// occurs at the end of a sequence of typing before saving
 		// (OK button).
-		editTextViewWasChanged = ([replacementString length] == 1);
+		editTextViewWasChanged = ([replacementString length] == 1) || wasCutPaste;
 
 		// Pure attribute changes are ok
 		if (!replacementString) return YES;
