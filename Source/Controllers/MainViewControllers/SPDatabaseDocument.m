@@ -2198,7 +2198,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)showFilterTable {
     [self viewContent];
 
-    [tableContentInstance performSelector:@selector(showFilterTable) withObject:nil afterDelay:0.1];
+    [tableContentInstance toggleRuleEditorVisible:nil];
 }
 
 /**
