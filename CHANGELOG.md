@@ -1,3 +1,22 @@
+## [4.0.2]
+
+### Added
+- 51fad246, Show column type in query editor and content view 
+
+### Fixed
+- 0756e835,  Remove data type names from CSV exports
+- e8fa9487,   Text is not invalidated if just a cut or paste action is executed
+- 9ccf9d19, Enable Help menu for connection screen 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [4.0.1]
 
 ### Added
