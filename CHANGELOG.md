@@ -1,3 +1,20 @@
+## [4.0.3]
+
+### Added
+
+
+### Fixed
+- 81e08793, Fix copy as SQL insert, Fix users modal resizing 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [4.0.2]
 
 ### Added
