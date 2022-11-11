@@ -504,7 +504,7 @@ NSString *kHeader     = @"HEADER";
             data              = [[NSMutableDictionary alloc] init];
             data[kColMapping] = @(columnMapping);
             data[kColType]    = @(1);                 // By default, set to String
-            data[kHeader]     = [[[columns safeObjectAtIndex:c] headerCell] stringValue];
+            data[kHeader]     = [[[[columns safeObjectAtIndex:c] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0];
             // Numeric data
             if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
                 data[kColType] = @(0);
@@ -657,8 +657,9 @@ NSString *kHeader     = @"HEADER";
     for (NSDictionary *dic in array) {
         if (![dic isKindOfClass:[NSNull class]]) {
             NSString *header = [dic safeObjectForKey:kHeader];
-            if ([result length])
+            if ([result length]) {
                 [result appendString: @", "];
+            }
             [result appendString:[header backtickQuotedString]];
         }
     }

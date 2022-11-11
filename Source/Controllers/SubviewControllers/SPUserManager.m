@@ -135,7 +135,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[tabView selectTabViewItemAtIndex:0];
 
 	[splitView setMinSize:120.f ofSubviewAtIndex:0];
-	[splitView setMinSize:620.f ofSubviewAtIndex:1];
+	[splitView setMinSize:550.f ofSubviewAtIndex:1];
 
 	NSTableColumn *tableColumn = [outlineView tableColumnWithIdentifier:SPTableViewNameColumnID];
 	ImageAndTextCell *imageAndTextCell = [[ImageAndTextCell alloc] init];
