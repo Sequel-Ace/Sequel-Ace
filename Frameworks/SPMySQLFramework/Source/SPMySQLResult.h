@@ -65,7 +65,7 @@ typedef enum {
 }
 
 // Master init method
-- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding;
+- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding version:(NSUInteger)majorVersion;
 
 // Result set information
 - (NSUInteger)numberOfFields;
@@ -94,6 +94,7 @@ typedef enum {
  * necessary there.
  */
 @property (readwrite, assign) BOOL returnDataAsStrings;
+@property (readonly, assign) NSUInteger serverMajorVersion;
 
 @property (readwrite, assign) SPMySQLResultRowType defaultRowReturnType;
 

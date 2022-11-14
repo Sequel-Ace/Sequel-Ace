@@ -40,7 +40,7 @@
 /**
  * Override the standard SPMySQLResult interface
  */
-- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding
+- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding version:(NSUInteger)majorVersion
 {
 	return [super init];
 }

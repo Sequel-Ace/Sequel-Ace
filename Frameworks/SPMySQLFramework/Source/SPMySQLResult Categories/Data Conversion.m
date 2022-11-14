@@ -153,7 +153,7 @@ static NSStringEncoding NSFromCFStringEncodingGBK_95;
 
 		// For Geometry types, use a special Geometry object to handle their complexity
 		case SPMySQLResultFieldAsGeometry:
-			return [SPMySQLGeometryData dataWithBytes:bytes length:length];
+			return [SPMySQLGeometryData dataWithBytes:bytes length:length version: self.serverMajorVersion];
 
 		// For bit fields, get a zero-padded representation of the data
 		case SPMySQLResultFieldAsBit:

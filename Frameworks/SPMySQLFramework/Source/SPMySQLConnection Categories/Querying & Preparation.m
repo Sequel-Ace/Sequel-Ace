@@ -355,7 +355,7 @@
 				// update the affected row count.
 				case SPMySQLResultAsResult:
 					mysqlResult = mysql_store_result(mySQLConnection);
-					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding];
+					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding version:self.serverMajorVersion];
 					theAffectedRowCount = mysql_affected_rows(mySQLConnection);
 					break;
 

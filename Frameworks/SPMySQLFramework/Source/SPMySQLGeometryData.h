@@ -35,10 +35,11 @@
 	// Holds the buffer length
 	NSUInteger bufferLength;
 
+  NSUInteger serverMajorVersion;
 }
 
-- (instancetype)initWithBytes:(const void *)geoData length:(NSUInteger)length;
-+ (instancetype)dataWithBytes:(const void *)geoData length:(NSUInteger)length;
+- (instancetype)initWithBytes:(const void *)geoData length:(NSUInteger)length version:(NSUInteger)majorVersion;
++ (instancetype)dataWithBytes:(const void *)geoData length:(NSUInteger)length version:(NSUInteger)majorVersion;
 - (NSString *)description;
 - (NSUInteger)length;
 - (NSData *)data;
