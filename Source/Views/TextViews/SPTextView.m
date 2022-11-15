@@ -2175,6 +2175,11 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 				   afterDelay:[[prefs valueForKey:SPCustomQueryAutoHelpDelay] doubleValue]];
 	}
 
+  if (completionIsOpen && completionPopup && ![completionPopup hasStartedIntercepting]) {
+    [completionPopup close];
+    completionPopup = nil;
+  }
+
 	// Cancel auto-completion timer
 	if([prefs boolForKey:SPCustomQueryAutoComplete])
 		[NSObject cancelPreviousPerformRequestsWithTarget:self
