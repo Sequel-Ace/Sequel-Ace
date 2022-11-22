@@ -52,7 +52,9 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 
 @end
 
-@interface SPNarrowDownCompletion ()
+@interface SPNarrowDownCompletion () {
+  BOOL startedIntercepting;
+}
 
 - (NSRect)rectOfMainScreen;
 - (NSString*)filterString;
@@ -124,6 +126,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		suggestions = nil;
 		autocompletePlaceholderWasInserted = NO;
 		prefs = [NSUserDefaults standardUserDefaults];
+    startedIntercepting = NO;
 
 		tableFont = [NSUnarchiver unarchiveObjectWithData:[[NSUserDefaults standardUserDefaults] dataForKey:SPCustomQueryEditorFont]];
 		[self setupInterface];
@@ -785,18 +788,15 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 	[theView setCompletionIsOpen:YES];
 
-	closeMe = NO;
 	while(!closeMe) {
 		NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
 		                                    untilDate:[NSDate distantFuture]
 		                                       inMode:NSDefaultRunLoopMode
 		                                      dequeue:YES];
+    startedIntercepting = YES;
 
 		if(!event) continue;
 
-		// Exit if closeMe has been set in the meantime
-		if(closeMe) return;
-		
 		NSEventType t = [event type];
 		if([theTableView SP_NarrowDownCompletion_canHandleEvent:event]) {
 			// skip the rest
@@ -1142,6 +1142,10 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 {
 	theCharRange.location += delta;
 	theParseRange.location += delta;
+}
+
+- (BOOL)hasStartedIntercepting {
+  return startedIntercepting;
 }
 
 @end
