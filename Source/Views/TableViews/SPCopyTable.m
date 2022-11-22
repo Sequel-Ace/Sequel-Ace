@@ -1291,14 +1291,14 @@ NSString *kHeader     = @"HEADER";
 
 
     //Check for null
-	if ([cellValue isNSNull])
-	{
+    if ([cellValue isNSNull])
+    {
         //Null should always be inline
         return NO;
     }
 
     //Check string lengths
-    if (editLongerTextInSheet && [cellValue length] > editInSheetForLongTextLengthThreshold) {
+    if (editLongerTextInSheet && [cellValue isKindOfClass:[NSString class]] && [cellValue length] > editInSheetForLongTextLengthThreshold) {
         return YES;
     }
 
