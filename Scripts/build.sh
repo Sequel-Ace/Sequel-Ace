@@ -30,7 +30,7 @@ fi
 
 if [ "$MODE" = "tests" ]; then
   echo "Running Sequel Ace Unit tests"
-  set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Sequel Ace Debug" -destination "platform=macOS,arch=arm64" test CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c
+  set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Sequel Ace Debug" -destination "platform=macOS,arch=x86_64" test CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c
   success="1"
 fi
 
