@@ -161,7 +161,7 @@ NSString *kHeader     = @"HEADER";
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@"\t"];
-			[result appendString:[[[columns safeObjectAtIndex:i] headerCell] stringValue]];
+			[result appendString:[[[[columns safeObjectAtIndex:i] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
 		}
 		[result appendString:@"\n"];
 	}

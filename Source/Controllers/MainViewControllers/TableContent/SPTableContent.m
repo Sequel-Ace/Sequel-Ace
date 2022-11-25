@@ -2201,7 +2201,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Set field names as first line
 	for (NSTableColumn *aTableColumn in tableColumns) 
 	{
-		[tempRow addObject:[[aTableColumn headerCell] stringValue]];
+		[tempRow addObject:[[[aTableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
 	}
 	
 	[currentResult addObject:[NSArray arrayWithArray:tempRow]];
