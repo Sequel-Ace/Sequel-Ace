@@ -106,7 +106,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
 				[NSString stringForByteSize:i];
-//                NSLog(@"%@", [NSString stringForByteSize:i]);
 			}
 		}
 	}];
@@ -123,8 +122,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
         int const iterations = 100000;
         for (int i = 0; i < iterations; i++) {
             @autoreleasepool {
-//                NSLog(@"%@", [NSByteCountFormatter stringWithByteSize:i]);
-
                 tmp = [NSByteCountFormatter stringWithByteSize:i];
             }
         }
@@ -145,47 +142,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}];
 }
 
-//// swift static - 0.24s
-//- (void)testPerformance_stringForByteSizeStatic {
-//	// this is on main thread
-//	[self measureBlock:^{
-//		// Put the code you want to measure the time of here.
-//		int const iterations = 10000;
-//		for (int i = 0; i < iterations; i++) {
-//			@autoreleasepool {
-//				[NSString stringForByteSize2:i];
-//			}
-//		}
-//	}];
-//}
-//
-//// swift static NumberLiterals - 0.239s
-//- (void)testPerformance_stringForByteSizeSwiftStaticNumberLiterals {
-//	// this is on main thread
-//	[self measureBlock:^{
-//		// Put the code you want to measure the time of here.
-//		int const iterations = 10000;
-//		for (int i = 0; i < iterations; i++) {
-//			@autoreleasepool {
-//				[NSString stringForByteSize2:i];
-//			}
-//		}
-//	}];
-//}
-
-//- (void)testPerformance_stringForByteSize{
-//	// this is on main thread
-//	[self measureBlock:^{
-//		// Put the code you want to measure the time of here.
-//		int const iterations = 10000;
-//		for (int i = 0; i < iterations; i++) {
-//			@autoreleasepool {
-//				[NSString stringForByteSize2:i];
-//			}
-//		}
-//	}];
-//}
-
 // 0.0383s
 - (void)testPerformance_stringByMatchingRegexSearch {
     // this is on main thread
@@ -205,7 +161,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
         }
     }];
 }
-
 
 // 0.175s - 4 times slower than regexkit
 - (void)testPerformance_captureGroupForRegex {

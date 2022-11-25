@@ -226,8 +226,8 @@
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
+		51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 51A2D3B5292FEF000018CFB8 /* OCMock */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
-		51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51BA34A525BD9F30007CA20B /* OCMock.framework */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
@@ -884,7 +884,6 @@
 		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		51BA34A525BD9F30007CA20B /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Frameworks/OCMock.framework; sourceTree = "<group>"; };
 		51BB391B25F82B060048CA69 /* SPAppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAppController.swift; sourceTree = "<group>"; };
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -1167,8 +1166,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */,
 				51DCBEF0257134190098E303 /* libz.tbd in Frameworks */,
-				51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */,
 				502D22151BA62FA5000D4CE7 /* Security.framework in Frameworks */,
 				1717FA43155831600065C036 /* libicucore.dylib in Frameworks */,
 				50EA92671AB23EE1008D3C4F /* SPMySQL.framework in Frameworks */,
@@ -1231,7 +1230,6 @@
 				584756B4120A06740057631F /* CoreServices.framework */,
 				584756B6120A067B0057631F /* ApplicationServices.framework */,
 				584756B8120A06830057631F /* QuickLook.framework */,
-				51BA34A525BD9F30007CA20B /* OCMock.framework */,
 				296DC8BE0F9091DF002A3258 /* libicucore.dylib */,
 				179ECEC611F265EE009C6A40 /* libbz2.dylib */,
 				17B7B591101602AE00F057DE /* libssl.dylib */,
@@ -2435,6 +2433,7 @@
 			);
 			name = "Unit Tests";
 			packageProductDependencies = (
+				51A2D3B5292FEF000018CFB8 /* OCMock */,
 			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
@@ -2545,6 +2544,7 @@
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -3143,8 +3143,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3178,8 +3176,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3213,8 +3209,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3666,8 +3660,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -4063,6 +4055,14 @@
 				minimumVersion = 4.1.0;
 			};
 		};
+		51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/erikdoe/ocmock";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SnapKit/SnapKit";
@@ -4096,6 +4096,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
 			productName = AppCenterAnalytics;
+		};
+		51A2D3B5292FEF000018CFB8 /* OCMock */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */;
+			productName = OCMock;
 		};
 		51BC150025BE138700F1CDC9 /* SnapKit */ = {
 			isa = XCSwiftPackageProductDependency;
