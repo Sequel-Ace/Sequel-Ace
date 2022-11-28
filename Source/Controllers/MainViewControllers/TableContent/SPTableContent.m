@@ -527,7 +527,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Set up the column
 		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
-		[[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+
+        if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+            [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+        } else {
+            [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+        }
+
 		[theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@%@%@", 
 			[columnDefinition objectForKey:@"name"], 
 			[columnDefinition objectForKey:@"type"], 
