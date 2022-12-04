@@ -3242,10 +3242,10 @@
 "User Data Error" = "Error de datos de usuario";
 
 /* Title for Stale Bookmark file selection dialog */
-"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Por favor, vuelva a seleccionar el archivo '%@' para restaurar el acceso de Sequel Ace.";
 
 /* Title for File Preference file selection dialog */
-"Please choose a file or folder to grant Sequel Ace access to." = "Please choose a file or folder to grant Sequel Ace access to.";
+"Please choose a file or folder to grant Sequel Ace access to." = "Por favor, elija un archivo o una carpeta a la que conceder acceso a Sequel Ace.";
 
 /* Title for Network Preference ssh config file selection dialog */
 "Please choose your ssh config files(s)" = "Por favor, seleccione su(s) archivo(s) de configuración ssh";
@@ -3260,7 +3260,7 @@
 "Applying syntax highlighting..." = "Aplicando resaltado de sintaxis...";
 
 /* Error message when a bash task fails to start */
-"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "No se pudo iniciar la tarea.\nExcepción: %@\n Longitud ENV: %lu";
 
 /* Error message title when we failed to create new connection view */
 "New Connection Error" = "Error en la nueva conexión";
