@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Bei der Ausführung trat ein Fehler auf.\n\nMySQL Ergebnis: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Ressourcenlimits werden für Ihre MySQL-Version nicht unterstützt. Alle von Ihnen angegebenen Ressourcenlimits wurden verworfen und nicht gespeichert. MySQL sagte: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Beim Anlegen von %lu der Export-Dateien trat ein unklarer Fehler auf. Nach Prüfen der Umstände erneut versuchen.";
@@ -2333,7 +2333,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace findet keine Spalten zu diesem Index. Eventuell wurden sie bereits entfernt?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace unterstützt und wird nur mit den standardmäßigen OpenSSH-Client-Versionen getestet, die in macOS enthalten sind. Die Verwendung unterschiedlicher Clients kann zu Verbindungsproblemen oder Sicherheitsrisiken führen oder gar nicht funktionieren.\n\nBitte beachten Sie, dass wir für solche Konfigurationen keinen Support leisten können.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Sequelace URL Schema-Befehl wird nicht unterstützt.";
@@ -2453,7 +2453,7 @@ Befehle werden anwendungsweit ausgeführt";
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "Gesicherte Verbindung via SSL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH verbunden";
@@ -3201,13 +3201,13 @@ Befehle werden anwendungsweit ausgeführt";
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Die gewählte Datei ist ungültig.\n\nBitte erneut versuchen.\n\nKlasse: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Die ausgewählte known_hosts-Datei ist nicht beschreibbar.\n\n%@\n\nBitte wählen Sie die Datei erneut in den Einstellungen von Sequel Ace aus und versuchen Sie es erneut.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Die ausgewählte Known-Hosts-Datei ist ungültig.\n\nBitte wählen Sie die Datei in den Einstellungen von Sequel Ace erneut aus und versuchen Sie es erneut.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Die ausgewählte Datei bekannter Hosts enthält ein Anführungszeichen (\") im Dateipfad, das nicht unterstützt wird.\n\n%@\n\nBitte wählen Sie eine andere Datei in den Einstellungen von Sequel Ace aus oder benennen Sie die Datei/den Pfad um, um das Anführungszeichen zu entfernen.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSH-Tunnel-Debugging-Informationen";
