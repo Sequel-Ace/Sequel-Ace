@@ -1,3 +1,23 @@
+## [4.0.4]
+
+### Added
+
+
+### Fixed
+- b09e83df, Temporary Hotfix: Kill the task after termination 
+- 9f6d5ec0, Fix column types when copying content with column types and when exporting 
+- 49ec01cb,  Autocomplete weirdness
+- 4e1dfbec,  Pasting content in unloaded text/blob field causes crash
+
+### Changed
+- 55f6cc02, Update OpenSSL to 1.1.1s 
+
+### Removed
+
+
+### Infra
+- e2d231a1, Move OCMock to SPM from included framework 
+
 ## [4.0.3]
 
 ### Added
