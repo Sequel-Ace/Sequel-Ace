@@ -119,7 +119,7 @@
 	lastConnectionUsedTime = _monotonicTime();
 
 	// Convert to SPMySQLResult
-	SPMySQLResult *theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:stringEncoding];
+	SPMySQLResult *theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:stringEncoding version: self.serverMajorVersion];
 
 	// Unlock and return
 	[self _unlockConnection];

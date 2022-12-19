@@ -54,6 +54,9 @@ typedef struct st_point_2d_
 #define WKB_HEADER_SIZE (1+SIZEOF_STORED_UINT32)
 #define BUFFER_START 0
 
+static bool should_swap_order(int32_t srid, NSUInteger version);
+static void order_aware_memcpy(st_point_2d *pt, const void *src, bool needsSwap);
+
 @implementation SPMySQLGeometryData
 
 /**
@@ -71,12 +74,13 @@ typedef struct st_point_2d_
 /**
  * Initialize the SPMySQLGeometryData object with the WKB data
  */
-- (instancetype)initWithBytes:(const void *)geoData length:(NSUInteger)length
+- (instancetype)initWithBytes:(const void *)geoData length:(NSUInteger)length version:(NSUInteger)majorVersion
 {
 	if ((self = [self init])) {
 		bufferLength = length;
 		geoBuffer = malloc(bufferLength);
 		memcpy(geoBuffer, geoData, bufferLength);
+    serverMajorVersion = majorVersion;
 	}
 	return self;
 }
@@ -88,9 +92,9 @@ typedef struct st_point_2d_
 /**
  * Return an autorelease SPMySQLGeometryData object
  */
-+ (instancetype)dataWithBytes:(const void *)geoData length:(NSUInteger)length
++ (instancetype)dataWithBytes:(const void *)geoData length:(NSUInteger)length version:(NSUInteger)majorVersion
 {
-	return [[SPMySQLGeometryData alloc] initWithBytes:geoData length:length];
+	return [[SPMySQLGeometryData alloc] initWithBytes:geoData length:length version: majorVersion];
 }
 
 /**
@@ -145,11 +149,13 @@ typedef struct st_point_2d_
 	geoType = geoBuffer[ptr];
 	ptr += SIZEOF_STORED_UINT32;
 
+  bool needsSwap = should_swap_order(srid, serverMajorVersion);
+
 	switch (geoType) {
 
 		case wkb_point:
-			memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
-			return [NSString stringWithFormat:@"POINT(%.16g %.16g)%@", aPoint.x, aPoint.y, (srid) ? [NSString stringWithFormat:@",%d",srid]: @""];
+      order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
+      return [NSString stringWithFormat:@"POINT(%.16g %.16g)%@", aPoint.x, aPoint.y, (srid) ? [NSString stringWithFormat:@",%d",srid]: @""];
 		break;
 
 		case wkb_linestring:
@@ -157,7 +163,7 @@ typedef struct st_point_2d_
 			memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 			ptr += SIZEOF_STORED_UINT32;
 			for (i=0; i < numberOfItems; i++) {
-				memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+        order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 				[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (i < numberOfItems-1) ? @"," : @""];
 				ptr += POINT_DATA_SIZE;
 			}
@@ -174,7 +180,7 @@ typedef struct st_point_2d_
 				ptr += SIZEOF_STORED_UINT32;
 				[wkt appendString:@"("];
 				for (j=0; j < numberOfSubItems; j++) {
-					memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+          order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 					[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (j < numberOfSubItems-1) ? @"," : @""];
 					ptr += POINT_DATA_SIZE;
 				}
@@ -189,7 +195,7 @@ typedef struct st_point_2d_
 			memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 			ptr += SIZEOF_STORED_UINT32+WKB_HEADER_SIZE;
 			for (i=0; i < numberOfItems; i++) {
-				memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+        order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 				[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (i < numberOfItems-1) ? @"," : @""];
 				ptr += POINT_DATA_SIZE+WKB_HEADER_SIZE;
 			}
@@ -206,7 +212,7 @@ typedef struct st_point_2d_
 				ptr += SIZEOF_STORED_UINT32;
 				[wkt appendString:@"("];
 				for (j=0; j < numberOfSubItems; j++) {
-					memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+          order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 					[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (j < numberOfSubItems-1) ? @"," : @""];
 					ptr += POINT_DATA_SIZE;
 				}
@@ -230,7 +236,7 @@ typedef struct st_point_2d_
 					ptr += SIZEOF_STORED_UINT32;
 					[wkt appendString:@"("];
 					for (k=0; k < numberOfSubSubItems; k++) {
-						memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+            order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 						[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (k < numberOfSubSubItems-1) ? @"," : @""];
 						ptr += POINT_DATA_SIZE;
 					}
@@ -261,7 +267,7 @@ typedef struct st_point_2d_
 				switch(geoType) {
 
 					case wkb_point:
-						memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+            order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 						[wkt appendFormat:@"POINT(%.16g %.16g)", aPoint.x, aPoint.y];
 						ptr += POINT_DATA_SIZE;
 					break;
@@ -271,7 +277,7 @@ typedef struct st_point_2d_
 						memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 						ptr += SIZEOF_STORED_UINT32;
 						for (i=0; i < numberOfItems; i++) {
-							memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+              order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 							[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (i < numberOfItems-1) ? @"," : @""];
 							ptr += POINT_DATA_SIZE;
 						}
@@ -287,7 +293,7 @@ typedef struct st_point_2d_
 							ptr += SIZEOF_STORED_UINT32;
 							[wkt appendString:@"("];
 							for (j=0; j < numberOfSubItems; j++) {
-								memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+                order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 								[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (j < numberOfSubItems-1) ? @"," : @""];
 								ptr += POINT_DATA_SIZE;
 							}
@@ -301,7 +307,7 @@ typedef struct st_point_2d_
 						memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 						ptr += SIZEOF_STORED_UINT32+WKB_HEADER_SIZE;
 						for (i=0; i < numberOfItems; i++) {
-							memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+              order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 							[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (i < numberOfItems-1) ? @"," : @""];
 							ptr += POINT_DATA_SIZE+WKB_HEADER_SIZE;
 						}
@@ -318,7 +324,7 @@ typedef struct st_point_2d_
 							ptr += SIZEOF_STORED_UINT32;
 							[wkt appendString:@"("];
 							for (j=0; j < numberOfSubItems; j++) {
-								memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+                order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 								[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (j < numberOfSubItems-1) ? @"," : @""];
 								ptr += POINT_DATA_SIZE;
 							}
@@ -342,7 +348,7 @@ typedef struct st_point_2d_
 								ptr += SIZEOF_STORED_UINT32;
 								[wkt appendString:@"("];
 								for (k=0; k < numberOfSubSubItems; k++) {
-									memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+                  order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 									[wkt appendFormat:@"%.16g %.16g%@", aPoint.x, aPoint.y, (k < numberOfSubSubItems-1) ? @"," : @""];
 									ptr += POINT_DATA_SIZE;
 								}
@@ -413,10 +419,12 @@ typedef struct st_point_2d_
 	geoType = geoBuffer[ptr];
 	ptr += SIZEOF_STORED_UINT32;
 
+  bool needsSwap = should_swap_order(srid, serverMajorVersion);
+
 	switch(geoType) {
 
 		case wkb_point:
-			memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+      order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 			x_min = aPoint.x;
 			x_max = aPoint.x;
 			y_min = aPoint.y;
@@ -439,7 +447,7 @@ typedef struct st_point_2d_
 			memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 			ptr += SIZEOF_STORED_UINT32;
 			for (i=0; i < numberOfItems; i++) {
-				memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+        order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 				x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 				x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 				y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -466,7 +474,7 @@ typedef struct st_point_2d_
 				memcpy(&numberOfSubItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 				ptr += SIZEOF_STORED_UINT32;
 				for (j=0; j < numberOfSubItems; j++) {
-					memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+          order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 					x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 					x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 					y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -494,7 +502,7 @@ typedef struct st_point_2d_
 			memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 			ptr += SIZEOF_STORED_UINT32+WKB_HEADER_SIZE;
 			for (i=0; i < numberOfItems; i++) {
-				memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+        order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 				x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 				x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 				y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -522,7 +530,7 @@ typedef struct st_point_2d_
 				memcpy(&numberOfSubItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 				ptr += SIZEOF_STORED_UINT32;
 				for (j=0; j < numberOfSubItems; j++) {
-					memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+          order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 					x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 					x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 					y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -557,7 +565,7 @@ typedef struct st_point_2d_
 					memcpy(&numberOfSubSubItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 					ptr += SIZEOF_STORED_UINT32;
 					for (k=0; k < numberOfSubSubItems; k++) {
-						memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+            order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 						x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 						x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 						y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -601,7 +609,7 @@ typedef struct st_point_2d_
 				switch(geoType) {
 			
 					case wkb_point:
-						memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+            order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 						x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 						x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 						y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -614,7 +622,7 @@ typedef struct st_point_2d_
 						memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 						ptr += SIZEOF_STORED_UINT32;
 						for (i=0; i < numberOfItems; i++) {
-							memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+              order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 							x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 							x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 							y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -633,7 +641,7 @@ typedef struct st_point_2d_
 							memcpy(&numberOfSubItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 							ptr += SIZEOF_STORED_UINT32;
 							for (j=0; j < numberOfSubItems; j++) {
-								memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+                order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 								x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 								x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 								y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -650,7 +658,7 @@ typedef struct st_point_2d_
 						memcpy(&numberOfItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 						ptr += SIZEOF_STORED_UINT32+WKB_HEADER_SIZE;
 						for (i=0; i < numberOfItems; i++) {
-							memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+              order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 							x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 							x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 							y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -668,7 +676,7 @@ typedef struct st_point_2d_
 							memcpy(&numberOfSubItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 							ptr += SIZEOF_STORED_UINT32;
 							for (j=0; j < numberOfSubItems; j++) {
-								memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+                order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 								x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 								x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 								y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -693,7 +701,7 @@ typedef struct st_point_2d_
 								memcpy(&numberOfSubSubItems, &geoBuffer[ptr], SIZEOF_STORED_UINT32);
 								ptr += SIZEOF_STORED_UINT32;
 								for (k=0; k < numberOfSubSubItems; k++) {
-									memcpy(&aPoint, &geoBuffer[ptr], POINT_DATA_SIZE);
+                  order_aware_memcpy(&aPoint, &geoBuffer[ptr], needsSwap);
 									x_min = (aPoint.x < x_min) ? aPoint.x : x_min;
 									x_max = (aPoint.x > x_max) ? aPoint.x : x_max;
 									y_min = (aPoint.y < y_min) ? aPoint.y : y_min;
@@ -793,3 +801,33 @@ typedef struct st_point_2d_
 }
 
 @end
+
+
+// normally POINT(X Y) = POINT(lon lat) but in MySQL 8, that is only true for SRIDs below.
+// So, if we don't have one of these then we need to swap x & y
+static bool should_swap_order(int32_t srid, NSUInteger version) {
+  if (version != 8) {
+    return false;
+  }
+
+  static int32_t KNOWN_LON_LAT_SRIDs[8] = { 0, 7035, 7037, 7039, 7041, 7084, 7086, 7133 };
+
+  for ( int i = 0; i < 8; i++ ) {
+    if (KNOWN_LON_LAT_SRIDs[i] == srid) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static void order_aware_memcpy(st_point_2d *pt, const void *src, bool needsSwap) {
+  memcpy(pt, src, POINT_DATA_SIZE);
+
+  if (needsSwap) {
+    double temp = pt->x;
+    pt->x = pt->y;
+    pt->y = temp;
+  }
+}
+

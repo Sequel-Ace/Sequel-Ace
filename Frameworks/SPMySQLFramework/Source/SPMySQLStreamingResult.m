@@ -68,7 +68,7 @@
 	// If no result set was passed in, return nil.
 	if (!theResult) return nil;
 
-	if ((self = [super initWithMySQLResult:theResult stringEncoding:theStringEncoding])) {
+	if ((self = [super initWithMySQLResult:theResult stringEncoding:theStringEncoding version:theConnection.serverMajorVersion])) {
 		parentConnection = theConnection;
 		numberOfRows = NSNotFound;
 

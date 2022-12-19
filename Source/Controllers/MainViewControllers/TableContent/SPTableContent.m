@@ -2201,7 +2201,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Set field names as first line
 	for (NSTableColumn *aTableColumn in tableColumns) 
 	{
-		[tempRow addObject:[[aTableColumn headerCell] stringValue]];
+		[tempRow addObject:[[[aTableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
 	}
 	
 	[currentResult addObject:[NSArray arrayWithArray:tempRow]];
@@ -3917,6 +3917,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSBeep();
 		return;
 	}
+
+    [prefs setBool:YES forKey:SPRuleFilterEditorLastVisibilityChoice];
 	
 	[self setRuleEditorVisible:YES animate:YES];
 	[toggleRuleFilterButton setState:NSOnState];
@@ -4105,7 +4107,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ([[tableValues cellDataAtRow:rowIndex column:[[tableColumn identifier] integerValue]] isSPNotLoaded]) {
 
 			// Only get the data for the selected column, not all of them
-			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[tableColumn headerCell] stringValue] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
+			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
 
 			SPMySQLResult *tempResult = [mySQLConnection queryString:query];
 

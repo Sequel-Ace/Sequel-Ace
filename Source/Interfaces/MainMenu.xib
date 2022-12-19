@@ -820,8 +820,8 @@
                 <menuItem title="Table" tag="5" id="757">
                     <menu key="submenu" title="Table" id="758">
                         <items>
-                            <menuItem title="Filter Content" toolTip="Move the keyboard focus to the Content Table filter table fields (⌘F is an available shortcut on the Content view)" id="1041">
-                                <modifierMask key="keyEquivalentModifierMask"/>
+                            <menuItem title="Filter Content" keyEquivalent="f" toolTip="Move the keyboard focus to the Content Table filter table fields (⌘F is an available shortcut on the Content view)" id="1041">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                 <connections>
                                     <action selector="focusOnTableContentFilter:" target="-1" id="1044"/>
                                 </connections>

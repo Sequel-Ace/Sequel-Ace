@@ -41,6 +41,7 @@ static id NSNullPointer;
 
 @synthesize returnDataAsStrings;
 @synthesize defaultRowReturnType;
+@synthesize serverMajorVersion;
 
 #pragma mark -
 #pragma mark Setup and teardown
@@ -81,7 +82,7 @@ static id NSNullPointer;
  * Standard init method, constructing the SPMySQLResult around a MySQL
  * result pointer and the encoding to use when working with the data.
  */
-- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding
+- (instancetype)initWithMySQLResult:(void *)theResult stringEncoding:(NSStringEncoding)theStringEncoding version:(NSUInteger)majorVersion
 {
 	// If no result set was passed in, return nil.
 	if (!theResult) return nil;
@@ -93,6 +94,7 @@ static id NSNullPointer;
 		resultSet = theResult;
 		numberOfFields = mysql_num_fields(resultSet);
 		numberOfRows = mysql_num_rows(resultSet);
+    serverMajorVersion = majorVersion;
 
 		// Cache the field definitions and build up an array of cached field names and types
 		fieldDefinitions = mysql_fetch_fields(resultSet);

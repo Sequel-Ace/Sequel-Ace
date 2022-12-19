@@ -28,6 +28,15 @@
       }
     },
     {
+      "identity" : "ocmock",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/erikdoe/ocmock",
+      "state" : {
+        "branch" : "master",
+        "revision" : "05cbc9d934e84ad32530fa53fd7d29c7966d5828"
+      }
+    },
+    {
       "identity" : "plcrashreporter",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/microsoft/PLCrashReporter.git",

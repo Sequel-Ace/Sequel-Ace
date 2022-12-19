@@ -1,3 +1,59 @@
+## [4.0.4]
+
+### Added
+
+
+### Fixed
+- b09e83df, Temporary Hotfix: Kill the task after termination 
+- 9f6d5ec0, Fix column types when copying content with column types and when exporting 
+- 49ec01cb,  Autocomplete weirdness
+- 4e1dfbec,  Pasting content in unloaded text/blob field causes crash
+
+### Changed
+- 55f6cc02, Update OpenSSL to 1.1.1s 
+
+### Removed
+
+
+### Infra
+- e2d231a1, Move OCMock to SPM from included framework 
+
+## [4.0.3]
+
+### Added
+
+
+### Fixed
+- 81e08793, Fix copy as SQL insert, Fix users modal resizing 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.2]
+
+### Added
+- 51fad246, Show column type in query editor and content view 
+
+### Fixed
+- 0756e835,  Remove data type names from CSV exports
+- e8fa9487,   Text is not invalidated if just a cut or paste action is executed
+- 9ccf9d19, Enable Help menu for connection screen 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [4.0.1]
 
 ### Added

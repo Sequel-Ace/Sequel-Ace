@@ -104,5 +104,6 @@
 
 - (void)updateSyncArrowStatus;
 - (void)reInvokeCompletion;
+- (BOOL)hasStartedIntercepting;
 
 @end

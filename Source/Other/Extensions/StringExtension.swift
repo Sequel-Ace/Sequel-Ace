@@ -201,6 +201,9 @@ extension String {
 }
 
 @objc extension NSString {
+    //Special space-character used to separate the column name and column type
+    @objc static let columnHeaderSplittingSpace: String = " "
+
     static func rawByteString(data: NSData) -> NSString {
         return String.rawByteString(data as Data) as NSString
     }

@@ -161,7 +161,7 @@ NSString *kHeader     = @"HEADER";
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@"\t"];
-			[result appendString:[[[columns safeObjectAtIndex:i] headerCell] stringValue]];
+			[result appendString:[[[[columns safeObjectAtIndex:i] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
 		}
 		[result appendString:@"\n"];
 	}
@@ -293,7 +293,7 @@ NSString *kHeader     = @"HEADER";
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@","];
-			[result appendFormat:@"\"%@\"", [[[[columns safeObjectAtIndex:i] headerCell] stringValue] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+			[result appendFormat:@"\"%@\"", [[[[[columns safeObjectAtIndex:i] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
 		}
 		[result appendString:@"\n"];
 	}
@@ -504,7 +504,7 @@ NSString *kHeader     = @"HEADER";
             data              = [[NSMutableDictionary alloc] init];
             data[kColMapping] = @(columnMapping);
             data[kColType]    = @(1);                 // By default, set to String
-            data[kHeader]     = [[[columns safeObjectAtIndex:c] headerCell] stringValue];
+            data[kHeader]     = [[[[columns safeObjectAtIndex:c] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0];
             // Numeric data
             if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
                 data[kColType] = @(0);
@@ -657,8 +657,9 @@ NSString *kHeader     = @"HEADER";
     for (NSDictionary *dic in array) {
         if (![dic isKindOfClass:[NSNull class]]) {
             NSString *header = [dic safeObjectForKey:kHeader];
-            if ([result length])
+            if ([result length]) {
                 [result appendString: @", "];
+            }
             [result appendString:[header backtickQuotedString]];
         }
     }
@@ -1290,14 +1291,14 @@ NSString *kHeader     = @"HEADER";
 
 
     //Check for null
-	if ([cellValue isNSNull])
-	{
+    if ([cellValue isNSNull])
+    {
         //Null should always be inline
         return NO;
     }
 
     //Check string lengths
-    if (editLongerTextInSheet && [cellValue length] > editInSheetForLongTextLengthThreshold) {
+    if (editLongerTextInSheet && [cellValue isKindOfClass:[NSString class]] && [cellValue length] > editInSheetForLongTextLengthThreshold) {
         return YES;
     }
 
