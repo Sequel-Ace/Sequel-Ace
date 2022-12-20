@@ -3702,7 +3702,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView reloadData];
 		}
 		else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
-			[tableContentView reloadData];
+            NSDictionary *tableDetails = [NSDictionary dictionaryWithObjectsAndKeys:
+                                          selectedTable, @"name",
+                                          [tableDataInstance columns], @"columns",
+                                          [tableDataInstance columnNames], @"columnNames",
+                                          [tableDataInstance getConstraints], @"constraints",
+                                          nil];
+            [[self onMainThread] setTableDetails:tableDetails];
 		}
 	}
 	else {
