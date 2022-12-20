@@ -125,6 +125,8 @@
 	<true/>
 	<key>DisplayTableViewVerticalGridlines</key>
 	<false/>
+	<key>DisplayTableViewColumnTypes</key>
+	<true/>
 	<key>EditInSheetEnabled</key>
 	<false/>
 	<key>FavoriteColorList</key>

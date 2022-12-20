@@ -228,6 +228,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
@@ -527,7 +528,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Set up the column
 		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
-		[[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+
+        if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+            [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+        } else {
+            [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+        }
+
 		[theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@%@%@", 
 			[columnDefinition objectForKey:@"name"], 
 			[columnDefinition objectForKey:@"type"], 
@@ -3694,6 +3701,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		else if ([keyPath isEqualToString:SPDisplayBinaryDataAsHex] && [tableContentView numberOfRows] > 0) {
 			[tableContentView reloadData];
 		}
+		else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
+			[tableContentView reloadData];
+		}
 	}
 	else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
@@ -4608,6 +4618,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
+		[prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
 	}
 
 	// Cancel previous performSelector: requests on ourselves and the table view

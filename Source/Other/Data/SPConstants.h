@@ -307,6 +307,7 @@ extern NSString *SPDefaultViewMode;
 extern NSString *SPLastViewMode;
 extern NSString *SPDefaultEncoding;
 extern NSString *SPDisplayTableViewVerticalGridlines;
+extern NSString *SPDisplayTableViewColumnTypes;
 extern NSString *SPDisplayCommentsInTablesList;
 extern NSString *SPCustomQueryMaxHistoryItems;
 extern NSString *SPAppearance;
