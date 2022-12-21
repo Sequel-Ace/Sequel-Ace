@@ -115,6 +115,7 @@ NSString *SPDefaultViewMode                      = @"DefaultViewMode";
 NSString *SPLastViewMode                         = @"LastViewMode";
 NSString *SPDefaultEncoding                      = @"DefaultEncodingTag";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
+NSString *SPDisplayTableViewColumnTypes          = @"DisplayTableViewColumnTypes";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
 NSString *SPCustomQueryMaxHistoryItems           = @"CustomQueryMaxHistoryItems";
 NSString *SPCustomQuerySaveHistoryIndividually   = @"CustomQuerySaveHistoryIndividually";
