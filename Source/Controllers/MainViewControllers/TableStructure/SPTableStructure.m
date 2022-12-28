@@ -1563,6 +1563,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		else if ([[theField objectForKey:@"default"] isNSNull]) {
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
+        else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"]) {
+            [theField setObject:[mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
+        }
 
 		// Init Extra field
 		[theField setObject:@"None" forKey:@"Extra"];

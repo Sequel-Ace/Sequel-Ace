@@ -717,11 +717,6 @@
 			// Split the remaining field definition string by spaces and process
 			[tableColumn addEntriesFromDictionary:[self parseFieldDefinitionStringParts:[fieldsParser splitStringByCharacter:' ' skippingBrackets:YES]]];
 
-			//if column is not null, but doesn't have a default value, set empty string
-			if([[tableColumn objectForKey:@"null"] integerValue] == 0 && [[tableColumn objectForKey:@"autoincrement"] integerValue] == 0 && ![tableColumn objectForKey:@"default"]) {
-				[tableColumn setObject:@"" forKey:@"default"];
-			}
-
 			// Store the column.
 			NSMutableDictionary *d = [NSMutableDictionary dictionaryWithCapacity:1];
 			[d setDictionary:tableColumn];
