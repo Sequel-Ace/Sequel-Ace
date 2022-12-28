@@ -976,8 +976,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			else if ([theRowType isEqualToString:@"BIT"]) {
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
-            // *CHAR and *TEXT must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP and DATETIME must always be wrapped in quotes.
-            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME"]]) {
+            // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP and DATETIME must always be wrapped in quotes.
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
                     [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
@@ -1563,6 +1563,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		else if ([[theField objectForKey:@"default"] isNSNull]) {
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
+        else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"] || [type hasSuffix:@"ENUM"]) {
+            [theField setObject:[mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
+        }
 
 		// Init Extra field
 		[theField setObject:@"None" forKey:@"Extra"];
