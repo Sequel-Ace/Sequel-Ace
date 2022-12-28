@@ -976,8 +976,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			else if ([theRowType isEqualToString:@"BIT"]) {
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
-            // *CHAR and *TEXT must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is.
-            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"]) {
+            // *CHAR and *TEXT must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP and DATETIME must always be wrapped in quotes.
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
                     [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
