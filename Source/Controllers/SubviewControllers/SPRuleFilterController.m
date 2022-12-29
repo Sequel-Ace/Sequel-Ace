@@ -1182,7 +1182,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
                     // FIXME: oh ... is the regex is wrong.
                     // (?<foo>bar) = Define a named group named "foo" consisting of pattern bar.
                     // so (?<!\\\\)\\$CURRENT_FIELD" looks like the start of a group name,
-					[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[[colNode name] backtickQuotedString]];
+                    [tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[NSRegularExpression escapedPatternForString:[[colNode name] backtickQuotedString]]];
+
 					[tip flushCachedRegexData];
 					tooltip = [NSString stringWithString:tip];
 				} else {
