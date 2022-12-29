@@ -151,9 +151,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[tableTargetPopup addItemsWithTitles:allTableNames];
 
 		// Select either the currently selected table, or the first item in the list, or if no table in db switch to "New Table" mode
-		if ([[tablesListInstance selectedTableNames] count]
-				&& [allTableNames containsObject:[[tablesListInstance selectedTableNames] objectAtIndex:0]]) {
-			[tableTargetPopup selectItemWithTitle:[[tablesListInstance selectedTableNames] objectAtIndex:0]];
+		if ([[tablesListInstance selectedTableAndViewNames] count]
+				&& [allTableNames containsObject:[[tablesListInstance selectedTableAndViewNames] objectAtIndex:0]]) {
+			[tableTargetPopup selectItemWithTitle:[[tablesListInstance selectedTableAndViewNames] objectAtIndex:0]];
 		} else {
 			if([allTableNames count])
 				[tableTargetPopup selectItemAtIndex:3];
@@ -495,9 +495,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 
 		// Select either the currently selected table, or the first item in the list, or if no table in db switch to "New Table" mode
-		if ([[tablesListInstance selectedTableNames] count]
-				&& [allTableNames containsObject:[[tablesListInstance selectedTableNames] objectAtIndex:0]]) {
-			[tableTargetPopup selectItemWithTitle:[[tablesListInstance selectedTableNames] objectAtIndex:0]];
+		if ([[tablesListInstance selectedTableAndViewNames] count]
+				&& [allTableNames containsObject:[[tablesListInstance selectedTableAndViewNames] objectAtIndex:0]]) {
+			[tableTargetPopup selectItemWithTitle:[[tablesListInstance selectedTableAndViewNames] objectAtIndex:0]];
 		} else {
 			if([allTableNames count])
 				[tableTargetPopup selectItemAtIndex:3];
