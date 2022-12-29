@@ -156,7 +156,7 @@
 - (void)deselectAllTables;
 
 // Getters
-- (nonnull NSArray *)selectedTableNames;
+- (nonnull NSArray *)selectedTableAndViewNames;
 - (nonnull NSArray *)selectedTableItems;
 - (nonnull NSArray *)selectedTableTypes;
 - (nullable NSString *)tableName;

@@ -1247,14 +1247,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark -
 #pragma mark Getter methods
 
-- (NSArray *)selectedTableNames
+- (NSArray *)selectedTableAndViewNames
 {
 	NSIndexSet *indexes = [tablesListView selectedRowIndexes];
 
 	NSMutableArray *selTables = [NSMutableArray arrayWithCapacity:[indexes count]];
 
 	[indexes enumerateIndexesUsingBlock:^(NSUInteger currentIndex, BOOL * _Nonnull stop) {
-		if([[filteredTableTypes objectAtIndex:currentIndex] integerValue] == SPTableTypeTable)
+        NSInteger tableTypeIndex = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
+		if(tableTypeIndex == SPTableTypeTable || tableTypeIndex == SPTableTypeView)
 			[selTables addObject:[filteredTables objectAtIndex:currentIndex]];
 	}];
 
