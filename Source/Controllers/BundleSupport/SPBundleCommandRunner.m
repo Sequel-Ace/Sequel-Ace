@@ -150,11 +150,7 @@
 	// Create and set an unique process ID for each SPDatabaseDocument which has to passed
 	// for each sequelace:// scheme command as user to be able to identify the url scheme command.
 	// Furthermore this id is used to communicate with the called command as file name.
-	SPDatabaseDocument *databaseDocument = nil;
-    if ([[[NSApp mainWindow] delegate] isKindOfClass:[SPAppController class]]) {
-        SPAppController *appController = (SPAppController *)[[NSApp mainWindow] delegate];
-        databaseDocument = appController.frontDocument;
-    }
+    SPDatabaseDocument *databaseDocument = [SPAppDelegate frontDocument];
 	// Check if connected
     if ([databaseDocument getConnection] == nil) {
         databaseDocument = nil;
