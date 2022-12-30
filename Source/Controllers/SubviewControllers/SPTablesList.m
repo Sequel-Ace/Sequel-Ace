@@ -345,11 +345,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		tableListIsSelectable = previousTableListIsSelectable;
 		selectedTableName = [[NSString alloc] initWithString:[tables objectAtIndex:itemToReselect]];
 		selectedTableType = (SPTableType)[[tableTypes objectAtIndex:itemToReselect] integerValue];
-	} 
-	else {
-		if (selectedTableName) selectedTableName = nil;
-		selectedTableType = SPTableTypeNone;
 	}
+    else if (selectedTableName != nil) {
+        selectedTableName = nil;
+        [[tablesListView onMainThread] selectRowIndexes:[NSIndexSet init] byExtendingSelection:NO];
+        selectedTableType = SPTableTypeNone;
+    }
     
     [self refreshPinnedTables];
 
