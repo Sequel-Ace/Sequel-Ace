@@ -58,6 +58,7 @@
 #import "SPSplitView.h"
 #import "SPExtendedTableInfo.h"
 #import "SPBundleManager.h"
+#import "SPComboBoxCell.h"
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
@@ -553,12 +554,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Set up the data cell depending on the column type
 		id dataCell;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[NSComboBoxCell alloc] initTextCell:@""];
+			dataCell = [[SPComboBoxCell alloc] initTextCell:@""];
 			[dataCell setButtonBordered:NO];
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
 			[dataCell setCompletes:YES];
 			[dataCell setControlSize:NSControlSizeSmall];
+            [dataCell setUsesSingleLineMode:YES];
 			// add prefs NULL value representation if NULL value is allowed for that field
 			if([[columnDefinition objectForKey:@"null"] boolValue])
 				[dataCell addItemWithObjectValue:nullValue];
