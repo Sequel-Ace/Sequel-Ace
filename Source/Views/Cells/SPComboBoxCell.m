@@ -129,4 +129,16 @@ static NSString *_CellWillDismissNotification = @"NSComboBoxCellWillDismissNotif
 	}
 }
 
+
+
+/**
+ * Implements nicer cell truncating by appending '...' to the table name, before asking super to draw it.
+ */
+- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
+{
+    //Weird offset hack to fix enums and structure view ComboBoxCell labels from floating up or down randomly
+    [super drawInteriorWithFrame:NSMakeRect(cellFrame.origin.x, cellFrame.origin.y + (self.font.pointSize-13.0) / 2.0, cellFrame.size.width, cellFrame.size.height) inView:controlView];
+
+}
+
 @end
