@@ -1,3 +1,21 @@
+## [4.0.5]
+
+### Added
+- 9c3dd59f, Add preference for column types visibility 
+- fe2b4506,  preference for column type visibility
+
+### Fixed
+- 1a47d524,  Error when altering Timestamp/Datetime columns in structure view
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [4.0.4]
 
 ### Added
