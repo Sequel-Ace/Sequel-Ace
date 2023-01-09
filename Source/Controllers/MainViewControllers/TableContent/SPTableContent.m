@@ -745,6 +745,24 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[queryString appendFormat:@" ORDER BY %@", [[[dataColumns safeObjectAtIndex:[sortCol integerValue]] safeObjectForKey:@"name"] backtickQuotedString]];
 		if (isDesc) [queryString appendString:@" DESC"];
 	}
+    else // no sorting is set
+    {
+        if ([prefs boolForKey:@"SortDescendingByPrimaryIndex"])
+        {
+            for (NSDictionary * column in tableDataInstance.columns)
+            {
+                if ([column[@"isprimarykey"] boolValue])
+                {
+                    NSLog(@"%@",column);
+                    [queryString appendFormat:@" ORDER BY %@ DESC",column[@"name"]];
+                    break;
+                }
+            }
+        }
+    }
+    
+    
+
 
 	// Check to see if a limit needs to be applied
 	if ([prefs boolForKey:SPLimitResults]) 

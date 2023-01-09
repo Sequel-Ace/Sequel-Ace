@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21507" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21219" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21507"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21219"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -83,7 +83,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowCollectionBehavior key="collectionBehavior" fullScreenAuxiliary="YES"/>
             <rect key="contentRect" x="430" y="486" width="700" height="100"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1470" height="919"/>
             <value key="minSize" type="size" width="540" height="100"/>
             <value key="maxSize" type="size" width="1500" height="700"/>
             <value key="minFullScreenContentSize" type="size" width="540" height="100"/>
@@ -101,7 +101,7 @@
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="481" width="227" height="114"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1470" height="919"/>
             <value key="minSize" type="size" width="227" height="114"/>
             <value key="maxSize" type="size" width="247" height="124"/>
             <view key="contentView" id="1717">
@@ -205,7 +205,7 @@ Gw
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="343" y="370" width="264" height="234"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1470" height="919"/>
             <value key="minSize" type="size" width="264" height="225"/>
             <value key="maxSize" type="size" width="264" height="274"/>
             <view key="contentView" id="1757">
@@ -217,7 +217,7 @@ Gw
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <clipView key="contentView" id="eRr-LP-c79">
                             <rect key="frame" x="1" y="1" width="263" height="152"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" id="1774">
                                     <rect key="frame" x="0.0" y="0.0" width="263" height="152"/>
@@ -869,13 +869,13 @@ Gw
             <point key="canvasLocation" x="-52" y="1082"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="512" userLabel="Tables">
-            <rect key="frame" x="0.0" y="0.0" width="540" height="359"/>
+            <rect key="frame" x="0.0" y="0.0" width="540" height="384"/>
             <userGuides>
                 <userLayoutGuide location="195" affinity="minX"/>
             </userGuides>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="950">
-                    <rect key="frame" x="178" y="187" width="342" height="24"/>
+                    <rect key="frame" x="178" y="212" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="jKC-sK-N4K"/>
                     </constraints>
@@ -888,25 +888,25 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="554">
-                    <rect key="frame" x="180" y="135" width="340" height="5"/>
+                    <rect key="frame" x="180" y="160" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="9Oq-Ng-kvf"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="553">
-                    <rect key="frame" x="180" y="176" width="340" height="5"/>
+                    <rect key="frame" x="180" y="201" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="C6E-tR-dLf"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="552">
-                    <rect key="frame" x="180" y="248" width="340" height="5"/>
+                    <rect key="frame" x="180" y="273" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="XQn-Hf-WgQ"/>
                     </constraints>
                 </box>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="535">
-                    <rect key="frame" x="178" y="218" width="342" height="24"/>
+                    <rect key="frame" x="178" y="243" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="250" id="S6J-1c-jeX"/>
                         <constraint firstAttribute="height" constant="22" id="poT-TR-Yy5"/>
@@ -920,7 +920,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="532">
-                    <rect key="frame" x="180" y="106" width="340" height="22"/>
+                    <rect key="frame" x="180" y="131" width="340" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="br0-Qy-rrh"/>
                     </constraints>
@@ -934,7 +934,7 @@ Gw
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="531">
-                    <rect key="frame" x="18" y="107" width="154" height="20"/>
+                    <rect key="frame" x="18" y="132" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="qhE-Ia-yxO"/>
                     </constraints>
@@ -945,7 +945,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="520">
-                    <rect key="frame" x="295" y="147" width="175" height="22"/>
+                    <rect key="frame" x="295" y="172" width="175" height="22"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="75" id="0em-nN-sPX"/>
                         <constraint firstAttribute="height" constant="22" id="c07-Tp-IM8"/>
@@ -968,7 +968,7 @@ Gw
                     </connections>
                 </textField>
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="519">
-                    <rect key="frame" x="468" y="146" width="17" height="24"/>
+                    <rect key="frame" x="468" y="171" width="17" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="4O1-HE-XH8"/>
                         <constraint firstAttribute="width" constant="11" id="BgY-gn-Agc"/>
@@ -981,7 +981,7 @@ Gw
                     </connections>
                 </stepper>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="518">
-                    <rect key="frame" x="178" y="290" width="342" height="24"/>
+                    <rect key="frame" x="178" y="315" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="dJC-h5-h8k"/>
                     </constraints>
@@ -994,7 +994,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="517">
-                    <rect key="frame" x="178" y="146" width="112" height="24"/>
+                    <rect key="frame" x="178" y="171" width="112" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="E5b-gA-NPS"/>
                         <constraint firstAttribute="width" constant="110" id="FbY-Rf-3Kz"/>
@@ -1008,7 +1008,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="516">
-                    <rect key="frame" x="178" y="321" width="342" height="24"/>
+                    <rect key="frame" x="178" y="346" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="ekR-ID-Ft2"/>
                     </constraints>
@@ -1021,7 +1021,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="515">
-                    <rect key="frame" x="483" y="150" width="39" height="16"/>
+                    <rect key="frame" x="483" y="175" width="39" height="16"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="35" id="0fh-Y8-SkD"/>
                     </constraints>
@@ -1035,7 +1035,7 @@ Gw
                     </connections>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="514">
-                    <rect key="frame" x="18" y="323" width="154" height="20"/>
+                    <rect key="frame" x="18" y="348" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="atp-2o-EmZ"/>
                         <constraint firstAttribute="width" constant="150" id="uia-kW-GYj"/>
@@ -1047,7 +1047,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="513">
-                    <rect key="frame" x="178" y="259" width="342" height="24"/>
+                    <rect key="frame" x="178" y="284" width="342" height="24"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="3B8-bR-NuH"/>
                     </constraints>
@@ -1060,13 +1060,13 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1467">
-                    <rect key="frame" x="180" y="94" width="340" height="5"/>
+                    <rect key="frame" x="180" y="119" width="340" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="cvo-x6-AXc"/>
                     </constraints>
                 </box>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1468">
-                    <rect key="frame" x="18" y="66" width="154" height="20"/>
+                    <rect key="frame" x="18" y="91" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="FXJ-gj-57u"/>
                     </constraints>
@@ -1077,7 +1077,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1470">
-                    <rect key="frame" x="177" y="61" width="347" height="27"/>
+                    <rect key="frame" x="177" y="86" width="347" height="27"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="8Hk-DM-XZ6"/>
                     </constraints>
@@ -1097,7 +1097,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ykf-r8-q6R">
-                    <rect key="frame" x="178" y="39" width="200" height="18"/>
+                    <rect key="frame" x="178" y="64" width="200" height="18"/>
                     <buttonCell key="cell" type="check" title="Intelligently switch at length:" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="xxI-Ka-WSh">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -1107,7 +1107,7 @@ Gw
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vFL-gu-iZ8">
-                    <rect key="frame" x="18" y="43" width="154" height="16"/>
+                    <rect key="frame" x="18" y="66" width="154" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="right" title="Edit inline or popup:" id="59O-pr-57t">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1115,7 +1115,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="suA-e3-Xus">
-                    <rect key="frame" x="386" y="37" width="134" height="22"/>
+                    <rect key="frame" x="386" y="62" width="134" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="zNt-Ga-qF7"/>
                     </constraints>
@@ -1131,7 +1131,7 @@ Gw
                     </connections>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Fnh-E7-zuv">
-                    <rect key="frame" x="178" y="14" width="342" height="18"/>
+                    <rect key="frame" x="178" y="39" width="342" height="18"/>
                     <buttonCell key="cell" type="check" title="Always use popup for multi-line content" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="9qv-rY-7Hz">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -1140,14 +1140,34 @@ Gw
                         <binding destination="117" name="value" keyPath="values.EditInSheetForMultiLineText" id="mbU-Zr-d1A"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YH2-qI-BBK">
+                    <rect key="frame" x="178" y="14" width="230" height="18"/>
+                    <buttonCell key="cell" type="check" title="Sort descending by primary index" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="L4y-ub-YHv">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.SortDescendingByPrimaryIndex" id="MLl-Tn-i1B"/>
+                    </connections>
+                </button>
+                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="t1L-c3-rba">
+                    <rect key="frame" x="18" y="15" width="154" height="16"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="right" title="Default sorting:" id="CQS-bJ-8og">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
             </subviews>
             <constraints>
                 <constraint firstAttribute="trailing" secondItem="Fnh-E7-zuv" secondAttribute="trailing" constant="20" id="1FZ-17-F1T"/>
                 <constraint firstItem="554" firstAttribute="top" secondItem="517" secondAttribute="bottom" constant="9" id="2Qu-5h-UB6"/>
                 <constraint firstItem="suA-e3-Xus" firstAttribute="centerY" secondItem="ykf-r8-q6R" secondAttribute="centerY" id="49j-gt-VYq"/>
-                <constraint firstAttribute="bottom" secondItem="Fnh-E7-zuv" secondAttribute="bottom" constant="15" id="4Kl-86-osg"/>
+                <constraint firstAttribute="bottom" secondItem="Fnh-E7-zuv" secondAttribute="bottom" constant="40" id="4Kl-86-osg"/>
                 <constraint firstItem="1468" firstAttribute="leading" secondItem="514" secondAttribute="leading" id="5oZ-xu-Ici"/>
                 <constraint firstItem="1470" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="7QM-tH-vMJ"/>
+                <constraint firstItem="YH2-qI-BBK" firstAttribute="top" secondItem="Fnh-E7-zuv" secondAttribute="bottom" constant="9" id="7s5-ms-lbI"/>
+                <constraint firstItem="t1L-c3-rba" firstAttribute="baseline" secondItem="YH2-qI-BBK" secondAttribute="baseline" id="8qK-KK-iem"/>
                 <constraint firstItem="520" firstAttribute="centerY" secondItem="517" secondAttribute="centerY" id="A30-fC-QR3"/>
                 <constraint firstItem="1470" firstAttribute="centerY" secondItem="1468" secondAttribute="centerY" id="BVX-Dj-FxY"/>
                 <constraint firstItem="514" firstAttribute="leading" secondItem="512" secondAttribute="leading" constant="20" id="BqZ-gS-0X3"/>
@@ -1175,13 +1195,15 @@ Gw
                 <constraint firstItem="1467" firstAttribute="top" secondItem="532" secondAttribute="bottom" constant="9" id="Te7-4g-Xzx"/>
                 <constraint firstItem="515" firstAttribute="centerY" secondItem="517" secondAttribute="centerY" id="Vat-H9-p6s"/>
                 <constraint firstItem="518" firstAttribute="top" secondItem="516" secondAttribute="bottom" constant="9" id="Ve4-Jv-EkZ"/>
+                <constraint firstItem="t1L-c3-rba" firstAttribute="trailing" secondItem="vFL-gu-iZ8" secondAttribute="trailing" id="Wh8-Jh-u6l"/>
                 <constraint firstItem="519" firstAttribute="leading" secondItem="520" secondAttribute="trailing" constant="1" id="Z1R-fz-BJU"/>
+                <constraint firstItem="YH2-qI-BBK" firstAttribute="leading" secondItem="t1L-c3-rba" secondAttribute="trailing" constant="10" id="Zoe-q1-ag0"/>
                 <constraint firstItem="532" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="ZtR-pG-Mgg"/>
                 <constraint firstItem="513" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="d79-vW-qhB"/>
                 <constraint firstItem="531" firstAttribute="leading" secondItem="514" secondAttribute="leading" id="dSb-nT-KlY"/>
                 <constraint firstItem="532" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="deG-L2-Slq"/>
                 <constraint firstItem="515" firstAttribute="leading" secondItem="519" secondAttribute="trailing" constant="3" id="fqu-hb-Zkb"/>
-                <constraint firstItem="vFL-gu-iZ8" firstAttribute="baseline" secondItem="ykf-r8-q6R" secondAttribute="centerY" constant="2" id="g4a-8F-WeI"/>
+                <constraint firstItem="vFL-gu-iZ8" firstAttribute="baseline" secondItem="ykf-r8-q6R" secondAttribute="centerY" constant="4" id="g4a-8F-WeI"/>
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="552" secondAttribute="trailing" id="gEf-Yt-4oK"/>
                 <constraint firstItem="517" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="gbh-Ii-Zzd"/>
                 <constraint firstItem="535" firstAttribute="top" secondItem="552" secondAttribute="bottom" constant="9" id="id8-2Z-Cwy"/>
@@ -1203,9 +1225,10 @@ Gw
                 <constraint firstItem="552" firstAttribute="top" secondItem="513" secondAttribute="bottom" constant="9" id="vwL-4b-XyP"/>
                 <constraint firstItem="531" firstAttribute="trailing" secondItem="514" secondAttribute="trailing" id="wRJ-uF-qSn"/>
                 <constraint firstItem="516" firstAttribute="leading" secondItem="514" secondAttribute="trailing" constant="10" id="wd5-tH-69R"/>
+                <constraint firstItem="t1L-c3-rba" firstAttribute="leading" secondItem="vFL-gu-iZ8" secondAttribute="leading" id="zCu-5v-fax"/>
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="513" secondAttribute="trailing" id="zPM-7o-ZJu"/>
             </constraints>
-            <point key="canvasLocation" x="-52" y="615.5"/>
+            <point key="canvasLocation" x="-52" y="615"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="56" userLabel="Notifications">
             <rect key="frame" x="0.0" y="0.0" width="500" height="344"/>
