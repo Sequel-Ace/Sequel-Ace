@@ -1141,13 +1141,13 @@ Gw
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YH2-qI-BBK">
-                    <rect key="frame" x="178" y="14" width="230" height="18"/>
-                    <buttonCell key="cell" type="check" title="Sort descending by primary index" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="L4y-ub-YHv">
+                    <rect key="frame" x="178" y="14" width="218" height="18"/>
+                    <buttonCell key="cell" type="check" title="Sort descending by primary key" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="L4y-ub-YHv">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <binding destination="117" name="value" keyPath="values.SortDescendingByPrimaryIndex" id="MLl-Tn-i1B"/>
+                        <binding destination="117" name="value" keyPath="values.SortDescendingByPrimaryKey" id="NWV-5B-LN1"/>
                     </connections>
                 </button>
                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="t1L-c3-rba">

@@ -747,7 +747,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
     else // no sorting is set
     {
-        if ([prefs boolForKey:@"SortDescendingByPrimaryIndex"])
+        if ([prefs boolForKey:@"SortDescendingByPrimaryKey"])
         {
             for (NSDictionary * column in tableDataInstance.columns)
             {
