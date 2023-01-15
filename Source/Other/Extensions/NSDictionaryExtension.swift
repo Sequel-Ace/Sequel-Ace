@@ -14,7 +14,7 @@ import Foundation
             return NSAttributedString(string: "")
         }
         let font = UserDefaults.getFont()
-        let attributedString = NSMutableAttributedString(string: columnName, attributes: [.font: font])
+        let attributedString = NSMutableAttributedString(string: columnName, attributes: [.font: NSFontManager.shared.convert(font, toSize: 11)])
         if let columnType: String = value(forKey: "type") as? String {
             attributedString.append(NSAttributedString(string: NSString.columnHeaderSplittingSpace as String))
             attributedString.append(NSAttributedString(string: columnType, attributes: [.font: NSFontManager.shared.convert(font, toSize: 8), .foregroundColor: NSColor.gray]))
