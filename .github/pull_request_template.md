@@ -20,12 +20,12 @@ Please use one of these hashtags for your PR title:
   - [ ] Intel
   - [ ] Apple Silicon
 - macOS Versions:
-  - [ ] 10.12.x (Sierra)
   - [ ] 10.13.x (High Sierra)
   - [ ] 10.14.x (Mojave)
   - [ ] 10.15.x (Catalina)
   - [ ] 11.x (Big Sur)
   - [ ] 12.x (Monterey)
+  - [ ] 13.x (Ventura)
 - Localizations:
   - [ ] English
   - [ ] Spanish

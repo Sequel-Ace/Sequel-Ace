@@ -6,20 +6,6 @@
 	objectVersion = 54;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		517E44E6257A8FAA00ED333B /* Update Strings */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 517E44E7257A8FAA00ED333B /* Build configuration list for PBXAggregateTarget "Update Strings" */;
-			buildPhases = (
-				517E44F4257A8FB700ED333B /* ShellScript */,
-			);
-			dependencies = (
-			);
-			name = "Update Strings";
-			productName = "Update Strings";
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
@@ -231,6 +217,7 @@
 		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
+		51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51384AC12903461000FEC501 /* NSDictionaryExtension.swift */; };
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
 		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
@@ -239,8 +226,8 @@
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
+		51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 51A2D3B5292FEF000018CFB8 /* OCMock */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
-		51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51BA34A525BD9F30007CA20B /* OCMock.framework */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
@@ -691,7 +678,7 @@
 		17E0937D114AE154007FC1B4 /* SPTableInfoPrintTemplate.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = SPTableInfoPrintTemplate.html; path = Templates/SPTableInfoPrintTemplate.html; sourceTree = "<group>"; };
 		17E5954E14F304000054EE08 /* QueryKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = QueryKit.xcodeproj; path = Frameworks/QueryKit/QueryKit.xcodeproj; sourceTree = "<group>"; };
 		17E641440EF01EB5001BC333 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		17E641450EF01EB5001BC333 /* Sequel-Pro.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sequel-Pro.pch"; sourceTree = "<group>"; };
+		17E641450EF01EB5001BC333 /* Sequel-Ace.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace.pch"; sourceTree = "<group>"; };
 		17E641480EF01EF6001BC333 /* SPCustomQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPCustomQuery.h; sourceTree = "<group>"; };
 		17E641490EF01EF6001BC333 /* SPCustomQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPCustomQuery.m; sourceTree = "<group>"; };
 		17E6414A0EF01EF6001BC333 /* SPAppController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPAppController.h; sourceTree = "<group>"; };
@@ -838,7 +825,7 @@
 		44011DFD0DC2836DB08A0619 /* SQLitePinnedTableManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SQLitePinnedTableManager.swift; sourceTree = "<group>"; };
 		4D90B798101E0CDF00D116A1 /* SPUserManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserManager.h; sourceTree = "<group>"; };
 		4D90B799101E0CDF00D116A1 /* SPUserManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserManager.m; sourceTree = "<group>"; };
-		4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; name = SPUserManager.xcdatamodel; path = Models/SPUserManager.xcdatamodel; sourceTree = SOURCE_ROOT; };
+		4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; path = SPUserManager.xcdatamodel; sourceTree = "<group>"; };
 		4D90B79C101E0CF200D116A1 /* SPUserMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserMO.h; sourceTree = "<group>"; };
 		4D90B79D101E0CF200D116A1 /* SPUserMO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserMO.m; sourceTree = "<group>"; };
 		500C1F901BFB5F9F0095DC7F /* SPPrivilegesMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPrivilegesMO.h; sourceTree = "<group>"; };
@@ -876,33 +863,33 @@
 		50E217B518174280009D3580 /* SPFavoriteColorSupport.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFavoriteColorSupport.m; sourceTree = "<group>"; };
 		50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDatabaseActionTest.m; sourceTree = "<group>"; };
 		50F530511ABCF66B002F2C1A /* resetTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = resetTemplate.pdf; sourceTree = "<group>"; };
+		510EE15C27B6C35F008544E7 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		511B309F25ABBC6500D010E3 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		511E8F6926EF72FD001FC731 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5132930925F586A900D803AD /* NotificationToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationToken.swift; sourceTree = "<group>"; };
 		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
+		51384AC12903461000FEC501 /* NSDictionaryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSDictionaryExtension.swift; sourceTree = "<group>"; };
 		514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPDatabaseDocument.swift; sourceTree = "<group>"; };
 		516A76C52653B4E800DC6501 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		51731E7B27DFB99A00D81B98 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
 		517E44FB257A94C400ED333B /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
-		517E457C257A971900ED333B /* es-ES */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-ES"; path = "es-ES.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51905622267DFF1700212442 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
 		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		51BA34A525BD9F30007CA20B /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Frameworks/OCMock.framework; sourceTree = "<group>"; };
 		51BB391B25F82B060048CA69 /* SPAppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAppController.swift; sourceTree = "<group>"; };
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		51C04C99261E4CFB001F5554 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-PT"; path = "pt-PT.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
@@ -1011,7 +998,6 @@
 		589582131154F8F400EDCC28 /* SPMainThreadTrampoline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPMainThreadTrampoline.h; sourceTree = "<group>"; };
 		589582141154F8F400EDCC28 /* SPMainThreadTrampoline.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPMainThreadTrampoline.m; sourceTree = "<group>"; };
 		58B9077D11BD9B64000826E5 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
-		58B9088711BDB7AA000826E5 /* PSMTabBar-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "PSMTabBar-Info.plist"; path = "Plists/PSMTabBar-Info.plist"; sourceTree = "<group>"; };
 		58B9095B11C3A3EC000826E5 /* xibLocalizationPostprocessor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = xibLocalizationPostprocessor.m; sourceTree = "<group>"; };
 		58B9096111C3A42B000826E5 /* xibLocalizationPostprocessor */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xibLocalizationPostprocessor; sourceTree = BUILT_PRODUCTS_DIR; };
 		58C56EF30F438E120035701E /* SPDataCellFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDataCellFormatter.h; sourceTree = "<group>"; };
@@ -1043,7 +1029,6 @@
 		65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFilePreferencePane.m; sourceTree = "<group>"; };
 		65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPFilePreferencePane.h; sourceTree = "<group>"; };
 		6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditions.swift; sourceTree = "<group>"; };
-		6F0EA8EE272F372700514FF1 /* developing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = developing.md; sourceTree = "<group>"; };
 		6F0EA9222734ABE200514FF1 /* SABundleRunner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SABundleRunner.h; sourceTree = "<group>"; };
 		6F0EA9232734ABE200514FF1 /* SABundleRunner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SABundleRunner.m; sourceTree = "<group>"; };
 		73F70A941E4E547500636550 /* SPJSONFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPJSONFormatter.h; sourceTree = "<group>"; };
@@ -1181,8 +1166,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */,
 				51DCBEF0257134190098E303 /* libz.tbd in Frameworks */,
-				51BA34A625BD9F30007CA20B /* OCMock.framework in Frameworks */,
 				502D22151BA62FA5000D4CE7 /* Security.framework in Frameworks */,
 				1717FA43155831600065C036 /* libicucore.dylib in Frameworks */,
 				50EA92671AB23EE1008D3C4F /* SPMySQL.framework in Frameworks */,
@@ -1245,7 +1230,6 @@
 				584756B4120A06740057631F /* CoreServices.framework */,
 				584756B6120A067B0057631F /* ApplicationServices.framework */,
 				584756B8120A06830057631F /* QuickLook.framework */,
-				51BA34A525BD9F30007CA20B /* OCMock.framework */,
 				296DC8BE0F9091DF002A3258 /* libicucore.dylib */,
 				179ECEC611F265EE009C6A40 /* libbz2.dylib */,
 				17B7B591101602AE00F057DE /* libssl.dylib */,
@@ -1401,11 +1385,11 @@
 		173E70A1107FF495008733C9 /* Core Data */ = {
 			isa = PBXGroup;
 			children = (
-				4D90B79C101E0CF200D116A1 /* SPUserMO.h */,
-				4D90B79D101E0CF200D116A1 /* SPUserMO.m */,
 				500C1F901BFB5F9F0095DC7F /* SPPrivilegesMO.h */,
 				500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */,
 				4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */,
+				4D90B79C101E0CF200D116A1 /* SPUserMO.h */,
+				4D90B79D101E0CF200D116A1 /* SPUserMO.m */,
 			);
 			name = "Core Data";
 			path = CoreData;
@@ -1414,22 +1398,22 @@
 		173E70A6107FF61D008733C9 /* Main View Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				17D38FC2127B0C9500672B13 /* Connection View */,
 				1AF5A25D250AC401009885DF /* SPBracketHighlighter.h */,
 				1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */,
 				1AF5A260250AC401009885DF /* SPBrackets.h */,
 				1AF5A25F250AC401009885DF /* SPBrackets.m */,
 				17E641480EF01EF6001BC333 /* SPCustomQuery.h */,
 				17E641490EF01EF6001BC333 /* SPCustomQuery.m */,
-				177E7A210FCB6A2E00E9E122 /* SPExtendedTableInfo.h */,
-				177E7A220FCB6A2E00E9E122 /* SPExtendedTableInfo.m */,
 				17E641500EF01EF6001BC333 /* SPDatabaseDocument.h */,
 				17E641510EF01EF6001BC333 /* SPDatabaseDocument.m */,
-				17D38FC2127B0C9500672B13 /* Connection View */,
+				514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */,
+				177E7A210FCB6A2E00E9E122 /* SPExtendedTableInfo.h */,
+				177E7A220FCB6A2E00E9E122 /* SPExtendedTableInfo.m */,
 				17386E08151924E9002DC206 /* Table Content */,
+				171156501E8B0F40002E6363 /* Table Relations */,
 				17D38F691279E17D00672B13 /* Table Structure */,
 				17005CB016D6CEA400AF81F4 /* Table Triggers */,
-				171156501E8B0F40002E6363 /* Table Relations */,
-				514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -1549,7 +1533,6 @@
 				17DA04EA0FC1A7DA00D66140 /* Unit Tests-Info.plist */,
 				B58731270F838C9E00087794 /* PreferenceDefaults.plist */,
 				517E4511257A954000ED333B /* ContentFilters.plist */,
-				58B9088711BDB7AA000826E5 /* PSMTabBar-Info.plist */,
 				BC962D651144EACA006170BD /* CompletionTokens.plist */,
 			);
 			name = Plists;
@@ -1785,15 +1768,16 @@
 		17E641420EF01E8A001BC333 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				17E641440EF01EB5001BC333 /* main.m */,
-				51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */,
-				17E641450EF01EB5001BC333 /* Sequel-Pro.pch */,
 				17E641470EF01EB8001BC333 /* Controllers */,
-				17E6415D0EF01EF9001BC333 /* Model */,
-				17E641670EF01F19001BC333 /* Views */,
-				17E6416E0EF01F3B001BC333 /* Other */,
-				17DC8825126B222D00E9AAEC /* Third Party */,
 				17FC36AE141425D600AC3602 /* Frameworks */,
+				17E642050EF020A3001BC333 /* Interfaces */,
+				17E641440EF01EB5001BC333 /* main.m */,
+				17E6415D0EF01EF9001BC333 /* Model */,
+				17E6416E0EF01F3B001BC333 /* Other */,
+				51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */,
+				17E641450EF01EB5001BC333 /* Sequel-Ace.pch */,
+				17DC8825126B222D00E9AAEC /* Third Party */,
+				17E641670EF01F19001BC333 /* Views */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -1840,18 +1824,18 @@
 		17E6415D0EF01EF9001BC333 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
-				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
-				17D3C66F128AD8160047709F /* SPSingleton.h */,
-				17D3C670128AD8160047709F /* SPSingleton.m */,
+				173E70A1107FF495008733C9 /* Core Data */,
+				BC0ED3D812A9196C00088461 /* SPChooseMenuItemDialog.h */,
+				BC0ED3D912A9196C00088461 /* SPChooseMenuItemDialog.m */,
 				172A650F0F7BED7A001E861A /* SPConsoleMessage.h */,
 				172A65100F7BED7A001E861A /* SPConsoleMessage.m */,
 				17C058860FC9FC390077E9CF /* SPNarrowDownCompletion.h */,
 				17C058870FC9FC390077E9CF /* SPNarrowDownCompletion.m */,
-				BC0ED3D812A9196C00088461 /* SPChooseMenuItemDialog.h */,
-				BC0ED3D912A9196C00088461 /* SPChooseMenuItemDialog.m */,
+				17D3C66F128AD8160047709F /* SPSingleton.h */,
+				17D3C670128AD8160047709F /* SPSingleton.m */,
+				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
+				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
-				173E70A1107FF495008733C9 /* Core Data */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -2184,20 +2168,16 @@
 		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
 			isa = PBXGroup;
 			children = (
-				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
-				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
-				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
-				1798F17E1550171B004B0AB8 /* LICENSE */,
-				38F37194182F0621008EB031 /* readme.md */,
-				6F0EA8EE272F372700514FF1 /* developing.md */,
-				17E641420EF01E8A001BC333 /* Source */,
-				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
-				17E642050EF020A3001BC333 /* Interfaces */,
-				17E641430EF01E90001BC333 /* Resources */,
-				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
+				518E02F227B91FBC007973E3 /* Entitlements */,
 				969178A324A5640D0012ED42 /* Default Bundles */,
 				969178A424A5640D0012ED42 /* Default Themes */,
+				2A37F4C3FDCFA73011CA2CEA /* Frameworks */,
+				1798F17E1550171B004B0AB8 /* LICENSE */,
 				19C28FB0FE9D524F11CA2CBB /* Products */,
+				38F37194182F0621008EB031 /* readme.md */,
+				17E641430EF01E90001BC333 /* Resources */,
+				17E641420EF01E8A001BC333 /* Source */,
+				380F4EF20FC0B67A00B0BFD7 /* Unit Tests */,
 			);
 			name = "sequel-pro";
 			sourceTree = "<group>";
@@ -2266,25 +2246,36 @@
 			path = Localization;
 			sourceTree = "<group>";
 		};
+		518E02F227B91FBC007973E3 /* Entitlements */ = {
+			isa = PBXGroup;
+			children = (
+				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
+				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
+				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
+			);
+			path = Entitlements;
+			sourceTree = "<group>";
+		};
 		51F4AFB924B26646006144D5 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */,
+				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
+				1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */,
+				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
+				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
+				1A94988D25516057000BC793 /* DateExtension.swift */,
+				1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */,
+				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
+				1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */,
 				51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */,
+				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
+				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
+				1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */,
+				1ACA0B6525BEBE18002FA618 /* PopupButtonExtensions.swift */,
 				51C8597B24C8A31400A8C7C4 /* StringExtension.swift */,
 				1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */,
 				51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */,
-				1A1EE9492551185D0056FECD /* DateFormatterExtension.swift */,
-				1A1EE9572551249C0056FECD /* NumberFormatterExtension.swift */,
-				1A9D83A325514E740024B563 /* DateComponentsFormatterExtension.swift */,
-				1A94988D25516057000BC793 /* DateExtension.swift */,
-				5193502E2567D2FB001272B5 /* CollectionExtension.swift */,
-				1A199629257A624200F5B0F1 /* BundleExtension.swift */,
-				513515D1259354BB001E4533 /* NSImageExtensions.swift */,
-				1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */,
-				51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */,
-				1ABC770025E3895300E8EE01 /* DispatchQueueExtension.swift */,
-				1A8B582925EEE15900DFC54A /* ByteCountFormatterExtension.swift */,
+				51384AC12903461000FEC501 /* NSDictionaryExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -2442,6 +2433,7 @@
 			);
 			name = "Unit Tests";
 			packageProductDependencies = (
+				51A2D3B5292FEF000018CFB8 /* OCMock */,
 			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
@@ -2521,9 +2513,6 @@
 				LastUpgradeCheck = 1210;
 				ORGANIZATIONNAME = "Sequel-Ace";
 				TargetAttributes = {
-					517E44E6257A8FAA00ED333B = {
-						CreatedOnToolsVersion = 12.2;
-					};
 					8D15AC270486D014006FF6A4 = {
 						LastSwiftMigration = 1200;
 					};
@@ -2535,19 +2524,19 @@
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
-				"es-ES",
 				es,
 				Base,
 				"zh-Hans",
 				"zh-Hant",
 				de,
 				"pt-BR",
-				"pt-PT",
 				pt,
 				ja,
 				vi,
 				ru,
 				tr,
+				fr,
+				it,
 			);
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
 			packageReferences = (
@@ -2555,6 +2544,7 @@
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -2574,7 +2564,6 @@
 				380F4ED80FC0B50500B0BFD7 /* Unit Tests */,
 				58CDB3350FCE13C900F8ACA3 /* SequelAceTunnelAssistant */,
 				58B9096011C3A42B000826E5 /* xibLocalizationPostprocessor */,
-				517E44E6257A8FAA00ED333B /* Update Strings */,
 			);
 		};
 /* End PBXProject section */
@@ -2778,7 +2767,8 @@
 /* Begin PBXShellScriptBuildPhase section */
 		1A62C63425BE08F400DF903B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
+			alwaysOutOfDate = 1;
+			buildActionMask = 12;
 			files = (
 			);
 			inputFileListPaths = (
@@ -2791,24 +2781,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"Initializing upload symbols for \\\"${CONFIGURATION}\\\" build\"\n    \"${PROJECT_DIR}/Scripts/upload_symbols.sh\" \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
-		};
-		517E44F4257A8FB700ED333B /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "cd $SCRIPTS_DIR\n./translations-fetch.sh -o \"${SRCROOT}/Resources/Localization/\"\n";
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"Initializing upload symbols for \\\"${CONFIGURATION}\\\" build\"\n    ${PROJECT_DIR}/Scripts/upload_symbols.sh \"Sequel-Ace/Sequel-Ace\" \nelse\n    echo \"Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\n    return 0\nfi\n\n\n#!/usr/bin/env bash\n# shellcheck shell=bash\n\n# MS AppCenter upload-symbols wrapper for Xcode\n# By James Stout 25/01/2021\n\n# SEE: https://docs.microsoft.com/en-us/appcenter/diagnostics/iOS-symbolication#app-center-api\n# AND: https://github.com/microsoft/appcenter-cli#commands\n\necho \"[SA] Starting Upload Symbols Script\"\n\nSCRIPT_DIR=\"${PROJECT_DIR}\"\nAPP=\"Sequel-Ace/Sequel-Ace\"\n\ncd \"$SCRIPT_DIR\" || return 1\n\nme=$(basename \"$0\")\n\nexport SCRIPT_DIR\n\n# Common functions\nfunction sa_log () {\n    echo \"[SA] $1\";\n}\n\nfunction sa_fail () {\n    sa_log \"$1\";\n    exit 0; #TODO: change to error\n}\n\nfunction sa_usage ()\n{\n    sa_log \"You must invoke the script as follows:\"\n    echo \"    sh $me \\\"your/appname\\\"\"\n}\n\nfunction dir_exists() {\n    if [ -d \"$1\" ]; then\n        return 0\n    fi\n    return 1\n}\n\nfunction file_exists() {\n    if [ -e \"$1\" ]; then\n        return 0\n    fi\n    return 1\n}\n\nsafe_cd() {\n    cd \"$@\" >/dev/null || sa_fail \"Error: failed to cd to $*!\"\n}\n\nfunction is_variable\n{\n    compgen -A variable | grep ^\"${1}\"$ > /dev/null\n}\n\nfunction var_exists() {\n    if is_variable \"${1}\"\n    then\n        if [ -n \"$1\" ]; then\n            return 0\n        fi\n        sa_log \"ret here else 1\"\n        return 1\n    else\n        sa_log \"ret here else 2\"\n        return 1\n    fi\n}\n\n# try to add a path that contains appcenter\nfunction set_path() {\n    paths_to_add=(\n        # Private \"bin\"\n        \"$HOME/bin\"\n        # Homebrew (and various other distributions and local installations)\n        /usr/local/{,s}bin\n        /opt/homebrew/{,s}bin\n        \"$HOME/Homebrew\"\n        \"$HOME/.nvm/versions/node/\"\n        # XCode Cloud Paths\n        /Users/local/bin\n        /Users/local/Homebrew\n        /Users/local/Homebrew/bin\n        \"/Users/local/.npm-packages/bin\"\n        /Library/Apple/usr/{,s}bin\n        # System\n        /{,s}bin\n        /usr/{,s}bin\n        /usr/local/lib/node_modules\n        \"$HOME/.npm-packages/bin\"\n    );\n\n    # Create an array of directories currently in the PATH variable.\n    oldIFS=\"$IFS\";\n    IFS=:;\n    set -- $PATH;\n    IFS=\"$oldIFS\";\n    unset oldIFS;\n    old_paths=(\"$@\");\n\n    # Construct an array of the directories in the new PATH, preferring our paths\n    # to the predefined ones.\n    new_paths=();\n    for path_to_add in \"${paths_to_add[@]}\"; do\n        [ -d \"$path_to_add\" ] && new_paths+=(\"$path_to_add\");\n    done;\n    for old_path in \"${old_paths[@]}\"; do\n        [ -d \"$old_path\" ] || continue;\n        for new_path in \"${new_paths[@]}\"; do\n            [ \"${old_path%%/}\" = \"${new_path%%/}\" ] && continue 2;\n        done;\n        new_paths+=(\"$old_path\");\n    done;\n\n    # Now implode everything into the new PATH variable.\n    printf -v PATH \"%s:\" \"${new_paths[@]}\";\n    export PATH=\"${PATH%:}\";\n    unset {old,new}_path{,s} path{s,}_to_add;\n\n    # remove dupes\n    if hash perl 2> /dev/null; then\n        PATH=$(perl -e 'print join \":\", grep {!$h{$_}++} split \":\", $ENV{PATH}')\n    fi\n    export PATH\n\n    sa_log \"PATH = ${PATH}\"\n}\n\n\nfunction check_return_code () {\n\ncase \"$1\" in\n    0)\n    sa_log \"Symbols uploaded succesully.\"\n    ;;\n    1)\n    sa_fail \"Error: Unknown Error\"\n    ;;\n    2)\n    sa_fail \"Error: Invalid Options\"\n    ;;\n    3)\n    sa_fail \"Error: App File Not Found\"\n    ;;\n    [4-9])\n    sa_fail \"Error: Misc errors\"\n    ;;\n    10)\n    sa_fail \"Error: dSym Not Found Or Not Directory\"\n    ;;\n    11)\n    sa_fail \"Error: dSym Directory Wrong Extension\"\n    ;;\n    12)\n    sa_fail \"Error: dSym Contains More than One Dwarf\"\n    ;;\n    13)\n    sa_fail \"Error: Test Chunking Failed\"\n    ;;\n    14)\n    sa_fail \"Error: Upload Negotiation Failed\"\n    ;;\n    15)\n    sa_fail \"Error: Upload Failed\"\n    ;;\n    20)\n    sa_fail \"Error: Incompatible Versions\"\n    ;;\n    25)\n    sa_fail \"Error: Cancelled\"\n    ;;\n    *)\n    sa_fail \"Error: Unknown Error\"\n    ;;\nesac\n\n}\n\nif ! dir_exists \"${SOURCE_ROOT}\"; then\n    sa_fail \"SOURCE_ROOT path ${SOURCE_ROOT} does not exist!\"\nfi\n\nFASTLANE_DIR=\"$SOURCE_ROOT/fastlane\"\nFASTLANE_ENV_FILE=\"$FASTLANE_DIR/.env\"\n\n# Pre-checks\nif dir_exists \"$FASTLANE_DIR\"; then\n    sa_log \"FASTLANE_DIR exists: $FASTLANE_DIR\"\nelse\n    sa_fail \"FASTLANE_DIR does NOT exist: $FASTLANE_DIR\"\nfi\n\n# source the env file, which should export a var containing the token\n# var is: MS_APP_CENTER\nif file_exists \"$FASTLANE_ENV_FILE\"; then\n    sa_log \"FASTLANE_ENV_FILE exists: $FASTLANE_ENV_FILE\"\n    # shellcheck source=/dev/null\n    source \"$FASTLANE_ENV_FILE\"\nfi\n\n# It's okay if the value is instead in an env though\nif [[ -n $APPCENTER_ACCESS_TOKEN ]]; then\n    sa_log \"APPCENTER_ACCESS_TOKEN exists in ENV! Using this value\"\n    MS_APP_CENTER=\"$APPCENTER_ACCESS_TOKEN\"\nfi\n\nif var_exists MS_APP_CENTER; then\n    sa_log \"MS_APP_CENTER var exists: ******************\"\nelse\n    sa_fail \"MS_APP_CENTER var does NOT exist: $MS_APP_CENTER. Define the var in $FASTLANE_ENV_FILE\"\nfi\n\nif [[ -z \"$APP\" ]]; then\n    sa_usage\n    sa_fail \"App name not specified!\"\nfi\n\nif [ ! \"${DWARF_DSYM_FOLDER_PATH}\" ] || [ ! \"${DWARF_DSYM_FILE_NAME}\" ]; then\n    sa_fail \"Xcode Environment Variables are missing!: DWARF_DSYM_FOLDER_PATH and/or DWARF_DSYM_FILE_NAME\"\nfi\n\nDSYM_PATH=\"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\";\n\nif ! dir_exists \"${DSYM_PATH}\"; then\n    sa_fail \"dSYM path ${DSYM_PATH} does not exist!\"\nfi\n\nsa_log \"APP = ${APP}\"\nsa_log \"DSYM_PATH = ${DSYM_PATH}\"\n\nset_path\n\nmethod=\"\"\n\nif hash appcenter 2> /dev/null; then\n    method=\"cli\"\nelse\n    method=\"curl\"\n    sa_fail \"curl method DOES NOT WORK! Install appcenter: npm install -g appcenter-cli\"\nfi\n\nsa_log \"method = ${method}\"\n\n# these are our expected dSYMs\n# might need some work...\ndeclare -a dSYMArray=(\n    \"SequelAceTunnelAssistant.dSYM\"\n    \"Sequel Ace.app.dSYM\"\n    \"Sequel Ace Beta.app.dSYM\"\n    \"SPMySQL.framework.dSYM\"\n    \"xibLocalizationPostprocessor.dSYM\"\n    \"QueryKit.framework.dSYM\"\n)\n\nsa_log \"DWARF_DSYM_FOLDER_PATH = ${DWARF_DSYM_FOLDER_PATH}\"\n\nsafe_cd \"$DWARF_DSYM_FOLDER_PATH\"\n\ndSYM_ARCHIVE_NAME=\"${APP#*\\/}_dSYMs.zip\"\n\nsa_log \"dSYM_ARCHIVE_NAME: ${dSYM_ARCHIVE_NAME}\"\n\nif file_exists \"${dSYM_ARCHIVE_NAME}\"; then\n    sa_log \"dSYM_ARCHIVE exists, removing\"\n    rm -f \"${dSYM_ARCHIVE_NAME}\"\nfi\n\nfor dSYM in \"${dSYMArray[@]}\";\ndo\n   if ! dir_exists \"${dSYM}\"; then\n        sa_log \"path ${dSYM} does not exist, just skip?\"\n    else\n        sa_log \"path ${dSYM} exists, adding to zip archive.\"\n        zip -X -q -r -9 \"${dSYM_ARCHIVE_NAME}\" \"${dSYM}\"\n    fi\ndone\n\nif [ \"$method\" == \"cli\" ]\nthen\n    appcenter crashes upload-symbols --app \"${APP}\" --symbol \"${dSYM_ARCHIVE_NAME}\" --token \"${MS_APP_CENTER}\"\n    # should error check here: https://docs.microsoft.com/en-us/appcenter/test-cloud/troubleshooting/cli-exit-codes\n    rc=\"$?\"\n    check_return_code \"${rc}\"\nelse\n    if ! hash jq &>/dev/null; then\n        sa_log \"You need to install jq for this to work - jq is like sed for JSON data\"\n        sa_log \"Run: brew install jq\"\n        sa_fail \"Or build from source: https://github.com/stedolan/jq\"\n    fi\n\n    # per: https://docs.microsoft.com/en-us/appcenter/diagnostics/iOS-symbolication#app-center-api\n\n    #construct filename\n    file_name=\"${APP#*\\/}\"\n    file_name=\"${file_name}-\"$(date -u +\"%Y-%m-%dT%H-%M-%SZ\")\n    sa_log \"file_name = ${file_name}\"\n\n    #construct url\n    # This call allocates space on our backend for your file and returns a symbol_upload_id and an upload_url property.\n    URL=\"https://api.appcenter.ms/v0.1/apps/${APP}/symbol_uploads\"\n\n    response=\"$(curl -s -X POST \"${URL}\" -H  \"accept: application/json\" \\\n        -H  \"X-API-Token: ${TOKEN}\" \\\n        -H  \"Content-Type: application/json\" \\\n        -d \"{  \\\"symbol_type\\\": \\\"Apple\\\", \\\"file_name\\\": \\\"${file_name}\\\"}\")\"\n\n    sa_log \"response = ${response}\"\n\n    # check for errors\n    error_msg=$(echo \"$response\" | jq -r '.message')\n\n    if [[ \"$error_msg\" != \"null\" ]]; then\n        sa_fail \"Request failed. error_msg = ${error_msg}\"\n    fi\n\n    symbol_upload_id=$(echo \"$response\" | jq -r '.symbol_upload_id')\n    upload_url=$(echo \"$response\" | jq -r '.upload_url')\n\n    if [[ \"$symbol_upload_id\" == \"null\" ]]; then\n        sa_fail \"Request failed. symbol_upload_id = ${symbol_upload_id}\"\n    fi\n    if [[ \"$upload_url\" == \"null\" ]]; then\n        sa_fail \"Request failed. upload_url = ${upload_url}\"\n    fi\n\n    sa_log \"symbol_upload_id = ${symbol_upload_id}\"\n    sa_log \"upload_url = ${upload_url}\"\n\n    # Using the upload_url property returned from the first step, make a PUT request with the header: \"x-ms-blob-type: BlockBlob\" and supply the location of your file on disk.\n    # This call uploads the file to our backend storage accounts\n    # -----------\n    #   HOWEVER\n    # -----------\n    # this doesn't work. Reported to MS\n    # Transfer-Encoding: chunked is set by the call to curl\n    #\n    # https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob#request-headers-all-blob-types says:\n    # \"For a page blob or an append blob, the value of this header must be set to zero\"\n    #\n    # but this is the response:\n    #<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>InvalidHeaderValue</Code><Message>The value for one of the HTTP headers is not in the correct format.\n    # RequestId:1485bd45-701e-0025-284b-9eb210000000\n    # Time:2020-10-09T14:47:04.2689302Z</Message><HeaderName>Content-Length</HeaderName><HeaderValue>-1</HeaderValue></Error>\n    curl -X PUT \"${upload_url}\" -H 'Content-Length: 0' -H 'x-ms-blob-type: BlockBlob' --upload-file \"${DSYM_PATH}\"\n\n    # this works, but nothing is committed\n    # Make a PATCH request to the symbol_uploads API using the symbol_upload_id property returned from the first step.\n    # In the body of the request, specify whether you want to set the status of the upload to committed (successfully completed) the upload process,\n    # or aborted (unsuccessfully completed).\n\n    #construct url\n    URL=\"https://api.appcenter.ms/v0.1/apps/${APP}/symbol_uploads/${symbol_upload_id}\"\n\n    curl -X PATCH \"${URL}\" \\\n    -H 'accept: application/json' \\\n    -H  \"X-API-Token: ${TOKEN}\" \\\n    -H 'Content-Type: application/json' \\\n    -d '{ \"status\": \"committed\" }'\n\nfi\n\nexit 0;\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3037,6 +3010,7 @@
 				1785EB60127DD5A800F468C8 /* SPNotificationsPreferencePane.m in Sources */,
 				1785EB66127DD5EA00F468C8 /* SPNetworkPreferencePane.m in Sources */,
 				500DA4B71BEFF877000773FE /* SPComboBoxCell.m in Sources */,
+				51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */,
 				1785EB6A127DD79300F468C8 /* SPEditorPreferencePane.m in Sources */,
 				17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */,
 				17D3C22212859E070047709F /* SPFavoriteNode.m in Sources */,
@@ -3123,18 +3097,18 @@
 			isa = PBXVariantGroup;
 			children = (
 				965125F524926B6300E65B53 /* en */,
-				517E457C257A971900ED333B /* es-ES */,
 				511B309F25ABBC6500D010E3 /* es */,
 				51BB3DFC25AEF020005AAE44 /* zh-Hans */,
 				51BB3E0425AEF0D7005AAE44 /* zh-Hant */,
 				519F2829261A5A1800370B14 /* de */,
 				51C04C98261E4CF5001F5554 /* pt-BR */,
-				51C04C99261E4CFB001F5554 /* pt-PT */,
 				51C04C9D261E4DB6001F5554 /* pt */,
 				516A76C52653B4E800DC6501 /* ja */,
 				51905622267DFF1700212442 /* vi */,
 				511E8F6926EF72FD001FC731 /* ru */,
 				5199783E27760147008DEB7B /* tr */,
+				510EE15C27B6C35F008544E7 /* fr */,
+				51731E7B27DFB99A00D81B98 /* it */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -3162,7 +3136,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3170,8 +3143,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3198,7 +3169,6 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3206,8 +3176,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3234,7 +3202,6 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3242,8 +3209,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3252,42 +3217,6 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Distribution;
-		};
-		517E44E8257A8FAA00ED333B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		517E44E9257A8FAA00ED333B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		517E44EA257A8FAA00ED333B /* Distribution */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Distribution;
-		};
-		517E44EB257A8FAA00ED333B /* Beta */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Beta;
 		};
 		588593F00F7AEB6900ED0E67 /* Distribution */ = {
 			isa = XCBuildConfiguration;
@@ -3317,12 +3246,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20028;
+				CURRENT_PROJECT_VERSION = 20046;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -3353,8 +3282,7 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 3.4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
@@ -3369,7 +3297,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3386,7 +3314,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3416,7 +3343,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3442,7 +3369,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3468,7 +3395,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3492,7 +3419,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3503,7 +3430,6 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3527,7 +3453,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3537,7 +3463,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3562,7 +3487,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3571,7 +3496,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3618,13 +3542,13 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20028;
+				CURRENT_PROJECT_VERSION = 20046;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -3655,8 +3579,7 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 3.4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				STRIP_INSTALLED_PRODUCT = NO;
@@ -3672,7 +3595,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3689,7 +3612,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3731,7 +3653,6 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
@@ -3739,8 +3660,6 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
-					"-framework",
-					OCMock,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3755,7 +3674,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = SequelAceTunnelAssistant.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
@@ -3764,7 +3683,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
@@ -3788,7 +3706,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = xibLocalizationPostprocessor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_MODEL_TUNING = G5;
@@ -3813,7 +3731,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3831,7 +3749,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3863,7 +3780,7 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
@@ -3880,7 +3797,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INSTALL_PATH = /Applications;
@@ -3934,14 +3850,14 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20028;
+				CURRENT_PROJECT_VERSION = 20046;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
@@ -3976,8 +3892,7 @@
 				IBC_WARNINGS = YES;
 				LEX_INSERT_LINE_DIRECTIVES = YES;
 				LEX_SUPPRESS_DEFAULT_RULE = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 3.4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
@@ -4017,12 +3932,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20028;
+				CURRENT_PROJECT_VERSION = 20046;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Pro.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -4053,8 +3968,7 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 3.4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -4074,17 +3988,6 @@
 				380F4EDC0FC0B50600B0BFD7 /* Release */,
 				380F4EDD0FC0B50600B0BFD7 /* Distribution */,
 				96BC47C92500A84F003C8105 /* Beta */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		517E44E7257A8FAA00ED333B /* Build configuration list for PBXAggregateTarget "Update Strings" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				517E44E8257A8FAA00ED333B /* Debug */,
-				517E44E9257A8FAA00ED333B /* Release */,
-				517E44EA257A8FAA00ED333B /* Distribution */,
-				517E44EB257A8FAA00ED333B /* Beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4152,6 +4055,14 @@
 				minimumVersion = 4.1.0;
 			};
 		};
+		51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/erikdoe/ocmock";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SnapKit/SnapKit";
@@ -4185,6 +4096,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
 			productName = AppCenterAnalytics;
+		};
+		51A2D3B5292FEF000018CFB8 /* OCMock */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */;
+			productName = OCMock;
 		};
 		51BC150025BE138700F1CDC9 /* SnapKit */ = {
 			isa = XCSwiftPackageProductDependency;

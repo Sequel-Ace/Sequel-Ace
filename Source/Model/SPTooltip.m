@@ -191,9 +191,12 @@ static CGFloat slow_in_out (CGFloat t)
         }
         
         if(errorDict.count > 0){
-            executeOnBackgroundThread(^{
-                [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
-            });
+            NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+            if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+                executeOnBackgroundThread(^{
+                    [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+                });
+            }
         }
 
 		if(text)
@@ -328,12 +331,7 @@ static CGFloat slow_in_out (CGFloat t)
 		boundingRect = [fr convertRect: boundingRect toView:NULL];
 
 		NSPoint oppositeOrigin = NSMakePoint(NSMaxX(boundingRect), NSMaxY(boundingRect));
-
-		if (@available(macOS 10.12, *)) {
-			pos = [[fr window] convertPointToScreen:oppositeOrigin];
-		} else {
-			pos = [[fr window] convertRectToScreen:(CGRect){.origin=oppositeOrigin}].origin;
-		}
+        pos = [[fr window] convertPointToScreen:oppositeOrigin];
 		NSFont* font = [fr font];
 		if(font) pos.y -= [font pointSize]*1.3f;
 		return pos;

@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by Jakub Kaspar on 22.07.2020.
-//  Copyright © 2020 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 import Foundation
@@ -201,6 +201,9 @@ extension String {
 }
 
 @objc extension NSString {
+    //Special space-character used to separate the column name and column type
+    @objc static let columnHeaderSplittingSpace: String = " "
+
     static func rawByteString(data: NSData) -> NSString {
         return String.rawByteString(data as Data) as NSString
     }

@@ -942,6 +942,8 @@ static unsigned short getRandomPort(void);
 	
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
+    
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 @end

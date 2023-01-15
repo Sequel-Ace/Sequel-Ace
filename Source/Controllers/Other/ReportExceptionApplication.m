@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by James on 28/2/2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 #import "SPFunctions.h"
@@ -31,7 +31,10 @@
     });
 
     // forward exception to MSACCrashes
-    [MSACCrashes applicationDidReportException:exception];
+    NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+    if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+        [MSACCrashes applicationDidReportException:exception];
+    }
     [super reportException:exception];
 }
 

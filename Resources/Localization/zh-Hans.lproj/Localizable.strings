@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "尝试完成操作时发生错误。\n\nMySQL提示：%@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "您的 MySQL 版本不支持资源限制。您指定的任何重置限制已被丢弃而未被保存。MySQL ： %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "尝试创建%lu个导出文件时发生了未处理的错误。请检查详细信息并重试。";
@@ -1088,6 +1088,9 @@
 
 /* sql export dump of table label */
 "Dump of table" = "转储表";
+
+/* sql export dump of view label */
+"Dump of view" = "导出视图";
 
 /* text showing that app is writing dump */
 "Dumping..." = "正在转储...";
@@ -2449,7 +2452,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "使用 SSL 加密连接";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH已连接";
@@ -3197,13 +3200,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "选中的文件不是有效的文件。\n\n请再试一次。\n\nClass： %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "所选的 known_hosts 文件不可写。\n\n%@\n\n请在 Sequel Ace 的偏好设置中重新选择其他文件然后重试。";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "所选的 known_hosts 文件无效。\n\n请在 Sequel Ace 的偏好设置中重新选择其他文件然后重试。";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "所选的 known_hosts 文件路径中存在不被允许的引号（\"）。\n\n%@\n\n请在 Sequel Ace 偏好设置中重新选择其他文件，或者重命名/移动文件以移除引号。";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSH 隧道调试信息";
@@ -3323,31 +3326,40 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "当前字段%@是一个生成的列，因此无法编辑。";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "“默认值”的用法自上个版本的 Sequel ACE 就已经变更：\n\n- 无默认值：留空。\n- 字符串值：在字符串（包括空字符串）前后使用单引号 '' 或者双引号 \"\"\n- 表达式：使用括号 ()。TIMESTAMP 和 DATETIME 类型字段可以直接使用 CURRENT_TIMESTAMP 函数而无需加上括号。";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "置顶视图";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "置顶表";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "置顶存储过程";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "置顶函数";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "取消置顶视图";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "取消置顶表";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "取消置顶存储过程";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "取消置顶函数";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "置顶";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "复制表名";
+
+/* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
+"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+
+/* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";

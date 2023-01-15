@@ -1861,9 +1861,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					r = [theHintString rangeOfRegex:@"(?<!\\\\)\\$SP_SELECTED_TABLES"];
 					
 					if (r.length) {
-						NSArray *selTables = [[(NSObject *)[self delegate] valueForKeyPath:@"tablesListInstance"] selectedTableNames];
+						NSArray *selTables = [tablesListInstance selectedTableAndViewNames];
 						
-						[theHintString replaceCharactersInRange:r withString:[selTables count] ? [selTables componentsJoinedAndBacktickQuoted] : @"$SP_SELECTED_TABLE"];
+						[theHintString replaceCharactersInRange:r withString:[selTables count] ? [selTables componentsJoinedAndBacktickQuoted] : @"\\$SP_SELECTED_TABLE"];
 					}
 					
 					[theHintString flushCachedRegexData];
@@ -2174,6 +2174,11 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[self performSelector:@selector(autoHelp) withObject:nil
 				   afterDelay:[[prefs valueForKey:SPCustomQueryAutoHelpDelay] doubleValue]];
 	}
+
+  if (completionIsOpen && completionPopup && ![completionPopup hasStartedIntercepting]) {
+    [completionPopup close];
+    completionPopup = nil;
+  }
 
 	// Cancel auto-completion timer
 	if([prefs boolForKey:SPCustomQueryAutoComplete])

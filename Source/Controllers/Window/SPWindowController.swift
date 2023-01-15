@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by Jakub Kašpar on 24.01.2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -35,6 +35,8 @@ import SnapKit
 
     @objc lazy var databaseDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
 
+    @objc let uniqueID: UUID = UUID()
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
@@ -47,6 +49,10 @@ import SnapKit
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
+
+    deinit {
+        print("Deinit called")
+    }
 }
 
 // MARK: - Private API
@@ -87,10 +93,14 @@ extension SPWindowController: NSWindowDelegate {
             return false
         }
 
-        if let appDelegate = NSApp.delegate as? SPAppController, appDelegate.sessionURL() != nil {
-            appDelegate.setSessionURL(nil)
+        if let appDelegate = NSApp.delegate as? SPAppController{
             appDelegate.setSpfSessionDocData(nil)
         }
         return true
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
+        NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
     }
 }

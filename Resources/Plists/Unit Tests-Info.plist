@@ -15,10 +15,10 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>20028</string>
+	<string>20046</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleShortVersionString</key>
-	<string>3.5.0</string>
+	<string>4.0.5</string>
 </dict>
 </plist>

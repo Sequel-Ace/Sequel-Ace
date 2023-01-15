@@ -52,6 +52,9 @@
 #import "SPBundleManager.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
+#import "SPTreeNode.h"
+#import "SPConnectionController.h"
+#import "SPFavoritesOutlineView.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -96,7 +99,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (instancetype)init
 {
     if ((self = [super init])) {
-        _sessionURL = nil;
         aboutController = nil;
         lastBundleBlobFilesDirectory = nil;
         _spfSessionDocData = [[NSMutableDictionary alloc] init];
@@ -190,26 +192,30 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
-    // Send time interval for non-critical logs
-    // must set before calling AppCenter.start
-    // 5 mins?
-    [MSACAnalytics setTransmissionInterval:60*5];
+    NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
+    if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+        // Send time interval for non-critical logs
+        // must set before calling AppCenter.start
+        // 5 mins?
+        [MSACAnalytics setTransmissionInterval:60*5];
 
-    // Use 30 MB for storage for logs
-    [MSACAppCenter setMaxStorageSize:(30 * 1024 * 1024) completionHandler:nil];
-    [MSACAppCenter start:@"65535bfb-1763-40fd-896b-a3aaae06227f" withServices:@[[MSACAnalytics class], [MSACCrashes class]]];
+        // Use 30 MB for storage for logs
+        [MSACAppCenter setMaxStorageSize:(30 * 1024 * 1024) completionHandler:nil];
+        [MSACAppCenter start:@"65535bfb-1763-40fd-896b-a3aaae06227f" withServices:@[[MSACAnalytics class], [MSACCrashes class]]];
 
 #ifdef DEBUG
-    // default is 5 = MSACLogLevelWarning
-    [MSACAppCenter setLogLevel:MSACLogLevelDebug];
+        // default is 5 = MSACLogLevelWarning
+        [MSACAppCenter setLogLevel:MSACLogLevelDebug];
 #endif
 
-    if(MSACAppCenter.isEnabled == YES && MSACAppCenter.isConfigured == YES){
-        SPLog(@"Started MSACAppCenter. sdkVersion: %@. defaultLogLevel: %lu", MSACAppCenter.sdkVersion, (unsigned long) MSACAppCenter.logLevel);
+        if(MSACAppCenter.isEnabled == YES && MSACAppCenter.isConfigured == YES){
+            SPLog(@"Started MSACAppCenter. sdkVersion: %@. defaultLogLevel: %lu", MSACAppCenter.sdkVersion, (unsigned long) MSACAppCenter.logLevel);
+        }
+        else{
+            SPLog(@"MSACAppCenter FAILED to start.");
+        }
     }
-    else{
-        SPLog(@"MSACAppCenter FAILED to start.");
-    }
+
 
     // this reRequests access to all bookmarks
     SecureBookmarkManager *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
@@ -387,10 +393,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // info.plist will contain the opened structure (windows and tabs for each window). Each connection
     // is linked to a saved spf file either in 'Contents' for unTitled ones or already saved spf files.
 
-    if ([contextInfo isEqual:@"saveAsSession"] && [self sessionURL]) {
-        fileName = [[self sessionURL] path];
-    }
-
     if(!fileName || ![fileName length]) {
         return;
     }
@@ -424,21 +426,17 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // retrieve save panel data for passing them to each doc
     NSMutableDictionary *spfDocData_temp = [NSMutableDictionary dictionary];
-    if ([contextInfo isEqualTo:@"saveAsSession"]) {
-        [spfDocData_temp addEntriesFromDictionary:[self spfSessionDocData]];
-    } else {
-        [spfDocData_temp setObject:encrypted forKey:@"encrypted"];
-        if ([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
-            [spfDocData_temp setObject:saveConnectionEncryptString forKey:@"e_string"];
-        }
-        [spfDocData_temp setObject:auto_connect forKey:@"auto_connect"];
-        [spfDocData_temp setObject:save_password forKey:@"save_password"];
-        [spfDocData_temp setObject:include_session forKey:@"include_session"];
-        [spfDocData_temp setObject:save_editor_content forKey:@"save_editor_content"];
-
-        // Save the session's accessory view settings
-        [self setSpfSessionDocData:spfDocData_temp];
+    [spfDocData_temp setObject:encrypted forKey:@"encrypted"];
+    if ([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
+        [spfDocData_temp setObject:saveConnectionEncryptString forKey:@"e_string"];
     }
+    [spfDocData_temp setObject:auto_connect forKey:@"auto_connect"];
+    [spfDocData_temp setObject:save_password forKey:@"save_password"];
+    [spfDocData_temp setObject:include_session forKey:@"include_session"];
+    [spfDocData_temp setObject:save_editor_content forKey:@"save_editor_content"];
+
+    // Save the session's accessory view settings
+    [self setSpfSessionDocData:spfDocData_temp];
 
     [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"encrypted"] boolValue]] forKey:@"encrypted"];
     [info setObject:[NSNumber numberWithBool:[[spfDocData_temp objectForKey:@"auto_connect"] boolValue]] forKey:@"auto_connect"];
@@ -448,34 +446,53 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [info setObject:@1 forKey:SPFVersionKey];
     [info setObject:@"connection bundle" forKey:SPFFormatKey];
 
-    // Loop through all windows
-    for (SPWindowController *windowController in [self.tabManager windowControllers]) {
+    NSMutableArray *processedWindows = [NSMutableArray new];
 
-        // First window is always the currently key window
+    NSSet *allWindows = [self.tabManager windows];
+    for (NSWindow *window in allWindows) {
+        NSMutableArray *tabs = [NSMutableArray array];
         NSMutableDictionary *win = [NSMutableDictionary dictionary];
 
-        // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-        if (![windowController.databaseDocument mySQLVersion]) continue;
+        NSArray *windowsToProcess = [[window tabbedWindows] count] > 0 ? [window tabbedWindows] : @[window];
+        for (NSWindow *processedWindow in windowsToProcess) {
+            SPWindowController *windowController = processedWindow.windowController;
+            if ([processedWindows containsObject:windowController.uniqueID]) {
+                continue;
+            }
 
-        NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
-        if([windowController.databaseDocument isUntitled]) {
-            // new bundle file name for untitled docs
-            NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
-            // internal bundle path to store the doc
-            NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
-            // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
-            [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
-            [windowController.databaseDocument setIsSavedInBundle:YES];
-            [tabData setObject:@NO forKey:@"isAbsolutePath"];
-            [tabData setObject:newName forKey:@"path"];
-        } else {
-            // save it to the original location and take the file's spfDocData
-            [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
-            [tabData setObject:@YES forKey:@"isAbsolutePath"];
-            [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
+            // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
+            if (![windowController.databaseDocument mySQLVersion]) {
+                continue;
+            }
+
+            NSMutableDictionary *tabData = [NSMutableDictionary dictionary];
+            if([windowController.databaseDocument isUntitled]) {
+                // new bundle file name for untitled docs
+                NSString *newName = [NSString stringWithFormat:@"%@.%@", [NSString stringWithNewUUID], SPFileExtensionDefault];
+                // internal bundle path to store the doc
+                NSString *filePath = [NSString stringWithFormat:@"%@/Contents/%@", fileName, newName];
+                // save it as temporary spf file inside the bundle with save panel options spfDocData_temp
+                [windowController.databaseDocument saveDocumentWithFilePath:filePath inBackground:NO onlyPreferences:NO contextInfo:[NSDictionary dictionaryWithDictionary:spfDocData_temp]];
+                [windowController.databaseDocument setIsSavedInBundle:YES];
+                [tabData setObject:@NO forKey:@"isAbsolutePath"];
+                [tabData setObject:newName forKey:@"path"];
+            } else {
+                // save it to the original location and take the file's spfDocData
+                [windowController.databaseDocument saveDocumentWithFilePath:[[windowController.databaseDocument fileURL] path] inBackground:YES onlyPreferences:NO contextInfo:nil];
+                [tabData setObject:@YES forKey:@"isAbsolutePath"];
+                [tabData setObject:[[windowController.databaseDocument fileURL] path] forKey:@"path"];
+            }
+            [tabs addObject:tabData];
+            [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
+
+            [processedWindows addObject:windowController.uniqueID];
         }
-        [win setObject:NSStringFromRect([[windowController window] frame]) forKey:@"frame"];
-        [windows addObject:win];
+        if ([tabs count] > 0) {
+            [win setObject:tabs forKey:@"tabs"];
+        }
+        if ([[win allValues] count] > 0) {
+            [windows addObject:win];
+        }
     }
     [info setObject:windows forKey:@"windows"];
 
@@ -497,8 +514,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return;
     }
 
-    [self setSessionURL:fileName];
-
     // Register spfs bundle in Recent Files
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
 }
@@ -518,6 +533,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return ([[self frontDocument] getConnection] != nil);
     }
     if (action == @selector(openAboutPanel:) || action == @selector(openPreferences:) || action == @selector(visitWebsite:) || action == @selector(checkForNewVersionFromMenu)) {
+        return YES;
+    }
+
+    if (action == @selector(visitHelpWebsite:) || action == @selector(visitFAQWebsite:) || action == @selector(viewKeyboardShortcuts:)) {
         return YES;
     }
 
@@ -768,7 +787,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return;
     }
 
-    if([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
+    if ([spfs objectForKey:@"windows"] && [[spfs objectForKey:@"windows"] isKindOfClass:[NSArray class]]) {
 
         // Retrieve Save Panel accessory view data for remembering them globally
         NSMutableDictionary *spfsDocData = [NSMutableDictionary dictionary];
@@ -780,26 +799,23 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         // Set global session properties
         [self setSpfSessionDocData:spfsDocData];
-        [self setSessionURL:filePath];
 
         // Loop through each defined window in reversed order to reconstruct the last active window
-        for (NSDictionary *window in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
-            // Create a new window controller, and set up a new connection view within it.
+        for (NSDictionary *windowDictionary in [[[spfs objectForKey:@"windows"] reverseObjectEnumerator] allObjects]) {
 
-            SPWindowController *newWindowController = [self.tabManager newWindowForWindow];
-            NSWindow *newWindow = [newWindowController window];
+            NSWindow *window;
 
-            // Set the window controller as the window's delegate
-            [newWindow setDelegate:newWindowController];
+            // Loop through all defined tabs / windows
+            for (NSDictionary *tab in [windowDictionary objectForKey:@"tabs"]) {
 
-            usleep(1000);
+                // Add new the tab or window
+                SPWindowController *newWindowController = window == nil ? [self.tabManager newWindowForWindow] : [self.tabManager newWindowForTab];
+                window = newWindowController.window;
 
-            // Show the window
-            [newWindowController showWindow:self];
+                usleep(1000);
 
-            // Loop through all defined tabs for each window
-            for (NSDictionary *tab in [window objectForKey:@"tabs"])
-            {
+                [window setFrameFromString:[windowDictionary objectForKey:@"frame"]];
+
                 NSString *fileName = nil;
                 BOOL isBundleFile = NO;
 
@@ -807,30 +823,23 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 // otherwise construct the releative path for the passed spfs file
                 if ([[tab objectForKey:@"isAbsolutePath"] boolValue]) {
                     fileName = [tab objectForKey:@"path"];
-                }
-                else {
+                } else {
                     fileName = [NSString stringWithFormat:@"%@/Contents/%@", filePath, [tab objectForKey:@"path"]];
                     isBundleFile = YES;
                 }
 
                 // Security check if file really exists
                 if ([fileManager fileExistsAtPath:fileName]) {
-
-                    // Add new the tab
-                    if(newWindowController) {
-
-                        if ([[newWindowController window] isMiniaturized]) [[newWindowController window] deminiaturize:self];
-
-                        [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
-                        if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
-                            break;
-                        }
+                    [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
+                    if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
+                        break;
                     }
-
-                }
-                else {
+                } else {
                     SPLog(@"Bundle file “%@” does not exists", fileName);
                     NSBeep();
+                }
+                if ([window isMiniaturized]) {
+                    [window deminiaturize:self];
                 }
             }
         }
@@ -839,8 +848,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
 }
 
-- (void)openColorThemeFileAtPath:(NSString *)filePath
-{
+- (void)openColorThemeFileAtPath:(NSString *)filePath {
     NSString *themePath = [fileManager applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
 
     if (!themePath) return;
@@ -982,6 +990,41 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"BASH Error", @"bash error") message:NSLocalizedString(@"Status file for sequelace url scheme command couldn't be written!", @"status file for sequelace url scheme command couldn't be written error message") callback:nil];
         }
         [result writeToFile:resultFileName atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        return;
+    }
+    
+    if ([command isEqualToString:@"LaunchFavorite"]) {
+        NSString *targetBookmarkName = nil;
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        for (NSURLQueryItem *queryItem in components.queryItems) {
+            if ([queryItem.name isEqualToString:@"name"]) {
+                targetBookmarkName = queryItem.value;
+                break;
+            }
+        }
+        
+        if (targetBookmarkName && [targetBookmarkName length]) {
+            SPTreeNode *targetFavoriteNode = nil;
+            SPTreeNode *favoritesTree = [SPFavoritesController sharedFavoritesController].favoritesTree;
+            for (SPTreeNode *favoriteNode in [favoritesTree allChildLeafs]) {
+                if ([favoriteNode.dictionaryRepresentation[SPFavoriteNameKey] isEqualToString:targetBookmarkName]) {
+                    targetFavoriteNode = favoriteNode;
+                    break;
+                }
+            }
+            
+            if (targetFavoriteNode) {
+                SPWindowController *windowController = [self.tabManager newWindowForWindow];
+                SPFavoritesOutlineView *favoritesOutlineView = windowController.databaseDocument.connectionController.favoritesOutlineView;
+                [favoritesOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:[favoritesOutlineView rowForItem:targetFavoriteNode]] byExtendingSelection:NO];
+                [windowController.databaseDocument.connectionController initiateConnection:windowController.databaseDocument.connectionController];
+                return;
+            }
+        }
+        
+        NSBeep();
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"LaunchFavorite URL Scheme Error", @"LaunchFavorite URL Scheme Error") message: [NSString stringWithFormat:@"%@ %@: “%@”", NSLocalizedString(@"The variable in the ?name= query parameter could not be matched with any of your favorites.", @"The variable in the ?name= query parameter could not be matched with any of your favorites."), NSLocalizedString(@"Variable", @"Variable"), targetBookmarkName] callback:nil];
+        
         return;
     }
 
@@ -1201,9 +1244,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSDictionary*)shellEnvironmentForDocument:(NSString*)docUUID {
     NSMutableDictionary *env = [NSMutableDictionary dictionary];
-    SPDatabaseDocument *doc;
     if (docUUID == nil) {
-        doc = [self frontDocument];
+        [self frontDocument];
     } else {
         SPWindowController *windowController = [self.tabManager windowControllerWithDocumentWithProcessID:docUUID];
         if (windowController) {
@@ -1353,32 +1395,17 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     return [[self.tabManager activeWindowController] databaseDocument];
 }
 
-/**
- * Retrieve the session URL. Return nil if no session is opened
- */
-- (NSURL *)sessionURL {
-    return _sessionURL;
-}
-
-/**
- * Set the global session URL used for Save (As) Session.
- */
-- (void)setSessionURL:(NSString *)urlString {
-
-    if(urlString)
-        _sessionURL = [NSURL fileURLWithPath:urlString];
-}
-
 - (NSDictionary *)spfSessionDocData
 {
     return _spfSessionDocData;
 }
 
-- (void)setSpfSessionDocData:(NSDictionary *)data
-{
-    [_spfSessionDocData removeAllObjects];
-    if(data)
-        [_spfSessionDocData addEntriesFromDictionary:data];
+- (void)setSpfSessionDocData:(NSDictionary *)data {
+    if (data) {
+        _spfSessionDocData = [data mutableCopy];
+    } else {
+        _spfSessionDocData = [NSMutableDictionary new];
+    }
 }
 
 #pragma mark -
@@ -1658,20 +1685,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [frontState setObject:@YES forKey:@"auto_connect"];
 
     [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentDuplicateTabNotification object:nil userInfo:frontState];
-}
-
-#pragma mark - NSWindowDelegate
-
-- (void)windowWillClose:(NSNotification *)notification
-{
-    id window = notification.object;
-    if (!window) {
-        return;
-    }
-
-    if (window == aboutController.window) {
-        aboutController.window.delegate = nil;
-    }
 }
 
 #pragma mark -

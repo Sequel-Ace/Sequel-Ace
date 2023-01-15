@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by Jakub Kaspar on 05.07.2020.
-//  Copyright © 2020 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@
 #import "SPAppController.h"
 #import "SPDatabaseDocument.h"
 #import "SPBundleManager.h"
+#import "SPWindow.h"
 
 #import "SPConstants.h"
 

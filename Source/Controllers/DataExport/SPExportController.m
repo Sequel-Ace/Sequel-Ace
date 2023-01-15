@@ -2996,7 +2996,7 @@ set_input:
 	[panel setAllowsOtherFileTypes:YES];
 
 	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger result) {
-		if(result != NSFileHandlingPanelOKButton) return;
+		if(result != NSModalResponseOK) return;
 
 		[panel orderOut:nil]; // Panel is still on screen. Hide it first. (This is Apple's recommended way)
 
@@ -3055,7 +3055,7 @@ set_input:
 	[panel setCanCreateDirectories:YES];
 
 	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
-		if(returnCode != NSFileHandlingPanelOKButton) return;
+		if(returnCode != NSModalResponseOK) return;
 
 		// Panel is still on screen. Hide it first. (This is Apple's recommended way)
 		[panel orderOut:nil];

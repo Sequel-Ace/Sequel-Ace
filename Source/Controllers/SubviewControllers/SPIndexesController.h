@@ -38,7 +38,7 @@
 @interface SPIndexesController : NSWindowController <NSTableViewDelegate, NSTableViewDataSource, NSComboBoxCellDataSource>
 {
 	// Controllers
-	IBOutlet SPDatabaseDocument *dbDocument;
+	IBOutlet __weak SPDatabaseDocument *dbDocument;
 	IBOutlet SPTableStructure *tableStructure;
 	IBOutlet SPTablesList *tablesList;
 	IBOutlet SPTableData *tableData;

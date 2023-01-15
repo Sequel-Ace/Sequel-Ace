@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by Jakub Kašpar on 09.03.2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 import AppKit
@@ -163,6 +163,10 @@ extension SPAppController {
 
     @IBAction func showFilterTable(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.showFilterTable()
+    }
+
+    @IBAction func makeTableListFilterHaveFocus(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.makeTableListFilterHaveFocus(nil)
     }
 
     @IBAction func copyCreateTableSyntax(_ sender: Any) {

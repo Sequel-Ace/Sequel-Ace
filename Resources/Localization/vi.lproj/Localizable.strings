@@ -1089,6 +1089,9 @@
 /* sql export dump of table label */
 "Dump of table" = "Dump of table";
 
+/* sql export dump of view label */
+"Dump of view" = "Dump of view";
+
 /* text showing that app is writing dump */
 "Dumping..." = "Dumping...";
 
@@ -3351,3 +3354,12 @@
 
 /* header for pinned table list */
 "PINNED" = "PINNED";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "Copy Table Name";
+
+/* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
+"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+
+/* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";

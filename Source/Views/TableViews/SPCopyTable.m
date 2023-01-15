@@ -161,7 +161,7 @@ NSString *kHeader     = @"HEADER";
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@"\t"];
-			[result appendString:[[[columns safeObjectAtIndex:i] headerCell] stringValue]];
+			[result appendString:[[[[columns safeObjectAtIndex:i] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
 		}
 		[result appendString:@"\n"];
 	}
@@ -293,7 +293,7 @@ NSString *kHeader     = @"HEADER";
 		for( i = 0; i < numColumns; i++ ){
 			if([result length])
 				[result appendString:@","];
-			[result appendFormat:@"\"%@\"", [[[[columns safeObjectAtIndex:i] headerCell] stringValue] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+			[result appendFormat:@"\"%@\"", [[[[[columns safeObjectAtIndex:i] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
 		}
 		[result appendString:@"\n"];
 	}
@@ -504,7 +504,7 @@ NSString *kHeader     = @"HEADER";
             data              = [[NSMutableDictionary alloc] init];
             data[kColMapping] = @(columnMapping);
             data[kColType]    = @(1);                 // By default, set to String
-            data[kHeader]     = [[[columns safeObjectAtIndex:c] headerCell] stringValue];
+            data[kHeader]     = [[[[columns safeObjectAtIndex:c] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0];
             // Numeric data
             if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
                 data[kColType] = @(0);
@@ -523,8 +523,10 @@ NSString *kHeader     = @"HEADER";
 	} // end of column loop
 
     if(errorDict.count > 0){
-        SPLog(@"autoIncrement error");
-        [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+        SPLog(@"autoIncrement error");        
+        if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+            [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+        }
     }
 
     // --- SECOND PART --- Build the SQL with the previous selected columns
@@ -655,8 +657,9 @@ NSString *kHeader     = @"HEADER";
     for (NSDictionary *dic in array) {
         if (![dic isKindOfClass:[NSNull class]]) {
             NSString *header = [dic safeObjectForKey:kHeader];
-            if ([result length])
+            if ([result length]) {
                 [result appendString: @", "];
+            }
             [result appendString:[header backtickQuotedString]];
         }
     }
@@ -928,7 +931,8 @@ NSString *kHeader     = @"HEADER";
 	maxCellWidth += columnBaseWidth;
 
 	// If the header width is wider than this expanded width, use it instead
-	cellWidth = [[columnDefinition objectForKey:@"name"] sizeWithAttributes:@{NSFontAttributeName : [NSFont labelFontOfSize:[NSFont smallSystemFontSize]]}].width;
+    NSAttributedString *headerString = [columnDefinition tableContentColumnHeaderAttributedString];
+    cellWidth = [headerString size].width;
 	if (cellWidth + 10 > maxCellWidth) maxCellWidth = cellWidth + 10;
 
 	return maxCellWidth;
@@ -1287,14 +1291,14 @@ NSString *kHeader     = @"HEADER";
 
 
     //Check for null
-	if ([cellValue isNSNull])
-	{
+    if ([cellValue isNSNull])
+    {
         //Null should always be inline
         return NO;
     }
 
     //Check string lengths
-    if (editLongerTextInSheet && [cellValue length] > editInSheetForLongTextLengthThreshold) {
+    if (editLongerTextInSheet && [cellValue isKindOfClass:[NSString class]] && [cellValue length] > editInSheetForLongTextLengthThreshold) {
         return YES;
     }
 
@@ -1368,7 +1372,6 @@ NSString *kHeader     = @"HEADER";
     }
 
     NSString *inputAction = @"";
-    NSString *inputFallBackAction = @"";
     NSError *err = nil;
     NSString *uuid = [NSString stringWithNewUUID];
     NSString *bundleInputFilePath = [NSString stringWithFormat:@"%@_%@", [SPBundleTaskInputFilePath stringByExpandingTildeInPath], uuid];
@@ -1378,8 +1381,6 @@ NSString *kHeader     = @"HEADER";
 
     if([cmdData objectForKey:SPBundleFileInputSourceKey])
         inputAction = [[cmdData objectForKey:SPBundleFileInputSourceKey] lowercaseString];
-    if([cmdData objectForKey:SPBundleFileInputSourceFallBackKey])
-        inputFallBackAction = [[cmdData objectForKey:SPBundleFileInputSourceFallBackKey] lowercaseString];
 
     NSMutableDictionary *env = [NSMutableDictionary dictionary];
     [env setObject:[infoPath stringByDeletingLastPathComponent] forKey:SPBundleShellVariableBundlePath];

@@ -47,7 +47,7 @@ typedef enum {
 @interface SPDataImport : NSObject <NSOpenSavePanelDelegate>
 {
 #warning Outlets belong to multiple xib files!
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPTableStructure *tableSourceInstance;
 	IBOutlet SPTableData *tableDataInstance;

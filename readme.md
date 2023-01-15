@@ -7,6 +7,19 @@ Sequel Ace is a fast, easy-to-use Mac database management application for workin
 
 If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace)!
 
+## Compatibility
+
+- **macOS:** >= 10.13 \*
+- **Processor:** Intel & Apple Silicon
+- **MySQL:** >= 5.7
+- **MariaDB:** >= 10.0
+
+_Note: An [older version of Sequel Ace (version 3.5.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F3.5.2-20033) is available to download for macOS versions 10.12 or for MySQL 5.6 support._
+
+_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11._
+
+\* To run Sequel Ace on Mac OS X 10.13-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
+
 ## Installation
 
 ### Mac AppStore <a href="https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1"><img alt="Download on the Mac AppStore" src="https://sequel-ace.com/images/download_on_mas.png" align="right" height="60"></a>
@@ -35,9 +48,7 @@ To migrate your favorites, please check the [migration guide](https://sequel-ace
 
 ## Contributing
 
-We have a lot of work to do, but we're here to provide, with your help, an always-free, macOS first SQL database tool for everyone.
-
-We use Slack for communication - feel free to join our [Slack workspace](https://join.slack.com/t/sequel-ace/shared_invite/zt-g9bg1q6o-gDWyGCzauwPdg8BjmBCqKg).
+Please refer to [this](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Contributing.md) doc.
 
 ### Translations
 
@@ -45,7 +56,7 @@ If you would like to help with translations, please sign up for Crowdin and join
 
 ### Development
 
-If you would like to help with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or [issues](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose) with relevant labels such as [Help Wanted](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22), [Bug](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3ABug), [Feature Request](https://github.com/Sequel-Ace/Sequel-Ace/labels/Feature%20Request), and [PR Welcome](https://github.com/Sequel-Ace/Sequel-Ace/labels/PR%20Welcome). These lists contain the issues where we would most like your help. There are both challenging and straightforward tasks there, so new contributors should be able to get started. For more technical information see [the developer guide](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/developing.md)
+If you would like to help with code and development, please see either our [projects page](https://github.com/sequel-ace/sequel-ace/projects) or [issues](https://github.com/Sequel-Ace/Sequel-Ace/issues/new/choose) with relevant labels such as [Help Wanted](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22), [Bug](https://github.com/Sequel-Ace/Sequel-Ace/issues?q=is%3Aopen+is%3Aissue+label%3ABug), [Feature Request](https://github.com/Sequel-Ace/Sequel-Ace/labels/Feature%20Request), and [PR Welcome](https://github.com/Sequel-Ace/Sequel-Ace/labels/PR%20Welcome). These lists contain the issues where we would most like your help. There are both challenging and straightforward tasks there, so new contributors should be able to get started. For more technical information see [the developer guide](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Developing.md)
 
 ## Branches
 
@@ -56,20 +67,13 @@ If you would like to help with code and development, please see either our [proj
 - production/ tags represent submissions to the macOS App Store. These are marked as "Pre-Release" until approved by Apple and officially released by the team. Both release candidates and final releases use production/ tags. Release candidates will have RC or Release Candidate in their title.
 - beta/ tags represent pre-release versions of Sequel Ace intended to test new features and bug fixes. The downloadable app in a beta/ tag has a different name and identifier (Sequel Ace Beta), meaning you can install it side-by-side with the latest App Store release. Beta releases also have increased logging turned on to help us identify critical issues.
 
-## Compatibility
+## Code of Conduct
 
-- **macOS:** >= 10.12 \*
-- **Processor:** Intel & Apple Silicon
-- **MySQL:** >= 5.6
-- **MariaDB:** >= 10.0
-
-_Note: An [older version of Sequel Ace (version 2.3.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F2.3.2-2121) is available to download for macOS versions 10.10 and 10.11. However support is limited, and we encourage upgrading to the latest macOS and Sequel Ace._
-
-\* To run Sequel Ace on Mac OS X 10.12-10.14.4, you need to install Apple's Swift Standard Libraries for the app to work as expected. You can download this support package free of charge from [here (this repository)](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Scripts/) or [here (Apple directly)](https://support.apple.com/kb/DL1998?locale=en_GB).
+Please refer [here](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Code_of_conduct.md)
 
 ## License
 
-Copyright (c) 2020-2021 Moballo, LLC.  All rights reserved.
+Copyright (c) 2020-2022 Moballo, LLC.  All rights reserved.
 Forked from Sequel Pro: Copyright (c) 2002-2019 Sequel Pro & CocoaMySQL Teams. All rights reserved.
 
 Sequel Ace is free and open-source software licensed under [MIT](https://opensource.org/licenses/MIT). See [LICENSE](https://github.com/sequel-ace/sequel-ace/blob/master/LICENSE) for complete details.

@@ -53,7 +53,7 @@
 
 @interface SPCustomQuery : NSObject <NSTableViewDataSource, NSWindowDelegate, NSTableViewDelegate, SPDatabaseContentViewDelegate>
 {
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 
 	IBOutlet id queryFavoritesButton;

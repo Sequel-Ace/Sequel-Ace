@@ -158,11 +158,8 @@ typedef enum
 	SPMainMenuSequelPro = 0,
 	SPMainMenuFile      = 1,
 	SPMainMenuFileSaveConnection   = 1004,
-	SPMainMenuFileSaveConnectionAs = 1005,
 	SPMainMenuFileSaveQuery        = 1006,
-	SPMainMenuFileSaveQueryAs      = 1008,
 	SPMainMenuFileSaveSession      = 1020,
-	SPMainMenuFileSaveSessionAs    = 1021,
 	SPMainMenuFileClose            = 1003,
 	SPMainMenuFileCloseTab         = 1103,
 	SPMainMenuEdit      = 2,
@@ -310,6 +307,7 @@ extern NSString *SPDefaultViewMode;
 extern NSString *SPLastViewMode;
 extern NSString *SPDefaultEncoding;
 extern NSString *SPDisplayTableViewVerticalGridlines;
+extern NSString *SPDisplayTableViewColumnTypes;
 extern NSString *SPDisplayCommentsInTablesList;
 extern NSString *SPCustomQueryMaxHistoryItems;
 extern NSString *SPAppearance;
@@ -691,6 +689,7 @@ extern const NSInteger SPBundleRedirectActionLastCode;
 extern NSString *SPMigratedQueriesFromPrefs;
 extern NSString *SPTraceSQLiteExecutions;
 extern NSString *SPCustomQuerySaveHistoryIndividually;
+extern NSString *SPSaveApplicationUsageAnalytics;
 
 // URL scheme
 extern NSString *SPURLSchemeQueryInputPathHeader;

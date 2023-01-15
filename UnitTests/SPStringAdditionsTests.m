@@ -106,7 +106,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
 				[NSString stringForByteSize:i];
-//                NSLog(@"%@", [NSString stringForByteSize:i]);
 			}
 		}
 	}];
@@ -123,8 +122,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
         int const iterations = 100000;
         for (int i = 0; i < iterations; i++) {
             @autoreleasepool {
-//                NSLog(@"%@", [NSByteCountFormatter stringWithByteSize:i]);
-
                 tmp = [NSByteCountFormatter stringWithByteSize:i];
             }
         }
@@ -145,47 +142,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 	}];
 }
 
-//// swift static - 0.24s
-//- (void)testPerformance_stringForByteSizeStatic {
-//	// this is on main thread
-//	[self measureBlock:^{
-//		// Put the code you want to measure the time of here.
-//		int const iterations = 10000;
-//		for (int i = 0; i < iterations; i++) {
-//			@autoreleasepool {
-//				[NSString stringForByteSize2:i];
-//			}
-//		}
-//	}];
-//}
-//
-//// swift static NumberLiterals - 0.239s
-//- (void)testPerformance_stringForByteSizeSwiftStaticNumberLiterals {
-//	// this is on main thread
-//	[self measureBlock:^{
-//		// Put the code you want to measure the time of here.
-//		int const iterations = 10000;
-//		for (int i = 0; i < iterations; i++) {
-//			@autoreleasepool {
-//				[NSString stringForByteSize2:i];
-//			}
-//		}
-//	}];
-//}
-
-//- (void)testPerformance_stringForByteSize{
-//	// this is on main thread
-//	[self measureBlock:^{
-//		// Put the code you want to measure the time of here.
-//		int const iterations = 10000;
-//		for (int i = 0; i < iterations; i++) {
-//			@autoreleasepool {
-//				[NSString stringForByteSize2:i];
-//			}
-//		}
-//	}];
-//}
-
 // 0.0383s
 - (void)testPerformance_stringByMatchingRegexSearch {
     // this is on main thread
@@ -205,7 +161,6 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
         }
     }];
 }
-
 
 // 0.175s - 4 times slower than regexkit
 - (void)testPerformance_captureGroupForRegex {
@@ -415,19 +370,23 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 - (void)testIsUnixTimeStamp{
 
-    NSString *justOver100YAgo = @"-1574579624";
+    long currentTimestamp = (long) [[NSDate date] timeIntervalSince1970];
+    long oneYearTime = 31536000;
+    long aLittleExtra = 1000;
+
+    NSString *justOver100YAgo = [NSString stringWithFormat:@"%ld", (currentTimestamp - (oneYearTime * 100) - aLittleExtra)];
     XCTAssertNil(justOver100YAgo.dateStringFromUnixTimestamp);
 
-    NSString *justUnder100YAgo = @"-1479885224";
+    NSString *justUnder100YAgo = [NSString stringWithFormat:@"%ld", (currentTimestamp - (oneYearTime * 100) + aLittleExtra)];
     XCTAssertNotNil(justUnder100YAgo.dateStringFromUnixTimestamp);
 
-    NSString *justOver100YinTheFut = @"4800012376";
+    NSString *justOver100YinTheFut = [NSString stringWithFormat:@"%ld", (currentTimestamp + (oneYearTime * 100) + aLittleExtra)];
     XCTAssertNil(justOver100YinTheFut.dateStringFromUnixTimestamp);
 
-    NSString *justUnder100YinTheFut = @"4736853976";
+    NSString *justUnder100YinTheFut = [NSString stringWithFormat:@"%ld", (currentTimestamp + (oneYearTime * 100) - aLittleExtra)];
     XCTAssertNotNil(justUnder100YinTheFut.dateStringFromUnixTimestamp);
 
-    NSString *aboutNow = @"1612803456";
+    NSString *aboutNow = [NSString stringWithFormat:@"%ld", (currentTimestamp)];
     XCTAssertNotNil(aboutNow.dateStringFromUnixTimestamp);
 
 }

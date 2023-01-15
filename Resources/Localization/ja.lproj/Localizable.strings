@@ -45,16 +45,16 @@
 "%@ rows of %@%@ match filter" = "%1$@ 行の %2$@%3$@ 一致するフィルター";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld 行が影響を受けました";
+"%@; %ld rows affected" = "%1$@; %2$ld 行に影響";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld 行が %3$ld クエリで %4$@ 影響を受けます";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%2が複数のクエリによって影響を受けた行数、%3は実行されたクエリの数、%4は全クエリの実行に要した時間になります";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 行が影響を受けました";
+"%@; 1 row affected" = "%@; 1 行に影響";
 
 /* text showing one row has been affected by multiple queries */
-"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; %2$ld クエリで %3$@ 行が影響を受けます";
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 合計 1 行に影響、%2$ld クエリで %3$@ 経過";
 
 /* text showing a query was cancelled */
 "%@; Cancelled after %@" = "%1$@; %2$@ の後にキャンセルされました";
@@ -117,10 +117,10 @@
 "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(これは通常、接続が非アクティブの後にサーバーによって閉じられていることを示しますが、他の条件によっても発生する可能性があります。 接続が復元されました。クエリが安全な場合は、もう一度やり直してください。)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
-", first row available after %1$@" = "、 %1$@ の後に最初の行が利用可能です";
+", first row available after %1$@" = "、%1$@ 経過後に先頭行が利用可能";
 
 /* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
-", taking %1$@" = "、 %1$@ を取る";
+", taking %1$@" = "、 %1$@ 経過";
 
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
@@ -236,7 +236,7 @@
 "Add" = "追加";
 
 /* menu item to add db */
-"Add Database..." = "データベースを追加...";
+"Add Database..." = "データベースを追加…";
 
 /* Add Host */
 "Add Host" = "ホストを追加";
@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "操作の実行中にエラーが発生しました。\n\nMySQL : %@ ";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "お使いのバージョンのMySQLではリソース制限はサポートされていません。指定したリソース制限は破棄され保存されていません。MySQLは次のとおりです: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "エクスポートファイルの %lu を作成しようとしたときに処理されないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
@@ -768,27 +768,27 @@
 
 /* copy create func syntax menu item
  Table List : Context Menu : copy CREATE FUNCTION syntax */
-"Copy Create Function Syntax" = "関数構文をコピー";
+"Copy Create Function Syntax" = "関数の構文をコピー";
 
 /* copy create proc syntax menu item
  Table List : Context Menu : Copy CREATE PROCEDURE syntax
  Table List : Gear Menu : Copy CREATE PROCEDURE syntax */
-"Copy Create Procedure Syntax" = "作成手順の構文をコピー";
+"Copy Create Procedure Syntax" = "プロシージャの構文をコピー";
 
 /* copy create syntaxes menu item
  Table List : Context Menu : Copy CREATE syntax (multiple selection)
  Table List : Gear Menu : Copy CREATE syntax (multiple selection) */
-"Copy Create Syntaxes" = "構文のコピー作成";
+"Copy Create Syntaxes" = "構文をコピー";
 
 /* copy create table syntax menu item
  Table List : Context Menu : Copy CREATE syntax (single table)
  Table List : Gear Menu : Copy CREATE syntax (single table) */
-"Copy Create Table Syntax" = "テーブル構文のコピー作成";
+"Copy Create Table Syntax" = "テーブルの構文をコピー";
 
 /* copy create view syntax menu item
  Table List : Context Menu : Copy CREATE view statement
  Table List : Gear Menu : Copy CREATE view statement */
-"Copy Create View Syntax" = "ビュー構文のコピー作成";
+"Copy Create View Syntax" = "ビューの構文をコピー";
 
 /* copy server variable name menu item */
 "Copy Variable Name" = "変数名をコピー";
@@ -851,7 +851,7 @@
 "Couldn't flush privileges.\nMySQL said: %@" = "権限をフラッシュできませんでした。\nMySQL は %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "構文を作成できませんでした。\nMySQL: %@";
+"Couldn't get create syntax.\nMySQL said: %@" = "構文を取得できませんでした。\nMySQL: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "フィールドの原点を明確に識別できませんでした。列 '%@' には複数のテーブルのデータが含まれています。";
@@ -872,20 +872,20 @@
 "Couldn't write field.\nMySQL said: %@" = "フィールドを書き込めませんでした。\nMySQL: %@";
 
 /* create syntax for table comment */
-"Create syntax for" = "構文を作成";
+"Create syntax for" = "構文";
 
 /* Create syntax label */
-"Create syntax for %@ '%@'" = "%1$@ '%2$@ ' の構文を作成";
+"Create syntax for %@ '%@'" = "%1$@ '%2$@ ' の構文";
 
 /* Create syntaxes for selected items label */
-"Create syntaxes for selected items" = "選択したアイテムの構文を作成";
+"Create syntaxes for selected items" = "選択アイテムの構文";
 
 /* Table Info Section : table create options */
 "create_options: %@" = "作成オプション: %@";
 
 /* created: %@
  Table Info Section : time+date table was created at */
-"created: %@" = "作成済み: %@";
+"created: %@" = "作成: %@";
 
 /* description of polygon */
 "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "外側の境界として1つのLinearRing（つまり、閉じた単純なLineString）と、「穴」として機能する0個以上の内側のLinearRingを組み合わせてサーフェスを作成します。";
@@ -967,10 +967,10 @@
 "default_value" = "default_value";
 
 /* definer label (Navigator) */
-"Definer" = "定義";
+"Definer" = "定義者";
 
 /* definer: %@ */
-"definer: %@" = "定義: %@";
+"definer: %@" = "定義者: %@";
 
 /* description of enum */
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "すべてのフィールドが最大1つで使用できるメンバーのリストを定義します。 値はインデックス番号(最初のメンバーの場合は0から)でソートされます。";
@@ -1088,6 +1088,9 @@
 
 /* sql export dump of table label */
 "Dump of table" = "テーブルのダンプ";
+
+/* sql export dump of view label */
+"Dump of view" = "ダンプ表示";
 
 /* text showing that app is writing dump */
 "Dumping..." = "ダンプ中...";
@@ -1631,7 +1634,7 @@
 "Is Nullable" = "Null を許す";
 
 /* is updatable: %@ */
-"is updatable: %@" = "更新: %@";
+"is updatable: %@" = "更新可否: %@";
 
 /* items */
 "items" = "項目";
@@ -2219,10 +2222,10 @@
 "Rows %@ - %@ of %@%@ from table" = "テーブルから %1$@ - %2$@ 行目 %3$@%4$@";
 
 /* Table Info Section : number of rows (exact value) */
-"rows: %@" = "行: %@";
+"rows: %@" = "行数: %@";
 
 /* Table Info Section : number of rows (estimated value) */
-"rows: ~%@" = "行: ~%@";
+"rows: ~%@" = "行数: ~%@";
 
 /* run all button */
 "Run All" = "すべて実行";
@@ -2377,10 +2380,10 @@
 "Show Create Procedure Syntax..." = "プロシージャの構文を表示...";
 
 /* show create syntaxes menu item */
-"Show Create Syntaxes..." = "構文の作成...";
+"Show Create Syntaxes..." = "構文を表示...";
 
 /* show create table syntax menu item */
-"Show Create Table Syntax..." = "テーブルの構文の作成...";
+"Show Create Table Syntax..." = "テーブルの構文を表示...";
 
 /* show create view syntax menu item */
 "Show Create View Syntax..." = "ビューの構文を表示...";
@@ -2450,7 +2453,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "SSL経由で接続が保護されました";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH 接続済み";
@@ -2698,7 +2701,7 @@
 "The connection to the server was lost during the import.  The import is only partially complete." = "インポート中にサーバーへの接続が失われました。インポートは部分的にのみ完了します。";
 
 /* Create syntax permission denied detail */
-"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "パーミッションエラーのため作成構文を取得できませんでした。\n\n管理者にユーザー権限を確認してください。";
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "権限エラーのため構文を取得できませんでした。\n\n管理者にてユーザー権限を確認してください。";
 
 /* CSV file open error */
 "The CSV file you selected could not be found or read." = "選択した CSV ファイルが見つかりませんでした。";
@@ -3198,13 +3201,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "選択したファイルは有効なファイルではありません。\n\nもう一度やり直してください。\n\nクラス: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "選択された既知のホストファイルは書き込み可能ではありません。\n\n%@\n\nSequel Aceの環境設定でファイルを再度選択して、もう一度やり直してください。";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "選択された既知のホストファイルは無効です。\n\nSequel Aceの環境設定でファイルを再度選択し、もう一度やり直してください。";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "選択された既知のホストファイルのファイルパスに、サポートされていない引用符 (\") が含まれています。\n\n%@\n\nSequel Aceの環境設定で別のファイルを選択するか、ファイル名あるいはパス名を変更して引用符を取り除いてください。";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSHトンネルのデバッグ情報";
@@ -3324,31 +3327,40 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "現在のフィールド \"%@\" は生成された列であるため、編集できません。";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "列のデフォルト値の用法がSequel Aceの最終バージョンから変更されています:\n\n- デフォルト値なし : 無指定のままとする。\n- 文字列値 : 空文字列の使用や文字列の折り返しをする場合、引用符 '' か二重引用符 \"\" を使う。\n- 式 : 括弧 () を使う。ただし、括弧なしでCURRENT_TIMESTAMPを指定可能なTIMESTAMP列とDATETIME列を除く。";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "ビューをピンで固定";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "テーブルをピンで固定";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "プロシージャをピンで固定";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "関数をピンで固定";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "ビューのピン固定を解除";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "テーブルのピン固定を解除";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "プロシージャのピン固定を解除";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "関数のピン固定を解除";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "ピンで固定";
+
+/* Menu option to copy a table's name with database name in the list of tables */
+"Copy Table Name" = "テーブル名をコピー";
+
+/* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
+"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+
+/* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";

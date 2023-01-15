@@ -59,7 +59,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 @interface SPTableContent : NSObject <NSTableViewDelegate, NSTableViewDataSource, NSComboBoxDataSource, NSComboBoxDelegate, SPDatabaseContentViewDelegate>
 {	
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 
 	IBOutlet SPTableStructure *tableSourceInstance;

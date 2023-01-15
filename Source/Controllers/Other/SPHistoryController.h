@@ -34,7 +34,7 @@
 
 @interface SPHistoryController : NSObject 
 {
-	IBOutlet SPDatabaseDocument *theDocument;
+	IBOutlet __weak SPDatabaseDocument *theDocument;
 	IBOutlet NSSegmentedControl *historyControl;
 
 	SPTableContent *tableContentInstance;

@@ -22,32 +22,6 @@ set -e
 
 MODE="$1"
 
-dir_exists() {
-	if [ -d "$1" ]; then
-		return 0
-	fi
-	return 1
-}
-
-#Shouldn't be needed anymore
-#OPENSSL_VER=1.1.1h
-#OPENSSL_FILE="openssl-$OPENSSL_VER.tar.gz"
-#OPENSSL_URL="https://www.openssl.org/source/$OPENSSL_FILE"
-#OPENSSL_TARGET_DIR="Frameworks/openssl"
-#
-#if ! dir_exists "$OPENSSL_TARGET_DIR"; then
-#  echo "$OPENSSL_TARGET_DIR doesn't exist"
-#  trap - EXIT
-#  exit 1
-#fi
-#
-#if ! curl -L "$OPENSSL_URL" -o "$OPENSSL_TARGET_DIR/$OPENSSL_FILE";
-#then
-#  echo "curl of $OPENSSL_URL failed"
-#  trap - EXIT
-#  exit 1
-#fi
-
 if ! hash xcpretty 2> /dev/null; then
   echo "xcpretty not installed. Try gem install xcpretty"
   trap - EXIT
@@ -56,7 +30,7 @@ fi
 
 if [ "$MODE" = "tests" ]; then
   echo "Running Sequel Ace Unit tests"
-  set -o pipefail && xcodebuild test -workspace sequel-ace.xcworkspace -scheme "Sequel Ace Local Testing" -destination "platform=macOS,arch=x86_64" test CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c
+  set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Sequel Ace Debug" -destination "platform=macOS,arch=x86_64" test CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c
   success="1"
 fi
 

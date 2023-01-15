@@ -1,3 +1,197 @@
+## [4.0.5]
+
+### Added
+- 9c3dd59f, Add preference for column types visibility 
+- fe2b4506,  preference for column type visibility
+
+### Fixed
+- 1a47d524,  Error when altering Timestamp/Datetime columns in structure view
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.4]
+
+### Added
+
+
+### Fixed
+- b09e83df, Temporary Hotfix: Kill the task after termination 
+- 9f6d5ec0, Fix column types when copying content with column types and when exporting 
+- 49ec01cb,  Autocomplete weirdness
+- 4e1dfbec,  Pasting content in unloaded text/blob field causes crash
+
+### Changed
+- 55f6cc02, Update OpenSSL to 1.1.1s 
+
+### Removed
+
+
+### Infra
+- e2d231a1, Move OCMock to SPM from included framework 
+
+## [4.0.3]
+
+### Added
+
+
+### Fixed
+- 81e08793, Fix copy as SQL insert, Fix users modal resizing 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.2]
+
+### Added
+- 51fad246, Show column type in query editor and content view 
+
+### Fixed
+- 0756e835,  Remove data type names from CSV exports
+- e8fa9487,   Text is not invalidated if just a cut or paste action is executed
+- 9ccf9d19, Enable Help menu for connection screen 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.1]
+
+### Added
+
+
+### Fixed
+- 1b531f4c, Fix closing all connections that are being opened
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.0.0]
+
+### Added
+- 968d5361, Make analytics opt-out 
+
+### Fixed
+- c9d037a3,  Fix small typo on Export dialog
+- e37e799e,  Portuguese localization
+- f8f016ca, Fix major memory leak with database document not being released 
+- 24676d51, Fix memory leaks when closing connection 
+- c9e367d5, Fix saving session not saving / restoring tabs 
+- 6381ff81, Fix crash on right click when field editor is active 
+- dd6d02c5, Fix deprecations and warnings 
+- 2dd099f6, Fix saving session more than once 
+
+### Changed
+
+
+### Removed
+- 26092354, Breaking change: Officially drop MySQL 5.6 support 
+- 6183c515, Drop macOS 10.12 
+
+### Infra
+
+
+## [3.5.3]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+- ebeb253c, Update MAMP Documentation regarding settings to connect 
+
+### Removed
+
+
+### Infra
+- ed74fc85, Fix preferences path, keychain path, formatting  
+- b10de447, [CLEANUP] Migration HowTo 
+- c5ecac7e, chore: Included githubactions in the dependabot config 
+
+## [3.5.2]
+
+### Added
+
+
+### Fixed
+- c25b64a7, Possible fix for crash on tables with invisible columns 
+- 03c9e6f1, Only append a default value if its specified 
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [3.5.1]
+
+### Added
+- 3acc82a8,  support to copy table's name with database name in the list of tables
+
+### Fixed
+
+
+### Changed
+- e9ac3d3c,  Attempt non-SSL connections if we fail connecting via SSL and SSL is not required
+
+### Removed
+
+
+### Infra
+- 4dac484c, Infra cleanup, xcworkspace removal, hierarchy simplification 
+
+## [3.5.0]
+
+### Added
+- 49ed5429, Support for pinning tables at top of tables list 
+- 18af48c0,  Clicking S[tructure] C[ontent] or D[rop] in export window will toggle the value for all tables
+- 7293fc50,   Filter and Sorting to Structure "fields" Table View.
+
+### Fixed
+- 7e16cee2, Disable dark mode variants of colors for tab bar 
+- d46f0712, Disable TouchBar font panel API 
+
+### Changed
+- 8afb7e51,  Improved tab coloring appearance in Dark and Light modes
+- 81ec264f,  Stop exporting a placeholder table for views in database exports
+- da43e08c,  Accurately show SSL connection status always
+- a37b653c,  Allow sorting every column on the Structure "fields" table view
+- b002cae1,  Change default query editor font to Menlo to improve query editor performance
+
+### Removed
+
+
+### Infra
+
+
 ## [3.4.5]
 
 ### Added

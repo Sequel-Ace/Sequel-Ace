@@ -53,7 +53,7 @@ typedef struct {
 
 @interface SPTextView : NSTextView <NSTextStorageDelegate>
 {
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPCustomQuery *customQueryInstance;
 

@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by James on 28/2/2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 #import "SPTaskAdditions.h"
@@ -24,12 +24,20 @@
 
 - (void)SPterminate{
 
+    int processID = self.processIdentifier;
+
+    [self terminate];
+
+    NSTask *killTask = [[NSTask alloc] init];
+    [killTask setLaunchPath:@"/bin/sh"];
     SPMainQSync(^{
-        [SPAppDelegate.sshProcessIDs removeObject:@(self.processIdentifier)];
+        [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -9 %@", [NSString stringWithFormat:@"%i", processID]]]];
+        [killTask launch];
+        [killTask waitUntilExit];
+
+        [SPAppDelegate.sshProcessIDs removeObject:@(processID)];
         SPLog(@"sshProcessIDs count: %lu", (unsigned long)SPAppDelegate.sshProcessIDs.count);
     });
-    
-    [self terminate];
 }
 
 @end

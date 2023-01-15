@@ -1695,7 +1695,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Set field names as first line
     for (tableColumn in [customQueryView tableColumns])
     {
-        [tempRow addObject:[[tableColumn headerCell] stringValue]];
+        [tempRow addObject:[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
     }
     
     NSMutableArray *currentResult = [NSMutableArray array];
@@ -1821,7 +1821,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Set field type for validations
         [[dataCell formatter] setFieldType:[columnDefinition objectForKey:@"type"]];
         [theCol setDataCell:dataCell];
-        [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+        [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
         [theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@", [columnDefinition objectForKey:@"name"], [columnDefinition objectForKey:@"type"], ([columnDefinition objectForKey:@"char_length"]) ? [NSString stringWithFormat:@"(%@)", [columnDefinition objectForKey:@"char_length"]] : @""]];
         
         // Set the width of this column to saved value if exists and maps to a real column
@@ -3578,7 +3578,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(documentWillClose:)
                                                  name:SPDocumentWillCloseNotification
-                                               object:tableDocumentInstance];
+                                               object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(queryFavoritesHaveBeenUpdated:)
                                                  name:SPQueryFavoritesHaveBeenUpdatedNotification
@@ -3652,10 +3652,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 }
 
 //this method is called right before the UI objects are deallocated
-- (void)documentWillClose:(NSNotification *)notification
-{
-    // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
-    [self clearQueryLoadTimer];
+- (void)documentWillClose:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (tableDocumentInstance == document) {
+
+            // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
+            [self clearQueryLoadTimer];
+        }
+    }
 }
 
 #pragma mark -

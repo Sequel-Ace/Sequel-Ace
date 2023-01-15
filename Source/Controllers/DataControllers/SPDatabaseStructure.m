@@ -76,7 +76,7 @@
 	if ((self = [super init])) {
 
 		// Keep a weak reference to the delegate
-		delegate = theDelegate;
+		_delegate = theDelegate;
 
 		// Start with no root connection
 		mySQLConnection = nil;
@@ -89,7 +89,7 @@
 		[[NSNotificationCenter defaultCenter] addObserver:self
 		                                         selector:@selector(_destroy:)
 		                                             name:SPDocumentWillCloseNotification
-		                                           object:delegate];
+		                                           object:nil];
 
 		// Set up the connection, thread management and data locks
 		pthread_mutex_init(&threadManagementLock, NULL);
@@ -108,7 +108,7 @@
 - (void)setConnectionToClone:(SPMySQLConnection *)aConnection
 {
 	// Perform the task in a background thread to avoid blocking the UI
-	[NSThread detachNewThreadWithName:SPCtxt(@"SPDatabaseStructure clone connection task",delegate)
+	[NSThread detachNewThreadWithName:SPCtxt(@"SPDatabaseStructure clone connection task",self.delegate)
 							   target:self 
 							 selector:@selector(_cloneConnectionFromConnection:) 
 							   object:aConnection];
@@ -128,7 +128,7 @@
 
 - (SPDatabaseDocument *)delegate
 {
-	return delegate;
+	return _delegate;
 }
 
 #pragma mark -
@@ -136,7 +136,7 @@
 
 - (void)queryDbStructureInBackgroundWithUserInfo:(NSDictionary *)userInfo
 {
-	[NSThread detachNewThreadWithName:SPCtxt(@"SPNavigatorController database structure querier", delegate)
+	[NSThread detachNewThreadWithName:SPCtxt(@"SPNavigatorController database structure querier", self.delegate)
 							   target:self
 							 selector:@selector(queryDbStructureWithUserInfo:)
 							   object:userInfo];
@@ -161,21 +161,21 @@
 		// This thread is now first on the stack, and about to process the structure.
 		[[NSNotificationCenter defaultCenter] postNotificationName:@"SPDBStructureIsUpdating" object:self];
 
-		NSString *connectionID = ([delegate respondsToSelector:@selector(connectionID)])? [NSString stringWithString:[delegate connectionID]] : @"_";
+		NSString *connectionID = ([self.delegate respondsToSelector:@selector(connectionID)])? [NSString stringWithString:[self.delegate connectionID]] : @"_";
 
 		// Re-init with already cached data from navigator controller
 		NSMutableDictionary *queriedStructure = [NSMutableDictionary dictionary];
-		NSDictionary *dbstructure = [delegate getDbStructure];
+		NSDictionary *dbstructure = [self.delegate getDbStructure];
 		if (dbstructure) [queriedStructure setDictionary:[NSMutableDictionary dictionaryWithDictionary:dbstructure]];
 
 		NSMutableArray *queriedStructureKeys = [NSMutableArray array];
-		NSArray *dbStructureKeys = [delegate allSchemaKeys];
+		NSArray *dbStructureKeys = [self.delegate allSchemaKeys];
 		if (dbStructureKeys) [queriedStructureKeys setArray:dbStructureKeys];
 
 		// Retrieve all the databases known of by the delegate
 		NSMutableArray *connectionDatabases = [NSMutableArray array];
-		[connectionDatabases addObjectsFromArray:[delegate allSystemDatabaseNames]];
-		[connectionDatabases addObjectsFromArray:[delegate allDatabaseNames]];
+		[connectionDatabases addObjectsFromArray:[self.delegate allSystemDatabaseNames]];
+		[connectionDatabases addObjectsFromArray:[self.delegate allDatabaseNames]];
 
 		// Add all known databases coming from connection if they aren't parsed yet
 		for (id db in connectionDatabases) {
@@ -202,7 +202,7 @@
 			}
 		}
 
-		NSString *currentDatabase = ([delegate respondsToSelector:@selector(database)])? [delegate database] : nil;
+		NSString *currentDatabase = ([self.delegate respondsToSelector:@selector(database)])? [self.delegate database] : nil;
 
 		// Determine whether the database details need to be queried.
 		BOOL shouldQueryStructure = YES;
@@ -248,14 +248,14 @@
 
 		// Retrieve the tables and views for this database from SPTablesList
 		NSMutableArray *tablesAndViews = [NSMutableArray array];
-		for (id aTable in [[delegate valueForKeyPath:@"tablesListInstance"] allTableNames]) {
+		for (id aTable in [[self.delegate valueForKeyPath:@"tablesListInstance"] allTableNames]) {
 			NSDictionary *aTableDict = [NSDictionary dictionaryWithObjectsAndKeys:
 				aTable, @"name",
 				@(SPTableTypeTable), @"type",
 					nil];
 			[tablesAndViews addObject:aTableDict];
 		}
-		for (id aView in [[delegate valueForKeyPath:@"tablesListInstance"] allViewNames]) {
+		for (id aView in [[self.delegate valueForKeyPath:@"tablesListInstance"] allViewNames]) {
 			NSDictionary *aViewDict = [NSDictionary dictionaryWithObjectsAndKeys:
 				aView, @"name",
 				@(SPTableTypeView), @"type",
@@ -487,7 +487,7 @@
  */
 - (NSString *)keychainPasswordForConnection:(id)connection
 {
-	return [delegate keychainPasswordForConnection:connection];
+	return [self.delegate keychainPasswordForConnection:connection];
 }
 
 #pragma mark -
@@ -510,12 +510,16 @@
 /**
  * Ensure that processing is completed.
  */
-- (void)_destroy:(NSNotification *)notification
-{
-	delegate = nil;
-	
-	// Ensure all the retrieval threads have ended
-	[self _cancelAllThreadsAndWait];
+- (void)_destroy:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (self.delegate == document) {
+            self.delegate = nil;
+
+            // Ensure all the retrieval threads have ended
+            [self _cancelAllThreadsAndWait];
+        }
+    }
 }
 
 /**
@@ -524,7 +528,7 @@
 - (void)_updateGlobalVariablesWithStructure:(NSDictionary *)aStructure keys:(NSArray *)theKeys
 {
 
-	NSString *connectionID = [delegate connectionID];
+	NSString *connectionID = [self.delegate connectionID];
 
 	// Return if the delegate indicates disconnection
 	if([connectionID length] < 2) return;
@@ -574,7 +578,7 @@
  */
 - (BOOL)_ensureConnectionUnsafe
 {
-	if (!mySQLConnection || !delegate) return NO;
+	if (!mySQLConnection || !self.delegate) return NO;
 
 	// Check the connection state
 	if ([mySQLConnection isConnected] && [mySQLConnection checkConnectionIfNecessary]) return YES;
@@ -584,10 +588,10 @@
 
 	// The connection isn't connected.  Check the parent connection state, and if that
 	// also isn't connected, return.
-	if (![[delegate getConnection] isConnected]) return NO;
+	if (![[self.delegate getConnection] isConnected]) return NO;
 
 	// Copy the local port from the parent connection, in case a proxy has changed
-	[mySQLConnection setPort:[[delegate getConnection] port]];
+	[mySQLConnection setPort:[[self.delegate getConnection] port]];
 
 	// Attempt a connection
 	if (![mySQLConnection connect]) return NO;

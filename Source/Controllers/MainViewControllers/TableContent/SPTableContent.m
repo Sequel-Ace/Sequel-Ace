@@ -58,6 +58,7 @@
 #import "SPSplitView.h"
 #import "SPExtendedTableInfo.h"
 #import "SPBundleManager.h"
+#import "SPComboBoxCell.h"
 
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
@@ -228,6 +229,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
@@ -261,7 +263,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[NSNotificationCenter defaultCenter] addObserver:self
 	                                         selector:@selector(documentWillClose:)
 	                                             name:SPDocumentWillCloseNotification
-	                                           object:tableDocumentInstance];
+	                                           object:nil];
 }
 
 #pragma mark -
@@ -527,7 +529,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Set up the column
 		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
-		[[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+
+        if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+            [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+        } else {
+            [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+        }
+
 		[theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@%@%@", 
 			[columnDefinition objectForKey:@"name"], 
 			[columnDefinition objectForKey:@"type"], 
@@ -546,12 +554,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Set up the data cell depending on the column type
 		id dataCell;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[NSComboBoxCell alloc] initTextCell:@""];
+			dataCell = [[SPComboBoxCell alloc] initTextCell:@""];
 			[dataCell setButtonBordered:NO];
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
 			[dataCell setCompletes:YES];
 			[dataCell setControlSize:NSControlSizeSmall];
+            [dataCell setUsesSingleLineMode:YES];
 			// add prefs NULL value representation if NULL value is allowed for that field
 			if([[columnDefinition objectForKey:@"null"] boolValue])
 				[dataCell addItemWithObjectValue:nullValue];
@@ -686,9 +695,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void) clearTableValues
 {
-	SPDataStorage *tableValuesTransition;
-
-	tableValuesTransition = tableValues;
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	tableValues = [[SPDataStorage alloc] init];
@@ -2204,7 +2210,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Set field names as first line
 	for (NSTableColumn *aTableColumn in tableColumns) 
 	{
-		[tempRow addObject:[[aTableColumn headerCell] stringValue]];
+		[tempRow addObject:[[[aTableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
 	}
 	
 	[currentResult addObject:[NSArray arrayWithArray:tempRow]];
@@ -2911,30 +2917,32 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 }
 
 /**
- * Returns a string controlling which fields to retrieve for a query.  Returns * (all fields) if the preferences
- * option dontShowBlob isn't set; otherwise, returns a comma-separated list of all non-blob/text fields.
+ * Returns a string controlling which fields to retrieve for a query.  returns a comma-separated list of fields
  */
 - (NSString *)fieldListForQuery
 {
-	if (([prefs boolForKey:SPLoadBlobsAsNeeded]) && [dataColumns count]) {
+    if(![dataColumns count]) {
+        return @"*";
+    }
 
-		NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
-		BOOL tableHasBlobs = NO;
-		NSString *fieldName;
+    //Specifically list out columns to load invisible column data
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[dataColumns count]];
+    NSString *fieldName;
+    BOOL dontLoadTextAndBlobs = ([prefs boolForKey:SPLoadBlobsAsNeeded]);
 
-		for (NSDictionary* field in dataColumns)
-			if (![tableDataInstance columnIsBlobOrText:fieldName = [field objectForKey:@"name"]] )
-				[fields addObject:[fieldName backtickQuotedString]];
-			else {
-				// For blob/text fields, select a null placeholder so the column count is still correct
-				[fields addObject:@"NULL"];
-				tableHasBlobs = YES;
-			}
+    for (NSDictionary* field in dataColumns) {
+        fieldName = [field objectForKey:@"name"];
 
-		return (tableHasBlobs) ? [fields componentsJoinedByString:@", "] : @"*";
+        if (dontLoadTextAndBlobs && [tableDataInstance columnIsBlobOrText:fieldName]) {
+            // For blob/text fields, select a null placeholder so the column count is still correct
+            [fields addObject:@"NULL"];
+            continue;
+        }
 
-	}
-		return @"*";
+        [fields addObject:[fieldName backtickQuotedString]];
+    }
+
+    return [fields componentsJoinedByString:@", "];
 
 }
 
@@ -3659,10 +3667,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 }
 
 //this method is called right before the UI objects are deallocated
-- (void)documentWillClose:(NSNotification *)notification
-{
-	// if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
-	[self clearTableLoadTimer];
+- (void)documentWillClose:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (tableDocumentInstance == document) {
+            // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
+            [self clearTableLoadTimer];
+        }
+    }
 }
 
 #pragma mark -
@@ -3690,6 +3702,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Display binary data as Hex
 		else if ([keyPath isEqualToString:SPDisplayBinaryDataAsHex] && [tableContentView numberOfRows] > 0) {
 			[tableContentView reloadData];
+		}
+		else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
+            NSDictionary *tableDetails = [NSDictionary dictionaryWithObjectsAndKeys:
+                                          selectedTable, @"name",
+                                          [tableDataInstance columns], @"columns",
+                                          [tableDataInstance columnNames], @"columnNames",
+                                          [tableDataInstance getConstraints], @"constraints",
+                                          nil];
+            [[self onMainThread] setTableDetails:tableDetails];
 		}
 	}
 	else {
@@ -3795,11 +3816,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					return [NSString stringWithFormat:@"0x%@…", [[(NSData *)value subdataWithRange:NSMakeRange(0, 255)] dataToHexString]];
 				}
 				return [NSString stringWithFormat:@"0x%@", [(NSData *)value dataToHexString]];
-			}
-
-			pthread_mutex_t *fieldEditorCheckLock = NULL;
-			if (isWorking) {
-				fieldEditorCheckLock = &tableValuesLock;
 			}
 
 			// Unless we're editing, always retrieve the short string representation, truncating the value where necessary
@@ -3919,6 +3935,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		NSBeep();
 		return;
 	}
+
+    [prefs setBool:YES forKey:SPRuleFilterEditorLastVisibilityChoice];
 	
 	[self setRuleEditorVisible:YES animate:YES];
 	[toggleRuleFilterButton setState:NSOnState];
@@ -4107,7 +4125,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if ([[tableValues cellDataAtRow:rowIndex column:[[tableColumn identifier] integerValue]] isSPNotLoaded]) {
 
 			// Only get the data for the selected column, not all of them
-			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[tableColumn headerCell] stringValue] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
+			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
 
 			SPMySQLResult *tempResult = [mySQLConnection queryString:query];
 
@@ -4248,8 +4266,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Disable row selection while the document is working.
  */
-- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)rowIndex
-{
+- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)rowIndex {
+    if (fieldEditor) {
+        return NO;
+    }
 	return tableView == tableContentView ? tableRowsSelectable : YES;
 }
 
@@ -4606,6 +4626,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
+		[prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
 	}
 
 	// Cancel previous performSelector: requests on ourselves and the table view
@@ -4616,6 +4637,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[self clearTableLoadTimer];
 	
 	pthread_mutex_destroy(&tableValuesLock);
+    
+    NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
 @end

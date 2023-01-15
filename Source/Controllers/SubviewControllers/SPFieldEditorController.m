@@ -1278,6 +1278,7 @@ typedef enum {
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
     if (replacementString == nil || [replacementString characterCount] == 0) {
+        editTextViewWasChanged = YES; // Backspace
         return YES;
     }
     
@@ -1291,7 +1292,7 @@ typedef enum {
 		// saves a non-space char + base char if that combination
 		// occurs at the end of a sequence of typing before saving
 		// (OK button).
-		editTextViewWasChanged = ([replacementString length] == 1);
+		editTextViewWasChanged = ([replacementString length] == 1) || wasCutPaste;
 
 		// Pure attribute changes are ok
 		if (!replacementString) return YES;

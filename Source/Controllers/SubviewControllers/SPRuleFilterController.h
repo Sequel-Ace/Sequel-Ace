@@ -38,12 +38,11 @@ NSString * const SPRuleFilterHeightChangedNotification;
 @interface SPRuleFilterController : NSObject {
 	IBOutlet NSRuleEditor *filterRuleEditor;
 	IBOutlet SPTableData *tableDataInstance;
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet NSView *tableContentViewBelow;
 	IBOutlet NSButton *filterButton;
 	IBOutlet NSButton *addFilterButton;
-	IBOutlet NSButton *resetButton;
 
 	NSMutableArray *columns;
 	NSMutableDictionary *contentFilters;

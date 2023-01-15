@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by James on 13/2/2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 // This file was generated from JSON Schema using quicktype, do not modify it directly.
@@ -455,17 +455,13 @@ extension Array where Element == GitHub.Element {
 
 func newJSONDecoder() -> JSONDecoder {
     let decoder = JSONDecoder()
-    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
-        decoder.dateDecodingStrategy = .iso8601
-    }
+    decoder.dateDecodingStrategy = .iso8601
     return decoder
 }
 
 func newJSONEncoder() -> JSONEncoder {
     let encoder = JSONEncoder()
-    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
-        encoder.dateEncodingStrategy = .iso8601
-    }
+    encoder.dateEncodingStrategy = .iso8601
     return encoder
 }
 

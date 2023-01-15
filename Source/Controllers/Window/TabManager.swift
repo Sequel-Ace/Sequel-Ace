@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Created by Jakub Kašpar on 07.03.2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -72,6 +72,10 @@ import AppKit
         return managedWindows.compactMap { $0.windowController}
     }
 
+    @objc var windows: Set<NSWindow> {
+        return Set(windowControllers.compactMap { $0.window })
+    }
+
     weak var appController: SPAppController?
 
     // MARK: - Lifecycle
@@ -106,14 +110,14 @@ import AppKit
     @discardableResult
     @objc func newWindowForWindow() -> SPWindowController {
         let windowController = createNewWindowController()
-        createWindow(newWindowController: windowController, inWindow: NSWindow(), ordered: .above)
+        createWindow(newWindowController: windowController, inWindow: SPWindow(), ordered: .above)
         return windowController
     }
 
     @discardableResult
     @objc func replaceTabServiceWithInitialWindow() -> SPWindowController {
         let windowController = createNewWindowController()
-        addManagedWindow(windowController: windowController)
+        createWindow(newWindowController: windowController, inWindow: SPWindow(), ordered: .above)
         windowController.showWindow(self)
         return windowController
     }
@@ -128,7 +132,7 @@ import AppKit
 private extension TabManager {
     func createNewWindowController() -> SPWindowController {
         let windowController = SPWindowController(windowNibName: "MainWindow")
-        windowController.window?.delegate = appController
+        windowController.window?.delegate = windowController
         return windowController
     }
 

@@ -47,7 +47,7 @@
 
 @interface SPTablesList : NSObject <NSTextFieldDelegate, NSTableViewDelegate>
 {
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTableStructure *tableSourceInstance;
 	IBOutlet SPTableContent *tableContentInstance;
 	IBOutlet SPDatabaseData *databaseDataInstance;
@@ -107,6 +107,7 @@
 	IBOutlet NSMenuItem *openTableInNewTabContextMenuItem;
 	IBOutlet NSMenuItem *openTableInNewWindowContextMenuItem;
 	IBOutlet NSMenuItem *pinTableContextMenuItem;
+    IBOutlet NSMenuItem *copyTableNameContextMenuItem;
 	IBOutlet NSMenuItem *separatorTableContextMenuItem;
 	IBOutlet NSMenuItem *showCreateSyntaxContextMenuItem;
 	IBOutlet NSMenuItem *copyCreateSyntaxContextMenuItem;
@@ -155,7 +156,7 @@
 - (void)deselectAllTables;
 
 // Getters
-- (nonnull NSArray *)selectedTableNames;
+- (nonnull NSArray *)selectedTableAndViewNames;
 - (nonnull NSArray *)selectedTableItems;
 - (nonnull NSArray *)selectedTableTypes;
 - (nullable NSString *)tableName;

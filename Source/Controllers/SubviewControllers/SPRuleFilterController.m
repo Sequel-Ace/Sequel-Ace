@@ -249,7 +249,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)_resize;
 - (void)openContentFilterManagerForFilterType:(NSString *)filterType;
 - (IBAction)filterTable:(id)sender;
-- (IBAction)resetFilter:(id)sender;
 - (IBAction)_menuItemInRuleEditorClicked:(id)sender;
 - (void)_pretendPlayRuleEditorForCriteria:(NSMutableArray *)criteria
                             displayValues:(NSMutableArray *)displayValues
@@ -321,17 +320,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	return self;
 }
 
-- (void)awakeFromNib
-{
-	// move the add filter button over the filter button (since only one of them can be visible at a time)
-	NSRect filterRect = [filterButton frame];
-	NSRect addFilterRect = [addFilterButton frame];
-	CGFloat widthContainer = [[filterButton superview] frame].size.width;
-	CGFloat deltaR = widthContainer - (filterRect.origin.x + filterRect.size.width);
-	addFilterRect.origin.x = widthContainer - deltaR - addFilterRect.size.width;
-	addFilterRect.origin.y = filterRect.origin.y;
-	addFilterRect.size.height = filterRect.size.height;
-	[addFilterButton setFrame:addFilterRect];
+- (void)awakeFromNib {
 
 	[self _doChangeToRuleEditorData:^{
 		[self->filterRuleEditor bind:@"rows" toObject:self->_modelContainer withKeyPath:@"model" options:nil];
@@ -639,7 +628,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			SPMainLoopAsync(^{
 				// if we are about to remove the only row in existance, treat it as a reset instead
 				if([[self->_modelContainer model] count] == 1) {
-					[self resetFilter:nil];
+					[self resetFilter];
 				}
 				else {
 					[self _doChangeToRuleEditorData:^{
@@ -981,8 +970,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if(target && action) [target performSelector:action withObject:self];
 }
 
-- (IBAction)resetFilter:(id)sender
-{
+- (void)resetFilter {
     SPTableContent *con = tableDocumentInstance.tableContentInstance;
 
     con->toggleRuleFilterButton.state = !con->toggleRuleFilterButton.state;
@@ -1052,7 +1040,6 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[addFilterButton setHidden:!empty];
 	[filterButton setHidden:empty];
 
-	[resetButton setEnabled:(enabled && !empty)];
 	[filterButton setEnabled:(enabled && !empty)];
 	[filterRuleEditor setEnabled:enabled];
 	[addFilterButton setEnabled:(enabled && empty)];
@@ -1195,7 +1182,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
                     // FIXME: oh ... is the regex is wrong.
                     // (?<foo>bar) = Define a named group named "foo" consisting of pattern bar.
                     // so (?<!\\\\)\\$CURRENT_FIELD" looks like the start of a group name,
-					[tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[[colNode name] backtickQuotedString]];
+                    [tip replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:[NSRegularExpression escapedPatternForString:[[colNode name] backtickQuotedString]]];
+
 					[tip flushCachedRegexData];
 					tooltip = [NSString stringWithString:tip];
 				} else {

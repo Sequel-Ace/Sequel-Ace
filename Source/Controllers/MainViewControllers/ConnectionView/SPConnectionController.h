@@ -56,7 +56,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
 {	
-	SPDatabaseDocument *dbDocument;
+	__weak SPDatabaseDocument *dbDocument;
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;

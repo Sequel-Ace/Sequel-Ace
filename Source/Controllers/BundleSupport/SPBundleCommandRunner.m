@@ -75,7 +75,6 @@
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 
 	BOOL userTerminated = NO;
-	BOOL redirectForScript = NO;
 	BOOL isDir = NO;
 
 	NSMutableArray *scriptHeaderArguments = [NSMutableArray array];
@@ -111,7 +110,6 @@
 			NSError *writeError = nil;
 			[script writeToFile:scriptFilePath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
 			if(writeError == nil) {
-				redirectForScript = YES;
 				[scriptHeaderArguments addObject:scriptFilePath];
 			} else {
 				NSBeep();
@@ -123,7 +121,6 @@
 		NSError *writeError = nil;
 		[command writeToFile:scriptFilePath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
 		if(writeError == nil) {
-			redirectForScript = YES;
 			[scriptHeaderArguments addObject:scriptFilePath];
 		} else {
 			NSBeep();
@@ -153,11 +150,7 @@
 	// Create and set an unique process ID for each SPDatabaseDocument which has to passed
 	// for each sequelace:// scheme command as user to be able to identify the url scheme command.
 	// Furthermore this id is used to communicate with the called command as file name.
-	SPDatabaseDocument *databaseDocument = nil;
-    if ([[[NSApp mainWindow] delegate] isKindOfClass:[SPAppController class]]) {
-        SPAppController *appController = (SPAppController *)[[NSApp mainWindow] delegate];
-        databaseDocument = appController.frontDocument;
-    }
+    SPDatabaseDocument *databaseDocument = [SPAppDelegate frontDocument];
 	// Check if connected
     if ([databaseDocument getConnection] == nil) {
         databaseDocument = nil;

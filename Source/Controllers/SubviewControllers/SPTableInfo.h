@@ -38,7 +38,7 @@
 	IBOutlet SPTableView *tableList;
 	IBOutlet SPTablesList *tableListInstance;
 	IBOutlet SPTableData *tableDataInstance;
-	IBOutlet SPDatabaseDocument *tableDocumentInstance;
+	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 
 	IBOutlet NSTableView *infoTable;
 	IBOutlet NSTableView *activitiesTable;

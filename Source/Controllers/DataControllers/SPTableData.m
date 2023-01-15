@@ -67,10 +67,26 @@
 		tableCreateSyntax = nil;
 		tableHasAutoIncrementField = NO;
 
+        [NSNotificationCenter.defaultCenter addObserver:self
+               selector:@selector(documentWillClose:)
+                   name:SPDocumentWillCloseNotification
+                 object:nil];
+
 		pthread_mutex_init(&dataProcessingLock, NULL);
 	}
 
 	return self;
+}
+
+- (void)documentWillClose:(NSNotification *)notification {
+    if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
+        SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
+        if (tableDocumentInstance == document) {
+            [self setConnection:nil];
+
+            pthread_mutex_destroy(&dataProcessingLock);
+        }
+    }
 }
 
 /**
@@ -700,11 +716,6 @@
 
 			// Split the remaining field definition string by spaces and process
 			[tableColumn addEntriesFromDictionary:[self parseFieldDefinitionStringParts:[fieldsParser splitStringByCharacter:' ' skippingBrackets:YES]]];
-
-			//if column is not null, but doesn't have a default value, set empty string
-			if([[tableColumn objectForKey:@"null"] integerValue] == 0 && [[tableColumn objectForKey:@"autoincrement"] integerValue] == 0 && ![tableColumn objectForKey:@"default"]) {
-				[tableColumn setObject:@"" forKey:@"default"];
-			}
 
 			// Store the column.
 			NSMutableDictionary *d = [NSMutableDictionary dictionaryWithCapacity:1];
@@ -1495,7 +1506,6 @@
 	[self setConnection:nil];
 
 	pthread_mutex_destroy(&dataProcessingLock);
-
 }
 
 #pragma mark -

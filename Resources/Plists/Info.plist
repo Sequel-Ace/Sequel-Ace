@@ -190,7 +190,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.5.0</string>
+	<string>4.0.5</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -213,13 +213,11 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20028</string>
+	<string>20046</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.12</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

@@ -135,7 +135,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	[tabView selectTabViewItemAtIndex:0];
 
 	[splitView setMinSize:120.f ofSubviewAtIndex:0];
-	[splitView setMinSize:620.f ofSubviewAtIndex:1];
+	[splitView setMinSize:550.f ofSubviewAtIndex:1];
 
 	NSTableColumn *tableColumn = [outlineView tableColumnWithIdentifier:SPTableViewNameColumnID];
 	ImageAndTextCell *imageAndTextCell = [[ImageAndTextCell alloc] init];
@@ -1008,10 +1008,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 				{
 					if(!first) [alterStmt appendString:@", "];
 					[alterStmt appendFormat:@"%@@%@ IDENTIFIED WITH %@ BY %@", //note: "BY" -> plaintext, "AS" -> hash
-					                        [[user valueForKey:@"user"] tickQuotedString],
-					                        [[child host] tickQuotedString],
-					                        [[user valueForKey:@"plugin"] tickQuotedString],
-					                        (![newPass isNSNull] && [newPass length]) ? [newPass tickQuotedString] : @"''"];
+                        [[self connection] escapeAndQuoteString: [user valueForKey:@"user"]],
+                        [[self connection] escapeAndQuoteString: [child host]],
+                        [[self connection] escapeAndQuoteString: [user valueForKey:@"plugin"]],
+                        (![newPass isNSNull] && [newPass length]) ? [[self connection] escapeAndQuoteString:newPass] : @"''"];
 					first = NO;
 				}
 				[connection queryString:alterStmt];
@@ -1024,10 +1024,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 				for (SPUserMO *child in hosts)
 				{
 					NSString *changePasswordStatement = [NSString stringWithFormat:
-														 @"SET PASSWORD FOR %@@%@ = PASSWORD(%@)",
-														 [[user valueForKey:@"user"] tickQuotedString],
-														 [[child host] tickQuotedString],
-														 ([user valueForKey:@"password"]) ? [[user valueForKey:@"password"] tickQuotedString] : @"''"];
+                        @"SET PASSWORD FOR %@@%@ = PASSWORD(%@)",
+                        [[self connection] escapeAndQuoteString: [user valueForKey:@"user"]],
+                        [[self connection] escapeAndQuoteString: [child host]],
+                        ([user valueForKey:@"password"]) ? [[self connection] escapeAndQuoteString:[user valueForKey:@"password"]] : @"''"];
 					
 					[connection queryString:changePasswordStatement];
 					if(![self _checkAndDisplayMySqlError]) return NO;

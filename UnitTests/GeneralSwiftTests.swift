@@ -3,7 +3,7 @@
 //  Unit Tests
 //
 //  Created by James on 12/1/2021.
-//  Copyright © 2021 Sequel-Ace. All rights reserved.
+//  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
 import XCTest

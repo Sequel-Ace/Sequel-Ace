@@ -41,7 +41,7 @@
  *
  * SPMutableArrayAdditions tests class.
  */
-@interface SPMutableArrayAdditionsTests : XCTestCase
+@interface SPMutableArrayAdditionsTests: XCTestCase
 
 @end
 
@@ -230,8 +230,8 @@
 
     XCTAssertNoThrow([testArray safeRemoveObjectAtIndex:-1]);
     XCTAssertThrows([testArray removeObjectAtIndex:-1]);
-
 }
+
 // 0.0272s
 - (void)testPerformanceRemoveObjectAtIndex {
 
@@ -245,6 +245,7 @@
         }
     }];
 }
+
 //0.0289s
 - (void)testPerformanceSafeRemoveObjectAtIndex {
 
@@ -261,11 +262,9 @@
 
 // 0.761 s
 - (void)testPerformanceReverse {
-
     [self measureBlock:^{
 
         NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
-
         int const iterations = 1000;
         for (int i = 0; i < iterations; i++) {
             @autoreleasepool {
