@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Ocorreu um erro ao tentar executar a operação.\n\nMensagem do MySQL: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Os Limites de Recursos não são suportados para sua versão do MySQL. Quaisquer Limites de recurso especificados foram descartados e não salvos. MySQL disse: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Ocorreu um erro não tratado ao tentar criar %lu dos arquivos de exportação. Por favor, verifique os detalhes e tente novamente.";
@@ -1090,7 +1090,7 @@
 "Dump of table" = "Dump de tabela";
 
 /* sql export dump of view label */
-"Dump of view" = "Dump of view";
+"Dump of view" = "Dump da vista";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Executando o dump...";
@@ -2188,13 +2188,13 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requer espaço de armazenamento de 8 bytes. M é a largura de exibição opcional e não afeta o possível intervalo do valor. Nota: Operações aritméticas podem falhar para números grandes.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Redefinir AUTO_INCREMENT após a exclusão\n(somente para Delete ALL ROWS IN TABLE)?";
 
 /* delete selected row button */
-"Delete Selected Row" = "Delete Selected Row";
+"Delete Selected Row" = "Excluir linha selecionada";
 
 /* delete selected rows button */
-"Delete Selected Rows" = "Delete Selected Rows";
+"Delete Selected Rows" = "Excluir linhas selecionadas";
 
 /* delete all rows in table button */
 "Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
@@ -2332,7 +2332,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace não conseguiu encontrar colunas pertencentes a este índice. Será que já foi removido?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "O Sequel Ace só suporta e é testado com as versões padrão do cliente OpenSSH incluídas no macOS. Usar diferentes clientes pode causar problemas de conexão, riscos de segurança ou nem sequer funcionar.\n\nPor favor, saiba que não podemos fornecer suporte para tais configurações.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "comando Sequel Ace não suportado.";
@@ -2452,7 +2452,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "Conexão segura via SSL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH conectado";
@@ -3200,13 +3200,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "O arquivo selecionado não é um arquivo válido.\n\nTente novamente.\n\nClasse: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "O arquivo de hosts conhecidos selecionado não é gravável.\n\n%@\n\nPor favor, re-selecione o arquivo nas Preferências do Sequel Ace e tente novamente.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "O arquivo de hosts conhecidos selecionado é inválido.\n\nPor favor, re-selecione o arquivo nas Preferências do Sequel Ace e tente novamente.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "O arquivo de hosts conhecido selecionado contém uma citação (\") no caminho do arquivo que não é suportado.\n\n%@\n\nSelecione um arquivo diferente nas Preferências do Sequel Ace, ou renomeie o arquivo/caminho para remover a citação.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Informações de depuração do túnel SSH";
@@ -3323,43 +3323,43 @@
 "Never show this again" = "Não mostre isso novamente";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "O campo atual \"%@é uma coluna gerada e, portanto, não pode ser editada.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "O uso da coluna \"default\" mudou desde a última versão da Sequel ACE:\n\n- Nenhum valor padrão: Deixe-o em branco.\n- Valor de string: use aspas duplas ou '' simples \"\" se você quiser uma sequência de caracteres vazia ou para embrulhar uma sequência de caracteres\n- Expressão: Use parênteses (). Exceto nas colunas TIMESTAMP e DATETIME onde você pode especificar a função CURRENT_TIMESTAMP sem incluir parênteses.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Fixar Vista";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Fixar tabela";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "Fixar procedimento";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Fixar função";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Desafixar Vista";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Desafixar Tabela";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "Desafixar processo";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Desafixar função";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "FIXAR";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "Copiar nome da tabela";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+"LaunchFavorite URL Scheme Error" = "Erro ao iniciar esquema de URL Favorita";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "A variável no parâmetro de consulta ?name= não pode ser combinada com nenhum dos seus favoritos.";
