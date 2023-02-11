@@ -911,7 +911,21 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     NSValue *connect = @NO;
 
-    [details setObject:@"SPTCPIPConnection" forKey:@"type"];
+    if ([url query]) {
+        NSArray* query = [[url query] componentsSeparatedByString:@"&"];
+
+        for (NSString* param in query) {
+            NSString* key = [param componentsSeparatedByString:@"="].firstObject;
+            NSString* value = [param componentsSeparatedByString:@"="].lastObject;
+            [details setObject:value forKey:key];
+        }
+
+        [details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
+    }
+    else {
+        [details setObject:@"SPTCPIPConnection" forKey:@"type"];
+    }
+
     if ([url port]) {
         [details setObject:[url port] forKey:@"port"];
     }
