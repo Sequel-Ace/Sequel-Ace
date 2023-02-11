@@ -150,7 +150,7 @@
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "位元欄位類型，其中 M 指定位元數。如果輸入值位元數小於 M，則對齊到最後一位元。若要單獨命名每一位元組請參考 SET。";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
-"A Bundle ‘%@」 is already installed. Do you want to update it?" = "已安裝擴充包「%@」。是否更新？";
+"A Bundle ‘%@’ is already installed. Do you want to update it?" = "已安裝包「%@」。是否更新？";
 
 /* description of binary */
 "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "固定長度的位元組陣列，位數不足的值將會向右填充 0x00 直到長度達到 M。";
@@ -209,7 +209,7 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "指定的 SSL 金鑰位置找不到金鑰檔案，請重新選擇。";
 
 /* duplicate host informative message */
-"A user with the host「%@」already exists" = "已存在主機為「%@」的使用者";
+"A user with the host '%@' already exists" = "已存在主機為'%@'的用戶";
 
 /* duplicate user informative message */
 "A user with the name '%@' already exists" = "使用者「%@」已存在";
@@ -1973,7 +1973,7 @@
 "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "請輸入 SSH Tunnel 的域名或關閉 SSH Tunnel。";
 
 /* Please enter the password */
-"Please enter the password for ‘%@」:" = "請輸入「%@」的密碼：";
+"Please enter the password for ‘%@’:" = "請輸入‘%@’的密碼：";
 
 /* print button */
 "Print" = "列印";
@@ -2332,7 +2332,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace 找不到該索引對應的任何欄位。請檢查索引是否存在。";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with Mac OS X. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace 只在 Mac OS X 附帶的 OpenSSH 用戶端版本中測試有效並保證支援。使用其他用戶端可能會導致連線問題、安全問題或根本無法工作。\n\n請注意我們無法為此類設定提供技術支援。";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace 只支援跟測試過 macOS 附帶的預設 OpenSSH 客戶端版本。使用其他的客戶端可能會發生連線問題、安全風險或無法使用。\n\n請注意！我們無法為類似設定提供技術支援。";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "不支援 Sequal Ace 的 URL SCHEME 指令。";
@@ -2675,7 +2675,7 @@
 "Thanks for updating Sequel Ace!" = "感謝您更新 Sequel Ace！";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@」 already exists." = "擴充包「%@」已安裝。";
+"The Bundle ‘%@’ already exists." = "包‘%@’已安裝。";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "擴充包「%@」未包含區分已安裝的擴充包所必需的的 UUID。";
