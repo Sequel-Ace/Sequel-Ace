@@ -912,12 +912,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSValue *connect = @NO;
 
     if ([url query]) {
-        NSArray *params = [[url query] componentsSeparatedByString:@"&"];
-
-        for (NSString *param in params) {
-            NSString *key = [param componentsSeparatedByString:@"="].firstObject;
-            NSString *value = [param componentsSeparatedByString:@"="].lastObject;
-            [details setObject:value forKey:key];
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        for (NSURLQueryItem *queryItem in [components queryItems]) {
+            [details setObject:queryItem.value forKey:queryItem.name];
         }
     }
 
