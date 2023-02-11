@@ -912,14 +912,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSValue *connect = @NO;
 
     if ([url query]) {
-        NSArray* query = [[url query] componentsSeparatedByString:@"&"];
+        NSArray *params = [[url query] componentsSeparatedByString:@"&"];
 
-        for (NSString* param in query) {
-            NSString* key = [param componentsSeparatedByString:@"="].firstObject;
-            NSString* value = [param componentsSeparatedByString:@"="].lastObject;
+        for (NSString *param in params) {
+            NSString *key = [param componentsSeparatedByString:@"="].firstObject;
+            NSString *value = [param componentsSeparatedByString:@"="].lastObject;
             [details setObject:value forKey:key];
         }
+    }
 
+    if ([details objectForKey:@"ssh_host"]) {
         [details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
     }
     else {
