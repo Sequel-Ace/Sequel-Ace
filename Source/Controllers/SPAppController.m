@@ -912,9 +912,21 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSValue *connect = @NO;
 
     if ([url query]) {
+        NSArray *valid = @[@"ssh_host", @"ssh_port", @"ssh_user", @"ssh_password", @"ssh_keyLocation", @"ssh_keyLocationEnabled"];
+        NSMutableArray *invalid = [NSMutableArray array];
         NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
         for (NSURLQueryItem *queryItem in [components queryItems]) {
-            [details setObject:queryItem.value forKey:queryItem.name];
+            if ([valid containsObject:queryItem.name]) {
+                [details setObject:queryItem.value forKey:queryItem.name];
+            }
+            else {
+                [invalid addObject:queryItem.name];
+            }
+        }
+        if ([invalid count] > 0) {
+            NSBeep();
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error") message:[NSString stringWithFormat:@"%@:\n\n%@: %@\n\n%@: %@", NSLocalizedString(@"Error for", @"error for message"), NSLocalizedString(@"Invalid query parameters given", @"Invalid query parameters given"), [invalid componentsJoinedByString:@", "], NSLocalizedString(@"Allowed query parameters are", @"Allowed query parameters are"), [valid componentsJoinedByString:@", "]] callback:nil];
+            return;
         }
     }
 
