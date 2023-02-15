@@ -48,7 +48,7 @@
 "%@; %ld rows affected" = "%1$@; %2$ld 行に影響";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%2が複数のクエリによって影響を受けた行数、%3は実行されたクエリの数、%4は全クエリの実行に要した時間になります";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ldが複数のクエリによって影響を受けた行数、%3$ldは実行されたクエリの数、%4$@は全クエリの実行に要した時間になります";
 
 /* text showing one row has been affected by a single query */
 "%@; 1 row affected" = "%@; 1 行に影響";
