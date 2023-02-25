@@ -138,7 +138,7 @@
 "[name required]" = "[name required]";
 
 /* [no selection] */
-"[no selection]" = "[no selection]";
+"[no selection]" = "[neniu elekto]";
 
 /* Additional export file errors */
 "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
@@ -335,7 +335,7 @@
 "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
 
 /* mysql error occurred message */
-"An error occurred" = "An error occurred";
+"An error occurred" = "Eraro okazis";
 
 /* MySQL table info retrieval error message */
 "An error occurred retrieving table information.  MySQL said: %@" = "An error occurred retrieving table information.  MySQL said: %@";
@@ -449,13 +449,13 @@
 "An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "An unhandled error occurred when attempting to create the export file.  Please check the details and try again.";
 
 /* ANALYZE one or more tables - result title */
-"Analyze %@" = "Analyze %@";
+"Analyze %@" = "Analizi %@";
 
 /* analyze selected items menu item */
 "Analyze Selected Items" = "Analyze Selected Items";
 
 /* analyze table menu item */
-"Analyze Table" = "Analyze Table";
+"Analyze Table" = "Analizi la tabelon";
 
 /* analyze table failed message */
 "Analyze table failed." = "Analyze table failed.";
@@ -536,10 +536,10 @@
 "auto_increment: %@" = "auto_increment: %@";
 
 /* Encoding autodetect menu item */
-"Autodetect" = "Autodetect";
+"Autodetect" = "Aŭtomate detekti";
 
 /* background label for color table (Prefs > Editor) */
-"Background" = "Background";
+"Background" = "Fono";
 
 /* backtick quote label for color table (Prefs > Editor) */
 "Backtick Quote" = "Backtick Quote";
@@ -616,7 +616,7 @@
 "character set client: %@" = "character set client: %@";
 
 /* CHECK one or more tables - result title */
-"Check %@" = "Check %@";
+"Check %@" = "Kontroli %@";
 
 /* check of all selected items successfully passed message */
 "Check of all selected items successfully passed." = "Check of all selected items successfully passed.";
@@ -652,7 +652,7 @@
 "Checksum Table" = "Checksum Table";
 
 /* Checksums of %@ message */
-"Checksums of %@" = "Checksums of %@";
+"Checksums of %@" = "Kontrolsumoj de %@";
 
 /* menu item for choose db */
 "Choose Database..." = "Choose Database...";
@@ -685,10 +685,10 @@
 "Clear the global history list" = "Clear the global history list";
 
 /* Close menu item */
-"Close" = "Close";
+"Close" = "Fermi";
 
 /* close tab context menu item */
-"Close Tab" = "Close Tab";
+"Close Tab" = "Fermi la langeton";
 
 /* Close Window menu item */
 "Close Window" = "Close Window";
@@ -745,20 +745,20 @@
 "Connection succeeded" = "Connection succeeded";
 
 /* Console */
-"Console" = "Console";
+"Console" = "Konzolo";
 
 /* Console : Save as : Initial filename */
 "ConsoleLog" = "ConsoleLog";
 
 /* toolbar item label for switching to the Table Content tab */
-"Content" = "Content";
+"Content" = "Enhavo";
 
 /* content filter clause is empty tooltip. */
 "Content Filter clause is empty." = "Content Filter clause is empty.";
 
 /* continue button
  Continue button title */
-"Continue" = "Continue";
+"Continue" = "Daŭrigi";
 
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
@@ -976,13 +976,13 @@
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member).";
 
 /* delete button */
-"Delete" = "Delete";
+"Delete" = "Forigi";
 
 /* delete table/view message */
 "Delete %@ '%@'?" = "Delete %1$@ '%2$@'?";
 
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
-"Delete Both" = "Delete Both";
+"Delete Both" = "Forigi ambaŭ";
 
 /* delete database message */
 "Delete database '%@'?" = "Delete database '%@'?";
@@ -1164,7 +1164,7 @@
 
 /* Bundle Editor : Copy-Command-Error : error dialog title
  error */
-"Error" = "Error";
+"Error" = "Eraro";
 
 /* error adding field message */
 "Error adding field" = "Error adding field";
@@ -1302,7 +1302,7 @@
 "Error while saving %@." = "Error while saving %@.";
 
 /* Errors title */
-"Errors" = "Errors";
+"Errors" = "Eraroj";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
 "Example:" = "Example:";
@@ -1365,10 +1365,10 @@
 "fetching table data…" = "fetching table data…";
 
 /* popup menuitem for field (showing only if disabled) */
-"field" = "field";
+"field" = "kampo";
 
 /* Field */
-"Field" = "Field";
+"Field" = "Kampo";
 
 /* Query result editing error - could not match row being edited uniquely */
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
@@ -1441,7 +1441,7 @@
 "FULLTEXT" = "FULLTEXT";
 
 /* function */
-"function" = "function";
+"function" = "funkcio";
 
 /* header for function info pane */
 "FUNCTION INFORMATION" = "FUNCTION INFORMATION";
@@ -1505,7 +1505,7 @@
 "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
 
 /* ignore button */
-"Ignore" = "Ignore";
+"Ignore" = "Ignori";
 
 /* ignore errors button */
 "Ignore All Errors" = "Ignore All Errors";
@@ -1520,7 +1520,7 @@
 "Ignore Field" = "Ignore Field";
 
 /* import button */
-"Import" = "Import";
+"Import" = "Importi";
 
 /* import all fields menu item */
 "Import all Fields" = "Import all Fields";
@@ -1636,7 +1636,7 @@
 "is updatable: %@" = "is updatable: %@";
 
 /* items */
-"items" = "items";
+"items" = "eroj";
 
 /* javascript exception */
 "JavaScript Exception" = "JavaScript Exception";
@@ -1694,20 +1694,20 @@
 
 /* range for blob type
  range for varbinary type */
-"M: %@ to %@ bytes" = "M: %1$@ to %2$@ bytes";
+"M: %@ to %@ bytes" = "M: %1$@ ĝis %2$@ bajtoj";
 
 /* range for text type
  range for varchar type */
-"M: %@ to %@ characters" = "M: %1$@ to %2$@ characters";
+"M: %@ to %@ characters" = "M: %1$@ ĝis %2$@ signoj";
 
 /* range for longtext type */
-"M: %@ to %@ characters (4 GiB)" = "M: %1$@ to %2$@ characters (4 GiB)";
+"M: %@ to %@ characters (4 GiB)" = "M: %1$@ ĝis %2$@ signoj (4 GiB)";
 
 /* range for binary type */
-"M: 0 to 255 bytes" = "M: 0 to 255 bytes";
+"M: 0 to 255 bytes" = "M: 0 ĝis 255 bajtoj";
 
 /* range for char type */
-"M: 0 to 255 characters" = "M: 0 to 255 characters";
+"M: 0 to 255 characters" = "M: 0 ĝis 255 signoj";
 
 /* range for bit type */
 "M: 1 (default) to 64" = "M: 1 (default) to 64";
@@ -1737,13 +1737,13 @@
 "Maximum text length is set to %llu. Inserted text was truncated." = "Maximum text length is set to %llu. Inserted text was truncated.";
 
 /* message column title */
-"Message" = "Message";
+"Message" = "Mesaĝo";
 
 /* mgtemplateengine error */
 "MGTemplateEngine Error" = "MGTemplateEngine Error";
 
 /* export filename date token */
-"Month" = "Month";
+"Month" = "Monato";
 
 /* multiple selection */
 "multiple selection" = "multiple selection";
@@ -1779,7 +1779,7 @@
 "MyTheme" = "MyTheme";
 
 /* network preference pane name */
-"Network" = "Network";
+"Network" = "Reto";
 
 /* network preference pane tooltip */
 "Network Preferences" = "Network Preferences";
@@ -1806,10 +1806,10 @@
 "New Folder" = "New Folder";
 
 /* Bundle Editor : Default name for a new bundle in the menu */
-"New Name" = "New Name";
+"New Name" = "Nova nomo";
 
 /* new table menu item */
-"New Table" = "New Table";
+"New Table" = "Nova tabelo";
 
 /* error that no color theme found */
 "No color theme data found." = "No color theme data found.";
@@ -1830,7 +1830,7 @@
 "No data found." = "No data found.";
 
 /* No errors title */
-"No errors" = "No errors";
+"No errors" = "Neniu eraro";
 
 /* No favorites entry in favorites menu */
 "No Favorties" = "No Favorties";
@@ -1958,7 +1958,7 @@
 "Optimized type for field '%@'" = "Optimized type for field '%@'";
 
 /* optional placeholder string */
-"optional" = "optional";
+"optional" = "nedeviga";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
@@ -1985,13 +1985,13 @@
 "Privileges" = "Privileges";
 
 /* procedure */
-"procedure" = "procedure";
+"procedure" = "proceduro";
 
 /* header for procedure info pane */
 "PROCEDURE INFORMATION" = "PROCEDURE INFORMATION";
 
 /* procedures */
-"procedures" = "procedures";
+"procedures" = "proceduroj";
 
 /* proceed button */
 "Proceed" = "Proceed";
@@ -2073,7 +2073,7 @@
 "Refresh List" = "Refresh List";
 
 /* toolbar item label for switching to the Table Relations tab */
-"Relations" = "Relations";
+"Relations" = "Rilatoj";
 
 /* Relations tab subtitle showing table name */
 "Relations for table: %@" = "Relations for table: %@";
@@ -2092,7 +2092,7 @@
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
-"Remove" = "Remove";
+"Remove" = "Forigi";
 
 /* remove all button */
 "Remove All" = "Remove All";
@@ -2131,13 +2131,13 @@
 "Rename View..." = "Rename View...";
 
 /* REPAIR one or more tables - result title */
-"Repair %@" = "Repair %@";
+"Repair %@" = "Ripari %@";
 
 /* repair selected items menu item */
 "Repair Selected Items" = "Repair Selected Items";
 
 /* repair table menu item */
-"Repair Table" = "Repair Table";
+"Repair Table" = "Ripari la tabelon";
 
 /* repair table failed message */
 "Repair table failed." = "Repair table failed.";
@@ -2221,10 +2221,10 @@
 "Rows %@ - %@ of %@%@ from table" = "Rows %1$@ - %2$@ of %3$@%4$@ from table";
 
 /* Table Info Section : number of rows (exact value) */
-"rows: %@" = "rows: %@";
+"rows: %@" = "vicoj: %@";
 
 /* Table Info Section : number of rows (estimated value) */
-"rows: ~%@" = "rows: ~%@";
+"rows: ~%@" = "vicoj: ~%@";
 
 /* run all button */
 "Run All" = "Run All";
@@ -2269,7 +2269,7 @@
 "Save All to Favorites" = "Save All to Favorites";
 
 /* save as button title */
-"Save As..." = "Save As...";
+"Save As..." = "Konservi kiel...";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as dat file' item */
 "save BLOB as dat file" = "save BLOB as dat file";
@@ -2326,7 +2326,7 @@
 "Selected Text" = "Selected Text";
 
 /* selection label for color table (Prefs > Editor) */
-"Selection" = "Selection";
+"Selection" = "Elekto";
 
 /* table structure : indexes : delete index : no columns error : description */
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
@@ -2342,7 +2342,7 @@
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
-"Server" = "Server";
+"Server" = "Servilo";
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
@@ -2518,7 +2518,7 @@
 "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
 
 /* toolbar item label for switching to the Table Structure tab */
-"Structure" = "Structure";
+"Structure" = "Strukturo";
 
 /* successfully analyzed all selected items message */
 "Successfully analyzed all selected items." = "Successfully analyzed all selected items.";
@@ -2572,13 +2572,13 @@
 "Syntax for %@ table copied" = "Syntax for %@ table copied";
 
 /* table */
-"table" = "table";
+"table" = "tabelo";
 
 /* csv export table heading
  table
  Table Structure : Collation dropdown : 'item is the same as the collation of table' marker
  Table Structure : Encoding dropdown : 'item is table default' marker */
-"Table" = "Table";
+"Table" = "Tabelo";
 
 /* export label showing that the app is fetching data for a specific table */
 "Table %lu of %lu (%@): Fetching data..." = "Table %1$lu of %2$lu (%3$@): Fetching data...";
@@ -2642,19 +2642,19 @@
 "Table Triggers" = "Table Triggers";
 
 /* Add Relation sheet title, showing table name */
-"Table: %@" = "Table: %@";
+"Table: %@" = "Tabelo: %@";
 
 /* tables preference pane name */
-"Tables" = "Tables";
+"Tables" = "Tabeloj";
 
 /* tables */
-"tables" = "tables";
+"tables" = "tabeloj";
 
 /* header for table list */
-"TABLES" = "TABLES";
+"TABLES" = "TABELOJ";
 
 /* header for table & views list */
-"TABLES & VIEWS" = "TABLES & VIEWS";
+"TABLES & VIEWS" = "TABELOJ KAJ VIDOJ";
 
 /* Connection test very short status message */
 "Testing connection..." = "Testing connection...";
@@ -2888,7 +2888,7 @@
 "Time" = "Time";
 
 /* toolbar item label for switching to the Table Triggers tab */
-"Triggers" = "Triggers";
+"Triggers" = "Ekagiloj";
 
 /* triggers for table label */
 "Triggers for table: %@" = "Triggers for table: %@";
@@ -3020,22 +3020,22 @@
 "Untitled %ld" = "Untitled %ld";
 
 /* range for mediumblob type */
-"Up to %@ bytes (16 MiB)" = "Up to %@ bytes (16 MiB)";
+"Up to %@ bytes (16 MiB)" = "Ĝis %@ bajtoj (16 MiB)";
 
 /* range for longblob type */
-"Up to %@ bytes (4 GiB)" = "Up to %@ bytes (4 GiB)";
+"Up to %@ bytes (4 GiB)" = "Ĝis %@ bajtoj (4 GiB)";
 
 /* range for mediumtext type */
-"Up to %@ characters (16 MiB)" = "Up to %@ characters (16 MiB)";
+"Up to %@ characters (16 MiB)" = "Ĝis %@ signoj (16 MiB)";
 
 /* range for enum type */
 "Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";
 
 /* range for tinyblob type */
-"Up to 255 bytes" = "Up to 255 bytes";
+"Up to 255 bytes" = "Ĝis 255 bajtoj";
 
 /* range for tinytext type */
-"Up to 255 characters" = "Up to 255 characters";
+"Up to 255 characters" = "Ĝis 255 signoj";
 
 /* Open Files : Bundle : Already-Installed : Update button */
 "Update" = "Update";
@@ -3062,7 +3062,7 @@
 "URL scheme command %@ unsupported" = "URL scheme command %@ unsupported";
 
 /* Use 127.0.0.1 button */
-"Use 127.0.0.1" = "Use 127.0.0.1";
+"Use 127.0.0.1" = "Uzi 127.0.0.1";
 
 /* use standard connection button */
 "Use Standard Connection" = "Use Standard Connection";
@@ -3074,13 +3074,13 @@
 "User-defined value" = "User-defined value";
 
 /* toolbar item label for switching to the User Manager tab */
-"Users" = "Users";
+"Users" = "Uzantoj";
 
 /* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
 "Value will be imported as MySQL NULL" = "Value will be imported as MySQL NULL";
 
 /* variable label for color table (Prefs > Editor) */
-"Variable" = "Variable";
+"Variable" = "Variablo";
 
 /* version */
 "version" = "versio";
@@ -3089,7 +3089,7 @@
 "Version" = "Versio";
 
 /* view */
-"view" = "view";
+"view" = "vido";
 
 /* Release notes button title */
 "View full release notes" = "View full release notes";
@@ -3104,10 +3104,10 @@
 "View Structure" = "View Structure";
 
 /* views */
-"views" = "views";
+"views" = "vidoj";
 
 /* warning */
-"Warning" = "Warning";
+"Warning" = "Averto";
 
 /* Short important release note for why password prompts may occur */
 "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again.";
@@ -3299,7 +3299,7 @@
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "WARNING: Setting the auto-complete delay to 0.0 can result in strange output.";
 
 /* downloading new version bytes of bytes done */
-"%@ of %@" = "%@ of %@";
+"%@ of %@" = "%@ de %@";
 
 /* Time zone set failed informative message */
 "\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone will be set to SYSTEM.";
