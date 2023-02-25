@@ -233,7 +233,7 @@
 "ACTIVITIES" = "ACTIVITIES";
 
 /* Add trigger button label */
-"Add" = "Add";
+"Add" = "Aldoni";
 
 /* menu item to add db */
 "Add Database..." = "Add Database...";
@@ -257,10 +257,10 @@
 "Alerts & Logs Preferences" = "Alerts & Logs Preferences";
 
 /* All databases placeholder */
-"All Databases" = "All Databases";
+"All Databases" = "Ĉiuj datumbazoj";
 
 /* All databases (%) placeholder */
-"All Databases (%)" = "All Databases (%)";
+"All Databases (%)" = "Ĉiuj datumbazoj (%)";
 
 /* All export files already exist message */
 "All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
@@ -586,7 +586,7 @@
  Open Files : Bundle : Already-Installed : Cancel button
  Preferences : Network : Custom SSH client : warning dialog : cancel button
  shutdown server : confirmation dialog : cancel button */
-"Cancel" = "Cancel";
+"Cancel" = "Nuligi";
 
 /* sql import : charset error alert : cancel button */
 "Cancel Import" = "Cancel Import";
@@ -926,7 +926,7 @@
  export source
  Table Structure : Collation dropdown : 'item is the same as the collation of database' marker
  Table Structure : Encoding dropdown : 'item is database default' marker */
-"Database" = "Database";
+"Database" = "Datumbazo";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
@@ -939,10 +939,10 @@
 "Database Rename Unsupported" = "Database Rename Unsupported";
 
 /* export filename date token */
-"Date" = "Date";
+"Date" = "Dato";
 
 /* export filename date token */
-"Day" = "Day";
+"Day" = "Tago";
 
 /* Add Table Sheet : Collation : Default (unknown)
  Collation Dropdown : Default (unknown)
@@ -1618,7 +1618,7 @@
 "Interpret data as:" = "Interpret data as:";
 
 /* Invalid database very short status message */
-"Invalid database" = "Invalid database";
+"Invalid database" = "Nevalida datumbazo";
 
 /* export : import settings : file error title */
 "Invalid file supplied!" = "Invalid file supplied!";
@@ -1645,7 +1645,7 @@
 "JavaScript Parsing Error" = "JavaScript Parsing Error";
 
 /* key label (Navigator) */
-"Key" = "Key";
+"Key" = "Ŝlosilo";
 
 /* keyword label for color table (Prefs > Editor) */
 "Keyword" = "Keyword";
@@ -1785,7 +1785,7 @@
 "Network Preferences" = "Network Preferences";
 
 /* file preference pane name */
-"Files" = "Files";
+"Files" = "Dosieroj";
 
 /* file preference pane tooltip */
 "File Preferences" = "File Preferences";
@@ -1868,7 +1868,7 @@
  Bundle Editor : Scope=General : Output dropdown : 'none' item
  Bundle Editor : Scope=General : Trigger dropdown : 'none' item
  compression: none */
-"None" = "None";
+"None" = "Neniu";
 
 /* not available label */
 "Not available" = "Not available";
@@ -1889,7 +1889,7 @@
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
-"OK" = "OK";
+"OK" = "Bone";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
 "One additional row was removed!" = "One additional row was removed!";
@@ -2209,10 +2209,10 @@
 "return type: %@" = "return type: %@";
 
 /* singular word for row */
-"row" = "row";
+"row" = "vico";
 
 /* plural word for rows */
-"rows" = "rows";
+"rows" = "vicoj";
 
 /* text showing how many rows are in the limited filter match */
 "Rows %@ - %@ from filtered matches" = "Rows %1$@ - %2$@ from filtered matches";
@@ -2263,7 +2263,7 @@
 "Running query..." = "Running query...";
 
 /* Save trigger button label */
-"Save" = "Save";
+"Save" = "Konservi";
 
 /* Save All to Favorites */
 "Save All to Favorites" = "Save All to Favorites";
@@ -2666,7 +2666,7 @@
 "Testing SSH..." = "Testing SSH...";
 
 /* text label for color table (Prefs > Editor) */
-"Text" = "Text";
+"Text" = "Teksto";
 
 /* Text is too long. Maximum text length is set to %llu. */
 "Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
@@ -3083,10 +3083,10 @@
 "Variable" = "Variable";
 
 /* version */
-"version" = "version";
+"version" = "versio";
 
 /* export header version label */
-"Version" = "Version";
+"Version" = "Versio";
 
 /* view */
 "view" = "view";
@@ -3146,7 +3146,7 @@
 "Wrong SPF content type!" = "Wrong SPF content type!";
 
 /* export filename date token */
-"Year" = "Year";
+"Year" = "Jaro";
 
 /* message of panel when trying to copy multiple rows */
 "You can only copy single rows." = "You can only copy single rows.";
@@ -3221,7 +3221,7 @@
 "Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
 
 /* The answer, yes */
-"Yes" = "Yes";
+"Yes" = "Jes";
 
 /* Shown to remind users of their stale bookmarks */
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "A reminder of your stale secure bookmarks:<br /><br />%@<br />";
@@ -3254,7 +3254,7 @@
 "Please choose your known hosts file" = "Please choose your known hosts file";
 
 /* Message for field editor JSON segment when JSON is invalid */
-"Invalid JSON" = "Invalid JSON";
+"Invalid JSON" = "Nevalida JSON";
 
 /* Applying syntax highlighting task description */
 "Applying syntax highlighting..." = "Applying syntax highlighting...";
@@ -3272,7 +3272,7 @@
 "A new version is available" = "A new version is available";
 
 /* new version is available download button title */
-"Download" = "Download";
+"Download" = "Elŝuti";
 
 /* new version is available alert informativeText */
 "Version %@ is available. You are currently running %@" = "Version %@ is available. You are currently running %@";
@@ -3353,7 +3353,7 @@
 "Unpin Function" = "Unpin Function";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "FIKSITA";
 
 /* Menu option to copy a table's name with database name in the list of tables */
 "Copy Table Name" = "Copy Table Name";
