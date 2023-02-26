@@ -20,7 +20,7 @@
 "%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
 
 /* History item with page number label */
-"%@ (Page %lu)" = "%1$@ (Page %2$lu)";
+"%@ (Page %lu)" = "%1$@ (paĝo %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
@@ -476,7 +476,7 @@
 "Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone.";
 
 /* delete all rows informative message */
-"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Are you sure you want to delete all the rows from this table? This action cannot be undone.";
+"Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi ĉiujn vicojn de la tabelo? La ago ne estas malfarebla.";
 
 /* delete table/view informative message */
 "Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Are you sure you want to delete the %1$@ '%2$@'? This operation cannot be undone.";
@@ -488,28 +488,28 @@
 "Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "Are you sure you want to delete the favorite '%@'? This operation cannot be undone.";
 
 /* delete field informative message */
-"Are you sure you want to delete the field '%@'? This action cannot be undone." = "Are you sure you want to delete the field '%@'? This action cannot be undone.";
+"Are you sure you want to delete the field '%@'? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la kampon '%@'? La ago ne estas malfarebla.";
 
 /* delete database informative message */
 "Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone." = "Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone.";
 
 /* delete index informative message */
-"Are you sure you want to delete the index '%@'? This action cannot be undone." = "Are you sure you want to delete the index '%@'? This action cannot be undone.";
+"Are you sure you want to delete the index '%@'? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la indekson '%@'? La ago ne estas malfarebla.";
 
 /* delete tables/views informative message */
 "Are you sure you want to delete the selected %@? This operation cannot be undone." = "Are you sure you want to delete the selected %@? This operation cannot be undone.";
 
 /* delete rows informative message */
-"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone.";
+"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la %ld elektitajn vicojn de la tabelo? La ago ne estas malfarebla.";
 
 /* delete selected relation informative message */
-"Are you sure you want to delete the selected relations? This action cannot be undone." = "Are you sure you want to delete the selected relations? This action cannot be undone.";
+"Are you sure you want to delete the selected relations? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la elektitajn rilatojn? La ago ne estas malfarebla.";
 
 /* delete selected row informative message */
-"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "Are you sure you want to delete the selected row from this table? This action cannot be undone.";
+"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la elektitan vicon de la tabelo? La ago ne estas malfarebla.";
 
 /* delete selected trigger informative message */
-"Are you sure you want to delete the selected triggers? This action cannot be undone." = "Are you sure you want to delete the selected triggers? This action cannot be undone.";
+"Are you sure you want to delete the selected triggers? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la elektitajn ekagilojn? La ago ne estas malfarebla.";
 
 /* kill connection informative message */
 "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.";
@@ -575,7 +575,7 @@
 "Bundles Installation Error" = "Bundles Installation Error";
 
 /* bzip2 compression export summary - within a sentence */
-"bzip2 compression" = "bzip2 compression";
+"bzip2 compression" = "bzip2-densigo";
 
 /* description of geometry */
 "Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model.";
@@ -601,7 +601,7 @@
 "Caret" = "Caret";
 
 /* change button */
-"Change" = "Change";
+"Change" = "Ŝanĝi";
 
 /* change focus to table list menu item */
 "Change Focus to Table List" = "Change Focus to Table List";
@@ -764,7 +764,7 @@
 "Continue to print?" = "Continue to print?";
 
 /* Copy as RTF */
-"Copy as RTF" = "Copy as RTF";
+"Copy as RTF" = "Kopii kiel RTF";
 
 /* copy create func syntax menu item
  Table List : Context Menu : copy CREATE FUNCTION syntax */
@@ -885,7 +885,7 @@
 
 /* created: %@
  Table Info Section : time+date table was created at */
-"created: %@" = "created: %@";
+"created: %@" = "kreita: %@";
 
 /* description of polygon */
 "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
@@ -900,7 +900,7 @@
 "Current Query" = "Current Query";
 
 /* header for current selection in filtered list */
-"CURRENT SELECTION" = "CURRENT SELECTION";
+"CURRENT SELECTION" = "NUNA ELEKTO";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current word' item */
 "Current Word" = "Current Word";
@@ -930,7 +930,7 @@
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'database changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'database changed' item */
-"Database changed" = "Database changed";
+"Database changed" = "Datumbazo ŝanĝita";
 
 /* message of panel when no db name is given */
 "Database must have a name." = "Database must have a name.";
@@ -961,7 +961,7 @@
 "Default Bundles Update" = "Default Bundles Update";
 
 /* import : csv field mapping : field default value */
-"Default: %@" = "Default: %@";
+"Default: %@" = "Defaŭlta: %@";
 
 /* Query snippet default value placeholder */
 "default_value" = "default_value";
@@ -994,7 +994,7 @@
 "Delete field '%@'?" = "Delete field '%@'?";
 
 /* delete func menu title */
-"Delete Function" = "Delete Function";
+"Delete Function" = "Forigi la funkcion";
 
 /* delete functions menu title */
 "Delete Functions" = "Delete Functions";
@@ -1015,10 +1015,10 @@
 "Delete Procedures" = "Delete Procedures";
 
 /* delete relation menu item */
-"Delete Relation" = "Delete Relation";
+"Delete Relation" = "Forigi la rilaton";
 
 /* delete relation message */
-"Delete relation" = "Delete relation";
+"Delete relation" = "Forigi la rilaton";
 
 /* delete relations menu item */
 "Delete Relations" = "Delete Relations";
@@ -1039,7 +1039,7 @@
 "Delete selected row?" = "Delete selected row?";
 
 /* delete table menu title */
-"Delete Table..." = "Delete Table...";
+"Delete Table..." = "Forigi la tabelon...";
 
 /* delete tables menu title */
 "Delete Tables" = "Delete Tables";
@@ -1066,7 +1066,7 @@
 "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards.";
 
 /* discard changes button */
-"Discard changes" = "Discard changes";
+"Discard changes" = "Forĵeti la ŝanĝojn";
 
 /* description for disconnected notification */
 "Disconnected from %@" = "Disconnected from %@";
@@ -1447,7 +1447,7 @@
 "FUNCTION INFORMATION" = "FUNCTION INFORMATION";
 
 /* functions */
-"functions" = "functions";
+"functions" = "funkcioj";
 
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
@@ -1752,10 +1752,10 @@
 "MySQL connecting..." = "MySQL connecting...";
 
 /* mysql error message */
-"MySQL Error" = "MySQL Error";
+"MySQL Error" = "MySQL-eraro";
 
 /* mysql help */
-"MySQL Help" = "MySQL Help";
+"MySQL Help" = "MySQL-helpo";
 
 /* MySQL Help for Selection */
 "MySQL Help for Selection" = "MySQL Help for Selection";
@@ -1767,13 +1767,13 @@
 "MySQL Help – Categories" = "MySQL Help – Categories";
 
 /* mysql said message */
-"MySQL said:" = "MySQL said:";
+"MySQL said:" = "MySQL diris:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL said:\n%@";
+"MySQL said:\n%@" = "MySQL diris:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL said:\n\n%@";
+"MySQL said:\n\n%@" = "MySQL diris:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "MyTheme";
@@ -1815,7 +1815,7 @@
 "No color theme data found." = "No color theme data found.";
 
 /* No compression export summary - within a sentence */
-"no compression" = "no compression";
+"no compression" = "neniu densigo";
 
 /* no connection available message */
 "No connection available" = "No connection available";
@@ -1854,7 +1854,7 @@
 "No query favorites found." = "No query favorites found.";
 
 /* Mysql Help Viewer : Search : No results */
-"No results found." = "No results found.";
+"No results found." = "Neniu rezulto trovita.";
 
 /* Bundle Editor : Fallback Input source dropdown : 'none' item
  Bundle Editor : Scope=? : ? dropdown: 'None' item
@@ -1871,7 +1871,7 @@
 "None" = "Neniu";
 
 /* not available label */
-"Not available" = "Not available";
+"Not available" = "Ne disponebla";
 
 /* Argument count (ContentFilterManager) */
 "Number of arguments: %lu" = "Number of arguments: %lu";
@@ -1911,10 +1911,10 @@
 "Open Function in New Window" = "Open Function in New Window";
 
 /* open connection in new tab context menu item */
-"Open in New Tab" = "Open in New Tab";
+"Open in New Tab" = "Malfermi en nova langeto";
 
 /* menu item open in new window */
-"Open in New Window" = "Open in New Window";
+"Open in New Window" = "Malfermi en nova fenestro";
 
 /* open procedure in new table title */
 "Open Procedure in New Tab" = "Open Procedure in New Tab";
@@ -1933,14 +1933,14 @@
 
 /* open view in new tab title
  open view in new table title */
-"Open View in New Tab" = "Open View in New Tab";
+"Open View in New Tab" = "Malfermi la vidon en nova langeto";
 
 /* Tables List : Context Menu : Duplicate connection to new window
  Tables List : Gear Menu : Duplicate connection to new window */
 "Open View in New Window" = "Open View in New Window";
 
 /* menu item open %@ in new window */
-"Open %@ in New Window" = "Open %@ in New Window";
+"Open %@ in New Window" = "Malfermi %@ en nova langeto";
 
 /* OPTIMIZE one or more tables - result title */
 "Optimize %@" = "Optimize %@";
@@ -2043,13 +2043,13 @@
 "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
 
 /* range for serial type */
-"Range: %@ to %@" = "Range: %1$@ to %2$@";
+"Range: %@ to %@" = "Intervalo: %1$@ ĝis %2$@";
 
 /* range for time type */
 "Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)" = "Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)";
 
 /* range for year type */
-"Range: 0000, 1901 to 2155" = "Range: 0000, 1901 to 2155";
+"Range: 0000, 1901 to 2155" = "Intervalo: 0000, 1901 ĝis 2155";
 
 /* range for set type */
 "Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage" = "Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage";
@@ -2058,7 +2058,7 @@
 "Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)";
 
 /* range for date type */
-"Range: 1000-01-01 to 9999-12-31" = "Range: 1000-01-01 to 9999-12-31";
+"Range: 1000-01-01 to 9999-12-31" = "Intervalo: 1000-01-01 ĝis 9999-12-31";
 
 /* range for timestamp type */
 "Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)";
@@ -2323,7 +2323,7 @@
 "Selected Rows (TSV)" = "Selected Rows (TSV)";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
-"Selected Text" = "Selected Text";
+"Selected Text" = "Elektita teksto";
 
 /* selection label for color table (Prefs > Editor) */
 "Selection" = "Elekto";
@@ -2357,7 +2357,7 @@
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as html' item
  Bundle Editor : Scope=General : Output dropdown : 'show as html' item */
-"Show as HTML" = "Show as HTML";
+"Show as HTML" = "Montri kiel HTML";
 
 /* Bundle Editor : Scope=Data-Table : Output dropdown : 'show as html tooltip' item
  Bundle Editor : Scope=Field : Output dropdown : 'show as html tooltip' item
@@ -2418,7 +2418,7 @@
 "Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
 
 /* Table Info Section : table size on disk */
-"size: %@" = "size: %@";
+"size: %@" = "grando: %@";
 
 /* skip existing button */
 "Skip existing" = "Skip existing";
@@ -2591,7 +2591,7 @@
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'table changed' item */
-"Table changed" = "Table changed";
+"Table changed" = "Tabelo ŝanĝita";
 
 /* table checksum message */
 "Table checksum" = "Table checksum";
@@ -2660,10 +2660,10 @@
 "Testing connection..." = "Testing connection...";
 
 /* MySQL connection test very short status message */
-"Testing MySQL..." = "Testing MySQL...";
+"Testing MySQL..." = "Testado de MySQL...";
 
 /* SSH testing very short status message */
-"Testing SSH..." = "Testing SSH...";
+"Testing SSH..." = "Testado de SSH...";
 
 /* text label for color table (Prefs > Editor) */
 "Text" = "Teksto";
@@ -3002,7 +3002,7 @@
 "Unknown file format" = "Unknown file format";
 
 /* unsaved changes message */
-"Unsaved changes" = "Unsaved changes";
+"Unsaved changes" = "Nekonservitaj ŝanĝoj";
 
 /* unsaved theme message */
 "Unsaved Theme" = "Unsaved Theme";
@@ -3329,28 +3329,28 @@
 "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Fiksi la vidon";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Fiksi la tabelon";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "Fiksi la proceduron";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Fiksi la funkcion";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Malfiksi la vidon";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Malfiksi la tabelon";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "Malfiksi la proceduron";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Malfiksi la funkcion";
 
 /* header for pinned table list */
 "PINNED" = "FIKSITA";
