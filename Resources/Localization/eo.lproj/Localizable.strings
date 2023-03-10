@@ -57,13 +57,13 @@
 "%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
 
 /* text showing a query was cancelled */
-"%@; Cancelled after %@" = "%1$@; Cancelled after %2$@";
+"%@; Cancelled after %@" = "%1$@; Nuligita post %2$@";
 
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL diris: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favorite";
@@ -72,10 +72,10 @@
 "%lu favorites" = "%lu favorites";
 
 /* favorite group singular label (%d == 1) */
-"%lu group" = "%lu group";
+"%lu group" = "%lu grupo";
 
 /* favorite groups plural label (%d != 1) */
-"%lu groups" = "%lu groups";
+"%lu groups" = "%lu grupoj";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
 "%ld additional rows were removed!" = "%ld additional rows were removed!";
@@ -87,7 +87,7 @@
 "%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld vicoj ne estis forigitaj.";
 
 /* Export file already exists message */
 "%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
@@ -108,16 +108,16 @@
 "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again.";
 
 /* History item title with nothing selected */
-"(no selection)" = "(no selection)";
+"(no selection)" = "(neniu elekto)";
 
 /* value shown for hidden blob and text fields */
-"(not loaded)" = "(not loaded)";
+"(not loaded)" = "(ne ŝargita)";
 
 /* Explanation for MySQL server has gone away error */
 "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
-", first row available after %1$@" = ", first row available after %1$@";
+", first row available after %1$@" = ", unua vico disponebla post %1$@";
 
 /* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
 ", taking %1$@" = ", taking %1$@";
@@ -129,7 +129,7 @@
 "[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
 
 /* error text when reading of csv file gave errors */
-"[ERROR in row %ld] %@\n" = "[ERROR in row %1$ld] %2$@\n";
+"[ERROR in row %ld] %@\n" = "[ERARO en vico %1$ld] %2$@\n";
 
 /* [multiple selection] */
 "[multiple selection]" = "[multiple selection]";
@@ -236,13 +236,13 @@
 "Add" = "Aldoni";
 
 /* menu item to add db */
-"Add Database..." = "Add Database...";
+"Add Database..." = "Aldoni datumbazon...";
 
 /* Add Host */
 "Add Host" = "Add Host";
 
 /* add global value or expression menu item */
-"Add Value or Expression…" = "Add Value or Expression…";
+"Add Value or Expression…" = "Aldoni valoron aŭ esprimon…";
 
 /* adding index task status message */
 "Adding index..." = "Adding index...";
@@ -545,7 +545,7 @@
 "Backtick Quote" = "Backtick Quote";
 
 /* bash error */
-"BASH Error" = "BASH Error";
+"BASH Error" = "BASH-eraro";
 
 /* toolbar item label for switching to the Table Content tab */
 "Browse & Edit Table Content" = "Browse & Edit Table Content";
@@ -592,7 +592,7 @@
 "Cancel Import" = "Cancel Import";
 
 /* cancelling task status message */
-"Cancelling..." = "Cancelling...";
+"Cancelling..." = "Nuligado...";
 
 /* empty query informative message */
 "Cannot save an empty query." = "Cannot save an empty query.";
@@ -872,10 +872,10 @@
 "Couldn't write field.\nMySQL said: %@" = "Couldn't write field.\nMySQL said: %@";
 
 /* create syntax for table comment */
-"Create syntax for" = "Create syntax for";
+"Create syntax for" = "Krei sintakson por";
 
 /* Create syntax label */
-"Create syntax for %@ '%@'" = "Create syntax for %1$@ '%2$@'";
+"Create syntax for %@ '%@'" = "Krei sintakson por %1$@ '%2$@'";
 
 /* Create syntaxes for selected items label */
 "Create syntaxes for selected items" = "Create syntaxes for selected items";
@@ -891,10 +891,10 @@
 "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
 
 /* Creating table task string */
-"Creating %@..." = "Creating %@...";
+"Creating %@..." = "Kreado de %@...";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current line' item */
-"Current Line" = "Current Line";
+"Current Line" = "Nuna linio";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current query' item */
 "Current Query" = "Current Query";
@@ -903,7 +903,7 @@
 "CURRENT SELECTION" = "NUNA ELEKTO";
 
 /* Bundle Editor : Fallback Input source dropdown : 'current word' item */
-"Current Word" = "Current Word";
+"Current Word" = "Nuna vorto";
 
 /* SSH connection : debug header with user-defined ssh binary */
 "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!";
@@ -948,14 +948,14 @@
  Collation Dropdown : Default (unknown)
  default label
  Table Structure : Collation dropdown : 'item is the same as the default collation of the row's charset' marker */
-"Default" = "Default";
+"Default" = "Defaŭlta";
 
 /* Add Table : Collation : Default ($1 = collation name)
  Charset Dropdown : Default item ($1 = charset name)
  Collation Dropdown : Default ($1 = collation name)
  Collation Dropdown : Default collation for given charset ($1 = collation name)
  New Table Sheet : Table Engine Dropdown : Default */
-"Default (%@)" = "Default (%@)";
+"Default (%@)" = "Defaŭlta (%@)";
 
 /* default bundles update */
 "Default Bundles Update" = "Default Bundles Update";
@@ -997,22 +997,22 @@
 "Delete Function" = "Forigi la funkcion";
 
 /* delete functions menu title */
-"Delete Functions" = "Delete Functions";
+"Delete Functions" = "Forigi la funkciojn";
 
 /* delete database message */
-"Delete group '%@'?" = "Delete group '%@'?";
+"Delete group '%@'?" = "Ĉu forigi la grupon '%@'?";
 
 /* delete index message */
-"Delete index '%@'?" = "Delete index '%@'?";
+"Delete index '%@'?" = "Ĉu forigi la indekson '%@'?";
 
 /* delete items menu title */
-"Delete Items" = "Delete Items";
+"Delete Items" = "Forigi la erojn";
 
 /* delete proc menu title */
-"Delete Procedure" = "Delete Procedure";
+"Delete Procedure" = "Forigi la proceduron";
 
 /* delete procedures menu title */
-"Delete Procedures" = "Delete Procedures";
+"Delete Procedures" = "Forigi la procedurojn";
 
 /* delete relation menu item */
 "Delete Relation" = "Forigi la rilaton";
@@ -1021,43 +1021,43 @@
 "Delete relation" = "Forigi la rilaton";
 
 /* delete relations menu item */
-"Delete Relations" = "Delete Relations";
+"Delete Relations" = "Forigi la rilatojn";
 
 /* delete row menu item singular */
-"Delete Row" = "Delete Row";
+"Delete Row" = "Forigi la vicon";
 
 /* delete rows menu item plural */
-"Delete Rows" = "Delete Rows";
+"Delete Rows" = "Forigi la vicojn";
 
 /* delete rows message */
-"Delete rows?" = "Delete rows?";
+"Delete rows?" = "Ĉu forigi la vicojn?";
 
 /* delete tables/views message */
 "Delete selected %@?" = "Delete selected %@?";
 
 /* delete selected row message */
-"Delete selected row?" = "Delete selected row?";
+"Delete selected row?" = "Ĉu forgi la elektitan vicon?";
 
 /* delete table menu title */
 "Delete Table..." = "Forigi la tabelon...";
 
 /* delete tables menu title */
-"Delete Tables" = "Delete Tables";
+"Delete Tables" = "Forigi la tabelojn";
 
 /* delete trigger menu item */
-"Delete Trigger" = "Delete Trigger";
+"Delete Trigger" = "Forigi la ekagilon";
 
 /* delete trigger message */
-"Delete trigger" = "Delete trigger";
+"Delete trigger" = "Forigi la ekagilon";
 
 /* delete triggers menu item */
-"Delete Triggers" = "Delete Triggers";
+"Delete Triggers" = "Forigi la ekagilojn";
 
 /* delete view menu title */
-"Delete View" = "Delete View";
+"Delete View" = "Forigi la vidon";
 
 /* delete views menu title */
-"Delete Views" = "Delete Views";
+"Delete Views" = "Forigi la vidojn";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
 "Disabled Cipher Suites" = "Disabled Cipher Suites";
@@ -1099,7 +1099,7 @@
 "Duplicate %@ '%@' to:" = "Duplicate %1$@ '%2$@' to:";
 
 /* duplicate func menu title */
-"Duplicate Function..." = "Duplicate Function...";
+"Duplicate Function..." = "Duobligi la funkcion...";
 
 /* duplicate host message */
 "Duplicate Host" = "Duplicate Host";
@@ -1108,13 +1108,13 @@
 "Duplicate Procedure..." = "Duplicate Procedure...";
 
 /* duplicate table menu title */
-"Duplicate Table..." = "Duplicate Table...";
+"Duplicate Table..." = "Duobligi la tabelon...";
 
 /* duplicate user message */
-"Duplicate User" = "Duplicate User";
+"Duplicate User" = "Duobligi la uzanton";
 
 /* duplicate view menu title */
-"Duplicate View..." = "Duplicate View...";
+"Duplicate View..." = "Duobligi la vidon...";
 
 /* partial copy database support informative message */
 "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
@@ -1123,7 +1123,7 @@
 "Edit Filters…" = "Edit Filters…";
 
 /* Edit row button */
-"Edit row" = "Edit row";
+"Edit row" = "Redakti la vicon";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Edit Table Structure" = "Edit Table Structure";
@@ -1305,7 +1305,7 @@
 "Errors" = "Eraroj";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
-"Example:" = "Example:";
+"Example:" = "Ekzemplo:";
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclude BLOB";
@@ -1553,10 +1553,10 @@
 "Imported %@ of SQL" = "Imported %@ of SQL";
 
 /* text showing that the application is importing CSV */
-"Importing CSV" = "Importing CSV";
+"Importing CSV" = "Importado de CSV";
 
 /* text showing that the application is importing SQL */
-"Importing SQL" = "Importing SQL";
+"Importing SQL" = "Importado de SQL";
 
 /* Bundle Editor : BLOB dropdown : 'include BLOB' item */
 "include BLOB" = "include BLOB";
@@ -1994,7 +1994,7 @@
 "procedures" = "proceduroj";
 
 /* proceed button */
-"Proceed" = "Proceed";
+"Proceed" = "Daŭrigi";
 
 /* header for procs & funcs list */
 "PROCS & FUNCS" = "PROCS & FUNCS";
@@ -2064,7 +2064,7 @@
 "Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)";
 
 /* text showing that app is reading dump */
-"Reading..." = "Reading...";
+"Reading..." = "Legado...";
 
 /* menu item to refresh databases */
 "Refresh Databases" = "Refresh Databases";
@@ -2085,7 +2085,7 @@
 "Reloading data..." = "Reloading data...";
 
 /* Reloading table task string */
-"Reloading..." = "Reloading...";
+"Reloading..." = "Reŝargado...";
 
 /* remote error */
 "Remote Error" = "Remote Error";
@@ -2311,16 +2311,16 @@
 "Select Database" = "Select Database";
 
 /* selected items */
-"selected items" = "selected items";
+"selected items" = "elektitaj eroj";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
-"Selected Rows (CSV)" = "Selected Rows (CSV)";
+"Selected Rows (CSV)" = "Elektitaj vicoj (CSV)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as SQL' item */
-"Selected Rows (SQL)" = "Selected Rows (SQL)";
+"Selected Rows (SQL)" = "Elektitaj vicoj (SQL)";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as tab-separated' item */
-"Selected Rows (TSV)" = "Selected Rows (TSV)";
+"Selected Rows (TSV)" = "Elektitaj vicoj (TSV)";
 
 /* Bundle Editor : Scope=Field : Input source dropdown: 'selected text' item */
 "Selected Text" = "Elektita teksto";
@@ -3134,7 +3134,7 @@
 "Writing data..." = "Writing data...";
 
 /* text showing that app is writing text file */
-"Writing..." = "Writing...";
+"Writing..." = "Skribado...";
 
 /* wrong data format or password */
 "Wrong data format or password." = "Wrong data format or password.";
