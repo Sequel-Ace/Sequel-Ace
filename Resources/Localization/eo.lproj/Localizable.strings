@@ -30,7 +30,7 @@
 "%@ row in partial load" = "%@ row in partial load";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ row in table";
+"%@ row in table" = "%@ vico en la tabelo";
 
 /* text showing how a single rows matched filter */
 "%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
@@ -39,19 +39,19 @@
 "%@ rows in partial load" = "%@ rows in partial load";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ rows in table";
+"%@ rows in table" = "%@ vicoj en la tabelo";
 
 /* text showing how many rows matched filter */
 "%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
+"%@; %ld rows affected" = "%1$@; %2$ld vicoj influitaj";
 
 /* text showing how many rows have been affected by multiple queries */
 "%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 row affected";
+"%@; 1 row affected" = "%@; 1 vico influita";
 
 /* text showing one row has been affected by multiple queries */
 "%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
@@ -123,7 +123,7 @@
 ", taking %1$@" = ", taking %1$@";
 
 /* warning shown in the console when no rows have been affected after writing to the db */
-"/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
+"/* WARNING: No rows have been affected */\n" = "/* AVERTO: Neniu vico estis influita */\n";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
@@ -191,7 +191,7 @@
 
 /* table structure : indexes : delete index : error 1553 : title
  table structure : indexes : delete index : error 1553, no FK found : title */
-"A foreign key needs this index" = "A foreign key needs this index";
+"A foreign key needs this index" = "Fremda ŝlosilo bezonas la indekson";
 
 /* description of set */
 "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.";
@@ -470,19 +470,19 @@
 "Are you sure you want to clear the history list for %@? This action cannot be undone." = "Are you sure you want to clear the history list for %@? This action cannot be undone.";
 
 /* truncate tables informative message */
-"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone.";
+"Are you sure you want to delete ALL records in the selected tables? This operation cannot be undone." = "Ĉu vi certas, ke vi volas forigi ĈIUJN vicojn en la elektitaj tabeloj? La operacio ne estas malfarebla.";
 
 /* truncate table informative message */
-"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone.";
+"Are you sure you want to delete ALL records in the table '%@'? This operation cannot be undone." = "Ĉu vi certas, ke vi volas forigi ĈIUJN vicojn en la tabelo '%@'? La operacio ne estas malfarebla.";
 
 /* delete all rows informative message */
 "Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi ĉiujn vicojn de la tabelo? La ago ne estas malfarebla.";
 
 /* delete table/view informative message */
-"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Are you sure you want to delete the %1$@ '%2$@'? This operation cannot be undone.";
+"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Ĉu vi certas, ke vi volas forigi la %1$@n '%2$@'? La operacio ne estas malfarebla.";
 
 /* delete database informative message */
-"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "Are you sure you want to delete the database '%@'? This operation cannot be undone.";
+"Are you sure you want to delete the database '%@'? This operation cannot be undone." = "Ĉu vi certas, ke vi volas forigi la datumbazon '%@'? La operacio ne estas malfarebla.";
 
 /* delete database informative message */
 "Are you sure you want to delete the favorite '%@'? This operation cannot be undone." = "Are you sure you want to delete the favorite '%@'? This operation cannot be undone.";
@@ -497,7 +497,7 @@
 "Are you sure you want to delete the index '%@'? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la indekson '%@'? La ago ne estas malfarebla.";
 
 /* delete tables/views informative message */
-"Are you sure you want to delete the selected %@? This operation cannot be undone." = "Are you sure you want to delete the selected %@? This operation cannot be undone.";
+"Are you sure you want to delete the selected %@? This operation cannot be undone." = "Ĉu vi certas, ke vi volas forigi la elektitan %@n? La operacio ne estas malfarebla.";
 
 /* delete rows informative message */
 "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Ĉu vi certas, ke vi volas forigi la %ld elektitajn vicojn de la tabelo? La ago ne estas malfarebla.";
@@ -2197,7 +2197,7 @@
 "Delete Selected Rows" = "Delete Selected Rows";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
+"Delete ALL ROWS IN TABLE" = "Forigi ĈIUJN VICOJN EN LA TABELO";
 
 /* Restoring session task description */
 "Restoring session..." = "Restoring session...";
@@ -2470,7 +2470,7 @@
 "SSH Disconnected" = "SSH Disconnected";
 
 /* SSH key check error */
-"SSH Key not found" = "SSH Key not found";
+"SSH Key not found" = "SSH-ŝlosilo ne trovita";
 
 /* title when ssh tunnel port forwarding failed */
 "SSH port forwarding failed" = "SSH port forwarding failed";
@@ -2485,7 +2485,7 @@
 "SSL connection not established" = "SSL connection not established";
 
 /* SSL key file check error */
-"SSL Key File not found" = "SSL Key File not found";
+"SSL Key File not found" = "SSH-ŝlosildosiero ne trovita";
 
 /* Standard memory export summary */
 "Standard memory" = "Standard memory";
